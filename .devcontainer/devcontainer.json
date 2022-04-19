@@ -1,0 +1,14 @@
+{
+	"name": "Go",
+	"build": {
+		"dockerfile": "Dockerfile",
+	},
+	"extensions": [
+		"golang.go",
+		"hashicorp.terraform",
+	],
+	"remoteUser": "vscode",
+	"mounts": [
+		"source=${localEnv:HOME}/.aws/,target=/home/vscode/.aws/,type=bind,consistency=cached"
+	]
+}

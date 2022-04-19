@@ -1,0 +1,6 @@
+{
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "go.formatTool": "gofmt",
+  "go.lintTool": "golint",
+  "go.inferGopath": false,
+}

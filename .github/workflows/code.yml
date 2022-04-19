@@ -1,0 +1,39 @@
+name: code
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: setup
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+
+    - name: lint
+      run: |
+        go get golang.org/x/lint/golint
+        golint -set_exit_status ./...
+
+    - name: tests
+      run: go test -timeout 30s -v ./... 
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: setup
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - run: |
+          pip3 install black
+          find -name *.py | xargs black --check

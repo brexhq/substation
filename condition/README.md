@@ -72,7 +72,7 @@ Inspects bytes and evalutes them by content type. This inspector uses the standa
 The inspector uses this Jsonnet configuration:
 
 ```
-// returns true if the IP address value stored in JSON key "foo" is not a private address
+// returns true if the bytes have a valid Zip header
 {
   type: 'content',
   settings: {

@@ -65,9 +65,7 @@ Conditions use inspectors, which are atomic data inspection methods, to evaluate
 
 ### content
 
-Inspects bytes and evalutes them by content type. This inspector uses the standard library's `net/http` package to identify the content type of data (more information is available [here](https://pkg.go.dev/net/http#DetectContentType)) and is most effective when using processors that change the format of data (e.g., `process/gzip`). The inspector supports these evaluations:
-
-- type: the MIME type of the content (e.g., application/zip, application/x-gzip)
+Inspects bytes and evalutes them by content type. This inspector uses the standard library's `net/http` package to identify the content type of data (more information is available [here](https://pkg.go.dev/net/http#DetectContentType)) and is most effective when using processors that change the format of data (e.g., `process/gzip`). The inspector supports MIME types that follow [this specification](https://mimesniff.spec.whatwg.org/).
 
 The inspector uses this Jsonnet configuration:
 
@@ -77,7 +75,7 @@ The inspector uses this Jsonnet configuration:
   type: 'content',
   settings: {
     type: 'application/zip',
-    negate: true,
+    negate: false,
   },
 }
 ```

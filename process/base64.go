@@ -18,7 +18,7 @@ const Base64InvalidAlphabet = errors.Error("Base64InvalidAlphabet")
 Base64Options contain custom options settings for this processor.
 
 Direction: the direction of the encoding, either to (encode) or from (decode) base64.
-Alphabet (optional): the base64 alphabet to use, either std (https://www.rfc-editor.org/rfc/rfc4648.html#section-4) or url (https://www.rfc-editor.org/rfc/rfc4648.html#section-5); defaults to std
+Alphabet (optional): the base64 alphabet to use, either std (https://www.rfc-editor.org/rfc/rfc4648.html#section-4) or url (https://www.rfc-editor.org/rfc/rfc4648.html#section-5); defaults to std.
 */
 type Base64Options struct {
 	Direction string `mapstructure:"direction"`

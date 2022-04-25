@@ -43,8 +43,9 @@ In Substation applications, processors adhere to these rules:
 - operate on JSON data
 
 ## processors
-| Processor                             | Description |
-| ---                                   | --- | 
+| Processor                           | Description |
+| ---                                 | --- | 
+| [Base64](#base64)                   | Encodes and decodes bytes to and from base64 |
 | [Capture](#capture)                 | Applies a capturing regular expression |
 | [Case](#case)                       | Modifies the case of a string |
 | [Concat](#concat)                   | Modifies the case of a string |
@@ -65,6 +66,25 @@ In Substation applications, processors adhere to these rules:
 | [Replace](#replace)                 | Replaces characters within a string |
 | [Time](#time)                       | Converts time values between formats |
 | [Zip](#zip)                         | Concatenates arrays into tuples or JSON objects |
+
+### base64
+Processes data by encoding it to or decoding it from base64. This processor should be used for converting entire JSON objects. The processor supports these base64 alphabets:
+- std: https://www.rfc-editor.org/rfc/rfc4648.html#section-4
+- url: https://www.rfc-editor.org/rfc/rfc4648.html#section-5
+
+The processor uses this Jsonnet configuration:
+```
+{
+  // if the input is `eyJoZWxsbyI6IndvcmxkIn0K`, then the output is `{"hello":"world"}`
+  type: 'base64',
+  settings: {
+    options: {
+      direction: 'from',
+      alphabet: 'std',  // defaults std
+    }
+  },
+}
+```
 
 ### capture
 Processes data by applying a capturing regular expression. This processor is array-aware and can output one or many values that are automatically stored as values or arrays of elements.

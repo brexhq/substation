@@ -1,4 +1,4 @@
 provider "aws" {
-  profile = "InfoSec-Dev-Admin"
+  profile = "default"
   region  = "us-east-1"
 }

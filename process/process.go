@@ -118,6 +118,10 @@ func ByterFactory(cfg Config) (Byter, error) {
 		var p Flatten
 		mapstructure.Decode(cfg.Settings, &p)
 		return p, nil
+	case "gzip":
+		var p Gzip
+		mapstructure.Decode(cfg.Settings, &p)
+		return p, nil
 	case "hash":
 		var p Hash
 		mapstructure.Decode(cfg.Settings, &p)
@@ -196,6 +200,10 @@ func ChannelerFactory(cfg Config) (Channeler, error) {
 		return p, nil
 	case "flatten":
 		var p Flatten
+		mapstructure.Decode(cfg.Settings, &p)
+		return p, nil
+	case "gzip":
+		var p Gzip
 		mapstructure.Decode(cfg.Settings, &p)
 		return p, nil
 	case "hash":

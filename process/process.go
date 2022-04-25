@@ -82,6 +82,10 @@ func ReadOnlyChannel(ch chan []byte) <-chan []byte {
 // ByterFactory loads a Byter from a Config. This is the recommended function for retrieving ready-to-use Byters.
 func ByterFactory(cfg Config) (Byter, error) {
 	switch t := cfg.Type; t {
+	case "base64":
+		var p Base64
+		mapstructure.Decode(cfg.Settings, &p)
+		return p, nil
 	case "capture":
 		var p Capture
 		mapstructure.Decode(cfg.Settings, &p)
@@ -158,6 +162,10 @@ func ByterFactory(cfg Config) (Byter, error) {
 // ChannelerFactory loads Channeler from a Config. This is the recommended function for retrieving ready-to-use Channelers.
 func ChannelerFactory(cfg Config) (Channeler, error) {
 	switch t := cfg.Type; t {
+	case "base64":
+		var p Base64
+		mapstructure.Decode(cfg.Settings, &p)
+		return p, nil
 	case "capture":
 		var p Capture
 		mapstructure.Decode(cfg.Settings, &p)

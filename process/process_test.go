@@ -58,9 +58,32 @@ var processTests = []struct {
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 170, 86, 202, 72, 205, 201, 201, 87, 178, 82, 74, 207, 207, 79, 73, 170, 76, 85, 170, 5, 4, 0, 0, 255, 255, 214, 182, 196, 150, 19, 0, 0, 0},
 		[]byte(`{"hello":"goodbye"}`),
 	},
+	{
+		[]Config{
+			{
+				Type: "base64",
+				Settings: map[string]interface{}{
+					"condition": struct {
+						Operator string
+					}{
+						Operator: "all",
+					},
+					"options": struct {
+						Direction string
+						Alphabet  string
+					}{
+						Direction: "from",
+						Alphabet:  "std",
+					},
+				},
+			},
+		},
+		[]byte(`eyJoZWxsbyI6IndvcmxkIn0=`),
+		[]byte(`{"hello":"world"}`),
+	},
 }
 
-func TestByteorAll(t *testing.T) {
+func TestByterAll(t *testing.T) {
 	ctx := context.TODO()
 
 	for _, test := range processTests {

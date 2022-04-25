@@ -176,6 +176,10 @@ func OperatorFactory(cfg OperatorConfig) (Operator, error) {
 // InspectorFactory loads Inspectors from an InspectorConfig. This is the recommended function for retrieving ready-to-use Inspectors.
 func InspectorFactory(cfg InspectorConfig) (Inspector, error) {
 	switch t := cfg.Type; t {
+	case "content":
+		var i Content
+		mapstructure.Decode(cfg.Settings, &i)
+		return i, nil
 	case "ip":
 		var i IP
 		mapstructure.Decode(cfg.Settings, &i)

@@ -62,6 +62,18 @@ var configTests = []struct {
 		[]byte(`{"foo":"bar","baz":"hello"`),
 		true,
 	},
+	{
+		[]InspectorConfig{
+			{
+				Type: "content",
+				Settings: map[string]interface{}{
+					"type": "application/x-gzip",
+				},
+			},
+		},
+		[]byte{80, 75, 03, 04},
+		false,
+	},
 }
 
 func TestAND(t *testing.T) {

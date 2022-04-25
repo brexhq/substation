@@ -56,11 +56,29 @@ Conditions use inspectors, which are atomic data inspection methods, to evaluate
 
 | Inspector                  | Description                               |
 | -------------------------- | ----------------------------------------- |
+| [Content](#content)        | Evaluates data by content type             |
 | [IP](#ip)                  | Evaluates an IP address by type and usage |
 | [JSONSchema](#json_schema) | Evaluates JSON key values by type         |
 | [JSONValid](#json_valid)   | Evaluates whether data is valid JSON      |
 | [RegExp](#regexp)          | Evaluates data with a regular expression  |
 | [Strings](#strings)        | Evaluates data with string functions      |
+
+### content
+
+Inspects bytes and evalutes them by content type. This inspector uses the standard library's `net/http` package to identify the content type of data (more information is available [here](https://pkg.go.dev/net/http#DetectContentType)) and is most effective when using processors that change the format of data (e.g., `process/gzip`). The inspector supports MIME types that follow [this specification](https://mimesniff.spec.whatwg.org/).
+
+The inspector uses this Jsonnet configuration:
+
+```
+// returns true if the bytes have a valid Zip header
+{
+  type: 'content',
+  settings: {
+    type: 'application/zip',
+    negate: false,
+  },
+}
+```
 
 ### ip
 

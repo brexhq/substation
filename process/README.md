@@ -57,6 +57,7 @@ In Substation applications, processors adhere to these rules:
 | [DynamoDB](#dynamodb)               | Runs a query on a DynamoDB table and returns matched items |
 | [Expand](#expand)                   | Expands JSON arrays into individual objects |
 | [Flatten](#flatten)                 | Flattens an array of values, including deeply nested arrays |
+| [Gzip](#gzip)                       | Compresses and decompresses bytes to and from Gzip |
 | [Hash](#hash)                       | Calculates the hash of a value |
 | [Insert](#insert)                   | Inserts a value into a JSON key |
 | [Lambda](#lambda)                   | Synchronously invokes an AWS Lambda and returns the results |
@@ -306,6 +307,21 @@ The processor uses this Jsonnet configuration:
     }
     options: {
       deep: true,
+    }
+  },
+}
+```
+
+### gzip
+Processes data by compressing it to or decompressing it from gzip. This processor should be used for converting entire JSON objects.
+
+The processor uses this Jsonnet configuration:
+```
+{
+  type: 'gzip',
+  settings: {
+    options: {
+      direction: 'from',
     }
   },
 }

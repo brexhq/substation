@@ -80,7 +80,7 @@ The processor uses this Jsonnet configuration:
   settings: {
     options: {
       direction: 'from',
-      alphabet: 'std',  // defaults std
+      alphabet: 'std',  // defaults to std
     }
   },
 }

@@ -75,7 +75,7 @@ Processes data by encoding it to or decoding it from base64. This processor shou
 The processor uses this Jsonnet configuration:
 ```
 {
-  // if the input is `eyJoZWxsbyI6IndvcmxkIn0K`, then the output is `{"hello":"world"}`
+  // if the input is `eyJoZWxsbyI6IndvcmxkIn0=`, then the output is `{"hello":"world"}`
   type: 'base64',
   settings: {
     options: {

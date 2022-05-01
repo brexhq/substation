@@ -6,19 +6,21 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/errors"
+	"github.com/brexhq/substation/internal/json"
 )
 
-// Base64InvalidDirection is used when an invalid direction setting is given to the processor
+// Base64InvalidDirection is returned when the Base64 processor is configured with an invalid direction setting.
 const Base64InvalidDirection = errors.Error("Base64InvalidDirection")
 
-// Base64InvalidAlphabet is used when an invalid alphabet setting is given to the processor
+// Base64InvalidAlphabet is returned when the Base64 processor is configured with an invalid alphabet setting.
 const Base64InvalidAlphabet = errors.Error("Base64InvalidAlphabet")
 
 /*
-Base64Options contain custom options settings for this processor.
-
-Direction: the direction of the encoding, either to (encode) or from (decode) base64.
-Alphabet (optional): the base64 alphabet to use, either std (https://www.rfc-editor.org/rfc/rfc4648.html#section-4) or url (https://www.rfc-editor.org/rfc/rfc4648.html#section-5); defaults to std.
+Base64Options contains custom options for the Base64 processor:
+	direction:
+		the direction of the encoding, either to (encode) or from (decode) base64
+	alphabet (optional, defaults to "std"):
+		the base64 alphabet to use, either std (https://www.rfc-editor.org/rfc/rfc4648.html#section-4) or url (https://www.rfc-editor.org/rfc/rfc4648.html#section-5)
 */
 type Base64Options struct {
 	Direction string `mapstructure:"direction"`
@@ -28,10 +30,12 @@ type Base64Options struct {
 // Base64 implements the Byter and Channeler interfaces and converts bytes to and from Base64. More information is available in the README.
 type Base64 struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
+	Input     Input                    `mapstructure:"input"`
+	Output    Output                   `mapstructure:"output"`
 	Options   Base64Options            `mapstructure:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Base64 processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Base64) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	var array [][]byte
 
@@ -66,29 +70,42 @@ func (p Base64) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 	return output, nil
 }
 
-// Byte processes a byte slice with this processor.
+// Byte processes a byte slice with the Base64 processor.
 func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	if p.Options.Alphabet == "" {
 		p.Options.Alphabet = "std"
 	}
 
+	var tmp []byte
+	if p.Input.Key != "" {
+		// convert string to bytes for base64 conversion
+		v := json.Get(data, p.Input.Key)
+		tmp = []byte(v.String())
+	} else {
+		tmp = data
+	}
+
+	var result []byte
+	var err error
 	if p.Options.Direction == "from" {
-		res, err := fromBase64(data, p.Options.Alphabet)
+		result, err = fromBase64(tmp, p.Options.Alphabet)
 		if err != nil {
 			return nil, err
 		}
-
-		return res, nil
 	} else if p.Options.Direction == "to" {
-		res, err := toBase64(data, p.Options.Alphabet)
+		result, err = toBase64(tmp, p.Options.Alphabet)
 		if err != nil {
 			return nil, err
 		}
-
-		return res, nil
 	} else {
 		return nil, Base64InvalidDirection
 	}
+
+	if p.Output.Key != "" {
+		return json.Set(data, p.Output.Key, result)
+	}
+
+	return result, nil
 }
 
 func fromBase64(data []byte, alphabet string) ([]byte, error) {

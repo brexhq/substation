@@ -100,6 +100,23 @@ var base64Tests = []struct {
 		[]byte(`{"base64":"YWJjMTIzIT8kKiYoKSctPUB+"}`),
 		[]byte(`{"base64":"abc123!?$*&()'-=@~"}`),
 	},
+	// decode array of std base64 from input to output
+	{
+		Base64{
+			Input: Input{
+				Key: "base64",
+			},
+			Output: Output{
+				Key: "base64",
+			},
+			Options: Base64Options{
+				Direction: "from",
+				Alphabet:  "std",
+			},
+		},
+		[]byte(`{"base64":["aGVsbG8=","d29ybGQ="]}`),
+		[]byte(`{"base64":["hello","world"]}`),
+	},
 }
 
 func TestBase64(t *testing.T) {

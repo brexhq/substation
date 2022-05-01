@@ -76,13 +76,58 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		p.Options.Alphabet = "std"
 	}
 
-	var tmp []byte
+	// JSON object processing
+	if p.Input.Key != "" && p.Output.Key != "" {
+		value := json.Get(data, p.Input.Key)
+
+		if !value.IsArray() {
+			tmp := []byte(value.String())
+			if p.Options.Direction == "from" {
+				result, err := fromBase64(tmp, p.Options.Alphabet)
+				if err != nil {
+					return nil, err
+				}
+				return json.Set(data, p.Output.Key, result)
+			} else if p.Options.Direction == "to" {
+				result, err := toBase64(tmp, p.Options.Alphabet)
+				if err != nil {
+					return nil, err
+				}
+				return json.Set(data, p.Output.Key, result)
+			} else {
+				return nil, Base64InvalidDirection
+			}
+		}
+
+		var array []string
+		for _, v := range value.Array() {
+			tmp := []byte(v.String())
+			if p.Options.Direction == "from" {
+				result, err := fromBase64(tmp, p.Options.Alphabet)
+				if err != nil {
+					return nil, err
+				}
+				array = append(array, string(result))
+			} else if p.Options.Direction == "to" {
+				result, err := toBase64(tmp, p.Options.Alphabet)
+				if err != nil {
+					return nil, err
+				}
+				array = append(array, string(result))
+			} else {
+				return nil, Base64InvalidDirection
+			}
+		}
+
+		return json.Set(data, p.Output.Key, array)
+	}
+
+	// data processing
+	tmp := data
 	if p.Input.Key != "" {
 		// convert string to bytes for base64 conversion
 		v := json.Get(data, p.Input.Key)
 		tmp = []byte(v.String())
-	} else {
-		tmp = data
 	}
 
 	var result []byte

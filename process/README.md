@@ -184,7 +184,13 @@ The processor uses this Jsonnet configuration:
 ```
 
 ### copy
-Processes data by copying values between JSON keys, preserving the original JSON key.
+Processes data by copying it. The processor supports these patterns:
+- json
+  - `{"hello":"world"} >>> {"hello":"world","goodbye":"world"}`
+- from json
+  - `{"hello":"world"} >>> world`
+- to json
+  - `world >>> {"hello":"world"}`
 
 The processor uses this Jsonnet configuration:
 ```

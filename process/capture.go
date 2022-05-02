@@ -5,22 +5,64 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/regexp"
 )
 
-/*
-CaptureOptions contain custom options settings for this processor.
+// CaptureInvalidSettings is returned when the Capture processor is configured with invalid Input and Output settings.
+const CaptureInvalidSettings = errors.Error("CaptureInvalidSettings")
 
-Expression: the capturing regular expression
-Count (optional): the number of captures to return; defaults to 0, which returns all captures
+/*
+CaptureOptions contains custom options for the Capture processor:
+	expression:
+		the regular expression used to capture values
+	function:
+		the type of regular expression applied
+		must be one of:
+			find: applies the Find(String)?Submatch function
+			find_all: applies the FindAll(String)?Submatch function (see count)
+			named_group: applies the Find(String)?Submatch function and stores values as JSON using subexpressions
+	count (optional, defaults to -1):
+		used for repeating capture groups
 */
 type CaptureOptions struct {
 	Expression string `mapstructure:"expression"`
+	Function   string `mapstructure:"function"`
 	Count      int    `mapstructure:"count"`
 }
 
-// Capture implements the Byter and Channeler interfaces and applies a capturing regular expression to data. More information is available in the README.
+/*
+Capture processes data by capturing values using regular expressions. The processor supports these patterns:
+	json:
+		{"capture":"foo@qux.com"} >>> {"capture":"foo"}
+		{"capture":"foo@qux.com"} >>> {"capture":["f","o","o"]}
+	json array:
+		{"capture":["foo@qux.com","bar@qux.com"]} >>> {"capture":["foo","bar"]}
+		{"capture":["foo@qux.com","bar@qux.com"]} >>> {"capture":[["f","o","o"],["b","a","r"]]}
+	from json:
+		{"capture":"foo@qux.com"} >>> foo
+	data:
+		foo@qux.com >>> foo
+		bar quux >>> {"foo":"bar","qux":"quux"}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'capture',
+		settings: {
+			input: {
+				key: 'capture',
+			},
+			output: {
+				key: 'capture',
+			},
+			options: {
+				expression: '^([^@]*)@.*$',
+				function: 'find',
+			},
+		},
+	}
+*/
 type Capture struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Input                    `mapstructure:"input"`
@@ -67,67 +109,127 @@ func (p Capture) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, 
 
 // Byte processes a byte slice with this processor
 func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	value := json.Get(data, p.Input.Key)
-
-	if !value.IsArray() {
-		s := value.String()
-		matches, err := p.capture(s)
-		if err != nil {
-			return nil, err
-		}
-
-		// if only one match, then set the element directly in the JSON key
-		if len(matches) == 1 {
-			return json.Set(data, p.Output.Key, matches[0])
-		}
-
-		return json.Set(data, p.Output.Key, matches)
-	}
-
-	// array needs to be able to hold strings and slices of strings
-	// 	if it contains slices of strings, then the output should be additionally
-	// 	processed by the flatten processor
-	var array []interface{}
-	for _, v := range value.Array() {
-		s := v.String()
-		matches, err := p.capture(s)
-		if err != nil {
-			return nil, err
-		}
-
-		// if only one ok, then append the element directly in the array
-		if len(matches) == 1 {
-			array = append(array, matches[0])
-			continue
-		}
-
-		array = append(array, matches)
-	}
-
-	return json.Set(data, p.Output.Key, array)
-}
-
-func (p Capture) capture(v string) ([]string, error) {
 	re, err := regexp.Compile(p.Options.Expression)
 	if err != nil {
 		return nil, fmt.Errorf("err Capture processor failed to compile regexp %s: %v", p.Options.Expression, err)
 	}
 
-	subs := re.FindAllStringSubmatch(v, p.Options.Count)
-	var matches []string
-	for _, s := range subs {
-		m, _ := getMatch(s)
-
-		matches = append(matches, m)
+	if p.Options.Count == 0 {
+		p.Options.Count = -1
 	}
 
-	return matches, nil
+	// json processing
+	if p.Input.Key != "" && p.Output.Key != "" {
+		value := json.Get(data, p.Input.Key)
+
+		if !value.IsArray() {
+			if p.Options.Function == "find" {
+				match := re.FindStringSubmatch(value.String())
+				return json.Set(data, p.Output.Key, match[1])
+			}
+
+			if p.Options.Function == "find_all" {
+				var matches []interface{}
+
+				subs := re.FindAllStringSubmatch(value.String(), p.Options.Count)
+				for _, s := range subs {
+					m := getStringMatch(s)
+					matches = append(matches, m)
+				}
+
+				return json.Set(data, p.Output.Key, matches)
+			}
+		}
+
+		// json array processing
+		var array []interface{}
+		for _, v := range value.Array() {
+			var matches []interface{}
+
+			if p.Options.Function == "find" {
+				match := re.FindStringSubmatch(v.String())
+				array = append(array, match[1])
+				continue
+			}
+
+			if p.Options.Function == "find_all" {
+				subs := re.FindAllStringSubmatch(v.String(), p.Options.Count)
+				for _, s := range subs {
+					m := getStringMatch(s)
+					matches = append(matches, m)
+				}
+
+				array = append(array, matches)
+			}
+		}
+
+		return json.Set(data, p.Output.Key, array)
+	}
+
+	// from json processing
+	if p.Input.Key != "" && p.Output.Key == "" {
+		value := json.Get(data, p.Input.Key)
+
+		if p.Options.Function == "find" {
+			match := re.FindStringSubmatch(value.String())
+			return []byte(match[1]), nil
+		}
+	}
+
+	// to json processing
+	if p.Input.Key == "" && p.Output.Key != "" {
+		if p.Options.Function == "find" {
+			match := re.FindSubmatch(data)
+			return json.Set(data, p.Output.Key, match[1])
+		}
+
+		if p.Options.Function == "find_all" {
+			subs := re.FindAllSubmatch(data, p.Options.Count)
+			var matches []interface{}
+			for _, s := range subs {
+				m := getByteMatch(s)
+				matches = append(matches, m)
+			}
+
+			return json.Set(data, p.Output.Key, matches)
+		}
+	}
+
+	// data processing
+	if p.Input.Key == "" && p.Output.Key == "" {
+		if p.Options.Function == "find" {
+			match := re.FindSubmatch(data)
+			return match[1], nil
+		}
+
+		if p.Options.Function == "named_group" {
+			names := re.SubexpNames()
+
+			var tmp []byte
+			matches := re.FindSubmatch(data)
+			for i, m := range matches {
+				tmp, err = json.Set(tmp, names[i], m)
+			}
+
+			return tmp, nil
+		}
+	}
+
+	return nil, CaptureInvalidSettings
 }
 
-func getMatch(m []string) (o string, l int) {
-	if len(m) > 1 {
-		o = m[len(m)-1]
+func getStringMatch(match []string) string {
+	if len(match) > 1 {
+		return match[len(match)-1]
 	}
 
-	return o, len(o)
+	return ""
+}
+
+func getByteMatch(match [][]byte) []byte {
+	if len(match) > 1 {
+		return match[len(match)-1]
+	}
+
+	return nil
 }

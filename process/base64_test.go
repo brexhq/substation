@@ -7,12 +7,14 @@ import (
 )
 
 var base64Tests = []struct {
+	name     string
 	proc     Base64
 	test     []byte
 	expected []byte
 }{
 	// decode std base64
 	{
+		"decode data std",
 		Base64{
 			Options: Base64Options{
 				Direction: "from",
@@ -24,6 +26,7 @@ var base64Tests = []struct {
 	},
 	// decode url base64
 	{
+		"decode data url",
 		Base64{
 			Options: Base64Options{
 				Direction: "from",
@@ -35,6 +38,7 @@ var base64Tests = []struct {
 	},
 	// encode std base64
 	{
+		"encode data std",
 		Base64{
 			Options: Base64Options{
 				Direction: "to",
@@ -46,6 +50,7 @@ var base64Tests = []struct {
 	},
 	// encode url base64
 	{
+		"encode data url",
 		Base64{
 			Options: Base64Options{
 				Direction: "to",
@@ -57,6 +62,7 @@ var base64Tests = []struct {
 	},
 	// decode std base64 from input
 	{
+		"from json std",
 		Base64{
 			Input: Input{
 				Key: "base64",
@@ -71,6 +77,7 @@ var base64Tests = []struct {
 	},
 	// decode std base64 to output
 	{
+		"to json std",
 		Base64{
 			Output: Output{
 				Key: "base64",
@@ -85,6 +92,7 @@ var base64Tests = []struct {
 	},
 	// decode std base64 from input to output
 	{
+		"json std",
 		Base64{
 			Input: Input{
 				Key: "base64",
@@ -102,6 +110,7 @@ var base64Tests = []struct {
 	},
 	// decode array of std base64 from input to output
 	{
+		"json array std",
 		Base64{
 			Input: Input{
 				Key: "base64",
@@ -132,5 +141,22 @@ func TestBase64(t *testing.T) {
 			t.Logf("expected %s, got %s", test.expected, res)
 			t.Fail()
 		}
+	}
+}
+
+func benchmarkBase64Byte(b *testing.B, byter Base64, test []byte) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		byter.Byte(ctx, test)
+	}
+}
+
+func BenchmarkBase64Byte(b *testing.B) {
+	for _, test := range base64Tests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkBase64Byte(b, test.proc, test.test)
+			},
+		)
 	}
 }

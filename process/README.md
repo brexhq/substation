@@ -68,7 +68,19 @@ In Substation applications, processors adhere to these rules:
 | [Zip](#zip)                         | Concatenates arrays into tuples or JSON objects |
 
 ### base64
-Processes data by encoding it to or decoding it from base64. This processor should be used for converting entire JSON objects. The processor supports these base64 alphabets:
+Processes data by encoding it to or decoding it from base64. The processor supports these patterns:
+- json
+  - `{"base64":"Zm9v"}` >>> `{"base64":"foo"}`
+- json array
+    - `{"base64":["Zm9v","YmFy"]}` >>> `{"base64":["foo","bar"]}`
+- from json
+  - `{"base64":"Zm9v"}` >>> `foo`
+- to json
+  - `Zm9v` >>> `{"base64":"foo"}`
+- data
+  - `Zm9v` >>> `foo`
+
+The processor supports these base64 alphabets:
 - std: https://www.rfc-editor.org/rfc/rfc4648.html#section-4
 - url: https://www.rfc-editor.org/rfc/rfc4648.html#section-5
 

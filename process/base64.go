@@ -9,6 +9,9 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
+// Base64InvalidSettings is returned when the Base64 processor is configured with invalid Input and Output settings.
+const Base64InvalidSettings = errors.Error("Base64InvalidSettings")
+
 // Base64InvalidDirection is returned when the Base64 processor is configured with an invalid direction setting.
 const Base64InvalidDirection = errors.Error("Base64InvalidDirection")
 
@@ -27,7 +30,19 @@ type Base64Options struct {
 	Alphabet  string `mapstructure:"alphabet"`
 }
 
-// Base64 implements the Byter and Channeler interfaces and converts bytes to and from Base64. More information is available in the README.
+/*
+Base64 processes data by converting it to and from base64. The processor supports these patterns:
+	json:
+  	{"base64":"Zm9v"} >>> {"base64":"foo"}
+	json array:
+		{"base64":["Zm9v","YmFy"]} >>> {"base64":["foo","bar"]}
+	from json:
+  	{"base64":"Zm9v"} >>> foo
+	to json:
+  	Zm9v >>> `{"base64":"foo"}`
+	data:
+		Zm9v >>> foo
+*/
 type Base64 struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Input                    `mapstructure:"input"`
@@ -76,7 +91,7 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		p.Options.Alphabet = "std"
 	}
 
-	// JSON object processing
+	// json processing
 	if p.Input.Key != "" && p.Output.Key != "" {
 		value := json.Get(data, p.Input.Key)
 
@@ -99,6 +114,7 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			}
 		}
 
+		// json array processing
 		var array []string
 		for _, v := range value.Array() {
 			tmp := []byte(v.String())
@@ -122,35 +138,68 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return json.Set(data, p.Output.Key, array)
 	}
 
-	// data processing
-	tmp := data
-	if p.Input.Key != "" {
-		// convert string to bytes for base64 conversion
+	// from json processing
+	if p.Input.Key != "" && p.Output.Key == "" {
 		v := json.Get(data, p.Input.Key)
-		tmp = []byte(v.String())
-	}
+		tmp := []byte(v.String())
 
-	var result []byte
-	var err error
-	if p.Options.Direction == "from" {
-		result, err = fromBase64(tmp, p.Options.Alphabet)
-		if err != nil {
-			return nil, err
+		if p.Options.Direction == "from" {
+			result, err := fromBase64(tmp, p.Options.Alphabet)
+			if err != nil {
+				return nil, err
+			}
+
+			return result, nil
+		} else if p.Options.Direction == "to" {
+			result, err := toBase64(tmp, p.Options.Alphabet)
+			if err != nil {
+				return nil, err
+			}
+			return result, nil
+		} else {
+			return nil, Base64InvalidDirection
 		}
-	} else if p.Options.Direction == "to" {
-		result, err = toBase64(tmp, p.Options.Alphabet)
-		if err != nil {
-			return nil, err
+	}
+
+	// to json processing
+	if p.Input.Key == "" && p.Output.Key != "" {
+		if p.Options.Direction == "from" {
+			result, err := fromBase64(data, p.Options.Alphabet)
+			if err != nil {
+				return nil, err
+			}
+			return json.Set([]byte(""), p.Output.Key, result)
+		} else if p.Options.Direction == "to" {
+			result, err := toBase64(data, p.Options.Alphabet)
+			if err != nil {
+				return nil, err
+			}
+			return json.Set([]byte(""), p.Output.Key, result)
+		} else {
+			return nil, Base64InvalidDirection
 		}
-	} else {
-		return nil, Base64InvalidDirection
 	}
 
-	if p.Output.Key != "" {
-		return json.Set(data, p.Output.Key, result)
+	// data processing
+	if p.Input.Key == "" && p.Output.Key == "" {
+		if p.Options.Direction == "from" {
+			result, err := fromBase64(data, p.Options.Alphabet)
+			if err != nil {
+				return nil, err
+			}
+			return result, nil
+		} else if p.Options.Direction == "to" {
+			result, err := toBase64(data, p.Options.Alphabet)
+			if err != nil {
+				return nil, err
+			}
+			return result, nil
+		} else {
+			return nil, Base64InvalidDirection
+		}
 	}
 
-	return result, nil
+	return nil, Base64InvalidSettings
 }
 
 func fromBase64(data []byte, alphabet string) ([]byte, error) {

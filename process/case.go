@@ -33,9 +33,9 @@ Case processes data by changing the case of a string or byte slice. The processo
 	json:
 		{"case":"foo"} >>> {"case":"FOO"}
 	json array:
-		{"capture":["foo","bar"]} >>> {"case":["FOO","BAR"]}
+		{"case":["foo","bar"]} >>> {"case":["FOO","BAR"]}
 	from json:
-		{"capture":"foo"} >>> FOO
+		{"case":"foo"} >>> FOO
 	to json:
 		foo >>> {"case":"FOO"}
 	data:

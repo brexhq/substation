@@ -1,25 +1,63 @@
 package process
 
 import (
+	"bytes"
 	"context"
 	"strings"
 
 	"github.com/iancoleman/strcase"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-CaseOptions contain custom options settings for this processor.
+// CaseInvalidSettings is returned when the Case processor is configured with invalid Input and Output settings.
+const CaseInvalidSettings = errors.Error("CaseInvalidSettings")
 
-Case: the case to convert the string to; one of: upper, lower, or snake
+/*
+CaseOptions contains custom options for the Case processor:
+	case:
+		the case to convert the string or byte to
+		must be one of:
+			upper
+			lower
+			snake (strings only)
 */
 type CaseOptions struct {
 	Case string `mapstructure:"case"`
 }
 
-// Case implements the Byter and Channeler interfaces and converts the case of a string. More information is available in the README.
+/*
+Case processes data by changing the case of a string or byte slice. The processor supports these patterns:
+	json:
+		{"case":"foo"} >>> {"case":"FOO"}
+	json array:
+		{"capture":["foo","bar"]} >>> {"case":["FOO","BAR"]}
+	from json:
+		{"capture":"foo"} >>> FOO
+	to json:
+		foo >>> {"case":"FOO"}
+	data:
+		foo >>> FOO
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'case',
+		settings: {
+			// if the value is "foo", then this returns "FOO"
+			input: {
+				key: 'case',
+			},
+			output: {
+				key: 'case',
+			},
+			options: {
+				case: 'upper',
+			}
+		},
+	}
+*/
 type Case struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Input                    `mapstructure:"input"`
@@ -65,25 +103,44 @@ func (p Case) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, err
 
 // Byte processes a byte slice with this processor
 func (p Case) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	value := json.Get(data, p.Input.Key)
+	// json processing
+	if p.Input.Key != "" && p.Output.Key != "" {
+		value := json.Get(data, p.Input.Key)
+		if !value.IsArray() {
+			s := p.stringsCase(value.String())
+			return json.Set(data, p.Output.Key, s)
+		}
+		// json array processing
+		var array []string
+		for _, v := range value.Array() {
+			s := p.stringsCase(v.String())
+			array = append(array, s)
+		}
 
-	if !value.IsArray() {
-		s := value.String()
-		c := p._case(s)
-		return json.Set(data, p.Output.Key, c)
+		return json.Set(data, p.Output.Key, array)
 	}
 
-	var array []string
-	for _, v := range value.Array() {
-		s := v.String()
-		c := p._case(s)
-		array = append(array, c)
+	// from json processing
+	if p.Input.Key != "" && p.Output.Key == "" {
+		v := json.Get(data, p.Input.Key)
+		b := []byte(v.String())
+		return p.bytesCase(b), nil
 	}
 
-	return json.Set(data, p.Output.Key, array)
+	// to json processing
+	if p.Input.Key == "" && p.Output.Key != "" {
+		return json.Set(data, p.Output.Key, p.bytesCase(data))
+	}
+
+	// data processing
+	if p.Input.Key == "" && p.Output.Key == "" {
+		return p.bytesCase(data), nil
+	}
+
+	return nil, CaseInvalidSettings
 }
 
-func (p Case) _case(s string) string {
+func (p Case) stringsCase(s string) string {
 	switch t := p.Options.Case; t {
 	case "upper":
 		return strings.ToUpper(s)
@@ -93,5 +150,16 @@ func (p Case) _case(s string) string {
 		return strcase.ToSnake(s)
 	default:
 		return ""
+	}
+}
+
+func (p Case) bytesCase(b []byte) []byte {
+	switch t := p.Options.Case; t {
+	case "upper":
+		return bytes.ToUpper(b)
+	case "lower":
+		return bytes.ToLower(b)
+	default:
+		return nil
 	}
 }

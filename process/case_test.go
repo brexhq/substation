@@ -6,106 +6,107 @@ import (
 	"testing"
 )
 
-func TestCase(t *testing.T) {
-	var tests = []struct {
-		proc     Case
-		test     []byte
-		expected []byte
-	}{
-		{
-			Case{
-				Input: Input{
-					Key: "case",
-				},
-				Options: CaseOptions{
-					Case: "lower",
-				},
-				Output: Output{
-					Key: "case",
-				},
+var caseTests = []struct {
+	name     string
+	proc     Case
+	test     []byte
+	expected []byte
+}{
+	{
+		"json lower",
+		Case{
+			Input: Input{
+				Key: "case",
 			},
-			[]byte(`{"case":"ABC"}`),
-			[]byte(`{"case":"abc"}`),
-		},
-		{
-			Case{
-				Input: Input{
-					Key: "case",
-				},
-				Options: CaseOptions{
-					Case: "upper",
-				},
-				Output: Output{
-					Key: "case",
-				},
+			Options: CaseOptions{
+				Case: "lower",
 			},
-			[]byte(`{"case":"abc"}`),
-			[]byte(`{"case":"ABC"}`),
-		},
-		{
-			Case{
-				Input: Input{
-					Key: "case",
-				},
-				Options: CaseOptions{
-					Case: "snake",
-				},
-				Output: Output{
-					Key: "case",
-				},
+			Output: Output{
+				Key: "case",
 			},
-			[]byte(`{"case":"AbC"})`),
-			[]byte(`{"case":"ab_c"})`),
 		},
-		// array support
-		{
-			Case{
-				Input: Input{
-					Key: "case",
-				},
-				Options: CaseOptions{
-					Case: "lower",
-				},
-				Output: Output{
-					Key: "case",
-				},
+		[]byte(`{"case":"ABC"}`),
+		[]byte(`{"case":"abc"}`),
+	},
+	{
+		"json upper",
+		Case{
+			Input: Input{
+				Key: "case",
 			},
-			[]byte(`{"case":["ABC","DEF"]}`),
-			[]byte(`{"case":["abc","def"]}`),
-		},
-		{
-			Case{
-				Input: Input{
-					Key: "case",
-				},
-				Options: CaseOptions{
-					Case: "upper",
-				},
-				Output: Output{
-					Key: "case",
-				},
+			Options: CaseOptions{
+				Case: "upper",
 			},
-			[]byte(`{"case":["abc","def"]}`),
-			[]byte(`{"case":["ABC","DEF"]}`),
-		},
-		{
-			Case{
-				Input: Input{
-					Key: "case",
-				},
-				Options: CaseOptions{
-					Case: "snake",
-				},
-				Output: Output{
-					Key: "case",
-				},
+			Output: Output{
+				Key: "case",
 			},
-			[]byte(`{"case":["AbC","DeF"]}`),
-			[]byte(`{"case":["ab_c","de_f"]}`),
 		},
-	}
+		[]byte(`{"case":"abc"}`),
+		[]byte(`{"case":"ABC"}`),
+	},
+	{
+		"json snake",
+		Case{
+			Input: Input{
+				Key: "case",
+			},
+			Options: CaseOptions{
+				Case: "snake",
+			},
+			Output: Output{
+				Key: "case",
+			},
+		},
+		[]byte(`{"case":"AbC"})`),
+		[]byte(`{"case":"ab_c"})`),
+	},
+	// array support
+	{
+		"json array lower",
+		Case{
+			Input: Input{
+				Key: "case",
+			},
+			Options: CaseOptions{
+				Case: "lower",
+			},
+			Output: Output{
+				Key: "case",
+			},
+		},
+		[]byte(`{"case":["ABC","DEF"]}`),
+		[]byte(`{"case":["abc","def"]}`),
+	},
+	{
+		"from json",
+		Case{
+			Input: Input{
+				Key: "case",
+			},
+			Options: CaseOptions{
+				Case: "upper",
+			},
+		},
+		[]byte(`{"case":"foo"}`),
+		[]byte(`FOO`),
+	},
+	{
+		"to json",
+		Case{
+			Options: CaseOptions{
+				Case: "upper",
+			},
+			Output: Output{
+				Key: "case",
+			},
+		},
+		[]byte(`foo`),
+		[]byte(`{"case":"FOO"}`),
+	},
+}
 
-	for _, test := range tests {
+func TestCase(t *testing.T) {
+	for _, test := range caseTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
 		if err != nil {
@@ -117,5 +118,22 @@ func TestCase(t *testing.T) {
 			t.Logf("expected %s, got %s", test.expected, res)
 			t.Fail()
 		}
+	}
+}
+
+func benchmarkCaseByte(b *testing.B, byter Case, test []byte) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		byter.Byte(ctx, test)
+	}
+}
+
+func BenchmarkCaseByte(b *testing.B) {
+	for _, test := range caseTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkCaseByte(b, test.proc, test.test)
+			},
+		)
 	}
 }

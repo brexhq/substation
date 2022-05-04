@@ -6,10 +6,10 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
-// Count implements the Channeler interfaces and counts all data put into the channel. More information is available in the README.
+// Count processes data by counting it.
 type Count struct{}
 
-// Channel processes a data channel of bytes with this processor.
+// Channel processes a channel of byte slices with the Count processor.
 func (p Count) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	output := make(chan []byte, 1)
 	defer close(output)

@@ -4,19 +4,41 @@ import (
 	"context"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-ExpandOptions contain custom options settings for this processor.
+// ExpandInvalidSettings is returned when the Expand processor is configured with invalid Input and Output settings.
+const ExpandInvalidSettings = errors.Error("ExpandInvalidSettings")
 
-Retain: array of JSON keys to retain from the original object and insert into the new objects
+/*
+ExpandOptions contains custom options settings for the Expand processor:
+	Retain (optional):
+		array of JSON keys to retain from the original object
 */
 type ExpandOptions struct {
 	Retain []string `mapstructure:"retain"` // retain fields found anywhere in input
 }
 
-// Expand implements the Channeler interface and expands data in JSON arrays into individual events. More information is available in the README.
+/*
+Expand processes data by creating individual events from objects in JSON arrays. The processor supports these patterns:
+	json array:
+		{"expand":[{"foo":"bar"}],"baz":"qux"} >>> {"foo":"bar","baz":"qux"}
+
+The processor uses this Jsonnet configuration:
+{
+  type: 'expand',
+  settings: {
+    // if the original event is {"expand":[{"foo":"bar"}],"baz":"qux"}, then this expands to create the event {"foo":"bar","baz":"qux"}
+    input: {
+      key: 'expand',
+    },
+    options: {
+      retain: ['baz'],
+    }
+  },
+}
+*/
 type Expand struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Input                    `mapstructure:"input"`
@@ -25,6 +47,11 @@ type Expand struct {
 
 // Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
 func (p Expand) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+	// only supports json, so error early if there is no input key
+	if p.Input.Key == "" {
+		return nil, ExpandInvalidSettings
+	}
+
 	var array [][]byte
 
 	op, err := condition.OperatorFactory(p.Condition)
@@ -43,10 +70,7 @@ func (p Expand) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 			continue
 		}
 
-		if len(p.Input.Key) == 0 {
-			p.Input.Key = "@this"
-		}
-
+		// json array processing
 		value := json.Get(data, p.Input.Key)
 		for _, x := range value.Array() {
 			var err error

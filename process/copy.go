@@ -19,6 +19,19 @@ Copy processes data by copying it. The processor supports these patterns:
   	{"hello":"world"} >>> world
 	to json:
   	world >>> {"hello":"world"}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'copy',
+		settings: {
+			input: {
+				key: 'hello',
+			},
+			output: {
+				key: 'goodbyte',
+			},
+		},
+	}
 */
 type Copy struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`

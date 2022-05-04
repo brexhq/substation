@@ -15,6 +15,16 @@ const DeleteInvalidSettings = errors.Error("DeleteInvalidSettings")
 Delete processes data by deleting JSON keys. The processor supports these patterns:
 	json:
   	{"hello":"world","goodbye":"world"} >>> {"hello":"world"}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'delete',
+		settings: {
+			input: {
+				key: 'hello',
+			},
+		},
+	}
 */
 type Delete struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`

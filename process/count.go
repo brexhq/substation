@@ -6,7 +6,14 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
-// Count processes data by counting it.
+/*
+Count processes data by counting it.
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'count',
+	}
+*/
 type Count struct{}
 
 // Channel processes a channel of byte slices with the Count processor.

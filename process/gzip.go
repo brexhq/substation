@@ -10,6 +10,9 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
+// GzipInvalidSettings is returned when the Gzip processor is configured with invalid Input and Output settings.
+const GzipInvalidSettings = errors.Error("GzipInvalidSettings")
+
 // GzipInvalidDirection is used when an invalid direction is given to the processor
 const GzipInvalidDirection = errors.Error("GzipInvalidDirection")
 
@@ -18,17 +21,38 @@ GzipOptions contain custom options settings for this processor.
 
 Direction: the direction of the compression, either to (compress) or from (decompress) Gzip.
 */
+/*
+GzipOptions contains custom options settings for the Gzip processor:
+	Direction:
+		the direction of the compression
+		must be one of:
+			to (compress)
+			from (decompress)
+*/
 type GzipOptions struct {
 	Direction string `mapstructure:"direction"`
 }
 
-// Gzip implements the Byter and Channeler interfaces and converts bytes to and from Gzip. More information is available in the README.
+/*
+Gzip processes data by compressing or decompressing gzip. The processor supports these patterns:
+	data:
+		[31 139 8 0 0 0 0 0 0 255 74 203 207 7 4 0 0 255 255 33 101 115 140 3 0 0 0] >>> foo
+		foo >>> [31 139 8 0 0 0 0 0 0 255 74 203 207 7 4 0 0 255 255 33 101 115 140 3 0 0 0]
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'gzip',
+		settings: {
+			direction: 'from',
+		},
+	}
+*/
 type Gzip struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Options   GzipOptions              `mapstructure:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Gzip processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Gzip) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	var array [][]byte
 
@@ -63,28 +87,29 @@ func (p Gzip) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, err
 	return output, nil
 }
 
-// Byte processes a byte slice with this processor.
+// Byte processes a byte slice with the Gzip processor.
 func (p Gzip) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	if p.Options.Direction == "from" {
-		tmp, err := fromGzip(data)
+	switch s := p.Options.Direction; s {
+	case "from":
+		tmp, err := p.from(data)
 		if err != nil {
 			return nil, err
 		}
 
 		return tmp, nil
-	} else if p.Options.Direction == "to" {
-		tmp, err := toGzip(data)
+	case "to":
+		tmp, err := p.to(data)
 		if err != nil {
 			return nil, err
 		}
 
 		return tmp, nil
-	} else {
+	default:
 		return nil, GzipInvalidDirection
 	}
 }
 
-func fromGzip(data []byte) ([]byte, error) {
+func (p Gzip) from(data []byte) ([]byte, error) {
 	r := bytes.NewReader(data)
 	gz, err := gzip.NewReader(r)
 	if err != nil {
@@ -99,7 +124,7 @@ func fromGzip(data []byte) ([]byte, error) {
 	return output, nil
 }
 
-func toGzip(data []byte) ([]byte, error) {
+func (p Gzip) to(data []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	if _, err := gz.Write(data); err != nil {

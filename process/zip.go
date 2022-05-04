@@ -5,19 +5,42 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-ZipOptions contain custom options settings for this processor.
+// ZipInvalidSettings is returned when the Zip processor is configured with invalid Input and Output settings.
+const ZipInvalidSettings = errors.Error("ZipInvalidSettings")
 
-Keys: location where elements from the input keys are written to; this creates JSON objects (optional)
+/*
+ZipOptions contains custom options for the Zip processor:
+	Keys:
+		where values from Inputs.Keys are written to, creating new JSON objects
 */
 type ZipOptions struct {
 	Keys []string `mapstructure:"keys"`
 }
 
-// Zip implements the Byter and Channeler interfaces and concatenates JSON arrays into an array of tuples or array of JSON objects. More information is available in the README.
+/*
+Zip processes data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
+	json array:
+		{"names":["foo","bar"],"sizes":[111,222]} >>> {"names":["foo","bar"],"sizes":[111,222],"group":[["foo",111],["bar",222]]}
+		{"names":["foo","bar"],"sizes":[111,222]} >>> {"names":["foo","bar"],"sizes":[111,222],"group":[{"name":foo","size":111},{"name":"bar","size":222}]}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'group',
+		settings: {
+			// if the values are ["foo","bar"] and [123,456], then this returns [["foo",123],["bar",456]]
+			input: {
+				keys: ['names','sizes'],
+			},
+			output: {
+				key: 'group',
+			}
+		},
+	}
+*/
 type Zip struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Inputs                   `mapstructure:"input"`
@@ -25,15 +48,14 @@ type Zip struct {
 	Options   ZipOptions               `mapstructure:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Zip processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Zip) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {
@@ -61,8 +83,13 @@ func (p Zip) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, erro
 
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes a byte slice with the Zip processor.
 func (p Zip) Byte(ctx context.Context, data []byte) ([]byte, error) {
+	// only supports json arrays, so error early if there are no keys
+	if len(p.Input.Keys) == 0 && p.Output.Key == "" {
+		return nil, ZipInvalidSettings
+	}
+
 	if len(p.Options.Keys) == 0 {
 		// elements in the values array are stored at their
 		// relative position inside the map to maintain order

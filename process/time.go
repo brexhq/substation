@@ -6,16 +6,33 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-TimeOptions contain custom options settings for this processor.
+// TimeInvalidSettings is returned when the Time processor is configured with invalid Input and Output settings.
+const TimeInvalidSettings = errors.Error("TimeInvalidSettings")
 
-InputFormat: time format of the input
-InputLocation (optional): the time zone abbreviation for the input; if empty, then defaults to UTC
-OutputFormat: time format of the output
-OutputLocation (optional): the time zone abbreviation for the output; if empty, then defaults to UTC
+/*
+TimeOptions contains custom options for the Time processor:
+	InputFormat:
+		time format of the input
+		must be one of:
+			pattern-based layouts (https://gobyexample.com/time-formatting-parsing)
+			unix (epoch)
+			unix_milli (epoch milliseconds)
+			unix_nano (epoch nanoseconds)
+			now (current time)
+	InputLocation:
+		the time zone abbreviation for the input
+		defaults to UTC
+	OutputFormat:
+		time format of the output
+		must be one of:
+			pattern-based layouts (https://gobyexample.com/time-formatting-parsing)
+	InputLocation:
+		the time zone abbreviation for the output
+		defaults to UTC
 */
 type TimeOptions struct {
 	InputFormat    string `mapstructure:"input_format"`
@@ -24,7 +41,30 @@ type TimeOptions struct {
 	OutputLocation string `mapstructure:"output_location"`
 }
 
-// Time implements the Byter and Channeler interfaces and converts time values between formats. More information is available in the README.
+/*
+Time processes data by converting time values between formats. The processor supports these patterns:
+	json:
+		{"time":1639877490.061} >>> {"time":"2021-12-19T01:31:30.000000Z"}
+	json array:
+		{"time":[1639877490.061,1651705967]} >>> {"time":["2021-12-19T01:31:30.000000Z","2022-05-04T23:12:47.000000Z"]}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'time',
+		settings: {
+			input: {
+				key: 'foo',
+			},
+			output: {
+				key: 'processed',
+			}
+			options: {
+				input_format: 'epoch',
+				output_format: '2006-01-02T15:04:05',
+			}
+		},
+	}
+*/
 type Time struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Input                    `mapstructure:"input"`
@@ -32,7 +72,7 @@ type Time struct {
 	Options   TimeOptions              `mapstructure:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Time processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Time) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	var array [][]byte
 
@@ -68,39 +108,56 @@ func (p Time) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, err
 
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes a byte slice with the Time processor.
 func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
+	// "now" processing, supports json and data
 	if p.Options.InputFormat == "now" {
-		timeDate := time.Now()
-		ts := timeDate.Format(p.Options.OutputFormat)
+		ts := time.Now().Format(p.Options.OutputFormat)
 
-		return json.Set(data, p.Output.Key, ts)
-	}
-
-	value := json.Get(data, p.Input.Key)
-	// return input, otherwise time defaults to 1970
-	if value.Type.String() == "Null" {
-		return data, nil
-	}
-
-	if !value.IsArray() {
-		o, err := p.time(value)
-		if err != nil {
-			return nil, err
+		if p.Output.Key != "" {
+			return json.Set(data, p.Output.Key, ts)
 		}
-		return json.Set(data, p.Output.Key, o)
+
+		return []byte(ts), nil
 	}
 
-	var array []interface{}
-	for _, v := range value.Array() {
-		o, err := p.time(v)
-		if err != nil {
-			return nil, err
+	// json processing
+	if p.Input.Key != "" && p.Output.Key != "" {
+		if p.Options.InputFormat == "now" {
+			timeDate := time.Now()
+			ts := timeDate.Format(p.Options.OutputFormat)
+
+			return json.Set(data, p.Output.Key, ts)
 		}
-		array = append(array, o)
+
+		value := json.Get(data, p.Input.Key)
+		// return input, otherwise time defaults to 1970
+		if value.Type.String() == "Null" {
+			return data, nil
+		}
+
+		if !value.IsArray() {
+			ts, err := p.time(value)
+			if err != nil {
+				return nil, err
+			}
+			return json.Set(data, p.Output.Key, ts)
+		}
+
+		// json array processing
+		var array []interface{}
+		for _, v := range value.Array() {
+			ts, err := p.time(v)
+			if err != nil {
+				return nil, err
+			}
+			array = append(array, ts)
+		}
+
+		return json.Set(data, p.Output.Key, array)
 	}
 
-	return json.Set(data, p.Output.Key, array)
+	return nil, TimeInvalidSettings
 }
 
 func (p Time) time(v json.Result) (interface{}, error) {

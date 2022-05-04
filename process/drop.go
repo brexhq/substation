@@ -6,12 +6,17 @@ import (
 	"github.com/brexhq/substation/condition"
 )
 
-// Drop implements the Channeler interface and drops any matched data. More information is available in the README.
+/*
+Drop processes data by dropping it from a data channel. The processor uses this Jsonnet configuration:
+	{
+		type: 'drop',
+	}
+*/
 type Drop struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Drop processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Drop) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	var array [][]byte
 

@@ -5,24 +5,25 @@ import (
 	"testing"
 )
 
-func TestDrop(t *testing.T) {
-	var tests = []struct {
-		proc Drop
-		test [][]byte
-	}{
-		{
-			Drop{},
-			[][]byte{
-				[]byte(`{"foo":"bar"}`),
-				[]byte(`{"foo":"baz"}`),
-				[]byte(`{"foo":"qux"}`),
-			},
+var dropTests = []struct {
+	name string
+	proc Drop
+	test [][]byte
+}{
+	{
+		"drop",
+		Drop{},
+		[][]byte{
+			[]byte(`{"foo":"bar"}`),
+			[]byte(`{"foo":"baz"}`),
+			[]byte(`{"foo":"qux"}`),
 		},
-	}
+	},
+}
 
+func TestDrop(t *testing.T) {
 	ctx := context.TODO()
-
-	for _, test := range tests {
+	for _, test := range dropTests {
 		pipe := make(chan []byte, len(test.test))
 		for _, x := range test.test {
 			pipe <- x
@@ -39,5 +40,28 @@ func TestDrop(t *testing.T) {
 			t.Log("result pipe wrong size")
 			t.Fail()
 		}
+	}
+}
+
+func benchmarkDropByte(b *testing.B, byter Drop, test chan []byte) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		byter.Channel(ctx, test)
+	}
+}
+
+func BenchmarkDropByte(b *testing.B) {
+	for _, test := range dropTests {
+		pipe := make(chan []byte, len(test.test))
+		for _, x := range test.test {
+			pipe <- x
+		}
+		close(pipe)
+
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkDropByte(b, test.proc, pipe)
+			},
+		)
 	}
 }

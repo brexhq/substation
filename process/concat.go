@@ -4,19 +4,45 @@ import (
 	"context"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-ConcatOptions contain custom options settings for this processor.
+// ConcatInvalidSettings is returned when the Concat processor is configured with invalid Input and Output settings.
+const ConcatInvalidSettings = errors.Error("ConcatInvalidSettings")
 
-Separator: the string that separates the concatenated values.
+/*
+ConcatOptions contains custom options for the Concat processor:
+	separator:
+		the string that separates the concatenated values
 */
 type ConcatOptions struct {
 	Separator string `mapstructure:"separator"`
 }
 
-// Concat implements the Byter and Channeler interfaces and concatenates multiple JSON keys into a single value with a separator character. More information is available in the README.
+/*
+Concat processes data by concatenating multiple values together with a separator. The processor supports these patterns:
+	json:
+		{"c1":"foo","c2":"bar"} >>> {"c3":"foo.bar"}
+	json array:
+		{"c1":["foo","baz"],"c2":["bar","qux"]} >>> {"c3":["foo.bar","baz.qux"]}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'concat',
+		settings: {
+			input: {
+				keys: ['c1','c2'],
+			},
+			output: {
+				key: 'c3',
+			},
+			options: {
+				separator: '.',
+			}
+		},
+	}
+*/
 type Concat struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Inputs                   `mapstructure:"input"`
@@ -24,7 +50,7 @@ type Concat struct {
 	Options   ConcatOptions            `mapstructure:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Concat processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Concat) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	var array [][]byte
 
@@ -60,32 +86,39 @@ func (p Concat) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes a byte slice with the Concat processor.
 func (p Concat) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	count := len(p.Input.Keys) - 1
+	if len(p.Input.Keys) != 0 && p.Output.Key != "" {
+		count := len(p.Input.Keys) - 1
 
-	cache := make(map[int]string)
-	for i, key := range p.Input.Keys {
-		value := json.Get(data, key)
-		if value.Type.String() == "Null" {
-			return data, nil
-		}
+		cache := make(map[int]string)
+		for i, key := range p.Input.Keys {
+			value := json.Get(data, key)
+			if value.Type.String() == "Null" {
+				return data, nil
+			}
 
-		for x, v := range value.Array() {
-			cache[x] += v.String()
-			if i != count {
-				cache[x] += p.Options.Separator
+			for x, v := range value.Array() {
+				cache[x] += v.String()
+				if i != count {
+					cache[x] += p.Options.Separator
+				}
 			}
 		}
+
+		// json processing
+		if len(cache) == 1 {
+			return json.Set(data, p.Output.Key, cache[0])
+		}
+
+		// json array processing
+		var array []string
+		for _, v := range cache {
+			array = append(array, v)
+		}
+
+		return json.Set(data, p.Output.Key, array)
 	}
 
-	var array []string
-	for _, v := range cache {
-		array = append(array, v)
-	}
-
-	if len(array) == 1 {
-		return json.Set(data, p.Output.Key, array[0])
-	}
-	return json.Set(data, p.Output.Key, array)
+	return nil, ConcatInvalidSettings
 }

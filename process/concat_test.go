@@ -15,17 +15,17 @@ func TestConcat(t *testing.T) {
 		{
 			Concat{
 				Input: Inputs{
-					Keys: []string{"concat1", "concat2"},
+					Keys: []string{"c1", "c2"},
 				},
 				Options: ConcatOptions{
 					Separator: ".",
 				},
 				Output: Output{
-					Key: "concat3",
+					Key: "c3",
 				},
 			},
-			[]byte(`{"concat1":"hello","concat2":"goodbye"}`),
-			[]byte(`{"concat1":"hello","concat2":"goodbye","concat3":"hello.goodbye"}`),
+			[]byte(`{"c1":"foo","c2":"bar"}`),
+			[]byte(`{"c1":"foo","c2":"bar","c3":"foo.bar"}`),
 		},
 	}
 
@@ -54,19 +54,19 @@ func TestConcatArray(t *testing.T) {
 		{
 			Concat{
 				Input: Inputs{
-					Keys: []string{"concat1", "concat2"},
+					Keys: []string{"c1", "c2"},
 				},
 				Options: ConcatOptions{
 					Separator: ".",
 				},
 				Output: Output{
-					Key: "concat3",
+					Key: "c3",
 				},
 			},
-			[]byte(`{"concat1":["abc","ghi"],"concat2":["def","jkl"]}`),
+			[]byte(`{"c1":["foo","baz"],"c2":["bar","qux"]}`),
 			[][]byte{
-				[]byte(`{"concat1":["abc","ghi"],"concat2":["def","jkl"],"concat3":["abc.def","ghi.jkl"]}`),
-				[]byte(`{"concat1":["abc","ghi"],"concat2":["def","jkl"],"concat3":["ghi.jkl","abc.def"]}`),
+				[]byte(`{"c1":["foo","baz"],"c2":["bar","qux"],"c3":["foo.bar","baz.qux"]}`),
+				[]byte(`{"c1":["foo","baz"],"c2":["bar","qux"],"c3":["baz.qux","foo.bar"]}`),
 			},
 		},
 	}

@@ -4,19 +4,41 @@ import (
 	"context"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-FlattenOptions contain custom options settings for this processor.
+// FlattenInvalidSettings is returned when the Flatten processor is configured with invalid Input and Output settings.
+const FlattenInvalidSettings = errors.Error("FlattenInvalidSettings")
 
-Deep: deeply flattens nested arrays.
+/*
+FlattenOptions contains custom options settings for the Flatten processor:
+	Deep (optional):
+		deeply flattens nested arrays
+		[["foo"],[[["bar",[["baz"]]]]]] >>> ["foo","bar","baz"]
 */
 type FlattenOptions struct {
 	Deep bool `mapstructure:"deep"`
 }
 
-// Flatten implements the Byter and Channeler interfaces and flattens JSON arrays. More information is available in the README.
+/*
+Flatten processes data by flattening JSON arrays. The processor supports these patterns:
+	json:
+		{"flatten":["foo",["bar"]]} >>> {"flatten":["foo","bar"]}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'flatten',
+		settings: {
+			input: {
+				key: 'flatten',
+			},
+			output: {
+				key: 'flatten',
+			},
+		},
+	}
+*/
 type Flatten struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Input                    `mapstructure:"input"`
@@ -24,7 +46,7 @@ type Flatten struct {
 	Options   FlattenOptions           `mapstructure:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Flatten processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Flatten) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	var array [][]byte
 
@@ -61,11 +83,16 @@ func (p Flatten) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, 
 
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes a byte slice with the Flatten processor.
 func (p Flatten) Byte(ctx context.Context, data []byte) ([]byte, error) {
+	// only supports json, so error early if there are no keys
+	if p.Input.Key == "" && p.Output.Key == "" {
+		return nil, FlattenInvalidSettings
+	}
+
 	var value json.Result
 	if p.Options.Deep {
-		value = json.Get(data, p.Input.Key+"|@flatten:deep")
+		value = json.Get(data, p.Input.Key+`|@flatten:{"deep":true}`)
 	} else {
 		value = json.Get(data, p.Input.Key+"|@flatten")
 	}

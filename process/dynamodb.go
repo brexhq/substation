@@ -7,14 +7,19 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-DynamoDBInput contains custom input settings for this processor.
+// DynamoDBInvalidSettings is returned when the DynamoDB processor is configured with invalid Input and Output settings.
+const DynamoDBInvalidSettings = errors.Error("DynamoDBInvalidSettings")
 
-PartitionKey: the JSON key that is used as the paritition key value for the DynamoDB query
-SortKey (optional): the JSON key that is used as the sort /range key value for the DynamoDB query
+/*
+DynamoDBInput contains custom input settings for the DynamoDB processor:
+	PartitionKey:
+		path to the JSON value used as the partition key in the DynamoDB query
+	SortKey (optional):
+		path to the JSON value used as the sort key in the DynamoDB query
 */
 type DynamoDBInput struct {
 	PartitionKey string `mapstructure:"partition_key"`
@@ -22,14 +27,18 @@ type DynamoDBInput struct {
 }
 
 /*
-DynamoDBOptions contain custom options settings for this processor. Refer to the DynamoDB API query documentation for more information: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html.
-
-A common use for this processor is to return the most recent item from a DynamoDB table based on partition and sort keys. This can be achieved by setting Limit to 1 and ScanIndexForward to false.
-
-Table: the DynamoDB table to query
-KeyConditionExpression: the DynamoDB key condition expression
-Limit (optional): the number of result items to return
-ScanIndexForward (optional): reverses the order of item results
+DynamoDBOptions contains custom options settings for the DynamoDB processor (https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#API_Query_RequestSyntax):
+	Table:
+		table to query
+	KeyConditionExpression:
+		key condition expression (see documentation)
+	Limit (optional):
+		maximum number of items to evaluate
+	ScanIndexForward (optional):
+		specifies the order of index traversal
+		must be one of:
+			true (default): traversal is performed in ascending order
+			false: traversal is performed in descending order
 */
 type DynamoDBOptions struct {
 	Table                  string `mapstructure:"table"`
@@ -38,18 +47,46 @@ type DynamoDBOptions struct {
 	ScanIndexForward       bool   `mapstructure:"scan_index_forward"`
 }
 
-// DynamoDB implements the Byter and Channeler interfaces and queries DynamoDB and returns all matched items as an array of JSON objects. More information is available in the README.
+/*
+DynamoDB processes data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The processor supports these patterns:
+	json:
+		{"dynamodb":"foo"} >>> {"dynamodb":"foo","items":[{"foo":"bar"}]}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'dynamodb',
+		settings: {
+			// if the value is "foo", then this queries DynamoDB by using "foo" as the paritition key value for the table attribute "pk" and returns the last indexed item from the table.
+			input: {
+				partition_key: 'dynamodb',
+			},
+			output: {
+				key: 'items',
+			},
+			options: {
+				table: 'foo-table',
+				key_condition_expression: 'pk = :partitionkeyval',
+				limit: 1,
+				scan_index_forward: true,
+			}
+		},
+	}
+*/
 type DynamoDB struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     DynamoDBInput            `mapstructure:"input"`
 	Output    Output                   `mapstructure:"output"`
 	Options   DynamoDBOptions          `mapstructure:"options"`
+	api       dynamodb.API
 }
 
-var dynamodbAPI dynamodb.API
-
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the DynamoDB processor. Conditions are optionally applied on the channel data to enable processing.
 func (p DynamoDB) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+	// lazy load API
+	if !p.api.IsEnabled() {
+		p.api.Setup()
+	}
+
 	var array [][]byte
 
 	op, err := condition.OperatorFactory(p.Condition)
@@ -84,53 +121,44 @@ func (p DynamoDB) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte,
 
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes a byte slice with the DynamoDB processor.
 func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	if !dynamodbAPI.IsEnabled() {
-		dynamodbAPI.Setup()
+	// lazy load API
+	if !p.api.IsEnabled() {
+		p.api.Setup()
 	}
 
-	pk := json.Get(data, p.Input.PartitionKey)
-	if pk.Type.String() == "Null" {
-		return data, nil
-	}
-
-	sk := json.Get(data, p.Input.SortKey)
-	if !pk.IsArray() && !sk.IsArray() {
-		items, err := p.dynamodb(ctx, pk.String(), sk.String())
-		if err != nil {
-			return nil, err
-		}
-
-		// no match
-		if len(items) == 0 {
+	// json processing
+	if p.Input.PartitionKey != "" && p.Output.Key != "" {
+		partitionKey := json.Get(data, p.Input.PartitionKey)
+		if partitionKey.Type.String() == "Null" {
 			return data, nil
 		}
 
-		return json.Set(data, p.Output.Key, items)
-	}
+		sortKey := json.Get(data, p.Input.SortKey)
+		if !partitionKey.IsArray() && !sortKey.IsArray() {
+			items, err := p.dynamodb(ctx, partitionKey.String(), sortKey.String())
+			if err != nil {
+				return nil, err
+			}
 
-	var array []interface{}
-	for i := 0; i < len(pk.Array()); i++ {
-		pks := pk.Array()[i]
-		sks := sk.Array()[i]
+			// no match
+			if len(items) == 0 {
+				return data, nil
+			}
 
-		items, err := p.dynamodb(ctx, pks.String(), sks.String())
-		if err != nil {
-			return nil, err
+			return json.Set(data, p.Output.Key, items)
 		}
-		array = append(array, items)
+
+		// json arrays not supported
+		return nil, DynamoDBInvalidSettings
 	}
 
-	if len(array) == 0 {
-		return data, nil
-	}
-
-	return json.Set(data, p.Output.Key, array)
+	return nil, DynamoDBInvalidSettings
 }
 
 func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {
-	resp, err := dynamodbAPI.Query(
+	resp, err := p.api.Query(
 		ctx,
 		p.Options.Table,
 		pk, sk,

@@ -6,49 +6,62 @@ import (
 	"testing"
 )
 
-func TestReplace(t *testing.T) {
-	var tests = []struct {
-		proc     Replace
-		test     []byte
-		expected []byte
-	}{
-		{
-			Replace{
-				Input: Input{
-					Key: "replace",
-				},
-				Options: ReplaceOptions{
-					Old: "l",
-					New: "|",
-				},
-				Output: Output{
-					Key: "replace",
-				},
+var replaceTests = []struct {
+	name     string
+	proc     Replace
+	test     []byte
+	expected []byte
+}{
+	{
+		"json",
+		Replace{
+			Input: Input{
+				Key: "foo",
 			},
-			[]byte(`{"replace":"hello"}`),
-			[]byte(`{"replace":"he||o"}`),
-		},
-		// array input
-		{
-			Replace{
-				Input: Input{
-					Key: "replace",
-				},
-				Options: ReplaceOptions{
-					Old: "l",
-					New: "|",
-				},
-				Output: Output{
-					Key: "replace",
-				},
+			Options: ReplaceOptions{
+				Old: "r",
+				New: "z",
 			},
-			[]byte(`{"replace":["hello","halo"]}`),
-			[]byte(`{"replace":["he||o","ha|o"]}`),
+			Output: Output{
+				Key: "foo",
+			},
 		},
-	}
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"baz"}`),
+	},
+	{
+		"json array",
+		Replace{
+			Input: Input{
+				Key: "foo",
+			},
+			Options: ReplaceOptions{
+				Old: "r",
+				New: "z",
+			},
+			Output: Output{
+				Key: "foo",
+			},
+		},
+		[]byte(`{"foo":["bar","bard"]}`),
+		[]byte(`{"foo":["baz","bazd"]}`),
+	},
+	{
+		"data",
+		Replace{
+			Options: ReplaceOptions{
+				Old: "r",
+				New: "z",
+			},
+		},
+		[]byte(`bar`),
+		[]byte(`baz`),
+	},
+}
 
-	for _, test := range tests {
-		ctx := context.TODO()
+func TestReplace(t *testing.T) {
+	ctx := context.TODO()
+	for _, test := range replaceTests {
 		res, err := test.proc.Byte(ctx, test.test)
 		if err != nil {
 			t.Logf("%v", err)
@@ -59,5 +72,22 @@ func TestReplace(t *testing.T) {
 			t.Logf("expected %s, got %s", test.expected, res)
 			t.Fail()
 		}
+	}
+}
+
+func benchmarkReplaceByte(b *testing.B, byter Replace, test []byte) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		byter.Byte(ctx, test)
+	}
+}
+
+func BenchmarkReplaceByte(b *testing.B) {
+	for _, test := range replaceTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkReplaceByte(b, test.proc, test.test)
+			},
+		)
 	}
 }

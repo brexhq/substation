@@ -15,32 +15,47 @@ func TestMath(t *testing.T) {
 		{
 			Math{
 				Input: Inputs{
-					Keys: []string{"first", "second"},
+					Keys: []string{"foo", "bar"},
 				},
 				Options: MathOptions{
 					Operation: "add",
 				},
 				Output: Output{
-					Key: "third",
+					Key: "baz",
 				},
 			},
-			[]byte(`{"first":5,"second":2}`),
-			[]byte(`{"first":5,"second":2,"third":7}`),
+			[]byte(`{"foo":1,"bar":3}`),
+			[]byte(`{"foo":1,"bar":3,"baz":4}`),
 		},
 		{
 			Math{
 				Input: Inputs{
-					Keys: []string{"first", "second"},
+					Keys: []string{"foo", "bar"},
 				},
 				Options: MathOptions{
 					Operation: "subtract",
 				},
 				Output: Output{
-					Key: "third",
+					Key: "baz",
 				},
 			},
-			[]byte(`{"first":5,"second":2}`),
-			[]byte(`{"first":5,"second":2,"third":3}`),
+			[]byte(`{"foo":5,"bar":2}`),
+			[]byte(`{"foo":5,"bar":2,"baz":3}`),
+		},
+		{
+			Math{
+				Input: Inputs{
+					Keys: []string{"foo", "bar"},
+				},
+				Options: MathOptions{
+					Operation: "add",
+				},
+				Output: Output{
+					Key: "baz",
+				},
+			},
+			[]byte(`{"foo":[1,2],"bar":[3,4]}`),
+			[]byte(`{"foo":[1,2],"bar":[3,4],"baz":[4,6]}`),
 		},
 	}
 

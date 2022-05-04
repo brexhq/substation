@@ -4,16 +4,24 @@ import (
 	"context"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-// Delete implements the Byter and Channeler interfaces and deletes JSON keys. More information is available in the README.
+// DeleteInvalidSettings is returned when the Copy processor is configured with invalid Input and Output settings.
+const DeleteInvalidSettings = errors.Error("DeleteInvalidSettings")
+
+/*
+Delete processes data by deleting JSON keys. The processor supports these patterns:
+	json:
+  	{"hello":"world","goodbye":"world"} >>> {"hello":"world"}
+*/
 type Delete struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Input                    `mapstructure:"input"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a channel of byte slices with the Delete processor.
 func (p Delete) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	var array [][]byte
 
@@ -49,7 +57,12 @@ func (p Delete) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes a byte slice with the Delete processor.
 func (p Delete) Byte(ctx context.Context, object []byte) ([]byte, error) {
-	return json.Delete(object, p.Input.Key)
+	// json processing
+	if p.Input.Key != "" {
+		return json.Delete(object, p.Input.Key)
+	}
+
+	return nil, DeleteInvalidSettings
 }

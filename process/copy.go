@@ -64,19 +64,19 @@ func (p Copy) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, err
 
 // Byte processes a byte slice with the Copy processor.
 func (p Copy) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// JSON processing
+	// json processing
 	if p.Input.Key != "" && p.Output.Key != "" {
 		v := json.Get(data, p.Input.Key)
 		return json.Set(data, p.Output.Key, v)
 	}
 
-	// from JSON processing
+	// from json processing
 	if p.Input.Key != "" && p.Output.Key == "" {
 		v := json.Get(data, p.Input.Key)
 		return []byte(v.String()), nil
 	}
 
-	// to JSON processing
+	// to json processing
 	if p.Input.Key == "" && p.Output.Key != "" {
 		return json.Set([]byte(""), p.Output.Key, data)
 	}

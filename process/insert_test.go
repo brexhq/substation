@@ -6,63 +6,83 @@ import (
 	"testing"
 )
 
-func TestInsert(t *testing.T) {
-	var tests = []struct {
-		proc     Insert
-		test     []byte
-		expected []byte
-	}{
-		{
-			Insert{
-				Options: InsertOptions{
-					Value: "goodbye",
-				},
-				Output: Output{
-					Key: "hello",
+var insertTests = []struct {
+	name     string
+	proc     Insert
+	test     []byte
+	expected []byte
+}{
+	{
+		"byte",
+		Insert{
+			Options: InsertOptions{
+				Value: []byte{98, 97, 114},
+			},
+			Output: Output{
+				Key: "foo",
+			},
+		},
+		[]byte(``),
+		[]byte(`{"foo":"bar"}`),
+	},
+	{
+		"string",
+		Insert{
+			Options: InsertOptions{
+				Value: "bar",
+			},
+			Output: Output{
+				Key: "foo",
+			},
+		},
+		[]byte(``),
+		[]byte(`{"foo":"bar"}`),
+	},
+	{
+		"int",
+		Insert{
+			Options: InsertOptions{
+				Value: 10,
+			},
+			Output: Output{
+				Key: "int",
+			},
+		},
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"bar","int":10}`),
+	},
+	{
+		"string array",
+		Insert{
+			Options: InsertOptions{
+				Value: []string{"bar", "baz", "qux"},
+			},
+			Output: Output{
+				Key: "array",
+			},
+		},
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"bar","array":["bar","baz","qux"]}`),
+	},
+	{
+		"map",
+		Insert{
+			Options: InsertOptions{
+				Value: map[string]string{
+					"baz": "qux",
 				},
 			},
-			[]byte(``),
-			[]byte(`{"hello":"goodbye"}`),
-		},
-		{
-			Insert{
-				Options: InsertOptions{
-					Value: 10,
-				},
-				Output: Output{
-					Key: "int",
-				},
+			Output: Output{
+				Key: "map",
 			},
-			[]byte(`{"hello":"goodbye"}`),
-			[]byte(`{"hello":"goodbye","int":10}`),
 		},
-		{
-			Insert{
-				Options: InsertOptions{
-					Value: "goodbye",
-				},
-				Output: Output{
-					Key: "__hidden",
-				},
-			},
-			[]byte(`{"hello":"goodbye"}`),
-			[]byte(`{"hello":"goodbye","__hidden":"goodbye"}`),
-		},
-		{
-			Insert{
-				Options: InsertOptions{
-					Value: "goodbye",
-				},
-				Output: Output{
-					Key: "__hidden.deeply.nested",
-				},
-			},
-			[]byte(`{"hello":"goodbye"}`),
-			[]byte(`{"hello":"goodbye","__hidden":{"deeply":{"nested":"goodbye"}}}`),
-		},
-	}
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"bar","map":{"baz":"qux"}}`),
+	},
+}
 
-	for _, test := range tests {
+func TestInsert(t *testing.T) {
+	for _, test := range insertTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
 		if err != nil {
@@ -74,5 +94,22 @@ func TestInsert(t *testing.T) {
 			t.Logf("expected %s, got %s", test.expected, res)
 			t.Fail()
 		}
+	}
+}
+
+func benchmarkInsertByte(b *testing.B, byter Insert, test []byte) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		byter.Byte(ctx, test)
+	}
+}
+
+func BenchmarkInsertByte(b *testing.B) {
+	for _, test := range insertTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkInsertByte(b, test.proc, test.test)
+			},
+		)
 	}
 }

@@ -2,17 +2,20 @@ package process
 
 import (
 	"context"
-	"errors"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/aws/lambda"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-LambdaInput contain custom options settings for this processor.
+// LambdaInvalidSettings is returned when the Lambda processor is configured with invalid Input and Output settings.
+const LambdaInvalidSettings = errors.Error("LambdaInvalidSettings")
 
-Payload: maps values from a JSON object (Key) to values in the AWS Lambda payload (PayloadKey)
+/*
+LambdaInput contains custom input settings for the Lambda processor:
+	Payload:
+		maps values from the JSON object (Key) to values in the AWS Lambda payload (PayloadKey)
 */
 type LambdaInput struct {
 	Payload []struct {
@@ -22,35 +25,67 @@ type LambdaInput struct {
 }
 
 /*
-LambdaOptions contain custom options settings for this processor.
-
-Function: the name of the AWS Lambda function to invoke.
-Errors: if true, then errors from the invoked Lambda will cause this processor to fail (defaults to false).
+LambdaOptions contains custom options settings for the Flatten processor:
+	Function:
+		function to invoke
+	ErrorOnFailure:
+		if set to true, then errors from the invoked Lambda will cause the processor to fail
+		defaults to false
 */
 type LambdaOptions struct {
-	Function string `mapstructure:"function"`
-	Errors   bool   `mapstructure:"errors"`
+	Function       string `mapstructure:"function"`
+	ErrorOnFailure bool   `mapstructure:"error_on_failure"`
 }
 
-// Lambda implements the Byter and Channeler interfaces and synchronously invokes an AWS Lambda. More information is available in the README.
+/*
+Lambda processes data by synchronously invoking an AWS Lambda and returning the payload. The average latency of synchronously invoking a Lambda function is 10s of milliseconds, but latency can take 100s to 1000s of milliseconds depending on the function which can have significant impact on total event latency. If Substation is running in AWS Lambda with Kinesis, then this latency can be mitigated by increasing the parallelization factor of the Lambda (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
+
+The processor supports these patterns:
+	json:
+		{"foo":"bar"} >>> {"foo":"bar","lambda":{"baz":"qux"}}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'lambda',
+		settings: {
+			input: {
+				payload: [
+					{
+						key: 'foo',
+						payload_key: 'foo',
+					}
+				],
+			},
+			output: {
+				key: 'lambda',
+			}
+			options: {
+				function: 'foo-function',
+			}
+		},
+	}
+*/
 type Lambda struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     LambdaInput              `mapstructure:"input"`
 	Output    Output                   `mapstructure:"output"`
 	Options   LambdaOptions            `mapstructure:"options"`
+	api       lambda.API
 }
 
-var lambdaAPI lambda.API
-
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Lambda processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Lambda) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
+	// lazy load API
+	if !p.api.IsEnabled() {
+		p.api.Setup()
+	}
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {
@@ -75,13 +110,18 @@ func (p Lambda) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 	}
 	close(output)
 	return output, nil
-
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes a byte slice with the Lambda processor.
 func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	if !lambdaAPI.IsEnabled() {
-		lambdaAPI.Setup()
+	// only supports json, so error early if there are no keys
+	if len(p.Input.Payload) == 0 && p.Output.Key == "" {
+		return nil, LambdaInvalidSettings
+	}
+
+	// lazy load API
+	if !p.api.IsEnabled() {
+		p.api.Setup()
 	}
 
 	var payload []byte
@@ -94,15 +134,16 @@ func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 	}
 
-	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, payload)
+	resp, err := p.api.Invoke(ctx, p.Options.Function, payload)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.FunctionError != nil && p.Options.Errors {
+	if resp.FunctionError != nil && p.Options.ErrorOnFailure {
 		resErr := json.Get(resp.Payload, "errorMessage").String()
-		return nil, errors.New(resErr)
+		return nil, errors.Error(resErr)
 	}
+
 	if resp.FunctionError != nil {
 		return data, nil
 	}

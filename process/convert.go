@@ -4,19 +4,55 @@ import (
 	"context"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-ConvertOptions contain custom options settings for this processor.
+// ConvertInvalidSettings is returned when the Convert processor is configured with invalid Input and Output settings.
+const ConvertInvalidSettings = errors.Error("ConvertInvalidSettings")
 
-Type: the type that the value should be converted to; one of: bool (boolean), int (integer), float, uint (unsigned integer), string
+/*
+ConvertOptions contains custom options for the Convert processor:
+	type:
+		the type that the value should be converted to
+		must be one of:
+			bool (boolean)
+			int (integer)
+			float
+			uint (unsigned integer)
+			string
 */
 type ConvertOptions struct {
 	Type string `mapstructure:"type"`
 }
 
-// Convert implements the Byter and Channeler interfaces and converts values between types. More information is available in the README.
+/*
+Convert processes data by converting values between types (e.g., string to integer, integer to float). The processor supports these patterns:
+	json:
+		{"convert":"true"} >>> {"convert":true}
+		{"convert":"-123"} >>> {"convert":-123}
+		{"convert":123} >>> {"convert":"123"}
+	json array:
+		{"convert":["true","false"]} >>> {"convert":[true,false]}
+		{"convert":["-123","-456"]} >>> {"convert":[-123,-456]}
+		{"convert":[123,123.456]} >>> {"convert":["123","123.456"]}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'convert',
+		settings: {
+			input: {
+				key: 'convert',
+			},
+			output: {
+				key: 'convert',
+			},
+			options: {
+				type: 'int',
+			}
+		},
+	}
+*/
 type Convert struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Input                    `mapstructure:"input"`
@@ -24,7 +60,7 @@ type Convert struct {
 	Options   ConvertOptions           `mapstructure:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Convert processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Convert) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	var array [][]byte
 
@@ -60,22 +96,27 @@ func (p Convert) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, 
 
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes a byte slice with the Convert processor.
 func (p Convert) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	value := json.Get(data, p.Input.Key)
+	// json processing
+	if p.Input.Key != "" && p.Output.Key != "" {
+		value := json.Get(data, p.Input.Key)
+		if !value.IsArray() {
+			c := p.convert(value)
+			return json.Set(data, p.Output.Key, c)
+		}
 
-	if !value.IsArray() {
-		o := p.convert(value)
-		return json.Set(data, p.Output.Key, o)
+		// json array processing
+		var array []interface{}
+		for _, v := range value.Array() {
+			c := p.convert(v)
+			array = append(array, c)
+		}
+
+		return json.Set(data, p.Output.Key, array)
 	}
 
-	var array []interface{}
-	for _, v := range value.Array() {
-		o := p.convert(v)
-		array = append(array, o)
-	}
-
-	return json.Set(data, p.Output.Key, array)
+	return nil, ConvertInvalidSettings
 }
 
 func (p Convert) convert(v json.Result) interface{} {

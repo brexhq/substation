@@ -12,19 +12,50 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
+// DomainInvalidSettings is returned when the Domain processor is configured with invalid Input and Output settings.
+const DomainInvalidSettings = errors.Error("DomainInvalidSettings")
+
 // DomainNoSubdomain is used when a domain without a subdomain is processed
 const DomainNoSubdomain = errors.Error("DomainNoSubdomain")
 
 /*
-DomainOptions contain custom options settings for this processor.
-
-Function: the domain processing function to apply to the data; one of: tld, domain, or subdomain
+DomainOptions contains custom options for the Convert processor:
+	function:
+		the domain processing function to apply to the data
+		must be one of:
+			tld
+			domain
+			subdomain
 */
 type DomainOptions struct {
 	Function string `mapstructure:"function"`
 }
 
-// Domain implements the Byter and Channeler interfaces and parses fully qualified domain names into separate labels. More information is available in the README.
+/*
+Domain processes data by parsing fully qualified domain names into labels. The processor supports these patterns:
+	json:
+		{"domain":"example.com"} >>> {"domain":"example.com","tld":"com"}
+	json array:
+		{"domain":["example.com","example.top"]} >>> {"domain":["example.com","example.top"],"tld":["com","top"]}
+	data:
+		example.com >>> com
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'domain',
+		settings: {
+			input: {
+				key: 'domain',
+			},
+			output: {
+				key: 'tld',
+			},
+			options: {
+				function: 'tld',
+			}
+		},
+	}
+*/
 type Domain struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Input                    `mapstructure:"input"`
@@ -32,7 +63,7 @@ type Domain struct {
 	Options   DomainOptions            `mapstructure:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Domain processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Domain) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	var array [][]byte
 
@@ -68,29 +99,33 @@ func (p Domain) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes a byte slice with the Domain processor.
 func (p Domain) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	value := json.Get(data, p.Input.Key)
-
-	if !value.IsArray() {
-		s := value.String()
-		output, _ := p.domain(s)
-
-		if output == "" {
-			return data, nil
+	// json processing
+	if p.Input.Key != "" && p.Output.Key != "" {
+		value := json.Get(data, p.Input.Key)
+		if !value.IsArray() {
+			label, _ := p.domain(value.String())
+			return json.Set(data, p.Output.Key, label)
 		}
 
-		return json.Set(data, p.Output.Key, output)
+		// json array processing
+		var array []string
+		for _, v := range value.Array() {
+			l, _ := p.domain(v.String())
+			array = append(array, l)
+		}
+
+		return json.Set(data, p.Output.Key, array)
 	}
 
-	var array []string
-	for _, v := range value.Array() {
-		s := v.String()
-		o, _ := p.domain(s)
-		array = append(array, o)
+	// data processing
+	if p.Input.Key == "" && p.Output.Key == "" {
+		l, _ := p.domain(string(data))
+		return []byte(l), nil
 	}
 
-	return json.Set(data, p.Output.Key, array)
+	return nil, DomainInvalidSettings
 }
 
 func (p Domain) domain(s string) (string, error) {

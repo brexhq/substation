@@ -21,16 +21,6 @@ func (m mockedQuery) QueryWithContext(ctx aws.Context, input *dynamodb.QueryInpu
 	return &m.Resp, nil
 }
 
-var jsonQueryOutput = dynamodb.QueryOutput{
-	Items: []map[string]*dynamodb.AttributeValue{
-		{
-			"foo": {
-				S: aws.String("bar"),
-			},
-		},
-	},
-}
-
 var dynamodbTests = []struct {
 	name     string
 	proc     DynamoDB
@@ -50,7 +40,17 @@ var dynamodbTests = []struct {
 				Key: "ddb",
 			},
 			api: ddb.API{
-				mockedQuery{Resp: jsonQueryOutput},
+				mockedQuery{
+					Resp: dynamodb.QueryOutput{
+						Items: []map[string]*dynamodb.AttributeValue{
+							{
+								"foo": {
+									S: aws.String("bar"),
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 		[]byte(`{"pk":"foo"}`),

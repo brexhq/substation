@@ -9,23 +9,23 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
-// ZipInvalidSettings is returned when the Zip processor is configured with invalid Input and Output settings.
-const ZipInvalidSettings = errors.Error("ZipInvalidSettings")
+// GroupInvalidSettings is returned when the Group processor is configured with invalid Input and Output settings.
+const GroupInvalidSettings = errors.Error("GroupInvalidSettings")
 
 /*
-ZipOptions contains custom options for the Zip processor:
-	Keys:
+GroupOptions contains custom options for the Group processor:
+	Keys (optional):
 		where values from Inputs.Keys are written to, creating new JSON objects
 */
-type ZipOptions struct {
+type GroupOptions struct {
 	Keys []string `mapstructure:"keys"`
 }
 
 /*
-Zip processes data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
+Group processes data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
 	json array:
-		{"names":["foo","bar"],"sizes":[111,222]} >>> {"names":["foo","bar"],"sizes":[111,222],"group":[["foo",111],["bar",222]]}
-		{"names":["foo","bar"],"sizes":[111,222]} >>> {"names":["foo","bar"],"sizes":[111,222],"group":[{"name":foo","size":111},{"name":"bar","size":222}]}
+		{"g1":["foo","bar"],"g2":[111,222]} >>> {"g1":["foo","bar"],"g2":[111,222],"group":[["foo",111],["bar",222]]}
+		{"g1":["foo","bar"],"g2":[111,222]} >>> {"g1":["foo","bar"],"g2":[111,222],"group":[{"name":foo","size":111},{"name":"bar","size":222}]}
 
 The processor uses this Jsonnet configuration:
 	{
@@ -33,7 +33,7 @@ The processor uses this Jsonnet configuration:
 		settings: {
 			// if the values are ["foo","bar"] and [123,456], then this returns [["foo",123],["bar",456]]
 			input: {
-				keys: ['names','sizes'],
+				keys: ['g1','g2'],
 			},
 			output: {
 				key: 'group',
@@ -41,15 +41,15 @@ The processor uses this Jsonnet configuration:
 		},
 	}
 */
-type Zip struct {
+type Group struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
 	Input     Inputs                   `mapstructure:"input"`
 	Output    Output                   `mapstructure:"output"`
-	Options   ZipOptions               `mapstructure:"options"`
+	Options   GroupOptions             `mapstructure:"options"`
 }
 
-// Channel processes a data channel of byte slices with the Zip processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Zip) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Channel processes a data channel of byte slices with the Group processor. Conditions are optionally applied on the channel data to enable processing.
+func (p Group) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
@@ -83,11 +83,11 @@ func (p Zip) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, erro
 
 }
 
-// Byte processes a byte slice with the Zip processor.
-func (p Zip) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Byte processes a byte slice with the Group processor.
+func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json arrays, so error early if there are no keys
 	if len(p.Input.Keys) == 0 && p.Output.Key == "" {
-		return nil, ZipInvalidSettings
+		return nil, GroupInvalidSettings
 	}
 
 	if len(p.Options.Keys) == 0 {

@@ -78,30 +78,14 @@ var caseTests = []struct {
 		[]byte(`{"case":["abc","def"]}`),
 	},
 	{
-		"from json",
-		Case{
-			Input: Input{
-				Key: "case",
-			},
-			Options: CaseOptions{
-				Case: "upper",
-			},
-		},
-		[]byte(`{"case":"foo"}`),
-		[]byte(`FOO`),
-	},
-	{
-		"to json",
+		"data",
 		Case{
 			Options: CaseOptions{
 				Case: "upper",
-			},
-			Output: Output{
-				Key: "case",
 			},
 		},
 		[]byte(`foo`),
-		[]byte(`{"case":"FOO"}`),
+		[]byte(`FOO`),
 	},
 }
 

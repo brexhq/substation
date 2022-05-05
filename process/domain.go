@@ -19,8 +19,8 @@ const DomainInvalidSettings = errors.Error("DomainInvalidSettings")
 const DomainNoSubdomain = errors.Error("DomainNoSubdomain")
 
 /*
-DomainOptions contains custom options for the Convert processor:
-	function:
+DomainOptions contains custom options for the Domain processor:
+	Function:
 		the domain processing function to apply to the data
 		must be one of:
 			tld
@@ -65,13 +65,12 @@ type Domain struct {
 
 // Channel processes a data channel of byte slices with the Domain processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Domain) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {
@@ -112,8 +111,8 @@ func (p Domain) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		// json array processing
 		var array []string
 		for _, v := range value.Array() {
-			l, _ := p.domain(v.String())
-			array = append(array, l)
+			label, _ := p.domain(v.String())
+			array = append(array, label)
 		}
 
 		return json.Set(data, p.Output.Key, array)
@@ -121,8 +120,8 @@ func (p Domain) Byte(ctx context.Context, data []byte) ([]byte, error) {
 
 	// data processing
 	if p.Input.Key == "" && p.Output.Key == "" {
-		l, _ := p.domain(string(data))
-		return []byte(l), nil
+		label, _ := p.domain(string(data))
+		return []byte(label), nil
 	}
 
 	return nil, DomainInvalidSettings

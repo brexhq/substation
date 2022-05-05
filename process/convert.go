@@ -13,7 +13,7 @@ const ConvertInvalidSettings = errors.Error("ConvertInvalidSettings")
 
 /*
 ConvertOptions contains custom options for the Convert processor:
-	type:
+	Type:
 		the type that the value should be converted to
 		must be one of:
 			bool (boolean)
@@ -48,7 +48,7 @@ The processor uses this Jsonnet configuration:
 				key: 'convert',
 			},
 			options: {
-				type: 'int',
+				type: 'bool',
 			}
 		},
 	}
@@ -62,13 +62,12 @@ type Convert struct {
 
 // Channel processes a data channel of byte slices with the Convert processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Convert) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {

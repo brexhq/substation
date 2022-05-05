@@ -19,7 +19,7 @@ ReplaceOptions contains custom options for the Replace processor:
 		the character(s) to replace in the data
 	New:
 		the character(s) that replace Old
-	Count:
+	Count (optional):
 		the number of replacements to make
 		defaults to -1, which replaces all matches
 */
@@ -32,9 +32,9 @@ type ReplaceOptions struct {
 /*
 Replace processes data by replacing characters. The processor supports these patterns:
 	json:
-		{"foo":"bar"} >>> {"foo":"baz"}
+		{"replace":"bar"} >>> {"replace":"baz"}
 	json array:
-		{"foo":["bar","bard"]} >>> {"foo":["baz","bazd"]}
+		{"replace":["bar","bard"]} >>> {"replace":["baz","bazd"]}
 	data:
 		bar >>> baz
 
@@ -43,10 +43,10 @@ The processor uses this Jsonnet configuration:
 		type: 'replace',
 		settings: {
 			input: {
-				key: 'foo',
+				key: 'replace',
 			},
 			output: {
-				key: 'foo',
+				key: 'replace',
 			}
 			options: {
 				old: 'r',
@@ -64,13 +64,12 @@ type Replace struct {
 
 // Channel processes a data channel of byte slices with the Replace processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Replace) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {

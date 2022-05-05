@@ -17,7 +17,7 @@ const CaseInvalidSettings = errors.Error("CaseInvalidSettings")
 
 /*
 CaseOptions contains custom options for the Case processor:
-	case:
+	Case:
 		the case to convert the string or byte to
 		must be one of:
 			upper
@@ -34,10 +34,6 @@ Case processes data by changing the case of a string or byte slice. The processo
 		{"case":"foo"} >>> {"case":"FOO"}
 	json array:
 		{"case":["foo","bar"]} >>> {"case":["FOO","BAR"]}
-	from json:
-		{"case":"foo"} >>> FOO
-	to json:
-		foo >>> {"case":"FOO"}
 	data:
 		foo >>> FOO
 
@@ -65,15 +61,14 @@ type Case struct {
 	Options   CaseOptions              `mapstructure:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Case processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Case) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {
@@ -101,7 +96,7 @@ func (p Case) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, err
 
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes a byte slice with the Case processor.
 func (p Case) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// json processing
 	if p.Input.Key != "" && p.Output.Key != "" {
@@ -118,18 +113,6 @@ func (p Case) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 
 		return json.Set(data, p.Output.Key, array)
-	}
-
-	// from json processing
-	if p.Input.Key != "" && p.Output.Key == "" {
-		v := json.Get(data, p.Input.Key)
-		b := []byte(v.String())
-		return p.bytesCase(b), nil
-	}
-
-	// to json processing
-	if p.Input.Key == "" && p.Output.Key != "" {
-		return json.Set(data, p.Output.Key, p.bytesCase(data))
 	}
 
 	// data processing

@@ -16,35 +16,35 @@ var replaceTests = []struct {
 		"json",
 		Replace{
 			Input: Input{
-				Key: "foo",
+				Key: "replace",
 			},
 			Options: ReplaceOptions{
 				Old: "r",
 				New: "z",
 			},
 			Output: Output{
-				Key: "foo",
+				Key: "replace",
 			},
 		},
-		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"baz"}`),
+		[]byte(`{"replace":"bar"}`),
+		[]byte(`{"replace":"baz"}`),
 	},
 	{
 		"json array",
 		Replace{
 			Input: Input{
-				Key: "foo",
+				Key: "replace",
 			},
 			Options: ReplaceOptions{
 				Old: "r",
 				New: "z",
 			},
 			Output: Output{
-				Key: "foo",
+				Key: "replace",
 			},
 		},
-		[]byte(`{"foo":["bar","bard"]}`),
-		[]byte(`{"foo":["baz","bazd"]}`),
+		[]byte(`{"replace":["bar","bard"]}`),
+		[]byte(`{"replace":["baz","bazd"]}`),
 	},
 	{
 		"data",

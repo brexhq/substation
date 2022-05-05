@@ -60,36 +60,6 @@ var base64Tests = []struct {
 		[]byte(`abc123!?$*&()'-=@~`),
 		[]byte(`YWJjMTIzIT8kKiYoKSctPUB-`),
 	},
-	// decode std base64 from input
-	{
-		"from json std",
-		Base64{
-			Input: Input{
-				Key: "base64",
-			},
-			Options: Base64Options{
-				Direction: "from",
-				Alphabet:  "std",
-			},
-		},
-		[]byte(`{"base64":"YWJjMTIzIT8kKiYoKSctPUB+"}`),
-		[]byte(`abc123!?$*&()'-=@~`),
-	},
-	// decode std base64 to output
-	{
-		"to json std",
-		Base64{
-			Output: Output{
-				Key: "base64",
-			},
-			Options: Base64Options{
-				Direction: "from",
-				Alphabet:  "std",
-			},
-		},
-		[]byte(`YWJjMTIzIT8kKiYoKSctPUB+`),
-		[]byte(`{"base64":"abc123!?$*&()'-=@~"}`),
-	},
 	// decode std base64 from input to output
 	{
 		"json std",

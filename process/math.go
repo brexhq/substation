@@ -14,7 +14,7 @@ const MathInvalidSettings = errors.Error("MathInvalidSettings")
 /*
 MathOptions contains custom options for the Math processor:
 	Operation:
-		the math operation applied to the data
+		the operator applied to the data
 		must be one of:
 			add
 			subtract
@@ -24,11 +24,11 @@ type MathOptions struct {
 }
 
 /*
-Math processes data by applying mathetical operations. The processor supports these patterns:
+Math processes data by applying mathematic operations. The processor supports these patterns:
 	json:
-		{"foo":1,"bar":3} >>> {"foo":1,"bar":3,"baz":4}
+		{"foo":1,"bar":3} >>> {"foo":1,"bar":3,"math":4}
 	json array:
-		{"foo":[1,2],"bar":[3,4]} >>> {"foo":[1,2],"bar":[3,4],"baz":[4,6]}
+		{"foo":[1,2],"bar":[3,4]} >>> {"foo":[1,2],"bar":[3,4],"math":[4,6]}
 
 The processor uses this Jsonnet configuration:
 	{
@@ -38,7 +38,7 @@ The processor uses this Jsonnet configuration:
 				keys: ['foo','bar'],
 			},
 			output: {
-				key: 'baz',
+				key: 'math',
 			}
 			options: {
 				operation: 'add',

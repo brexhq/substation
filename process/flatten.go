@@ -15,7 +15,6 @@ const FlattenInvalidSettings = errors.Error("FlattenInvalidSettings")
 FlattenOptions contains custom options settings for the Flatten processor:
 	Deep (optional):
 		deeply flattens nested arrays
-		[["foo"],[[["bar",[["baz"]]]]]] >>> ["foo","bar","baz"]
 */
 type FlattenOptions struct {
 	Deep bool `mapstructure:"deep"`
@@ -48,13 +47,12 @@ type Flatten struct {
 
 // Channel processes a data channel of byte slices with the Flatten processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Flatten) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {

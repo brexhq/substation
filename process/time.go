@@ -19,18 +19,18 @@ TimeOptions contains custom options for the Time processor:
 		time format of the input
 		must be one of:
 			pattern-based layouts (https://gobyexample.com/time-formatting-parsing)
-			unix (epoch)
-			unix_milli (epoch milliseconds)
-			unix_nano (epoch nanoseconds)
-			now (current time)
-	InputLocation:
+			unix: epoch
+			unix_milli: epoch milliseconds
+			unix_nano: epoch nanoseconds
+			now: current time
+	InputLocation (optional):
 		the time zone abbreviation for the input
 		defaults to UTC
 	OutputFormat:
 		time format of the output
 		must be one of:
 			pattern-based layouts (https://gobyexample.com/time-formatting-parsing)
-	InputLocation:
+	InputLocation (optional):
 		the time zone abbreviation for the output
 		defaults to UTC
 */
@@ -53,10 +53,10 @@ The processor uses this Jsonnet configuration:
 		type: 'time',
 		settings: {
 			input: {
-				key: 'foo',
+				key: 'time',
 			},
 			output: {
-				key: 'processed',
+				key: 'time',
 			}
 			options: {
 				input_format: 'epoch',
@@ -74,13 +74,12 @@ type Time struct {
 
 // Channel processes a data channel of byte slices with the Time processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Time) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {

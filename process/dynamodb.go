@@ -34,6 +34,7 @@ DynamoDBOptions contains custom options settings for the DynamoDB processor (htt
 		key condition expression (see documentation)
 	Limit (optional):
 		maximum number of items to evaluate
+		defaults to evaluating all items
 	ScanIndexForward (optional):
 		specifies the order of index traversal
 		must be one of:
@@ -87,13 +88,12 @@ func (p DynamoDB) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte,
 		p.api.Setup()
 	}
 
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {

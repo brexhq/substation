@@ -21,11 +21,11 @@ func TestMath(t *testing.T) {
 					Operation: "add",
 				},
 				Output: Output{
-					Key: "baz",
+					Key: "math",
 				},
 			},
 			[]byte(`{"foo":1,"bar":3}`),
-			[]byte(`{"foo":1,"bar":3,"baz":4}`),
+			[]byte(`{"foo":1,"bar":3,"math":4}`),
 		},
 		{
 			Math{
@@ -36,11 +36,11 @@ func TestMath(t *testing.T) {
 					Operation: "subtract",
 				},
 				Output: Output{
-					Key: "baz",
+					Key: "math",
 				},
 			},
 			[]byte(`{"foo":5,"bar":2}`),
-			[]byte(`{"foo":5,"bar":2,"baz":3}`),
+			[]byte(`{"foo":5,"bar":2,"math":3}`),
 		},
 		{
 			Math{
@@ -51,11 +51,11 @@ func TestMath(t *testing.T) {
 					Operation: "add",
 				},
 				Output: Output{
-					Key: "baz",
+					Key: "math",
 				},
 			},
 			[]byte(`{"foo":[1,2],"bar":[3,4]}`),
-			[]byte(`{"foo":[1,2],"bar":[3,4],"baz":[4,6]}`),
+			[]byte(`{"foo":[1,2],"bar":[3,4],"math":[4,6]}`),
 		},
 	}
 

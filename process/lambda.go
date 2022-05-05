@@ -25,10 +25,10 @@ type LambdaInput struct {
 }
 
 /*
-LambdaOptions contains custom options settings for the Flatten processor:
+LambdaOptions contains custom options settings for the Lambda processor:
 	Function:
 		function to invoke
-	ErrorOnFailure:
+	ErrorOnFailure (optional):
 		if set to true, then errors from the invoked Lambda will cause the processor to fail
 		defaults to false
 */

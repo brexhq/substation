@@ -15,16 +15,17 @@ const CaptureInvalidSettings = errors.Error("CaptureInvalidSettings")
 
 /*
 CaptureOptions contains custom options for the Capture processor:
-	expression:
+	Expression:
 		the regular expression used to capture values
-	function:
+	Function:
 		the type of regular expression applied
 		must be one of:
 			find: applies the Find(String)?Submatch function
 			find_all: applies the FindAll(String)?Submatch function (see count)
 			named_group: applies the Find(String)?Submatch function and stores values as JSON using subexpressions
-	count (optional, defaults to -1):
+	Count (optional):
 		used for repeating capture groups
+		defaults to match all capture groups
 */
 type CaptureOptions struct {
 	Expression string `mapstructure:"expression"`
@@ -40,8 +41,6 @@ Capture processes data by capturing values using regular expressions. The proces
 	json array:
 		{"capture":["foo@qux.com","bar@qux.com"]} >>> {"capture":["foo","bar"]}
 		{"capture":["foo@qux.com","bar@qux.com"]} >>> {"capture":[["f","o","o"],["b","a","r"]]}
-	from json:
-		{"capture":"foo@qux.com"} >>> foo
 	data:
 		foo@qux.com >>> foo
 		bar quux >>> {"foo":"bar","qux":"quux"}
@@ -70,15 +69,14 @@ type Capture struct {
 	Options   CaptureOptions           `mapstructure:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Capture processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Capture) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {
@@ -107,7 +105,7 @@ func (p Capture) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, 
 
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes a byte slice with the Capture processor.
 func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	re, err := regexp.Compile(p.Options.Expression)
 	if err != nil {
@@ -133,7 +131,7 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 
 				subs := re.FindAllStringSubmatch(value.String(), p.Options.Count)
 				for _, s := range subs {
-					m := getStringMatch(s)
+					m := p.getStringMatch(s)
 					matches = append(matches, m)
 				}
 
@@ -155,7 +153,7 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			if p.Options.Function == "find_all" {
 				subs := re.FindAllStringSubmatch(v.String(), p.Options.Count)
 				for _, s := range subs {
-					m := getStringMatch(s)
+					m := p.getStringMatch(s)
 					matches = append(matches, m)
 				}
 
@@ -164,35 +162,6 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 
 		return json.Set(data, p.Output.Key, array)
-	}
-
-	// from json processing
-	if p.Input.Key != "" && p.Output.Key == "" {
-		value := json.Get(data, p.Input.Key)
-
-		if p.Options.Function == "find" {
-			match := re.FindStringSubmatch(value.String())
-			return []byte(match[1]), nil
-		}
-	}
-
-	// to json processing
-	if p.Input.Key == "" && p.Output.Key != "" {
-		if p.Options.Function == "find" {
-			match := re.FindSubmatch(data)
-			return json.Set(data, p.Output.Key, match[1])
-		}
-
-		if p.Options.Function == "find_all" {
-			subs := re.FindAllSubmatch(data, p.Options.Count)
-			var matches []interface{}
-			for _, s := range subs {
-				m := getByteMatch(s)
-				matches = append(matches, m)
-			}
-
-			return json.Set(data, p.Output.Key, matches)
-		}
 	}
 
 	// data processing
@@ -218,18 +187,10 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	return nil, CaptureInvalidSettings
 }
 
-func getStringMatch(match []string) string {
+func (p Capture) getStringMatch(match []string) string {
 	if len(match) > 1 {
 		return match[len(match)-1]
 	}
 
 	return ""
-}
-
-func getByteMatch(match [][]byte) []byte {
-	if len(match) > 1 {
-		return match[len(match)-1]
-	}
-
-	return nil
 }

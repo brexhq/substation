@@ -122,6 +122,10 @@ func ByterFactory(cfg Config) (Byter, error) {
 		var p Flatten
 		mapstructure.Decode(cfg.Settings, &p)
 		return p, nil
+	case "group":
+		var p Group
+		mapstructure.Decode(cfg.Settings, &p)
+		return p, nil
 	case "gzip":
 		var p Gzip
 		mapstructure.Decode(cfg.Settings, &p)
@@ -148,10 +152,6 @@ func ByterFactory(cfg Config) (Byter, error) {
 		return p, nil
 	case "time":
 		var p Time
-		mapstructure.Decode(cfg.Settings, &p)
-		return p, nil
-	case "zip":
-		var p Zip
 		mapstructure.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
@@ -206,8 +206,16 @@ func ChannelerFactory(cfg Config) (Channeler, error) {
 		var p DynamoDB
 		mapstructure.Decode(cfg.Settings, &p)
 		return p, nil
+	case "expand":
+		var p Expand
+		mapstructure.Decode(cfg.Settings, &p)
+		return p, nil
 	case "flatten":
 		var p Flatten
+		mapstructure.Decode(cfg.Settings, &p)
+		return p, nil
+	case "group":
+		var p Group
 		mapstructure.Decode(cfg.Settings, &p)
 		return p, nil
 	case "gzip":
@@ -220,10 +228,6 @@ func ChannelerFactory(cfg Config) (Channeler, error) {
 		return p, nil
 	case "insert":
 		var p Insert
-		mapstructure.Decode(cfg.Settings, &p)
-		return p, nil
-	case "expand":
-		var p Expand
 		mapstructure.Decode(cfg.Settings, &p)
 		return p, nil
 	case "lambda":
@@ -240,10 +244,6 @@ func ChannelerFactory(cfg Config) (Channeler, error) {
 		return p, nil
 	case "time":
 		var p Time
-		mapstructure.Decode(cfg.Settings, &p)
-		return p, nil
-	case "zip":
-		var p Zip
 		mapstructure.Decode(cfg.Settings, &p)
 		return p, nil
 	default:

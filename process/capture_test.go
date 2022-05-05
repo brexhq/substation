@@ -83,20 +83,6 @@ var captureTests = []struct {
 		[]byte(`{"capture":[["f","o","o"],["b","a","r"]]}`),
 	},
 	{
-		"from json find",
-		Capture{
-			Input: Input{
-				Key: "capture",
-			},
-			Options: CaptureOptions{
-				Expression: "^([^@]*)@.*$",
-				Function:   "find",
-			},
-		},
-		[]byte(`{"capture":"foo@qux.com"}`),
-		[]byte(`foo`),
-	},
-	{
 		"data",
 		Capture{
 			Options: CaptureOptions{

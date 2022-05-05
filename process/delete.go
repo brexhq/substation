@@ -14,14 +14,14 @@ const DeleteInvalidSettings = errors.Error("DeleteInvalidSettings")
 /*
 Delete processes data by deleting JSON keys. The processor supports these patterns:
 	json:
-  	{"hello":"world","goodbye":"world"} >>> {"hello":"world"}
+  	{"foo":"bar","baz":"qux"} >>> {"foo":"bar"}
 
 The processor uses this Jsonnet configuration:
 	{
 		type: 'delete',
 		settings: {
 			input: {
-				key: 'hello',
+				key: 'baz',
 			},
 		},
 	}
@@ -33,13 +33,12 @@ type Delete struct {
 
 // Channel processes a channel of byte slices with the Delete processor.
 func (p Delete) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {

@@ -20,10 +20,14 @@ const Base64InvalidAlphabet = errors.Error("Base64InvalidAlphabet")
 
 /*
 Base64Options contains custom options for the Base64 processor:
-	direction:
-		the direction of the encoding, either to (encode) or from (decode) base64
-	alphabet (optional, defaults to "std"):
+	Direction:
+		the direction of the encoding
+		must be one of:
+			to: encode to base64
+			from: decode from base64
+	Alphabet:
 		the base64 alphabet to use, either std (https://www.rfc-editor.org/rfc/rfc4648.html#section-4) or url (https://www.rfc-editor.org/rfc/rfc4648.html#section-5)
+		defaults to std
 */
 type Base64Options struct {
 	Direction string `mapstructure:"direction"`
@@ -36,12 +40,24 @@ Base64 processes data by converting it to and from base64. The processor support
   	{"base64":"Zm9v"} >>> {"base64":"foo"}
 	json array:
 		{"base64":["Zm9v","YmFy"]} >>> {"base64":["foo","bar"]}
-	from json:
-  	{"base64":"Zm9v"} >>> foo
-	to json:
-  	Zm9v >>> `{"base64":"foo"}`
 	data:
 		Zm9v >>> foo
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'base64',
+		settings: {
+			input: {
+				key: 'base64',
+			},
+			output: {
+				key: 'base64',
+			},
+			options: {
+				direction: 'from',
+			}
+		},
+	}
 */
 type Base64 struct {
 	Condition condition.OperatorConfig `mapstructure:"condition"`
@@ -52,13 +68,12 @@ type Base64 struct {
 
 // Channel processes a data channel of byte slices with the Base64 processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Base64) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {
@@ -98,13 +113,13 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		if !value.IsArray() {
 			tmp := []byte(value.String())
 			if p.Options.Direction == "from" {
-				result, err := fromBase64(tmp, p.Options.Alphabet)
+				result, err := p.from(tmp, p.Options.Alphabet)
 				if err != nil {
 					return nil, err
 				}
 				return json.Set(data, p.Output.Key, result)
 			} else if p.Options.Direction == "to" {
-				result, err := toBase64(tmp, p.Options.Alphabet)
+				result, err := p.to(tmp, p.Options.Alphabet)
 				if err != nil {
 					return nil, err
 				}
@@ -119,13 +134,13 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		for _, v := range value.Array() {
 			tmp := []byte(v.String())
 			if p.Options.Direction == "from" {
-				result, err := fromBase64(tmp, p.Options.Alphabet)
+				result, err := p.from(tmp, p.Options.Alphabet)
 				if err != nil {
 					return nil, err
 				}
 				array = append(array, string(result))
 			} else if p.Options.Direction == "to" {
-				result, err := toBase64(tmp, p.Options.Alphabet)
+				result, err := p.to(tmp, p.Options.Alphabet)
 				if err != nil {
 					return nil, err
 				}
@@ -138,58 +153,16 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return json.Set(data, p.Output.Key, array)
 	}
 
-	// from json processing
-	if p.Input.Key != "" && p.Output.Key == "" {
-		v := json.Get(data, p.Input.Key)
-		tmp := []byte(v.String())
-
-		if p.Options.Direction == "from" {
-			result, err := fromBase64(tmp, p.Options.Alphabet)
-			if err != nil {
-				return nil, err
-			}
-
-			return result, nil
-		} else if p.Options.Direction == "to" {
-			result, err := toBase64(tmp, p.Options.Alphabet)
-			if err != nil {
-				return nil, err
-			}
-			return result, nil
-		} else {
-			return nil, Base64InvalidDirection
-		}
-	}
-
-	// to json processing
-	if p.Input.Key == "" && p.Output.Key != "" {
-		if p.Options.Direction == "from" {
-			result, err := fromBase64(data, p.Options.Alphabet)
-			if err != nil {
-				return nil, err
-			}
-			return json.Set([]byte(""), p.Output.Key, result)
-		} else if p.Options.Direction == "to" {
-			result, err := toBase64(data, p.Options.Alphabet)
-			if err != nil {
-				return nil, err
-			}
-			return json.Set([]byte(""), p.Output.Key, result)
-		} else {
-			return nil, Base64InvalidDirection
-		}
-	}
-
 	// data processing
 	if p.Input.Key == "" && p.Output.Key == "" {
 		if p.Options.Direction == "from" {
-			result, err := fromBase64(data, p.Options.Alphabet)
+			result, err := p.from(data, p.Options.Alphabet)
 			if err != nil {
 				return nil, err
 			}
 			return result, nil
 		} else if p.Options.Direction == "to" {
-			result, err := toBase64(data, p.Options.Alphabet)
+			result, err := p.to(data, p.Options.Alphabet)
 			if err != nil {
 				return nil, err
 			}
@@ -202,7 +175,7 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	return nil, Base64InvalidSettings
 }
 
-func fromBase64(data []byte, alphabet string) ([]byte, error) {
+func (p Base64) from(data []byte, alphabet string) ([]byte, error) {
 	len := len(string(data))
 
 	switch s := alphabet; s {
@@ -227,7 +200,7 @@ func fromBase64(data []byte, alphabet string) ([]byte, error) {
 	}
 }
 
-func toBase64(data []byte, alphabet string) ([]byte, error) {
+func (p Base64) to(data []byte, alphabet string) ([]byte, error) {
 	len := len(data)
 
 	switch s := alphabet; s {

@@ -18,13 +18,12 @@ type Drop struct {
 
 // Channel processes a data channel of byte slices with the Drop processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Drop) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {

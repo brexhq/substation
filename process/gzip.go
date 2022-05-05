@@ -17,17 +17,12 @@ const GzipInvalidSettings = errors.Error("GzipInvalidSettings")
 const GzipInvalidDirection = errors.Error("GzipInvalidDirection")
 
 /*
-GzipOptions contain custom options settings for this processor.
-
-Direction: the direction of the compression, either to (compress) or from (decompress) Gzip.
-*/
-/*
 GzipOptions contains custom options settings for the Gzip processor:
 	Direction:
 		the direction of the compression
 		must be one of:
-			to (compress)
-			from (decompress)
+			to: compress data to gzip
+			from: decompress data from gzip
 */
 type GzipOptions struct {
 	Direction string `mapstructure:"direction"`
@@ -54,13 +49,12 @@ type Gzip struct {
 
 // Channel processes a data channel of byte slices with the Gzip processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Gzip) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {

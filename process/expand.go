@@ -29,7 +29,6 @@ The processor uses this Jsonnet configuration:
 {
   type: 'expand',
   settings: {
-    // if the original event is {"expand":[{"foo":"bar"}],"baz":"qux"}, then this expands to create the event {"foo":"bar","baz":"qux"}
     input: {
       key: 'expand',
     },
@@ -45,20 +44,19 @@ type Expand struct {
 	Options   ExpandOptions            `mapstructure:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
+// Channel processes a data channel of byte slices with the Expand processor. Conditions are optionally applied on the channel data to enable processing.
 func (p Expand) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
 	// only supports json, so error early if there is no input key
 	if p.Input.Key == "" {
 		return nil, ExpandInvalidSettings
 	}
 
-	var array [][]byte
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
+	var array [][]byte
 	for data := range ch {
 		ok, err := op.Operate(data)
 		if err != nil {

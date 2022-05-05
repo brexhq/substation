@@ -4,7 +4,44 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
-// JSONSchema implements the Inspector interface for evaluating JSON schemas. More information is available in the README.
+/*
+JSONSchema evaluates JSON objects against a schema.
+
+The inspector has these settings:
+	Schema.Key:
+		the JSON key-value to retrieve for inspection
+	Schema.Type:
+		the value type used during inspection of the Schema.Key
+		must be one of:
+			string
+			number (float, int)
+			boolean (true, false)
+			json
+	Negate (optional):
+		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
+		defaults to false
+
+The inspector supports these patterns:
+	json:
+		{"foo":"foo","bar":123} == string,number
+
+The inspector uses this Jsonnet configuration:
+	{
+		type: 'json_schema',
+		settings: {
+			schema: [
+				{
+					key: "foo",
+					type: "string",
+				},
+				{
+					key: "bar",
+					type: "number",
+				}
+			],
+		},
+	}
+*/
 type JSONSchema struct {
 	Schema []struct {
 		Key  string `mapstructure:"key"`
@@ -13,13 +50,13 @@ type JSONSchema struct {
 	Negate bool `mapstructure:"negate"`
 }
 
-// Inspect evaluates the JSON object against a provided schema.
+// Inspect evaluates data with the JSONSchema inspector.
 func (c JSONSchema) Inspect(data []byte) (output bool, err error) {
 	matched := true
 
 	for _, schema := range c.Schema {
-		v := json.Get(data, schema.Key)
-		vtype := json.Types[v.Type]
+		value := json.Get(data, schema.Key)
+		vtype := json.Types[value.Type]
 
 		// Null values don't exist in the JSON
 		// 	and cannot be validated
@@ -32,7 +69,7 @@ func (c JSONSchema) Inspect(data []byte) (output bool, err error) {
 		// 	number OR number array
 		// 	boolean OR boolean array
 		// 	pre-formatted JSON
-		if v.IsArray() && vtype+"/array" != schema.Type {
+		if value.IsArray() && vtype+"/array" != schema.Type {
 			matched = false
 		} else if vtype != schema.Type {
 			matched = false
@@ -51,12 +88,29 @@ func (c JSONSchema) Inspect(data []byte) (output bool, err error) {
 	return matched, nil
 }
 
-// JSONValid implements the Inspector interface for evaluating the validity of JSON data. More information is available in the README.
+/*
+JSONValid evaluates JSON objects for validity.
+
+The inspector has these settings:
+	Negate (optional):
+		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
+		defaults to false
+
+The inspector supports these patterns:
+	json:
+		{"foo":"foo","bar":123} == valid
+		foo == invalid
+
+The inspector uses this Jsonnet configuration:
+	{
+		type: 'json_valid',
+	}
+*/
 type JSONValid struct {
 	Negate bool `mapstructure:"negate"`
 }
 
-// Inspect evaluates data as a valid JSON object.
+// Inspect evaluates data with the JSONValid inspector.
 func (c JSONValid) Inspect(data []byte) (output bool, err error) {
 	matched := json.Valid(data)
 

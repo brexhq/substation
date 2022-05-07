@@ -8,7 +8,7 @@
       options: { direction: direction, alphabet: alphabet },
     },
   },
-  capture(input, output, expression, _function, count=1, condition_operator='', condition_inspectors=[]): {
+  capture(input, output, expression, _function='find', count=-1, condition_operator='', condition_inspectors=[]): {
     type: 'capture',
     settings: {
       condition: { operator: condition_operator, inspectors: condition_inspectors},
@@ -44,7 +44,7 @@
       options: { type: type },
     },
   },
-  copy(input, output, condition_operator='', condition_inspectors=[]): {
+  copy(input='', output='', condition_operator='', condition_inspectors=[]): {
     type: 'copy',
     settings: {
       condition: { operator: condition_operator, inspectors: condition_inspectors},
@@ -118,7 +118,7 @@
     },
   },
   gzip(direction, condition_operator='', condition_inspectors=[]): {
-    type: 'base64',
+    type: 'gzip',
     settings: {
       condition: { operator: condition_operator, inspectors: condition_inspectors},
       options: { direction: direction },

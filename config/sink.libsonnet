@@ -23,7 +23,7 @@
     type: 'stdout',
   },
   sumologic(url, category_key='', error_on_failure=false): {
-    type: 's3',
+    type: 'sumologic',
     settings: {
       url: url,
       category_key: category_key,

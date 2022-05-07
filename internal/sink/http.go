@@ -10,13 +10,28 @@ import (
 )
 
 /*
-HTTP implements the Sink interface and POSTs data to an HTTP(S) endpoint. More information is available in the README.
+HTTP sinks JSON data to an HTTP(S) endpoint.
 
-URL: HTTP(S) endpoint that data is sent to
-Headers: maps keys from JSON data to an HTTP header
+The sink has these settings:
+	URL:
+		HTTP(S) endpoint that data is sent to
+	Headers (optional):
+		maps values from the JSON object (Key) to the HTTP header (Header)
+		defaults to no headers
+
+The sink uses this Jsonnet configuration:
+	{
+		type: 'http',
+		settings: {
+			url: 'foo.com/bar',
+			headers: [
+				key: 'foo',
+				header: 'X-FOO',
+			],
+		},
+	}
 */
 type HTTP struct {
-	client  http.HTTP
 	URL     string `mapstructure:"url"`
 	Headers []struct {
 		Key    string `mapstructure:"key"`
@@ -24,12 +39,14 @@ type HTTP struct {
 	} `mapstructure:"headers"`
 }
 
+var httpClient http.HTTP
+
 // Send sends a channel of bytes to the HTTP destination defined by this sink.
 func (sink *HTTP) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
-	if !sink.client.IsEnabled() {
-		sink.client.Setup()
+	if !httpClient.IsEnabled() {
+		httpClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
-			sink.client.EnableXRay()
+			httpClient.EnableXRay()
 		}
 	}
 
@@ -55,7 +72,7 @@ func (sink *HTTP) Send(ctx context.Context, ch chan []byte, kill chan struct{}) 
 				}
 			}
 
-			_, err := sink.client.Post(ctx, sink.URL, string(data), headers...)
+			_, err := httpClient.Post(ctx, sink.URL, string(data), headers...)
 			if err != nil {
 				return fmt.Errorf("err failed to POST to URL %s: %v", sink.URL, err)
 			}

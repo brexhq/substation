@@ -10,21 +10,34 @@ import (
 )
 
 /*
-Kinesis implements the Sink interface and puts aggregated records into a Kinesis Data Stream. More information is available in the README.
+Kinesis sinks data to an AWS Kinesis Data Stream using Kinesis Producer Library (KPL) compliant aggregated records. More information about the KPL and its schema is available here: https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html.
 
-Stream: the Kinesis Data Stream to put data into
-PartitionKey (optional): uses the value from this JSON key as the stream partition key; defaults to a random string to avoid hot shards
+The sink has these settings:
+	Stream:
+		Kinesis Data Stream that data is sent to
+	PartitionKey (optional):
+		JSON key-value that is used as the partition key for the aggregated record
+		defaults to a random string to avoid hot shards
+
+The sink uses this Jsonnet configuration:
+	{
+		type: 'kinesis',
+		settings: {
+			stream: 'foo',
+		},
+	}
 */
 type Kinesis struct {
-	api          kinesis.API
 	Stream       string `mapstructure:"stream"`
 	PartitionKey string `mapstructure:"partition_key"`
 }
 
+var kinesisAPI kinesis.API
+
 // Send sends a channel of bytes to the Kinesis Data Stream stream defined by this sink.
 func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
-	if !sink.api.IsEnabled() {
-		sink.api.Setup()
+	if !kinesisAPI.IsEnabled() {
+		kinesisAPI.Setup()
 	}
 
 	agg := kinesis.Aggregate{}
@@ -52,7 +65,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 				aggData := agg.Get()
 				aggPk := agg.PartitionKey
 
-				_, err := sink.api.PutRecord(ctx, aggData, sink.Stream, aggPk)
+				_, err := kinesisAPI.PutRecord(ctx, aggData, sink.Stream, aggPk)
 				if err != nil {
 					return fmt.Errorf("err failed to put records into Kinesis stream %s: %v", sink.Stream, err)
 				}
@@ -71,7 +84,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 		aggData := agg.Get()
 		aggPk := agg.PartitionKey
 
-		_, err := sink.api.PutRecord(ctx, aggData, sink.Stream, aggPk)
+		_, err := kinesisAPI.PutRecord(ctx, aggData, sink.Stream, aggPk)
 		if err != nil {
 			return fmt.Errorf("err failed to put records into Kinesis stream %s: %v", sink.Stream, err)
 		}

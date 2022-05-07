@@ -5,7 +5,14 @@ import (
 	"fmt"
 )
 
-// Stdout implements the Sink interface and prints data to stdout. More information is available in the README.
+/*
+Stdout sinks data to stdout.
+
+The sink uses this Jsonnet configuration:
+	{
+		type: 'stdout',
+	}
+*/
 type Stdout struct{}
 
 // Send prints a channel of bytes to stdout.

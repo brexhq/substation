@@ -5,37 +5,44 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
 )
 
 /*
-SumoLogic implements the Sink interface and POSTs data to a Sumo Logic HTTP source. More information is available in the README.
+SumoLogic sinks JSON data to Sumo Logic using an HTTP collector. More information about Sumo Logic HTTP collectors is available here: https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Data-to-an-HTTP-Source.
 
-URL: HTTP(S) endpoint that data is sent to, this is defined in the Sumo Logic console
-Categories: array of options for inspecting input data and assigning a Sumo Logic source category
-Categories.Condition: conditions that must pass to assign a Sumo Logic source category
-Categories.Category: the Sumo Logic source category that is assigned
-ErrorOnFailure (optional): determines if invalid input data causes the sink to error; defaults to false
+The sink has these settings:
+	URL:
+		HTTP(S) endpoint that data is sent to
+	CategoryKey (optional):
+		JSON key-value that is used as the Sumo Logic source category
+		defaults to no source category, which sends data to the source category configured for URL
+
+The sink uses this Jsonnet configuration:
+	{
+		type: 'sumologic',
+		settings: {
+			url: 'foo.com/bar',
+			category_key: 'foo',
+		},
+	}
 */
 type SumoLogic struct {
-	client     http.HTTP
-	URL        string `mapstructure:"url"`
-	Categories []struct {
-		Condition condition.OperatorConfig `mapstructure:"condition"`
-		Category  string                   `mapstructure:"category"`
-	} `mapstructure:"categories"`
-	ErrorOnFailure bool `mapstructure:"error_on_failure"`
+	URL            string `mapstructure:"url"`
+	CategoryKey    string `mapstructure:"category_key"`
+	ErrorOnFailure bool   `mapstructure:"error_on_failure"`
 }
+
+var sumoLogicClient http.HTTP
 
 // Send sends a channel of bytes to the Sumo Logic HTTP source categories defined by this sink.
 func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
-	if !sink.client.IsEnabled() {
-		sink.client.Setup()
+	if !sumoLogicClient.IsEnabled() {
+		sumoLogicClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
-			sink.client.EnableXRay()
+			sumoLogicClient.EnableXRay()
 		}
 	}
 
@@ -62,25 +69,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 				continue
 			}
 
-			var category string
-
-			for _, categories := range sink.Categories {
-				op, err := condition.OperatorFactory(categories.Condition)
-				if err != nil {
-					return err
-				}
-				ok, err := op.Operate(data)
-				if err != nil {
-					return err
-				}
-
-				if !ok {
-					continue
-				}
-
-				category = categories.Category
-			}
-
+			category := json.Get(data, sink.CategoryKey).String()
 			if _, ok := bundles[category]; !ok {
 				bundles[category] = &http.Aggregate{}
 			}
@@ -97,7 +86,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 				})
 
 				data := bundles[category].Get()
-				if _, err := sink.client.Post(ctx, sink.URL, data, h...); err != nil {
+				if _, err := sumoLogicClient.Post(ctx, sink.URL, data, h...); err != nil {
 					return fmt.Errorf("err failed to POST to URL %s: %v", sink.URL, err)
 				}
 
@@ -128,7 +117,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 		})
 
 		data := agg.Get()
-		if _, err := sink.client.Post(ctx, sink.URL, data, h...); err != nil {
+		if _, err := sumoLogicClient.Post(ctx, sink.URL, data, h...); err != nil {
 			return fmt.Errorf("err failed to POST to URL %s: %v", sink.URL, err)
 		}
 

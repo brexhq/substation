@@ -17,21 +17,34 @@ import (
 const layout = "2006-01-02"
 
 /*
-S3 implements the Sink interface and writes gzip compressed objects to an S3 bucket. More information is available in the README.
+S3 sinks data as gzip compressed objects to an AWS S3 bucket. Object names contain the year, month, and day the data was processed by the sink; they can be optionally prefixed with a custom string.
 
-Bucket: the S3 bucket that objects are written to
-Prefix (optional): prefix prepended to the S3 object name
+The sink has these settings:
+	Bucket:
+		S3 bucket that data is written to
+	Prefix (optional):
+		prefix prepended to the S3 object name
+		defaults to no prefix
+
+The sink uses this Jsonnet configuration:
+	{
+		type: 's3',
+		settings: {
+			bucket: 'foo-bucket',
+		},
+	}
 */
 type S3 struct {
-	api    s3manager.UploaderAPI
 	Bucket string `mapstructure:"bucket"`
 	Prefix string `mapstructure:"prefix"`
 }
 
+var s3managerAPI s3manager.UploaderAPI
+
 // Send sends a channel of bytes to the S3 bucket defined by this sink.
 func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
-	if !sink.api.IsEnabled() {
-		sink.api.Setup()
+	if !s3managerAPI.IsEnabled() {
+		s3managerAPI.Setup()
 	}
 
 	// tracks inidividual data pulled from ch and written to the S3 object
@@ -55,7 +68,7 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 	writer.Close()
 
 	key := formatKey(sink.Prefix) + ".gz"
-	if _, err := sink.api.Upload(ctx, buffer.Bytes(), sink.Bucket, key); err != nil {
+	if _, err := s3managerAPI.Upload(ctx, buffer.Bytes(), sink.Bucket, key); err != nil {
 		return fmt.Errorf("err failed to upload data to bucket %s and key %s: %v", sink.Bucket, key, err)
 	}
 

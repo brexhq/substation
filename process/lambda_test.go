@@ -51,12 +51,14 @@ var lambdaTests = []struct {
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"bar","lambda":{"baz":"qux"}}`),
 		lamb.API{
-			mockedInvoke{Resp: lambda.InvokeOutput{
-				Payload: []byte(`{"baz":"qux"}`),
-			},
+			mockedInvoke{
+				Resp: lambda.InvokeOutput{
+					Payload: []byte(`{"baz":"qux"}`),
+				},
 			},
 		},
-	}}
+	},
+}
 
 func TestLambda(t *testing.T) {
 	ctx := context.TODO()

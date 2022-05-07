@@ -36,4 +36,4 @@ func main() {
 }
 ```
 
-Information for each operator and inspector can be found in the package's [GoDoc](https://pkg.go.dev/github.com/brexhq/substation/condition).
+Information for each operator and inspector is available in the [GoDoc](https://pkg.go.dev/github.com/brexhq/substation/condition).

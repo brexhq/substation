@@ -34,7 +34,7 @@ type Kinesis struct {
 
 var kinesisAPI kinesis.API
 
-// Send sends a channel of bytes to the Kinesis Data Stream stream defined by this sink.
+// Send sinks a channel of bytes with the Kinesis sink.
 func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
 	if !kinesisAPI.IsEnabled() {
 		kinesisAPI.Setup()

@@ -37,7 +37,7 @@ type SumoLogic struct {
 
 var sumoLogicClient http.HTTP
 
-// Send sends a channel of bytes to the Sumo Logic HTTP source categories defined by this sink.
+// Send sinks a channel of bytes with the SumoLogic sink.
 func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
 	if !sumoLogicClient.IsEnabled() {
 		sumoLogicClient.Setup()

@@ -46,7 +46,7 @@ type DynamoDB struct {
 
 var dynamodbAPI dynamodb.API
 
-// Send sends a channel of bytes to the DynamoDB tables defined by this sink.
+// Send sinks a channel of bytes with the DynamoDB sink.
 func (sink *DynamoDB) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
 	if !dynamodbAPI.IsEnabled() {
 		dynamodbAPI.Setup()

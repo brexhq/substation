@@ -41,7 +41,7 @@ type S3 struct {
 
 var s3managerAPI s3manager.UploaderAPI
 
-// Send sends a channel of bytes to the S3 bucket defined by this sink.
+// Send sinks a channel of bytes with the S3 sink.
 func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
 	if !s3managerAPI.IsEnabled() {
 		s3managerAPI.Setup()

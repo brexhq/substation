@@ -41,7 +41,7 @@ type HTTP struct {
 
 var httpClient http.HTTP
 
-// Send sends a channel of bytes to the HTTP destination defined by this sink.
+// Send sinks a channel of bytes with the HTTP sink.
 func (sink *HTTP) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
 	if !httpClient.IsEnabled() {
 		httpClient.Setup()

@@ -6,7 +6,7 @@ import (
 )
 
 /*
-Content evaluates bytes by their content type. This inspector uses the standard library's net/http package to identify the content type of data (more information available here: https://pkg.go.dev/net/http#DetectContentType). When used in Substation pipelines, it is most effective when using processors that change the format of data (e.g., process/gzip). The inspector supports MIME types that follow this specification: https://mimesniff.spec.whatwg.org/.
+Content evaluates bytes by their content type. This inspector uses the standard library's net/http package to identify the content type of data (more information is available here: https://pkg.go.dev/net/http#DetectContentType). When used in Substation pipelines, it is most effective when using processors that change the format of data (e.g., process/gzip). The inspector supports MIME types that follow this specification: https://mimesniff.spec.whatwg.org/.
 
 The inspector has these settings:
 	Type:

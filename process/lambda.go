@@ -19,9 +19,9 @@ LambdaInput contains custom input settings for the Lambda processor:
 */
 type LambdaInput struct {
 	Payload []struct {
-		Key        string `mapstructure:"key"`
-		PayloadKey string `mapstructure:"payload_key"`
-	} `mapstructure:"payload"`
+		Key        string `json:"key"`
+		PayloadKey string `json:"payload_key"`
+	} `json:"payload"`
 }
 
 /*
@@ -33,8 +33,8 @@ LambdaOptions contains custom options settings for the Lambda processor:
 		defaults to false
 */
 type LambdaOptions struct {
-	Function       string `mapstructure:"function"`
-	ErrorOnFailure bool   `mapstructure:"error_on_failure"`
+	Function       string `json:"function"`
+	ErrorOnFailure bool   `json:"error_on_failure"`
 }
 
 /*
@@ -66,18 +66,19 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Lambda struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     LambdaInput              `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   LambdaOptions            `mapstructure:"options"`
-	api       lambda.API
+	Condition condition.OperatorConfig `json:"condition"`
+	Input     LambdaInput              `json:"input"`
+	Output    Output                   `json:"output"`
+	Options   LambdaOptions            `json:"options"`
 }
 
-// Channel processes a data channel of byte slices with the Lambda processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Lambda) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+var lambdaAPI lambda.API
+
+// Slice processes a slice of bytes with the Lambda processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Lambda) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	// lazy load API
-	if !p.api.IsEnabled() {
-		p.api.Setup()
+	if !lambdaAPI.IsEnabled() {
+		lambdaAPI.Setup()
 	}
 
 	op, err := condition.OperatorFactory(p.Condition)
@@ -85,15 +86,15 @@ func (p Lambda) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -101,18 +102,13 @@ func (p Lambda) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 		if err != nil {
 			return nil, err
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
+	return slice, nil
 }
 
-// Byte processes a byte slice with the Lambda processor.
+// Byte processes bytes with the Lambda processor.
 func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json, so error early if there are no keys
 	if len(p.Input.Payload) == 0 && p.Output.Key == "" {
@@ -120,8 +116,8 @@ func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	// lazy load API
-	if !p.api.IsEnabled() {
-		p.api.Setup()
+	if !lambdaAPI.IsEnabled() {
+		lambdaAPI.Setup()
 	}
 
 	var payload []byte
@@ -134,7 +130,7 @@ func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 	}
 
-	resp, err := p.api.Invoke(ctx, p.Options.Function, payload)
+	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, payload)
 	if err != nil {
 		return nil, err
 	}

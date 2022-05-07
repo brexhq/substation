@@ -4,20 +4,21 @@ import (
 	"context"
 	"sync"
 
+	"github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/log"
 	"github.com/brexhq/substation/internal/sink"
 	"github.com/brexhq/substation/internal/transform"
 )
 
-type config struct {
-	Transform transform.Config
-	Sink      sink.Config
+type cfg struct {
+	Transform config.Config
+	Sink      config.Config
 }
 
 // Substation is the application core, all data processing and flow happens through Substation.
 type Substation struct {
 	Channels Channels
-	Config   config
+	Config   cfg
 }
 
 /*

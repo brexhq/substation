@@ -36,12 +36,12 @@ The sink uses this Jsonnet configuration:
 	}
 */
 type DynamoDB struct {
-	Table      string `mapstructure:"table"`
+	Table      string `json:"table"`
 	Attributes []struct {
-		Key       string `mapstructure:"key"`
-		Attribute string `mapstructure:"attribute"`
-	} `mapstructure:"attributes"`
-	ErrorOnFailure bool `mapstructure:"error_on_failure"`
+		Key       string `json:"key"`
+		Attribute string `json:"attribute"`
+	} `json:"attributes"`
+	ErrorOnFailure bool `json:"error_on_failure"`
 }
 
 var dynamodbAPI dynamodb.API

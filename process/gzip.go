@@ -25,7 +25,7 @@ GzipOptions contains custom options settings for the Gzip processor:
 			from: decompress data from gzip
 */
 type GzipOptions struct {
-	Direction string `mapstructure:"direction"`
+	Direction string `json:"direction"`
 }
 
 /*
@@ -43,26 +43,26 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Gzip struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Options   GzipOptions              `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	Options   GzipOptions              `json:"options"`
 }
 
-// Channel processes a data channel of byte slices with the Gzip processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Gzip) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Slice processes a slice of bytes with the Gzip processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Gzip) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -70,18 +70,13 @@ func (p Gzip) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, err
 		if err != nil {
 			return nil, err
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
+	return slice, nil
 }
 
-// Byte processes a byte slice with the Gzip processor.
+// Byte processes bytes with the Gzip processor.
 func (p Gzip) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	switch s := p.Options.Direction; s {
 	case "from":

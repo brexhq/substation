@@ -18,7 +18,7 @@ GroupOptions contains custom options for the Group processor:
 		where values from Inputs.Keys are written to, creating new JSON objects
 */
 type GroupOptions struct {
-	Keys []string `mapstructure:"keys"`
+	Keys []string `json:"keys"`
 }
 
 /*
@@ -42,28 +42,28 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Group struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Inputs                   `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   GroupOptions             `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	Input     Inputs                   `json:"input"`
+	Output    Output                   `json:"output"`
+	Options   GroupOptions             `json:"options"`
 }
 
-// Channel processes a data channel of byte slices with the Group processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Group) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Slice processes a slice of bytes with the Group processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Group) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -71,19 +71,13 @@ func (p Group) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, er
 		if err != nil {
 			return nil, err
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with the Group processor.
+// Byte processes bytes with the Group processor.
 func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json arrays, so error early if there are no keys
 	if len(p.Input.Keys) == 0 && p.Output.Key == "" {

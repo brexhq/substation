@@ -25,17 +25,9 @@ var countTests = []struct {
 }
 
 func TestCount(t *testing.T) {
-
 	ctx := context.TODO()
-
 	for _, test := range countTests {
-		pipe := make(chan []byte, len(test.test))
-		for _, x := range test.test {
-			pipe <- x
-		}
-		close(pipe)
-
-		res, err := test.proc.Channel(ctx, pipe)
+		res, err := test.proc.Slice(ctx, test.test)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
@@ -45,32 +37,25 @@ func TestCount(t *testing.T) {
 			t.Log("result pipe wrong size")
 		}
 
-		processed := <-res
-		if c := bytes.Compare(test.expected, processed); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, processed)
+		if c := bytes.Compare(test.expected, res[0]); c != 0 {
+			t.Logf("expected %s, got %s", test.expected, res[0])
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkCountByte(b *testing.B, byter Count, test chan []byte) {
+func benchmarkCountSlice(b *testing.B, slicer Count, test [][]byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Channel(ctx, test)
+		slicer.Slice(ctx, test)
 	}
 }
 
-func BenchmarkCountByte(b *testing.B) {
+func BenchmarkCountSlice(b *testing.B) {
 	for _, test := range countTests {
-		pipe := make(chan []byte, len(test.test))
-		for _, x := range test.test {
-			pipe <- x
-		}
-		close(pipe)
-
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkCountByte(b, test.proc, pipe)
+				benchmarkCountSlice(b, test.proc, test.test)
 			},
 		)
 	}

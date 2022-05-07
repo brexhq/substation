@@ -3,6 +3,7 @@ package transform
 import (
 	"context"
 
+	"github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/process"
 )
 
@@ -41,7 +42,7 @@ The transform uses this Jsonnet configuration:
 	}
 */
 type Process struct {
-	Processors []process.Config `mapstructure:"processors"`
+	Processors []config.Config `json:"processors"`
 }
 
 // Transform processes a channel of bytes with the Process transform.
@@ -51,7 +52,7 @@ func (transform *Process) Transform(ctx context.Context, in <-chan []byte, out c
 		return err
 	}
 
-	slice := make([][]byte, 0, 100)
+	slice := make([][]byte, 0, 10)
 	for data := range in {
 		select {
 		case <-kill:

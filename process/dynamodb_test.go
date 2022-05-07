@@ -26,6 +26,7 @@ var dynamodbTests = []struct {
 	proc     DynamoDB
 	test     []byte
 	expected []byte
+	api      ddb.API
 }{
 	{
 		"json",
@@ -39,28 +40,29 @@ var dynamodbTests = []struct {
 			Output: Output{
 				Key: "ddb",
 			},
-			api: ddb.API{
-				mockedQuery{
-					Resp: dynamodb.QueryOutput{
-						Items: []map[string]*dynamodb.AttributeValue{
-							{
-								"foo": {
-									S: aws.String("bar"),
-								},
+		},
+		[]byte(`{"pk":"foo"}`),
+		[]byte(`{"pk":"foo","ddb":[{"foo":"bar"}]}`),
+		ddb.API{
+			mockedQuery{
+				Resp: dynamodb.QueryOutput{
+					Items: []map[string]*dynamodb.AttributeValue{
+						{
+							"foo": {
+								S: aws.String("bar"),
 							},
 						},
 					},
 				},
 			},
 		},
-		[]byte(`{"pk":"foo"}`),
-		[]byte(`{"pk":"foo","ddb":[{"foo":"bar"}]}`),
 	},
 }
 
 func TestDynamoDB(t *testing.T) {
 	for _, test := range dynamodbTests {
 		ctx := context.TODO()
+		dynamodbAPI = test.api
 		res, err := test.proc.Byte(ctx, test.test)
 		if err != nil {
 			t.Logf("%v", err)
@@ -83,6 +85,7 @@ func benchmarkDynamoDBByte(b *testing.B, byter DynamoDB, test []byte) {
 
 func BenchmarkDynamoDBByte(b *testing.B) {
 	for _, test := range dynamodbTests {
+		dynamodbAPI = test.api
 		b.Run(string(test.name),
 			func(b *testing.B) {
 				benchmarkDynamoDBByte(b, test.proc, test.test)

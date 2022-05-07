@@ -17,7 +17,7 @@ ConcatOptions contains custom options for the Concat processor:
 		the string that separates the concatenated values
 */
 type ConcatOptions struct {
-	Separator string `mapstructure:"separator"`
+	Separator string `json:"separator"`
 }
 
 /*
@@ -44,28 +44,28 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Concat struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Inputs                   `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   ConcatOptions            `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	Input     Inputs                   `json:"input"`
+	Output    Output                   `json:"output"`
+	Options   ConcatOptions            `json:"options"`
 }
 
-// Channel processes a data channel of byte slices with the Concat processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Concat) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Slice processes a slice of bytes with the Concat processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Concat) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -73,19 +73,13 @@ func (p Concat) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 		if err != nil {
 			return nil, err
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with the Concat processor.
+// Byte processes bytes with the Concat processor.
 func (p Concat) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	if len(p.Input.Keys) != 0 && p.Output.Key != "" {
 		count := len(p.Input.Keys) - 1

@@ -28,8 +28,8 @@ The sink uses this Jsonnet configuration:
 	}
 */
 type Kinesis struct {
-	Stream       string `mapstructure:"stream"`
-	PartitionKey string `mapstructure:"partition_key"`
+	Stream       string `json:"stream"`
+	PartitionKey string `json:"partition_key"`
 }
 
 var kinesisAPI kinesis.API

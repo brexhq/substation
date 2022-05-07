@@ -30,9 +30,9 @@ The sink uses this Jsonnet configuration:
 	}
 */
 type SumoLogic struct {
-	URL            string `mapstructure:"url"`
-	CategoryKey    string `mapstructure:"category_key"`
-	ErrorOnFailure bool   `mapstructure:"error_on_failure"`
+	URL            string `json:"url"`
+	CategoryKey    string `json:"category_key"`
+	ErrorOnFailure bool   `json:"error_on_failure"`
 }
 
 var sumoLogicClient http.HTTP

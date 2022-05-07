@@ -28,7 +28,7 @@ DomainOptions contains custom options for the Domain processor:
 			subdomain
 */
 type DomainOptions struct {
-	Function string `mapstructure:"function"`
+	Function string `json:"function"`
 }
 
 /*
@@ -57,28 +57,28 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Domain struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Input                    `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   DomainOptions            `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	Input     Input                    `json:"input"`
+	Output    Output                   `json:"output"`
+	Options   DomainOptions            `json:"options"`
 }
 
-// Channel processes a data channel of byte slices with the Domain processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Domain) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Slice processes a slice of bytes with the Domain processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Domain) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -86,19 +86,13 @@ func (p Domain) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 		if err != nil {
 			return nil, err
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with the Domain processor.
+// Byte processes bytes with the Domain processor.
 func (p Domain) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// json processing
 	if p.Input.Key != "" && p.Output.Key != "" {

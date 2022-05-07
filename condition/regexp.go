@@ -37,9 +37,9 @@ The inspector uses this Jsonnet configuration:
 	}
 */
 type RegExp struct {
-	Key        string `mapstructure:"key"`
-	Expression string `mapstructure:"expression"`
-	Negate     bool   `mapstructure:"negate"`
+	Key        string `json:"key"`
+	Expression string `json:"expression"`
+	Negate     bool   `json:"negate"`
 }
 
 // Inspect evaluates data with the RegExp inspector.

@@ -26,14 +26,15 @@ var lambdaTests = []struct {
 	proc     Lambda
 	test     []byte
 	expected []byte
+	api      lamb.API
 }{
 	{
 		"json",
 		Lambda{
 			Input: LambdaInput{
 				Payload: []struct {
-					Key        string "mapstructure:\"key\""
-					PayloadKey string "mapstructure:\"payload_key\""
+					Key        string "json:\"key\""
+					PayloadKey string "json:\"payload_key\""
 				}{{
 					Key:        "foo",
 					PayloadKey: "foo",
@@ -46,20 +47,21 @@ var lambdaTests = []struct {
 			Output: Output{
 				Key: "lambda",
 			},
-			api: lamb.API{
-				mockedInvoke{Resp: lambda.InvokeOutput{
-					Payload: []byte(`{"baz":"qux"}`),
-				}},
-			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"bar","lambda":{"baz":"qux"}}`),
-	},
-}
+		lamb.API{
+			mockedInvoke{Resp: lambda.InvokeOutput{
+				Payload: []byte(`{"baz":"qux"}`),
+			},
+			},
+		},
+	}}
 
 func TestLambda(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range lambdaTests {
+		lambdaAPI = test.api
 		res, err := test.proc.Byte(ctx, test.test)
 		if err != nil {
 			t.Logf("%v", err)
@@ -82,6 +84,7 @@ func benchmarkLambdaByte(b *testing.B, byter Lambda, test []byte) {
 
 func BenchmarkLambdaByte(b *testing.B) {
 	for _, test := range lambdaTests {
+		lambdaAPI = test.api
 		b.Run(string(test.name),
 			func(b *testing.B) {
 				benchmarkLambdaByte(b, test.proc, test.test)

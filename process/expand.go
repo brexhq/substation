@@ -17,7 +17,7 @@ ExpandOptions contains custom options settings for the Expand processor:
 		array of JSON keys to retain from the original object
 */
 type ExpandOptions struct {
-	Retain []string `mapstructure:"retain"` // retain fields found anywhere in input
+	Retain []string `json:"retain"` // retain fields found anywhere in input
 }
 
 /*
@@ -39,13 +39,13 @@ The processor uses this Jsonnet configuration:
 }
 */
 type Expand struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Input                    `mapstructure:"input"`
-	Options   ExpandOptions            `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	Input     Input                    `json:"input"`
+	Options   ExpandOptions            `json:"options"`
 }
 
-// Channel processes a data channel of byte slices with the Expand processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Expand) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Slice processes a slice of bytes with the Expand processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	// only supports json, so error early if there is no input key
 	if p.Input.Key == "" {
 		return nil, ExpandInvalidSettings
@@ -56,15 +56,15 @@ func (p Expand) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -81,14 +81,9 @@ func (p Expand) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 				}
 			}
 
-			array = append(array, processed)
+			slice = append(slice, processed)
 		}
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	defer close(output)
-	return output, nil
+	return slice, nil
 }

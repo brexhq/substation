@@ -35,8 +35,8 @@ The sink uses this Jsonnet configuration:
 	}
 */
 type S3 struct {
-	Bucket string `mapstructure:"bucket"`
-	Prefix string `mapstructure:"prefix"`
+	Bucket string `json:"bucket"`
+	Prefix string `json:"prefix"`
 }
 
 var s3managerAPI s3manager.UploaderAPI

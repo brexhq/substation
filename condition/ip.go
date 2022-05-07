@@ -46,9 +46,9 @@ The inspector uses this Jsonnet configuration:
 	}
 */
 type IP struct {
-	Key    string `mapstructure:"key"`
-	Type   string `mapstructure:"type"`
-	Negate bool   `mapstructure:"negate"`
+	Key    string `json:"key"`
+	Type   string `json:"type"`
+	Negate bool   `json:"negate"`
 }
 
 // Inspect evaluates data with the IP inspector.

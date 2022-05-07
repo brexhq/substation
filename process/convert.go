@@ -23,7 +23,7 @@ ConvertOptions contains custom options for the Convert processor:
 			string
 */
 type ConvertOptions struct {
-	Type string `mapstructure:"type"`
+	Type string `json:"type"`
 }
 
 /*
@@ -54,28 +54,28 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Convert struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Input                    `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   ConvertOptions           `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	Input     Input                    `json:"input"`
+	Output    Output                   `json:"output"`
+	Options   ConvertOptions           `json:"options"`
 }
 
-// Channel processes a data channel of byte slices with the Convert processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Convert) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Slice processes a slice of bytes with the Convert processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Convert) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -83,19 +83,13 @@ func (p Convert) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, 
 		if err != nil {
 			return nil, err
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with the Convert processor.
+// Byte processes bytes with the Convert processor.
 func (p Convert) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// json processing
 	if p.Input.Key != "" && p.Output.Key != "" {

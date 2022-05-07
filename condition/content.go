@@ -30,8 +30,8 @@ The inspector uses this Jsonnet configuration:
 	}
 */
 type Content struct {
-	Type   string `mapstructure:"type"`
-	Negate bool   `mapstructure:"negate"`
+	Type   string `json:"type"`
+	Negate bool   `json:"negate"`
 }
 
 // Inspect evaluates data with the Content inspector.

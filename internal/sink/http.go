@@ -32,11 +32,11 @@ The sink uses this Jsonnet configuration:
 	}
 */
 type HTTP struct {
-	URL     string `mapstructure:"url"`
+	URL     string `json:"url"`
 	Headers []struct {
-		Key    string `mapstructure:"key"`
-		Header string `mapstructure:"header"`
-	} `mapstructure:"headers"`
+		Key    string `json:"key"`
+		Header string `json:"header"`
+	} `json:"headers"`
 }
 
 var httpClient http.HTTP

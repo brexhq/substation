@@ -46,10 +46,10 @@ The inspector uses this Jsonnet configuration:
 	}
 */
 type Strings struct {
-	Key        string `mapstructure:"key"`
-	Expression string `mapstructure:"expression"`
-	Function   string `mapstructure:"function"`
-	Negate     bool   `mapstructure:"negate"`
+	Key        string `json:"key"`
+	Expression string `json:"expression"`
+	Function   string `json:"function"`
+	Negate     bool   `json:"negate"`
 }
 
 // Inspect evaluates data with the Strings inspector.

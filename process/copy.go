@@ -34,27 +34,27 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Copy struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Input                    `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
+	Condition condition.OperatorConfig `json:"condition"`
+	Input     Input                    `json:"input"`
+	Output    Output                   `json:"output"`
 }
 
-// Channel processes a channel of byte slices with the Copy processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Copy) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Slice processes a slice of bytes with the Copy processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Copy) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -62,19 +62,13 @@ func (p Copy) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, err
 		if err != nil {
 			return nil, err
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with the Copy processor.
+// Byte processes bytes with the Copy processor.
 func (p Copy) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// json processing
 	if p.Input.Key != "" && p.Output.Key != "" {

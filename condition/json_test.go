@@ -14,8 +14,8 @@ var jsonSchemaTests = []struct {
 		"string",
 		JSONSchema{
 			Schema: []struct {
-				Key  string `mapstructure:"key"`
-				Type string `mapstructure:"type"`
+				Key  string `json:"key"`
+				Type string `json:"type"`
 			}{
 				{Key: "hello", Type: "String"},
 			},
@@ -28,8 +28,8 @@ var jsonSchemaTests = []struct {
 		"!string",
 		JSONSchema{
 			Schema: []struct {
-				Key  string `mapstructure:"key"`
-				Type string `mapstructure:"type"`
+				Key  string `json:"key"`
+				Type string `json:"type"`
 			}{
 				{Key: "foo", Type: "String"},
 			},
@@ -42,8 +42,8 @@ var jsonSchemaTests = []struct {
 		"string array",
 		JSONSchema{
 			Schema: []struct {
-				Key  string `mapstructure:"key"`
-				Type string `mapstructure:"type"`
+				Key  string `json:"key"`
+				Type string `json:"type"`
 			}{
 				{Key: "foo", Type: "String/Array"},
 			},

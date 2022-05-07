@@ -24,13 +24,7 @@ var dropTests = []struct {
 func TestDrop(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range dropTests {
-		pipe := make(chan []byte, len(test.test))
-		for _, x := range test.test {
-			pipe <- x
-		}
-		close(pipe)
-
-		res, err := test.proc.Channel(ctx, pipe)
+		res, err := test.proc.Slice(ctx, test.test)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
@@ -43,24 +37,18 @@ func TestDrop(t *testing.T) {
 	}
 }
 
-func benchmarkDropByte(b *testing.B, byter Drop, test chan []byte) {
+func benchmarkDropSlice(b *testing.B, slicer Drop, test [][]byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Channel(ctx, test)
+		slicer.Slice(ctx, test)
 	}
 }
 
-func BenchmarkDropByte(b *testing.B) {
+func BenchmarkDropSlice(b *testing.B) {
 	for _, test := range dropTests {
-		pipe := make(chan []byte, len(test.test))
-		for _, x := range test.test {
-			pipe <- x
-		}
-		close(pipe)
-
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkDropByte(b, test.proc, pipe)
+				benchmarkDropSlice(b, test.proc, test.test)
 			},
 		)
 	}

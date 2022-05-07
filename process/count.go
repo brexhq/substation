@@ -16,25 +16,15 @@ The processor uses this Jsonnet configuration:
 */
 type Count struct{}
 
-// Channel processes a channel of byte slices with the Count processor.
-func (p Count) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	output := make(chan []byte, 1)
-	defer close(output)
-
-	var count int
-	for {
-		_, ok := <-ch
-		if !ok {
-			break
-		}
-		count++
-	}
-
-	processed, err := json.Set([]byte(""), "count", count)
+// Slice processes a slice of bytes with the Count processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Count) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+	processed, err := json.Set([]byte(""), "count", len(s))
 	if err != nil {
 		return nil, err
 	}
-	output <- processed
 
-	return output, nil
+	slice := make([][]byte, 1, 1)
+	slice[0] = processed
+
+	return slice, nil
 }

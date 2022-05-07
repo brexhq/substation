@@ -36,4 +36,4 @@ func main() {
 }
 ```
 
-Information for each processor can be found in the package's [GoDoc](https://pkg.go.dev/github.com/brexhq/substation/process).
+Information for each processor is available in the [GoDoc](https://pkg.go.dev/github.com/brexhq/substation/process).

@@ -9,24 +9,15 @@
   },
   http(url, headers=[]): {
     type: 'http',
-    settings: {
-      url: url,
-      headers: headers,
-    },
+    settings: { url: url, headers: headers },
   },
   kinesis(stream, partition_key=''): {
     type: 'kinesis',
-    settings: {
-      stream: stream,
-      partition_key: partition_key,
-    },
+    settings: { stream: stream, partition_key: partition_key },
   },
   s3(bucket, prefix=''): {
     type: 's3',
-    settings: {
-      bucket: bucket,
-      prefix: prefix,
-    },
+    settings: { bucket: bucket, prefix: prefix },
   },
   stdout: {
     type: 'stdout',

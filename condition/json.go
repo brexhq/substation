@@ -44,10 +44,10 @@ The inspector uses this Jsonnet configuration:
 */
 type JSONSchema struct {
 	Schema []struct {
-		Key  string `mapstructure:"key"`
-		Type string `mapstructure:"type"`
-	} `mapstructure:"schema"`
-	Negate bool `mapstructure:"negate"`
+		Key  string `json:"key"`
+		Type string `json:"type"`
+	} `json:"schema"`
+	Negate bool `json:"negate"`
 }
 
 // Inspect evaluates data with the JSONSchema inspector.
@@ -107,7 +107,7 @@ The inspector uses this Jsonnet configuration:
 	}
 */
 type JSONValid struct {
-	Negate bool `mapstructure:"negate"`
+	Negate bool `json:"negate"`
 }
 
 // Inspect evaluates data with the JSONValid inspector.

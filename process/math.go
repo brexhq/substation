@@ -20,7 +20,7 @@ MathOptions contains custom options for the Math processor:
 			subtract
 */
 type MathOptions struct {
-	Operation string `mapstructure:"operation"`
+	Operation string `json:"operation"`
 }
 
 /*
@@ -47,28 +47,28 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Math struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Inputs                   `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   MathOptions              `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	Input     Inputs                   `json:"input"`
+	Output    Output                   `json:"output"`
+	Options   MathOptions              `json:"options"`
 }
 
-// Channel processes a data channel of byte slices with the Math processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Math) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Slice processes a slice of bytes with the Math processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Math) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -76,18 +76,13 @@ func (p Math) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, err
 		if err != nil {
 			return nil, err
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
+	return slice, nil
 }
 
-// Byte processes a byte slice with the Math processor.
+// Byte processes bytes with the Math processor.
 func (p Math) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json and json arrays, so error early if there are no keys
 	if len(p.Input.Keys) == 0 && p.Output.Key == "" {

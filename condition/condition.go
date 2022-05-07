@@ -3,8 +3,7 @@ package condition
 import (
 	"fmt"
 
-	"github.com/mitchellh/mapstructure"
-
+	"github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 )
 
@@ -140,16 +139,10 @@ func (o Default) Operate(data []byte) (bool, error) {
 	return true, nil
 }
 
-// InspectorConfig contains arbitrary JSON settings for Inspectors loaded via mapstructure.
-type InspectorConfig struct {
-	Type     string
-	Settings map[string]interface{}
-}
-
 // OperatorConfig contains an array of InspectorConfig that are used to evaluate data.
 type OperatorConfig struct {
 	Operator   string
-	Inspectors []InspectorConfig
+	Inspectors []config.Config
 }
 
 // OperatorFactory loads Operators from an OperatorConfig. This is the recommended function for retrieving ready-to-use Operators.
@@ -174,31 +167,31 @@ func OperatorFactory(cfg OperatorConfig) (Operator, error) {
 }
 
 // InspectorFactory loads Inspectors from an InspectorConfig. This is the recommended function for retrieving ready-to-use Inspectors.
-func InspectorFactory(cfg InspectorConfig) (Inspector, error) {
+func InspectorFactory(cfg config.Config) (Inspector, error) {
 	switch t := cfg.Type; t {
 	case "content":
 		var i Content
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "ip":
 		var i IP
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "json_schema":
 		var i JSONSchema
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "json_valid":
 		var i JSONValid
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "regexp":
 		var i RegExp
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "strings":
 		var i Strings
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	default:
 		return nil, fmt.Errorf("err retrieving %s from factory: %v", t, InspectorInvalidFactoryConfig)
@@ -206,7 +199,7 @@ func InspectorFactory(cfg InspectorConfig) (Inspector, error) {
 }
 
 // MakeInspectors is a convenience function for making several Inspectors.
-func MakeInspectors(cfg []InspectorConfig) ([]Inspector, error) {
+func MakeInspectors(cfg []config.Config) ([]Inspector, error) {
 	var inspectors []Inspector
 	for _, c := range cfg {
 		inspector, err := InspectorFactory(c)

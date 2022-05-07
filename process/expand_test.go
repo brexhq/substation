@@ -44,18 +44,17 @@ var expandTests = []struct {
 func TestExpand(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range expandTests {
-		pipe := make(chan []byte, 1)
-		pipe <- test.test
-		close(pipe)
+		slice := make([][]byte, 1, 1)
+		slice[0] = test.test
 
-		res, err := test.proc.Channel(ctx, pipe)
+		res, err := test.proc.Slice(ctx, slice)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
 		count := 0
-		for processed := range res {
+		for _, processed := range res {
 			expected := test.expected[count]
 			if c := bytes.Compare(expected, processed); c != 0 {
 				t.Logf("expected %s, got %s", expected, processed)
@@ -65,22 +64,21 @@ func TestExpand(t *testing.T) {
 	}
 }
 
-func benchmarkExpandByte(b *testing.B, byter Expand, test chan []byte) {
+func benchmarkExpandSlice(b *testing.B, slicer Expand, slice [][]byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Channel(ctx, test)
+		slicer.Slice(ctx, slice)
 	}
 }
 
-func BenchmarkExpandByte(b *testing.B) {
+func BenchmarkExpandSlice(b *testing.B) {
 	for _, test := range expandTests {
-		pipe := make(chan []byte, len(test.test))
-		pipe <- test.test
-		close(pipe)
+		slice := make([][]byte, 1, 1)
+		slice[0] = test.test
 
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkExpandByte(b, test.proc, pipe)
+				benchmarkExpandSlice(b, test.proc, slice)
 			},
 		)
 	}

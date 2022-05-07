@@ -22,8 +22,8 @@ DynamoDBInput contains custom input settings for the DynamoDB processor:
 		path to the JSON value used as the sort key in the DynamoDB query
 */
 type DynamoDBInput struct {
-	PartitionKey string `mapstructure:"partition_key"`
-	SortKey      string `mapstructure:"sort_key"`
+	PartitionKey string `json:"partition_key"`
+	SortKey      string `json:"sort_key"`
 }
 
 /*
@@ -42,10 +42,10 @@ DynamoDBOptions contains custom options settings for the DynamoDB processor (htt
 			false: traversal is performed in descending order
 */
 type DynamoDBOptions struct {
-	Table                  string `mapstructure:"table"`
-	KeyConditionExpression string `mapstructure:"key_condition_expression"`
-	Limit                  int64  `mapstructure:"limit"`
-	ScanIndexForward       bool   `mapstructure:"scan_index_forward"`
+	Table                  string `json:"table"`
+	KeyConditionExpression string `json:"key_condition_expression"`
+	Limit                  int64  `json:"limit"`
+	ScanIndexForward       bool   `json:"scan_index_forward"`
 }
 
 /*
@@ -74,18 +74,19 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type DynamoDB struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     DynamoDBInput            `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   DynamoDBOptions          `mapstructure:"options"`
-	api       dynamodb.API
+	Condition condition.OperatorConfig `json:"condition"`
+	Input     DynamoDBInput            `json:"input"`
+	Output    Output                   `json:"output"`
+	Options   DynamoDBOptions          `json:"options"`
 }
 
-// Channel processes a data channel of byte slices with the DynamoDB processor. Conditions are optionally applied on the channel data to enable processing.
-func (p DynamoDB) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+var dynamodbAPI dynamodb.API
+
+// Slice processes a slice of bytes with the DynamoDB processor. Conditions are optionally applied on the bytes to enable processing.
+func (p DynamoDB) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	// lazy load API
-	if !p.api.IsEnabled() {
-		p.api.Setup()
+	if !dynamodbAPI.IsEnabled() {
+		dynamodbAPI.Setup()
 	}
 
 	op, err := condition.OperatorFactory(p.Condition)
@@ -93,15 +94,15 @@ func (p DynamoDB) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte,
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -109,23 +110,17 @@ func (p DynamoDB) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte,
 		if err != nil {
 			return nil, err
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with the DynamoDB processor.
+// Byte processes bytes with the DynamoDB processor.
 func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// lazy load API
-	if !p.api.IsEnabled() {
-		p.api.Setup()
+	if !dynamodbAPI.IsEnabled() {
+		dynamodbAPI.Setup()
 	}
 
 	// json processing
@@ -158,7 +153,7 @@ func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
 }
 
 func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {
-	resp, err := p.api.Query(
+	resp, err := dynamodbAPI.Query(
 		ctx,
 		p.Options.Table,
 		pk, sk,

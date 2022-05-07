@@ -13,33 +13,28 @@ Drop processes data by dropping it from a data channel. The processor uses this 
 	}
 */
 type Drop struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
+	Condition condition.OperatorConfig `json:"condition"`
 }
 
-// Channel processes a data channel of byte slices with the Drop processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Drop) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Slice processes a slice of bytes with the Drop processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Drop) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
+	return slice, nil
 }

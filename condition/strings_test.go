@@ -123,6 +123,15 @@ var stringsTests = []struct {
 		[]byte("\"\""),
 		true,
 	},
+	{
+		"pass",
+		Strings{
+			Function:   "equals",
+			Expression: "",
+		},
+		[]byte(``),
+		true,
+	},
 }
 
 func TestStrings(t *testing.T) {

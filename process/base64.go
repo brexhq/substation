@@ -30,8 +30,8 @@ Base64Options contains custom options for the Base64 processor:
 		defaults to std
 */
 type Base64Options struct {
-	Direction string `mapstructure:"direction"`
-	Alphabet  string `mapstructure:"alphabet"`
+	Direction string `json:"direction"`
+	Alphabet  string `json:"alphabet"`
 }
 
 /*
@@ -60,28 +60,28 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Base64 struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Input                    `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   Base64Options            `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	Input     Input                    `json:"input"`
+	Output    Output                   `json:"output"`
+	Options   Base64Options            `json:"options"`
 }
 
-// Channel processes a data channel of byte slices with the Base64 processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Base64) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Slice processes a slice of bytes with the Base64 processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Base64) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -89,18 +89,13 @@ func (p Base64) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 		if err != nil {
 			return nil, err
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
+	return slice, nil
 }
 
-// Byte processes a byte slice with the Base64 processor.
+// Byte processes bytes with the Base64 processor.
 func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	if p.Options.Alphabet == "" {
 		p.Options.Alphabet = "std"

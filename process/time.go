@@ -35,10 +35,10 @@ TimeOptions contains custom options for the Time processor:
 		defaults to UTC
 */
 type TimeOptions struct {
-	InputFormat    string `mapstructure:"input_format"`
-	InputLocation  string `mapstructure:"output_location"`
-	OutputFormat   string `mapstructure:"output_format"`
-	OutputLocation string `mapstructure:"output_location"`
+	InputFormat    string `json:"input_format"`
+	InputLocation  string `json:"input_location"`
+	OutputFormat   string `json:"output_format"`
+	OutputLocation string `json:"output_location"`
 }
 
 /*
@@ -66,28 +66,28 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Time struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Input                    `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   TimeOptions              `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	Input     Input                    `json:"input"`
+	Output    Output                   `json:"output"`
+	Options   TimeOptions              `json:"options"`
 }
 
-// Channel processes a data channel of byte slices with the Time processor. Conditions are optionally applied on the channel data to enable processing.
-func (p Time) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
+// Slice processes a slice of bytes with the Time processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Time) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, err
 	}
 
-	var array [][]byte
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
@@ -95,19 +95,13 @@ func (p Time) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, err
 		if err != nil {
 			return nil, err
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with the Time processor.
+// Byte processes bytes with the Time processor.
 func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// "now" processing, supports json and data
 	if p.Options.InputFormat == "now" {

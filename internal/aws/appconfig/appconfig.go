@@ -9,12 +9,12 @@ import (
 	"github.com/brexhq/substation/internal/http"
 )
 
-// LambdaMissingAppConfig is used when the Lambda is deployed without a configured AppConfig URL
+// LambdaMissingAppConfig is returned when a Lambda is deployed without a configured AppConfig URL.
 const LambdaMissingAppConfig = errors.Error("LambdaMissingAppConfig")
 
 var client http.HTTP
 
-//GetPrefetch makes a call to get the environment variable that specifies the configuration data that the extension starts to retrieve before the function initializes and the handler runs.
+// GetPrefetch queries and returns the Lambda's prefetched AppConfig configuration.
 func GetPrefetch(ctx context.Context) ([]byte, error) {
 	if !client.IsEnabled() {
 		client.Setup()

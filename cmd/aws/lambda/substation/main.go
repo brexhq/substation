@@ -23,10 +23,10 @@ import (
 var sub cmd.Substation
 var handler string
 
-// LambdaMissingHandler is used when the Lambda is deployed without a configured handler
+// LambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
 const LambdaMissingHandler = errors.Error("LambdaMissingHandler")
 
-// LambdaUnsupportedHandler is used when the Lambda is deployed without a supported handler
+// LambdaUnsupportedHandler is returned when the Lambda is deployed without a supported handler.
 const LambdaUnsupportedHandler = errors.Error("LambdaUnsupportedHandler")
 
 func main() {

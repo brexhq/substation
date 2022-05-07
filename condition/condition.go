@@ -7,13 +7,13 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// InspectorInvalidFactoryConfig is used when an unsupported Inspector is referenced in InspectorFactory
+// InspectorInvalidFactoryConfig is returned when an unsupported Inspector is referenced in InspectorFactory.
 const InspectorInvalidFactoryConfig = errors.Error("InspectorInvalidFactoryConfig")
 
-// OperatorInvalidFactoryConfig is used when an unsupported Operator is referenced in OperatorFactory
+// OperatorInvalidFactoryConfig is returned when an unsupported Operator is referenced in OperatorFactory.
 const OperatorInvalidFactoryConfig = errors.Error("OperatorInvalidFactoryConfig")
 
-// OperatorMissingInspectors is used when an Operator that requres Inspectors is created with no inspectors
+// OperatorMissingInspectors is returned when an Operator that requres Inspectors is created with no inspectors.
 const OperatorMissingInspectors = errors.Error("OperatorMissingInspectors")
 
 // Inspector is the interface shared by all inspector methods.
@@ -134,18 +134,18 @@ func (o NOR) Operate(data []byte) (bool, error) {
 // Default implements the Operator interface.
 type Default struct{}
 
-// Operate always returns true. This operator cannot be called directly and is chosen from the OperatorFactory if no valid operator is provided.
+// Operate always returns true. This is the default operator returned by  OperatorFactory.
 func (o Default) Operate(data []byte) (bool, error) {
 	return true, nil
 }
 
-// OperatorConfig contains an array of InspectorConfig that are used to evaluate data.
+// OperatorConfig contains an array of Inspector configurations that are used to evaluate data.
 type OperatorConfig struct {
 	Operator   string
 	Inspectors []config.Config
 }
 
-// OperatorFactory loads Operators from an OperatorConfig. This is the recommended function for retrieving ready-to-use Operators.
+// OperatorFactory loads Operators from an OperatorConfig. This function is the preferred way to create Operators.
 func OperatorFactory(cfg OperatorConfig) (Operator, error) {
 	inspectors, err := MakeInspectors(cfg.Inspectors)
 	if err != nil {
@@ -166,7 +166,7 @@ func OperatorFactory(cfg OperatorConfig) (Operator, error) {
 	}
 }
 
-// InspectorFactory loads Inspectors from an InspectorConfig. This is the recommended function for retrieving ready-to-use Inspectors.
+// InspectorFactory loads Inspectors from an InspectorConfig. This function is the preferred way to create Inspectors.
 func InspectorFactory(cfg config.Config) (Inspector, error) {
 	switch t := cfg.Type; t {
 	case "content":
@@ -198,7 +198,7 @@ func InspectorFactory(cfg config.Config) (Inspector, error) {
 	}
 }
 
-// MakeInspectors is a convenience function for making several Inspectors.
+// MakeInspectors is a convenience function for creating several Inspectors.
 func MakeInspectors(cfg []config.Config) ([]Inspector, error) {
 	var inspectors []Inspector
 	for _, c := range cfg {

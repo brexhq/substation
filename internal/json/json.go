@@ -10,13 +10,13 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// JSONSetRawInvalid is used when SetRaw receives an invalid input
+// JSONSetRawInvalid is returned when SetRaw receives an invalid input.
 const JSONSetRawInvalid = errors.Error("JSONSetRawInvalid")
 
-// JSONInvalidData is used when JSON functions return invalid JSON
+// JSONInvalidData is returned when JSON functions return invalid JSON.
 const JSONInvalidData = errors.Error("JSONInvalidData")
 
-// Types maps gjson.Type to strings
+// Types maps gjson.Type to strings.
 var Types = map[gjson.Type]string{
 	0: "Null",
 	1: "Boolean", // False

@@ -8,10 +8,10 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// TransformInvalidFactoryConfig is used when an unsupported Transform is referenced in Factory.
+// TransformInvalidFactoryConfig is returned when an unsupported Transform is referenced in Factory.
 const TransformInvalidFactoryConfig = errors.Error("TransformInvalidFactoryConfig")
 
-// Transform is the interface used by all Substation transforms. Transforms read channels of bytes, can optionally write channels of bytes, and are interruptable via an anonymous struct channel.
+// Transform is an interface for transforming data as it moves from a source to a sink. Transforms read bytes from and write bytes to channels, may optionally modify bytes, and are interruptable via an anonymous struct channel.
 type Transform interface {
 	Transform(context.Context, <-chan []byte, chan<- []byte, chan struct{}) error
 }

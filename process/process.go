@@ -8,13 +8,10 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// ByteInvalidFactoryConfig is used when an unsupported Byte is referenced in ByteFactory
+// ByteInvalidFactoryConfig is used when an unsupported Byte is referenced in ByteFactory.
 const ByteInvalidFactoryConfig = errors.Error("ByteInvalidFactoryConfig")
 
-// ChannelInvalidFactoryConfig is used when an unsupported Channel is referenced in ChannelFactory
-const ChannelInvalidFactoryConfig = errors.Error("ChannelInvalidFactoryConfig")
-
-// SliceInvalidFactoryConfig is used when an unsupported Slice is referenced in SliceFactory
+// SliceInvalidFactoryConfig is used when an unsupported Slice is referenced in SliceFactory.
 const SliceInvalidFactoryConfig = errors.Error("SliceInvalidFactoryConfig")
 
 // Input is the default input setting for processors that accept a single JSON key. This can be overriden by each processor.

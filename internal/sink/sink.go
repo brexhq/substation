@@ -9,15 +9,15 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// SinkInvalidFactoryConfig is used when an unsupported Sink is referenced in Factory
+// SinkInvalidFactoryConfig is returned when an unsupported Sink is referenced in Factory.
 const SinkInvalidFactoryConfig = errors.Error("SinkInvalidFactoryConfig")
 
-// Sink is the interface used by all Substation sinks. Sinks read channels of bytes and are interruptable via an anonymous struct channel.
+// Sink is an interface for sending data to external services. Sinks read channels of bytes and are interruptable via an anonymous struct channel.
 type Sink interface {
 	Send(context.Context, chan []byte, chan struct{}) error
 }
 
-// Factory loads Sinks from a Config. This is the recommended function for retrieving ready-to-use Sinks.
+// Factory loads a Sink from a Config. This is the recommended function for retrieving ready-to-use Sinks.
 func Factory(cfg config.Config) (Sink, error) {
 	switch t := cfg.Type; t {
 	case "dynamodb":

@@ -39,7 +39,11 @@ func NewS3() *s3.S3 {
 		session.Must(session.NewSession()),
 		conf,
 	)
-	xray.AWS(c.Client)
+
+	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
+		xray.AWS(c.Client)
+	}
+
 	return c
 }
 

@@ -186,7 +186,10 @@ func New() *kinesis.Kinesis {
 		conf,
 	)
 
-	xray.AWS(c.Client)
+	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
+		xray.AWS(c.Client)
+	}
+
 	return c
 }
 

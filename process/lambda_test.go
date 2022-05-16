@@ -51,7 +51,7 @@ var lambdaTests = []struct {
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"bar","lambda":{"baz":"qux"}}`),
 		lamb.API{
-			mockedInvoke{
+			Client: mockedInvoke{
 				Resp: lambda.InvokeOutput{
 					Payload: []byte(`{"baz":"qux"}`),
 				},

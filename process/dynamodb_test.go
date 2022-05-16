@@ -44,7 +44,7 @@ var dynamodbTests = []struct {
 		[]byte(`{"pk":"foo"}`),
 		[]byte(`{"pk":"foo","ddb":[{"foo":"bar"}]}`),
 		ddb.API{
-			mockedQuery{
+			Client: mockedQuery{
 				Resp: dynamodb.QueryOutput{
 					Items: []map[string]*dynamodb.AttributeValue{
 						{

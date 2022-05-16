@@ -12,7 +12,7 @@ import (
 )
 
 /*
-DynamoDB sinks JSON data to AWS DynamoDB tables.
+DynamoDB sinks JSON data to AWS DynamoDB tables. This sink supports sinking multiple rows from the same event to a DynamoDB table.
 
 The sink has these settings:
 	Table:
@@ -29,15 +29,19 @@ The sink uses this Jsonnet configuration:
 		settings: {
 			table: 'foo-table',
 			attributes: [
-				key: 'foo',
-				attribute: 'bar',
+				[
+					{
+						key: 'foo',
+						attribute: 'bar',
+					},
+				],
 			],
 		},
 	}
 */
 type DynamoDB struct {
 	Table      string `json:"table"`
-	Attributes []struct {
+	Attributes [][]struct {
 		Key       string `json:"key"`
 		Attribute string `json:"attribute"`
 	} `json:"attributes"`
@@ -67,25 +71,27 @@ func (sink *DynamoDB) Send(ctx context.Context, ch chan []byte, kill chan struct
 				continue
 			}
 
-			var cache map[string]interface{}
-			cache = make(map[string]interface{})
-			for _, field := range sink.Attributes {
-				cache[field.Attribute] = json.Get(data, field.Key).Value()
-			}
+			for _, attr := range sink.Attributes {
+				var cache map[string]interface{}
+				cache = make(map[string]interface{})
+				for _, field := range attr {
+					cache[field.Attribute] = json.Get(data, field.Key).Value()
+				}
 
-			// if cache is empty, then all match condition failed
-			if len(cache) == 0 {
-				continue
-			}
+				// if cache is empty, then all match condition failed
+				if len(cache) == 0 {
+					continue
+				}
 
-			values, err := dynamodbattribute.MarshalMap(cache)
-			if err != nil {
-				return fmt.Errorf("err marshalling DynamoDB results: %v", err)
-			}
+				values, err := dynamodbattribute.MarshalMap(cache)
+				if err != nil {
+					return fmt.Errorf("err marshalling DynamoDB results: %v", err)
+				}
 
-			_, err = dynamodbAPI.PutItem(ctx, sink.Table, values)
-			if err != nil {
-				return fmt.Errorf("err putting values into DynamoDB table %s: %v", sink.Table, err)
+				_, err = dynamodbAPI.PutItem(ctx, sink.Table, values)
+				if err != nil {
+					return fmt.Errorf("err putting values into DynamoDB table %s: %v", sink.Table, err)
+				}
 			}
 
 			count++

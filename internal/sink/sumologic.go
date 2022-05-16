@@ -1,9 +1,12 @@
 package sink
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
+
+	"github.com/jshlbrd/go-aggregate"
 
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
@@ -46,7 +49,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 		}
 	}
 
-	bundles := map[string]*http.Aggregate{}
+	bundles := map[string]*aggregate.Bytes{}
 
 	headers := []http.Header{
 		{
@@ -71,13 +74,16 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 
 			category := json.Get(data, sink.CategoryKey).String()
 			if _, ok := bundles[category]; !ok {
-				bundles[category] = &http.Aggregate{}
+				bundles[category] = &aggregate.Bytes{}
+				bundles[category].New(1000*1000*.9, 10000)
 			}
 
-			dataString := string(data)
 			// add event data to the category bundle
 			// if category bundle is full, then send the bundle
-			ok := bundles[category].Add(dataString)
+			ok, err := bundles[category].Add(data)
+			if err != nil {
+				return err
+			}
 			if !ok {
 				h := headers
 				h = append(h, http.Header{
@@ -85,8 +91,13 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 					Value: category,
 				})
 
-				data := bundles[category].Get()
-				if _, err := sumoLogicClient.Post(ctx, sink.URL, data, h...); err != nil {
+				var buf bytes.Buffer
+				bundle := bundles[category].Get()
+				for _, b := range bundle {
+					buf.WriteString(fmt.Sprintf("%s\n", b))
+				}
+
+				if _, err := sumoLogicClient.Post(ctx, sink.URL, buf.Bytes(), h...); err != nil {
 					return fmt.Errorf("err failed to POST to URL %s: %v", sink.URL, err)
 				}
 
@@ -96,17 +107,16 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 					"count", bundles[category].Count(),
 				).Debug("sent events to Sumo Logic")
 
-				bundles[category] = &http.Aggregate{}
-				bundles[category].Add(dataString)
+				bundles[category].Reset()
+				bundles[category].Add(data)
 			}
 		}
 	}
 
 	// iterate and send remaining category bundles
 	for category := range bundles {
-		agg := bundles[category]
-		size := agg.Size()
-		if size == 0 {
+		count := bundles[category].Count()
+		if count == 0 {
 			continue
 		}
 
@@ -116,15 +126,20 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 			Value: category,
 		})
 
-		data := agg.Get()
-		if _, err := sumoLogicClient.Post(ctx, sink.URL, data, h...); err != nil {
+		var buf bytes.Buffer
+		bundle := bundles[category].Get()
+		for _, b := range bundle {
+			buf.WriteString(fmt.Sprintf("%s\n", b))
+		}
+
+		if _, err := sumoLogicClient.Post(ctx, sink.URL, buf.Bytes(), h...); err != nil {
 			return fmt.Errorf("err failed to POST to URL %s: %v", sink.URL, err)
 		}
 
 		log.WithField(
 			"category", category,
 		).WithField(
-			"count", agg.Count(),
+			"count", count,
 		).Debug("sent events to Sumo Logic")
 	}
 

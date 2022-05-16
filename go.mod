@@ -11,6 +11,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-retryablehttp v0.7.1
 	github.com/iancoleman/strcase v0.2.0
+	github.com/jshlbrd/go-aggregate v0.1.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tidwall/gjson v1.14.0
 	github.com/tidwall/sjson v1.2.4

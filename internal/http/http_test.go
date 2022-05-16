@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -81,44 +80,6 @@ func TestGet(t *testing.T) {
 
 		if c := bytes.Compare(body, test.expected); c != 0 {
 			t.Logf("expected %+v, got %+v", test.expected, body)
-		}
-	}
-}
-func TestSize(t *testing.T) {
-	var tests = []struct {
-		data   string
-		repeat int
-		key    string
-	}{
-		{
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-			1,
-			"8Ex8TUWD3dWUMh6dUKaT",
-		},
-		{
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-			2,
-			"8Ex8TUWD3dWUMh6dUKaT",
-		},
-		{
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-			50,
-			"8Ex8TUWD3dWUMh6dUKaT",
-		},
-	}
-
-	agg := Aggregate{}
-	agg.New()
-
-	for _, test := range tests {
-		s := strings.Repeat(test.data, test.repeat)
-		agg.Add(s)
-
-		check := agg.Size()
-		data := agg.Get()
-		if check != len(data) {
-			t.Logf("expected %v, got %v", len(data), check)
-			t.Fail()
 		}
 	}
 }

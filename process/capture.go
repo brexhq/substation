@@ -116,7 +116,7 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		if !value.IsArray() {
 			if p.Options.Function == "find" {
 				match := re.FindStringSubmatch(value.String())
-				return json.Set(data, p.Output.Key, match[1])
+				return json.Set(data, p.Output.Key, p.getStringMatch(match))
 			}
 
 			if p.Options.Function == "find_all" {
@@ -139,7 +139,7 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 
 			if p.Options.Function == "find" {
 				match := re.FindStringSubmatch(v.String())
-				array = append(array, match[1])
+				array = append(array, p.getStringMatch(match))
 				continue
 			}
 

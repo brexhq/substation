@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jshlbrd/go-aggregate"
 
 	"github.com/brexhq/substation/internal/aws/s3manager"
+	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
 )
 
@@ -25,6 +27,9 @@ The sink has these settings:
 	Prefix (optional):
 		prefix prepended to the S3 object name
 		defaults to no prefix
+	PrefixKey (optional):
+		JSON key-value that is used as the prefix prepended to the S3 object name, overrides Prefix
+		defaults to no prefix
 
 The sink uses this Jsonnet configuration:
 	{
@@ -35,8 +40,9 @@ The sink uses this Jsonnet configuration:
 	}
 */
 type S3 struct {
-	Bucket string `json:"bucket"`
-	Prefix string `json:"prefix"`
+	Bucket    string `json:"bucket"`
+	Prefix    string `json:"prefix"`
+	PrefixKey string `json:"prefix_key"`
 }
 
 var s3managerAPI s3manager.UploaderAPI
@@ -47,12 +53,12 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 		s3managerAPI.Setup()
 	}
 
-	// tracks inidividual data pulled from ch and written to the S3 object
-	var count int
+	buffer := map[string]*aggregate.Bytes{}
 
-	// flushes the channel writing all data to a gzip buffer
-	var buffer bytes.Buffer
-	writer := gzip.NewWriter(&buffer)
+	var prefix string
+	if sink.Prefix != "" {
+		prefix = sink.Prefix
+	}
 
 	sep := []byte("\n")
 	for data := range ch {
@@ -60,25 +66,76 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 		case <-kill:
 			return nil
 		default:
-			data = append(data, sep...)
-			writer.Write(data)
-			count++
+			if sink.PrefixKey != "" {
+				prefix = json.Get(data, sink.PrefixKey).String()
+			}
+
+			if _, ok := buffer[prefix]; !ok {
+				// aggregate up to 10MB or 100,000 items
+				buffer[prefix] = &aggregate.Bytes{}
+				buffer[prefix].New(1000*1000*10, 100000)
+			}
+			ok, err := buffer[prefix].Add(data)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				var buf bytes.Buffer
+				writer := gzip.NewWriter(&buf)
+				bundle := buffer[prefix].Get()
+				for _, b := range bundle {
+					writer.Write(b)
+					writer.Write(sep)
+				}
+				writer.Close()
+
+				key := formatKey(prefix) + ".gz"
+				if _, err := s3managerAPI.Upload(ctx, buf.Bytes(), sink.Bucket, key); err != nil {
+					return fmt.Errorf("err failed to upload data to bucket %s and key %s: %v", sink.Bucket, key, err)
+				}
+
+				log.WithField(
+					"count", buffer[prefix].Count(),
+				).WithField(
+					"bucket", sink.Bucket,
+				).WithField(
+					"key", key,
+				).Debug("uploaded data to S3")
+
+				buffer[prefix].Reset()
+				buffer[prefix].Add(data)
+			}
 		}
 	}
-	writer.Close()
 
-	key := formatKey(sink.Prefix) + ".gz"
-	if _, err := s3managerAPI.Upload(ctx, buffer.Bytes(), sink.Bucket, key); err != nil {
-		return fmt.Errorf("err failed to upload data to bucket %s and key %s: %v", sink.Bucket, key, err)
+	for prefix := range buffer {
+		count := buffer[prefix].Count()
+		if count == 0 {
+			continue
+		}
+
+		var buf bytes.Buffer
+		writer := gzip.NewWriter(&buf)
+		items := buffer[prefix].Get()
+		for _, b := range items {
+			writer.Write(b)
+			writer.Write(sep)
+		}
+		writer.Close()
+
+		key := formatKey(prefix) + ".gz"
+		if _, err := s3managerAPI.Upload(ctx, buf.Bytes(), sink.Bucket, key); err != nil {
+			return fmt.Errorf("err failed to upload data to bucket %s and key %s: %v", sink.Bucket, key, err)
+		}
+
+		log.WithField(
+			"count", buffer[prefix].Count(),
+		).WithField(
+			"bucket", sink.Bucket,
+		).WithField(
+			"key", key,
+		).Debug("uploaded data to S3")
 	}
-
-	log.WithField(
-		"count", count,
-	).WithField(
-		"bucket", sink.Bucket,
-	).WithField(
-		"key", key,
-	).Debug("uploaded data to S3")
 
 	return nil
 }

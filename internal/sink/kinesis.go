@@ -10,25 +10,27 @@ import (
 )
 
 /*
-Kinesis sinks data to an AWS Kinesis Data Stream using Kinesis Producer Library (KPL) compliant aggregated records. More information about the KPL and its schema is available here: https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html.
+Kinesis sinks data to an AWS Kinesis Data Stream using Kinesis Producer Library (KPL) compliant aggregated records. This sink can automatically redistribute data across shards by retrieving partition keys from JSON data; by default, it uses random strings to avoid hot shards. More information about the KPL and its schema is available here: https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html.
 
 The sink has these settings:
 	Stream:
 		Kinesis Data Stream that data is sent to
 	PartitionKey (optional):
 		JSON key-value that is used as the partition key for the aggregated record
-		defaults to a random string to avoid hot shards
+		defaults to a random string to avoid hot shards, which also disables record aggregation
 
 The sink uses this Jsonnet configuration:
 	{
 		type: 'kinesis',
 		settings: {
 			stream: 'foo',
+			partition: 'bar',
 		},
 	}
 */
 type Kinesis struct {
 	Stream       string `json:"stream"`
+	Partition    string `json:"partition"`
 	PartitionKey string `json:"partition_key"`
 }
 
@@ -40,57 +42,59 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 		kinesisAPI.Setup()
 	}
 
-	agg := kinesis.Aggregate{}
-	agg.New()
+	buffer := map[string]*kinesis.Aggregate{}
 
 	for data := range ch {
 		select {
 		case <-kill:
 			return nil
 		default:
-			var pk string
-			if sink.PartitionKey == "" {
-				pk = randomString()
-			} else if json.Valid(data) {
-				pk = json.Get(data, sink.PartitionKey).String()
-			} else {
-				// can only parse a partition key from JSON
-				// if this error occurs, then convert the data to JSON
-				// 	or remove the PartitionKey configuration
-				return fmt.Errorf("err failed to parse partition key %s due to invalid JSON: %v", sink.PartitionKey, json.JSONInvalidData)
+			partitionKey := randomString()
+			if sink.PartitionKey != "" {
+				pk := json.Get(data, sink.PartitionKey).String()
+				if pk != "" {
+					partitionKey = pk
+				}
 			}
 
-			ok := agg.Add(data, pk)
-			if !ok {
-				aggData := agg.Get()
-				aggPk := agg.PartitionKey
+			if _, ok := buffer[partitionKey]; !ok {
+				buffer[partitionKey] = &kinesis.Aggregate{}
+				buffer[partitionKey].New()
+			}
 
-				_, err := kinesisAPI.PutRecord(ctx, aggData, sink.Stream, aggPk)
+			ok := buffer[partitionKey].Add(data, partitionKey)
+			if !ok {
+				agg := buffer[partitionKey].Get()
+				_, err := kinesisAPI.PutRecord(ctx, agg, sink.Stream, partitionKey)
 				if err != nil {
 					return fmt.Errorf("err failed to put records into Kinesis stream %s: %v", sink.Stream, err)
 				}
 
 				log.WithField(
-					"count", agg.Count,
+					"count", buffer[partitionKey].Count,
 				).Debug("put records into Kinesis")
 
-				agg.New()
-				agg.Add(data, pk)
+				buffer[partitionKey].New()
+				buffer[partitionKey].Add(data, partitionKey)
 			}
 		}
 	}
 
-	if agg.Count > 0 {
-		aggData := agg.Get()
-		aggPk := agg.PartitionKey
+	for partitionKey := range buffer {
+		count := buffer[partitionKey].Count
 
-		_, err := kinesisAPI.PutRecord(ctx, aggData, sink.Stream, aggPk)
+		if count == 0 {
+			continue
+		}
+
+		agg := buffer[partitionKey].Get()
+		_, err := kinesisAPI.PutRecord(ctx, agg, sink.Stream, partitionKey)
 		if err != nil {
 			return fmt.Errorf("err failed to put records into Kinesis stream %s: %v", sink.Stream, err)
 		}
 
 		log.WithField(
-			"count", agg.Count,
+			"count", buffer[partitionKey].Count,
 		).Debug("put records into Kinesis")
 	}
 

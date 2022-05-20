@@ -1,33 +1,28 @@
 {
-  dynamodb(table, attributes, error_on_failure=false): {
+  dynamodb(table, items_key): {
     type: 'dynamodb',
     settings: {
       table: table,
-      attributes: attributes,
-      error_on_failure: error_on_failure,
+      items_key: items_key,
     },
   },
-  http(url, headers=[]): {
+  http(url, headers=[], headers_key=''): {
     type: 'http',
-    settings: { url: url, headers: headers },
+    settings: { url: url, headers: headers, headers_key: headers_key },
   },
-  kinesis(stream, partition_key=''): {
+  kinesis(stream, partition='', partition_key=''): {
     type: 'kinesis',
-    settings: { stream: stream, partition_key: partition_key },
+    settings: { stream: stream, partition: partition, partition_key: partition_key },
   },
-  s3(bucket, prefix=''): {
+  s3(bucket, prefix='', prefix_key=''): {
     type: 's3',
-    settings: { bucket: bucket, prefix: prefix },
+    settings: { bucket: bucket, prefix: prefix, prefix_key: prefix_key },
   },
   stdout: {
     type: 'stdout',
   },
-  sumologic(url, category_key='', error_on_failure=false): {
+  sumologic(url, category='', category_key=''): {
     type: 'sumologic',
-    settings: {
-      url: url,
-      category_key: category_key,
-      error_on_failure: error_on_failure,
-    },
+    settings: { url: url, category: category, category_key: category_key },
   },
 }

@@ -5,11 +5,14 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-
 	"github.com/brexhq/substation/internal/aws/dynamodb"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
 )
+
+// DynamoDBSinkInvalidJSON is returned when the DynamoDB sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
+const DynamoDBSinkInvalidJSON = errors.Error("DynamoDBSinkInvalidJSON")
 
 /*
 DynamoDB sinks JSON data to AWS DynamoDB tables. This sink supports sinking multiple rows from the same event to a DynamoDB table.
@@ -17,35 +20,31 @@ DynamoDB sinks JSON data to AWS DynamoDB tables. This sink supports sinking mult
 The sink has these settings:
 	Table:
 		DynamoDB table that data is written to
-	Attributes:
-		maps values from the JSON object (Key) to attributes in the DynamoDB table (Attribute)
-	ErrorOnFailure (optional):
-		if set to true, then receiving non-JSON data will cause the sink to fail
-		defaults to false
+	ItemsKey:
+		JSON key-value that contains maps that represent items to be stored in the DynamoDB table
+		This key can be a single map or an array of maps:
+			[	{
+					"PK": "foo",
+					"SK": "bar",
+				},
+				{
+					"PK": "baz",
+					"SK": "qux",
+				}
+			]
 
 The sink uses this Jsonnet configuration:
 	{
 		type: 'dynamodb',
 		settings: {
 			table: 'foo-table',
-			attributes: [
-				[
-					{
-						key: 'foo',
-						attribute: 'bar',
-					},
-				],
-			],
+			items_key: 'foo',
 		},
 	}
 */
 type DynamoDB struct {
-	Table      string `json:"table"`
-	Attributes [][]struct {
-		Key       string `json:"key"`
-		Attribute string `json:"attribute"`
-	} `json:"attributes"`
-	ErrorOnFailure bool `json:"error_on_failure"`
+	Table    string `json:"table"`
+	ItemsKey string `json:"items_key"`
 }
 
 var dynamodbAPI dynamodb.API
@@ -64,23 +63,17 @@ func (sink *DynamoDB) Send(ctx context.Context, ch chan []byte, kill chan struct
 		default:
 			// can only parse valid JSON into DynamoDB attributes
 			// if this error occurs, then parse the data into JSON
-			if !json.Valid(data) && sink.ErrorOnFailure {
-				return fmt.Errorf("err DynamoDB sink received invalid JSON data: %v", json.JSONInvalidData)
-			} else if !json.Valid(data) {
+			if !json.Valid(data) {
 				log.Info("DynamoDB sink received invalid JSON data")
-				continue
+				return DynamoDBSinkInvalidJSON
 			}
 
-			for _, attr := range sink.Attributes {
+			items := json.Get(data, sink.ItemsKey).Array()
+			for _, item := range items {
 				var cache map[string]interface{}
 				cache = make(map[string]interface{})
-				for _, field := range attr {
-					cache[field.Attribute] = json.Get(data, field.Key).Value()
-				}
-
-				// if cache is empty, then all match condition failed
-				if len(cache) == 0 {
-					continue
+				for k, v := range item.Map() {
+					cache[k] = v.Value()
 				}
 
 				values, err := dynamodbattribute.MarshalMap(cache)
@@ -92,9 +85,8 @@ func (sink *DynamoDB) Send(ctx context.Context, ch chan []byte, kill chan struct
 				if err != nil {
 					return fmt.Errorf("err putting values into DynamoDB table %s: %v", sink.Table, err)
 				}
+				count++
 			}
-
-			count++
 		}
 	}
 

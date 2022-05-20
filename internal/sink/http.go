@@ -16,27 +16,36 @@ The sink has these settings:
 	URL:
 		HTTP(S) endpoint that data is sent to
 	Headers (optional):
-		maps values from the JSON object (Key) to the HTTP header (Header)
+		contains configured maps that represent HTTP headers to be sent in the HTTP request
 		defaults to no headers
+	HeadersKey (optional):
+		JSON key-value that contains maps that represent HTTP headers to be sent in the HTTP request
+		This key can be a single map or an array of maps:
+			[
+				{
+					"FOO": "bar",
+				},
+				{
+					"BAZ": "qux",
+				}
+			]
 
 The sink uses this Jsonnet configuration:
 	{
 		type: 'http',
 		settings: {
 			url: 'foo.com/bar',
-			headers: [
-				key: 'foo',
-				header: 'X-FOO',
-			],
+			headers_key: 'foo',
 		},
 	}
 */
 type HTTP struct {
 	URL     string `json:"url"`
 	Headers []struct {
-		Key    string `json:"key"`
-		Header string `json:"header"`
+		Key   string `json:"key"`
+		Value string `json:"value"`
 	} `json:"headers"`
+	HeadersKey string `json:"headers_key"`
 }
 
 var httpClient http.HTTP
@@ -62,13 +71,26 @@ func (sink *HTTP) Send(ctx context.Context, ch chan []byte, kill chan struct{}) 
 					Key:   "Content-Type",
 					Value: "application/json",
 				})
+			}
 
-				for _, h := range sink.Headers {
-					v := json.Get(data, h.Header).String()
+			if len(sink.Headers) > 0 {
+				for _, header := range sink.Headers {
 					headers = append(headers, http.Header{
-						Key:   h.Key,
-						Value: v,
+						Key:   header.Key,
+						Value: header.Value,
 					})
+				}
+			}
+
+			if sink.HeadersKey != "" {
+				h := json.Get(data, sink.HeadersKey).Array()
+				for _, header := range h {
+					for k, v := range header.Map() {
+						headers = append(headers, http.Header{
+							Key:   k,
+							Value: v.String(),
+						})
+					}
 				}
 			}
 

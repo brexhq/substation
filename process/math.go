@@ -105,6 +105,8 @@ func (p Math) Byte(ctx context.Context, data []byte) ([]byte, error) {
 				cache[x] = cache[x] + v.Int()
 			case "subtract":
 				cache[x] = cache[x] - v.Int()
+			case "divide":
+				cache[x] = cache[x] / v.Int()
 			}
 		}
 	}

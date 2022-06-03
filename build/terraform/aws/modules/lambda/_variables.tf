@@ -41,3 +41,8 @@ variable "tags" {
   type    = map(any)
   default = {}
 }
+
+variable "secret" {
+  type    = bool
+  default = false
+}

@@ -21,11 +21,10 @@ import (
 var kplMagicHeader = fmt.Sprintf("%q", []byte("\xf3\x89\x9a\xc2"))
 
 const (
-	kplMagicLen        = 4  // Length of magic header for KPL Aggregate Record checking.
-	kplDigestSize      = 16 // MD5 Message size for protobuf.
-	kinesisMaxBytes    = 1024 * 1024
-	kinesisMaxCount    = 10000
-	scannerMaxCapacity = 1024 * 1024 * 100
+	kplMagicLen   = 4  // Length of magic header for KPL Aggregate Record checking.
+	kplDigestSize = 16 // MD5 Message size for protobuf.
+	kplMaxBytes   = 1024 * 1024
+	kplMaxCount   = 10000
 )
 
 // Aggregate produces a KPL-compliant Kinesis record
@@ -44,17 +43,17 @@ func (a *Aggregate) New() {
 	a.Count = 0
 
 	if a.MaxCount == 0 {
-		a.MaxCount = kinesisMaxCount
+		a.MaxCount = kplMaxCount
 	}
-	if a.MaxCount > kinesisMaxCount {
-		a.MaxCount = kinesisMaxCount
+	if a.MaxCount > kplMaxCount {
+		a.MaxCount = kplMaxCount
 	}
 
 	if a.MaxSize == 0 {
-		a.MaxSize = kinesisMaxBytes
+		a.MaxSize = kplMaxBytes
 	}
-	if a.MaxSize > kinesisMaxBytes {
-		a.MaxSize = kinesisMaxBytes
+	if a.MaxSize > kplMaxBytes {
+		a.MaxSize = kplMaxBytes
 	}
 
 	a.PartitionKey = ""
@@ -99,7 +98,7 @@ func (a *Aggregate) calculateRecordSize(data []byte, partitionKey string) int {
 }
 
 // Add inserts a Kinesis record into an aggregated Kinesis record
-//https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L382
+// https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L382
 func (a *Aggregate) Add(data []byte, partitionKey string) bool {
 	// https://docs.aws.amazon.com/streams/latest/dev/key-concepts.html#partition-key
 	if len(partitionKey) > 256 {
@@ -146,7 +145,7 @@ func (a *Aggregate) Get() []byte {
 	return record
 }
 
-//ConvertEventsRecords takes in a kinesis record and adds in a few additional fields such as ApproximateArrivalTimestamp
+// ConvertEventsRecords converts Kinesis records between the Lambda and Go SDK packages. This is required for deaggregating Kinesis records processed by AWS Lambda.
 func ConvertEventsRecords(records []events.KinesisEventRecord) []*kinesis.Record {
 	output := make([]*kinesis.Record, 0)
 
@@ -165,7 +164,7 @@ func ConvertEventsRecords(records []events.KinesisEventRecord) []*kinesis.Record
 	return output
 }
 
-//New creates a new session connection to Kinesis
+// New creates a new session connection to Kinesis
 func New() *kinesis.Kinesis {
 	conf := aws.NewConfig()
 

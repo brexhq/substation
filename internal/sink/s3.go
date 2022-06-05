@@ -75,16 +75,20 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 				buffer[prefix] = &aggregate.Bytes{}
 				buffer[prefix].New(1000*1000*10, 100000)
 			}
+
+			// add data to the buffer
+			// if buffer is full, then send the aggregated data
 			ok, err := buffer[prefix].Add(data)
 			if err != nil {
 				return err
 			}
+
 			if !ok {
 				var buf bytes.Buffer
 				writer := gzip.NewWriter(&buf)
-				bundle := buffer[prefix].Get()
-				for _, b := range bundle {
-					writer.Write(b)
+				items := buffer[prefix].Get()
+				for _, i := range items {
+					writer.Write(i)
 					writer.Write(sep)
 				}
 				writer.Close()
@@ -108,6 +112,7 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 		}
 	}
 
+	// iterate and send remaining buffers
 	for prefix := range buffer {
 		count := buffer[prefix].Count()
 		if count == 0 {
@@ -129,7 +134,7 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 		}
 
 		log.WithField(
-			"count", buffer[prefix].Count(),
+			"count", count,
 		).WithField(
 			"bucket", sink.Bucket,
 		).WithField(

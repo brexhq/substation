@@ -74,10 +74,13 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 			}
 
 			if _, ok := buffer[aggregationKey]; !ok {
+				// aggregate up to 1MB, the upper limit for Kinesis records
 				buffer[aggregationKey] = &kinesis.Aggregate{}
 				buffer[aggregationKey].New()
 			}
 
+			// add data to the buffer
+			// if buffer is full, then send the aggregated data
 			ok := buffer[aggregationKey].Add(data, partitionKey)
 			if !ok {
 				agg := buffer[aggregationKey].Get()
@@ -90,6 +93,8 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 				log.WithField(
 					"count", buffer[aggregationKey].Count,
 				).WithField(
+					"stream", sink.Stream,
+				).WithField(
 					"partition_key", aggPK,
 				).Debug("put records into Kinesis")
 
@@ -99,6 +104,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 		}
 	}
 
+	// iterate and send remaining buffers
 	for aggregationKey := range buffer {
 		count := buffer[aggregationKey].Count
 
@@ -115,6 +121,8 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 
 		log.WithField(
 			"count", buffer[aggregationKey].Count,
+		).WithField(
+			"stream", sink.Stream,
 		).WithField(
 			"partition_key", aggPK,
 		).Debug("put records into Kinesis")

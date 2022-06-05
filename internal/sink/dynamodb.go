@@ -15,7 +15,7 @@ import (
 const DynamoDBSinkInvalidJSON = errors.Error("DynamoDBSinkInvalidJSON")
 
 /*
-DynamoDB sinks JSON data to AWS DynamoDB tables. This sink supports sinking multiple rows from the same event to a DynamoDB table.
+DynamoDB sinks JSON data to an AWS DynamoDB table. This sink supports sinking multiple rows from the same event to a table.
 
 The sink has these settings:
 	Table:
@@ -23,7 +23,8 @@ The sink has these settings:
 	ItemsKey:
 		JSON key-value that contains maps that represent items to be stored in the DynamoDB table
 		This key can be a single map or an array of maps:
-			[	{
+			[
+				{
 					"PK": "foo",
 					"SK": "bar",
 				},
@@ -92,6 +93,8 @@ func (sink *DynamoDB) Send(ctx context.Context, ch chan []byte, kill chan struct
 
 	log.WithField(
 		"count", count,
+	).WithField(
+		"table", sink.Table,
 	).Debug("put items into DynamoDB")
 
 	return nil

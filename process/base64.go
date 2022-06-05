@@ -37,7 +37,7 @@ type Base64Options struct {
 /*
 Base64 processes data by converting it to and from base64. The processor supports these patterns:
 	json:
-  	{"base64":"Zm9v"} >>> {"base64":"foo"}
+	  	{"base64":"Zm9v"} >>> {"base64":"foo"}
 	json array:
 		{"base64":["Zm9v","YmFy"]} >>> {"base64":["foo","bar"]}
 	data:

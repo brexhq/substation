@@ -88,16 +88,18 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 
 			if _, ok := buffer[category]; !ok {
 				// aggregate up to 0.9MB or 10,000 items
+				// https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source#Data_payload_considerations
 				buffer[category] = &aggregate.Bytes{}
 				buffer[category].New(1000*1000*.9, 10000)
 			}
 
-			// add event data to the category bundle
-			// if category bundle is full, then send the bundle
+			// add data to the buffer
+			// if buffer is full, then send the aggregated data
 			ok, err := buffer[category].Add(data)
 			if err != nil {
 				return err
 			}
+
 			if !ok {
 				h := headers
 				h = append(h, http.Header{
@@ -107,8 +109,8 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 
 				var buf bytes.Buffer
 				items := buffer[category].Get()
-				for _, b := range items {
-					buf.WriteString(fmt.Sprintf("%s\n", b))
+				for _, i := range items {
+					buf.WriteString(fmt.Sprintf("%s\n", i))
 				}
 
 				if _, err := sumoLogicClient.Post(ctx, sink.URL, buf.Bytes(), h...); err != nil {
@@ -127,7 +129,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 		}
 	}
 
-	// iterate and send remaining category buffer
+	// iterate and send remaining buffers
 	for category := range buffer {
 		count := buffer[category].Count()
 		if count == 0 {
@@ -151,9 +153,9 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 		}
 
 		log.WithField(
-			"category", category,
-		).WithField(
 			"count", count,
+		).WithField(
+			"category", category,
 		).Debug("sent events to Sumo Logic")
 	}
 

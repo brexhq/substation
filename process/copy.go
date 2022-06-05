@@ -14,11 +14,11 @@ const CopyInvalidSettings = errors.Error("CopyInvalidSettings")
 /*
 Copy processes data by copying it. The processor supports these patterns:
 	json:
-  	{"hello":"world"} >>> {"hello":"world","goodbye":"world"}
+	  	{"hello":"world"} >>> {"hello":"world","goodbye":"world"}
 	from json:
-  	{"hello":"world"} >>> world
+  		{"hello":"world"} >>> world
 	to json:
-  	world >>> {"hello":"world"}
+  		world >>> {"hello":"world"}
 
 The processor uses this Jsonnet configuration:
 	{

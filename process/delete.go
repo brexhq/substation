@@ -14,7 +14,7 @@ const DeleteInvalidSettings = errors.Error("DeleteInvalidSettings")
 /*
 Delete processes data by deleting JSON keys. The processor supports these patterns:
 	json:
-  	{"foo":"bar","baz":"qux"} >>> {"foo":"bar"}
+	  	{"foo":"bar","baz":"qux"} >>> {"foo":"bar"}
 
 The processor uses this Jsonnet configuration:
 	{

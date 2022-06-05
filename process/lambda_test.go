@@ -31,15 +31,8 @@ var lambdaTests = []struct {
 	{
 		"json",
 		Lambda{
-			Input: LambdaInput{
-				Payload: []struct {
-					Key        string "json:\"key\""
-					PayloadKey string "json:\"payload_key\""
-				}{{
-					Key:        "foo",
-					PayloadKey: "foo",
-				},
-				},
+			Input: Input{
+				Key: "lambda",
 			},
 			Options: LambdaOptions{
 				Function: "test",

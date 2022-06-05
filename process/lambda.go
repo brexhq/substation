@@ -13,18 +13,6 @@ import (
 const LambdaInvalidSettings = errors.Error("LambdaInvalidSettings")
 
 /*
-LambdaInput contains custom input settings for the Lambda processor:
-	Payload:
-		maps values from the JSON object (Key) to values in the AWS Lambda payload (PayloadKey)
-*/
-type LambdaInput struct {
-	Payload []struct {
-		Key        string `json:"key"`
-		PayloadKey string `json:"payload_key"`
-	} `json:"payload"`
-}
-
-/*
 LambdaOptions contains custom options settings for the Lambda processor:
 	Function:
 		function to invoke
@@ -40,21 +28,18 @@ type LambdaOptions struct {
 /*
 Lambda processes data by synchronously invoking an AWS Lambda and returning the payload. The average latency of synchronously invoking a Lambda function is 10s of milliseconds, but latency can take 100s to 1000s of milliseconds depending on the function which can have significant impact on total event latency. If Substation is running in AWS Lambda with Kinesis, then this latency can be mitigated by increasing the parallelization factor of the Lambda (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
 
+The input key's value must be a JSON object that contains settings for the Lambda. It is recommended to use the copy and insert processors to create the JSON object before calling this processor and to use the delete processor to remove the JSON object after calling this processor.
+
 The processor supports these patterns:
 	json:
-		{"foo":"bar"} >>> {"foo":"bar","lambda":{"baz":"qux"}}
+		{"foo":"bar","lambda":{"lookup":"baz"}} >>> {"foo":"bar","lambda":{"baz":"qux"}}
 
 The processor uses this Jsonnet configuration:
 	{
 		type: 'lambda',
 		settings: {
 			input: {
-				payload: [
-					{
-						key: 'foo',
-						payload_key: 'foo',
-					}
-				],
+				key: 'lambda',
 			},
 			output: {
 				key: 'lambda',
@@ -67,7 +52,7 @@ The processor uses this Jsonnet configuration:
 */
 type Lambda struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     LambdaInput              `json:"input"`
+	Input     Input                    `json:"input"`
 	Output    Output                   `json:"output"`
 	Options   LambdaOptions            `json:"options"`
 }
@@ -111,7 +96,7 @@ func (p Lambda) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Lambda processor.
 func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json, so error early if there are no keys
-	if len(p.Input.Payload) == 0 && p.Output.Key == "" {
+	if p.Input.Key == "" && p.Output.Key == "" {
 		return nil, LambdaInvalidSettings
 	}
 
@@ -120,17 +105,12 @@ func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		lambdaAPI.Setup()
 	}
 
-	var payload []byte
-	var err error
-	for _, p := range p.Input.Payload {
-		v := json.Get(data, p.Key)
-		payload, err = json.Set(payload, p.PayloadKey, v)
-		if err != nil {
-			return nil, err
-		}
+	payload := json.Get(data, p.Input.Key)
+	if !payload.IsObject() {
+		return nil, LambdaInvalidSettings
 	}
 
-	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, payload)
+	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, []byte(payload.Raw))
 	if err != nil {
 		return nil, err
 	}

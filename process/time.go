@@ -59,7 +59,7 @@ The processor uses this Jsonnet configuration:
 				key: 'time',
 			}
 			options: {
-				input_format: 'epoch',
+				input_format: 'unix',
 				output_format: '2006-01-02T15:04:05',
 			}
 		},
@@ -124,6 +124,7 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 
 		value := json.Get(data, p.Input.Key)
+
 		// return input, otherwise time defaults to 1970
 		if value.Type.String() == "Null" {
 			return data, nil
@@ -165,11 +166,6 @@ func (p Time) time(v json.Result) (interface{}, error) {
 		timeDate := time.Unix(0, timeNum*1000000)
 		ts := timeDate.Format(p.Options.OutputFormat)
 		return ts, nil
-	} else if p.Options.InputFormat == "unix_nano" {
-		timeNum := v.Int()
-		timeDate := time.Unix(0, timeNum)
-		ts := timeDate.Format(p.Options.OutputFormat)
-		return ts, nil
 	}
 
 	// default time input format
@@ -205,6 +201,13 @@ func (p Time) time(v json.Result) (interface{}, error) {
 		}
 
 		timeDate = timeDate.In(loc)
+	}
+
+	// epoch conversion requires special cases
+	if p.Options.OutputFormat == "unix" {
+		return timeDate.Unix(), nil
+	} else if p.Options.OutputFormat == "unix_milli" {
+		return timeDate.UnixMilli(), nil
 	}
 
 	ts := timeDate.Format(p.Options.OutputFormat)

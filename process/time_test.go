@@ -32,23 +32,6 @@ var timeTests = []struct {
 		[]byte(`{"time":"2021-03-06T00:02:57.000000Z"}`),
 	},
 	{
-		"to unix",
-		Time{
-			Input: Input{
-				Key: "time",
-			},
-			Options: TimeOptions{
-				InputFormat:  "unix",
-				OutputFormat: outputFmt,
-			},
-			Output: Output{
-				Key: "time",
-			},
-		},
-		[]byte(`{"time":1639877490.061}`),
-		[]byte(`{"time":"2021-12-19T01:31:30.000000Z"}`),
-	},
-	{
 		"from unix",
 		Time{
 			Input: Input{
@@ -62,8 +45,59 @@ var timeTests = []struct {
 				Key: "time",
 			},
 		},
-		[]byte(`{"time":1639877490.061}`),
+		[]byte(`{"time":1639877490}`),
 		[]byte(`{"time":"2021-12-19T01:31:30.000000Z"}`),
+	},
+	{
+		"to unix",
+		Time{
+			Input: Input{
+				Key: "time",
+			},
+			Options: TimeOptions{
+				InputFormat:  outputFmt,
+				OutputFormat: "unix",
+			},
+			Output: Output{
+				Key: "time",
+			},
+		},
+		[]byte(`{"time":"2021-12-19T01:31:30.000000Z"}`),
+		[]byte(`{"time":1639877490}`),
+	},
+	{
+		"from unix_milli",
+		Time{
+			Input: Input{
+				Key: "time",
+			},
+			Options: TimeOptions{
+				InputFormat:  "unix_milli",
+				OutputFormat: outputFmt,
+			},
+			Output: Output{
+				Key: "time",
+			},
+		},
+		[]byte(`{"time":1654459632263}`),
+		[]byte(`{"time":"2022-06-05T20:07:12.263000Z"}`),
+	},
+	{
+		"to unix_milli",
+		Time{
+			Input: Input{
+				Key: "time",
+			},
+			Options: TimeOptions{
+				InputFormat:  outputFmt,
+				OutputFormat: "unix_milli",
+			},
+			Output: Output{
+				Key: "time",
+			},
+		},
+		[]byte(`{"time":"2022-06-05T20:07:12.263000Z"}`),
+		[]byte(`{"time":1654459632263}`),
 	},
 	{
 		"offset conversion",

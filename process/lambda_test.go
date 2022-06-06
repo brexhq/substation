@@ -41,7 +41,7 @@ var lambdaTests = []struct {
 				Key: "lambda",
 			},
 		},
-		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"bar","lambda":{"foo":"baz"}}`),
 		[]byte(`{"foo":"bar","lambda":{"baz":"qux"}}`),
 		lamb.API{
 			Client: mockedInvoke{

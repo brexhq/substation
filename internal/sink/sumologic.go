@@ -75,11 +75,8 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 		case <-kill:
 			return nil
 		default:
-			// Sumo Logic only parses JSON
-			// if this error occurs, then parse the data into JSON
 			if !json.Valid(data) {
-				log.Info("Sumo Logic sink received invalid JSON data")
-				return SumoLogicSinkInvalidJSON
+				return fmt.Errorf("sink sumologic category %s: %v", category, SumoLogicSinkInvalidJSON)
 			}
 
 			if sink.CategoryKey != "" {
@@ -97,7 +94,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 			// if buffer is full, then send the aggregated data
 			ok, err := buffer[category].Add(data)
 			if err != nil {
-				return err
+				return fmt.Errorf("sink sumologic category %s: %v", category, err)
 			}
 
 			if !ok {
@@ -114,7 +111,8 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 				}
 
 				if _, err := sumoLogicClient.Post(ctx, sink.URL, buf.Bytes(), h...); err != nil {
-					return fmt.Errorf("err failed to POST to URL %s: %v", sink.URL, err)
+					// Post err returns metadata
+					return fmt.Errorf("sink sumologic: %v", err)
 				}
 
 				log.WithField(
@@ -149,7 +147,8 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 		}
 
 		if _, err := sumoLogicClient.Post(ctx, sink.URL, buf.Bytes(), h...); err != nil {
-			return fmt.Errorf("err failed to POST to URL %s: %v", sink.URL, err)
+			// Post err returns metadata
+			return fmt.Errorf("sink sumologic: %v", err)
 		}
 
 		log.WithField(

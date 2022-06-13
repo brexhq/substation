@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
 )
@@ -20,14 +21,14 @@ type Drop struct {
 func (p Drop) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {

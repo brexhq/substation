@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/aws/lambda"
@@ -68,14 +69,14 @@ func (p Lambda) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -85,7 +86,7 @@ func (p Lambda) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -97,7 +98,7 @@ func (p Lambda) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json, so error early if there are no keys
 	if p.Input.Key == "" && p.Output.Key == "" {
-		return nil, LambdaInvalidSettings
+		return nil, fmt.Errorf("byter settings %v: %v", p, LambdaInvalidSettings)
 	}
 
 	// lazy load API
@@ -107,17 +108,17 @@ func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 
 	payload := json.Get(data, p.Input.Key)
 	if !payload.IsObject() {
-		return nil, LambdaInvalidSettings
+		return nil, fmt.Errorf("byter settings %v: %v", p, LambdaInvalidSettings)
 	}
 
 	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, []byte(payload.Raw))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("byter settings %v: %v", p, err)
 	}
 
 	if resp.FunctionError != nil && p.Options.ErrorOnFailure {
 		resErr := json.Get(resp.Payload, "errorMessage").String()
-		return nil, errors.Error(resErr)
+		return nil, fmt.Errorf("byter settings %v: %v", p, resErr)
 	}
 
 	if resp.FunctionError != nil {

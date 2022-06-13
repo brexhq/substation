@@ -76,14 +76,14 @@ type Time struct {
 func (p Time) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -93,7 +93,7 @@ func (p Time) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -133,7 +133,7 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		if !value.IsArray() {
 			ts, err := p.time(value)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
 			return json.Set(data, p.Output.Key, ts)
 		}
@@ -143,7 +143,7 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		for _, v := range value.Array() {
 			ts, err := p.time(v)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
 			array = append(array, ts)
 		}
@@ -151,7 +151,7 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return json.Set(data, p.Output.Key, array)
 	}
 
-	return nil, TimeInvalidSettings
+	return nil, fmt.Errorf("byter settings %v: %v", p, TimeInvalidSettings)
 }
 
 func (p Time) time(v json.Result) (interface{}, error) {
@@ -179,17 +179,17 @@ func (p Time) time(v json.Result) (interface{}, error) {
 	if p.Options.InputLocation != "" {
 		loc, err := time.LoadLocation(p.Options.InputLocation)
 		if err != nil {
-			return "", fmt.Errorf("err Time processor failed to parse output location: %v", err)
+			return nil, fmt.Errorf("time location %s: %v", p.Options.InputLocation, err)
 		}
 
 		timeDate, err = time.ParseInLocation(p.Options.InputFormat, timeStr, loc)
 		if err != nil {
-			return "", fmt.Errorf("err Time processor failed to parse time as %s from %s using location %s: %v", p.Options.InputFormat, timeStr, p.Options.InputLocation, err)
+			return nil, fmt.Errorf("time parse format %s location %s: %v", p.Options.InputFormat, p.Options.InputLocation, err)
 		}
 	} else {
 		timeDate, err = time.Parse(p.Options.InputFormat, timeStr)
 		if err != nil {
-			return "", fmt.Errorf("err Time processor failed to parse time as %s from %s: %v", p.Options.InputFormat, timeStr, err)
+			return nil, fmt.Errorf("time parse format %s: %v", p.Options.InputFormat, err)
 		}
 	}
 
@@ -197,7 +197,7 @@ func (p Time) time(v json.Result) (interface{}, error) {
 	if p.Options.OutputLocation != "" {
 		loc, err := time.LoadLocation(p.Options.OutputLocation)
 		if err != nil {
-			return "", fmt.Errorf("err Time processor failed to parse output location: %v", err)
+			return nil, fmt.Errorf("time location %s: %v", p.Options.OutputLocation, err)
 		}
 
 		timeDate = timeDate.In(loc)

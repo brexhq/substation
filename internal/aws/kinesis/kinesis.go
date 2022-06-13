@@ -209,13 +209,19 @@ func (a *API) Setup() {
 
 // PutRecord is a convenience wrapper for executing the PutRecord API on Kinesis.stream
 func (a *API) PutRecord(ctx aws.Context, data []byte, stream, partitionKey string) (*kinesis.PutRecordOutput, error) {
-	return a.Client.PutRecordWithContext(
+	resp, err := a.Client.PutRecordWithContext(
 		ctx,
 		&kinesis.PutRecordInput{
 			Data:         data,
 			StreamName:   aws.String(stream),
 			PartitionKey: aws.String(partitionKey),
 		})
+
+	if err != nil {
+		return nil, fmt.Errorf("putrecord stream %s partitionkey %s: %w", stream, partitionKey, err)
+	}
+
+	return resp, nil
 }
 
 // ActiveShards returns the number of in-use shards for a Kinesis stream
@@ -229,7 +235,7 @@ LOOP:
 	for {
 		output, err := a.Client.ListShardsWithContext(ctx, params)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("listshards stream %s: %w", stream, err)
 		}
 
 		for _, s := range output.Shards {
@@ -259,7 +265,7 @@ func (a *API) UpdateShards(ctx aws.Context, stream string, shards int64) error {
 		ScalingType:      aws.String("UNIFORM_SCALING"),
 	}
 	if _, err := a.Client.UpdateShardCountWithContext(ctx, params); err != nil {
-		return err
+		return fmt.Errorf("updateshards stream %s shards %d: %w", stream, shards, err)
 	}
 
 	for {
@@ -268,7 +274,7 @@ func (a *API) UpdateShards(ctx aws.Context, stream string, shards int64) error {
 				StreamName: aws.String(stream),
 			})
 		if err != nil {
-			return err
+			return fmt.Errorf("describestream stream %s: %w", stream, err)
 		}
 
 		if status := resp.StreamDescriptionSummary.StreamStatus; status != aws.String("UPDATING") {

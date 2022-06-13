@@ -80,7 +80,7 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 			// if buffer is full, then send the aggregated data
 			ok, err := buffer[prefix].Add(data)
 			if err != nil {
-				return err
+				return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
 			}
 
 			if !ok {
@@ -95,7 +95,7 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 
 				key := formatKey(prefix) + ".gz"
 				if _, err := s3managerAPI.Upload(ctx, buf.Bytes(), sink.Bucket, key); err != nil {
-					return fmt.Errorf("err failed to upload data to bucket %s and key %s: %v", sink.Bucket, key, err)
+					return fmt.Errorf("sink s3 bucket %s key %s: %v", sink.Bucket, key, err)
 				}
 
 				log.WithField(
@@ -130,7 +130,8 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 
 		key := formatKey(prefix) + ".gz"
 		if _, err := s3managerAPI.Upload(ctx, buf.Bytes(), sink.Bucket, key); err != nil {
-			return fmt.Errorf("err failed to upload data to bucket %s and key %s: %v", sink.Bucket, key, err)
+			// Upload err returns metadata
+			return fmt.Errorf("sink s3: %v", err)
 		}
 
 		log.WithField(

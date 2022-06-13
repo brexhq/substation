@@ -28,6 +28,6 @@ func Factory(cfg config.Config) (Transform, error) {
 		config.Decode(cfg.Settings, &t)
 		return &t, nil
 	default:
-		return nil, fmt.Errorf("err retrieving %s from factory: %v", t, TransformInvalidFactoryConfig)
+		return nil, fmt.Errorf("transform settings %v: %v", cfg.Settings, TransformInvalidFactoryConfig)
 	}
 }

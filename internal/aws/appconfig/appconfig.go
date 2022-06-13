@@ -2,6 +2,7 @@ package appconfig
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -20,20 +21,22 @@ func GetPrefetch(ctx context.Context) ([]byte, error) {
 		client.Setup()
 	}
 
-	url, found := os.LookupEnv("AWS_APPCONFIG_EXTENSION_PREFETCH_LIST")
+	env := "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST"
+	url, found := os.LookupEnv(env)
 	if !found {
-		return nil, LambdaMissingAppConfig
+		return nil, fmt.Errorf("getprefetch lookup %s: %v", env, LambdaMissingAppConfig)
 	}
 
-	resp, err := client.Get(ctx, "http://localhost:2772"+url)
+	local := "http://localhost:2772" + url
+	resp, err := client.Get(ctx, local)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getprefetch retrieve URL %s: %v", local, err)
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getprefetch read URL %s: %v", local, err)
 	}
 
 	return body, nil

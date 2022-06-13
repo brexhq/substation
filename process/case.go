@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/iancoleman/strcase"
@@ -65,14 +66,14 @@ type Case struct {
 func (p Case) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -82,7 +83,7 @@ func (p Case) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -114,7 +115,7 @@ func (p Case) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return p.bytesCase(data), nil
 	}
 
-	return nil, CaseInvalidSettings
+	return nil, fmt.Errorf("byter settings %v: %v", p, CaseInvalidSettings)
 }
 
 func (p Case) stringsCase(s string) string {

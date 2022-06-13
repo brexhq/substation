@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/brexhq/substation/condition"
@@ -66,14 +67,14 @@ type Replace struct {
 func (p Replace) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -83,7 +84,7 @@ func (p Replace) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -121,7 +122,7 @@ func (p Replace) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return p.bytesReplace(data), nil
 	}
 
-	return nil, ReplaceInvalidSettings
+	return nil, fmt.Errorf("byter settings %v: %v", p, ReplaceInvalidSettings)
 }
 
 func (p Replace) stringsReplace(s string) string {

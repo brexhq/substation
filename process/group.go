@@ -52,14 +52,14 @@ type Group struct {
 func (p Group) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -69,7 +69,7 @@ func (p Group) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -81,7 +81,7 @@ func (p Group) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json arrays, so error early if there are no keys
 	if len(p.Input.Keys) == 0 && p.Output.Key == "" {
-		return nil, GroupInvalidSettings
+		return nil, fmt.Errorf("byter settings %v: %v", p, GroupInvalidSettings)
 	}
 
 	if len(p.Options.Keys) == 0 {
@@ -121,7 +121,7 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		for x, v := range value.Array() {
 			cache[x], err = json.Set(cache[x], p.Options.Keys[idx], v)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
 		}
 	}
@@ -133,7 +133,7 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	for i, v := range cache {
 		tmp, err = json.SetRaw(tmp, fmt.Sprintf("%d", i), v)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("byter settings %v: %v", p, err)
 		}
 	}
 	// [{"name":"foo","size":123},{"name":"bar","size":456}]

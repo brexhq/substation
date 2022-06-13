@@ -3,6 +3,7 @@ package process
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/errors"
@@ -70,14 +71,14 @@ type Base64 struct {
 func (p Base64) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -87,7 +88,7 @@ func (p Base64) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -110,17 +111,17 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			if p.Options.Direction == "from" {
 				result, err := p.from(tmp, p.Options.Alphabet)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("byter settings %v: %v", p, err)
 				}
 				return json.Set(data, p.Output.Key, result)
 			} else if p.Options.Direction == "to" {
 				result, err := p.to(tmp, p.Options.Alphabet)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("byter settings %v: %v", p, err)
 				}
 				return json.Set(data, p.Output.Key, result)
 			} else {
-				return nil, Base64InvalidDirection
+				return nil, fmt.Errorf("byter settings %v: %v", p, Base64InvalidDirection)
 			}
 		}
 
@@ -131,17 +132,17 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			if p.Options.Direction == "from" {
 				result, err := p.from(tmp, p.Options.Alphabet)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("byter settings %v: %v", p, err)
 				}
 				array = append(array, string(result))
 			} else if p.Options.Direction == "to" {
 				result, err := p.to(tmp, p.Options.Alphabet)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("byter settings %v: %v", p, err)
 				}
 				array = append(array, string(result))
 			} else {
-				return nil, Base64InvalidDirection
+				return nil, fmt.Errorf("byter settings %v: %v", p, Base64InvalidDirection)
 			}
 		}
 
@@ -153,21 +154,21 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		if p.Options.Direction == "from" {
 			result, err := p.from(data, p.Options.Alphabet)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
 			return result, nil
 		} else if p.Options.Direction == "to" {
 			result, err := p.to(data, p.Options.Alphabet)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
 			return result, nil
 		} else {
-			return nil, Base64InvalidDirection
+			return nil, fmt.Errorf("byter settings %v: %v", p, Base64InvalidDirection)
 		}
 	}
 
-	return nil, Base64InvalidSettings
+	return nil, fmt.Errorf("byter settings %v: %v", p, Base64InvalidSettings)
 }
 
 func (p Base64) from(data []byte, alphabet string) ([]byte, error) {
@@ -178,7 +179,7 @@ func (p Base64) from(data []byte, alphabet string) ([]byte, error) {
 		res := make([]byte, base64.StdEncoding.DecodedLen(len))
 		n, err := base64.StdEncoding.Decode(res, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("base64 decode alphabet %s: %v", alphabet, err)
 		}
 
 		return res[:n], nil
@@ -186,12 +187,12 @@ func (p Base64) from(data []byte, alphabet string) ([]byte, error) {
 		res := make([]byte, base64.URLEncoding.DecodedLen(len))
 		n, err := base64.URLEncoding.Decode(res, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("base64 decode alphabet %s: %v", alphabet, err)
 		}
 
 		return res[:n], nil
 	default:
-		return nil, Base64InvalidAlphabet
+		return nil, fmt.Errorf("base64 decode alphabet %s: %v", alphabet, Base64InvalidAlphabet)
 	}
 }
 
@@ -208,6 +209,6 @@ func (p Base64) to(data []byte, alphabet string) ([]byte, error) {
 		base64.URLEncoding.Encode(res, data)
 		return res, nil
 	default:
-		return nil, Base64InvalidAlphabet
+		return nil, fmt.Errorf("base64 encode alphabet %s: %v", alphabet, Base64InvalidAlphabet)
 	}
 }

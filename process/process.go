@@ -143,7 +143,7 @@ func ByterFactory(cfg config.Config) (Byter, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("err retrieving %s from factory: %v", t, ByteInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %v: %v", cfg.Settings, ByteInvalidFactoryConfig)
 	}
 }
 
@@ -235,7 +235,7 @@ func SlicerFactory(cfg config.Config) (Slicer, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("err retrieving %s from factory: %v", t, SliceInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %v: %v", cfg.Settings, SliceInvalidFactoryConfig)
 	}
 }
 

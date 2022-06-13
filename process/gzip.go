@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/brexhq/substation/condition"
@@ -51,14 +52,14 @@ type Gzip struct {
 func (p Gzip) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -68,7 +69,7 @@ func (p Gzip) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -82,19 +83,19 @@ func (p Gzip) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	case "from":
 		tmp, err := p.from(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("byter settings %v: %v", p, err)
 		}
 
 		return tmp, nil
 	case "to":
 		tmp, err := p.to(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("byter settings %v: %v", p, err)
 		}
 
 		return tmp, nil
 	default:
-		return nil, GzipInvalidDirection
+		return nil, fmt.Errorf("byter settings %v: %v", p, GzipInvalidDirection)
 	}
 }
 
@@ -102,12 +103,12 @@ func (p Gzip) from(data []byte) ([]byte, error) {
 	r := bytes.NewReader(data)
 	gz, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("gzip: %v", err)
 	}
 
 	output, err := ioutil.ReadAll(gz)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("gzip: %v", err)
 	}
 
 	return output, nil
@@ -117,10 +118,10 @@ func (p Gzip) to(data []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	if _, err := gz.Write(data); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("gzip: %v", err)
 	}
 	if err := gz.Close(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("gzip: %v", err)
 	}
 
 	return buf.Bytes(), nil

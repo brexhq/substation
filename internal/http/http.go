@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -48,13 +49,13 @@ func (h *HTTP) IsEnabled() bool {
 func (h *HTTP) Get(ctx context.Context, url string) (*http.Response, error) {
 	req, err := retryablehttp.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("http get URL %s: %v", url, err)
 	}
 
 	reqCtx := req.WithContext(ctx)
 	resp, err := h.Client.Do(reqCtx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("http get URL %s: %v", url, err)
 	}
 
 	return resp, err
@@ -70,12 +71,12 @@ func (h *HTTP) Post(ctx context.Context, url string, payload interface{}, header
 	case string:
 		tmp = []byte(p)
 	default:
-		return resp, HTTPInvalidPayload
+		return nil, fmt.Errorf("http post URL %s: %v", url, err)
 	}
 
 	req, err := retryablehttp.NewRequest("POST", url, tmp)
 	if err != nil {
-		return resp, err
+		return nil, fmt.Errorf("http post URL %s: %v", url, err)
 	}
 	reqCtx := req.WithContext(ctx)
 
@@ -85,7 +86,7 @@ func (h *HTTP) Post(ctx context.Context, url string, payload interface{}, header
 
 	resp, err = h.Client.Do(reqCtx)
 	if err != nil {
-		return resp, err
+		return nil, fmt.Errorf("http post URL %s: %v", url, err)
 	}
 	io.Copy(ioutil.Discard, resp.Body)
 	defer resp.Body.Close()

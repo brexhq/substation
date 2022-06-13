@@ -87,7 +87,8 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 				aggPK := buffer[aggregationKey].PartitionKey
 				_, err := kinesisAPI.PutRecord(ctx, agg, sink.Stream, aggPK)
 				if err != nil {
-					return fmt.Errorf("err failed to put records into Kinesis stream %s: %v", sink.Stream, err)
+					// PutRecord err returns metadata
+					return fmt.Errorf("sink kinesis: %v", err)
 				}
 
 				log.WithField(
@@ -116,7 +117,8 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 		aggPK := buffer[aggregationKey].PartitionKey
 		_, err := kinesisAPI.PutRecord(ctx, agg, sink.Stream, aggPK)
 		if err != nil {
-			return fmt.Errorf("err failed to put records into Kinesis stream %s: %v", sink.Stream, err)
+			// PutRecord err returns metadata
+			return fmt.Errorf("sink kinesis: %v", err)
 		}
 
 		log.WithField(

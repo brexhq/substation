@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"runtime"
@@ -39,7 +40,7 @@ func main() {
 	loadConfig(*config)
 
 	if err := file(ctx, *input, *transforms); err != nil {
-		panic(err)
+		panic(fmt.Errorf("main: %v", err))
 	}
 }
 
@@ -61,7 +62,7 @@ func file(ctx context.Context, filename string, transforms int) error {
 
 		fileHandle, err := os.Open(filename)
 		if err != nil {
-			sub.SendErr(err)
+			sub.SendErr(fmt.Errorf("file filename %s: %v", filename, err))
 			return
 		}
 		defer fileHandle.Close()
@@ -77,7 +78,7 @@ func file(ctx context.Context, filename string, transforms int) error {
 	}()
 
 	if err := sub.Block(ctx); err != nil {
-		return err
+		return fmt.Errorf("file: %v", err)
 	}
 
 	return nil

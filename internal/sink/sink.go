@@ -45,7 +45,7 @@ func Factory(cfg config.Config) (Sink, error) {
 		config.Decode(cfg.Settings, &s)
 		return &s, nil
 	default:
-		return nil, fmt.Errorf("err retrieving %s from factory: %v", t, SinkInvalidFactoryConfig)
+		return nil, fmt.Errorf("sink settings %v: %v", cfg.Settings, SinkInvalidFactoryConfig)
 	}
 }
 

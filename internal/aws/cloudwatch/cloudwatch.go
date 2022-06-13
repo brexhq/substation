@@ -155,7 +155,7 @@ func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic s
 				},
 			},
 		}); err != nil {
-		return err
+		return fmt.Errorf("updatealarm alarm %s stream %s: %w", name, stream, err)
 	}
 
 	if _, err := a.Client.SetAlarmStateWithContext(ctx,
@@ -164,7 +164,7 @@ func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic s
 			StateValue:  aws.String("INSUFFICIENT_DATA"),
 			StateReason: aws.String("Threshold value updated"),
 		}); err != nil {
-		return err
+		return fmt.Errorf("updatealarm alarm %s stream %s: %w", name, stream, err)
 	}
 
 	return nil
@@ -259,7 +259,7 @@ func (a *API) UpdateKinesisUpscaleAlarm(ctx aws.Context, name, stream, topic str
 				},
 			},
 		}); err != nil {
-		return err
+		return fmt.Errorf("updatealarm alarm %s stream %s: %w", name, stream, err)
 	}
 
 	if _, err := a.Client.SetAlarmStateWithContext(ctx,
@@ -268,7 +268,7 @@ func (a *API) UpdateKinesisUpscaleAlarm(ctx aws.Context, name, stream, topic str
 			StateValue:  aws.String("INSUFFICIENT_DATA"),
 			StateReason: aws.String("Threshold value updated"),
 		}); err != nil {
-		return err
+		return fmt.Errorf("updatealarm alarm %s stream %s: %w", name, stream, err)
 	}
 
 	return nil

@@ -67,14 +67,14 @@ type Domain struct {
 func (p Domain) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -84,7 +84,7 @@ func (p Domain) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -118,7 +118,7 @@ func (p Domain) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return []byte(label), nil
 	}
 
-	return nil, DomainInvalidSettings
+	return nil, fmt.Errorf("byter settings %v: %v", p, DomainInvalidSettings)
 }
 
 func (p Domain) domain(s string) (string, error) {
@@ -129,13 +129,13 @@ func (p Domain) domain(s string) (string, error) {
 	case "domain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("err Domain processor failed to parse domain from %s: %v", s, DomainNoSubdomain)
+			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
 		}
 		return domain, nil
 	case "subdomain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("err Domain processor failed to parse domain from %s: %v", s, DomainNoSubdomain)
+			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
 		}
 
 		// subdomain is the input string minus the domain and a leading dot
@@ -144,7 +144,7 @@ func (p Domain) domain(s string) (string, error) {
 		// 	subdomain == "foo" ("foo.bar.com" minus ".bar.com")
 		subdomain := strings.Replace(s, "."+domain, "", 1)
 		if subdomain == domain {
-			return "", fmt.Errorf("err Domain processor failed to parse subdomain from %s: %v", s, DomainNoSubdomain)
+			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
 		}
 		return subdomain, nil
 	default:

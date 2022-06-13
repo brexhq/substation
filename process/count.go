@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/internal/json"
 )
@@ -20,7 +21,7 @@ type Count struct{}
 func (p Count) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	processed, err := json.Set([]byte(""), "count", len(s))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := make([][]byte, 1, 1)

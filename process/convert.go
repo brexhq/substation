@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/errors"
@@ -64,14 +65,14 @@ type Convert struct {
 func (p Convert) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -81,7 +82,7 @@ func (p Convert) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -109,7 +110,7 @@ func (p Convert) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return json.Set(data, p.Output.Key, array)
 	}
 
-	return nil, ConvertInvalidSettings
+	return nil, fmt.Errorf("byter settings %v: %v", p, ConvertInvalidSettings)
 }
 
 func (p Convert) convert(v json.Result) interface{} {

@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/brexhq/substation/internal/errors"
@@ -74,7 +75,7 @@ func (c Strings) Inspect(data []byte) (output bool, err error) {
 	case "startswith":
 		matched = strings.HasPrefix(check, c.Expression)
 	default:
-		return false, StringsInvalidFunction
+		return false, fmt.Errorf("inspector settings %v: %v", c, StringsInvalidFunction)
 	}
 
 	if c.Negate {

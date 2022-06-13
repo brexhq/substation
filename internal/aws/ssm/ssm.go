@@ -1,6 +1,7 @@
 package ssm
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -62,9 +63,9 @@ func (a *API) GetParameter(ctx aws.Context, param string) (val string, err error
 	}
 	result, err := a.Client.GetParameterWithContext(ctx, input)
 	if err != nil {
-		return val, err
+		return val, fmt.Errorf("getparameter parameter %s: %w", param, err)
 	}
-	val = *result.Parameter.Value
 
+	val = *result.Parameter.Value
 	return val, err
 }

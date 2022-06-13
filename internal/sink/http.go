@@ -96,7 +96,8 @@ func (sink *HTTP) Send(ctx context.Context, ch chan []byte, kill chan struct{}) 
 
 			_, err := httpClient.Post(ctx, sink.URL, string(data), headers...)
 			if err != nil {
-				return fmt.Errorf("err failed to POST to URL %s: %v", sink.URL, err)
+				// Post err returns metadata
+				return fmt.Errorf("sink http: %v", err)
 			}
 		}
 	}

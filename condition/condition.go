@@ -34,7 +34,7 @@ type AND struct {
 // Operate returns true if all Inspectors return true, otherwise it returns false.
 func (o AND) Operate(data []byte) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, OperatorMissingInspectors
+		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -61,7 +61,7 @@ type OR struct {
 // Operate returns true if any Inspectors return true, otherwise it returns false.
 func (o OR) Operate(data []byte) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, OperatorMissingInspectors
+		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -87,7 +87,7 @@ type NAND struct {
 // Operate returns true if all Inspectors return false, otherwise it returns true.
 func (o NAND) Operate(data []byte) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, OperatorMissingInspectors
+		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -113,7 +113,7 @@ type NOR struct {
 // Operate returns true if any Inspectors return false, otherwise it returns true.
 func (o NOR) Operate(data []byte) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, OperatorMissingInspectors
+		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -194,7 +194,7 @@ func InspectorFactory(cfg config.Config) (Inspector, error) {
 		config.Decode(cfg.Settings, &i)
 		return i, nil
 	default:
-		return nil, fmt.Errorf("err retrieving %s from factory: %v", t, InspectorInvalidFactoryConfig)
+		return nil, fmt.Errorf("condition settings %v: %v", cfg.Settings, InspectorInvalidFactoryConfig)
 	}
 }
 

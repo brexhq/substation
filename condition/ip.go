@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/brexhq/substation/internal/errors"
@@ -79,7 +80,7 @@ func (c IP) Inspect(data []byte) (output bool, err error) {
 	case "unspecified":
 		matched = ip.IsUnspecified()
 	default:
-		return false, IPInvalidType
+		return false, fmt.Errorf("inspector settings %v: %v", c, IPInvalidType)
 	}
 
 	if c.Negate {

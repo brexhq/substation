@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/errors"
@@ -48,19 +49,19 @@ type Expand struct {
 func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	// only supports json, so error early if there is no input key
 	if p.Input.Key == "" {
-		return nil, ExpandInvalidSettings
+		return nil, fmt.Errorf("slicer settings %v: %v", p, ExpandInvalidSettings)
 	}
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -77,7 +78,7 @@ func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 				v := json.Get(data, r)
 				processed, err = json.Set(processed, r, v)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 				}
 			}
 

@@ -73,14 +73,14 @@ type Capture struct {
 func (p Capture) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -90,7 +90,7 @@ func (p Capture) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -102,7 +102,7 @@ func (p Capture) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	re, err := regexp.Compile(p.Options.Expression)
 	if err != nil {
-		return nil, fmt.Errorf("err Capture processor failed to compile regexp %s: %v", p.Options.Expression, err)
+		return nil, fmt.Errorf("byter settings %v: %v", p, err)
 	}
 
 	if p.Options.Count == 0 {
@@ -177,7 +177,7 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 	}
 
-	return nil, CaptureInvalidSettings
+	return nil, fmt.Errorf("byter settings %v: %v", p, CaptureInvalidSettings)
 }
 
 func (p Capture) getStringMatch(match []string) string {

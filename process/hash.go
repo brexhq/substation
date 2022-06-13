@@ -65,14 +65,14 @@ type Hash struct {
 func (p Hash) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -82,7 +82,7 @@ func (p Hash) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -99,7 +99,7 @@ func (p Hash) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			b := []byte(value.String())
 			h, err := p.hash(b)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
 
 			return json.Set(data, p.Output.Key, h)
@@ -111,7 +111,7 @@ func (p Hash) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			b := []byte(v.String())
 			h, err := p.hash(b)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
 
 			array = append(array, h)
@@ -124,16 +124,16 @@ func (p Hash) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	if p.Input.Key == "" && p.Output.Key == "" {
 		h, err := p.hash(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("byter settings %v: %v", p, err)
 		}
 		return []byte(h), nil
 	}
 
-	return nil, HashInvalidSettings
+	return nil, fmt.Errorf("byter settings %v: %v", p, HashInvalidSettings)
 }
 
 func (p Hash) hash(b []byte) (string, error) {
-	switch a := p.Options.Algorithm; a {
+	switch s := p.Options.Algorithm; s {
 	case "md5":
 		sum := md5.Sum(b)
 		return fmt.Sprintf("%x", sum), nil
@@ -141,6 +141,6 @@ func (p Hash) hash(b []byte) (string, error) {
 		sum := sha256.Sum256(b)
 		return fmt.Sprintf("%x", sum), nil
 	default:
-		return "", HashUnsupportedAlgorithm
+		return "", fmt.Errorf("hash type %s: %v", s, HashUnsupportedAlgorithm)
 	}
 }

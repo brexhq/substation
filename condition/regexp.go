@@ -1,13 +1,11 @@
 package condition
 
 import (
-	"github.com/brexhq/substation/internal/errors"
+	"fmt"
+
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/regexp"
 )
-
-// RegExpBadExpression is returned when the RegExp inspector is configured with a regular expression that does not compile.
-const RegExpBadExpression = errors.Error("RegExpBadExpression")
 
 /*
 RegExp evaluates data using a regular expression. This inspector uses a regexp cache provided by internal/regexp.
@@ -46,7 +44,7 @@ type RegExp struct {
 func (c RegExp) Inspect(data []byte) (output bool, err error) {
 	re, err := regexp.Compile(c.Expression)
 	if err != nil {
-		return false, RegExpBadExpression
+		return false, fmt.Errorf("inspector settings %v: %v", c, err)
 	}
 
 	var matched bool

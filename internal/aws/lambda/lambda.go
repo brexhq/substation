@@ -1,6 +1,7 @@
 package lambda
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -65,7 +66,7 @@ func (a *API) Invoke(ctx aws.Context, function string, payload []byte) (resp *la
 		})
 
 	if err != nil {
-		return resp, err
+		return nil, fmt.Errorf("invoke function %s: %w", function, err)
 	}
 
 	return resp, nil

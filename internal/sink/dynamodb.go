@@ -62,11 +62,8 @@ func (sink *DynamoDB) Send(ctx context.Context, ch chan []byte, kill chan struct
 		case <-kill:
 			return nil
 		default:
-			// can only parse valid JSON into DynamoDB attributes
-			// if this error occurs, then parse the data into JSON
 			if !json.Valid(data) {
-				log.Info("DynamoDB sink received invalid JSON data")
-				return DynamoDBSinkInvalidJSON
+				return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, DynamoDBSinkInvalidJSON)
 			}
 
 			items := json.Get(data, sink.ItemsKey).Array()
@@ -79,12 +76,13 @@ func (sink *DynamoDB) Send(ctx context.Context, ch chan []byte, kill chan struct
 
 				values, err := dynamodbattribute.MarshalMap(cache)
 				if err != nil {
-					return fmt.Errorf("err marshalling DynamoDB results: %v", err)
+					return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, err)
 				}
 
 				_, err = dynamodbAPI.PutItem(ctx, sink.Table, values)
 				if err != nil {
-					return fmt.Errorf("err putting values into DynamoDB table %s: %v", sink.Table, err)
+					// PutItem err returns metadata
+					return fmt.Errorf("sink dynamodb: %v", err)
 				}
 				count++
 			}

@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/errors"
@@ -49,14 +50,14 @@ type Flatten struct {
 func (p Flatten) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -66,7 +67,7 @@ func (p Flatten) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -78,7 +79,7 @@ func (p Flatten) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Flatten) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json, so error early if there are no keys
 	if p.Input.Key == "" && p.Output.Key == "" {
-		return nil, FlattenInvalidSettings
+		return nil, fmt.Errorf("byter settings %v: %v", p, FlattenInvalidSettings)
 	}
 
 	var value json.Result

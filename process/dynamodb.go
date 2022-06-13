@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 
@@ -91,14 +92,14 @@ func (p DynamoDB) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
@@ -108,7 +109,7 @@ func (p DynamoDB) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
 		slice = append(slice, processed)
 	}
@@ -134,7 +135,7 @@ func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		if !partitionKey.IsArray() && !sortKey.IsArray() {
 			items, err := p.dynamodb(ctx, partitionKey.String(), sortKey.String())
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
 
 			// no match
@@ -145,11 +146,10 @@ func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			return json.Set(data, p.Output.Key, items)
 		}
 
-		// json arrays not supported
-		return nil, DynamoDBInvalidSettings
+		return nil, fmt.Errorf("byter settings %v: %v", p, DynamoDBInvalidSettings)
 	}
 
-	return nil, DynamoDBInvalidSettings
+	return nil, fmt.Errorf("byter settings %v: %v", p, DynamoDBInvalidSettings)
 }
 
 func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {
@@ -162,7 +162,7 @@ func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]int
 		p.Options.ScanIndexForward,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dynamodb: %v", err)
 	}
 
 	var items []map[string]interface{}
@@ -170,7 +170,7 @@ func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]int
 		var item map[string]interface{}
 		err = dynamodbattribute.UnmarshalMap(i, &item)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("dynamodb: %v", err)
 		}
 
 		items = append(items, item)

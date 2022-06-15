@@ -3,7 +3,6 @@ package sink
 import (
 	"context"
 	"fmt"
-	"math/rand"
 
 	"github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
@@ -47,15 +46,4 @@ func Factory(cfg config.Config) (Sink, error) {
 	default:
 		return nil, fmt.Errorf("sink settings %v: %v", cfg.Settings, SinkInvalidFactoryConfig)
 	}
-}
-
-// randomString returns a randomly generated string. This is referenced from https://golangdocs.com/generate-random-string-in-golang.
-func randomString() string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-	s := make([]rune, 16)
-	for i := range s {
-		s[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(s)
 }

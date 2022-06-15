@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/brexhq/substation/internal/aws/kinesis"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
@@ -63,7 +65,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 			}
 
 			if partitionKey == "" {
-				partitionKey = randomString()
+				partitionKey = uuid.NewString()
 			}
 
 			// enables redistribution of data across shards by aggregating partition keys into the same payload

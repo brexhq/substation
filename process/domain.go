@@ -47,7 +47,7 @@ The processor uses this Jsonnet configuration:
 			input_key: 'domain',
 			input_key: 'tld',
 			options: {
-				function: 'tld',
+				_function: 'tld',
 			}
 		},
 	}

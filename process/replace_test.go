@@ -15,8 +15,8 @@ var replaceTests = []struct {
 	{
 		"json",
 		Replace{
-			Input:  "replace",
-			Output: "replace",
+			InputKey:  "replace",
+			OutputKey: "replace",
 			Options: ReplaceOptions{
 				Old: "r",
 				New: "z",
@@ -28,8 +28,8 @@ var replaceTests = []struct {
 	{
 		"json array",
 		Replace{
-			Input:  "replace",
-			Output: "replace",
+			InputKey:  "replace",
+			OutputKey: "replace",
 			Options: ReplaceOptions{
 				Old: "r",
 				New: "z",

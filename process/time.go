@@ -52,12 +52,8 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'time',
 		settings: {
-			input: {
-				key: 'time',
-			},
-			output: {
-				key: 'time',
-			}
+			input_key: 'time',
+			output_key: 'time',
 			options: {
 				input_format: 'unix',
 				output_format: '2006-01-02T15:04:05',
@@ -67,8 +63,8 @@ The processor uses this Jsonnet configuration:
 */
 type Time struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   TimeOptions              `json:"options"`
 }
 
@@ -107,23 +103,23 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	if p.Options.InputFormat == "now" {
 		ts := time.Now().Format(p.Options.OutputFormat)
 
-		if p.Output != "" {
-			return json.Set(data, p.Output, ts)
+		if p.OutputKey != "" {
+			return json.Set(data, p.OutputKey, ts)
 		}
 
 		return []byte(ts), nil
 	}
 
 	// json processing
-	if p.Input != "" && p.Output != "" {
+	if p.InputKey != "" && p.OutputKey != "" {
 		if p.Options.InputFormat == "now" {
 			timeDate := time.Now()
 			ts := timeDate.Format(p.Options.OutputFormat)
 
-			return json.Set(data, p.Output, ts)
+			return json.Set(data, p.OutputKey, ts)
 		}
 
-		value := json.Get(data, p.Input)
+		value := json.Get(data, p.InputKey)
 
 		// return input, otherwise time defaults to 1970
 		if value.Type.String() == "Null" {
@@ -135,7 +131,7 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			if err != nil {
 				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
-			return json.Set(data, p.Output, ts)
+			return json.Set(data, p.OutputKey, ts)
 		}
 
 		// json array processing
@@ -148,7 +144,7 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			array = append(array, ts)
 		}
 
-		return json.Set(data, p.Output, array)
+		return json.Set(data, p.OutputKey, array)
 	}
 
 	return nil, fmt.Errorf("byter settings %v: %v", p, TimeInvalidSettings)

@@ -42,12 +42,8 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'convert',
 		settings: {
-			input: {
-				key: 'convert',
-			},
-			output: {
-				key: 'convert',
-			},
+			input_key: 'convert',
+			output_key: 'convert',
 			options: {
 				type: 'bool',
 			}
@@ -56,8 +52,8 @@ The processor uses this Jsonnet configuration:
 */
 type Convert struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   ConvertOptions           `json:"options"`
 }
 
@@ -93,11 +89,11 @@ func (p Convert) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Convert processor.
 func (p Convert) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// json processing
-	if p.Input != "" && p.Output != "" {
-		value := json.Get(data, p.Input)
+	if p.InputKey != "" && p.OutputKey != "" {
+		value := json.Get(data, p.InputKey)
 		if !value.IsArray() {
 			c := p.convert(value)
-			return json.Set(data, p.Output, c)
+			return json.Set(data, p.OutputKey, c)
 		}
 
 		// json array processing
@@ -107,7 +103,7 @@ func (p Convert) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			array = append(array, c)
 		}
 
-		return json.Set(data, p.Output, array)
+		return json.Set(data, p.OutputKey, array)
 	}
 
 	return nil, fmt.Errorf("byter settings %v: %v", p, ConvertInvalidSettings)

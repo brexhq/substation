@@ -48,12 +48,8 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'base64',
 		settings: {
-			input: {
-				key: 'base64',
-			},
-			output: {
-				key: 'base64',
-			},
+			input_key: 'base64',
+			output_key: 'base64',
 			options: {
 				direction: 'from',
 			}
@@ -62,8 +58,8 @@ The processor uses this Jsonnet configuration:
 */
 type Base64 struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   Base64Options            `json:"options"`
 }
 
@@ -103,8 +99,8 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	// json processing
-	if p.Input != "" && p.Output != "" {
-		value := json.Get(data, p.Input)
+	if p.InputKey != "" && p.OutputKey != "" {
+		value := json.Get(data, p.InputKey)
 
 		if !value.IsArray() {
 			tmp := []byte(value.String())
@@ -113,13 +109,13 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 				if err != nil {
 					return nil, fmt.Errorf("byter settings %v: %v", p, err)
 				}
-				return json.Set(data, p.Output, result)
+				return json.Set(data, p.OutputKey, result)
 			} else if p.Options.Direction == "to" {
 				result, err := p.to(tmp, p.Options.Alphabet)
 				if err != nil {
 					return nil, fmt.Errorf("byter settings %v: %v", p, err)
 				}
-				return json.Set(data, p.Output, result)
+				return json.Set(data, p.OutputKey, result)
 			} else {
 				return nil, fmt.Errorf("byter settings %v: %v", p, Base64InvalidDirection)
 			}
@@ -146,11 +142,11 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			}
 		}
 
-		return json.Set(data, p.Output, array)
+		return json.Set(data, p.OutputKey, array)
 	}
 
 	// data processing
-	if p.Input == "" && p.Output == "" {
+	if p.InputKey == "" && p.OutputKey == "" {
 		if p.Options.Direction == "from" {
 			result, err := p.from(data, p.Options.Alphabet)
 			if err != nil {

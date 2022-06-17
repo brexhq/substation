@@ -36,12 +36,8 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'math',
 		settings: {
-			input: {
-				key: 'math',
-			},
-			output: {
-				key: 'math',
-			}
+			input_key: 'math',
+			output_key: 'math',
 			options: {
 				operation: 'add',
 			}
@@ -50,8 +46,8 @@ The processor uses this Jsonnet configuration:
 */
 type Math struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   MathOptions              `json:"options"`
 }
 
@@ -87,7 +83,7 @@ func (p Math) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Math processor.
 func (p Math) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json and json arrays, error early if there are no keys
-	if p.Input == "" && p.Output == "" {
+	if p.InputKey == "" && p.OutputKey == "" {
 		return nil, fmt.Errorf("byter settings %v: %v", p, MathInvalidSettings)
 	}
 
@@ -99,7 +95,7 @@ func (p Math) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// 	cache[0:7]
 	// 	cache[1:12]
 	cache := make(map[int]int64)
-	value := json.Get(data, p.Input)
+	value := json.Get(data, p.InputKey)
 	for x, v := range value.Array() {
 		var idx int
 
@@ -125,7 +121,7 @@ func (p Math) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	if len(cache) == 1 {
-		return json.Set(data, p.Output, cache[0])
+		return json.Set(data, p.OutputKey, cache[0])
 	}
 
 	var array []int64
@@ -133,5 +129,5 @@ func (p Math) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		array = append(array, cache[i])
 	}
 
-	return json.Set(data, p.Output, array)
+	return json.Set(data, p.OutputKey, array)
 }

@@ -15,8 +15,8 @@ var flattenTests = []struct {
 	{
 		"json",
 		Flatten{
-			Input:  "flatten",
-			Output: "flatten",
+			InputKey:  "flatten",
+			OutputKey: "flatten",
 		},
 		[]byte(`{"flatten":["foo",["bar"]]}`),
 		[]byte(`{"flatten":["foo","bar"]}`),
@@ -24,8 +24,8 @@ var flattenTests = []struct {
 	{
 		"json deep flatten",
 		Flatten{
-			Input:  "flatten",
-			Output: "flatten",
+			InputKey:  "flatten",
+			OutputKey: "flatten",
 			Options: FlattenOptions{
 				Deep: true,
 			},

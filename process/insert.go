@@ -30,9 +30,7 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'insert',
 		settings: {
-			output: {
-				key: 'baz',
-			}
+			output_key: 'baz',
 			options: {
 				value: 'qux',
 			}
@@ -41,7 +39,7 @@ The processor uses this Jsonnet configuration:
 */
 type Insert struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Output    string                   `json:"output"`
+	OutputKey string                   `json:"output_key"`
 	Options   InsertOptions            `json:"options"`
 }
 
@@ -77,8 +75,8 @@ func (p Insert) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Insert processor.
 func (p Insert) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// json processing
-	if p.Output != "" {
-		return json.Set(data, p.Output, p.Options.Value)
+	if p.OutputKey != "" {
+		return json.Set(data, p.OutputKey, p.Options.Value)
 	}
 
 	return nil, fmt.Errorf("byter settings %v: %v", p, InsertInvalidSettings)

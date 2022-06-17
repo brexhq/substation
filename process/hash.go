@@ -42,12 +42,8 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'hash',
 		settings: {
-			input: {
-				key: 'hash',
-			},
-			output: {
-				key: 'hash',
-			}
+			input_key: 'hash',
+			output_key: 'hash',
 			options: {
 				algorithm: 'md5',
 			}
@@ -56,8 +52,8 @@ The processor uses this Jsonnet configuration:
 */
 type Hash struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   HashOptions              `json:"options"`
 }
 
@@ -93,8 +89,8 @@ func (p Hash) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Hash processor.
 func (p Hash) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// json processing
-	if p.Input != "" && p.Output != "" {
-		value := json.Get(data, p.Input)
+	if p.InputKey != "" && p.OutputKey != "" {
+		value := json.Get(data, p.InputKey)
 		if !value.IsArray() {
 			b := []byte(value.String())
 			h, err := p.hash(b)
@@ -102,7 +98,7 @@ func (p Hash) Byte(ctx context.Context, data []byte) ([]byte, error) {
 				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
 
-			return json.Set(data, p.Output, h)
+			return json.Set(data, p.OutputKey, h)
 		}
 
 		// json array processing
@@ -117,11 +113,11 @@ func (p Hash) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			array = append(array, h)
 		}
 
-		return json.Set(data, p.Output, array)
+		return json.Set(data, p.OutputKey, array)
 	}
 
 	// data processing
-	if p.Input == "" && p.Output == "" {
+	if p.InputKey == "" && p.OutputKey == "" {
 		h, err := p.hash(data)
 		if err != nil {
 			return nil, fmt.Errorf("byter settings %v: %v", p, err)

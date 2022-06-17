@@ -15,8 +15,8 @@ var concatTests = []struct {
 	{
 		"json",
 		Concat{
-			Input:  "concat",
-			Output: "concat",
+			InputKey:  "concat",
+			OutputKey: "concat",
 			Options: ConcatOptions{
 				Separator: ".",
 			},
@@ -27,8 +27,8 @@ var concatTests = []struct {
 	{
 		"json array",
 		Concat{
-			Input:  "concat",
-			Output: "concat",
+			InputKey:  "concat",
+			OutputKey: "concat",
 			Options: ConcatOptions{
 				Separator: ".",
 			},

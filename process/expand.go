@@ -27,28 +27,26 @@ Expand processes data by creating individual events from objects in JSON arrays.
 		{"expand":[{"foo":"bar"}],"baz":"qux"} >>> {"foo":"bar","baz":"qux"}
 
 The processor uses this Jsonnet configuration:
-{
-  type: 'expand',
-  settings: {
-    input: {
-      key: 'expand',
-    },
-    options: {
-      retain: ['baz'],
-    }
-  },
-}
+	{
+		type: 'expand',
+		settings: {
+			input_key: 'expand',
+			options: {
+				retain: ['baz'],
+			}
+		},
+	}
 */
 type Expand struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
+	InputKey  string                   `json:"input_key"`
 	Options   ExpandOptions            `json:"options"`
 }
 
 // Slice processes a slice of bytes with the Expand processor. Conditions are optionally applied on the bytes to enable processing.
 func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	// only supports json, error early if there is no input key
-	if p.Input == "" {
+	if p.InputKey == "" {
 		return nil, fmt.Errorf("slicer settings %v: %v", p, ExpandInvalidSettings)
 	}
 
@@ -70,7 +68,7 @@ func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 		}
 
 		// json array processing
-		value := json.Get(data, p.Input)
+		value := json.Get(data, p.InputKey)
 		for _, x := range value.Array() {
 			var err error
 			processed := []byte(x.String())

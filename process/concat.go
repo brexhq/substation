@@ -32,12 +32,8 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'concat',
 		settings: {
-			input: {
-				key: 'concat',
-			},
-			output: {
-				key: 'concat',
-			},
+			input_key: 'concat',
+			output_key: 'concat',
 			options: {
 				separator: '.',
 			}
@@ -46,8 +42,8 @@ The processor uses this Jsonnet configuration:
 */
 type Concat struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   ConcatOptions            `json:"options"`
 }
 
@@ -83,12 +79,12 @@ func (p Concat) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Concat processor.
 func (p Concat) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json and json arrays, error early if there are no keys
-	if p.Input == "" && p.Output == "" {
+	if p.InputKey == "" && p.OutputKey == "" {
 		return nil, fmt.Errorf("byter settings %v: %v", p, ConcatInvalidSettings)
 	}
 
 	cache := make(map[int]string)
-	value := json.Get(data, p.Input)
+	value := json.Get(data, p.InputKey)
 	for x, v := range value.Array() {
 		var idx int
 
@@ -106,7 +102,7 @@ func (p Concat) Byte(ctx context.Context, data []byte) ([]byte, error) {
 
 	// json processing
 	if len(cache) == 1 {
-		return json.Set(data, p.Output, cache[0])
+		return json.Set(data, p.OutputKey, cache[0])
 	}
 
 	// json array processing
@@ -115,5 +111,5 @@ func (p Concat) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		array = append(array, cache[i])
 	}
 
-	return json.Set(data, p.Output, array)
+	return json.Set(data, p.OutputKey, array)
 }

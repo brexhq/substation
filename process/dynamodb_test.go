@@ -31,8 +31,8 @@ var dynamodbTests = []struct {
 	{
 		"json",
 		DynamoDB{
-			Input:  "ddb",
-			Output: "ddb",
+			InputKey:  "ddb",
+			OutputKey: "ddb",
 			Options: DynamoDBOptions{
 				Table: "test",
 			},

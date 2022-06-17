@@ -15,8 +15,8 @@ var mathTests = []struct {
 	{
 		"add",
 		Math{
-			Input:  "math",
-			Output: "math",
+			InputKey:  "math",
+			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "add",
 			},
@@ -27,8 +27,8 @@ var mathTests = []struct {
 	{
 		"subtract",
 		Math{
-			Input:  "math",
-			Output: "math",
+			InputKey:  "math",
+			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "subtract",
 			},
@@ -39,8 +39,8 @@ var mathTests = []struct {
 	{
 		"divide",
 		Math{
-			Input:  "math",
-			Output: "math",
+			InputKey:  "math",
+			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "divide",
 			},
@@ -51,8 +51,8 @@ var mathTests = []struct {
 	{
 		"add array",
 		Math{
-			Input:  "math",
-			Output: "math",
+			InputKey:  "math",
+			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "add",
 			},
@@ -63,8 +63,8 @@ var mathTests = []struct {
 	{
 		"subtract array",
 		Math{
-			Input:  "math",
-			Output: "math",
+			InputKey:  "math",
+			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "subtract",
 			},
@@ -75,8 +75,8 @@ var mathTests = []struct {
 	{
 		"divide array",
 		Math{
-			Input:  "math",
-			Output: "math",
+			InputKey:  "math",
+			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "divide",
 			},

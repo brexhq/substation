@@ -31,8 +31,8 @@ var lambdaTests = []struct {
 	{
 		"json",
 		Lambda{
-			Input:  "lambda",
-			Output: "lambda",
+			InputKey:  "lambda",
+			OutputKey: "lambda",
 			Options: LambdaOptions{
 				Function: "test",
 			},

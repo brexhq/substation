@@ -15,8 +15,8 @@ var captureTests = []struct {
 	{
 		"json find",
 		Capture{
-			Input:  "capture",
-			Output: "capture",
+			InputKey:  "capture",
+			OutputKey: "capture",
 			Options: CaptureOptions{
 				Expression: "^([^@]*)@.*$",
 				Function:   "find",
@@ -28,8 +28,8 @@ var captureTests = []struct {
 	{
 		"json find_all",
 		Capture{
-			Input:  "capture",
-			Output: "capture",
+			InputKey:  "capture",
+			OutputKey: "capture",
 			Options: CaptureOptions{
 				Expression: "(.{1})",
 				Function:   "find_all",
@@ -42,8 +42,8 @@ var captureTests = []struct {
 	{
 		"json array find",
 		Capture{
-			Input:  "capture",
-			Output: "capture",
+			InputKey:  "capture",
+			OutputKey: "capture",
 			Options: CaptureOptions{
 				Expression: "^([^@]*)@.*$",
 				Function:   "find",
@@ -55,8 +55,8 @@ var captureTests = []struct {
 	{
 		"json array find_all",
 		Capture{
-			Input:  "capture",
-			Output: "capture",
+			InputKey:  "capture",
+			OutputKey: "capture",
 			Options: CaptureOptions{
 				Expression: "(.{1})",
 				Function:   "find_all",

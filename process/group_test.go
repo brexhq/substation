@@ -15,8 +15,8 @@ var groupTests = []struct {
 	{
 		"tuples",
 		Group{
-			Input:  "group",
-			Output: "group",
+			InputKey:  "group",
+			OutputKey: "group",
 		},
 		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
 		[]byte(`{"group":[["foo",123],["bar",456]]}`),
@@ -24,8 +24,8 @@ var groupTests = []struct {
 	{
 		"objects",
 		Group{
-			Input:  "group",
-			Output: "group",
+			InputKey:  "group",
+			OutputKey: "group",
 			Options: GroupOptions{
 				Keys: []string{"name.test", "size"},
 			},
@@ -36,8 +36,8 @@ var groupTests = []struct {
 	{
 		"null input",
 		Group{
-			Input:  "group",
-			Output: "group",
+			InputKey:  "group",
+			OutputKey: "group",
 			Options: GroupOptions{
 				Keys: []string{"name.test", "size"},
 			},

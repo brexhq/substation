@@ -15,8 +15,8 @@ var caseTests = []struct {
 	{
 		"json lower",
 		Case{
-			Input:  "case",
-			Output: "case",
+			InputKey:  "case",
+			OutputKey: "case",
 			Options: CaseOptions{
 				Case: "lower",
 			},
@@ -27,8 +27,8 @@ var caseTests = []struct {
 	{
 		"json upper",
 		Case{
-			Input:  "case",
-			Output: "case",
+			InputKey:  "case",
+			OutputKey: "case",
 			Options: CaseOptions{
 				Case: "upper",
 			},
@@ -39,8 +39,8 @@ var caseTests = []struct {
 	{
 		"json snake",
 		Case{
-			Input:  "case",
-			Output: "case",
+			InputKey:  "case",
+			OutputKey: "case",
 			Options: CaseOptions{
 				Case: "snake",
 			},
@@ -52,8 +52,8 @@ var caseTests = []struct {
 	{
 		"json array lower",
 		Case{
-			Input:  "case",
-			Output: "case",
+			InputKey:  "case",
+			OutputKey: "case",
 			Options: CaseOptions{
 				Case: "lower",
 			},

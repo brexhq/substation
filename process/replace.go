@@ -43,12 +43,8 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'replace',
 		settings: {
-			input: {
-				key: 'replace',
-			},
-			output: {
-				key: 'replace',
-			}
+			input_key: 'replace',
+			output_key: 'replace',
 			options: {
 				old: 'r',
 				new: 'z',
@@ -58,8 +54,8 @@ The processor uses this Jsonnet configuration:
 */
 type Replace struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   ReplaceOptions           `json:"options"`
 }
 
@@ -100,11 +96,11 @@ func (p Replace) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	// json processing
-	if p.Input != "" && p.Output != "" {
-		value := json.Get(data, p.Input)
+	if p.InputKey != "" && p.OutputKey != "" {
+		value := json.Get(data, p.InputKey)
 		if !value.IsArray() {
 			r := p.stringsReplace(value.String())
-			return json.Set(data, p.Output, r)
+			return json.Set(data, p.OutputKey, r)
 		}
 
 		// json array processing
@@ -114,11 +110,11 @@ func (p Replace) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			array = append(array, r)
 		}
 
-		return json.Set(data, p.Output, array)
+		return json.Set(data, p.OutputKey, array)
 	}
 
 	// data processing
-	if p.Input == "" && p.Output == "" {
+	if p.InputKey == "" && p.OutputKey == "" {
 		return p.bytesReplace(data), nil
 	}
 

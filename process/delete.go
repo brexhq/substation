@@ -21,14 +21,13 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'delete',
 		settings: {
-			input: {
-				key: 'baz',
-},
+			input_key: 'delete',
+		}
 	}
 */
 type Delete struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
+	InputKey  string                   `json:"input_key"`
 }
 
 // Slice processes a slice of bytes with the Delete processor. Conditions are optionally applied on the bytes to enable processing.
@@ -63,8 +62,8 @@ func (p Delete) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Delete processor.
 func (p Delete) Byte(ctx context.Context, object []byte) ([]byte, error) {
 	// json processing
-	if p.Input != "" {
-		return json.Delete(object, p.Input)
+	if p.InputKey != "" {
+		return json.Delete(object, p.InputKey)
 	}
 
 	return nil, fmt.Errorf("byter settings %v: %v", p, DeleteInvalidSettings)

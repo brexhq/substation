@@ -4,7 +4,7 @@
          condition_operator='', condition_inspectors=[]): {
     type: 'base64',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { direction: direction, alphabet: alphabet },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -14,7 +14,7 @@
           condition_operator='', condition_inspectors=[]): {
     type: 'capture',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { expression: expression, 'function': _function, count: count },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -23,7 +23,7 @@
        condition_operator='', condition_inspectors=[]): {
     type: 'case',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { case: case },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -32,7 +32,7 @@
          condition_operator='', condition_inspectors=[]): {
     type: 'concat',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { separator: separator },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -41,7 +41,7 @@
           condition_operator='', condition_inspectors=[]): {
     type: 'convert',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { type: type },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -50,7 +50,7 @@
        condition_operator='', condition_inspectors=[]): {
     type: 'copy',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
   },
@@ -66,7 +66,7 @@
          condition_operator='', condition_inspectors=[]): {
     type: 'domain',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { 'function': _function },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -82,7 +82,7 @@
            condition_operator='', condition_inspectors=[]): {
     type: 'dynamodb',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { table: table, key_condition_expression: key_condition_expression, limit: limit, scan_index_forward: scan_index_forward },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -102,7 +102,7 @@
           condition_operator='', condition_inspectors=[]): {
     type: 'flatten',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { deep: deep },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -112,7 +112,7 @@
         condition_operator='', condition_inspectors=[]): {
     type: 'group',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { keys: options_keys },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -130,7 +130,7 @@
        condition_operator='', condition_inspectors=[]): {
     type: 'hash',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { algorithm: algorithm },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -149,7 +149,7 @@
          condition_operator='', condition_inspectors=[]): {
     type: 'lambda',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { 'function': _function, error_on_failure: error_on_failure },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -158,7 +158,7 @@
        condition_operator='', condition_inspectors=[]): {
     type: 'math',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { operation: operation },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -168,7 +168,7 @@
           condition_operator='', condition_inspectors=[]): {
     type: 'replace',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { old: old, new: new, count: count },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },
@@ -178,7 +178,7 @@
        condition_operator='', condition_inspectors=[]): {
     type: 'time',
     settings: {
-      input: input, output: output,
+      input_key: input, output_key: output,
       options: { input_format: input_format, input_location: input_location, output_format: output_format, output_location: output_location },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
     },

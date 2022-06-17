@@ -31,19 +31,16 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'group',
 		settings: {
-			input: {
-				key: 'group',
-			},
-			output: {
-				key: 'group',
+			input_key: 'group',
+			output_key: 'group',
 			}
 		},
 	}
 */
 type Group struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   GroupOptions             `json:"options"`
 }
 
@@ -79,11 +76,11 @@ func (p Group) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Group processor.
 func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json arrays, error early if there are no keys
-	if p.Input == "" && p.Output == "" {
+	if p.InputKey == "" && p.OutputKey == "" {
 		return nil, fmt.Errorf("byter settings %v: %v", p, GroupInvalidSettings)
 	}
 
-	if !json.Get(data, p.Input).Exists() {
+	if !json.Get(data, p.InputKey).Exists() {
 		return data, nil
 	}
 
@@ -95,7 +92,7 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		// 	cache[0][]interface{}{"foo",123}
 		// 	cache[1][]interface{}{"bar",456}
 		cache := make(map[int][]interface{})
-		value := json.Get(data, p.Input)
+		value := json.Get(data, p.InputKey)
 		for _, v := range value.Array() {
 			for x, v1 := range v.Array() {
 				cache[x] = append(cache[x], v1.Value())
@@ -108,7 +105,7 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 
 		// [["foo",123],["bar",456]]
-		return json.Set(data, p.Output, array)
+		return json.Set(data, p.OutputKey, array)
 	}
 
 	// elements in the values array are stored at their
@@ -120,7 +117,7 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// 	cache[1][]byte(`{"name":"bar","size":456}`)
 	cache := make(map[int][]byte)
 	var err error
-	value := json.Get(data, p.Input)
+	value := json.Get(data, p.InputKey)
 	for x, v := range value.Array() {
 		for x1, v1 := range v.Array() {
 			cache[x1], err = json.Set(cache[x1], p.Options.Keys[x], v1)
@@ -142,5 +139,5 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	// [{"name":"foo","size":123},{"name":"bar","size":456}]
-	return json.SetRaw(data, p.Output, tmp)
+	return json.SetRaw(data, p.OutputKey, tmp)
 }

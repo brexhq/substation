@@ -17,8 +17,8 @@ var timeTests = []struct {
 	{
 		"string",
 		Time{
-			Input:  "time",
-			Output: "time",
+			InputKey:  "time",
+			OutputKey: "time",
 			Options: TimeOptions{
 				InputFormat:  "2006-01-02T15:04:05Z",
 				OutputFormat: outputFmt,
@@ -30,8 +30,8 @@ var timeTests = []struct {
 	{
 		"from unix",
 		Time{
-			Input:  "time",
-			Output: "time",
+			InputKey:  "time",
+			OutputKey: "time",
 			Options: TimeOptions{
 				InputFormat:  "unix",
 				OutputFormat: outputFmt,
@@ -43,8 +43,8 @@ var timeTests = []struct {
 	{
 		"to unix",
 		Time{
-			Input:  "time",
-			Output: "time",
+			InputKey:  "time",
+			OutputKey: "time",
 			Options: TimeOptions{
 				InputFormat:  outputFmt,
 				OutputFormat: "unix",
@@ -56,8 +56,8 @@ var timeTests = []struct {
 	{
 		"from unix_milli",
 		Time{
-			Input:  "time",
-			Output: "time",
+			InputKey:  "time",
+			OutputKey: "time",
 			Options: TimeOptions{
 				InputFormat:  "unix_milli",
 				OutputFormat: outputFmt,
@@ -69,8 +69,8 @@ var timeTests = []struct {
 	{
 		"to unix_milli",
 		Time{
-			Input:  "time",
-			Output: "time",
+			InputKey:  "time",
+			OutputKey: "time",
 			Options: TimeOptions{
 				InputFormat:  outputFmt,
 				OutputFormat: "unix_milli",
@@ -82,8 +82,8 @@ var timeTests = []struct {
 	{
 		"offset conversion",
 		Time{
-			Input:  "time",
-			Output: "time",
+			InputKey:  "time",
+			OutputKey: "time",
 			Options: TimeOptions{
 				InputFormat:  "2006-Jan-02 Monday 03:04:05 -0700",
 				OutputFormat: "2006-Jan-02 Monday 03:04:05 -0700",
@@ -95,8 +95,8 @@ var timeTests = []struct {
 	{
 		"offset to local conversion",
 		Time{
-			Input:  "time",
-			Output: "time",
+			InputKey:  "time",
+			OutputKey: "time",
 			Options: TimeOptions{
 				InputFormat:    "2006-Jan-02 Monday 03:04:05 -0700",
 				OutputFormat:   "2006-Jan-02 Monday 03:04:05 PM",
@@ -111,8 +111,8 @@ var timeTests = []struct {
 	{
 		"local to local conversion",
 		Time{
-			Input:  "time",
-			Output: "time",
+			InputKey:  "time",
+			OutputKey: "time",
 			Options: TimeOptions{
 				InputFormat:    "2006-Jan-02 Monday 03:04:05",
 				InputLocation:  "America/Los_Angeles",
@@ -128,8 +128,8 @@ var timeTests = []struct {
 	{
 		"array",
 		Time{
-			Input:  "time",
-			Output: "time",
+			InputKey:  "time",
+			OutputKey: "time",
 			Options: TimeOptions{
 				InputFormat:  "2006-01-02T15:04:05Z",
 				OutputFormat: outputFmt,
@@ -141,8 +141,8 @@ var timeTests = []struct {
 	{
 		"array",
 		Time{
-			Input:  "time",
-			Output: "time",
+			InputKey:  "time",
+			OutputKey: "time",
 			Options: TimeOptions{
 				InputFormat:  "unix",
 				OutputFormat: outputFmt,

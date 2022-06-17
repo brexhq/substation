@@ -15,8 +15,8 @@ var domainTests = []struct {
 	{
 		"json tld",
 		Domain{
-			Input:  "domain",
-			Output: "tld",
+			InputKey:  "domain",
+			OutputKey: "tld",
 			Options: DomainOptions{
 				Function: "tld",
 			},
@@ -27,8 +27,8 @@ var domainTests = []struct {
 	{
 		"json domain",
 		Domain{
-			Input:  "domain",
-			Output: "domain",
+			InputKey:  "domain",
+			OutputKey: "domain",
 			Options: DomainOptions{
 				Function: "domain",
 			},
@@ -39,8 +39,8 @@ var domainTests = []struct {
 	{
 		"json subdomain",
 		Domain{
-			Input:  "domain",
-			Output: "subdomain",
+			InputKey:  "domain",
+			OutputKey: "subdomain",
 			Options: DomainOptions{
 				Function: "subdomain",
 			},
@@ -52,8 +52,8 @@ var domainTests = []struct {
 	{
 		"json subdomain",
 		Domain{
-			Input:  "domain",
-			Output: "subdomain",
+			InputKey:  "domain",
+			OutputKey: "subdomain",
 			Options: DomainOptions{
 				Function: "subdomain",
 			},
@@ -65,8 +65,8 @@ var domainTests = []struct {
 	{
 		"json array tld",
 		Domain{
-			Input:  "domain",
-			Output: "tld",
+			InputKey:  "domain",
+			OutputKey: "tld",
 			Options: DomainOptions{
 				Function: "tld",
 			},
@@ -77,8 +77,8 @@ var domainTests = []struct {
 	{
 		"json array domain",
 		Domain{
-			Input:  "domain",
-			Output: "domain",
+			InputKey:  "domain",
+			OutputKey: "domain",
 			Options: DomainOptions{
 				Function: "domain",
 			},
@@ -89,8 +89,8 @@ var domainTests = []struct {
 	{
 		"json array subdomain",
 		Domain{
-			Input:  "domain",
-			Output: "subdomain",
+			InputKey:  "domain",
+			OutputKey: "subdomain",
 			Options: DomainOptions{
 				Function: "subdomain",
 			},

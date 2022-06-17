@@ -16,7 +16,7 @@ var deleteTests = []struct {
 	{
 		"delete",
 		Delete{
-			Input: "delete",
+			InputKey: "delete",
 		},
 		[]byte(`{"hello":"123","delete":"456"}`),
 		[]byte(`{"hello":"123"}`),

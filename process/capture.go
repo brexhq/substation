@@ -49,22 +49,19 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'capture',
 		settings: {
-			input: {
-				key: 'capture',
-			},
-			output: {
-				key: 'capture',
-			},
+			input_key: 'capture',
+			output_key: 'capture',
 			options: {
 				expression: '^([^@]*)@.*$',
-				function: 'find',
-},
+				_function: 'find',
+			},
+		},
 	}
 */
 type Capture struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   CaptureOptions           `json:"options"`
 }
 
@@ -109,13 +106,13 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	// json processing
-	if p.Input != "" && p.Output != "" {
-		value := json.Get(data, p.Input)
+	if p.InputKey != "" && p.OutputKey != "" {
+		value := json.Get(data, p.InputKey)
 
 		if !value.IsArray() {
 			if p.Options.Function == "find" {
 				match := re.FindStringSubmatch(value.String())
-				return json.Set(data, p.Output, p.getStringMatch(match))
+				return json.Set(data, p.OutputKey, p.getStringMatch(match))
 			}
 
 			if p.Options.Function == "find_all" {
@@ -127,7 +124,7 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 					matches = append(matches, m)
 				}
 
-				return json.Set(data, p.Output, matches)
+				return json.Set(data, p.OutputKey, matches)
 			}
 		}
 
@@ -153,11 +150,11 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			}
 		}
 
-		return json.Set(data, p.Output, array)
+		return json.Set(data, p.OutputKey, array)
 	}
 
 	// data processing
-	if p.Input == "" && p.Output == "" {
+	if p.InputKey == "" && p.OutputKey == "" {
 		if p.Options.Function == "find" {
 			match := re.FindSubmatch(data)
 			return match[1], nil

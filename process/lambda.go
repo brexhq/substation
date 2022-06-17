@@ -39,12 +39,8 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'lambda',
 		settings: {
-			input: {
-				key: 'lambda',
-			},
-			output: {
-				key: 'lambda',
-			}
+			input_key: 'lambda',
+			output_key: 'lambda',
 			options: {
 				function: 'foo-function',
 			}
@@ -53,8 +49,8 @@ The processor uses this Jsonnet configuration:
 */
 type Lambda struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   LambdaOptions            `json:"options"`
 }
 
@@ -97,7 +93,7 @@ func (p Lambda) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Lambda processor.
 func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports json, error early if there are no keys
-	if p.Input == "" && p.Output == "" {
+	if p.InputKey == "" && p.OutputKey == "" {
 		return nil, fmt.Errorf("byter settings %v: %v", p, LambdaInvalidSettings)
 	}
 
@@ -106,7 +102,7 @@ func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		lambdaAPI.Setup()
 	}
 
-	payload := json.Get(data, p.Input)
+	payload := json.Get(data, p.InputKey)
 	if !payload.IsObject() {
 		return nil, fmt.Errorf("byter settings %v: %v", p, LambdaInvalidSettings)
 	}
@@ -125,5 +121,5 @@ func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return data, nil
 	}
 
-	return json.SetRaw(data, p.Output, resp.Payload)
+	return json.SetRaw(data, p.OutputKey, resp.Payload)
 }

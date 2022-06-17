@@ -44,12 +44,8 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'domain',
 		settings: {
-			input: {
-				key: 'domain',
-			},
-			output: {
-				key: 'tld',
-			},
+			input_key: 'domain',
+			input_key: 'tld',
 			options: {
 				function: 'tld',
 			}
@@ -58,8 +54,8 @@ The processor uses this Jsonnet configuration:
 */
 type Domain struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   DomainOptions            `json:"options"`
 }
 
@@ -95,11 +91,11 @@ func (p Domain) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Domain processor.
 func (p Domain) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// json processing
-	if p.Input != "" && p.Output != "" {
-		value := json.Get(data, p.Input)
+	if p.InputKey != "" && p.OutputKey != "" {
+		value := json.Get(data, p.InputKey)
 		if !value.IsArray() {
 			label, _ := p.domain(value.String())
-			return json.Set(data, p.Output, label)
+			return json.Set(data, p.OutputKey, label)
 		}
 
 		// json array processing
@@ -109,11 +105,11 @@ func (p Domain) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			array = append(array, label)
 		}
 
-		return json.Set(data, p.Output, array)
+		return json.Set(data, p.OutputKey, array)
 	}
 
 	// data processing
-	if p.Input == "" && p.Output == "" {
+	if p.InputKey == "" && p.OutputKey == "" {
 		label, _ := p.domain(string(data))
 		return []byte(label), nil
 	}

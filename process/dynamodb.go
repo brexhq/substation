@@ -47,12 +47,8 @@ The processor uses this Jsonnet configuration:
 		type: 'dynamodb',
 		settings: {
 			// the input key is expected to be a map containing a partition key ("PK") and an optional sort key ("SK")
-			input: {
-				key: 'ddb',
-			},
-			output: {
-				key: 'ddb',
-			},
+			input_key: 'ddb',
+			output_key: 'ddb',
 			// if the value of the PK is "foo", then this queries DynamoDB by using "foo" as the paritition key value for the table attribute "pk" and returns the last indexed item from the table.
 			options: {
 				table: 'foo-table',
@@ -65,8 +61,8 @@ The processor uses this Jsonnet configuration:
 */
 type DynamoDB struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     string                   `json:"input"`
-	Output    string                   `json:"output"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 	Options   DynamoDBOptions          `json:"options"`
 }
 
@@ -114,12 +110,12 @@ func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	// only supports json, error early if there are no keys
-	if p.Input == "" && p.Output == "" {
+	if p.InputKey == "" && p.OutputKey == "" {
 		return nil, fmt.Errorf("byter settings %v: %v", p, DynamoDBInvalidSettings)
 	}
 
 	// json processing
-	request := json.Get(data, p.Input)
+	request := json.Get(data, p.InputKey)
 	if !request.IsObject() {
 		return nil, fmt.Errorf("byter settings %v: %v", p, DynamoDBInvalidSettings)
 	}
@@ -142,7 +138,7 @@ func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return data, nil
 	}
 
-	return json.Set(data, p.Output, items)
+	return json.Set(data, p.OutputKey, items)
 }
 
 func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {

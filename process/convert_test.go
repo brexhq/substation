@@ -16,8 +16,8 @@ var convertTests = []struct {
 	{
 		"json bool",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "bool",
 			},
@@ -28,8 +28,8 @@ var convertTests = []struct {
 	{
 		"json bool",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "bool",
 			},
@@ -40,8 +40,8 @@ var convertTests = []struct {
 	{
 		"json int",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "int",
 			},
@@ -52,8 +52,8 @@ var convertTests = []struct {
 	{
 		"json float",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "float",
 			},
@@ -64,8 +64,8 @@ var convertTests = []struct {
 	{
 		"json uint",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "uint",
 			},
@@ -76,8 +76,8 @@ var convertTests = []struct {
 	{
 		"json string",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "string",
 			},
@@ -88,8 +88,8 @@ var convertTests = []struct {
 	{
 		"json int",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "int",
 			},
@@ -101,8 +101,8 @@ var convertTests = []struct {
 	{
 		"json array bool",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "bool",
 			},
@@ -113,8 +113,8 @@ var convertTests = []struct {
 	{
 		"json array int",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "int",
 			},
@@ -125,8 +125,8 @@ var convertTests = []struct {
 	{
 		"json array float",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "float",
 			},
@@ -137,8 +137,8 @@ var convertTests = []struct {
 	{
 		"json array uint",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "uint",
 			},
@@ -149,8 +149,8 @@ var convertTests = []struct {
 	{
 		"json array string",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "string",
 			},
@@ -161,8 +161,8 @@ var convertTests = []struct {
 	{
 		"json array int",
 		Convert{
-			Input:  "convert",
-			Output: "convert",
+			InputKey:  "convert",
+			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "int",
 			},

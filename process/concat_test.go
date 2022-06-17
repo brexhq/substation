@@ -6,30 +6,40 @@ import (
 	"testing"
 )
 
-func TestConcat(t *testing.T) {
-	var tests = []struct {
-		proc     Concat
-		test     []byte
-		expected []byte
-	}{
-		{
-			Concat{
-				Input: Inputs{
-					Keys: []string{"concat1", "concat2"},
-				},
-				Options: ConcatOptions{
-					Separator: ".",
-				},
-				Output: Output{
-					Key: "concat3",
-				},
+var concatTests = []struct {
+	name     string
+	proc     Concat
+	test     []byte
+	expected []byte
+}{
+	{
+		"json",
+		Concat{
+			InputKey:  "concat",
+			OutputKey: "concat",
+			Options: ConcatOptions{
+				Separator: ".",
 			},
-			[]byte(`{"concat1":"hello","concat2":"goodbye"}`),
-			[]byte(`{"concat1":"hello","concat2":"goodbye","concat3":"hello.goodbye"}`),
 		},
-	}
+		[]byte(`{"concat":["foo","bar"]}`),
+		[]byte(`{"concat":"foo.bar"}`),
+	},
+	{
+		"json array",
+		Concat{
+			InputKey:  "concat",
+			OutputKey: "concat",
+			Options: ConcatOptions{
+				Separator: ".",
+			},
+		},
+		[]byte(`{"concat":[["foo","baz"],["bar","qux"]]}`),
+		[]byte(`{"concat":["foo.bar","baz.qux"]}`),
+	},
+}
 
-	for _, test := range tests {
+func TestConcat(t *testing.T) {
+	for _, test := range concatTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
 		if err != nil {
@@ -44,51 +54,19 @@ func TestConcat(t *testing.T) {
 	}
 }
 
-func TestConcatArray(t *testing.T) {
-	var tests = []struct {
-		proc Concat
-		test []byte
-		// the order of the concat output when used on arrays is inconsistent, so we check for a match anywhere in this slice
-		expected [][]byte
-	}{
-		{
-			Concat{
-				Input: Inputs{
-					Keys: []string{"concat1", "concat2"},
-				},
-				Options: ConcatOptions{
-					Separator: ".",
-				},
-				Output: Output{
-					Key: "concat3",
-				},
-			},
-			[]byte(`{"concat1":["abc","ghi"],"concat2":["def","jkl"]}`),
-			[][]byte{
-				[]byte(`{"concat1":["abc","ghi"],"concat2":["def","jkl"],"concat3":["abc.def","ghi.jkl"]}`),
-				[]byte(`{"concat1":["abc","ghi"],"concat2":["def","jkl"],"concat3":["ghi.jkl","abc.def"]}`),
-			},
-		},
+func benchmarkConcatByte(b *testing.B, byter Concat, test []byte) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		byter.Byte(ctx, test)
 	}
+}
 
-	for _, test := range tests {
-		ctx := context.TODO()
-		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
-			t.Fail()
-		}
-
-		pass := false
-		for _, x := range test.expected {
-			if c := bytes.Compare(res, x); c == 0 {
-				pass = true
-			}
-		}
-
-		if !pass {
-			t.Logf("expected %s, got %s", test.expected, res)
-			t.Fail()
-		}
+func BenchmarkConcatByte(b *testing.B) {
+	for _, test := range concatTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkConcatByte(b, test.proc, test.test)
+			},
+		)
 	}
 }

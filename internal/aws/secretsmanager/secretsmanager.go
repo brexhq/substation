@@ -1,6 +1,7 @@
 package secretsmanager
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -31,7 +32,11 @@ func New() *secretsmanager.SecretsManager {
 		session.Must(session.NewSession()),
 		conf,
 	)
-	xray.AWS(c.Client)
+
+	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
+		xray.AWS(c.Client)
+	}
+
 	return c
 }
 
@@ -59,7 +64,7 @@ func (a *API) GetSecret(ctx aws.Context, secretName string) (secret string, err 
 
 	result, err := a.Client.GetSecretValueWithContext(ctx, input)
 	if err != nil {
-		return secret, err
+		return secret, fmt.Errorf("getsecretvalue secret %s: %w", secretName, err)
 	}
 
 	if result.SecretString != nil {

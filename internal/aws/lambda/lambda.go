@@ -1,6 +1,7 @@
 package lambda
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -31,7 +32,11 @@ func New() *lambda.Lambda {
 		session.Must(session.NewSession()),
 		conf,
 	)
-	xray.AWS(c.Client)
+
+	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
+		xray.AWS(c.Client)
+	}
+
 	return c
 }
 
@@ -61,7 +66,7 @@ func (a *API) Invoke(ctx aws.Context, function string, payload []byte) (resp *la
 		})
 
 	if err != nil {
-		return resp, err
+		return nil, fmt.Errorf("invoke function %s: %w", function, err)
 	}
 
 	return resp, nil

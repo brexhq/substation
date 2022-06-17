@@ -60,3 +60,11 @@ resource "aws_appconfig_configuration_profile" "config" {
 
   tags = var.tags
 }
+
+# optional secret creation
+resource "aws_secretsmanager_secret" "secret" {
+  count      = var.secret ? 1 : 0
+  name       = var.function_name
+  kms_key_id = var.kms_arn
+  tags       = var.tags
+}

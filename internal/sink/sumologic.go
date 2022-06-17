@@ -1,45 +1,62 @@
 package sink
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
 
-	"github.com/brexhq/substation/condition"
+	"github.com/jshlbrd/go-aggregate"
+
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
 )
 
-/*
-SumoLogic implements the Sink interface and POSTs data to a Sumo Logic HTTP source. More information is available in the README.
+// SumoLogicSinkInvalidJSON is returned when the Sumo Logic sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
+const SumoLogicSinkInvalidJSON = errors.Error("SumoLogicSinkInvalidJSON")
 
-URL: HTTP(S) endpoint that data is sent to, this is defined in the Sumo Logic console
-Categories: array of options for inspecting input data and assigning a Sumo Logic source category
-Categories.Condition: conditions that must pass to assign a Sumo Logic source category
-Categories.Category: the Sumo Logic source category that is assigned
-ErrorOnFailure (optional): determines if invalid input data causes the sink to error; defaults to false
+/*
+SumoLogic sinks JSON data to Sumo Logic using an HTTP collector. More information about Sumo Logic HTTP collectors is available here: https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Data-to-an-HTTP-Source.
+
+The sink has these settings:
+	URL:
+		HTTP(S) endpoint that data is sent to
+	Category (optional):
+		configured Sumo Logic source category
+		defaults to no source category, which sends data to the source category configured for URL
+	CategoryKey (optional):
+		JSON key-value that is used as the Sumo Logic source category, overrides Category
+		defaults to no source category, which sends data to the source category configured for URL
+
+The sink uses this Jsonnet configuration:
+	{
+		type: 'sumologic',
+		settings: {
+			url: 'foo.com/bar',
+			category: 'foo',
+		},
+	}
 */
 type SumoLogic struct {
-	client     http.HTTP
-	URL        string `mapstructure:"url"`
-	Categories []struct {
-		Condition condition.OperatorConfig `mapstructure:"condition"`
-		Category  string                   `mapstructure:"category"`
-	} `mapstructure:"categories"`
-	ErrorOnFailure bool `mapstructure:"error_on_failure"`
+	URL         string `json:"url"`
+	Category    string `json:"category"`
+	CategoryKey string `json:"category_key"`
 }
 
-// Send sends a channel of bytes to the Sumo Logic HTTP source categories defined by this sink.
+var sumoLogicClient http.HTTP
+
+// Send sinks a channel of bytes with the SumoLogic sink.
 func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
-	if !sink.client.IsEnabled() {
-		sink.client.Setup()
+	if !sumoLogicClient.IsEnabled() {
+		sumoLogicClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
-			sink.client.EnableXRay()
+			sumoLogicClient.EnableXRay()
 		}
 	}
 
-	bundles := map[string]*http.Aggregate{}
+	buffer := map[string]*aggregate.Bytes{}
 
 	headers := []http.Header{
 		{
@@ -48,47 +65,38 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 		},
 	}
 
+	var category string
+	if sink.Category != "" {
+		category = sink.Category
+	}
+
 	for data := range ch {
 		select {
 		case <-kill:
 			return nil
 		default:
-			// Sumo Logic only parses JSON
-			// if this error occurs, then parse the data into JSON
-			if !json.Valid(data) && sink.ErrorOnFailure {
-				return fmt.Errorf("err Sumo Logic sink received invalid JSON data: %v", json.JSONInvalidData)
-			} else if !json.Valid(data) {
-				log.Info("Sumo Logic sink received invalid JSON data")
-				continue
+			if !json.Valid(data) {
+				return fmt.Errorf("sink sumologic category %s: %v", category, SumoLogicSinkInvalidJSON)
 			}
 
-			var category string
-
-			for _, categories := range sink.Categories {
-				op, err := condition.OperatorFactory(categories.Condition)
-				if err != nil {
-					return err
-				}
-				ok, err := op.Operate(data)
-				if err != nil {
-					return err
-				}
-
-				if !ok {
-					continue
-				}
-
-				category = categories.Category
+			if sink.CategoryKey != "" {
+				category = json.Get(data, sink.CategoryKey).String()
 			}
 
-			if _, ok := bundles[category]; !ok {
-				bundles[category] = &http.Aggregate{}
+			if _, ok := buffer[category]; !ok {
+				// aggregate up to 0.9MB or 10,000 items
+				// https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source#Data_payload_considerations
+				buffer[category] = &aggregate.Bytes{}
+				buffer[category].New(1000*1000*.9, 10000)
 			}
 
-			dataString := string(data)
-			// add event data to the category bundle
-			// if category bundle is full, then send the bundle
-			ok := bundles[category].Add(dataString)
+			// add data to the buffer
+			// if buffer is full, then send the aggregated data
+			ok, err := buffer[category].Add(data)
+			if err != nil {
+				return fmt.Errorf("sink sumologic category %s: %v", category, err)
+			}
+
 			if !ok {
 				h := headers
 				h = append(h, http.Header{
@@ -96,28 +104,33 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 					Value: category,
 				})
 
-				data := bundles[category].Get()
-				if _, err := sink.client.Post(ctx, sink.URL, data, h...); err != nil {
-					return fmt.Errorf("err failed to POST to URL %s: %v", sink.URL, err)
+				var buf bytes.Buffer
+				items := buffer[category].Get()
+				for _, i := range items {
+					buf.WriteString(fmt.Sprintf("%s\n", i))
+				}
+
+				if _, err := sumoLogicClient.Post(ctx, sink.URL, buf.Bytes(), h...); err != nil {
+					// Post err returns metadata
+					return fmt.Errorf("sink sumologic: %v", err)
 				}
 
 				log.WithField(
 					"category", category,
 				).WithField(
-					"count", bundles[category].Count(),
+					"count", buffer[category].Count(),
 				).Debug("sent events to Sumo Logic")
 
-				bundles[category] = &http.Aggregate{}
-				bundles[category].Add(dataString)
+				buffer[category].Reset()
+				buffer[category].Add(data)
 			}
 		}
 	}
 
-	// iterate and send remaining category bundles
-	for category := range bundles {
-		agg := bundles[category]
-		size := agg.Size()
-		if size == 0 {
+	// iterate and send remaining buffers
+	for category := range buffer {
+		count := buffer[category].Count()
+		if count == 0 {
 			continue
 		}
 
@@ -127,15 +140,21 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 			Value: category,
 		})
 
-		data := agg.Get()
-		if _, err := sink.client.Post(ctx, sink.URL, data, h...); err != nil {
-			return fmt.Errorf("err failed to POST to URL %s: %v", sink.URL, err)
+		var buf bytes.Buffer
+		bundle := buffer[category].Get()
+		for _, b := range bundle {
+			buf.WriteString(fmt.Sprintf("%s\n", b))
+		}
+
+		if _, err := sumoLogicClient.Post(ctx, sink.URL, buf.Bytes(), h...); err != nil {
+			// Post err returns metadata
+			return fmt.Errorf("sink sumologic: %v", err)
 		}
 
 		log.WithField(
-			"category", category,
+			"count", count,
 		).WithField(
-			"count", agg.Count(),
+			"category", category,
 		).Debug("sent events to Sumo Logic")
 	}
 

@@ -2,80 +2,111 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-ConvertOptions contain custom options settings for this processor.
+// ConvertInvalidSettings is returned when the Convert processor is configured with invalid Input and Output settings.
+const ConvertInvalidSettings = errors.Error("ConvertInvalidSettings")
 
-Type: the type that the value should be converted to; one of: bool (boolean), int (integer), float, uint (unsigned integer), string
+/*
+ConvertOptions contains custom options for the Convert processor:
+	Type:
+		the type that the value should be converted to
+		must be one of:
+			bool (boolean)
+			int (integer)
+			float
+			uint (unsigned integer)
+			string
 */
 type ConvertOptions struct {
-	Type string `mapstructure:"type"`
+	Type string `json:"type"`
 }
 
-// Convert implements the Byter and Channeler interfaces and converts values between types. More information is available in the README.
+/*
+Convert processes data by converting values between types (e.g., string to integer, integer to float). The processor supports these patterns:
+	json:
+		{"convert":"true"} >>> {"convert":true}
+		{"convert":"-123"} >>> {"convert":-123}
+		{"convert":123} >>> {"convert":"123"}
+	json array:
+		{"convert":["true","false"]} >>> {"convert":[true,false]}
+		{"convert":["-123","-456"]} >>> {"convert":[-123,-456]}
+		{"convert":[123,123.456]} >>> {"convert":["123","123.456"]}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'convert',
+		settings: {
+			input_key: 'convert',
+			output_key: 'convert',
+			options: {
+				type: 'bool',
+			}
+		},
+	}
+*/
 type Convert struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Input                    `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   ConvertOptions           `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
+	Options   ConvertOptions           `json:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
-func (p Convert) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
+// Slice processes a slice of bytes with the Convert processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Convert) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes bytes with the Convert processor.
 func (p Convert) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	value := json.Get(data, p.Input.Key)
+	// json processing
+	if p.InputKey != "" && p.OutputKey != "" {
+		value := json.Get(data, p.InputKey)
+		if !value.IsArray() {
+			c := p.convert(value)
+			return json.Set(data, p.OutputKey, c)
+		}
 
-	if !value.IsArray() {
-		o := p.convert(value)
-		return json.Set(data, p.Output.Key, o)
+		// json array processing
+		var array []interface{}
+		for _, v := range value.Array() {
+			c := p.convert(v)
+			array = append(array, c)
+		}
+
+		return json.Set(data, p.OutputKey, array)
 	}
 
-	var array []interface{}
-	for _, v := range value.Array() {
-		o := p.convert(v)
-		array = append(array, o)
-	}
-
-	return json.Set(data, p.Output.Key, array)
+	return nil, fmt.Errorf("byter settings %v: %v", p, ConvertInvalidSettings)
 }
 
 func (p Convert) convert(v json.Result) interface{} {

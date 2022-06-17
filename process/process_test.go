@@ -4,15 +4,17 @@ import (
 	"bytes"
 	"context"
 	"testing"
+
+	"github.com/brexhq/substation/internal/config"
 )
 
 var processTests = []struct {
-	conf     []Config
+	conf     []config.Config
 	test     []byte
 	expected []byte
 }{
 	{
-		[]Config{
+		[]config.Config{
 			{
 				Type: "insert",
 				Settings: map[string]interface{}{
@@ -26,11 +28,7 @@ var processTests = []struct {
 					}{
 						Value: "bar",
 					},
-					"output": struct {
-						Key string
-					}{
-						Key: "foo",
-					},
+					"output_key": "foo",
 				},
 			},
 		},
@@ -38,7 +36,7 @@ var processTests = []struct {
 		[]byte(`{"hello":"world","foo":"bar"}`),
 	},
 	{
-		[]Config{
+		[]config.Config{
 			{
 				Type: "gzip",
 				Settings: map[string]interface{}{
@@ -59,7 +57,7 @@ var processTests = []struct {
 		[]byte(`{"hello":"goodbye"}`),
 	},
 	{
-		[]Config{
+		[]config.Config{
 			{
 				Type: "base64",
 				Settings: map[string]interface{}{
@@ -130,59 +128,104 @@ func TestByterFactory(t *testing.T) {
 	}
 }
 
-func TestChannel(t *testing.T) {
+func TestSlice(t *testing.T) {
 	ctx := context.TODO()
-
 	for _, test := range processTests {
-		ch := make(chan []byte, 1)
-		ch <- test.test
-		close(ch)
+		slice := make([][]byte, 1, 1)
+		slice[0] = test.test
 
-		channelers, err := MakeAllChannelers(test.conf)
+		slicers, err := MakeAllSlicers(test.conf)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		output, err := Channel(ctx, channelers, ch)
+		processed, err := Slice(ctx, slicers, slice)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		processed := <-output
-		if c := bytes.Compare(processed, test.expected); c != 0 {
+		if c := bytes.Compare(processed[0], test.expected); c != 0 {
 			t.Logf("expected %v, got %v", test.expected, processed)
 			t.Fail()
 		}
 	}
 }
 
-func TestChannelFactory(t *testing.T) {
+func TestSliceFactory(t *testing.T) {
 	ctx := context.TODO()
 
 	for _, test := range processTests {
-		ch := make(chan []byte, 1)
-		ch <- test.test
-		close(ch)
+		slice := make([][]byte, 1, 1)
+		slice[0] = test.test
 
 		conf := test.conf[0]
-		channeler, err := ChannelerFactory(conf)
+		slicer, err := SlicerFactory(conf)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		output, err := channeler.Channel(ctx, ch)
+		processed, err := slicer.Slice(ctx, slice)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		processed := <-output
-		if c := bytes.Compare(processed, test.expected); c != 0 {
+		if c := bytes.Compare(processed[0], test.expected); c != 0 {
 			t.Logf("expected %v, got %v", test.expected, processed)
 			t.Fail()
 		}
+	}
+}
+
+func BenchmarkByterFactory(b *testing.B) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		byter, err := ByterFactory(processTests[0].conf[0])
+		if err != nil {
+			b.Log(err)
+			b.Fail()
+		}
+
+		byter.Byte(ctx, processTests[0].test)
+	}
+}
+
+var byter, _ = ByterFactory(processTests[0].conf[0])
+
+func BenchmarkByte(b *testing.B) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		byter.Byte(ctx, processTests[0].test)
+	}
+}
+
+func BenchmarkSlicerFactory(b *testing.B) {
+	slice := make([][]byte, 1, 1)
+	slice[0] = processTests[0].test
+
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		slicer, err := SlicerFactory(processTests[0].conf[0])
+		if err != nil {
+			b.Log(err)
+			b.Fail()
+		}
+
+		slicer.Slice(ctx, slice)
+	}
+}
+
+var slicer, _ = SlicerFactory(processTests[0].conf[0])
+
+func BenchmarkSlice(b *testing.B) {
+	slice := make([][]byte, 1, 1)
+	slice[0] = processTests[0].test
+
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		slicer.Slice(ctx, slice)
 	}
 }

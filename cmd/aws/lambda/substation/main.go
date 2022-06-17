@@ -23,10 +23,10 @@ import (
 var sub cmd.Substation
 var handler string
 
-// LambdaMissingHandler is used when the Lambda is deployed without a configured handler
+// LambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
 const LambdaMissingHandler = errors.Error("LambdaMissingHandler")
 
-// LambdaUnsupportedHandler is used when the Lambda is deployed without a supported handler
+// LambdaUnsupportedHandler is returned when the Lambda is deployed without a supported handler.
 const LambdaUnsupportedHandler = errors.Error("LambdaUnsupportedHandler")
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 	case "SNS":
 		lambda.Start(sns)
 	default:
-		panic(fmt.Errorf("err handler %s: %v", h, LambdaUnsupportedHandler))
+		panic(fmt.Errorf("main handler %s: %v", h, LambdaUnsupportedHandler))
 	}
 }
 
@@ -48,14 +48,14 @@ func init() {
 	var found bool
 	handler, found = os.LookupEnv("SUBSTATION_HANDLER")
 	if !found {
-		panic(fmt.Errorf("err handler %s: %v", handler, LambdaMissingHandler))
+		panic(fmt.Errorf("init handler %s: %v", handler, LambdaMissingHandler))
 	}
 }
 
 func gateway(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("err failed to fetch AppConfig configuration: %v", err)
+		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
@@ -83,7 +83,7 @@ func gateway(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}()
 
 	if err := sub.Block(ctx); err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500}, err
+		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway handler: %v", err)
 	}
 
 	return events.APIGatewayProxyResponse{StatusCode: 200}, nil
@@ -92,7 +92,7 @@ func gateway(ctx context.Context, request events.APIGatewayProxyRequest) (events
 func kinesisHandler(ctx context.Context, kinesisEvent events.KinesisEvent) error {
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
-		return fmt.Errorf("err failed to fetch AppConfig configuration: %v", err)
+		return fmt.Errorf("kinesis handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
@@ -114,7 +114,7 @@ func kinesisHandler(ctx context.Context, kinesisEvent events.KinesisEvent) error
 		converted := kinesis.ConvertEventsRecords(kinesisEvent.Records)
 		deaggregated, err := deaggregator.DeaggregateRecords(converted)
 		if err != nil {
-			sub.SendErr(fmt.Errorf("err failed to deaggregate Kinesis records: %v", err))
+			sub.SendErr(fmt.Errorf("kinesis handler: %v", err))
 			return
 		}
 
@@ -133,7 +133,7 @@ func kinesisHandler(ctx context.Context, kinesisEvent events.KinesisEvent) error
 	}()
 
 	if err := sub.Block(ctx); err != nil {
-		return err
+		return fmt.Errorf("kinesis handler: %v", err)
 	}
 
 	return nil
@@ -142,7 +142,7 @@ func kinesisHandler(ctx context.Context, kinesisEvent events.KinesisEvent) error
 func s3(ctx context.Context, s3Event events.S3Event) error {
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
-		return fmt.Errorf("err failed to fetch AppConfig configuration: %v", err)
+		return fmt.Errorf("s3 handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
@@ -177,7 +177,7 @@ func s3(ctx context.Context, s3Event events.S3Event) error {
 				record.S3.Object.Key,
 			)
 			if err != nil {
-				sub.SendErr(fmt.Errorf("err failed to download bucket %s key %s as scanner: %v", record.S3.Bucket.Name, record.S3.Object.Key, err))
+				sub.SendErr(fmt.Errorf("s3 handler: %v", err))
 				return
 			}
 
@@ -197,7 +197,7 @@ func s3(ctx context.Context, s3Event events.S3Event) error {
 	}()
 
 	if err := sub.Block(ctx); err != nil {
-		return err
+		return fmt.Errorf("s3 handler: %v", err)
 	}
 
 	return nil
@@ -206,7 +206,7 @@ func s3(ctx context.Context, s3Event events.S3Event) error {
 func sns(ctx context.Context, snsEvent events.SNSEvent) error {
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
-		return fmt.Errorf("err failed to fetch AppConfig configuration: %v", err)
+		return fmt.Errorf("sns handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
@@ -233,7 +233,7 @@ func sns(ctx context.Context, snsEvent events.SNSEvent) error {
 			var s3Event events.S3Event
 			err := json.Unmarshal([]byte(record.SNS.Message), &s3Event)
 			if err != nil {
-				sub.SendErr(fmt.Errorf("err failed to unmarshal SNS message as S3Event: %v", err))
+				sub.SendErr(fmt.Errorf("sns handler: %v", err))
 				return
 			}
 
@@ -250,7 +250,7 @@ func sns(ctx context.Context, snsEvent events.SNSEvent) error {
 					record.S3.Object.Key,
 				)
 				if err != nil {
-					sub.SendErr(fmt.Errorf("err failed to download bucket %s key %s as scanner: %v", record.S3.Bucket.Name, record.S3.Object.Key, err))
+					sub.SendErr(fmt.Errorf("sns handler: %v", err))
 					return
 				}
 
@@ -271,7 +271,7 @@ func sns(ctx context.Context, snsEvent events.SNSEvent) error {
 	}()
 
 	if err := sub.Block(ctx); err != nil {
-		return err
+		return fmt.Errorf("sns handler: %v", err)
 	}
 
 	return nil

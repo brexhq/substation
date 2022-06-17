@@ -2,15 +2,17 @@ package condition
 
 import (
 	"testing"
+
+	"github.com/brexhq/substation/internal/config"
 )
 
 var configTests = []struct {
-	conf     []InspectorConfig
+	conf     []config.Config
 	test     []byte
 	expected bool
 }{
 	{
-		[]InspectorConfig{
+		[]config.Config{
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
@@ -29,7 +31,7 @@ var configTests = []struct {
 		true,
 	},
 	{
-		[]InspectorConfig{
+		[]config.Config{
 			{
 				Type: "regexp",
 				Settings: map[string]interface{}{
@@ -48,7 +50,7 @@ var configTests = []struct {
 		false,
 	},
 	{
-		[]InspectorConfig{
+		[]config.Config{
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
@@ -63,7 +65,7 @@ var configTests = []struct {
 		true,
 	},
 	{
-		[]InspectorConfig{
+		[]config.Config{
 			{
 				Type: "content",
 				Settings: map[string]interface{}{
@@ -126,12 +128,12 @@ func TestFactory(t *testing.T) {
 
 func TestOR(t *testing.T) {
 	var tests = []struct {
-		conf     []InspectorConfig
+		conf     []config.Config
 		test     []byte
 		expected bool
 	}{
 		{
-			[]InspectorConfig{
+			[]config.Config{
 				{
 					Type: "strings",
 					Settings: map[string]interface{}{
@@ -150,7 +152,7 @@ func TestOR(t *testing.T) {
 			true,
 		},
 		{
-			[]InspectorConfig{
+			[]config.Config{
 				{
 					Type: "regexp",
 					Settings: map[string]interface{}{
@@ -197,12 +199,12 @@ func TestOR(t *testing.T) {
 
 func TestNOR(t *testing.T) {
 	var tests = []struct {
-		conf     []InspectorConfig
+		conf     []config.Config
 		test     []byte
 		expected bool
 	}{
 		{
-			[]InspectorConfig{
+			[]config.Config{
 				{
 					Type: "strings",
 					Settings: map[string]interface{}{
@@ -221,7 +223,7 @@ func TestNOR(t *testing.T) {
 			false,
 		},
 		{
-			[]InspectorConfig{
+			[]config.Config{
 				{
 					Type: "regexp",
 					Settings: map[string]interface{}{
@@ -263,5 +265,30 @@ func TestNOR(t *testing.T) {
 			t.Logf("expected %v, got %v", test.expected, ok)
 			t.Fail()
 		}
+	}
+}
+
+var BenchmarkCfg = OperatorConfig{
+	Operator:   "and",
+	Inspectors: configTests[0].conf,
+}
+
+func BenchmarkOperatorFactory(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		op, err := OperatorFactory(BenchmarkCfg)
+		if err != nil {
+			b.Log(err)
+			b.Fail()
+		}
+
+		op.Operate(configTests[0].test)
+	}
+}
+
+var op, _ = OperatorFactory(BenchmarkCfg)
+
+func BenchmarkOperate(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		op.Operate(configTests[0].test)
 	}
 }

@@ -89,6 +89,7 @@ data "aws_iam_policy_document" "dynamodb_write" {
     effect = "Allow"
     actions = [
       "dynamodb:PutItem",
+      "dynamodb:UpdateItem",
     ]
     resources = var.resources
   }
@@ -118,6 +119,7 @@ data "aws_iam_policy_document" "lambda_execute" {
   statement {
     effect = "Allow"
     actions = [
+      "lambda:InvokeAsync",
       "lambda:InvokeFunction",
     ]
     resources = var.resources
@@ -139,6 +141,16 @@ data "aws_iam_policy_document" "s3_write" {
     effect = "Allow"
     actions = [
       "s3:PutObject",
+    ]
+    resources = var.resources
+  }
+}
+
+data "aws_iam_policy_document" "secretsmanager_read" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue",
     ]
     resources = var.resources
   }

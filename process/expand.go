@@ -2,52 +2,73 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-ExpandOptions contain custom options settings for this processor.
+// ExpandInvalidSettings is returned when the Expand processor is configured with invalid Input and Output settings.
+const ExpandInvalidSettings = errors.Error("ExpandInvalidSettings")
 
-Retain: array of JSON keys to retain from the original object and insert into the new objects
+/*
+ExpandOptions contains custom options settings for the Expand processor:
+	Retain (optional):
+		array of JSON keys to retain from the original object
 */
 type ExpandOptions struct {
-	Retain []string `mapstructure:"retain"` // retain fields found anywhere in input
+	Retain []string `json:"retain"` // retain fields found anywhere in input
 }
 
-// Expand implements the Channeler interface and expands data in JSON arrays into individual events. More information is available in the README.
+/*
+Expand processes data by creating individual events from objects in JSON arrays. The processor supports these patterns:
+	json array:
+		{"expand":[{"foo":"bar"}],"baz":"qux"} >>> {"foo":"bar","baz":"qux"}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'expand',
+		settings: {
+			input_key: 'expand',
+			options: {
+				retain: ['baz'],
+			}
+		},
+	}
+*/
 type Expand struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Input                    `mapstructure:"input"`
-	Options   ExpandOptions            `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	InputKey  string                   `json:"input_key"`
+	Options   ExpandOptions            `json:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
-func (p Expand) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
+// Slice processes a slice of bytes with the Expand processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+	// only supports json, error early if there is no input key
+	if p.InputKey == "" {
+		return nil, fmt.Errorf("slicer settings %v: %v", p, ExpandInvalidSettings)
+	}
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
-		if len(p.Input.Key) == 0 {
-			p.Input.Key = "@this"
-		}
-
-		value := json.Get(data, p.Input.Key)
+		// json array processing
+		value := json.Get(data, p.InputKey)
 		for _, x := range value.Array() {
 			var err error
 			processed := []byte(x.String())
@@ -55,18 +76,13 @@ func (p Expand) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, e
 				v := json.Get(data, r)
 				processed, err = json.Set(processed, r, v)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 				}
 			}
 
-			array = append(array, processed)
+			slice = append(slice, processed)
 		}
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	defer close(output)
-	return output, nil
+	return slice, nil
 }

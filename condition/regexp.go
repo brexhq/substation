@@ -7,28 +7,54 @@ import (
 	"github.com/brexhq/substation/internal/regexp"
 )
 
-// RegExp implements the Inspector interface for evaluating data with a regular expression. More information is available in the README.
+/*
+RegExp evaluates data using a regular expression. This inspector uses a regexp cache provided by internal/regexp.
+
+The inspector has these settings:
+	Key (optional):
+		the JSON key-value to retrieve for inspection
+	Expression:
+		the regular expression to use during inspection
+	Negate (optional):
+		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
+		defaults to false
+
+The inspector supports these patterns:
+	json:
+		{"foo":"bar"} == ^bar
+	data:
+		bar == ^bar
+
+The inspector uses this Jsonnet configuration:
+	{
+		type: 'regexp',
+		settings: {
+			key: 'foo',
+			expression: '^bar',
+		},
+	}
+*/
 type RegExp struct {
-	Key        string `mapstructure:"key"`
-	Expression string `mapstructure:"expression"`
-	Negate     bool   `mapstructure:"negate"`
+	Key        string `json:"key"`
+	Expression string `json:"expression"`
+	Negate     bool   `json:"negate"`
 }
 
-// Inspect evaluates the data with a user-defined regular expression.
+// Inspect evaluates data with the RegExp inspector.
 func (c RegExp) Inspect(data []byte) (output bool, err error) {
-	var check string
-	if c.Key == "" {
-		check = string(data)
-	} else {
-		check = json.Get(data, c.Key).String()
-	}
-
 	re, err := regexp.Compile(c.Expression)
 	if err != nil {
-		return false, fmt.Errorf("err RegExp condition failed to compile regexp %s: %v", c.Expression, err)
+		return false, fmt.Errorf("inspector settings %v: %v", c, err)
 	}
 
-	matched := re.MatchString(check)
+	var matched bool
+	if c.Key == "" {
+		matched = re.Match(data)
+	} else {
+		s := json.Get(data, c.Key).String()
+		matched = re.MatchString(s)
+	}
+
 	if c.Negate {
 		return !matched, nil
 	}

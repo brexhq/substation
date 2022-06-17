@@ -3,18 +3,17 @@ package condition
 import (
 	"fmt"
 
-	"github.com/mitchellh/mapstructure"
-
+	"github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// InspectorInvalidFactoryConfig is used when an unsupported Inspector is referenced in InspectorFactory
+// InspectorInvalidFactoryConfig is returned when an unsupported Inspector is referenced in InspectorFactory.
 const InspectorInvalidFactoryConfig = errors.Error("InspectorInvalidFactoryConfig")
 
-// OperatorInvalidFactoryConfig is used when an unsupported Operator is referenced in OperatorFactory
+// OperatorInvalidFactoryConfig is returned when an unsupported Operator is referenced in OperatorFactory.
 const OperatorInvalidFactoryConfig = errors.Error("OperatorInvalidFactoryConfig")
 
-// OperatorMissingInspectors is used when an Operator that requres Inspectors is created with no inspectors
+// OperatorMissingInspectors is returned when an Operator that requres Inspectors is created with no inspectors.
 const OperatorMissingInspectors = errors.Error("OperatorMissingInspectors")
 
 // Inspector is the interface shared by all inspector methods.
@@ -35,7 +34,7 @@ type AND struct {
 // Operate returns true if all Inspectors return true, otherwise it returns false.
 func (o AND) Operate(data []byte) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, OperatorMissingInspectors
+		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -62,7 +61,7 @@ type OR struct {
 // Operate returns true if any Inspectors return true, otherwise it returns false.
 func (o OR) Operate(data []byte) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, OperatorMissingInspectors
+		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -88,7 +87,7 @@ type NAND struct {
 // Operate returns true if all Inspectors return false, otherwise it returns true.
 func (o NAND) Operate(data []byte) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, OperatorMissingInspectors
+		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -114,7 +113,7 @@ type NOR struct {
 // Operate returns true if any Inspectors return false, otherwise it returns true.
 func (o NOR) Operate(data []byte) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, OperatorMissingInspectors
+		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -135,24 +134,18 @@ func (o NOR) Operate(data []byte) (bool, error) {
 // Default implements the Operator interface.
 type Default struct{}
 
-// Operate always returns true. This operator cannot be called directly and is chosen from the OperatorFactory if no valid operator is provided.
+// Operate always returns true. This is the default operator returned by  OperatorFactory.
 func (o Default) Operate(data []byte) (bool, error) {
 	return true, nil
 }
 
-// InspectorConfig contains arbitrary JSON settings for Inspectors loaded via mapstructure.
-type InspectorConfig struct {
-	Type     string
-	Settings map[string]interface{}
-}
-
-// OperatorConfig contains an array of InspectorConfig that are used to evaluate data.
+// OperatorConfig contains an array of Inspector configurations that are used to evaluate data.
 type OperatorConfig struct {
 	Operator   string
-	Inspectors []InspectorConfig
+	Inspectors []config.Config
 }
 
-// OperatorFactory loads Operators from an OperatorConfig. This is the recommended function for retrieving ready-to-use Operators.
+// OperatorFactory loads Operators from an OperatorConfig. This function is the preferred way to create Operators.
 func OperatorFactory(cfg OperatorConfig) (Operator, error) {
 	inspectors, err := MakeInspectors(cfg.Inspectors)
 	if err != nil {
@@ -173,40 +166,40 @@ func OperatorFactory(cfg OperatorConfig) (Operator, error) {
 	}
 }
 
-// InspectorFactory loads Inspectors from an InspectorConfig. This is the recommended function for retrieving ready-to-use Inspectors.
-func InspectorFactory(cfg InspectorConfig) (Inspector, error) {
+// InspectorFactory loads Inspectors from an InspectorConfig. This function is the preferred way to create Inspectors.
+func InspectorFactory(cfg config.Config) (Inspector, error) {
 	switch t := cfg.Type; t {
 	case "content":
 		var i Content
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "ip":
 		var i IP
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "json_schema":
 		var i JSONSchema
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "json_valid":
 		var i JSONValid
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "regexp":
 		var i RegExp
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "strings":
 		var i Strings
-		mapstructure.Decode(cfg.Settings, &i)
+		config.Decode(cfg.Settings, &i)
 		return i, nil
 	default:
-		return nil, fmt.Errorf("err retrieving %s from factory: %v", t, InspectorInvalidFactoryConfig)
+		return nil, fmt.Errorf("condition settings %v: %v", cfg.Settings, InspectorInvalidFactoryConfig)
 	}
 }
 
-// MakeInspectors is a convenience function for making several Inspectors.
-func MakeInspectors(cfg []InspectorConfig) ([]Inspector, error) {
+// MakeInspectors is a convenience function for creating several Inspectors.
+func MakeInspectors(cfg []config.Config) ([]Inspector, error) {
 	var inspectors []Inspector
 	for _, c := range cfg {
 		inspector, err := InspectorFactory(c)

@@ -2,40 +2,40 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
 )
 
-// Drop implements the Channeler interface and drops any matched data. More information is available in the README.
+/*
+Drop processes data by dropping it from a data channel. The processor uses this Jsonnet configuration:
+	{
+		type: 'drop',
+	}
+*/
 type Drop struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
+	Condition condition.OperatorConfig `json:"condition"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
-func (p Drop) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
+// Slice processes a slice of bytes with the Drop processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Drop) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
+	return slice, nil
 }

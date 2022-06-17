@@ -153,12 +153,12 @@ From the project root, run the commands below to create a sample events file and
 
 ```bash
 $ echo '{"hello":"world"}' >> quickstart.json
-$ ./cmd/file/substation/substation -input /tmp/quickstart.json -config config/quickstart/config.json
+$ ./cmd/file/substation/substation -input quickstart.json -config config/quickstart/config.json
 ```
 
 ### Step 4: Test Substation in AWS
 
-Navigate to the [build](build/) directory and review the `terraform`, `container`, and `config` documentation. [build/terraform/aws/example_pipeline.tf](build/terraform/aws/example_pipeline.tf.bak) is a fully-featured data pipeline that can be used as an example of how to deploy pipelines in AWS.
+Navigate to the [build](build/) directory and review the `terraform`, `container`, and `config` documentation. [build/terraform/aws/](build/terraform/aws/) contains a fully-featured data pipeline that can be used as an example of how to deploy pipelines in AWS.
 
 ## Additional Documentation
 

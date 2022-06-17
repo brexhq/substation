@@ -2,90 +2,114 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-ConcatOptions contain custom options settings for this processor.
+// ConcatInvalidSettings is returned when the Concat processor is configured with invalid Input and Output settings.
+const ConcatInvalidSettings = errors.Error("ConcatInvalidSettings")
 
-Separator: the string that separates the concatenated values.
+/*
+ConcatOptions contains custom options for the Concat processor:
+	Separator:
+		the string that separates the concatenated values
 */
 type ConcatOptions struct {
-	Separator string `mapstructure:"separator"`
+	Separator string `json:"separator"`
 }
 
-// Concat implements the Byter and Channeler interfaces and concatenates multiple JSON keys into a single value with a separator character. More information is available in the README.
+/*
+Concat processes data by concatenating multiple values together with a separator. The processor supports these patterns:
+	json:
+		{"concat":["foo","bar"]} >>> {"concat":"foo.bar"}
+	json array:
+		{"concat":[["foo","baz"],["bar","qux"]]} >>> {"concat":["foo.bar","baz.qux"]}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'concat',
+		settings: {
+			input_key: 'concat',
+			output_key: 'concat',
+			options: {
+				separator: '.',
+			}
+		},
+	}
+*/
 type Concat struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Inputs                   `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   ConcatOptions            `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
+	Options   ConcatOptions            `json:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
-func (p Concat) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
+// Slice processes a slice of bytes with the Concat processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Concat) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes bytes with the Concat processor.
 func (p Concat) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	count := len(p.Input.Keys) - 1
+	// only supports json and json arrays, error early if there are no keys
+	if p.InputKey == "" && p.OutputKey == "" {
+		return nil, fmt.Errorf("byter settings %v: %v", p, ConcatInvalidSettings)
+	}
 
 	cache := make(map[int]string)
-	for i, key := range p.Input.Keys {
-		value := json.Get(data, key)
-		if value.Type.String() == "Null" {
-			return data, nil
-		}
+	value := json.Get(data, p.InputKey)
+	for x, v := range value.Array() {
+		var idx int
 
-		for x, v := range value.Array() {
-			cache[x] += v.String()
-			if i != count {
-				cache[x] += p.Options.Separator
+		for x1, v1 := range v.Array() {
+			if v.IsArray() {
+				idx = x1
+			}
+
+			cache[idx] += v1.String()
+			if x != len(value.Array())-1 {
+				cache[idx] += p.Options.Separator
 			}
 		}
 	}
 
-	var array []string
-	for _, v := range cache {
-		array = append(array, v)
+	// json processing
+	if len(cache) == 1 {
+		return json.Set(data, p.OutputKey, cache[0])
 	}
 
-	if len(array) == 1 {
-		return json.Set(data, p.Output.Key, array[0])
+	// json array processing
+	var array []string
+	for i := 0; i < len(cache); i++ {
+		array = append(array, cache[i])
 	}
-	return json.Set(data, p.Output.Key, array)
+
+	return json.Set(data, p.OutputKey, array)
 }

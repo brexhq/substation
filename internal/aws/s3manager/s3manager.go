@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -39,7 +40,11 @@ func NewS3() *s3.S3 {
 		session.Must(session.NewSession()),
 		conf,
 	)
-	xray.AWS(c.Client)
+
+	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
+		xray.AWS(c.Client)
+	}
+
 	return c
 }
 
@@ -73,7 +78,7 @@ func (a *DownloaderAPI) Download(ctx aws.Context, bucket, key string) ([]byte, i
 
 	size, err := a.Client.DownloadWithContext(ctx, buf, input)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("download bucket %s key %s: %w", bucket, key, err)
 	}
 	return buf.Bytes(), size, nil
 }
@@ -92,7 +97,7 @@ func (a *DownloaderAPI) DownloadAsScanner(ctx aws.Context, bucket, key string) (
 	ct := http.DetectContentType(buf)
 	decoded, err := decode(buf, ct)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("decode bucket %s key %s: %v", bucket, key, err)
 	}
 
 	s := createScanner(decoded)
@@ -105,7 +110,7 @@ func decode(buf []byte, contentType string) (io.Reader, error) {
 	case "application/x-gzip":
 		content, err := gzip.NewReader(bytes.NewBuffer(buf))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("decode content type %s: %v", contentType, err)
 		}
 		return content, nil
 	default:
@@ -152,7 +157,7 @@ func (a *UploaderAPI) Upload(ctx aws.Context, buffer []byte, bucket, key string)
 
 	resp, err := a.Client.UploadWithContext(ctx, input)
 	if err != nil {
-		return resp, err
+		return nil, fmt.Errorf("upload bucket %s key %s: %w", bucket, key, err)
 	}
 	return resp, nil
 }

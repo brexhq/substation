@@ -2,6 +2,7 @@ package json
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 
 	"github.com/tidwall/gjson"
@@ -10,13 +11,13 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// JSONSetRawInvalid is used when SetRaw receives an invalid input
+// JSONSetRawInvalid is returned when SetRaw receives an invalid input.
 const JSONSetRawInvalid = errors.Error("JSONSetRawInvalid")
 
-// JSONInvalidData is used when JSON functions return invalid JSON
+// JSONInvalidData is returned when JSON functions return invalid JSON.
 const JSONInvalidData = errors.Error("JSONInvalidData")
 
-// Types maps gjson.Type to strings
+// Types maps gjson.Type to strings.
 var Types = map[gjson.Type]string{
 	0: "Null",
 	1: "Boolean", // False
@@ -30,8 +31,14 @@ var Types = map[gjson.Type]string{
 type Result = gjson.Result
 
 // Delete wraps sjson.DeleteBytes.
-func Delete(json []byte, key string) ([]byte, error) {
-	return sjson.DeleteBytes(json, key)
+func Delete(json []byte, key string) (tmp []byte, err error) {
+	tmp, err = sjson.DeleteBytes(json, key)
+
+	if err != nil {
+		return nil, fmt.Errorf("delete key %s: %v", key, err)
+	}
+
+	return tmp, nil
 }
 
 // Get wraps gjson.GetBytes.
@@ -40,27 +47,39 @@ func Get(json []byte, key string) Result {
 }
 
 // Set wraps sjson.SetBytes.
-func Set(json []byte, key string, value interface{}) ([]byte, error) {
+func Set(json []byte, key string, value interface{}) (tmp []byte, err error) {
 	switch v := value.(type) {
 	case Result:
-		return sjson.SetBytes(json, key, v.Value())
+		tmp, err = sjson.SetBytes(json, key, v.Value())
 	default:
-		return sjson.SetBytes(json, key, v)
+		tmp, err = sjson.SetBytes(json, key, v)
 	}
+
+	if err != nil {
+		return nil, fmt.Errorf("set key %s: %v", key, err)
+	}
+
+	return tmp, nil
 }
 
 // SetRaw wraps sjson.SetRawBytes.
-func SetRaw(json []byte, key string, value interface{}) ([]byte, error) {
+func SetRaw(json []byte, key string, value interface{}) (tmp []byte, err error) {
 	switch v := value.(type) {
 	case []byte:
-		return sjson.SetRawBytes(json, key, v)
+		tmp, err = sjson.SetRawBytes(json, key, v)
 	case string:
-		return sjson.SetRawBytes(json, key, []byte(v))
+		tmp, err = sjson.SetRawBytes(json, key, []byte(v))
 	case Result:
-		return sjson.SetRawBytes(json, key, []byte(v.String()))
+		tmp, err = sjson.SetRawBytes(json, key, []byte(v.String()))
 	default:
-		return nil, JSONSetRawInvalid
+		return nil, fmt.Errorf("setraw key %s: %v", key, JSONSetRawInvalid)
 	}
+
+	if err != nil {
+		return nil, fmt.Errorf("setraw key %s: %v", key, err)
+	}
+
+	return tmp, nil
 }
 
 // Unmarshal wraps json.Unmarshal.

@@ -5,10 +5,17 @@ import (
 	"fmt"
 )
 
-// Stdout implements the Sink interface and prints data to stdout. More information is available in the README.
+/*
+Stdout sinks data to stdout.
+
+The sink uses this Jsonnet configuration:
+	{
+		type: 'stdout',
+	}
+*/
 type Stdout struct{}
 
-// Send prints a channel of bytes to stdout.
+// Send sinks a channel of bytes with the Stdout sink.
 func (sink *Stdout) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
 	for data := range ch {
 		select {

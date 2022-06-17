@@ -2,110 +2,124 @@ package process
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/aws/lambda"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-LambdaInput contain custom options settings for this processor.
-
-Payload: maps values from a JSON object (Key) to values in the AWS Lambda payload (PayloadKey)
-*/
-type LambdaInput struct {
-	Payload []struct {
-		Key        string `mapstructure:"key"`
-		PayloadKey string `mapstructure:"payload_key"`
-	} `mapstructure:"payload"`
-}
+// LambdaInvalidSettings is returned when the Lambda processor is configured with invalid Input and Output settings.
+const LambdaInvalidSettings = errors.Error("LambdaInvalidSettings")
 
 /*
-LambdaOptions contain custom options settings for this processor.
-
-Function: the name of the AWS Lambda function to invoke.
-Errors: if true, then errors from the invoked Lambda will cause this processor to fail (defaults to false).
+LambdaOptions contains custom options settings for the Lambda processor:
+	Function:
+		function to invoke
+	ErrorOnFailure (optional):
+		if set to true, then errors from the invoked Lambda will cause the processor to fail
+		defaults to false
 */
 type LambdaOptions struct {
-	Function string `mapstructure:"function"`
-	Errors   bool   `mapstructure:"errors"`
+	Function       string `json:"function"`
+	ErrorOnFailure bool   `json:"error_on_failure"`
 }
 
-// Lambda implements the Byter and Channeler interfaces and synchronously invokes an AWS Lambda. More information is available in the README.
+/*
+Lambda processes data by synchronously invoking an AWS Lambda and returning the payload. The average latency of synchronously invoking a Lambda function is 10s of milliseconds, but latency can take 100s to 1000s of milliseconds depending on the function which can have significant impact on total event latency. If Substation is running in AWS Lambda with Kinesis, then this latency can be mitigated by increasing the parallelization factor of the Lambda (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
+
+The input key's value must be a JSON object that contains settings for the Lambda. It is recommended to use the copy and insert processors to create the JSON object before calling this processor and to use the delete processor to remove the JSON object after calling this processor.
+
+The processor supports these patterns:
+	json:
+		{"foo":"bar","lambda":{"lookup":"baz"}} >>> {"foo":"bar","lambda":{"baz":"qux"}}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'lambda',
+		settings: {
+			input_key: 'lambda',
+			output_key: 'lambda',
+			options: {
+				function: 'foo-function',
+			}
+		},
+	}
+*/
 type Lambda struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     LambdaInput              `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   LambdaOptions            `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
+	Options   LambdaOptions            `json:"options"`
 }
 
 var lambdaAPI lambda.API
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
-func (p Lambda) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
+// Slice processes a slice of bytes with the Lambda processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Lambda) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+	// lazy load API
+	if !lambdaAPI.IsEnabled() {
+		lambdaAPI.Setup()
+	}
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes bytes with the Lambda processor.
 func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
+	// only supports json, error early if there are no keys
+	if p.InputKey == "" && p.OutputKey == "" {
+		return nil, fmt.Errorf("byter settings %v: %v", p, LambdaInvalidSettings)
+	}
+
+	// lazy load API
 	if !lambdaAPI.IsEnabled() {
 		lambdaAPI.Setup()
 	}
 
-	var payload []byte
-	var err error
-	for _, p := range p.Input.Payload {
-		v := json.Get(data, p.Key)
-		payload, err = json.Set(payload, p.PayloadKey, v)
-		if err != nil {
-			return nil, err
-		}
+	payload := json.Get(data, p.InputKey)
+	if !payload.IsObject() {
+		return nil, fmt.Errorf("byter settings %v: %v", p, LambdaInvalidSettings)
 	}
 
-	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, payload)
+	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, []byte(payload.Raw))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("byter settings %v: %v", p, err)
 	}
 
-	if resp.FunctionError != nil && p.Options.Errors {
+	if resp.FunctionError != nil && p.Options.ErrorOnFailure {
 		resErr := json.Get(resp.Payload, "errorMessage").String()
-		return nil, errors.New(resErr)
+		return nil, fmt.Errorf("byter settings %v: %v", p, resErr)
 	}
+
 	if resp.FunctionError != nil {
 		return data, nil
 	}
 
-	return json.SetRaw(data, p.Output.Key, resp.Payload)
+	return json.SetRaw(data, p.OutputKey, resp.Payload)
 }

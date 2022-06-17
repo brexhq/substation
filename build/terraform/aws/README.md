@@ -33,27 +33,22 @@ Substation Lambdas use AWS X-Ray for performance monitoring and tuning. If the A
 
 Read more about AWS X-Ray [here](https://aws.amazon.com/xray/).
 
-### autoscaling.tf.bak
+### autoscaling.tf
 
-(Note: this file must be applied after running `bootstrap.tf` and `xray.tf`.)
+This file includes everything required to deploy the AWS Lambda autoscaling application (`cmd/aws/lambda/autoscaling`). This is required for any data pipelines that use Kinesis Data Streams.
 
-This file includes everything required to deploy the AWS Lambda autoscaling application (`cmd/aws/lambda/kinesis_autoscaling`). This is required for any data pipelines that use Kinesis Data Streams.
+### example_*.tf
 
-### example_pipeline.tf.bak
+These files include a fully-featured data pipeline that makes use of every Substation component as an example of a "best practice" deployment. This includes:
 
-(Note: this file must be applied after running `bootstrap.tf` and `xray.tf`.)
-
-This file includes a fully-featured data pipeline that makes use of every Substation component as an example of a "best practice" deployment. This includes:
-
-- ability to ingest data pulled from an S3 bucket
-- ability to ingest data pushed from an API Gateway
-- ability to ingest data pushed from a Kinesis client
+- ingest data from an S3 bucket
+- ingest data from multiple API Gateways
 - raw Kinesis stream for storage and access to unmodified, pre-processed data
 - processed Kinesis stream for storage and access to transformed, processed data
-- data processing Lambda that reads from the raw Kinesis stream, processes data, and writes to the processed Kinesis stream
-- write once, read many (WORM) S3 bucket for long-term storage of raw data (useful for compliance purposes or data lakes)
-- S3 bucket for short-term storage of processed data (useful for data analytics)
-- DynamoDB table for short-term or long-term storage of metadata (useful for correlation inside a data pipeline or across data pipelines)
+- data processor Lambda that reads from the raw Kinesis stream, processes data, and writes to the processed Kinesis stream
+- load raw data to an S3 bucket 
+- load processed data to an S3 bucket
+- load metadata to a DynamoDB table
 
 This data pipeline can be visualized like this:
 
@@ -63,34 +58,34 @@ graph TD
     dynamodb_table(Metadata DynamoDB Table)
     gateway_kinesis(HTTPS Endpoint)
     gateway(HTTPS Endpoint)
-    kinesis_raw(Raw Data Kinesis Store)
-    kinesis_processed(Processed Data Kinesis Store)
+    kinesis_raw(Raw Data Kinesis Stream)
+    kinesis_processed(Processed Data Kinesis Stream)
     s3_source_bucket(S3 Data Storage)
-    s3_worm_bucket(WORM / Data Lake S3 Storage)
-    s3_sink_bucket(Data Warehouse S3 Storage)
+    s3_lake_bucket(Data Lake S3 Storage)
+    s3_warehouse_bucket(Data Warehouse S3 Storage)
 
     %% Lambda data processing
-    dynamodb_lambda[Metadata Processing Lambda]
-    gateway_lambda[HTTPS Ingest Lambda]
-    kinesis_lambda[Data Processing Lambda]
+    dynamodb_lambda[DynamoDB Sink Lambda]
+    gateway_lambda[Gateway Source Lambda]
+    kinesis_lambda[Processor Lambda]
     enrichment_lambda[Data Enrichment Lambda]
-    s3_sink_lambda[Data Warehouse Processing Lambda]
-    s3_source_lambda[Data Storage Ingest Lambda]
-    s3_worm_lambda[WORM Processing Lambda]
+    s3_warehouse_sink_lambda[S3 Sink Lambda]
+    s3_source_lambda[S3 Source Lambda]
+    s3_lake_sink_lambda[S3 Sink Lambda]
 
     %% ingest
     gateway ---|Push| gateway_lambda ---|Push| kinesis_raw
     gateway_kinesis ---|Push| kinesis_raw
     s3_source_bucket ---|Pull| s3_source_lambda ---|Push| kinesis_raw
-    kinesis_raw ---|Pull| s3_worm_lambda ---|Push| s3_worm_bucket
+    kinesis_raw ---|Pull| s3_lake_sink_lambda ---|Push| s3_lake_bucket
 
     %% transform
     kinesis_raw ---|Pull| kinesis_lambda ---|Push| kinesis_processed
     kinesis_lambda ---|Pull| dynamodb_table
-    kinesis_lambda ---|Pull| enrichment_lambda
+    kinesis_lambda ---|Invoke| enrichment_lambda
 
     %% load
-    kinesis_processed ---|Pull| s3_sink_lambda ---|Push| s3_sink_bucket
+    kinesis_processed ---|Pull| s3_warehouse_sink_lambda ---|Push| s3_warehouse_bucket
     kinesis_processed ---|Pull| dynamodb_lambda ---|Push| dynamodb_table
 ```
 
@@ -127,6 +122,14 @@ There are two things to be aware of when deploying new image repositories:
 
 Read more about ECR [here](https://aws.amazon.com/ecr/).
 
+### Event Bridge
+
+#### Lambda
+
+This module is used to create Event Bridge rules that trigger a Lambda.
+
+Read more about Event Bridge [here](https://aws.amazon.com/eventbridge/).
+
 ### IAM
 
 This module is used to provide default Identity and Access Management (IAM) policies for the most commonly used permissions. We use this naming convention: [AWS service]\_[read|write|modify]\_policy. For example, the `kinesis_read_policy` grants all the permissions required to read from a provided Kinesis stream.
@@ -155,7 +158,7 @@ Read more about the Key Management Service [here](https://aws.amazon.com/kms/).
 
 This module is used to create and manage Lambda, which is the recommended service for data processing. At release, the Lambda Substation app (`cmd/aws/lambda/substation`) supports these Lambda triggers:
 
-- API Gateway (REST)
+- API Gateway
 - Kinesis Data Streams
 - SNS via S3
 - S3

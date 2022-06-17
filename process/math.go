@@ -2,91 +2,132 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-MathOptions contain custom options settings for this processor.
+// MathInvalidSettings is returned when the Math processor is configured with invalid Input and Output settings.
+const MathInvalidSettings = errors.Error("MathInvalidSettings")
 
-Operation: the math operation applied to the data.
+/*
+MathOptions contains custom options for the Math processor:
+	Operation:
+		the operator applied to the data
+		must be one of:
+			add
+			subtract
+			divide
 */
 type MathOptions struct {
-	Operation string `mapstructure:"operation"`
+	Operation string `json:"operation"`
 }
 
-// Math implements the Byter and Channeler interfaces and applies mathematical operations to data. More information is available in the README.
+/*
+Math processes data by applying mathematic operations. The processor supports these patterns:
+	json:
+		{"math":[1,3]} >>> {"math":4}
+	json array:
+		{"math":[[1,2],[3,4]]} >>> {"math":[4,6]}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'math',
+		settings: {
+			input_key: 'math',
+			output_key: 'math',
+			options: {
+				operation: 'add',
+			}
+		},
+	}
+*/
 type Math struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Inputs                   `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   MathOptions              `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
+	Options   MathOptions              `json:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
-func (p Math) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
+// Slice processes a slice of bytes with the Math processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Math) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
+	return slice, nil
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes bytes with the Math processor.
 func (p Math) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	cache := make(map[int]int64)
-	for i, key := range p.Input.Keys {
-		value := json.Get(data, key)
+	// only supports json and json arrays, error early if there are no keys
+	if p.InputKey == "" && p.OutputKey == "" {
+		return nil, fmt.Errorf("byter settings %v: %v", p, MathInvalidSettings)
+	}
 
-		for x, v := range value.Array() {
-			if i == 0 {
-				cache[x] = v.Int()
+	// elements in the values array are stored at their
+	// 	relative position inside the map to maintain order
+	//
+	// input.key: [[1,2],[6,10]]
+	// options.operation: add
+	// 	cache[0:7]
+	// 	cache[1:12]
+	cache := make(map[int]int64)
+	value := json.Get(data, p.InputKey)
+	for x, v := range value.Array() {
+		var idx int
+
+		for x1, v1 := range v.Array() {
+			if v.IsArray() {
+				idx = x1
+			}
+
+			if x == 0 {
+				cache[idx] = v1.Int()
 				continue
 			}
 
 			switch p.Options.Operation {
 			case "add":
-				cache[x] = cache[x] + v.Int()
+				cache[idx] = cache[idx] + v1.Int()
 			case "subtract":
-				cache[x] = cache[x] - v.Int()
+				cache[idx] = cache[idx] - v1.Int()
+			case "divide":
+				cache[idx] = cache[idx] / v1.Int()
 			}
 		}
 	}
 
-	var array []int64
-	for _, v := range cache {
-		array = append(array, v)
+	if len(cache) == 1 {
+		return json.Set(data, p.OutputKey, cache[0])
 	}
 
-	if len(array) == 1 {
-		return json.Set(data, p.Output.Key, array[0])
+	var array []int64
+	for i := 0; i < len(cache); i++ {
+		array = append(array, cache[i])
 	}
-	return json.Set(data, p.Output.Key, array)
+
+	return json.Set(data, p.OutputKey, array)
 }

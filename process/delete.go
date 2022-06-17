@@ -2,54 +2,69 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-// Delete implements the Byter and Channeler interfaces and deletes JSON keys. More information is available in the README.
+// DeleteInvalidSettings is returned when the Copy processor is configured with invalid Input and Output settings.
+const DeleteInvalidSettings = errors.Error("DeleteInvalidSettings")
+
+/*
+Delete processes data by deleting JSON keys. The processor supports these patterns:
+	json:
+	  	{"foo":"bar","baz":"qux"} >>> {"foo":"bar"}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'delete',
+		settings: {
+			input_key: 'delete',
+		}
+	}
+*/
 type Delete struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Input                    `mapstructure:"input"`
+	Condition condition.OperatorConfig `json:"condition"`
+	InputKey  string                   `json:"input_key"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
-func (p Delete) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
+// Slice processes a slice of bytes with the Delete processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Delete) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes bytes with the Delete processor.
 func (p Delete) Byte(ctx context.Context, object []byte) ([]byte, error) {
-	return json.Delete(object, p.Input.Key)
+	// json processing
+	if p.InputKey != "" {
+		return json.Delete(object, p.InputKey)
+	}
+
+	return nil, fmt.Errorf("byter settings %v: %v", p, DeleteInvalidSettings)
 }

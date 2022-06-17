@@ -34,7 +34,7 @@ func main() {
 func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
-		return fmt.Errorf("err failed to fetch AppConfig configuration: %v", err)
+		return fmt.Errorf("handler: %v", err)
 	}
 
 	payload := snsEvent.Records[0].SNS
@@ -58,7 +58,7 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 
 	shards, err := kinesisAPI.ActiveShards(ctx, stream)
 	if err != nil {
-		return fmt.Errorf("err failed to identify active Kinesis shards for stream %s: %v", stream, err)
+		return fmt.Errorf("handler: %v", err)
 	}
 	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", shards).Info("retrieved active shard count")
 
@@ -85,17 +85,17 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 	}
 
 	if err := kinesisAPI.UpdateShards(ctx, stream, newShards); err != nil {
-		return fmt.Errorf("err failed to update Kinesis stream %s with new shard count %d: %v", stream, newShards, err)
+		return fmt.Errorf("handler: %v", err)
 	}
 	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", newShards).Info("updated shards")
 
 	if err := cloudwatchAPI.UpdateKinesisDownscaleAlarm(ctx, stream+"_downscale", stream, topicArn, newShards); err != nil {
-		return fmt.Errorf("err failed to update alarm %s: %v", stream+"_downscale", err)
+		return fmt.Errorf("handler: %v", err)
 	}
 	log.WithField("alarm", stream+"_downscale").WithField("stream", stream).WithField("count", newShards).Info("reset alarm")
 
 	if err := cloudwatchAPI.UpdateKinesisUpscaleAlarm(ctx, stream+"_upscale", stream, topicArn, newShards); err != nil {
-		return fmt.Errorf("err failed to update alarm %s: %v", stream+"_upscale", err)
+		return fmt.Errorf("handler: %v", err)
 	}
 	log.WithField("alarm", stream+"_upscale").WithField("stream", stream).WithField("count", newShards).Info("reset alarm")
 

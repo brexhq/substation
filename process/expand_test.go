@@ -4,89 +4,78 @@ import (
 	"bytes"
 	"context"
 	"testing"
-
-	"github.com/brexhq/substation/condition"
 )
 
+var expandTests = []struct {
+	name     string
+	proc     Expand
+	test     []byte
+	expected [][]byte
+}{
+	{
+		"json",
+		Expand{
+			InputKey: "expand",
+		},
+		[]byte(`{"expand":[{"foo":"bar"}],"baz":"qux"`),
+		[][]byte{
+			[]byte(`{"foo":"bar"}`),
+		},
+	},
+	{
+		"json retain",
+		Expand{
+			InputKey: "expand",
+			Options: ExpandOptions{
+				Retain: []string{"baz"},
+			},
+		},
+		[]byte(`{"expand":[{"foo":"bar"}],"baz":"qux"`),
+		[][]byte{
+			[]byte(`{"foo":"bar","baz":"qux"}`),
+		},
+	},
+}
+
 func TestExpand(t *testing.T) {
-	var tests = []struct {
-		proc     Expand
-		test     []byte
-		expected [][]byte
-	}{
-		{
-			Expand{
-				Input: Input{
-					Key: "Expand",
-				},
-				// Options: Output{
-				// 	Key: "Expand",
-				// },
-			},
-			[]byte(`{"expand":["123","456"]}`),
-			[][]byte{
-				[]byte(`{"expand":"123"}`),
-				[]byte(`{"expand":"456"}`),
-			},
-		},
-		{
-			Expand{
-				Condition: condition.OperatorConfig{
-					Operator: "all",
-				},
-				Input: Input{
-					Key: "Expand",
-				},
-				Options: ExpandOptions{
-					Retain: []string{"foo"},
-				},
-			},
-			[]byte(`{"expand":["123","456"],"foo":"bar"}`),
-			[][]byte{
-				[]byte(`{"expand":"123","foo":"bar"}`),
-				[]byte(`{"expand":"456","foo":"bar"}`),
-			},
-		},
-		{
-			Expand{
-				Condition: condition.OperatorConfig{
-					Operator: "all",
-				},
-				Input: Input{
-					Key: "Expand",
-				},
-				Options: ExpandOptions{
-					Retain: []string{"foo", "baz"},
-				},
-			},
-			[]byte(`{"expand":["123","456"],"foo":"bar","baz":"qux"}`),
-			[][]byte{
-				[]byte(`{"expand":"123","foo":"bar","baz":"qux"}`),
-				[]byte(`{"expand":"456","foo":"bar","baz":"qux"}`),
-			},
-		},
-	}
-
 	ctx := context.TODO()
+	for _, test := range expandTests {
+		slice := make([][]byte, 1, 1)
+		slice[0] = test.test
 
-	for _, test := range tests {
-		pipe := make(chan []byte, 1)
-		pipe <- test.test
-		close(pipe)
-
-		res, err := test.proc.Channel(ctx, pipe)
+		res, err := test.proc.Slice(ctx, slice)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
 		count := 0
-		for processed := range res {
+		for _, processed := range res {
 			expected := test.expected[count]
 			if c := bytes.Compare(expected, processed); c != 0 {
 				t.Logf("expected %s, got %s", expected, processed)
 				t.Fail()
 			}
 		}
+	}
+}
+
+func benchmarkExpandSlice(b *testing.B, slicer Expand, slice [][]byte) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		slicer.Slice(ctx, slice)
+	}
+}
+
+func BenchmarkExpandSlice(b *testing.B) {
+	for _, test := range expandTests {
+		slice := make([][]byte, 1, 1)
+		slice[0] = test.test
+
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkExpandSlice(b, test.proc, slice)
+			},
+		)
 	}
 }

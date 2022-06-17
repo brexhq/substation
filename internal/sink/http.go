@@ -10,26 +10,52 @@ import (
 )
 
 /*
-HTTP implements the Sink interface and POSTs data to an HTTP(S) endpoint. More information is available in the README.
+HTTP sinks JSON data to an HTTP(S) endpoint.
 
-URL: HTTP(S) endpoint that data is sent to
-Headers: maps keys from JSON data to an HTTP header
+The sink has these settings:
+	URL:
+		HTTP(S) endpoint that data is sent to
+	Headers (optional):
+		contains configured maps that represent HTTP headers to be sent in the HTTP request
+		defaults to no headers
+	HeadersKey (optional):
+		JSON key-value that contains maps that represent HTTP headers to be sent in the HTTP request
+		This key can be a single map or an array of maps:
+			[
+				{
+					"FOO": "bar",
+				},
+				{
+					"BAZ": "qux",
+				}
+			]
+
+The sink uses this Jsonnet configuration:
+	{
+		type: 'http',
+		settings: {
+			url: 'foo.com/bar',
+			headers_key: 'foo',
+		},
+	}
 */
 type HTTP struct {
-	client  http.HTTP
-	URL     string `mapstructure:"url"`
+	URL     string `json:"url"`
 	Headers []struct {
-		Key    string `mapstructure:"key"`
-		Header string `mapstructure:"header"`
-	} `mapstructure:"headers"`
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	} `json:"headers"`
+	HeadersKey string `json:"headers_key"`
 }
 
-// Send sends a channel of bytes to the HTTP destination defined by this sink.
+var httpClient http.HTTP
+
+// Send sinks a channel of bytes with the HTTP sink.
 func (sink *HTTP) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
-	if !sink.client.IsEnabled() {
-		sink.client.Setup()
+	if !httpClient.IsEnabled() {
+		httpClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
-			sink.client.EnableXRay()
+			httpClient.EnableXRay()
 		}
 	}
 
@@ -45,19 +71,33 @@ func (sink *HTTP) Send(ctx context.Context, ch chan []byte, kill chan struct{}) 
 					Key:   "Content-Type",
 					Value: "application/json",
 				})
+			}
 
-				for _, h := range sink.Headers {
-					v := json.Get(data, h.Header).String()
+			if len(sink.Headers) > 0 {
+				for _, header := range sink.Headers {
 					headers = append(headers, http.Header{
-						Key:   h.Key,
-						Value: v,
+						Key:   header.Key,
+						Value: header.Value,
 					})
 				}
 			}
 
-			_, err := sink.client.Post(ctx, sink.URL, string(data), headers...)
+			if sink.HeadersKey != "" {
+				h := json.Get(data, sink.HeadersKey).Array()
+				for _, header := range h {
+					for k, v := range header.Map() {
+						headers = append(headers, http.Header{
+							Key:   k,
+							Value: v.String(),
+						})
+					}
+				}
+			}
+
+			_, err := httpClient.Post(ctx, sink.URL, string(data), headers...)
 			if err != nil {
-				return fmt.Errorf("err failed to POST to URL %s: %v", sink.URL, err)
+				// Post err returns metadata
+				return fmt.Errorf("sink http: %v", err)
 			}
 		}
 	}

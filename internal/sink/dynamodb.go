@@ -5,39 +5,55 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
 )
 
-/*
-DynamoDB implements the Sink interface and writes data to DynamoDB tables. More information is available in the README.
+// DynamoDBSinkInvalidJSON is returned when the DynamoDB sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
+const DynamoDBSinkInvalidJSON = errors.Error("DynamoDBSinkInvalidJSON")
 
-Items: array of options for inspecting input data and putting an item into DynamoDB
-Items.Condition: conditions that must pass to put data into DynamoDB
-Items.Table: the DynamoDB table that data is written to
-Items.Fields: maps keys from JSON data to a DynamoDB attribute / column
-ErrorOnFailure (optional): determines if invalid input data causes the sink to error; defaults to false
+/*
+DynamoDB sinks JSON data to an AWS DynamoDB table. This sink supports sinking multiple rows from the same event to a table.
+
+The sink has these settings:
+	Table:
+		DynamoDB table that data is written to
+	ItemsKey:
+		JSON key-value that contains maps that represent items to be stored in the DynamoDB table
+		This key can be a single map or an array of maps:
+			[
+				{
+					"PK": "foo",
+					"SK": "bar",
+				},
+				{
+					"PK": "baz",
+					"SK": "qux",
+				}
+			]
+
+The sink uses this Jsonnet configuration:
+	{
+		type: 'dynamodb',
+		settings: {
+			table: 'foo-table',
+			items_key: 'foo',
+		},
+	}
 */
 type DynamoDB struct {
-	api   dynamodb.API
-	Items []struct {
-		Condition condition.OperatorConfig `mapstructure:"condition"`
-		Table     string                   `mapstructure:"table"`
-		Fields    []struct {
-			Key       string `mapstructure:"key"`
-			Attribute string `mapstructure:"attribute"`
-		} `mapstructure:"fields"`
-	} `mapstructure:"items"`
-	ErrorOnFailure bool `mapstructure:"error_on_failure"`
+	Table    string `json:"table"`
+	ItemsKey string `json:"items_key"`
 }
 
-// Send sends a channel of bytes to the DynamoDB tables defined by this sink.
+var dynamodbAPI dynamodb.API
+
+// Send sinks a channel of bytes with the DynamoDB sink.
 func (sink *DynamoDB) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
-	if !sink.api.IsEnabled() {
-		sink.api.Setup()
+	if !dynamodbAPI.IsEnabled() {
+		dynamodbAPI.Setup()
 	}
 
 	var count int
@@ -46,60 +62,37 @@ func (sink *DynamoDB) Send(ctx context.Context, ch chan []byte, kill chan struct
 		case <-kill:
 			return nil
 		default:
-			// can only parse valid JSON into DynamoDB attributes
-			// if this error occurs, then parse the data into JSON
-			if !json.Valid(data) && sink.ErrorOnFailure {
-				return fmt.Errorf("err DynamoDB sink received invalid JSON data: %v", json.JSONInvalidData)
-			} else if !json.Valid(data) {
-				log.Info("DynamoDB sink received invalid JSON data")
-				continue
+			if !json.Valid(data) {
+				return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, DynamoDBSinkInvalidJSON)
 			}
 
-			var table string
-			var cache map[string]interface{}
-
-			for _, attributes := range sink.Items {
-				op, err := condition.OperatorFactory(attributes.Condition)
-				if err != nil {
-					return err
-				}
-				ok, err := op.Operate(data)
-				if err != nil {
-					return err
-				}
-
-				if !ok {
-					continue
-				}
-
-				table = attributes.Table
+			items := json.Get(data, sink.ItemsKey).Array()
+			for _, item := range items {
+				var cache map[string]interface{}
 				cache = make(map[string]interface{})
-				for _, field := range attributes.Fields {
-					cache[field.Attribute] = json.Get(data, field.Key).Value()
+				for k, v := range item.Map() {
+					cache[k] = v.Value()
 				}
-			}
 
-			// if cache is empty, then all match condition failed
-			if len(cache) == 0 {
-				continue
-			}
+				values, err := dynamodbattribute.MarshalMap(cache)
+				if err != nil {
+					return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, err)
+				}
 
-			values, err := dynamodbattribute.MarshalMap(cache)
-			if err != nil {
-				return fmt.Errorf("err marshalling DynamoDB results: %v", err)
+				_, err = dynamodbAPI.PutItem(ctx, sink.Table, values)
+				if err != nil {
+					// PutItem err returns metadata
+					return fmt.Errorf("sink dynamodb: %v", err)
+				}
+				count++
 			}
-
-			_, err = sink.api.PutItem(ctx, table, values)
-			if err != nil {
-				return fmt.Errorf("err putting values into DyanmoDB table %s: %v", table, err)
-			}
-
-			count++
 		}
 	}
 
 	log.WithField(
 		"count", count,
+	).WithField(
+		"table", sink.Table,
 	).Debug("put items into DynamoDB")
 
 	return nil

@@ -7,91 +7,136 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-HashOptions contain custom options settings for this processor.
+// HashInvalidSettings is returned when the Hash processor is configured with invalid Input and Output settings.
+const HashInvalidSettings = errors.Error("HashInvalidSettings")
 
-Algorithm: the algorithm to apply.
+// HashUnsupportedAlgorithm is returned when the Hash processor is configured with an unsupported algorithm.
+const HashUnsupportedAlgorithm = errors.Error("HashUnsupportedAlgorithm")
+
+/*
+HashOptions contains custom options for the Hash processor:
+	Algorithm:
+		the hashing algorithm to apply
+		must be one of:
+			md5
+			sha256
 */
 type HashOptions struct {
-	Algorithm string `mapstructure:"algorithm"`
+	Algorithm string `json:"algorithm"`
 }
 
-// Hash implements the Byter and Channeler interfaces and calculates the hash of data. More information is available in the README.
+/*
+Hash processes data by calculating hashes. The processor supports these patterns:
+	json:
+		{"hash":"foo"} >>> {"hash":"acbd18db4cc2f85cedef654fccc4a4d8"}
+	json array:
+		{"hash":["foo","bar"]} >>> {"hash":["acbd18db4cc2f85cedef654fccc4a4d8","37b51d194a7513e45b56f6524f2d51f2"]}
+	data:
+		foo >>> acbd18db4cc2f85cedef654fccc4a4d8
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'hash',
+		settings: {
+			input_key: 'hash',
+			output_key: 'hash',
+			options: {
+				algorithm: 'md5',
+			}
+		},
+	}
+*/
 type Hash struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Input                    `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
-	Options   HashOptions              `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
+	Options   HashOptions              `json:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
-func (p Hash) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
+// Slice processes a slice of bytes with the Hash processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Hash) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes bytes with the Hash processor.
 func (p Hash) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	value := json.Get(data, p.Input.Key)
+	// json processing
+	if p.InputKey != "" && p.OutputKey != "" {
+		value := json.Get(data, p.InputKey)
+		if !value.IsArray() {
+			b := []byte(value.String())
+			h, err := p.hash(b)
+			if err != nil {
+				return nil, fmt.Errorf("byter settings %v: %v", p, err)
+			}
 
-	if !value.IsArray() {
-		b := []byte(value.String())
-		o := p.hash(b)
-		return json.Set(data, p.Output.Key, o)
+			return json.Set(data, p.OutputKey, h)
+		}
+
+		// json array processing
+		var array []string
+		for _, v := range value.Array() {
+			b := []byte(v.String())
+			h, err := p.hash(b)
+			if err != nil {
+				return nil, fmt.Errorf("byter settings %v: %v", p, err)
+			}
+
+			array = append(array, h)
+		}
+
+		return json.Set(data, p.OutputKey, array)
 	}
 
-	var array []string
-	for _, v := range value.Array() {
-		b := []byte(v.String())
-		o := p.hash(b)
-		array = append(array, o)
+	// data processing
+	if p.InputKey == "" && p.OutputKey == "" {
+		h, err := p.hash(data)
+		if err != nil {
+			return nil, fmt.Errorf("byter settings %v: %v", p, err)
+		}
+		return []byte(h), nil
 	}
 
-	return json.Set(data, p.Output.Key, array)
+	return nil, fmt.Errorf("byter settings %v: %v", p, HashInvalidSettings)
 }
 
-func (p Hash) hash(b []byte) string {
-	switch a := p.Options.Algorithm; a {
+func (p Hash) hash(b []byte) (string, error) {
+	switch s := p.Options.Algorithm; s {
 	case "md5":
 		sum := md5.Sum(b)
-		return fmt.Sprintf("%x", sum)
+		return fmt.Sprintf("%x", sum), nil
 	case "sha256":
 		sum := sha256.Sum256(b)
-		return fmt.Sprintf("%x", sum)
+		return fmt.Sprintf("%x", sum), nil
 	default:
-		return ""
+		return "", fmt.Errorf("hash type %s: %v", s, HashUnsupportedAlgorithm)
 	}
 }

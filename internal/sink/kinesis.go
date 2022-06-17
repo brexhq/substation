@@ -4,80 +4,131 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/brexhq/substation/internal/aws/kinesis"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
 )
 
 /*
-Kinesis implements the Sink interface and puts aggregated records into a Kinesis Data Stream. More information is available in the README.
+Kinesis sinks data to an AWS Kinesis Data Stream using Kinesis Producer Library (KPL) compliant aggregated records. This sink can automatically redistribute data across shards by retrieving partition keys from JSON data; by default, it uses random strings to avoid hot shards. More information about the KPL and its schema is available here: https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html.
 
-Stream: the Kinesis Data Stream to put data into
-PartitionKey (optional): uses the value from this JSON key as the stream partition key; defaults to a random string to avoid hot shards
+The sink has these settings:
+	Stream:
+		Kinesis Data Stream that data is sent to
+	Partition (optional):
+		string that is used as the partition key for the aggregated record
+	PartitionKey (optional):
+		JSON key-value that is used as the partition key for the aggregated record
+	ShardRedistribution (optional):
+		determines if data should be redistributed across shards based on the partition key
+		if enabled with an empty partition key, then data aggregation is disabled
+		defaults to false, data is randomly distributed across shards
+
+The sink uses this Jsonnet configuration:
+	{
+		type: 'kinesis',
+		settings: {
+			stream: 'foo',
+			partition: 'bar',
+		},
+	}
 */
 type Kinesis struct {
-	api          kinesis.API
-	Stream       string `mapstructure:"stream"`
-	PartitionKey string `mapstructure:"partition_key"`
+	Stream              string `json:"stream"`
+	Partition           string `json:"partition"`
+	PartitionKey        string `json:"partition_key"`
+	ShardRedistribution bool   `json:"shard_redistribution"`
 }
 
-// Send sends a channel of bytes to the Kinesis Data Stream stream defined by this sink.
+var kinesisAPI kinesis.API
+
+// Send sinks a channel of bytes with the Kinesis sink.
 func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
-	if !sink.api.IsEnabled() {
-		sink.api.Setup()
+	if !kinesisAPI.IsEnabled() {
+		kinesisAPI.Setup()
 	}
 
-	agg := kinesis.Aggregate{}
-	agg.New()
+	buffer := map[string]*kinesis.Aggregate{}
 
 	for data := range ch {
 		select {
 		case <-kill:
 			return nil
 		default:
-			var pk string
-			if sink.PartitionKey == "" {
-				pk = randomString()
-			} else if json.Valid(data) {
-				pk = json.Get(data, sink.PartitionKey).String()
-			} else {
-				// can only parse a partition key from JSON
-				// if this error occurs, then convert the data to JSON
-				// 	or remove the PartitionKey configuration
-				return fmt.Errorf("err failed to parse partition key %s due to invalid JSON: %v", sink.PartitionKey, json.JSONInvalidData)
+			var partitionKey string
+			if sink.Partition != "" {
+				partitionKey = sink.Partition
+			} else if sink.PartitionKey != "" {
+				partitionKey = json.Get(data, sink.PartitionKey).String()
 			}
 
-			ok := agg.Add(data, pk)
-			if !ok {
-				aggData := agg.Get()
-				aggPk := agg.PartitionKey
+			if partitionKey == "" {
+				partitionKey = uuid.NewString()
+			}
 
-				_, err := sink.api.PutRecord(ctx, aggData, sink.Stream, aggPk)
+			// enables redistribution of data across shards by aggregating partition keys into the same payload
+			// this has the intentional side effect where data aggregation is disabled if no partition key is assigned
+			var aggregationKey string
+			if sink.ShardRedistribution {
+				aggregationKey = partitionKey
+			}
+
+			if _, ok := buffer[aggregationKey]; !ok {
+				// aggregate up to 1MB, the upper limit for Kinesis records
+				buffer[aggregationKey] = &kinesis.Aggregate{}
+				buffer[aggregationKey].New()
+			}
+
+			// add data to the buffer
+			// if buffer is full, then send the aggregated data
+			ok := buffer[aggregationKey].Add(data, partitionKey)
+			if !ok {
+				agg := buffer[aggregationKey].Get()
+				aggPK := buffer[aggregationKey].PartitionKey
+				_, err := kinesisAPI.PutRecord(ctx, agg, sink.Stream, aggPK)
 				if err != nil {
-					return fmt.Errorf("err failed to put records into Kinesis stream %s: %v", sink.Stream, err)
+					// PutRecord err returns metadata
+					return fmt.Errorf("sink kinesis: %v", err)
 				}
 
 				log.WithField(
-					"count", agg.Count,
+					"count", buffer[aggregationKey].Count,
+				).WithField(
+					"stream", sink.Stream,
+				).WithField(
+					"partition_key", aggPK,
 				).Debug("put records into Kinesis")
 
-				agg.New()
-				agg.Add(data, pk)
+				buffer[aggregationKey].New()
+				buffer[aggregationKey].Add(data, partitionKey)
 			}
 		}
 	}
 
-	if agg.Count > 0 {
-		aggData := agg.Get()
-		aggPk := agg.PartitionKey
+	// iterate and send remaining buffers
+	for aggregationKey := range buffer {
+		count := buffer[aggregationKey].Count
 
-		_, err := sink.api.PutRecord(ctx, aggData, sink.Stream, aggPk)
+		if count == 0 {
+			continue
+		}
+
+		agg := buffer[aggregationKey].Get()
+		aggPK := buffer[aggregationKey].PartitionKey
+		_, err := kinesisAPI.PutRecord(ctx, agg, sink.Stream, aggPK)
 		if err != nil {
-			return fmt.Errorf("err failed to put records into Kinesis stream %s: %v", sink.Stream, err)
+			// PutRecord err returns metadata
+			return fmt.Errorf("sink kinesis: %v", err)
 		}
 
 		log.WithField(
-			"count", agg.Count,
+			"count", buffer[aggregationKey].Count,
+		).WithField(
+			"stream", sink.Stream,
+		).WithField(
+			"partition_key", aggPK,
 		).Debug("put records into Kinesis")
 	}
 

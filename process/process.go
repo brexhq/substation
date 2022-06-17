@@ -4,36 +4,33 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mitchellh/mapstructure"
-
+	"github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// ByteInvalidFactoryConfig is used when an unsupported Byte is referenced in ByteFactory
+// ByteInvalidFactoryConfig is used when an unsupported Byte is referenced in ByteFactory.
 const ByteInvalidFactoryConfig = errors.Error("ByteInvalidFactoryConfig")
 
-// ChannelInvalidFactoryConfig is used when an unsupported Channel is referenced in ChannelFactory
-const ChannelInvalidFactoryConfig = errors.Error("ChannelInvalidFactoryConfig")
+// SliceInvalidFactoryConfig is used when an unsupported Slice is referenced in SliceFactory.
+const SliceInvalidFactoryConfig = errors.Error("SliceInvalidFactoryConfig")
 
-// Config contains arbitrary JSON settings for Processors loaded via mapstructure.
-type Config struct {
-	Type     string
-	Settings map[string]interface{}
+// Slicer is an interface for applying processors to slices of bytes.
+type Slicer interface {
+	Slice(context.Context, [][]byte) ([][]byte, error)
 }
 
-// Input is the default input setting for processors that accept a single JSON key. This can be overriden by each processor.
-type Input struct {
-	Key string `mapstructure:"key"`
-}
+// Slice accepts an array of Slicers and applies all processors to the data.
+func Slice(ctx context.Context, slicers []Slicer, slice [][]byte) ([][]byte, error) {
+	var err error
 
-// Inputs is the default input setting for processors that accept multiple JSON keys. This can be overriden by each processor.
-type Inputs struct {
-	Keys []string `mapstructure:"keys"`
-}
+	for _, slicer := range slicers {
+		slice, err = slicer.Slice(ctx, slice)
+		if err != nil {
+			return nil, err
+		}
+	}
 
-// Output is the default output setting for processors that produce a single JSON key. This can be overriden by each processor.
-type Output struct {
-	Key string `mapstructure:"key"`
+	return slice, nil
 }
 
 // Byter is an interface for applying processors to bytes.
@@ -55,204 +52,180 @@ func Byte(ctx context.Context, byters []Byter, data []byte) ([]byte, error) {
 	return data, nil
 }
 
-// Channeler is an interface for applying processors to channels of bytes.
-type Channeler interface {
-	Channel(context.Context, <-chan []byte) (<-chan []byte, error)
-}
-
-// Channel accepts a channel of bytes and applies all processors to data in the channel.
-func Channel(ctx context.Context, channelers []Channeler, ch <-chan []byte) (<-chan []byte, error) {
-	var err error
-
-	for _, channeler := range channelers {
-		ch, err = channeler.Channel(ctx, ch)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return ch, nil
-}
-
-// ReadOnlyChannel turns a write/read channel into a read-only channel.
-func ReadOnlyChannel(ch chan []byte) <-chan []byte {
-	return ch
-}
-
 // ByterFactory loads a Byter from a Config. This is the recommended function for retrieving ready-to-use Byters.
-func ByterFactory(cfg Config) (Byter, error) {
+func ByterFactory(cfg config.Config) (Byter, error) {
 	switch t := cfg.Type; t {
 	case "base64":
 		var p Base64
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "capture":
 		var p Capture
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "case":
 		var p Case
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "concat":
 		var p Concat
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "convert":
 		var p Convert
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "copy":
 		var p Copy
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "delete":
 		var p Delete
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "domain":
 		var p Domain
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "dynamodb":
 		var p DynamoDB
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "flatten":
 		var p Flatten
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "group":
+		var p Group
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "gzip":
 		var p Gzip
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "hash":
 		var p Hash
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "insert":
 		var p Insert
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "lambda":
 		var p Lambda
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "math":
 		var p Math
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "replace":
 		var p Replace
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "time":
 		var p Time
-		mapstructure.Decode(cfg.Settings, &p)
-		return p, nil
-	case "zip":
-		var p Zip
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("err retrieving %s from factory: %v", t, ByteInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %v: %v", cfg.Settings, ByteInvalidFactoryConfig)
 	}
 }
 
-// ChannelerFactory loads Channeler from a Config. This is the recommended function for retrieving ready-to-use Channelers.
-func ChannelerFactory(cfg Config) (Channeler, error) {
+// SlicerFactory loads a Slicer from a Config. This is the recommended function for retrieving ready-to-use Slicers.
+func SlicerFactory(cfg config.Config) (Slicer, error) {
 	switch t := cfg.Type; t {
 	case "base64":
 		var p Base64
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "capture":
 		var p Capture
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "case":
 		var p Case
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "concat":
 		var p Concat
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "convert":
 		var p Convert
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "copy":
 		var p Copy
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "count":
 		var p Count
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "delete":
 		var p Delete
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "domain":
 		var p Domain
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "drop":
 		var p Drop
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "dynamodb":
 		var p DynamoDB
-		mapstructure.Decode(cfg.Settings, &p)
-		return p, nil
-	case "flatten":
-		var p Flatten
-		mapstructure.Decode(cfg.Settings, &p)
-		return p, nil
-	case "gzip":
-		var p Gzip
-		mapstructure.Decode(cfg.Settings, &p)
-		return p, nil
-	case "hash":
-		var p Hash
-		mapstructure.Decode(cfg.Settings, &p)
-		return p, nil
-	case "insert":
-		var p Insert
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "expand":
 		var p Expand
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "flatten":
+		var p Flatten
+		config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "group":
+		var p Group
+		config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "gzip":
+		var p Gzip
+		config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "hash":
+		var p Hash
+		config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "insert":
+		var p Insert
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "lambda":
 		var p Lambda
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "math":
 		var p Math
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "replace":
 		var p Replace
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "time":
 		var p Time
-		mapstructure.Decode(cfg.Settings, &p)
-		return p, nil
-	case "zip":
-		var p Zip
-		mapstructure.Decode(cfg.Settings, &p)
+		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("err retrieving %s from factory: %v", t, ChannelInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %v: %v", cfg.Settings, SliceInvalidFactoryConfig)
 	}
 }
 
 // MakeAllByters accepts an array of Config and returns populated Byters. This a conveience function for loading many Byters.
-func MakeAllByters(cfg []Config) ([]Byter, error) {
+func MakeAllByters(cfg []config.Config) ([]Byter, error) {
 	var byters []Byter
 
 	for _, c := range cfg {
@@ -266,17 +239,25 @@ func MakeAllByters(cfg []Config) ([]Byter, error) {
 	return byters, nil
 }
 
-// MakeAllChannelers accepts an array of Config and returns populated Channelers. This a conveience function for loading many Channelers.
-func MakeAllChannelers(cfg []Config) ([]Channeler, error) {
-	var channelers []Channeler
+// MakeAllSlicers accepts an array of Config and returns populated Slicers. This a conveience function for loading many Slicers.
+func MakeAllSlicers(cfg []config.Config) ([]Slicer, error) {
+	var slicers []Slicer
 
 	for _, c := range cfg {
-		channeler, err := ChannelerFactory(c)
+		slicer, err := SlicerFactory(c)
 		if err != nil {
 			return nil, err
 		}
-		channelers = append(channelers, channeler)
+		slicers = append(slicers, slicer)
 	}
 
-	return channelers, nil
+	return slicers, nil
+}
+
+// NewSlice returns a byte slice with a minimum capacity of 10.
+func NewSlice(s *[][]byte) [][]byte {
+	if len(*s) > 10 {
+		return make([][]byte, 0, len(*s))
+	}
+	return make([][]byte, 0, 10)
 }

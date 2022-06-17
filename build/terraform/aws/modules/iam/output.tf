@@ -49,3 +49,7 @@ output "s3_read_policy" {
 output "s3_write_policy" {
   value = data.aws_iam_policy_document.s3_write.json
 }
+
+output "secretsmanager_read_policy" {
+  value = data.aws_iam_policy_document.secretsmanager_read.json
+}

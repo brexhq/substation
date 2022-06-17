@@ -2,63 +2,82 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-InsertOptions contain custom options settings for this processor.
+// InsertInvalidSettings is returned when the Insert processor is configured with invalid Input and Output settings.
+const InsertInvalidSettings = errors.Error("InsertInvalidSettings")
 
-Value: the value to insert.
+/*
+InsertOptions contains custom options for the Insert processor:
+	value:
+		the value to insert
 */
 type InsertOptions struct {
-	Value interface{} `mapstructure:"value"`
+	Value interface{} `json:"value"`
 }
 
-// Insert implements the Byter and Channeler interfaces and inserts a value into a JSON object. More information is available in the README.
+/*
+Insert processes data by inserting a value into a JSON object. The processor supports these patterns:
+	json:
+		{"foo":"bar"} >>> {"foo":"bar","baz":"qux"}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'insert',
+		settings: {
+			output_key: 'baz',
+			options: {
+				value: 'qux',
+			}
+		},
+	}
+*/
 type Insert struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Output    Output                   `mapstructure:"output"`
-	Options   InsertOptions            `mapstructure:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
+	OutputKey string                   `json:"output_key"`
+	Options   InsertOptions            `json:"options"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
-func (p Insert) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
+// Slice processes a slice of bytes with the Insert processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Insert) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
+	return slice, nil
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes bytes with the Insert processor.
 func (p Insert) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	return json.Set(data, p.Output.Key, p.Options.Value)
+	// json processing
+	if p.OutputKey != "" {
+		return json.Set(data, p.OutputKey, p.Options.Value)
+	}
+
+	return nil, fmt.Errorf("byter settings %v: %v", p, InsertInvalidSettings)
 }

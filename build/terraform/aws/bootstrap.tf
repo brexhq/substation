@@ -1,11 +1,7 @@
-# Initializes deployment-wide Substation infrastructure.
-
-data "aws_region" "region" {}
-
 data "aws_caller_identity" "caller" {}
 
 # KMS encryption key that is shared by all Substation infrastructure
-module "substation_kms" {
+module "kms_substation" {
   source = "./modules/kms"
   name   = "alias/substation"
   policy = <<POLICY
@@ -42,14 +38,14 @@ resource "aws_appconfig_application" "substation" {
   description = "Stores compiled configuration files for Substation"
 }
 
-# use the prod environment for production pipelines
+# use the prod environment for production resources
 resource "aws_appconfig_environment" "prod" {
   name           = "prod"
   description    = "Stores production Substation configuration files"
   application_id = aws_appconfig_application.substation.id
 }
 
-# use the dev environment for development pipelines
+# use the dev environment for development resources
 resource "aws_appconfig_environment" "dev" {
   name           = "dev"
   description    = "Stores development Substation configuration files"
@@ -69,15 +65,15 @@ resource "aws_appconfig_deployment_strategy" "instant" {
 }
 
 # repository for the core Substation app
-module "substation_ecr" {
+module "ecr_substation" {
   source  = "./modules/ecr"
   name    = "substation"
-  kms_arn = module.substation_kms.arn
+  kms_arn = module.kms_substation.arn
 }
 
 # repository for the autoscaling app
-module "autoscaling_ecr" {
+module "ecr_autoscaling" {
   source  = "./modules/ecr"
   name    = "substation_autoscaling"
-  kms_arn = module.substation_kms.arn
+  kms_arn = module.kms_substation.arn
 }

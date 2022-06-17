@@ -21,11 +21,10 @@ import (
 var kplMagicHeader = fmt.Sprintf("%q", []byte("\xf3\x89\x9a\xc2"))
 
 const (
-	kplMagicLen        = 4  // Length of magic header for KPL Aggregate Record checking.
-	kplDigestSize      = 16 // MD5 Message size for protobuf.
-	kinesisMaxBytes    = 1024 * 1024
-	kinesisMaxCount    = 10000
-	scannerMaxCapacity = 1024 * 1024 * 100
+	kplMagicLen   = 4  // Length of magic header for KPL Aggregate Record checking.
+	kplDigestSize = 16 // MD5 Message size for protobuf.
+	kplMaxBytes   = 1024 * 1024
+	kplMaxCount   = 10000
 )
 
 // Aggregate produces a KPL-compliant Kinesis record
@@ -44,17 +43,17 @@ func (a *Aggregate) New() {
 	a.Count = 0
 
 	if a.MaxCount == 0 {
-		a.MaxCount = kinesisMaxCount
+		a.MaxCount = kplMaxCount
 	}
-	if a.MaxCount > kinesisMaxCount {
-		a.MaxCount = kinesisMaxCount
+	if a.MaxCount > kplMaxCount {
+		a.MaxCount = kplMaxCount
 	}
 
 	if a.MaxSize == 0 {
-		a.MaxSize = kinesisMaxBytes
+		a.MaxSize = kplMaxBytes
 	}
-	if a.MaxSize > kinesisMaxBytes {
-		a.MaxSize = kinesisMaxBytes
+	if a.MaxSize > kplMaxBytes {
+		a.MaxSize = kplMaxBytes
 	}
 
 	a.PartitionKey = ""
@@ -99,7 +98,7 @@ func (a *Aggregate) calculateRecordSize(data []byte, partitionKey string) int {
 }
 
 // Add inserts a Kinesis record into an aggregated Kinesis record
-//https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L382
+// https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L382
 func (a *Aggregate) Add(data []byte, partitionKey string) bool {
 	// https://docs.aws.amazon.com/streams/latest/dev/key-concepts.html#partition-key
 	if len(partitionKey) > 256 {
@@ -146,7 +145,7 @@ func (a *Aggregate) Get() []byte {
 	return record
 }
 
-//ConvertEventsRecords takes in a kinesis record and adds in a few additional fields such as ApproximateArrivalTimestamp
+// ConvertEventsRecords converts Kinesis records between the Lambda and Go SDK packages. This is required for deaggregating Kinesis records processed by AWS Lambda.
 func ConvertEventsRecords(records []events.KinesisEventRecord) []*kinesis.Record {
 	output := make([]*kinesis.Record, 0)
 
@@ -165,7 +164,7 @@ func ConvertEventsRecords(records []events.KinesisEventRecord) []*kinesis.Record
 	return output
 }
 
-//New creates a new session connection to Kinesis
+// New creates a new session connection to Kinesis
 func New() *kinesis.Kinesis {
 	conf := aws.NewConfig()
 
@@ -186,7 +185,10 @@ func New() *kinesis.Kinesis {
 		conf,
 	)
 
-	xray.AWS(c.Client)
+	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
+		xray.AWS(c.Client)
+	}
+
 	return c
 }
 
@@ -207,13 +209,19 @@ func (a *API) Setup() {
 
 // PutRecord is a convenience wrapper for executing the PutRecord API on Kinesis.stream
 func (a *API) PutRecord(ctx aws.Context, data []byte, stream, partitionKey string) (*kinesis.PutRecordOutput, error) {
-	return a.Client.PutRecordWithContext(
+	resp, err := a.Client.PutRecordWithContext(
 		ctx,
 		&kinesis.PutRecordInput{
 			Data:         data,
 			StreamName:   aws.String(stream),
 			PartitionKey: aws.String(partitionKey),
 		})
+
+	if err != nil {
+		return nil, fmt.Errorf("putrecord stream %s partitionkey %s: %w", stream, partitionKey, err)
+	}
+
+	return resp, nil
 }
 
 // ActiveShards returns the number of in-use shards for a Kinesis stream
@@ -227,7 +235,7 @@ LOOP:
 	for {
 		output, err := a.Client.ListShardsWithContext(ctx, params)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("listshards stream %s: %w", stream, err)
 		}
 
 		for _, s := range output.Shards {
@@ -257,7 +265,7 @@ func (a *API) UpdateShards(ctx aws.Context, stream string, shards int64) error {
 		ScalingType:      aws.String("UNIFORM_SCALING"),
 	}
 	if _, err := a.Client.UpdateShardCountWithContext(ctx, params); err != nil {
-		return err
+		return fmt.Errorf("updateshards stream %s shards %d: %w", stream, shards, err)
 	}
 
 	for {
@@ -266,7 +274,7 @@ func (a *API) UpdateShards(ctx aws.Context, stream string, shards int64) error {
 				StreamName: aws.String(stream),
 			})
 		if err != nil {
-			return err
+			return fmt.Errorf("describestream stream %s: %w", stream, err)
 		}
 
 		if status := resp.StreamDescriptionSummary.StreamStatus; status != aws.String("UPDATING") {

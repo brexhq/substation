@@ -1,9 +1,8 @@
 local event = import './event.libsonnet';
+local sinklib = import '../sink.libsonnet';
 
 {
-  sink: {
-    type: 'stdout',
-  },
+  sink: sinklib.stdout,
   transform: {
     type: 'process',
     settings: {

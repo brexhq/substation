@@ -6,122 +6,112 @@ import (
 	"testing"
 )
 
-func TestDomain(t *testing.T) {
-	var tests = []struct {
-		proc     Domain
-		test     []byte
-		expected []byte
-	}{
-		{
-			Domain{
-				Input: Input{
-					Key: "domain",
-				},
-				Options: DomainOptions{
-					Function: "tld",
-				},
-				Output: Output{
-					Key: "tld",
-				},
+var domainTests = []struct {
+	name     string
+	proc     Domain
+	test     []byte
+	expected []byte
+}{
+	{
+		"json tld",
+		Domain{
+			InputKey:  "domain",
+			OutputKey: "tld",
+			Options: DomainOptions{
+				Function: "tld",
 			},
-			[]byte(`{"domain":"example.com"}`),
-			[]byte(`{"domain":"example.com","tld":"com"}`),
 		},
-		{
-			Domain{
-				Input: Input{
-					Key: "domain",
-				},
-				Options: DomainOptions{
-					Function: "domain",
-				},
-				Output: Output{
-					Key: "domain",
-				},
+		[]byte(`{"domain":"example.com"}`),
+		[]byte(`{"domain":"example.com","tld":"com"}`),
+	},
+	{
+		"json domain",
+		Domain{
+			InputKey:  "domain",
+			OutputKey: "domain",
+			Options: DomainOptions{
+				Function: "domain",
 			},
-			[]byte(`{"domain":"www.example.com"}`),
-			[]byte(`{"domain":"example.com"}`),
 		},
-		{
-			Domain{
-				Input: Input{
-					Key: "domain",
-				},
-				Options: DomainOptions{
-					Function: "subdomain",
-				},
-				Output: Output{
-					Key: "subdomain",
-				},
+		[]byte(`{"domain":"www.example.com"}`),
+		[]byte(`{"domain":"example.com"}`),
+	},
+	{
+		"json subdomain",
+		Domain{
+			InputKey:  "domain",
+			OutputKey: "subdomain",
+			Options: DomainOptions{
+				Function: "subdomain",
 			},
-			[]byte(`{"domain":"www.example.com"}`),
-			[]byte(`{"domain":"www.example.com","subdomain":"www"}`),
 		},
-		// empty subdomain, returns input
-		{
-			Domain{
-				Input: Input{
-					Key: "domain",
-				},
-				Options: DomainOptions{
-					Function: "subdomain",
-				},
-				Output: Output{
-					Key: "subdomain",
-				},
+		[]byte(`{"domain":"www.example.com"}`),
+		[]byte(`{"domain":"www.example.com","subdomain":"www"}`),
+	},
+	// empty subdomain, returns empty
+	{
+		"json subdomain",
+		Domain{
+			InputKey:  "domain",
+			OutputKey: "subdomain",
+			Options: DomainOptions{
+				Function: "subdomain",
 			},
-			[]byte(`{"domain":"example.com"}`),
-			[]byte(`{"domain":"example.com"}`),
 		},
-		// array support
-		{
-			Domain{
-				Input: Input{
-					Key: "domain",
-				},
-				Options: DomainOptions{
-					Function: "tld",
-				},
-				Output: Output{
-					Key: "tld",
-				},
+		[]byte(`{"domain":"example.com"}`),
+		[]byte(`{"domain":"example.com","subdomain":""}`),
+	},
+	// array support
+	{
+		"json array tld",
+		Domain{
+			InputKey:  "domain",
+			OutputKey: "tld",
+			Options: DomainOptions{
+				Function: "tld",
 			},
-			[]byte(`{"domain":["example.com","example.top"]}`),
-			[]byte(`{"domain":["example.com","example.top"],"tld":["com","top"]}`),
 		},
-		{
-			Domain{
-				Input: Input{
-					Key: "domain",
-				},
-				Options: DomainOptions{
-					Function: "domain",
-				},
-				Output: Output{
-					Key: "domain",
-				},
+		[]byte(`{"domain":["example.com","example.top"]}`),
+		[]byte(`{"domain":["example.com","example.top"],"tld":["com","top"]}`),
+	},
+	{
+		"json array domain",
+		Domain{
+			InputKey:  "domain",
+			OutputKey: "domain",
+			Options: DomainOptions{
+				Function: "domain",
 			},
-			[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
-			[]byte(`{"domain":["example.com","example.top"]}`),
 		},
-		{
-			Domain{
-				Input: Input{
-					Key: "domain",
-				},
-				Options: DomainOptions{
-					Function: "subdomain",
-				},
-				Output: Output{
-					Key: "subdomain",
-				},
+		[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
+		[]byte(`{"domain":["example.com","example.top"]}`),
+	},
+	{
+		"json array subdomain",
+		Domain{
+			InputKey:  "domain",
+			OutputKey: "subdomain",
+			Options: DomainOptions{
+				Function: "subdomain",
 			},
-			[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
-			[]byte(`{"domain":["www.example.com","mail.example.top"],"subdomain":["www","mail"]}`),
 		},
-	}
+		[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
+		[]byte(`{"domain":["www.example.com","mail.example.top"],"subdomain":["www","mail"]}`),
+	},
+	{
+		"data",
+		Domain{
+			Options: DomainOptions{
+				Function: "subdomain",
+			},
+		},
+		[]byte(`www.example.com`),
+		[]byte(`www`),
+	},
+}
 
-	for _, test := range tests {
+func TestDomain(t *testing.T) {
+	for _, test := range domainTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
 		if err != nil {
@@ -133,5 +123,22 @@ func TestDomain(t *testing.T) {
 			t.Logf("expected %s, got %s", test.expected, res)
 			t.Fail()
 		}
+	}
+}
+
+func benchmarkDomainByte(b *testing.B, byter Domain, test []byte) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		byter.Byte(ctx, test)
+	}
+}
+
+func BenchmarkDomainByte(b *testing.B) {
+	for _, test := range domainTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkDomainByte(b, test.proc, test.test)
+			},
+		)
 	}
 }

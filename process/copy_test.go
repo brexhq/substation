@@ -6,27 +6,41 @@ import (
 	"testing"
 )
 
-func TestCopy(t *testing.T) {
-	var tests = []struct {
-		proc     Copy
-		test     []byte
-		expected []byte
-	}{
-		{
-			Copy{
-				Input: Input{
-					Key: "original",
-				},
-				Output: Output{
-					Key: "copy",
-				},
-			},
-			[]byte(`{"original":"hello"}`),
-			[]byte(`{"original":"hello","copy":"hello"}`),
+var copyTests = []struct {
+	name     string
+	proc     Copy
+	test     []byte
+	expected []byte
+}{
+	{
+		"json",
+		Copy{
+			InputKey:  "original",
+			OutputKey: "copy",
 		},
-	}
+		[]byte(`{"original":"hello"}`),
+		[]byte(`{"original":"hello","copy":"hello"}`),
+	},
+	{
+		"from json",
+		Copy{
+			InputKey: "copy",
+		},
+		[]byte(`{"copy":"hello"}`),
+		[]byte(`hello`),
+	},
+	{
+		"to json",
+		Copy{
+			OutputKey: "copy",
+		},
+		[]byte(`hello`),
+		[]byte(`{"copy":"hello"}`),
+	},
+}
 
-	for _, test := range tests {
+func TestCopy(t *testing.T) {
+	for _, test := range copyTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
 		if err != nil {
@@ -38,5 +52,22 @@ func TestCopy(t *testing.T) {
 			t.Logf("expected %s, got %s", test.expected, res)
 			t.Fail()
 		}
+	}
+}
+
+func benchmarkCopyByte(b *testing.B, byter Copy, test []byte) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		byter.Byte(ctx, test)
+	}
+}
+
+func BenchmarkCopyByte(b *testing.B) {
+	for _, test := range copyTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkCopyByte(b, test.proc, test.test)
+			},
+		)
 	}
 }

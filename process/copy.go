@@ -2,56 +2,87 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-// Copy implements the Byter and Channeler interfaces and copies values between JSON keys, preserving the original JSON key. More information is available in the README.
+// CopyInvalidSettings is returned when the Copy processor is configured with invalid Input and Output settings.
+const CopyInvalidSettings = errors.Error("CopyInvalidSettings")
+
+/*
+Copy processes data by copying it. The processor supports these patterns:
+	json:
+	  	{"hello":"world"} >>> {"hello":"world","goodbye":"world"}
+	from json:
+  		{"hello":"world"} >>> world
+	to json:
+  		world >>> {"hello":"world"}
+
+The processor uses this Jsonnet configuration:
+	{
+		type: 'copy',
+		settings: {
+			input_key: 'hello',
+			output_key: 'goodbye',
+		},
+	}
+*/
 type Copy struct {
-	Condition condition.OperatorConfig `mapstructure:"condition"`
-	Input     Input                    `mapstructure:"input"`
-	Output    Output                   `mapstructure:"output"`
+	Condition condition.OperatorConfig `json:"condition"`
+	InputKey  string                   `json:"input_key"`
+	OutputKey string                   `json:"output_key"`
 }
 
-// Channel processes a data channel of bytes with this processor. Conditions can be optionally applied on the channel data to enable processing.
-func (p Copy) Channel(ctx context.Context, ch <-chan []byte) (<-chan []byte, error) {
-	var array [][]byte
-
+// Slice processes a slice of bytes with the Copy processor. Conditions are optionally applied on the bytes to enable processing.
+func (p Copy) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 	}
 
-	for data := range ch {
+	slice := NewSlice(&s)
+	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
 		}
 
 		if !ok {
-			array = append(array, data)
+			slice = append(slice, data)
 			continue
 		}
 
 		processed, err := p.Byte(ctx, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("slicer: %v", err)
 		}
-		array = append(array, processed)
+		slice = append(slice, processed)
 	}
 
-	output := make(chan []byte, len(array))
-	for _, x := range array {
-		output <- x
-	}
-	close(output)
-	return output, nil
-
+	return slice, nil
 }
 
-// Byte processes a byte slice with this processor
+// Byte processes bytes with the Copy processor.
 func (p Copy) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	v := json.Get(data, p.Input.Key)
-	return json.Set(data, p.Output.Key, v)
+	// json processing
+	if p.InputKey != "" && p.OutputKey != "" {
+		v := json.Get(data, p.InputKey)
+		return json.Set(data, p.OutputKey, v)
+	}
+
+	// from json processing
+	if p.InputKey != "" && p.OutputKey == "" {
+		v := json.Get(data, p.InputKey)
+		return []byte(v.String()), nil
+	}
+
+	// to json processing
+	if p.InputKey == "" && p.OutputKey != "" {
+		return json.Set([]byte(""), p.OutputKey, data)
+	}
+
+	return nil, fmt.Errorf("byter settings %v: %v", p, CopyInvalidSettings)
 }

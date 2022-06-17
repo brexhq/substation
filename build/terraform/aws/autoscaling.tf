@@ -15,7 +15,7 @@ module "lambda_autoscaling" {
   description   = "Autoscales Kinesis streams based on data volume and size"
   appconfig_id  = aws_appconfig_application.substation.id
   kms_arn       = module.kms_substation.arn
-  image_uri     = "${module.ecr_autoscaling.repository_url}:latest2"
+  image_uri     = "${module.ecr_autoscaling.repository_url}:latest"
   architectures = ["arm64"]
 
   env = {

@@ -27,7 +27,7 @@ module "lambda_example_dynamodb_sink" {
   description   = "Substation Lambda that is triggered from the processed Kinesis stream and writes data to DynamoDB"
   appconfig_id  = aws_appconfig_application.substation.id
   kms_arn       = module.kms_substation.arn
-  image_uri     = "${module.ecr_substation.repository_url}:latest2"
+  image_uri     = "${module.ecr_substation.repository_url}:latest"
   architectures = ["arm64"]
 
   env = {

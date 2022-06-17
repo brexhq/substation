@@ -20,7 +20,7 @@ module "lambda_example_gateway_source" {
   description   = "Substation Lambda that is triggered from an API Gateway and writes data to the raw Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id
   kms_arn       = module.kms_substation.arn
-  image_uri     = "${module.ecr_substation.repository_url}:latest2"
+  image_uri     = "${module.ecr_substation.repository_url}:latest"
   architectures = ["arm64"]
 
   env = {

@@ -9,7 +9,7 @@ module "lambda_example_processor" {
   description   = "Substation Lambda that is triggered from the raw Kinesis stream and writes data to the processed Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id
   kms_arn       = module.kms_substation.arn
-  image_uri     = "${module.ecr_substation.repository_url}:latest2"
+  image_uri     = "${module.ecr_substation.repository_url}:latest"
   architectures = ["arm64"]
 
   env = {

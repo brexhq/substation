@@ -20,7 +20,7 @@ module "lambda_example_raw_s3_sink" {
   description   = "Substation Lambda that is triggered from the raw Kinesis stream and writes data to S3"
   appconfig_id  = aws_appconfig_application.substation.id
   kms_arn       = module.kms_substation.arn
-  image_uri     = "${module.ecr_substation.repository_url}:latest2"
+  image_uri     = "${module.ecr_substation.repository_url}:latest"
   architectures = ["arm64"]
 
   env = {

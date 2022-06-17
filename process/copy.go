@@ -30,14 +30,13 @@ The processor uses this Jsonnet configuration:
 			},
 			output: {
 				key: 'goodbye',
-			},
-		},
+},
 	}
 */
 type Copy struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     Input                    `json:"input"`
-	Output    Output                   `json:"output"`
+	Input     string                   `json:"input"`
+	Output    string                   `json:"output"`
 }
 
 // Slice processes a slice of bytes with the Copy processor. Conditions are optionally applied on the bytes to enable processing.
@@ -72,20 +71,20 @@ func (p Copy) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Copy processor.
 func (p Copy) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// json processing
-	if p.Input.Key != "" && p.Output.Key != "" {
-		v := json.Get(data, p.Input.Key)
-		return json.Set(data, p.Output.Key, v)
+	if p.Input != "" && p.Output != "" {
+		v := json.Get(data, p.Input)
+		return json.Set(data, p.Output, v)
 	}
 
 	// from json processing
-	if p.Input.Key != "" && p.Output.Key == "" {
-		v := json.Get(data, p.Input.Key)
+	if p.Input != "" && p.Output == "" {
+		v := json.Get(data, p.Input)
 		return []byte(v.String()), nil
 	}
 
 	// to json processing
-	if p.Input.Key == "" && p.Output.Key != "" {
-		return json.Set([]byte(""), p.Output.Key, data)
+	if p.Input == "" && p.Output != "" {
+		return json.Set([]byte(""), p.Output, data)
 	}
 
 	return nil, fmt.Errorf("byter settings %v: %v", p, CopyInvalidSettings)

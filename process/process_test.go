@@ -28,11 +28,7 @@ var processTests = []struct {
 					}{
 						Value: "bar",
 					},
-					"output": struct {
-						Key string
-					}{
-						Key: "foo",
-					},
+					"output": "foo",
 				},
 			},
 		},

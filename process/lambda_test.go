@@ -31,14 +31,10 @@ var lambdaTests = []struct {
 	{
 		"json",
 		Lambda{
-			Input: Input{
-				Key: "lambda",
-			},
+			Input:  "lambda",
+			Output: "lambda",
 			Options: LambdaOptions{
 				Function: "test",
-			},
-			Output: Output{
-				Key: "lambda",
 			},
 		},
 		[]byte(`{"foo":"bar","lambda":{"foo":"baz"}}`),

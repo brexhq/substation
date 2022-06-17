@@ -19,9 +19,7 @@ func main() {
 		Options: process.InsertOptions{
 			Value: "bar",
 		},
-		Output: process.Output{
-			Key: "foo",
-		},
+		Output: "foo",
 	}
 
 	ctx := context.TODO()

@@ -41,14 +41,14 @@ The processor uses this Jsonnet configuration:
 */
 type Expand struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     Input                    `json:"input"`
+	Input     string                   `json:"input"`
 	Options   ExpandOptions            `json:"options"`
 }
 
 // Slice processes a slice of bytes with the Expand processor. Conditions are optionally applied on the bytes to enable processing.
 func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
-	// only supports json, so error early if there is no input key
-	if p.Input.Key == "" {
+	// only supports json, error early if there is no input key
+	if p.Input == "" {
 		return nil, fmt.Errorf("slicer settings %v: %v", p, ExpandInvalidSettings)
 	}
 
@@ -70,7 +70,7 @@ func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 		}
 
 		// json array processing
-		value := json.Get(data, p.Input.Key)
+		value := json.Get(data, p.Input)
 		for _, x := range value.Array() {
 			var err error
 			processed := []byte(x.String())

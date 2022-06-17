@@ -31,18 +31,14 @@ var dynamodbTests = []struct {
 	{
 		"json",
 		DynamoDB{
-			Input: DynamoDBInput{
-				PartitionKey: "pk",
-			},
+			Input:  "ddb",
+			Output: "ddb",
 			Options: DynamoDBOptions{
 				Table: "test",
 			},
-			Output: Output{
-				Key: "ddb",
-			},
 		},
-		[]byte(`{"pk":"foo"}`),
-		[]byte(`{"pk":"foo","ddb":[{"foo":"bar"}]}`),
+		[]byte(`{"ddb":{"PK":"foo"}}`),
+		[]byte(`{"ddb":[{"foo":"bar"}]}`),
 		ddb.API{
 			Client: mockedQuery{
 				Resp: dynamodb.QueryOutput{

@@ -64,12 +64,8 @@ var base64Tests = []struct {
 	{
 		"json std",
 		Base64{
-			Input: Input{
-				Key: "base64",
-			},
-			Output: Output{
-				Key: "base64",
-			},
+			Input:  "base64",
+			Output: "base64",
 			Options: Base64Options{
 				Direction: "from",
 				Alphabet:  "std",
@@ -82,12 +78,8 @@ var base64Tests = []struct {
 	{
 		"json array std",
 		Base64{
-			Input: Input{
-				Key: "base64",
-			},
-			Output: Output{
-				Key: "base64",
-			},
+			Input:  "base64",
+			Output: "base64",
 			Options: Base64Options{
 				Direction: "from",
 				Alphabet:  "std",

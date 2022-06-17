@@ -18,9 +18,7 @@ var insertTests = []struct {
 			Options: InsertOptions{
 				Value: []byte{98, 97, 114},
 			},
-			Output: Output{
-				Key: "foo",
-			},
+			Output: "foo",
 		},
 		[]byte(``),
 		[]byte(`{"foo":"bar"}`),
@@ -31,9 +29,7 @@ var insertTests = []struct {
 			Options: InsertOptions{
 				Value: "bar",
 			},
-			Output: Output{
-				Key: "foo",
-			},
+			Output: "foo",
 		},
 		[]byte(``),
 		[]byte(`{"foo":"bar"}`),
@@ -44,9 +40,7 @@ var insertTests = []struct {
 			Options: InsertOptions{
 				Value: 10,
 			},
-			Output: Output{
-				Key: "int",
-			},
+			Output: "int",
 		},
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"bar","int":10}`),
@@ -57,9 +51,7 @@ var insertTests = []struct {
 			Options: InsertOptions{
 				Value: []string{"bar", "baz", "qux"},
 			},
-			Output: Output{
-				Key: "array",
-			},
+			Output: "array",
 		},
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"bar","array":["bar","baz","qux"]}`),
@@ -72,9 +64,7 @@ var insertTests = []struct {
 					"baz": "qux",
 				},
 			},
-			Output: Output{
-				Key: "map",
-			},
+			Output: "map",
 		},
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"bar","map":{"baz":"qux"}}`),

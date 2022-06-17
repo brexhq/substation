@@ -16,14 +16,10 @@ var convertTests = []struct {
 	{
 		"json bool",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "bool",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":"true"}`),
@@ -32,14 +28,10 @@ var convertTests = []struct {
 	{
 		"json bool",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "bool",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":"false"}`),
@@ -48,14 +40,10 @@ var convertTests = []struct {
 	{
 		"json int",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "int",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":"-123"}`),
@@ -64,14 +52,10 @@ var convertTests = []struct {
 	{
 		"json float",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "float",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":"123.456"}`),
@@ -80,14 +64,10 @@ var convertTests = []struct {
 	{
 		"json uint",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "uint",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":"123"}`),
@@ -96,14 +76,10 @@ var convertTests = []struct {
 	{
 		"json string",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "string",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":123}`),
@@ -112,14 +88,10 @@ var convertTests = []struct {
 	{
 		"json int",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "int",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":123.456}`),
@@ -129,14 +101,10 @@ var convertTests = []struct {
 	{
 		"json array bool",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "bool",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":["true","false"]}`),
@@ -145,14 +113,10 @@ var convertTests = []struct {
 	{
 		"json array int",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "int",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":["-123","-456"]}`),
@@ -161,14 +125,10 @@ var convertTests = []struct {
 	{
 		"json array float",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "float",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":["-123.456","123.456"]}`),
@@ -177,14 +137,10 @@ var convertTests = []struct {
 	{
 		"json array uint",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "uint",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":["123","456"]}`),
@@ -193,14 +149,10 @@ var convertTests = []struct {
 	{
 		"json array string",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "string",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":[123,123.456]}`),
@@ -209,14 +161,10 @@ var convertTests = []struct {
 	{
 		"json array int",
 		Convert{
-			Input: Input{
-				Key: "convert",
-			},
+			Input:  "convert",
+			Output: "convert",
 			Options: ConvertOptions{
 				Type: "int",
-			},
-			Output: Output{
-				Key: "convert",
 			},
 		},
 		[]byte(`{"convert":[123.456,1.2]}`),

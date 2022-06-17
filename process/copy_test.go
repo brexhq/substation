@@ -15,12 +15,8 @@ var copyTests = []struct {
 	{
 		"json",
 		Copy{
-			Input: Input{
-				Key: "original",
-			},
-			Output: Output{
-				Key: "copy",
-			},
+			Input:  "original",
+			Output: "copy",
 		},
 		[]byte(`{"original":"hello"}`),
 		[]byte(`{"original":"hello","copy":"hello"}`),
@@ -28,9 +24,7 @@ var copyTests = []struct {
 	{
 		"from json",
 		Copy{
-			Input: Input{
-				Key: "copy",
-			},
+			Input: "copy",
 		},
 		[]byte(`{"copy":"hello"}`),
 		[]byte(`hello`),
@@ -38,9 +32,7 @@ var copyTests = []struct {
 	{
 		"to json",
 		Copy{
-			Output: Output{
-				Key: "copy",
-			},
+			Output: "copy",
 		},
 		[]byte(`hello`),
 		[]byte(`{"copy":"hello"}`),

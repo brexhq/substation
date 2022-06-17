@@ -19,6 +19,7 @@ MathOptions contains custom options for the Math processor:
 		must be one of:
 			add
 			subtract
+			divide
 */
 type MathOptions struct {
 	Operation string `json:"operation"`
@@ -27,16 +28,16 @@ type MathOptions struct {
 /*
 Math processes data by applying mathematic operations. The processor supports these patterns:
 	json:
-		{"foo":1,"bar":3} >>> {"foo":1,"bar":3,"math":4}
+		{"math":[1,3]} >>> {"math":4}
 	json array:
-		{"foo":[1,2],"bar":[3,4]} >>> {"foo":[1,2],"bar":[3,4],"math":[4,6]}
+		{"math":[[1,2],[3,4]]} >>> {"math":[4,6]}
 
 The processor uses this Jsonnet configuration:
 	{
 		type: 'math',
 		settings: {
 			input: {
-				keys: ['foo','bar'],
+				key: 'math',
 			},
 			output: {
 				key: 'math',
@@ -49,8 +50,8 @@ The processor uses this Jsonnet configuration:
 */
 type Math struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     Inputs                   `json:"input"`
-	Output    Output                   `json:"output"`
+	Input     string                   `json:"input"`
+	Output    string                   `json:"output"`
 	Options   MathOptions              `json:"options"`
 }
 
@@ -85,41 +86,52 @@ func (p Math) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Math processor.
 func (p Math) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// only supports json and json arrays, so error early if there are no keys
-	if len(p.Input.Keys) == 0 && p.Output.Key == "" {
+	// only supports json and json arrays, error early if there are no keys
+	if p.Input == "" && p.Output == "" {
 		return nil, fmt.Errorf("byter settings %v: %v", p, MathInvalidSettings)
 	}
 
-	// simultaneously processes json and json arrays
+	// elements in the values array are stored at their
+	// 	relative position inside the map to maintain order
+	//
+	// input.key: [[1,2],[6,10]]
+	// options.operation: add
+	// 	cache[0:7]
+	// 	cache[1:12]
 	cache := make(map[int]int64)
-	for i, key := range p.Input.Keys {
-		value := json.Get(data, key)
+	value := json.Get(data, p.Input)
+	for x, v := range value.Array() {
+		var idx int
 
-		for x, v := range value.Array() {
-			if i == 0 {
-				cache[x] = v.Int()
+		for x1, v1 := range v.Array() {
+			if v.IsArray() {
+				idx = x1
+			}
+
+			if x == 0 {
+				cache[idx] = v1.Int()
 				continue
 			}
 
 			switch p.Options.Operation {
 			case "add":
-				cache[x] = cache[x] + v.Int()
+				cache[idx] = cache[idx] + v1.Int()
 			case "subtract":
-				cache[x] = cache[x] - v.Int()
+				cache[idx] = cache[idx] - v1.Int()
 			case "divide":
-				cache[x] = cache[x] / v.Int()
+				cache[idx] = cache[idx] / v1.Int()
 			}
 		}
 	}
 
 	if len(cache) == 1 {
-		return json.Set(data, p.Output.Key, cache[0])
+		return json.Set(data, p.Output, cache[0])
 	}
 
 	var array []int64
-	for _, v := range cache {
-		array = append(array, v)
+	for i := 0; i < len(cache); i++ {
+		array = append(array, cache[i])
 	}
 
-	return json.Set(data, p.Output.Key, array)
+	return json.Set(data, p.Output, array)
 }

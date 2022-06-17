@@ -15,14 +15,10 @@ var caseTests = []struct {
 	{
 		"json lower",
 		Case{
-			Input: Input{
-				Key: "case",
-			},
+			Input:  "case",
+			Output: "case",
 			Options: CaseOptions{
 				Case: "lower",
-			},
-			Output: Output{
-				Key: "case",
 			},
 		},
 		[]byte(`{"case":"ABC"}`),
@@ -31,14 +27,10 @@ var caseTests = []struct {
 	{
 		"json upper",
 		Case{
-			Input: Input{
-				Key: "case",
-			},
+			Input:  "case",
+			Output: "case",
 			Options: CaseOptions{
 				Case: "upper",
-			},
-			Output: Output{
-				Key: "case",
 			},
 		},
 		[]byte(`{"case":"abc"}`),
@@ -47,14 +39,10 @@ var caseTests = []struct {
 	{
 		"json snake",
 		Case{
-			Input: Input{
-				Key: "case",
-			},
+			Input:  "case",
+			Output: "case",
 			Options: CaseOptions{
 				Case: "snake",
-			},
-			Output: Output{
-				Key: "case",
 			},
 		},
 		[]byte(`{"case":"AbC"})`),
@@ -64,14 +52,10 @@ var caseTests = []struct {
 	{
 		"json array lower",
 		Case{
-			Input: Input{
-				Key: "case",
-			},
+			Input:  "case",
+			Output: "case",
 			Options: CaseOptions{
 				Case: "lower",
-			},
-			Output: Output{
-				Key: "case",
 			},
 		},
 		[]byte(`{"case":["ABC","DEF"]}`),

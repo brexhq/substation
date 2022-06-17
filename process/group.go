@@ -24,16 +24,15 @@ type GroupOptions struct {
 /*
 Group processes data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
 	json array:
-		{"g1":["foo","bar"],"g2":[111,222]} >>> {"g1":["foo","bar"],"g2":[111,222],"group":[["foo",111],["bar",222]]}
-		{"g1":["foo","bar"],"g2":[111,222]} >>> {"g1":["foo","bar"],"g2":[111,222],"group":[{"name":foo","size":111},{"name":"bar","size":222}]}
+		{"group":[["foo","bar"],[111,222]]} >>> {"group":[["foo",111],["bar",222]]}
+		{"group":[["foo","bar"],[111,222]]} >>> {"group":[{"name":foo","size":111},{"name":"bar","size":222}]}
 
 The processor uses this Jsonnet configuration:
 	{
 		type: 'group',
 		settings: {
-			// if the values are ["foo","bar"] and [123,456], then this returns [["foo",123],["bar",456]]
 			input: {
-				keys: ['g1','g2'],
+				key: 'group',
 			},
 			output: {
 				key: 'group',
@@ -43,8 +42,8 @@ The processor uses this Jsonnet configuration:
 */
 type Group struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     Inputs                   `json:"input"`
-	Output    Output                   `json:"output"`
+	Input     string                   `json:"input"`
+	Output    string                   `json:"output"`
 	Options   GroupOptions             `json:"options"`
 }
 
@@ -79,47 +78,52 @@ func (p Group) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Group processor.
 func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// only supports json arrays, so error early if there are no keys
-	if len(p.Input.Keys) == 0 && p.Output.Key == "" {
+	// only supports json arrays, error early if there are no keys
+	if p.Input == "" && p.Output == "" {
 		return nil, fmt.Errorf("byter settings %v: %v", p, GroupInvalidSettings)
+	}
+
+	if !json.Get(data, p.Input).Exists() {
+		return data, nil
 	}
 
 	if len(p.Options.Keys) == 0 {
 		// elements in the values array are stored at their
 		// relative position inside the map to maintain order
 		//
-		// input.keys: ["foo","bar"], [123,456]
+		// input.key: [["foo","bar"],[123,456]]
 		// 	cache[0][]interface{}{"foo",123}
 		// 	cache[1][]interface{}{"bar",456}
 		cache := make(map[int][]interface{})
-		for _, key := range p.Input.Keys {
-			value := json.Get(data, key)
-			for x, v := range value.Array() {
-				cache[x] = append(cache[x], v.Value())
+		value := json.Get(data, p.Input)
+		for _, v := range value.Array() {
+			for x, v1 := range v.Array() {
+				cache[x] = append(cache[x], v1.Value())
 			}
 		}
 
 		var array []interface{}
-		for _, v := range cache {
-			array = append(array, v)
+		for i := 0; i < len(cache); i++ {
+			array = append(array, cache[i])
 		}
+
 		// [["foo",123],["bar",456]]
-		return json.Set(data, p.Output.Key, array)
+		return json.Set(data, p.Output, array)
 	}
 
 	// elements in the values array are stored at their
 	// 	relative position inside the map to maintain order
 	//
-	// input.keys: ["foo","bar"], [123,456]
+	// input.key: [["foo","bar"],[123,456]]
 	// options.keys: ["name","size"]
 	// 	cache[0][]byte(`{"name":"foo","size":123}`)
 	// 	cache[1][]byte(`{"name":"bar","size":456}`)
 	cache := make(map[int][]byte)
 	var err error
-	for idx, key := range p.Input.Keys {
-		value := json.Get(data, key)
-		for x, v := range value.Array() {
-			cache[x], err = json.Set(cache[x], p.Options.Keys[idx], v)
+	value := json.Get(data, p.Input)
+	for x, v := range value.Array() {
+		for x1, v1 := range v.Array() {
+			cache[x1], err = json.Set(cache[x1], p.Options.Keys[x], v1)
 			if err != nil {
 				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
@@ -130,12 +134,13 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// 	on the length of the map
 	// pre-formatted JSON requires use of SetRaw
 	var tmp []byte
-	for i, v := range cache {
-		tmp, err = json.SetRaw(tmp, fmt.Sprintf("%d", i), v)
+	for i := 0; i < len(cache); i++ {
+		tmp, err = json.SetRaw(tmp, fmt.Sprintf("%d", i), cache[i])
 		if err != nil {
 			return nil, fmt.Errorf("byter settings %v: %v", p, err)
 		}
 	}
+
 	// [{"name":"foo","size":123},{"name":"bar","size":456}]
-	return json.SetRaw(data, p.Output.Key, tmp)
+	return json.SetRaw(data, p.Output, tmp)
 }

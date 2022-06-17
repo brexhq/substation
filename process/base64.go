@@ -62,8 +62,8 @@ The processor uses this Jsonnet configuration:
 */
 type Base64 struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     Input                    `json:"input"`
-	Output    Output                   `json:"output"`
+	Input     string                   `json:"input"`
+	Output    string                   `json:"output"`
 	Options   Base64Options            `json:"options"`
 }
 
@@ -103,8 +103,8 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	// json processing
-	if p.Input.Key != "" && p.Output.Key != "" {
-		value := json.Get(data, p.Input.Key)
+	if p.Input != "" && p.Output != "" {
+		value := json.Get(data, p.Input)
 
 		if !value.IsArray() {
 			tmp := []byte(value.String())
@@ -113,13 +113,13 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 				if err != nil {
 					return nil, fmt.Errorf("byter settings %v: %v", p, err)
 				}
-				return json.Set(data, p.Output.Key, result)
+				return json.Set(data, p.Output, result)
 			} else if p.Options.Direction == "to" {
 				result, err := p.to(tmp, p.Options.Alphabet)
 				if err != nil {
 					return nil, fmt.Errorf("byter settings %v: %v", p, err)
 				}
-				return json.Set(data, p.Output.Key, result)
+				return json.Set(data, p.Output, result)
 			} else {
 				return nil, fmt.Errorf("byter settings %v: %v", p, Base64InvalidDirection)
 			}
@@ -146,11 +146,11 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			}
 		}
 
-		return json.Set(data, p.Output.Key, array)
+		return json.Set(data, p.Output, array)
 	}
 
 	// data processing
-	if p.Input.Key == "" && p.Output.Key == "" {
+	if p.Input == "" && p.Output == "" {
 		if p.Options.Direction == "from" {
 			result, err := p.from(data, p.Options.Alphabet)
 			if err != nil {

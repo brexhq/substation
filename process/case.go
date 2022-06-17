@@ -57,8 +57,8 @@ The processor uses this Jsonnet configuration:
 */
 type Case struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     Input                    `json:"input"`
-	Output    Output                   `json:"output"`
+	Input     string                   `json:"input"`
+	Output    string                   `json:"output"`
 	Options   CaseOptions              `json:"options"`
 }
 
@@ -94,11 +94,11 @@ func (p Case) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Case processor.
 func (p Case) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// json processing
-	if p.Input.Key != "" && p.Output.Key != "" {
-		value := json.Get(data, p.Input.Key)
+	if p.Input != "" && p.Output != "" {
+		value := json.Get(data, p.Input)
 		if !value.IsArray() {
 			s := p.stringsCase(value.String())
-			return json.Set(data, p.Output.Key, s)
+			return json.Set(data, p.Output, s)
 		}
 		// json array processing
 		var array []string
@@ -107,11 +107,11 @@ func (p Case) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			array = append(array, s)
 		}
 
-		return json.Set(data, p.Output.Key, array)
+		return json.Set(data, p.Output, array)
 	}
 
 	// data processing
-	if p.Input.Key == "" && p.Output.Key == "" {
+	if p.Input == "" && p.Output == "" {
 		return p.bytesCase(data), nil
 	}
 

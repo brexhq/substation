@@ -15,15 +15,11 @@ var captureTests = []struct {
 	{
 		"json find",
 		Capture{
-			Input: Input{
-				Key: "capture",
-			},
+			Input:  "capture",
+			Output: "capture",
 			Options: CaptureOptions{
 				Expression: "^([^@]*)@.*$",
 				Function:   "find",
-			},
-			Output: Output{
-				Key: "capture",
 			},
 		},
 		[]byte(`{"capture":"foo@qux.com"}`),
@@ -32,16 +28,12 @@ var captureTests = []struct {
 	{
 		"json find_all",
 		Capture{
-			Input: Input{
-				Key: "capture",
-			},
+			Input:  "capture",
+			Output: "capture",
 			Options: CaptureOptions{
 				Expression: "(.{1})",
 				Function:   "find_all",
 				Count:      3,
-			},
-			Output: Output{
-				Key: "capture",
 			},
 		},
 		[]byte(`{"capture":"foo"}`),
@@ -50,15 +42,11 @@ var captureTests = []struct {
 	{
 		"json array find",
 		Capture{
-			Input: Input{
-				Key: "capture",
-			},
+			Input:  "capture",
+			Output: "capture",
 			Options: CaptureOptions{
 				Expression: "^([^@]*)@.*$",
 				Function:   "find",
-			},
-			Output: Output{
-				Key: "capture",
 			},
 		},
 		[]byte(`{"capture":["foo@qux.com","bar@qux.com"]}`),
@@ -67,16 +55,12 @@ var captureTests = []struct {
 	{
 		"json array find_all",
 		Capture{
-			Input: Input{
-				Key: "capture",
-			},
+			Input:  "capture",
+			Output: "capture",
 			Options: CaptureOptions{
 				Expression: "(.{1})",
 				Function:   "find_all",
 				Count:      3,
-			},
-			Output: Output{
-				Key: "capture",
 			},
 		},
 		[]byte(`{"capture":["foo@qux.com","bar@qux.com"]}`),

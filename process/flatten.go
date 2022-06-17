@@ -35,14 +35,13 @@ The processor uses this Jsonnet configuration:
 			},
 			output: {
 				key: 'flatten',
-			},
-		},
+},
 	}
 */
 type Flatten struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     Input                    `json:"input"`
-	Output    Output                   `json:"output"`
+	Input     string                   `json:"input"`
+	Output    string                   `json:"output"`
 	Options   FlattenOptions           `json:"options"`
 }
 
@@ -77,17 +76,17 @@ func (p Flatten) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Flatten processor.
 func (p Flatten) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// only supports json, so error early if there are no keys
-	if p.Input.Key == "" && p.Output.Key == "" {
+	// only supports json, error early if there are no keys
+	if p.Input == "" && p.Output == "" {
 		return nil, fmt.Errorf("byter settings %v: %v", p, FlattenInvalidSettings)
 	}
 
 	var value json.Result
 	if p.Options.Deep {
-		value = json.Get(data, p.Input.Key+`|@flatten:{"deep":true}`)
+		value = json.Get(data, p.Input+`|@flatten:{"deep":true}`)
 	} else {
-		value = json.Get(data, p.Input.Key+"|@flatten")
+		value = json.Get(data, p.Input+"|@flatten")
 	}
 
-	return json.Set(data, p.Output.Key, value)
+	return json.Set(data, p.Output, value)
 }

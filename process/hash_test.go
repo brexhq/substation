@@ -15,14 +15,10 @@ var hashTests = []struct {
 	{
 		"json md5",
 		Hash{
-			Input: Input{
-				Key: "hash",
-			},
+			Input:  "hash",
+			Output: "hash",
 			Options: HashOptions{
 				Algorithm: "md5",
-			},
-			Output: Output{
-				Key: "hash",
 			},
 		},
 		[]byte(`{"hash":"foo"}`),
@@ -31,14 +27,10 @@ var hashTests = []struct {
 	{
 		"json sha256",
 		Hash{
-			Input: Input{
-				Key: "hash",
-			},
+			Input:  "hash",
+			Output: "hash",
 			Options: HashOptions{
 				Algorithm: "sha256",
-			},
-			Output: Output{
-				Key: "hash",
 			},
 		},
 		[]byte(`{"hash":"foo"}`),
@@ -47,14 +39,10 @@ var hashTests = []struct {
 	{
 		"json @this md5",
 		Hash{
-			Input: Input{
-				Key: "@this",
-			},
+			Input:  "@this",
+			Output: "hash",
 			Options: HashOptions{
 				Algorithm: "md5",
-			},
-			Output: Output{
-				Key: "hash",
 			},
 		},
 		[]byte(`{"hash":"foo"}`),
@@ -63,14 +51,10 @@ var hashTests = []struct {
 	{
 		"json array md5",
 		Hash{
-			Input: Input{
-				Key: "hash",
-			},
+			Input:  "hash",
+			Output: "hash",
 			Options: HashOptions{
 				Algorithm: "md5",
-			},
-			Output: Output{
-				Key: "hash",
 			},
 		},
 		[]byte(`{"hash":["foo","bar"]}`),

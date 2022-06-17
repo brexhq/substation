@@ -14,21 +14,6 @@ const ByteInvalidFactoryConfig = errors.Error("ByteInvalidFactoryConfig")
 // SliceInvalidFactoryConfig is used when an unsupported Slice is referenced in SliceFactory.
 const SliceInvalidFactoryConfig = errors.Error("SliceInvalidFactoryConfig")
 
-// Input is the default input setting for processors that accept a single JSON key. This can be overriden by each processor.
-type Input struct {
-	Key string `json:"key"`
-}
-
-// Inputs is the default input setting for processors that accept multiple JSON keys. This can be overriden by each processor.
-type Inputs struct {
-	Keys []string `json:"keys"`
-}
-
-// Output is the default output setting for processors that produce a single JSON key. This can be overriden by each processor.
-type Output struct {
-	Key string `json:"key"`
-}
-
 // Slicer is an interface for applying processors to slices of bytes.
 type Slicer interface {
 	Slice(context.Context, [][]byte) ([][]byte, error)

@@ -15,9 +15,7 @@ var expandTests = []struct {
 	{
 		"json",
 		Expand{
-			Input: Input{
-				Key: "expand",
-			},
+			Input: "expand",
 		},
 		[]byte(`{"expand":[{"foo":"bar"}],"baz":"qux"`),
 		[][]byte{
@@ -27,9 +25,7 @@ var expandTests = []struct {
 	{
 		"json retain",
 		Expand{
-			Input: Input{
-				Key: "expand",
-			},
+			Input: "expand",
 			Options: ExpandOptions{
 				Retain: []string{"baz"},
 			},

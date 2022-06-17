@@ -16,18 +16,6 @@ import (
 const DynamoDBInvalidSettings = errors.Error("DynamoDBInvalidSettings")
 
 /*
-DynamoDBInput contains custom input settings for the DynamoDB processor:
-	PartitionKey:
-		path to the JSON value used as the partition key in the DynamoDB query
-	SortKey (optional):
-		path to the JSON value used as the sort key in the DynamoDB query
-*/
-type DynamoDBInput struct {
-	PartitionKey string `json:"partition_key"`
-	SortKey      string `json:"sort_key"`
-}
-
-/*
 DynamoDBOptions contains custom options settings for the DynamoDB processor (https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#API_Query_RequestSyntax):
 	Table:
 		table to query
@@ -52,19 +40,20 @@ type DynamoDBOptions struct {
 /*
 DynamoDB processes data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The processor supports these patterns:
 	json:
-		{"dynamodb":"foo"} >>> {"dynamodb":"foo","items":[{"foo":"bar"}]}
+		{"ddb":{"PK":"foo"}} >>> {"ddb":[{"foo":"bar"}]}
 
 The processor uses this Jsonnet configuration:
 	{
 		type: 'dynamodb',
 		settings: {
-			// if the value is "foo", then this queries DynamoDB by using "foo" as the paritition key value for the table attribute "pk" and returns the last indexed item from the table.
+			// the input key is expected to be a map containing a partition key ("PK") and an optional sort key ("SK")
 			input: {
-				partition_key: 'dynamodb',
+				key: 'ddb',
 			},
 			output: {
-				key: 'items',
+				key: 'ddb',
 			},
+			// if the value of the PK is "foo", then this queries DynamoDB by using "foo" as the paritition key value for the table attribute "pk" and returns the last indexed item from the table.
 			options: {
 				table: 'foo-table',
 				key_condition_expression: 'pk = :partitionkeyval',
@@ -76,8 +65,8 @@ The processor uses this Jsonnet configuration:
 */
 type DynamoDB struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     DynamoDBInput            `json:"input"`
-	Output    Output                   `json:"output"`
+	Input     string                   `json:"input"`
+	Output    string                   `json:"output"`
 	Options   DynamoDBOptions          `json:"options"`
 }
 
@@ -124,32 +113,36 @@ func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		dynamodbAPI.Setup()
 	}
 
-	// json processing
-	if p.Input.PartitionKey != "" && p.Output.Key != "" {
-		partitionKey := json.Get(data, p.Input.PartitionKey)
-		if partitionKey.Type.String() == "Null" {
-			return data, nil
-		}
-
-		sortKey := json.Get(data, p.Input.SortKey)
-		if !partitionKey.IsArray() && !sortKey.IsArray() {
-			items, err := p.dynamodb(ctx, partitionKey.String(), sortKey.String())
-			if err != nil {
-				return nil, fmt.Errorf("byter settings %v: %v", p, err)
-			}
-
-			// no match
-			if len(items) == 0 {
-				return data, nil
-			}
-
-			return json.Set(data, p.Output.Key, items)
-		}
-
+	// only supports json, error early if there are no keys
+	if p.Input == "" && p.Output == "" {
 		return nil, fmt.Errorf("byter settings %v: %v", p, DynamoDBInvalidSettings)
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, DynamoDBInvalidSettings)
+	// json processing
+	request := json.Get(data, p.Input)
+	if !request.IsObject() {
+		return nil, fmt.Errorf("byter settings %v: %v", p, DynamoDBInvalidSettings)
+	}
+
+	// PK is a required field
+	pk := json.Get([]byte(request.Raw), "PK").String()
+	if pk == "" {
+		return nil, fmt.Errorf("byter settings %v: %v", p, DynamoDBInvalidSettings)
+	}
+
+	sk := json.Get([]byte(request.Raw), "SK").String()
+
+	items, err := p.dynamodb(ctx, pk, sk)
+	if err != nil {
+		return nil, fmt.Errorf("byter settings %v: %v", p, err)
+	}
+
+	// no match
+	if len(items) == 0 {
+		return data, nil
+	}
+
+	return json.Set(data, p.Output, items)
 }
 
 func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {

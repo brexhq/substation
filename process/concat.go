@@ -24,19 +24,19 @@ type ConcatOptions struct {
 /*
 Concat processes data by concatenating multiple values together with a separator. The processor supports these patterns:
 	json:
-		{"c1":"foo","c2":"bar"} >>> {"c3":"foo.bar"}
+		{"concat":["foo","bar"]} >>> {"concat":"foo.bar"}
 	json array:
-		{"c1":["foo","baz"],"c2":["bar","qux"]} >>> {"c3":["foo.bar","baz.qux"]}
+		{"concat":[["foo","baz"],["bar","qux"]]} >>> {"concat":["foo.bar","baz.qux"]}
 
 The processor uses this Jsonnet configuration:
 	{
 		type: 'concat',
 		settings: {
 			input: {
-				keys: ['c1','c2'],
+				key: 'concat',
 			},
 			output: {
-				key: 'c3',
+				key: 'concat',
 			},
 			options: {
 				separator: '.',
@@ -46,8 +46,8 @@ The processor uses this Jsonnet configuration:
 */
 type Concat struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     Inputs                   `json:"input"`
-	Output    Output                   `json:"output"`
+	Input     string                   `json:"input"`
+	Output    string                   `json:"output"`
 	Options   ConcatOptions            `json:"options"`
 }
 
@@ -82,37 +82,38 @@ func (p Concat) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Concat processor.
 func (p Concat) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	if len(p.Input.Keys) != 0 && p.Output.Key != "" {
-		count := len(p.Input.Keys) - 1
-
-		cache := make(map[int]string)
-		for i, key := range p.Input.Keys {
-			value := json.Get(data, key)
-			if value.Type.String() == "Null" {
-				return data, nil
-			}
-
-			for x, v := range value.Array() {
-				cache[x] += v.String()
-				if i != count {
-					cache[x] += p.Options.Separator
-				}
-			}
-		}
-
-		// json processing
-		if len(cache) == 1 {
-			return json.Set(data, p.Output.Key, cache[0])
-		}
-
-		// json array processing
-		var array []string
-		for _, v := range cache {
-			array = append(array, v)
-		}
-
-		return json.Set(data, p.Output.Key, array)
+	// only supports json and json arrays, error early if there are no keys
+	if p.Input == "" && p.Output == "" {
+		return nil, fmt.Errorf("byter settings %v: %v", p, ConcatInvalidSettings)
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, ConcatInvalidSettings)
+	cache := make(map[int]string)
+	value := json.Get(data, p.Input)
+	for x, v := range value.Array() {
+		var idx int
+
+		for x1, v1 := range v.Array() {
+			if v.IsArray() {
+				idx = x1
+			}
+
+			cache[idx] += v1.String()
+			if x != len(value.Array())-1 {
+				cache[idx] += p.Options.Separator
+			}
+		}
+	}
+
+	// json processing
+	if len(cache) == 1 {
+		return json.Set(data, p.Output, cache[0])
+	}
+
+	// json array processing
+	var array []string
+	for i := 0; i < len(cache); i++ {
+		array = append(array, cache[i])
+	}
+
+	return json.Set(data, p.Output, array)
 }

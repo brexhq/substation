@@ -7,46 +7,43 @@ import (
 )
 
 var groupTests = []struct {
-	name string
-	proc Group
-	test []byte
-	// the order of the grouped output is inconsistent, so we check for a match anywhere in this slice
-	expected [][]byte
+	name     string
+	proc     Group
+	test     []byte
+	expected []byte
 }{
 	{
 		"tuples",
 		Group{
-			Input: Inputs{
-				Keys: []string{"g1", "g2"},
-			},
-			Output: Output{
-				Key: "group",
-			},
+			Input:  "group",
+			Output: "group",
 		},
-		[]byte(`{"g1":["foo","bar"],"g2":[123,456]}`),
-		[][]byte{
-			[]byte(`{"g1":["foo","bar"],"g2":[123,456],"group":[["foo",123],["bar",456]]}`),
-			[]byte(`{"g1":["foo","bar"],"g2":[123,456],"group":[["bar",456],["foo",123]]}`),
-		},
+		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
+		[]byte(`{"group":[["foo",123],["bar",456]]}`),
 	},
 	{
 		"objects",
 		Group{
-			Input: Inputs{
-				Keys: []string{"g1", "g2"},
-			},
+			Input:  "group",
+			Output: "group",
 			Options: GroupOptions{
 				Keys: []string{"name.test", "size"},
 			},
-			Output: Output{
-				Key: "group",
+		},
+		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
+		[]byte(`{"group":[{"name":{"test":"foo"},"size":123},{"name":{"test":"bar"},"size":456}]}`),
+	},
+	{
+		"null input",
+		Group{
+			Input:  "group",
+			Output: "group",
+			Options: GroupOptions{
+				Keys: []string{"name.test", "size"},
 			},
 		},
-		[]byte(`{"g1":["foo","bar"],"g2":[123,456]}`),
-		[][]byte{
-			[]byte(`{"g1":["foo","bar"],"g2":[123,456],"group":[{"name":{"test":"foo"},"size":123},{"name":{"test":"bar"},"size":456}]}`),
-			[]byte(`{"g1":["foo","bar"],"g2":[123,456],"group":[{"name":{"test":"bar"},"size":456},{"name":{"test":"foo"},"size":123}]}`),
-		},
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"bar"}`),
 	},
 }
 
@@ -59,14 +56,7 @@ func TestGroup(t *testing.T) {
 			t.Fail()
 		}
 
-		pass := false
-		for _, x := range test.expected {
-			if c := bytes.Compare(res, x); c == 0 {
-				pass = true
-			}
-		}
-
-		if !pass {
+		if c := bytes.Compare(res, test.expected); c != 0 {
 			t.Logf("expected %s, got %s", test.expected, res)
 			t.Fail()
 		}

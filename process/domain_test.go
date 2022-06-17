@@ -15,14 +15,10 @@ var domainTests = []struct {
 	{
 		"json tld",
 		Domain{
-			Input: Input{
-				Key: "domain",
-			},
+			Input:  "domain",
+			Output: "tld",
 			Options: DomainOptions{
 				Function: "tld",
-			},
-			Output: Output{
-				Key: "tld",
 			},
 		},
 		[]byte(`{"domain":"example.com"}`),
@@ -31,14 +27,10 @@ var domainTests = []struct {
 	{
 		"json domain",
 		Domain{
-			Input: Input{
-				Key: "domain",
-			},
+			Input:  "domain",
+			Output: "domain",
 			Options: DomainOptions{
 				Function: "domain",
-			},
-			Output: Output{
-				Key: "domain",
 			},
 		},
 		[]byte(`{"domain":"www.example.com"}`),
@@ -47,14 +39,10 @@ var domainTests = []struct {
 	{
 		"json subdomain",
 		Domain{
-			Input: Input{
-				Key: "domain",
-			},
+			Input:  "domain",
+			Output: "subdomain",
 			Options: DomainOptions{
 				Function: "subdomain",
-			},
-			Output: Output{
-				Key: "subdomain",
 			},
 		},
 		[]byte(`{"domain":"www.example.com"}`),
@@ -64,14 +52,10 @@ var domainTests = []struct {
 	{
 		"json subdomain",
 		Domain{
-			Input: Input{
-				Key: "domain",
-			},
+			Input:  "domain",
+			Output: "subdomain",
 			Options: DomainOptions{
 				Function: "subdomain",
-			},
-			Output: Output{
-				Key: "subdomain",
 			},
 		},
 		[]byte(`{"domain":"example.com"}`),
@@ -81,14 +65,10 @@ var domainTests = []struct {
 	{
 		"json array tld",
 		Domain{
-			Input: Input{
-				Key: "domain",
-			},
+			Input:  "domain",
+			Output: "tld",
 			Options: DomainOptions{
 				Function: "tld",
-			},
-			Output: Output{
-				Key: "tld",
 			},
 		},
 		[]byte(`{"domain":["example.com","example.top"]}`),
@@ -97,14 +77,10 @@ var domainTests = []struct {
 	{
 		"json array domain",
 		Domain{
-			Input: Input{
-				Key: "domain",
-			},
+			Input:  "domain",
+			Output: "domain",
 			Options: DomainOptions{
 				Function: "domain",
-			},
-			Output: Output{
-				Key: "domain",
 			},
 		},
 		[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
@@ -113,14 +89,10 @@ var domainTests = []struct {
 	{
 		"json array subdomain",
 		Domain{
-			Input: Input{
-				Key: "domain",
-			},
+			Input:  "domain",
+			Output: "subdomain",
 			Options: DomainOptions{
 				Function: "subdomain",
-			},
-			Output: Output{
-				Key: "subdomain",
 			},
 		},
 		[]byte(`{"domain":["www.example.com","mail.example.top"]}`),

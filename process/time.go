@@ -67,8 +67,8 @@ The processor uses this Jsonnet configuration:
 */
 type Time struct {
 	Condition condition.OperatorConfig `json:"condition"`
-	Input     Input                    `json:"input"`
-	Output    Output                   `json:"output"`
+	Input     string                   `json:"input"`
+	Output    string                   `json:"output"`
 	Options   TimeOptions              `json:"options"`
 }
 
@@ -107,23 +107,23 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	if p.Options.InputFormat == "now" {
 		ts := time.Now().Format(p.Options.OutputFormat)
 
-		if p.Output.Key != "" {
-			return json.Set(data, p.Output.Key, ts)
+		if p.Output != "" {
+			return json.Set(data, p.Output, ts)
 		}
 
 		return []byte(ts), nil
 	}
 
 	// json processing
-	if p.Input.Key != "" && p.Output.Key != "" {
+	if p.Input != "" && p.Output != "" {
 		if p.Options.InputFormat == "now" {
 			timeDate := time.Now()
 			ts := timeDate.Format(p.Options.OutputFormat)
 
-			return json.Set(data, p.Output.Key, ts)
+			return json.Set(data, p.Output, ts)
 		}
 
-		value := json.Get(data, p.Input.Key)
+		value := json.Get(data, p.Input)
 
 		// return input, otherwise time defaults to 1970
 		if value.Type.String() == "Null" {
@@ -135,7 +135,7 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			if err != nil {
 				return nil, fmt.Errorf("byter settings %v: %v", p, err)
 			}
-			return json.Set(data, p.Output.Key, ts)
+			return json.Set(data, p.Output, ts)
 		}
 
 		// json array processing
@@ -148,7 +148,7 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			array = append(array, ts)
 		}
 
-		return json.Set(data, p.Output.Key, array)
+		return json.Set(data, p.Output, array)
 	}
 
 	return nil, fmt.Errorf("byter settings %v: %v", p, TimeInvalidSettings)

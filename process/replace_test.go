@@ -15,15 +15,11 @@ var replaceTests = []struct {
 	{
 		"json",
 		Replace{
-			Input: Input{
-				Key: "replace",
-			},
+			Input:  "replace",
+			Output: "replace",
 			Options: ReplaceOptions{
 				Old: "r",
 				New: "z",
-			},
-			Output: Output{
-				Key: "replace",
 			},
 		},
 		[]byte(`{"replace":"bar"}`),
@@ -32,15 +28,11 @@ var replaceTests = []struct {
 	{
 		"json array",
 		Replace{
-			Input: Input{
-				Key: "replace",
-			},
+			Input:  "replace",
+			Output: "replace",
 			Options: ReplaceOptions{
 				Old: "r",
 				New: "z",
-			},
-			Output: Output{
-				Key: "replace",
 			},
 		},
 		[]byte(`{"replace":["bar","bard"]}`),

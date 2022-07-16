@@ -1,9 +1,11 @@
 package json
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/tidwall/gjson"
@@ -110,15 +112,23 @@ func Unmarshal(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
 
-// Valid wraps json.Valid and conditionally checks if bytes, strings, or Results are valid.
+// Valid conditionally checks if bytes, strings, or Results are valid JSON objects.
 func Valid(data interface{}) bool {
 	switch v := data.(type) {
 	case []byte:
+		if !bytes.HasPrefix(v, []byte(`{`)) {
+			return false
+		}
+
 		return json.Valid(v)
 	case string:
+		if !strings.HasPrefix(v, `{`) {
+			return false
+		}
+
 		return json.Valid([]byte(v))
 	case Result:
-		return json.Valid([]byte(v.String()))
+		return v.IsObject()
 	default:
 		return false
 	}

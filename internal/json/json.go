@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"unicode/utf8"
 
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 
+	"github.com/brexhq/substation/internal/base64"
 	"github.com/brexhq/substation/internal/errors"
 )
 
@@ -46,9 +48,30 @@ func Get(json []byte, key string) Result {
 	return gjson.GetBytes(json, key)
 }
 
-// Set wraps sjson.SetBytes.
+/*
+Set inserts values into JSON and operates under these conditions (in order):
+
+- If the value is valid JSON (bytes, string, or Result), then it is inserted using SetRaw to properly insert it as nested JSON; this avoids encoding that would otherwise create invalid JSON (e.g. `{\"hello\":\"world\"}`)
+
+-If the value is bytes, then it is converted to a base64 encoded string (this is the behavior of the standard library's encoding/json package)
+
+- If the value is Result, then it is converted to the underlying gjson Value
+
+- All other values are inserted as interfaces and are converted by SJSON to the proper format
+*/
 func Set(json []byte, key string, value interface{}) (tmp []byte, err error) {
+	if Valid(value) {
+		tmp, err = SetRaw(json, key, value)
+		return tmp, err
+	}
+
 	switch v := value.(type) {
+	case []byte:
+		if utf8.Valid(v) {
+			tmp, err = sjson.SetBytes(json, key, v)
+		} else {
+			tmp, err = sjson.SetBytes(json, key, base64.Encode(v))
+		}
 	case Result:
 		tmp, err = sjson.SetBytes(json, key, v.Value())
 	default:
@@ -62,7 +85,7 @@ func Set(json []byte, key string, value interface{}) (tmp []byte, err error) {
 	return tmp, nil
 }
 
-// SetRaw wraps sjson.SetRawBytes.
+// SetRaw wraps sjson.SetRawBytes and conditionally converts values to properly insert them as nested JSON.
 func SetRaw(json []byte, key string, value interface{}) (tmp []byte, err error) {
 	switch v := value.(type) {
 	case []byte:
@@ -87,9 +110,18 @@ func Unmarshal(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
 
-// Valid wraps json.Valid.
-func Valid(data []byte) bool {
-	return json.Valid(data)
+// Valid wraps json.Valid and conditionally checks if bytes, strings, or Results are valid.
+func Valid(data interface{}) bool {
+	switch v := data.(type) {
+	case []byte:
+		return json.Valid(v)
+	case string:
+		return json.Valid([]byte(v))
+	case Result:
+		return json.Valid([]byte(v.String()))
+	default:
+		return false
+	}
 }
 
 // DeepEquals performs a deep equals comparison between two byte arrays.

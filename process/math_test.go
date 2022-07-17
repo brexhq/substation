@@ -53,6 +53,15 @@ var mathTests = []struct {
 		[]byte(`{"math":[10,2]}`),
 		[]byte(`{"math":5}`),
 	},
+	{
+		"missing required options",
+		Math{
+			Options: MathOptions{},
+		},
+		ProcessorInvalidSettings,
+		[]byte{},
+		[]byte{},
+	},
 }
 
 func TestMath(t *testing.T) {

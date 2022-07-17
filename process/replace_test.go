@@ -3,40 +3,30 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
 var replaceTests = []struct {
 	name     string
 	proc     Replace
+	err      error
 	test     []byte
 	expected []byte
 }{
 	{
 		"json",
 		Replace{
-			InputKey:  "replace",
-			OutputKey: "replace",
 			Options: ReplaceOptions{
 				Old: "r",
 				New: "z",
 			},
+			InputKey:  "replace",
+			OutputKey: "replace",
 		},
+		nil,
 		[]byte(`{"replace":"bar"}`),
 		[]byte(`{"replace":"baz"}`),
-	},
-	{
-		"json array",
-		Replace{
-			InputKey:  "replace",
-			OutputKey: "replace",
-			Options: ReplaceOptions{
-				Old: "r",
-				New: "z",
-			},
-		},
-		[]byte(`{"replace":["bar","bard"]}`),
-		[]byte(`{"replace":["baz","bazd"]}`),
 	},
 	{
 		"data",
@@ -46,8 +36,18 @@ var replaceTests = []struct {
 				New: "z",
 			},
 		},
+		nil,
 		[]byte(`bar`),
 		[]byte(`baz`),
+	},
+	{
+		"missing required options",
+		Replace{
+			Options: ReplaceOptions{},
+		},
+		nil,
+		[]byte{},
+		[]byte{},
 	},
 }
 
@@ -55,8 +55,10 @@ func TestReplace(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range replaceTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

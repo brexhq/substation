@@ -3,12 +3,14 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
 var insertTests = []struct {
 	name     string
 	proc     Insert
+	err      error
 	test     []byte
 	expected []byte
 }{
@@ -20,7 +22,8 @@ var insertTests = []struct {
 			},
 			OutputKey: "foo",
 		},
-		[]byte(``),
+		nil,
+		[]byte{},
 		[]byte(`{"foo":"bar"}`),
 	},
 	{
@@ -31,7 +34,8 @@ var insertTests = []struct {
 			},
 			OutputKey: "foo",
 		},
-		[]byte(``),
+		nil,
+		[]byte{},
 		[]byte(`{"foo":"bar"}`),
 	},
 	{
@@ -42,6 +46,7 @@ var insertTests = []struct {
 			},
 			OutputKey: "int",
 		},
+		nil,
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"bar","int":10}`),
 	},
@@ -53,6 +58,7 @@ var insertTests = []struct {
 			},
 			OutputKey: "array",
 		},
+		nil,
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"bar","array":["bar","baz","qux"]}`),
 	},
@@ -66,17 +72,51 @@ var insertTests = []struct {
 			},
 			OutputKey: "map",
 		},
+		nil,
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"bar","map":{"baz":"qux"}}`),
+	},
+	{
+		"JSON",
+		Insert{
+			Options: InsertOptions{
+				Value: `{"baz":"qux"}`,
+			},
+			OutputKey: "insert",
+		},
+		nil,
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"bar","insert":{"baz":"qux"}}`),
+	},
+	{
+		"zlib",
+		Insert{
+			Options: InsertOptions{
+				Value: []byte{120, 156, 5, 192, 33, 13, 0, 0, 0, 128, 176, 182, 216, 247, 119, 44, 6, 2, 130, 1, 69},
+			},
+			OutputKey: "insert",
+		},
+		nil,
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"bar","insert":"eJwFwCENAAAAgLC22Pd3LAYCggFF"}`),
+	},
+	{
+		"missing required options",
+		Insert{},
+		ProcessorInvalidSettings,
+		[]byte{},
+		[]byte{},
 	},
 }
 
 func TestInsert(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range insertTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

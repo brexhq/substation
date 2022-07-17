@@ -3,15 +3,13 @@ package process
 import (
 	"context"
 	"fmt"
+	"math"
+	"strconv"
 	"time"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
-
-// TimeInvalidSettings is returned when the Time processor is configured with invalid Input and Output settings.
-const TimeInvalidSettings = errors.Error("TimeInvalidSettings")
 
 /*
 TimeOptions contains custom options for the Time processor:
@@ -19,34 +17,35 @@ TimeOptions contains custom options for the Time processor:
 		time format of the input
 		must be one of:
 			pattern-based layouts (https://gobyexample.com/time-formatting-parsing)
-			unix: epoch
+			unix: epoch (supports fractions of a second)
 			unix_milli: epoch milliseconds
-			unix_nano: epoch nanoseconds
 			now: current time
-	InputLocation (optional):
-		the time zone abbreviation for the input
-		defaults to UTC
 	OutputFormat:
 		time format of the output
 		must be one of:
 			pattern-based layouts (https://gobyexample.com/time-formatting-parsing)
+			unix: epoch
+			unix_milli: epoch milliseconds
 	InputLocation (optional):
+		the time zone abbreviation for the input
+		defaults to UTC
+	OutputLocation (optional):
 		the time zone abbreviation for the output
 		defaults to UTC
 */
 type TimeOptions struct {
 	InputFormat    string `json:"input_format"`
-	InputLocation  string `json:"input_location"`
 	OutputFormat   string `json:"output_format"`
+	InputLocation  string `json:"input_location"`
 	OutputLocation string `json:"output_location"`
 }
 
 /*
 Time processes data by converting time values between formats. The processor supports these patterns:
 	json:
-		{"time":1639877490.061} >>> {"time":"2021-12-19T01:31:30.000000Z"}
-	json array:
-		{"time":[1639877490.061,1651705967]} >>> {"time":["2021-12-19T01:31:30.000000Z","2022-05-04T23:12:47.000000Z"]}
+		{"time":1639877490.061} >>> {"time":"2021-12-19T01:31:30.061000Z"}
+	data:
+		1639877490.061 >>> 2021-12-19T01:31:30.061000Z
 
 The processor uses this Jsonnet configuration:
 	{
@@ -56,16 +55,16 @@ The processor uses this Jsonnet configuration:
 			output_key: 'time',
 			options: {
 				input_format: 'unix',
-				output_format: '2006-01-02T15:04:05',
+				output_format: '2006-01-02T15:04:05.000000Z',
 			}
 		},
 	}
 */
 type Time struct {
+	Options   TimeOptions              `json:"options"`
 	Condition condition.OperatorConfig `json:"condition"`
 	InputKey  string                   `json:"input_key"`
 	OutputKey string                   `json:"output_key"`
-	Options   TimeOptions              `json:"options"`
 }
 
 // Slice processes a slice of bytes with the Time processor. Conditions are optionally applied on the bytes to enable processing.
@@ -99,26 +98,39 @@ func (p Time) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Time processor.
 func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
+	// error early if required options are missing
+	if p.Options.InputFormat == "" || p.Options.OutputFormat == "" {
+		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+	}
+
 	// "now" processing, supports json and data
 	if p.Options.InputFormat == "now" {
-		ts := time.Now().Format(p.Options.OutputFormat)
+		ts := time.Now()
+		var output interface{}
 
-		if p.OutputKey != "" {
-			return json.Set(data, p.OutputKey, ts)
+		switch p.Options.OutputFormat {
+		case "unix":
+			output = ts.Unix()
+		case "unix_milli":
+			output = ts.UnixMilli()
+		default:
+			output = ts.Format(p.Options.OutputFormat)
 		}
 
-		return []byte(ts), nil
+		if p.OutputKey != "" {
+			return json.Set(data, p.OutputKey, output)
+		}
+
+		switch v := output.(type) {
+		case int64:
+			return []byte(strconv.FormatInt(v, 10)), nil
+		case string:
+			return []byte(v), nil
+		}
 	}
 
 	// json processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		if p.Options.InputFormat == "now" {
-			timeDate := time.Now()
-			ts := timeDate.Format(p.Options.OutputFormat)
-
-			return json.Set(data, p.OutputKey, ts)
-		}
-
 		value := json.Get(data, p.InputKey)
 
 		// return input, otherwise time defaults to 1970
@@ -126,66 +138,64 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 			return data, nil
 		}
 
-		if !value.IsArray() {
-			ts, err := p.time(value)
-			if err != nil {
-				return nil, fmt.Errorf("byter settings %v: %v", p, err)
-			}
-			return json.Set(data, p.OutputKey, ts)
+		ts, err := p.time(value)
+		if err != nil {
+			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
 		}
-
-		// json array processing
-		var array []interface{}
-		for _, v := range value.Array() {
-			ts, err := p.time(v)
-			if err != nil {
-				return nil, fmt.Errorf("byter settings %v: %v", p, err)
-			}
-			array = append(array, ts)
-		}
-
-		return json.Set(data, p.OutputKey, array)
+		return json.Set(data, p.OutputKey, ts)
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, TimeInvalidSettings)
+	// data processing
+	if p.InputKey == "" && p.OutputKey == "" {
+		tmp, err := json.Set([]byte{}, "_tmp", data)
+		if err != nil {
+			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+		}
+
+		value := json.Get(tmp, "_tmp")
+		ts, err := p.time(value)
+		if err != nil {
+			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+		}
+
+		switch v := ts.(type) {
+		case int64:
+			return []byte(strconv.FormatInt(v, 10)), nil
+		case string:
+			return []byte(v), nil
+		}
+	}
+
+	return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
 }
 
 func (p Time) time(v json.Result) (interface{}, error) {
-	// epoch conversion requires special cases
-	if p.Options.InputFormat == "unix" {
-		timeNum := v.Int()
-		timeDate := time.Unix(timeNum, 0)
-		ts := timeDate.Format(p.Options.OutputFormat)
-		return ts, nil
-	} else if p.Options.InputFormat == "unix_milli" {
-		timeNum := v.Int()
-		timeDate := time.Unix(0, timeNum*1000000)
-		ts := timeDate.Format(p.Options.OutputFormat)
-		return ts, nil
-	}
-
-	// default time input format
-	if p.Options.InputFormat == "" {
-		p.Options.InputFormat = time.RFC3339
-	}
-
-	timeStr := v.String()
 	var timeDate time.Time
-	var err error
-	if p.Options.InputLocation != "" {
-		loc, err := time.LoadLocation(p.Options.InputLocation)
-		if err != nil {
-			return nil, fmt.Errorf("time location %s: %v", p.Options.InputLocation, err)
-		}
+	switch p.Options.InputFormat {
+	case "unix":
+		secs := math.Floor(v.Float())
+		nanos := math.Round((v.Float() - secs) * 1000000000)
+		timeDate = time.Unix(int64(secs), int64(nanos))
+	case "unix_milli":
+		secs := math.Floor(v.Float())
+		timeDate = time.Unix(0, int64(secs)*1000000)
+	default:
+		if p.Options.InputLocation != "" {
+			loc, err := time.LoadLocation(p.Options.InputLocation)
+			if err != nil {
+				return nil, fmt.Errorf("time location %s: %v", p.Options.InputLocation, err)
+			}
 
-		timeDate, err = time.ParseInLocation(p.Options.InputFormat, timeStr, loc)
-		if err != nil {
-			return nil, fmt.Errorf("time parse format %s location %s: %v", p.Options.InputFormat, p.Options.InputLocation, err)
-		}
-	} else {
-		timeDate, err = time.Parse(p.Options.InputFormat, timeStr)
-		if err != nil {
-			return nil, fmt.Errorf("time parse format %s: %v", p.Options.InputFormat, err)
+			timeDate, err = time.ParseInLocation(p.Options.InputFormat, v.String(), loc)
+			if err != nil {
+				return nil, fmt.Errorf("time parse format %s location %s: %v", p.Options.InputFormat, p.Options.InputLocation, err)
+			}
+		} else {
+			var err error
+			timeDate, err = time.Parse(p.Options.InputFormat, v.String())
+			if err != nil {
+				return nil, fmt.Errorf("time parse format %s: %v", p.Options.InputFormat, err)
+			}
 		}
 	}
 
@@ -199,13 +209,12 @@ func (p Time) time(v json.Result) (interface{}, error) {
 		timeDate = timeDate.In(loc)
 	}
 
-	// epoch conversion requires special cases
-	if p.Options.OutputFormat == "unix" {
+	switch p.Options.OutputFormat {
+	case "unix":
 		return timeDate.Unix(), nil
-	} else if p.Options.OutputFormat == "unix_milli" {
+	case "unix_milli":
 		return timeDate.UnixMilli(), nil
+	default:
+		return timeDate.Format(p.Options.OutputFormat), nil
 	}
-
-	ts := timeDate.Format(p.Options.OutputFormat)
-	return ts, nil
 }

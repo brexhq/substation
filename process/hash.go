@@ -11,9 +11,6 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
-// HashInvalidSettings is returned when the Hash processor is configured with invalid Input and Output settings.
-const HashInvalidSettings = errors.Error("HashInvalidSettings")
-
 // HashUnsupportedAlgorithm is returned when the Hash processor is configured with an unsupported algorithm.
 const HashUnsupportedAlgorithm = errors.Error("HashUnsupportedAlgorithm")
 
@@ -33,8 +30,6 @@ type HashOptions struct {
 Hash processes data by calculating hashes. The processor supports these patterns:
 	json:
 		{"hash":"foo"} >>> {"hash":"acbd18db4cc2f85cedef654fccc4a4d8"}
-	json array:
-		{"hash":["foo","bar"]} >>> {"hash":["acbd18db4cc2f85cedef654fccc4a4d8","37b51d194a7513e45b56f6524f2d51f2"]}
 	data:
 		foo >>> acbd18db4cc2f85cedef654fccc4a4d8
 
@@ -51,10 +46,10 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Hash struct {
+	Options   HashOptions              `json:"options"`
 	Condition condition.OperatorConfig `json:"condition"`
 	InputKey  string                   `json:"input_key"`
 	OutputKey string                   `json:"output_key"`
-	Options   HashOptions              `json:"options"`
 }
 
 // Slice processes a slice of bytes with the Hash processor. Conditions are optionally applied on the bytes to enable processing.
@@ -88,44 +83,33 @@ func (p Hash) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Hash processor.
 func (p Hash) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// json processing
+	// error early if required options are missing
+	if p.Options.Algorithm == "" {
+		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+	}
+
+	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
 		value := json.Get(data, p.InputKey)
-		if !value.IsArray() {
-			b := []byte(value.String())
-			h, err := p.hash(b)
-			if err != nil {
-				return nil, fmt.Errorf("byter settings %v: %v", p, err)
-			}
-
-			return json.Set(data, p.OutputKey, h)
+		b := []byte(value.String())
+		h, err := p.hash(b)
+		if err != nil {
+			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
 		}
 
-		// json array processing
-		var array []string
-		for _, v := range value.Array() {
-			b := []byte(v.String())
-			h, err := p.hash(b)
-			if err != nil {
-				return nil, fmt.Errorf("byter settings %v: %v", p, err)
-			}
-
-			array = append(array, h)
-		}
-
-		return json.Set(data, p.OutputKey, array)
+		return json.Set(data, p.OutputKey, h)
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
 		h, err := p.hash(data)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
 		}
 		return []byte(h), nil
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, HashInvalidSettings)
+	return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
 }
 
 func (p Hash) hash(b []byte) (string, error) {

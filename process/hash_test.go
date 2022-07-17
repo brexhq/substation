@@ -3,12 +3,14 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
 var hashTests = []struct {
 	name     string
 	proc     Hash
+	err      error
 	test     []byte
 	expected []byte
 }{
@@ -21,6 +23,7 @@ var hashTests = []struct {
 				Algorithm: "md5",
 			},
 		},
+		nil,
 		[]byte(`{"hash":"foo"}`),
 		[]byte(`{"hash":"acbd18db4cc2f85cedef654fccc4a4d8"}`),
 	},
@@ -33,6 +36,7 @@ var hashTests = []struct {
 				Algorithm: "sha256",
 			},
 		},
+		nil,
 		[]byte(`{"hash":"foo"}`),
 		[]byte(`{"hash":"2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"}`),
 	},
@@ -45,20 +49,9 @@ var hashTests = []struct {
 				Algorithm: "md5",
 			},
 		},
+		nil,
 		[]byte(`{"hash":"foo"}`),
 		[]byte(`{"hash":"92568430636b469705c89466dfd39646"}`),
-	},
-	{
-		"json array md5",
-		Hash{
-			InputKey:  "hash",
-			OutputKey: "hash",
-			Options: HashOptions{
-				Algorithm: "md5",
-			},
-		},
-		[]byte(`{"hash":["foo","bar"]}`),
-		[]byte(`{"hash":["acbd18db4cc2f85cedef654fccc4a4d8","37b51d194a7513e45b56f6524f2d51f2"]}`),
 	},
 	{
 		"data",
@@ -67,8 +60,27 @@ var hashTests = []struct {
 				Algorithm: "md5",
 			},
 		},
+		nil,
 		[]byte(`foo`),
 		[]byte(`acbd18db4cc2f85cedef654fccc4a4d8`),
+	},
+	{
+		"missing required options",
+		Hash{},
+		ProcessorInvalidSettings,
+		[]byte{},
+		[]byte{},
+	},
+	{
+		"unsupported algorithm",
+		Hash{
+			Options: HashOptions{
+				Algorithm: "foo",
+			},
+		},
+		HashUnsupportedAlgorithm,
+		[]byte(`foo`),
+		[]byte{},
 	},
 }
 
@@ -76,8 +88,10 @@ func TestHash(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range hashTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

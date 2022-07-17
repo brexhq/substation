@@ -8,6 +8,9 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
+// ProcessorInvalidSettings is returned when a processor is configured with invalid settings. Common causes include improper input and output settings (e.g., missing keys) and missing required options.
+const ProcessorInvalidSettings = errors.Error("ProcessorInvalidSettings")
+
 // ByteInvalidFactoryConfig is used when an unsupported Byte is referenced in ByteFactory.
 const ByteInvalidFactoryConfig = errors.Error("ByteInvalidFactoryConfig")
 
@@ -95,6 +98,10 @@ func ByterFactory(cfg config.Config) (Byter, error) {
 		var p Flatten
 		config.Decode(cfg.Settings, &p)
 		return p, nil
+	case "for_each":
+		var p ForEach
+		config.Decode(cfg.Settings, &p)
+		return p, nil
 	case "group":
 		var p Group
 		config.Decode(cfg.Settings, &p)
@@ -117,6 +124,10 @@ func ByterFactory(cfg config.Config) (Byter, error) {
 		return p, nil
 	case "math":
 		var p Math
+		config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "pipeline":
+		var p Pipeline
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "replace":
@@ -187,6 +198,10 @@ func SlicerFactory(cfg config.Config) (Slicer, error) {
 		var p Flatten
 		config.Decode(cfg.Settings, &p)
 		return p, nil
+	case "for_each":
+		var p ForEach
+		config.Decode(cfg.Settings, &p)
+		return p, nil
 	case "group":
 		var p Group
 		config.Decode(cfg.Settings, &p)
@@ -209,6 +224,10 @@ func SlicerFactory(cfg config.Config) (Slicer, error) {
 		return p, nil
 	case "math":
 		var p Math
+		config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "pipeline":
+		var p Pipeline
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "replace":

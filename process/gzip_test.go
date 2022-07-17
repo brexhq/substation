@@ -3,12 +3,14 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
 var gzipTests = []struct {
 	name     string
 	proc     Gzip
+	err      error
 	test     []byte
 	expected []byte
 }{
@@ -19,6 +21,7 @@ var gzipTests = []struct {
 				Direction: "from",
 			},
 		},
+		nil,
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0},
 		[]byte(`foo`),
 	},
@@ -29,8 +32,23 @@ var gzipTests = []struct {
 				Direction: "to",
 			},
 		},
+		nil,
 		[]byte(`foo`),
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0},
+	},
+	{
+		"missing required options",
+		Gzip{},
+		ProcessorInvalidSettings,
+		[]byte{},
+		[]byte{},
+	},
+	{
+		"unsupported direction",
+		Gzip{},
+		ProcessorInvalidDirection,
+		[]byte(`foo`),
+		[]byte{},
 	},
 }
 
@@ -38,8 +56,10 @@ func TestGzip(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range gzipTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

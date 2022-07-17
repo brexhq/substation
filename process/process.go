@@ -11,6 +11,9 @@ import (
 // ProcessorInvalidSettings is returned when a processor is configured with invalid settings. Common causes include improper input and output settings (e.g., missing keys) and missing required options.
 const ProcessorInvalidSettings = errors.Error("ProcessorInvalidSettings")
 
+// ProcessorInvalidDirection is returned when an invalid direction option is configured on a processor.
+const ProcessorInvalidDirection = errors.Error("ProcessorInvalidDirection")
+
 // ByteInvalidFactoryConfig is used when an unsupported Byte is referenced in ByteFactory.
 const ByteInvalidFactoryConfig = errors.Error("ByteInvalidFactoryConfig")
 

@@ -3,86 +3,55 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
 var mathTests = []struct {
 	name     string
 	proc     Math
+	err      error
 	test     []byte
 	expected []byte
 }{
 	{
 		"add",
 		Math{
-			InputKey:  "math",
-			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "add",
 			},
+			InputKey:  "math",
+			OutputKey: "math",
 		},
+		nil,
 		[]byte(`{"math":[1,3]}`),
 		[]byte(`{"math":4}`),
 	},
 	{
 		"subtract",
 		Math{
-			InputKey:  "math",
-			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "subtract",
 			},
+			InputKey:  "math",
+			OutputKey: "math",
 		},
+		nil,
 		[]byte(`{"math":[5,2]}`),
 		[]byte(`{"math":3}`),
 	},
 	{
 		"divide",
 		Math{
-			InputKey:  "math",
-			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "divide",
 			},
+			InputKey:  "math",
+			OutputKey: "math",
 		},
+		nil,
 		[]byte(`{"math":[10,2]}`),
 		[]byte(`{"math":5}`),
-	},
-	{
-		"add array",
-		Math{
-			InputKey:  "math",
-			OutputKey: "math",
-			Options: MathOptions{
-				Operation: "add",
-			},
-		},
-		[]byte(`{"math":[[1,2],[3,4]]}`),
-		[]byte(`{"math":[4,6]}`),
-	},
-	{
-		"subtract array",
-		Math{
-			InputKey:  "math",
-			OutputKey: "math",
-			Options: MathOptions{
-				Operation: "subtract",
-			},
-		},
-		[]byte(`{"math":[[10,5],[4,1]]}`),
-		[]byte(`{"math":[6,4]}`),
-	},
-	{
-		"divide array",
-		Math{
-			InputKey:  "math",
-			OutputKey: "math",
-			Options: MathOptions{
-				Operation: "divide",
-			},
-		},
-		[]byte(`{"math":[[10,5],[5,1]]}`),
-		[]byte(`{"math":[2,5]}`),
 	},
 }
 
@@ -90,8 +59,10 @@ func TestMath(t *testing.T) {
 	for _, test := range mathTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

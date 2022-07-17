@@ -5,12 +5,8 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
-
-// MathInvalidSettings is returned when the Math processor is configured with invalid Input and Output settings.
-const MathInvalidSettings = errors.Error("MathInvalidSettings")
 
 /*
 MathOptions contains custom options for the Math processor:
@@ -29,8 +25,6 @@ type MathOptions struct {
 Math processes data by applying mathematic operations. The processor supports these patterns:
 	json:
 		{"math":[1,3]} >>> {"math":4}
-	json array:
-		{"math":[[1,2],[3,4]]} >>> {"math":[4,6]}
 
 The processor uses this Jsonnet configuration:
 	{
@@ -45,10 +39,10 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Math struct {
+	Options   MathOptions              `json:"options"`
 	Condition condition.OperatorConfig `json:"condition"`
 	InputKey  string                   `json:"input_key"`
 	OutputKey string                   `json:"output_key"`
-	Options   MathOptions              `json:"options"`
 }
 
 // Slice processes a slice of bytes with the Math processor. Conditions are optionally applied on the bytes to enable processing.
@@ -82,9 +76,14 @@ func (p Math) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Math processor.
 func (p Math) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// only supports json and json arrays, error early if there are no keys
+	// error early if required options are missing
+	if p.Options.Operation == "" {
+		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+	}
+
+	// only supports json, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %v: %v", p, MathInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
 	}
 
 	// elements in the values array are stored at their

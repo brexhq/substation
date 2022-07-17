@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -24,6 +25,7 @@ func (m mockedInvoke) InvokeWithContext(ctx aws.Context, input *lambda.InvokeInp
 var lambdaTests = []struct {
 	name     string
 	proc     Lambda
+	err      error
 	test     []byte
 	expected []byte
 	api      lamb.API
@@ -37,8 +39,27 @@ var lambdaTests = []struct {
 				Function: "test",
 			},
 		},
+		nil,
 		[]byte(`{"foo":"bar","lambda":{"foo":"baz"}}`),
 		[]byte(`{"foo":"bar","lambda":{"baz":"qux"}}`),
+		lamb.API{
+			Client: mockedInvoke{
+				Resp: lambda.InvokeOutput{
+					Payload: []byte(`{"baz":"qux"}`),
+				},
+			},
+		},
+	},
+	{
+		"missing required options",
+		Lambda{
+			InputKey:  "lambda",
+			OutputKey: "lambda",
+			Options:   LambdaOptions{},
+		},
+		nil,
+		[]byte{},
+		[]byte{},
 		lamb.API{
 			Client: mockedInvoke{
 				Resp: lambda.InvokeOutput{
@@ -54,8 +75,10 @@ func TestLambda(t *testing.T) {
 	for _, test := range lambdaTests {
 		lambdaAPI = test.api
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

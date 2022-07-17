@@ -3,12 +3,14 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
 var groupTests = []struct {
 	name     string
 	proc     Group
+	err      error
 	test     []byte
 	expected []byte
 }{
@@ -18,32 +20,29 @@ var groupTests = []struct {
 			InputKey:  "group",
 			OutputKey: "group",
 		},
+		nil,
 		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
 		[]byte(`{"group":[["foo",123],["bar",456]]}`),
 	},
 	{
 		"objects",
 		Group{
-			InputKey:  "group",
-			OutputKey: "group",
 			Options: GroupOptions{
 				Keys: []string{"name.test", "size"},
 			},
+			InputKey:  "group",
+			OutputKey: "group",
 		},
+		nil,
 		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
 		[]byte(`{"group":[{"name":{"test":"foo"},"size":123},{"name":{"test":"bar"},"size":456}]}`),
 	},
 	{
-		"null input",
-		Group{
-			InputKey:  "group",
-			OutputKey: "group",
-			Options: GroupOptions{
-				Keys: []string{"name.test", "size"},
-			},
-		},
-		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"bar"}`),
+		"invalid settings",
+		Group{},
+		ProcessorInvalidSettings,
+		[]byte{},
+		[]byte{},
 	},
 }
 
@@ -51,8 +50,10 @@ func TestGroup(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range groupTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

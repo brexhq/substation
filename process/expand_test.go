@@ -3,37 +3,45 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
 var expandTests = []struct {
 	name     string
 	proc     Expand
+	err      error
 	test     []byte
 	expected [][]byte
 }{
 	{
-		"json",
+		"JSON",
 		Expand{
 			InputKey: "expand",
 		},
-		[]byte(`{"expand":[{"foo":"bar"}],"baz":"qux"`),
+		nil,
+		[]byte(`{"expand":[{"foo":"bar"}]}`),
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
 		},
 	},
 	{
-		"json retain",
+		"JSON extra key",
 		Expand{
 			InputKey: "expand",
-			Options: ExpandOptions{
-				Retain: []string{"baz"},
-			},
 		},
-		[]byte(`{"expand":[{"foo":"bar"}],"baz":"qux"`),
+		nil,
+		[]byte(`{"expand":[{"foo":"bar"}],"baz":"qux"}`),
 		[][]byte{
 			[]byte(`{"foo":"bar","baz":"qux"}`),
 		},
+	},
+	{
+		"invalid settings",
+		Expand{},
+		ProcessorInvalidSettings,
+		[]byte{},
+		[][]byte{},
 	},
 }
 
@@ -44,7 +52,9 @@ func TestExpand(t *testing.T) {
 		slice[0] = test.test
 
 		res, err := test.proc.Slice(ctx, slice)
-		if err != nil {
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
 			t.Log(err)
 			t.Fail()
 		}

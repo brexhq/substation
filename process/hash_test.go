@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,57 +12,49 @@ var hashTests = []struct {
 	proc     Hash
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
-		"json md5",
+		"JSON md5",
 		Hash{
-			InputKey:  "hash",
-			OutputKey: "hash",
 			Options: HashOptions{
 				Algorithm: "md5",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"hash":"foo"}`),
-		[]byte(`{"hash":"acbd18db4cc2f85cedef654fccc4a4d8"}`),
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"37b51d194a7513e45b56f6524f2d51f2"}`),
+		nil,
 	},
 	{
-		"json sha256",
+		"JSON sha256",
 		Hash{
-			InputKey:  "hash",
-			OutputKey: "hash",
+			Options: HashOptions{
+				Algorithm: "sha256",
+			},
+			InputKey:  "foo",
+			OutputKey: "foo",
+		},
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9"}`),
+		nil,
+	},
+	{
+		"JSON @this sha256",
+		Hash{
+			InputKey:  "@this",
+			OutputKey: "foo",
 			Options: HashOptions{
 				Algorithm: "sha256",
 			},
 		},
-		[]byte(`{"hash":"foo"}`),
-		[]byte(`{"hash":"2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"}`),
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"7a38bf81f383f69433ad6e900d35b3e2385593f76a7b7ab5d4355b8ba41ee24b"}`),
+		nil,
 	},
 	{
-		"json @this md5",
-		Hash{
-			InputKey:  "@this",
-			OutputKey: "hash",
-			Options: HashOptions{
-				Algorithm: "md5",
-			},
-		},
-		[]byte(`{"hash":"foo"}`),
-		[]byte(`{"hash":"92568430636b469705c89466dfd39646"}`),
-	},
-	{
-		"json array md5",
-		Hash{
-			InputKey:  "hash",
-			OutputKey: "hash",
-			Options: HashOptions{
-				Algorithm: "md5",
-			},
-		},
-		[]byte(`{"hash":["foo","bar"]}`),
-		[]byte(`{"hash":["acbd18db4cc2f85cedef654fccc4a4d8","37b51d194a7513e45b56f6524f2d51f2"]}`),
-	},
-	{
-		"data",
+		"data md5",
 		Hash{
 			Options: HashOptions{
 				Algorithm: "md5",
@@ -69,6 +62,25 @@ var hashTests = []struct {
 		},
 		[]byte(`foo`),
 		[]byte(`acbd18db4cc2f85cedef654fccc4a4d8`),
+		nil,
+	},
+	{
+		"data sha256",
+		Hash{
+			Options: HashOptions{
+				Algorithm: "sha256",
+			},
+		},
+		[]byte(`foo`),
+		[]byte(`2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae`),
+		nil,
+	},
+	{
+		"invalid settings",
+		Hash{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
@@ -76,8 +88,10 @@ func TestHash(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range hashTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,6 +12,7 @@ var gzipTests = []struct {
 	proc     Gzip
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"from",
@@ -21,6 +23,7 @@ var gzipTests = []struct {
 		},
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0},
 		[]byte(`foo`),
+		nil,
 	},
 	{
 		"to",
@@ -31,6 +34,14 @@ var gzipTests = []struct {
 		},
 		[]byte(`foo`),
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0},
+		nil,
+	},
+	{
+		"missing required options",
+		Gzip{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
@@ -38,8 +49,10 @@ func TestGzip(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range gzipTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

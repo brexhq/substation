@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,24 +12,36 @@ var deleteTests = []struct {
 	proc     Delete
 	test     []byte
 	expected []byte
+	err      error
 }{
-	// strings
 	{
-		"delete",
+		"string",
 		Delete{
-			InputKey: "delete",
+			InputKey: "baz",
 		},
-		[]byte(`{"hello":"123","delete":"456"}`),
-		[]byte(`{"hello":"123"}`),
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		[]byte(`{"foo":"bar"}`),
+		nil,
+	},
+	{
+		"JSON",
+		Delete{
+			InputKey: "baz",
+		},
+		[]byte(`{"foo":"bar","baz":{"qux":"quux"}}`),
+		[]byte(`{"foo":"bar"}`),
+		nil,
 	},
 }
 
 func TestDelete(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range deleteTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

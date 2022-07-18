@@ -5,20 +5,16 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-// CopyInvalidSettings is returned when the Copy processor is configured with invalid Input and Output settings.
-const CopyInvalidSettings = errors.Error("CopyInvalidSettings")
-
 /*
 Copy processes data by copying it. The processor supports these patterns:
-	json:
+	JSON:
 	  	{"hello":"world"} >>> {"hello":"world","goodbye":"world"}
-	from json:
+	from JSON:
   		{"hello":"world"} >>> world
-	to json:
+	to JSON:
   		world >>> {"hello":"world"}
 
 The processor uses this Jsonnet configuration:
@@ -40,14 +36,14 @@ type Copy struct {
 func (p Copy) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -67,22 +63,22 @@ func (p Copy) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Copy processor.
 func (p Copy) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// json processing
+	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
 		v := json.Get(data, p.InputKey)
 		return json.Set(data, p.OutputKey, v)
 	}
 
-	// from json processing
+	// from JSON processing
 	if p.InputKey != "" && p.OutputKey == "" {
 		v := json.Get(data, p.InputKey)
 		return []byte(v.String()), nil
 	}
 
-	// to json processing
+	// to JSON processing
 	if p.InputKey == "" && p.OutputKey != "" {
-		return json.Set([]byte(""), p.OutputKey, data)
+		return json.Set([]byte{}, p.OutputKey, data)
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, CopyInvalidSettings)
+	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 }

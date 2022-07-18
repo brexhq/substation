@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,74 +12,64 @@ var caseTests = []struct {
 	proc     Case
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
-		"json lower",
+		"JSON lower",
 		Case{
-			InputKey:  "case",
-			OutputKey: "case",
 			Options: CaseOptions{
 				Case: "lower",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"case":"ABC"}`),
-		[]byte(`{"case":"abc"}`),
+		[]byte(`{"foo":"BAR"}`),
+		[]byte(`{"foo":"bar"}`),
+		nil,
 	},
 	{
-		"json upper",
+		"JSON upper",
 		Case{
-			InputKey:  "case",
-			OutputKey: "case",
 			Options: CaseOptions{
 				Case: "upper",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"case":"abc"}`),
-		[]byte(`{"case":"ABC"}`),
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"BAR"}`),
+		nil,
 	},
 	{
-		"json snake",
+		"JSON snake",
 		Case{
-			InputKey:  "case",
-			OutputKey: "case",
+			InputKey:  "foo",
+			OutputKey: "foo",
 			Options: CaseOptions{
 				Case: "snake",
 			},
 		},
-		[]byte(`{"case":"AbC"})`),
-		[]byte(`{"case":"ab_c"})`),
-	},
-	// array support
-	{
-		"json array lower",
-		Case{
-			InputKey:  "case",
-			OutputKey: "case",
-			Options: CaseOptions{
-				Case: "lower",
-			},
-		},
-		[]byte(`{"case":["ABC","DEF"]}`),
-		[]byte(`{"case":["abc","def"]}`),
+		[]byte(`{"foo":"AbC"})`),
+		[]byte(`{"foo":"ab_c"})`),
+		nil,
 	},
 	{
-		"data",
-		Case{
-			Options: CaseOptions{
-				Case: "upper",
-			},
-		},
-		[]byte(`foo`),
-		[]byte(`FOO`),
+		"invalid settings",
+		Case{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
 func TestCase(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range caseTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

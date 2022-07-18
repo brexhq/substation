@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,78 +12,66 @@ var mathTests = []struct {
 	proc     Math
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"add",
 		Math{
-			InputKey:  "math",
-			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "add",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"math":[1,3]}`),
-		[]byte(`{"math":4}`),
+		[]byte(`{"foo":[1,3]}`),
+		[]byte(`{"foo":4}`),
+		nil,
 	},
 	{
 		"subtract",
 		Math{
-			InputKey:  "math",
-			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "subtract",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"math":[5,2]}`),
-		[]byte(`{"math":3}`),
+		[]byte(`{"foo":[5,2]}`),
+		[]byte(`{"foo":3}`),
+		nil,
+	},
+	{
+		"multiply",
+		Math{
+			Options: MathOptions{
+				Operation: "multiply",
+			},
+			InputKey:  "foo",
+			OutputKey: "foo",
+		},
+		[]byte(`{"foo":[10,2]}`),
+		[]byte(`{"foo":20}`),
+		nil,
 	},
 	{
 		"divide",
 		Math{
-			InputKey:  "math",
-			OutputKey: "math",
 			Options: MathOptions{
 				Operation: "divide",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"math":[10,2]}`),
-		[]byte(`{"math":5}`),
+		[]byte(`{"foo":[10,2]}`),
+		[]byte(`{"foo":5}`),
+		nil,
 	},
 	{
-		"add array",
-		Math{
-			InputKey:  "math",
-			OutputKey: "math",
-			Options: MathOptions{
-				Operation: "add",
-			},
-		},
-		[]byte(`{"math":[[1,2],[3,4]]}`),
-		[]byte(`{"math":[4,6]}`),
-	},
-	{
-		"subtract array",
-		Math{
-			InputKey:  "math",
-			OutputKey: "math",
-			Options: MathOptions{
-				Operation: "subtract",
-			},
-		},
-		[]byte(`{"math":[[10,5],[4,1]]}`),
-		[]byte(`{"math":[6,4]}`),
-	},
-	{
-		"divide array",
-		Math{
-			InputKey:  "math",
-			OutputKey: "math",
-			Options: MathOptions{
-				Operation: "divide",
-			},
-		},
-		[]byte(`{"math":[[10,5],[5,1]]}`),
-		[]byte(`{"math":[2,5]}`),
+		"invalid settings",
+		Math{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
@@ -90,8 +79,10 @@ func TestMath(t *testing.T) {
 	for _, test := range mathTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

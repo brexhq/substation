@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,6 +12,7 @@ var flattenTests = []struct {
 	proc     Flatten
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"json",
@@ -20,27 +22,44 @@ var flattenTests = []struct {
 		},
 		[]byte(`{"flatten":["foo",["bar"]]}`),
 		[]byte(`{"flatten":["foo","bar"]}`),
+		nil,
 	},
 	{
 		"json deep flatten",
 		Flatten{
-			InputKey:  "flatten",
-			OutputKey: "flatten",
 			Options: FlattenOptions{
 				Deep: true,
 			},
+			InputKey:  "flatten",
+			OutputKey: "flatten",
 		},
 		[]byte(`{"flatten":[["foo"],[[["bar",[["baz"]]]]]]}`),
 		[]byte(`{"flatten":["foo","bar","baz"]}`),
+		nil,
+	},
+	{
+		"invalid settings",
+		Flatten{
+			Options: FlattenOptions{
+				Deep: true,
+			},
+			InputKey:  "flatten",
+			OutputKey: "flatten",
+		},
+		[]byte(`{"flatten":[["foo"],[[["bar",[["baz"]]]]]]}`),
+		[]byte(`{"flatten":["foo","bar","baz"]}`),
+		ProcessorInvalidSettings,
 	},
 }
 
 func TestFlatten(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range flattenTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

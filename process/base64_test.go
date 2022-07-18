@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,82 +12,75 @@ var base64Tests = []struct {
 	proc     Base64
 	test     []byte
 	expected []byte
+	err      error
 }{
-	// decode std base64
 	{
-		"decode data std",
+		"data decode",
 		Base64{
 			Options: Base64Options{
 				Direction: "from",
-				Alphabet:  "std",
 			},
 		},
-		[]byte(`YWJjMTIzIT8kKiYoKSctPUB+`),
-		[]byte(`abc123!?$*&()'-=@~`),
+		[]byte(`YmFy`),
+		[]byte(`bar`),
+		nil,
 	},
-	// decode url base64
 	{
-		"decode data url",
-		Base64{
-			Options: Base64Options{
-				Direction: "from",
-				Alphabet:  "url",
-			},
-		},
-		[]byte(`YWJjMTIzIT8kKiYoKSctPUB-`),
-		[]byte(`abc123!?$*&()'-=@~`),
-	},
-	// encode std base64
-	{
-		"encode data std",
+		"data encode",
 		Base64{
 			Options: Base64Options{
 				Direction: "to",
-				Alphabet:  "std",
 			},
 		},
-		[]byte(`abc123!?$*&()'-=@~`),
-		[]byte(`YWJjMTIzIT8kKiYoKSctPUB+`),
+		[]byte(`bar`),
+		[]byte(`YmFy`),
+		nil,
 	},
-	// encode url base64
 	{
-		"encode data url",
+		"JSON decode",
 		Base64{
-			Options: Base64Options{
-				Direction: "to",
-				Alphabet:  "url",
-			},
-		},
-		[]byte(`abc123!?$*&()'-=@~`),
-		[]byte(`YWJjMTIzIT8kKiYoKSctPUB-`),
-	},
-	// decode std base64 from input to output
-	{
-		"json std",
-		Base64{
-			InputKey:  "base64",
-			OutputKey: "base64",
 			Options: Base64Options{
 				Direction: "from",
-				Alphabet:  "std",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"base64":"YWJjMTIzIT8kKiYoKSctPUB+"}`),
-		[]byte(`{"base64":"abc123!?$*&()'-=@~"}`),
+		[]byte(`{"foo":"YmFy"}`),
+		[]byte(`{"foo":"bar"}`),
+		nil,
 	},
-	// decode array of std base64 from input to output
 	{
-		"json array std",
+		"invalid settings",
+		Base64{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
+	},
+	{
+		"invalid direction",
 		Base64{
-			InputKey:  "base64",
-			OutputKey: "base64",
+			Options: Base64Options{
+				Direction: "foo",
+			},
+			InputKey:  "foo",
+			OutputKey: "foo",
+		},
+		[]byte(`{"foo":"YmFy"}`),
+		[]byte(``),
+		ProcessorInvalidSettings,
+	},
+	{
+		"JSON binary",
+		Base64{
 			Options: Base64Options{
 				Direction: "from",
-				Alphabet:  "std",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"base64":["aGVsbG8=","d29ybGQ="]}`),
-		[]byte(`{"base64":["hello","world"]}`),
+		[]byte(`{"foo":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
+		[]byte(``),
+		Base64JSONDecodedBinary,
 	},
 }
 
@@ -94,8 +88,10 @@ func TestBase64(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range base64Tests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,32 +12,21 @@ var replaceTests = []struct {
 	proc     Replace
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"json",
 		Replace{
-			InputKey:  "replace",
-			OutputKey: "replace",
 			Options: ReplaceOptions{
 				Old: "r",
 				New: "z",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"replace":"bar"}`),
-		[]byte(`{"replace":"baz"}`),
-	},
-	{
-		"json array",
-		Replace{
-			InputKey:  "replace",
-			OutputKey: "replace",
-			Options: ReplaceOptions{
-				Old: "r",
-				New: "z",
-			},
-		},
-		[]byte(`{"replace":["bar","bard"]}`),
-		[]byte(`{"replace":["baz","bazd"]}`),
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"baz"}`),
+		nil,
 	},
 	{
 		"data",
@@ -48,6 +38,14 @@ var replaceTests = []struct {
 		},
 		[]byte(`bar`),
 		[]byte(`baz`),
+		nil,
+	},
+	{
+		"invalid settings",
+		Replace{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
@@ -55,8 +53,10 @@ func TestReplace(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range replaceTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

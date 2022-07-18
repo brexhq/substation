@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,6 +12,7 @@ var insertTests = []struct {
 	proc     Insert
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"byte",
@@ -20,8 +22,9 @@ var insertTests = []struct {
 			},
 			OutputKey: "foo",
 		},
-		[]byte(``),
+		[]byte{},
 		[]byte(`{"foo":"bar"}`),
+		nil,
 	},
 	{
 		"string",
@@ -31,8 +34,9 @@ var insertTests = []struct {
 			},
 			OutputKey: "foo",
 		},
-		[]byte(``),
+		[]byte{},
 		[]byte(`{"foo":"bar"}`),
+		nil,
 	},
 	{
 		"int",
@@ -40,10 +44,11 @@ var insertTests = []struct {
 			Options: InsertOptions{
 				Value: 10,
 			},
-			OutputKey: "int",
+			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"bar","int":10}`),
+		[]byte(`{"foo":10}`),
+		nil,
 	},
 	{
 		"string array",
@@ -51,10 +56,11 @@ var insertTests = []struct {
 			Options: InsertOptions{
 				Value: []string{"bar", "baz", "qux"},
 			},
-			OutputKey: "array",
+			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"bar","array":["bar","baz","qux"]}`),
+		[]byte(`{"foo":["bar","baz","qux"]}`),
+		nil,
 	},
 	{
 		"map",
@@ -64,19 +70,53 @@ var insertTests = []struct {
 					"baz": "qux",
 				},
 			},
-			OutputKey: "map",
+			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"bar","map":{"baz":"qux"}}`),
+		[]byte(`{"foo":{"baz":"qux"}}`),
+		nil,
+	},
+	{
+		"JSON",
+		Insert{
+			Options: InsertOptions{
+				Value: `{"baz":"qux"}`,
+			},
+			OutputKey: "foo",
+		},
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":{"baz":"qux"}}`),
+		nil,
+	},
+	{
+		"zlib",
+		Insert{
+			Options: InsertOptions{
+				Value: []byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},
+			},
+			OutputKey: "foo",
+		},
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
+		nil,
+	},
+	{
+		"invalid settings",
+		Insert{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
 func TestInsert(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range insertTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

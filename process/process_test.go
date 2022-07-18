@@ -16,19 +16,24 @@ var processTests = []struct {
 	{
 		[]config.Config{
 			{
+				Type: "copy",
+				Settings: map[string]interface{}{
+					"output_key": "foo",
+				},
+			},
+		},
+		[]byte(`bar`),
+		[]byte(`{"foo":"bar"}`),
+	},
+	{
+		[]config.Config{
+			{
 				Type: "insert",
 				Settings: map[string]interface{}{
-					"condition": struct {
-						Operator string
-					}{
-						Operator: "all",
-					},
-					"options": struct {
-						Value interface{}
-					}{
-						Value: "bar",
-					},
 					"output_key": "foo",
+					"options": map[string]interface{}{
+						"value": "bar",
+					},
 				},
 			},
 		},
@@ -40,15 +45,8 @@ var processTests = []struct {
 			{
 				Type: "gzip",
 				Settings: map[string]interface{}{
-					"condition": struct {
-						Operator string
-					}{
-						Operator: "all",
-					},
-					"options": struct {
-						Direction string
-					}{
-						Direction: "from",
+					"options": map[string]interface{}{
+						"direction": "from",
 					},
 				},
 			},
@@ -61,23 +59,31 @@ var processTests = []struct {
 			{
 				Type: "base64",
 				Settings: map[string]interface{}{
-					"condition": struct {
-						Operator string
-					}{
-						Operator: "all",
-					},
-					"options": struct {
-						Direction string
-						Alphabet  string
-					}{
-						Direction: "from",
-						Alphabet:  "std",
+					"options": map[string]interface{}{
+						"direction": "from",
 					},
 				},
 			},
 		},
 		[]byte(`eyJoZWxsbyI6IndvcmxkIn0=`),
 		[]byte(`{"hello":"world"}`),
+	},
+	{
+		[]config.Config{
+			{
+				Type: "time",
+				Settings: map[string]interface{}{
+					"input_key":  "foo",
+					"output_key": "foo",
+					"options": map[string]interface{}{
+						"input_format":  "unix",
+						"output_format": "2006-01-02T15:04:05.000000Z",
+					},
+				},
+			},
+		},
+		[]byte(`{"foo":1639877490}`),
+		[]byte(`{"foo":"2021-12-19T01:31:30.000000Z"}`),
 	},
 }
 

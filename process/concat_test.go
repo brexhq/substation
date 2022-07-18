@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,39 +12,38 @@ var concatTests = []struct {
 	proc     Concat
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
-		"json",
+		"JSON",
 		Concat{
-			InputKey:  "concat",
-			OutputKey: "concat",
 			Options: ConcatOptions{
 				Separator: ".",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"concat":["foo","bar"]}`),
-		[]byte(`{"concat":"foo.bar"}`),
+		[]byte(`{"foo":["bar","baz"]}`),
+		[]byte(`{"foo":"bar.baz"}`),
+		nil,
 	},
 	{
-		"json array",
-		Concat{
-			InputKey:  "concat",
-			OutputKey: "concat",
-			Options: ConcatOptions{
-				Separator: ".",
-			},
-		},
-		[]byte(`{"concat":[["foo","baz"],["bar","qux"]]}`),
-		[]byte(`{"concat":["foo.bar","baz.qux"]}`),
+		"invalid settings",
+		Concat{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
 func TestConcat(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range concatTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

@@ -8,12 +8,8 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
-
-// DynamoDBInvalidSettings is returned when the DynamoDB processor is configured with invalid Input and Output settings.
-const DynamoDBInvalidSettings = errors.Error("DynamoDBInvalidSettings")
 
 /*
 DynamoDBOptions contains custom options settings for the DynamoDB processor (https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#API_Query_RequestSyntax):
@@ -39,7 +35,7 @@ type DynamoDBOptions struct {
 
 /*
 DynamoDB processes data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The processor supports these patterns:
-	json:
+	JSON:
 		{"ddb":{"PK":"foo"}} >>> {"ddb":[{"foo":"bar"}]}
 
 The processor uses this Jsonnet configuration:
@@ -47,23 +43,23 @@ The processor uses this Jsonnet configuration:
 		type: 'dynamodb',
 		settings: {
 			// the input key is expected to be a map containing a partition key ("PK") and an optional sort key ("SK")
-			input_key: 'ddb',
-			output_key: 'ddb',
 			// if the value of the PK is "foo", then this queries DynamoDB by using "foo" as the paritition key value for the table attribute "pk" and returns the last indexed item from the table.
 			options: {
 				table: 'foo-table',
 				key_condition_expression: 'pk = :partitionkeyval',
 				limit: 1,
 				scan_index_forward: true,
-			}
+			},
+			input_key: 'ddb',
+			output_key: 'ddb',
 		},
 	}
 */
 type DynamoDB struct {
+	Options   DynamoDBOptions          `json:"options"`
 	Condition condition.OperatorConfig `json:"condition"`
 	InputKey  string                   `json:"input_key"`
 	OutputKey string                   `json:"output_key"`
-	Options   DynamoDBOptions          `json:"options"`
 }
 
 var dynamodbAPI dynamodb.API
@@ -77,14 +73,14 @@ func (p DynamoDB) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -104,33 +100,37 @@ func (p DynamoDB) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the DynamoDB processor.
 func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
+	// error early if required options are missing
+	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	}
+
 	// lazy load API
 	if !dynamodbAPI.IsEnabled() {
 		dynamodbAPI.Setup()
 	}
 
-	// only supports json, error early if there are no keys
+	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %v: %v", p, DynamoDBInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	// json processing
 	request := json.Get(data, p.InputKey)
 	if !request.IsObject() {
-		return nil, fmt.Errorf("byter settings %v: %v", p, DynamoDBInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// PK is a required field
 	pk := json.Get([]byte(request.Raw), "PK").String()
 	if pk == "" {
-		return nil, fmt.Errorf("byter settings %v: %v", p, DynamoDBInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	sk := json.Get([]byte(request.Raw), "SK").String()
 
 	items, err := p.dynamodb(ctx, pk, sk)
 	if err != nil {
-		return nil, fmt.Errorf("byter settings %v: %v", p, err)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 	}
 
 	// no match

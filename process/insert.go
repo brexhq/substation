@@ -5,12 +5,8 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
-
-// InsertInvalidSettings is returned when the Insert processor is configured with invalid Input and Output settings.
-const InsertInvalidSettings = errors.Error("InsertInvalidSettings")
 
 /*
 InsertOptions contains custom options for the Insert processor:
@@ -23,38 +19,38 @@ type InsertOptions struct {
 
 /*
 Insert processes data by inserting a value into a JSON object. The processor supports these patterns:
-	json:
+	JSON:
 		{"foo":"bar"} >>> {"foo":"bar","baz":"qux"}
 
 The processor uses this Jsonnet configuration:
 	{
 		type: 'insert',
 		settings: {
-			output_key: 'baz',
 			options: {
 				value: 'qux',
-			}
+			},
+			output_key: 'baz',
 		},
 	}
 */
 type Insert struct {
+	Options   InsertOptions            `json:"options"`
 	Condition condition.OperatorConfig `json:"condition"`
 	OutputKey string                   `json:"output_key"`
-	Options   InsertOptions            `json:"options"`
 }
 
 // Slice processes a slice of bytes with the Insert processor. Conditions are optionally applied on the bytes to enable processing.
 func (p Insert) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -74,10 +70,10 @@ func (p Insert) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Insert processor.
 func (p Insert) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// json processing
-	if p.OutputKey != "" {
-		return json.Set(data, p.OutputKey, p.Options.Value)
+	// only supports JSON, error early if there are no keys
+	if p.OutputKey == "" {
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, InsertInvalidSettings)
+	return json.Set(data, p.OutputKey, p.Options.Value)
 }

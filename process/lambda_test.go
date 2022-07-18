@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -26,19 +27,35 @@ var lambdaTests = []struct {
 	proc     Lambda
 	test     []byte
 	expected []byte
+	err      error
 	api      lamb.API
 }{
 	{
-		"json",
+		"JSON",
 		Lambda{
-			InputKey:  "lambda",
-			OutputKey: "lambda",
 			Options: LambdaOptions{
-				Function: "test",
+				Function: "fooer",
+			},
+			InputKey:  "foo",
+			OutputKey: "foo",
+		},
+		[]byte(`{"foo":{"bar":"baz"}}`),
+		[]byte(`{"foo":{"baz":"qux"}}`),
+		nil,
+		lamb.API{
+			Client: mockedInvoke{
+				Resp: lambda.InvokeOutput{
+					Payload: []byte(`{"baz":"qux"}`),
+				},
 			},
 		},
-		[]byte(`{"foo":"bar","lambda":{"foo":"baz"}}`),
-		[]byte(`{"foo":"bar","lambda":{"baz":"qux"}}`),
+	},
+	{
+		"invalid settings",
+		Lambda{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
 		lamb.API{
 			Client: mockedInvoke{
 				Resp: lambda.InvokeOutput{
@@ -54,8 +71,10 @@ func TestLambda(t *testing.T) {
 	for _, test := range lambdaTests {
 		lambdaAPI = test.api
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,92 +12,60 @@ var domainTests = []struct {
 	proc     Domain
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
-		"json tld",
+		"JSON tld",
 		Domain{
-			InputKey:  "domain",
-			OutputKey: "tld",
 			Options: DomainOptions{
 				Function: "tld",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"domain":"example.com"}`),
-		[]byte(`{"domain":"example.com","tld":"com"}`),
+		[]byte(`{"foo":"bar.com"}`),
+		[]byte(`{"foo":"com"}`),
+		nil,
 	},
 	{
-		"json domain",
+		"JSON domain",
 		Domain{
-			InputKey:  "domain",
-			OutputKey: "domain",
 			Options: DomainOptions{
 				Function: "domain",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"domain":"www.example.com"}`),
-		[]byte(`{"domain":"example.com"}`),
+		[]byte(`{"foo":"www.example.com"}`),
+		[]byte(`{"foo":"example.com"}`),
+		nil,
 	},
 	{
-		"json subdomain",
+		"JSON subdomain",
 		Domain{
-			InputKey:  "domain",
-			OutputKey: "subdomain",
 			Options: DomainOptions{
 				Function: "subdomain",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"domain":"www.example.com"}`),
-		[]byte(`{"domain":"www.example.com","subdomain":"www"}`),
+		[]byte(`{"foo":"www.bar.com"}`),
+		[]byte(`{"foo":"www"}`),
+		nil,
 	},
 	// empty subdomain, returns empty
 	{
-		"json subdomain",
+		"JSON subdomain",
 		Domain{
-			InputKey:  "domain",
-			OutputKey: "subdomain",
 			Options: DomainOptions{
 				Function: "subdomain",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"domain":"example.com"}`),
-		[]byte(`{"domain":"example.com","subdomain":""}`),
-	},
-	// array support
-	{
-		"json array tld",
-		Domain{
-			InputKey:  "domain",
-			OutputKey: "tld",
-			Options: DomainOptions{
-				Function: "tld",
-			},
-		},
-		[]byte(`{"domain":["example.com","example.top"]}`),
-		[]byte(`{"domain":["example.com","example.top"],"tld":["com","top"]}`),
-	},
-	{
-		"json array domain",
-		Domain{
-			InputKey:  "domain",
-			OutputKey: "domain",
-			Options: DomainOptions{
-				Function: "domain",
-			},
-		},
-		[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
-		[]byte(`{"domain":["example.com","example.top"]}`),
-	},
-	{
-		"json array subdomain",
-		Domain{
-			InputKey:  "domain",
-			OutputKey: "subdomain",
-			Options: DomainOptions{
-				Function: "subdomain",
-			},
-		},
-		[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
-		[]byte(`{"domain":["www.example.com","mail.example.top"],"subdomain":["www","mail"]}`),
+		[]byte(`{"foo":"example.com"}`),
+		[]byte(`{"foo":""}`),
+		nil,
 	},
 	{
 		"data",
@@ -105,17 +74,27 @@ var domainTests = []struct {
 				Function: "subdomain",
 			},
 		},
-		[]byte(`www.example.com`),
+		[]byte(`www.bar.com`),
 		[]byte(`www`),
+		nil,
+	},
+	{
+		"invalid settings",
+		Domain{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
 func TestDomain(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range domainTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

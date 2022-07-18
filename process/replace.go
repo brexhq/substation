@@ -7,12 +7,8 @@ import (
 	"strings"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
-
-// ReplaceInvalidSettings is returned when the Replace processor is configured with invalid Input and Output settings.
-const ReplaceInvalidSettings = errors.Error("ReplaceInvalidSettings")
 
 /*
 ReplaceOptions contains custom options for the Replace processor:
@@ -32,10 +28,8 @@ type ReplaceOptions struct {
 
 /*
 Replace processes data by replacing characters. The processor supports these patterns:
-	json:
+	JSON:
 		{"replace":"bar"} >>> {"replace":"baz"}
-	json array:
-		{"replace":["bar","bard"]} >>> {"replace":["baz","bazd"]}
 	data:
 		bar >>> baz
 
@@ -43,34 +37,34 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'replace',
 		settings: {
-			input_key: 'replace',
-			output_key: 'replace',
 			options: {
 				old: 'r',
 				new: 'z',
-			}
+			},
+			input_key: 'replace',
+			output_key: 'replace',
 		},
 	}
 */
 type Replace struct {
+	Options   ReplaceOptions           `json:"options"`
 	Condition condition.OperatorConfig `json:"condition"`
 	InputKey  string                   `json:"input_key"`
 	OutputKey string                   `json:"output_key"`
-	Options   ReplaceOptions           `json:"options"`
 }
 
 // Slice processes a slice of bytes with the Replace processor. Conditions are optionally applied on the bytes to enable processing.
 func (p Replace) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -90,41 +84,28 @@ func (p Replace) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Replace processor.
 func (p Replace) Byte(ctx context.Context, data []byte) ([]byte, error) {
+	// error early if required options are missing
+	if p.Options.Old == "" || p.Options.New == "" {
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	}
+
 	// default to replace all
 	if p.Options.Count == 0 {
 		p.Options.Count = -1
 	}
 
-	// json processing
+	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey)
-		if !value.IsArray() {
-			r := p.stringsReplace(value.String())
-			return json.Set(data, p.OutputKey, r)
-		}
-
-		// json array processing
-		var array []string
-		for _, v := range value.Array() {
-			r := p.stringsReplace(v.String())
-			array = append(array, r)
-		}
-
-		return json.Set(data, p.OutputKey, array)
+		value := json.Get(data, p.InputKey).String()
+		rep := strings.Replace(value, p.Options.Old, p.Options.New, p.Options.Count)
+		return json.Set(data, p.OutputKey, rep)
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		return p.bytesReplace(data), nil
+		rep := bytes.Replace(data, []byte(p.Options.Old), []byte(p.Options.New), p.Options.Count)
+		return rep, nil
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, ReplaceInvalidSettings)
-}
-
-func (p Replace) stringsReplace(s string) string {
-	return strings.Replace(s, p.Options.Old, p.Options.New, p.Options.Count)
-}
-
-func (p Replace) bytesReplace(b []byte) []byte {
-	return bytes.Replace(b, []byte(p.Options.Old), []byte(p.Options.New), p.Options.Count)
+	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 }

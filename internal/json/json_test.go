@@ -1,151 +1,263 @@
 package json
 
 import (
+	"bytes"
 	"testing"
 )
 
 var getTests = []struct {
-	json     string
+	name     string
 	key      string
+	test     []byte
 	expected interface{}
 }{
 	{
-		json:     `{"get":"string"}`,
-		key:      "get",
+		name:     "string",
+		key:      "foo",
+		test:     []byte(`{"foo":"string"}`),
 		expected: "string",
 	},
 	{
-		json:     `{"get":123}`,
-		key:      "get",
+		name:     "int",
+		key:      "foo",
+		test:     []byte(`{"foo":123}`),
 		expected: 123.0,
 	},
 	{
-		json:     `{"get":123.456}`,
-		key:      "get",
+		name:     "float",
+		key:      "foo",
+		test:     []byte(`{"foo":123.456}`),
 		expected: 123.456,
 	},
 	{
-		json:     `{"get":true}`,
-		key:      "get",
+		name:     "true",
+		key:      "foo",
+		test:     []byte(`{"foo":true}`),
 		expected: true,
 	},
 	{
-		json:     `{"get":false}`,
-		key:      "get",
+		name:     "false",
+		key:      "foo",
+		test:     []byte(`{"foo":false}`),
 		expected: false,
 	},
 }
 
 func TestGetJson(t *testing.T) {
-	for _, gt := range getTests {
-		result := Get([]byte(gt.json), gt.key)
+	for _, test := range getTests {
+		result := Get(test.test, test.key)
 
-		if result.Value() != gt.expected {
-			t.Logf("expected %v, got %v", gt.expected, result)
+		if result.Value() != test.expected {
+			t.Logf("expected %v, got %v", test.expected, result)
 			t.Fail()
 		}
+	}
+}
+
+func benchmarkGetJSON(b *testing.B, test []byte, key string) {
+	for i := 0; i < b.N; i++ {
+		Get(test, key)
+	}
+}
+
+func BenchmarkGetJSON(b *testing.B) {
+	for _, test := range getTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkGetJSON(b, test.test, test.key)
+			},
+		)
 	}
 }
 
 var setTests = []struct {
-	json     string
+	name     string
 	key      string
 	value    interface{}
-	expected string
+	test     []byte
+	expected []byte
 }{
 	{
-		json:     `{"hello":"world"}`,
-		key:      "olleh",
-		value:    "dlrow",
-		expected: `{"hello":"world","olleh":"dlrow"}`,
+		name:     "string",
+		key:      "baz",
+		value:    "qux",
+		test:     []byte(`{"foo":"bar"}`),
+		expected: []byte(`{"foo":"bar","baz":"qux"}`),
 	},
 	{
-		json:     `{"hello":"world"}`,
-		key:      "olleh",
+		name:     "int",
+		key:      "baz",
 		value:    123,
-		expected: `{"hello":"world","olleh":123}`,
+		test:     []byte(`{"foo":"bar"}`),
+		expected: []byte(`{"foo":"bar","baz":123}`),
 	},
 	{
-		json:     `{"hello":"world"}`,
-		key:      "olleh",
+		name:     "float",
+		key:      "baz",
 		value:    123.456,
-		expected: `{"hello":"world","olleh":123.456}`,
+		test:     []byte(`{"foo":"bar"}`),
+		expected: []byte(`{"foo":"bar","baz":123.456}`),
 	},
 	{
-		json:     `{"hello":"world"}`,
-		key:      "olleh",
+		name:     "true",
+		key:      "baz",
 		value:    true,
-		expected: `{"hello":"world","olleh":true}`,
+		test:     []byte(`{"foo":"bar"}`),
+		expected: []byte(`{"foo":"bar","baz":true}`),
+	},
+	{
+		name:     "JSON string",
+		key:      "baz",
+		value:    `{"qux":"quux"}`,
+		test:     []byte(`{"foo":"bar"}`),
+		expected: []byte(`{"foo":"bar","baz":{"qux":"quux"}}`),
+	},
+	{
+		name:     "JSON bytes",
+		key:      "baz",
+		value:    []byte(`{"qux":"quux"}`),
+		test:     []byte(`{"foo":"bar"}`),
+		expected: []byte(`{"foo":"bar","baz":{"qux":"quux"}}`),
+	},
+	{
+		name:     "bytes",
+		key:      "baz",
+		value:    []byte{120, 156, 5, 192, 33, 13, 0, 0, 0, 128, 176, 182, 216, 247, 119, 44, 6, 2, 130, 1, 69},
+		test:     []byte(`{"foo":"bar"}`),
+		expected: []byte(`{"foo":"bar","baz":"eJwFwCENAAAAgLC22Pd3LAYCggFF"}`),
 	},
 }
 
 func TestSetJson(t *testing.T) {
-	for _, st := range setTests {
-		result, err := Set([]byte(st.json), st.key, st.value)
+	for _, test := range setTests {
+		result, err := Set(test.test, test.key, test.value)
 		if err != nil {
 			t.Logf("got error %v", err)
 			t.Fail()
 			return
 		}
 
-		if string(result) != st.expected {
-			t.Logf("expected %s, got %s", st.expected, result)
+		if c := bytes.Compare(result, test.expected); c != 0 {
+			t.Logf("expected %s, got %s", test.expected, result)
 			t.Fail()
 		}
+	}
+}
+
+func benchmarkSetJSON(b *testing.B, test []byte, key string, value interface{}) {
+	for i := 0; i < b.N; i++ {
+		Set(test, key, value)
+	}
+}
+
+func BenchmarkSetJSON(b *testing.B) {
+	for _, test := range setTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkGetJSON(b, test.test, test.key)
+			},
+		)
 	}
 }
 
 var setRawTests = []struct {
-	json     string
+	name     string
 	key      string
 	value    string
-	expected string
+	test     []byte
+	expected []byte
 }{
 	{
-		json:     `{"hello":"world"}`,
-		key:      "inner",
-		value:    `{"olleh":"dlrow"}`,
-		expected: `{"hello":"world","inner":{"olleh":"dlrow"}}`,
+		name:     "JSON",
+		key:      "baz",
+		value:    `{"qux":"quux"}`,
+		test:     []byte(`{"foo":"bar"}`),
+		expected: []byte(`{"foo":"bar","baz":{"qux":"quux"}}`),
 	},
 }
 
 func TestSetRawJson(t *testing.T) {
-	for _, st := range setRawTests {
-		result, err := SetRaw([]byte(st.json), st.key, st.value)
+	for _, test := range setRawTests {
+		result, err := SetRaw(test.test, test.key, test.value)
 		if err != nil {
 			t.Logf("got error %v", err)
 			t.Fail()
 			return
 		}
 
-		if string(result) != st.expected {
-			t.Logf("expected %s, got %s", st.expected, result)
+		if c := bytes.Compare(result, test.expected); c != 0 {
+			t.Logf("expected %s, got %s", test.expected, result)
 			t.Fail()
 		}
 	}
 }
 
+func benchmarkSetRawJSON(b *testing.B, test []byte, key string, value interface{}) {
+	for i := 0; i < b.N; i++ {
+		Set(test, key, value)
+	}
+}
+
+func BenchmarkSetRawJSON(b *testing.B) {
+	for _, test := range setRawTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkGetJSON(b, test.test, test.key)
+			},
+		)
+	}
+}
+
 var validTests = []struct {
-	json     string
+	name     string
+	test     interface{}
 	expected bool
 }{
 	{
-		json:     `{"hello":"world"}`,
+		name:     "true string",
+		test:     `{"foo":"bar"}`,
 		expected: true,
 	},
 	{
-		json:     `{hello:"world"}`,
+		name:     "true bytes",
+		test:     []byte(`{"foo":"bar"}`),
+		expected: true,
+	},
+	{
+		name:     "false string",
+		test:     `{foo:"bar"}`,
+		expected: false,
+	},
+	{
+		name:     "false bytes",
+		test:     []byte(`{foo:"bar"}`),
 		expected: false,
 	},
 }
 
 func TestValidJson(t *testing.T) {
-	for _, vt := range validTests {
-		result := Valid([]byte(vt.json))
+	for _, test := range validTests {
+		result := Valid(test.test)
 
-		if result != vt.expected {
-			t.Logf("expected %v, got %v", vt.expected, result)
+		if result != test.expected {
+			t.Logf("expected %v, got %v", test.expected, result)
 			t.Fail()
 		}
+	}
+}
+
+func benchmarkValidJSON(b *testing.B, test interface{}) {
+	for i := 0; i < b.N; i++ {
+		Valid(test)
+	}
+}
+
+func BenchmarkValidJSON(b *testing.B) {
+	for _, test := range validTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkValidJSON(b, test.test)
+			},
+		)
 	}
 }

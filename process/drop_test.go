@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -9,6 +10,7 @@ var dropTests = []struct {
 	name string
 	proc Drop
 	test [][]byte
+	err  error
 }{
 	{
 		"drop",
@@ -18,6 +20,7 @@ var dropTests = []struct {
 			[]byte(`{"foo":"baz"}`),
 			[]byte(`{"foo":"qux"}`),
 		},
+		nil,
 	},
 }
 
@@ -25,7 +28,9 @@ func TestDrop(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range dropTests {
 		res, err := test.proc.Slice(ctx, test.test)
-		if err != nil {
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
 			t.Log(err)
 			t.Fail()
 		}

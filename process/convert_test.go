@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,173 +12,109 @@ var convertTests = []struct {
 	proc     Convert
 	test     []byte
 	expected []byte
+	err      error
 }{
-	// strings
 	{
-		"json bool",
+		"bool true",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "bool",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":"true"}`),
-		[]byte(`{"convert":true}`),
+		[]byte(`{"foo":"true"}`),
+		[]byte(`{"foo":true}`),
+		nil,
 	},
 	{
-		"json bool",
+		"bool false",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "bool",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":"false"}`),
-		[]byte(`{"convert":false}`),
+		[]byte(`{"foo":"false"}`),
+		[]byte(`{"foo":false}`),
+		nil,
 	},
 	{
-		"json int",
+		"int",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "int",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":"-123"}`),
-		[]byte(`{"convert":-123}`),
+		[]byte(`{"foo":"-123"}`),
+		[]byte(`{"foo":-123}`),
+		nil,
 	},
 	{
-		"json float",
+		"float",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "float",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":"123.456"}`),
-		[]byte(`{"convert":123.456}`),
+		[]byte(`{"foo":"123.456"}`),
+		[]byte(`{"foo":123.456}`),
+		nil,
 	},
 	{
-		"json uint",
+		"uint",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "uint",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":"123"}`),
-		[]byte(`{"convert":123}`),
+		[]byte(`{"foo":"123"}`),
+		[]byte(`{"foo":123}`),
+		nil,
 	},
 	{
-		"json string",
+		"string",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "string",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":123}`),
-		[]byte(`{"convert":"123"}`),
+		[]byte(`{"foo":123}`),
+		[]byte(`{"foo":"123"}`),
+		nil,
 	},
 	{
-		"json int",
+		"int",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "int",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":123.456}`),
-		[]byte(`{"convert":123}`),
-	},
-	// array support
-	{
-		"json array bool",
-		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
-			Options: ConvertOptions{
-				Type: "bool",
-			},
-		},
-		[]byte(`{"convert":["true","false"]}`),
-		[]byte(`{"convert":[true,false]}`),
-	},
-	{
-		"json array int",
-		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
-			Options: ConvertOptions{
-				Type: "int",
-			},
-		},
-		[]byte(`{"convert":["-123","-456"]}`),
-		[]byte(`{"convert":[-123,-456]}`),
-	},
-	{
-		"json array float",
-		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
-			Options: ConvertOptions{
-				Type: "float",
-			},
-		},
-		[]byte(`{"convert":["-123.456","123.456"]}`),
-		[]byte(`{"convert":[-123.456,123.456]}`),
-	},
-	{
-		"json array uint",
-		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
-			Options: ConvertOptions{
-				Type: "uint",
-			},
-		},
-		[]byte(`{"convert":["123","456"]}`),
-		[]byte(`{"convert":[123,456]}`),
-	},
-	{
-		"json array string",
-		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
-			Options: ConvertOptions{
-				Type: "string",
-			},
-		},
-		[]byte(`{"convert":[123,123.456]}`),
-		[]byte(`{"convert":["123","123.456"]}`),
-	},
-	{
-		"json array int",
-		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
-			Options: ConvertOptions{
-				Type: "int",
-			},
-		},
-		[]byte(`{"convert":[123.456,1.2]}`),
-		[]byte(`{"convert":[123,1]}`),
+		[]byte(`{"foo":123.456}`),
+		[]byte(`{"foo":123}`),
+		nil,
 	},
 }
 
 func TestConvert(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range convertTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

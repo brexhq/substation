@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,40 +12,64 @@ var copyTests = []struct {
 	proc     Copy
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
-		"json",
+		"JSON",
 		Copy{
-			InputKey:  "original",
-			OutputKey: "copy",
+			InputKey:  "foo",
+			OutputKey: "baz",
 		},
-		[]byte(`{"original":"hello"}`),
-		[]byte(`{"original":"hello","copy":"hello"}`),
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"bar","baz":"bar"}`),
+		nil,
 	},
 	{
-		"from json",
+		"from JSON",
 		Copy{
-			InputKey: "copy",
+			InputKey: "foo",
 		},
-		[]byte(`{"copy":"hello"}`),
-		[]byte(`hello`),
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`bar`),
+		nil,
 	},
 	{
-		"to json",
+		"from JSON nested",
 		Copy{
-			OutputKey: "copy",
+			InputKey: "foo",
 		},
-		[]byte(`hello`),
-		[]byte(`{"copy":"hello"}`),
+		[]byte(`{"foo":{"bar":"baz"}}`),
+		[]byte(`{"bar":"baz"}`),
+		nil,
+	},
+	{
+		"to JSON utf8",
+		Copy{
+			OutputKey: "bar",
+		},
+		[]byte(`baz`),
+		[]byte(`{"bar":"baz"}`),
+		nil,
+	},
+	{
+		"to JSON zlib",
+		Copy{
+			OutputKey: "bar",
+		},
+		[]byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},
+		[]byte(`{"bar":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
+		nil,
 	},
 }
 
 func TestCopy(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range copyTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

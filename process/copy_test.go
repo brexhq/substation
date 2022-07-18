@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,6 +12,7 @@ var copyTests = []struct {
 	proc     Copy
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"JSON",
@@ -20,6 +22,7 @@ var copyTests = []struct {
 		},
 		[]byte(`{"original":"foo"}`),
 		[]byte(`{"original":"foo","copy":"foo"}`),
+		nil,
 	},
 	{
 		"from JSON",
@@ -28,6 +31,7 @@ var copyTests = []struct {
 		},
 		[]byte(`{"copy":"foo"}`),
 		[]byte(`foo`),
+		nil,
 	},
 	{
 		"to JSON utf8",
@@ -36,6 +40,7 @@ var copyTests = []struct {
 		},
 		[]byte(`foo`),
 		[]byte(`{"copy":"foo"}`),
+		nil,
 	},
 	{
 		"to JSON zlib",
@@ -44,6 +49,7 @@ var copyTests = []struct {
 		},
 		[]byte{120, 156, 5, 192, 33, 13, 0, 0, 0, 128, 176, 182, 216, 247, 119, 44, 6, 2, 130, 1, 69},
 		[]byte(`{"copy":"eJwFwCENAAAAgLC22Pd3LAYCggFF"}`),
+		nil,
 	},
 }
 
@@ -51,8 +57,10 @@ func TestCopy(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range copyTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,6 +12,7 @@ var countTests = []struct {
 	proc     Count
 	test     [][]byte
 	expected []byte
+	err      error
 }{
 	{
 		"count",
@@ -21,6 +23,7 @@ var countTests = []struct {
 			[]byte(`{"foo":"qux"}`),
 		},
 		[]byte(`{"count":3}`),
+		nil,
 	},
 }
 
@@ -28,7 +31,9 @@ func TestCount(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range countTests {
 		res, err := test.proc.Slice(ctx, test.test)
-		if err != nil {
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
 			t.Log(err)
 			t.Fail()
 		}

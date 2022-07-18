@@ -1,12 +1,11 @@
 {
   base64(input, output, direction, 
-         alphabet='std', 
          condition_operator='', condition_inspectors=[]): {
     type: 'base64',
     settings: {
-      input_key: input, output_key: output,
-      options: { direction: direction, alphabet: alphabet },
+      options: { direction: direction },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   capture(input, output, expression, 
@@ -14,61 +13,61 @@
           condition_operator='', condition_inspectors=[]): {
     type: 'capture',
     settings: {
-      input_key: input, output_key: output,
       options: { expression: expression, 'function': _function, count: count },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   case(input, output, case, 
        condition_operator='', condition_inspectors=[]): {
     type: 'case',
     settings: {
-      input_key: input, output_key: output,
       options: { case: case },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   concat(input, output, separator, 
          condition_operator='', condition_inspectors=[]): {
     type: 'concat',
     settings: {
-      input_key: input, output_key: output,
       options: { separator: separator },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   convert(input, output, type, 
           condition_operator='', condition_inspectors=[]): {
     type: 'convert',
     settings: {
-      input_key: input, output_key: output,
       options: { type: type },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   copy(input='', output='', 
        condition_operator='', condition_inspectors=[]): {
     type: 'copy',
     settings: {
-      input_key: input, output_key: output,
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   delete(input, 
          condition_operator='', condition_inspectors=[]): {
     type: 'delete',
     settings: {
-      input: input,
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input: input,
     },
   },
   domain(input, output, _function, 
          condition_operator='', condition_inspectors=[]): {
     type: 'domain',
     settings: {
-      input_key: input, output_key: output,
       options: { 'function': _function },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   drop(condition_operator='', condition_inspectors=[]): {
@@ -82,19 +81,17 @@
            condition_operator='', condition_inspectors=[]): {
     type: 'dynamodb',
     settings: {
-      input_key: input, output_key: output,
       options: { table: table, key_condition_expression: key_condition_expression, limit: limit, scan_index_forward: scan_index_forward },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   expand(input, 
-         retain=[], 
          condition_operator='', condition_inspectors=[]): {
     type: 'expand',
     settings: {
-      input: input,
-      options: { retain: retain },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input: input,
     },
   },
   flatten(input, output, 
@@ -102,19 +99,19 @@
           condition_operator='', condition_inspectors=[]): {
     type: 'flatten',
     settings: {
-      input_key: input, output_key: output,
       options: { deep: deep },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   group(input, output, 
-        options_keys=[], 
+        keys=[], 
         condition_operator='', condition_inspectors=[]): {
     type: 'group',
     settings: {
-      input_key: input, output_key: output,
-      options: { keys: options_keys },
+      options: { keys: keys },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   gzip(direction, 
@@ -130,18 +127,18 @@
        condition_operator='', condition_inspectors=[]): {
     type: 'hash',
     settings: {
-      input_key: input, output_key: output,
       options: { algorithm: algorithm },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   insert(output, value, 
          condition_operator='', condition_inspectors=[]): {
     type: 'insert',
     settings: {
-      output: output,
       options: { value: value },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      output: output,
     },
   },
   lambda(input, output, _function, 
@@ -149,18 +146,18 @@
          condition_operator='', condition_inspectors=[]): {
     type: 'lambda',
     settings: {
-      input_key: input, output_key: output,
       options: { 'function': _function, error_on_failure: error_on_failure },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   math(input, output, operation, 
        condition_operator='', condition_inspectors=[]): {
     type: 'math',
     settings: {
-      input_key: input, output_key: output,
       options: { operation: operation },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   replace(input, output, old, new, 
@@ -168,9 +165,9 @@
           condition_operator='', condition_inspectors=[]): {
     type: 'replace',
     settings: {
-      input_key: input, output_key: output,
       options: { old: old, new: new, count: count },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
   time(input, output, input_format, 
@@ -178,9 +175,9 @@
        condition_operator='', condition_inspectors=[]): {
     type: 'time',
     settings: {
-      input_key: input, output_key: output,
       options: { input_format: input_format, input_location: input_location, output_format: output_format, output_location: output_location },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
     },
   },
 }

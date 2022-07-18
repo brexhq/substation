@@ -10,62 +10,62 @@ import (
 var domainTests = []struct {
 	name     string
 	proc     Domain
-	err      error
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
-		"json tld",
+		"JSON tld",
 		Domain{
-			InputKey:  "domain",
-			OutputKey: "tld",
 			Options: DomainOptions{
 				Function: "tld",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
+		[]byte(`{"foo":"bar.com"}`),
+		[]byte(`{"foo":"com"}`),
 		nil,
-		[]byte(`{"domain":"example.com"}`),
-		[]byte(`{"domain":"example.com","tld":"com"}`),
 	},
 	{
-		"json domain",
+		"JSON domain",
 		Domain{
-			InputKey:  "domain",
-			OutputKey: "domain",
 			Options: DomainOptions{
 				Function: "domain",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
+		[]byte(`{"foo":"www.example.com"}`),
+		[]byte(`{"foo":"example.com"}`),
 		nil,
-		[]byte(`{"domain":"www.example.com"}`),
-		[]byte(`{"domain":"example.com"}`),
 	},
 	{
-		"json subdomain",
+		"JSON subdomain",
 		Domain{
-			InputKey:  "domain",
-			OutputKey: "subdomain",
 			Options: DomainOptions{
 				Function: "subdomain",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
+		[]byte(`{"foo":"www.bar.com"}`),
+		[]byte(`{"foo":"www"}`),
 		nil,
-		[]byte(`{"domain":"www.example.com"}`),
-		[]byte(`{"domain":"www.example.com","subdomain":"www"}`),
 	},
 	// empty subdomain, returns empty
 	{
-		"json subdomain",
+		"JSON subdomain",
 		Domain{
-			InputKey:  "domain",
-			OutputKey: "subdomain",
 			Options: DomainOptions{
 				Function: "subdomain",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
+		[]byte(`{"foo":"example.com"}`),
+		[]byte(`{"foo":""}`),
 		nil,
-		[]byte(`{"domain":"example.com"}`),
-		[]byte(`{"domain":"example.com","subdomain":""}`),
 	},
 	{
 		"data",
@@ -74,24 +74,24 @@ var domainTests = []struct {
 				Function: "subdomain",
 			},
 		},
-		nil,
-		[]byte(`www.example.com`),
+		[]byte(`www.bar.com`),
 		[]byte(`www`),
+		nil,
 	},
 	{
 		"invalid settings",
 		Domain{},
+		[]byte{},
+		[]byte{},
 		ProcessorInvalidSettings,
-		[]byte{},
-		[]byte{},
 	},
 }
 
 func TestDomain(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range domainTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

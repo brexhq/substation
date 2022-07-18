@@ -42,12 +42,12 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'capture',
 		settings: {
-			input_key: 'capture',
-			output_key: 'capture',
 			options: {
 				expression: '^([^@]*)@.*$',
 				_function: 'find',
 			},
+			input_key: 'capture',
+			output_key: 'capture',
 		},
 	}
 */
@@ -62,14 +62,14 @@ type Capture struct {
 func (p Capture) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -91,12 +91,12 @@ func (p Capture) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// error early if required options are missing
 	if p.Options.Expression == "" || p.Options.Function == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	re, err := regexp.Compile(p.Options.Expression)
 	if err != nil {
-		return nil, fmt.Errorf("byter settings %v: %v", p, err)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 	}
 
 	if p.Options.Count == 0 {
@@ -107,12 +107,11 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	if p.InputKey != "" && p.OutputKey != "" {
 		value := json.Get(data, p.InputKey)
 
-		if p.Options.Function == "find" {
+		switch p.Options.Function {
+		case "find":
 			match := re.FindStringSubmatch(value.String())
 			return json.Set(data, p.OutputKey, p.getStringMatch(match))
-		}
-
-		if p.Options.Function == "find_all" {
+		case "find_all":
 			var matches []interface{}
 
 			subs := re.FindAllStringSubmatch(value.String(), p.Options.Count)
@@ -127,12 +126,11 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		if p.Options.Function == "find" {
+		switch p.Options.Function {
+		case "find":
 			match := re.FindSubmatch(data)
 			return match[1], nil
-		}
-
-		if p.Options.Function == "named_group" {
+		case "named_group":
 			names := re.SubexpNames()
 
 			var tmp []byte
@@ -145,7 +143,7 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
+	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
 func (p Capture) getStringMatch(match []string) string {

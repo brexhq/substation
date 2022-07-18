@@ -10,9 +10,9 @@ import (
 var insertTests = []struct {
 	name     string
 	proc     Insert
-	err      error
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"byte",
@@ -22,9 +22,9 @@ var insertTests = []struct {
 			},
 			OutputKey: "foo",
 		},
-		nil,
 		[]byte{},
 		[]byte(`{"foo":"bar"}`),
+		nil,
 	},
 	{
 		"string",
@@ -34,9 +34,9 @@ var insertTests = []struct {
 			},
 			OutputKey: "foo",
 		},
-		nil,
 		[]byte{},
 		[]byte(`{"foo":"bar"}`),
+		nil,
 	},
 	{
 		"int",
@@ -44,11 +44,11 @@ var insertTests = []struct {
 			Options: InsertOptions{
 				Value: 10,
 			},
-			OutputKey: "int",
+			OutputKey: "foo",
 		},
-		nil,
 		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"bar","int":10}`),
+		[]byte(`{"foo":10}`),
+		nil,
 	},
 	{
 		"string array",
@@ -56,11 +56,11 @@ var insertTests = []struct {
 			Options: InsertOptions{
 				Value: []string{"bar", "baz", "qux"},
 			},
-			OutputKey: "array",
+			OutputKey: "foo",
 		},
-		nil,
 		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"bar","array":["bar","baz","qux"]}`),
+		[]byte(`{"foo":["bar","baz","qux"]}`),
+		nil,
 	},
 	{
 		"map",
@@ -70,11 +70,11 @@ var insertTests = []struct {
 					"baz": "qux",
 				},
 			},
-			OutputKey: "map",
+			OutputKey: "foo",
 		},
-		nil,
 		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"bar","map":{"baz":"qux"}}`),
+		[]byte(`{"foo":{"baz":"qux"}}`),
+		nil,
 	},
 	{
 		"JSON",
@@ -82,30 +82,30 @@ var insertTests = []struct {
 			Options: InsertOptions{
 				Value: `{"baz":"qux"}`,
 			},
-			OutputKey: "insert",
+			OutputKey: "foo",
 		},
-		nil,
 		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"bar","insert":{"baz":"qux"}}`),
+		[]byte(`{"foo":{"baz":"qux"}}`),
+		nil,
 	},
 	{
 		"zlib",
 		Insert{
 			Options: InsertOptions{
-				Value: []byte{120, 156, 5, 192, 33, 13, 0, 0, 0, 128, 176, 182, 216, 247, 119, 44, 6, 2, 130, 1, 69},
+				Value: []byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},
 			},
-			OutputKey: "insert",
+			OutputKey: "foo",
 		},
-		nil,
 		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"bar","insert":"eJwFwCENAAAAgLC22Pd3LAYCggFF"}`),
+		[]byte(`{"foo":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
+		nil,
 	},
 	{
-		"missing required options",
+		"invalid settings",
 		Insert{},
+		[]byte{},
+		[]byte{},
 		ProcessorInvalidSettings,
-		[]byte{},
-		[]byte{},
 	},
 }
 
@@ -113,7 +113,7 @@ func TestInsert(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range insertTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

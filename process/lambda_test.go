@@ -25,23 +25,23 @@ func (m mockedInvoke) InvokeWithContext(ctx aws.Context, input *lambda.InvokeInp
 var lambdaTests = []struct {
 	name     string
 	proc     Lambda
-	err      error
 	test     []byte
 	expected []byte
+	err      error
 	api      lamb.API
 }{
 	{
-		"json",
+		"JSON",
 		Lambda{
-			InputKey:  "lambda",
-			OutputKey: "lambda",
 			Options: LambdaOptions{
-				Function: "test",
+				Function: "fooer",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
+		[]byte(`{"foo":{"bar":"baz"}}`),
+		[]byte(`{"foo":{"baz":"qux"}}`),
 		nil,
-		[]byte(`{"foo":"bar","lambda":{"foo":"baz"}}`),
-		[]byte(`{"foo":"bar","lambda":{"baz":"qux"}}`),
 		lamb.API{
 			Client: mockedInvoke{
 				Resp: lambda.InvokeOutput{
@@ -51,15 +51,11 @@ var lambdaTests = []struct {
 		},
 	},
 	{
-		"missing required options",
-		Lambda{
-			InputKey:  "lambda",
-			OutputKey: "lambda",
-			Options:   LambdaOptions{},
-		},
-		nil,
+		"invalid settings",
+		Lambda{},
 		[]byte{},
 		[]byte{},
+		ProcessorInvalidSettings,
 		lamb.API{
 			Client: mockedInvoke{
 				Resp: lambda.InvokeOutput{
@@ -75,7 +71,7 @@ func TestLambda(t *testing.T) {
 	for _, test := range lambdaTests {
 		lambdaAPI = test.api
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

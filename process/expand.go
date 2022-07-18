@@ -18,9 +18,6 @@ The processor uses this Jsonnet configuration:
 		type: 'expand',
 		settings: {
 			input_key: 'expand',
-			options: {
-				retain: ['baz'],
-			}
 		},
 	}
 */
@@ -33,19 +30,19 @@ type Expand struct {
 func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	// only supports JSON, error early if there is no input key
 	if p.InputKey == "" {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -76,7 +73,7 @@ func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 				expand, err = json.Set(expand, k, v)
 				if err != nil {
-					return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+					return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 				}
 			}
 

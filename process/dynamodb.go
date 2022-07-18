@@ -43,15 +43,15 @@ The processor uses this Jsonnet configuration:
 		type: 'dynamodb',
 		settings: {
 			// the input key is expected to be a map containing a partition key ("PK") and an optional sort key ("SK")
-			input_key: 'ddb',
-			output_key: 'ddb',
 			// if the value of the PK is "foo", then this queries DynamoDB by using "foo" as the paritition key value for the table attribute "pk" and returns the last indexed item from the table.
 			options: {
 				table: 'foo-table',
 				key_condition_expression: 'pk = :partitionkeyval',
 				limit: 1,
 				scan_index_forward: true,
-			}
+			},
+			input_key: 'ddb',
+			output_key: 'ddb',
 		},
 	}
 */
@@ -73,14 +73,14 @@ func (p DynamoDB) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -102,7 +102,7 @@ func (p DynamoDB) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// error early if required options are missing
 	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// lazy load API
@@ -112,25 +112,25 @@ func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	request := json.Get(data, p.InputKey)
 	if !request.IsObject() {
-		return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// PK is a required field
 	pk := json.Get([]byte(request.Raw), "PK").String()
 	if pk == "" {
-		return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	sk := json.Get([]byte(request.Raw), "SK").String()
 
 	items, err := p.dynamodb(ctx, pk, sk)
 	if err != nil {
-		return nil, fmt.Errorf("byter settings %v: %v", p, err)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 	}
 
 	// no match

@@ -12,9 +12,9 @@ var outputFmt = "2006-01-02T15:04:05.000000Z"
 var timeTests = []struct {
 	name     string
 	proc     Time
-	err      error
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"data string",
@@ -24,9 +24,9 @@ var timeTests = []struct {
 				OutputFormat: outputFmt,
 			},
 		},
-		nil,
 		[]byte(`2021-03-06T00:02:57Z`),
 		[]byte(`2021-03-06T00:02:57.000000Z`),
+		nil,
 	},
 	{
 		"data unix",
@@ -36,9 +36,9 @@ var timeTests = []struct {
 				OutputFormat: outputFmt,
 			},
 		},
-		nil,
 		[]byte(`1639877490.061`),
 		[]byte(`2021-12-19T01:31:30.061000Z`),
+		nil,
 	},
 	{
 		"data unix to unix_milli",
@@ -48,12 +48,12 @@ var timeTests = []struct {
 				OutputFormat: "unix_milli",
 			},
 		},
-		nil,
 		[]byte(`1639877490.061`),
 		[]byte(`1639877490061`),
+		nil,
 	},
 	{
-		"string",
+		"JSON",
 		Time{
 			Options: TimeOptions{
 				InputFormat:  "2006-01-02T15:04:05Z",
@@ -62,12 +62,12 @@ var timeTests = []struct {
 			InputKey:  "time",
 			OutputKey: "time",
 		},
-		nil,
 		[]byte(`{"time":"2021-03-06T00:02:57Z"}`),
 		[]byte(`{"time":"2021-03-06T00:02:57.000000Z"}`),
+		nil,
 	},
 	{
-		"from unix",
+		"JSON from unix",
 		Time{
 			Options: TimeOptions{
 				InputFormat:  "unix",
@@ -76,12 +76,12 @@ var timeTests = []struct {
 			InputKey:  "time",
 			OutputKey: "time",
 		},
-		nil,
 		[]byte(`{"time":1639877490}`),
 		[]byte(`{"time":"2021-12-19T01:31:30.000000Z"}`),
+		nil,
 	},
 	{
-		"to unix",
+		"JSON to unix",
 		Time{
 			Options: TimeOptions{
 				InputFormat:  outputFmt,
@@ -90,12 +90,12 @@ var timeTests = []struct {
 			InputKey:  "time",
 			OutputKey: "time",
 		},
-		nil,
 		[]byte(`{"time":"2021-12-19T01:31:30.000000Z"}`),
 		[]byte(`{"time":1639877490}`),
+		nil,
 	},
 	{
-		"from unix_milli",
+		"JSON from unix_milli",
 		Time{
 			Options: TimeOptions{
 				InputFormat:  "unix_milli",
@@ -104,12 +104,12 @@ var timeTests = []struct {
 			InputKey:  "time",
 			OutputKey: "time",
 		},
-		nil,
 		[]byte(`{"time":1654459632263}`),
 		[]byte(`{"time":"2022-06-05T20:07:12.263000Z"}`),
+		nil,
 	},
 	{
-		"to unix_milli",
+		"JSON to unix_milli",
 		Time{
 			Options: TimeOptions{
 				InputFormat:  outputFmt,
@@ -118,12 +118,12 @@ var timeTests = []struct {
 			InputKey:  "time",
 			OutputKey: "time",
 		},
-		nil,
 		[]byte(`{"time":"2022-06-05T20:07:12.263000Z"}`),
 		[]byte(`{"time":1654459632263}`),
+		nil,
 	},
 	{
-		"unix to unix_milli",
+		"JSON unix to unix_milli",
 		Time{
 			Options: TimeOptions{
 				InputFormat:  "unix",
@@ -132,12 +132,12 @@ var timeTests = []struct {
 			InputKey:  "time",
 			OutputKey: "time",
 		},
-		nil,
 		[]byte(`{"time":1639877490}`),
 		[]byte(`{"time":1639877490000}`),
+		nil,
 	},
 	{
-		"offset conversion",
+		"JSON offset conversion",
 		Time{
 			Options: TimeOptions{
 				InputFormat:  "2006-Jan-02 Monday 03:04:05 -0700",
@@ -146,12 +146,12 @@ var timeTests = []struct {
 			InputKey:  "time",
 			OutputKey: "time",
 		},
-		nil,
 		[]byte(`{"time":"2020-Jan-29 Wednesday 12:19:25 -0500"}`),
 		[]byte(`{"time":"2020-Jan-29 Wednesday 05:19:25 +0000"}`),
+		nil,
 	},
 	{
-		"offset to local conversion",
+		"JSON offset to local conversion",
 		Time{
 			Options: TimeOptions{
 				InputFormat:    "2006-Jan-02 Monday 03:04:05 -0700",
@@ -161,14 +161,14 @@ var timeTests = []struct {
 			InputKey:  "time",
 			OutputKey: "time",
 		},
-		nil,
 		// 12:19:25 AM in Pacific Standard Time
 		[]byte(`{"time":"2020-Jan-29 Wednesday 00:19:25 -0800"}`),
 		// 03:19:25 AM in Eastern Standard Time
 		[]byte(`{"time":"2020-Jan-29 Wednesday 03:19:25 AM"}`),
+		nil,
 	},
 	{
-		"local to local conversion",
+		"JSON local to local conversion",
 		Time{
 			Options: TimeOptions{
 				InputFormat:    "2006-Jan-02 Monday 03:04:05",
@@ -179,20 +179,18 @@ var timeTests = []struct {
 			InputKey:  "time",
 			OutputKey: "time",
 		},
-		nil,
 		// 12:19:25 AM in Pacific Standard Time
 		[]byte(`{"time":"2020-Jan-29 Wednesday 00:19:25"}`),
 		// 03:19:25 AM in Eastern Standard Time
 		[]byte(`{"time":"2020-Jan-29 Wednesday 03:19:25"}`),
+		nil,
 	},
 	{
-		"missing required options",
-		Time{
-			Options: TimeOptions{},
-		},
+		"invalid settings",
+		Time{},
+		[]byte{},
+		[]byte{},
 		ProcessorInvalidSettings,
-		[]byte{},
-		[]byte{},
 	},
 }
 
@@ -200,7 +198,7 @@ func TestTime(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range timeTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

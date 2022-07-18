@@ -10,9 +10,9 @@ import (
 var replaceTests = []struct {
 	name     string
 	proc     Replace
-	err      error
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"json",
@@ -21,12 +21,12 @@ var replaceTests = []struct {
 				Old: "r",
 				New: "z",
 			},
-			InputKey:  "replace",
-			OutputKey: "replace",
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"baz"}`),
 		nil,
-		[]byte(`{"replace":"bar"}`),
-		[]byte(`{"replace":"baz"}`),
 	},
 	{
 		"data",
@@ -36,18 +36,16 @@ var replaceTests = []struct {
 				New: "z",
 			},
 		},
-		nil,
 		[]byte(`bar`),
 		[]byte(`baz`),
+		nil,
 	},
 	{
-		"missing required options",
-		Replace{
-			Options: ReplaceOptions{},
-		},
-		nil,
+		"invalid settings",
+		Replace{},
 		[]byte{},
 		[]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
@@ -55,7 +53,7 @@ func TestReplace(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range replaceTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

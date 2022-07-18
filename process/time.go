@@ -42,7 +42,7 @@ type TimeOptions struct {
 
 /*
 Time processes data by converting time values between formats. The processor supports these patterns:
-	json:
+	JSON:
 		{"time":1639877490.061} >>> {"time":"2021-12-19T01:31:30.061000Z"}
 	data:
 		1639877490.061 >>> 2021-12-19T01:31:30.061000Z
@@ -51,12 +51,12 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'time',
 		settings: {
-			input_key: 'time',
-			output_key: 'time',
 			options: {
 				input_format: 'unix',
 				output_format: '2006-01-02T15:04:05.000000Z',
-			}
+			},
+			input_key: 'time',
+			output_key: 'time',
 		},
 	}
 */
@@ -71,14 +71,14 @@ type Time struct {
 func (p Time) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -100,7 +100,7 @@ func (p Time) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// error early if required options are missing
 	if p.Options.InputFormat == "" || p.Options.OutputFormat == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// "now" processing, supports json and data
@@ -140,7 +140,7 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 
 		ts, err := p.time(value)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 		}
 		return json.Set(data, p.OutputKey, ts)
 	}
@@ -149,13 +149,13 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	if p.InputKey == "" && p.OutputKey == "" {
 		tmp, err := json.Set([]byte{}, "_tmp", data)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 		}
 
 		value := json.Get(tmp, "_tmp")
 		ts, err := p.time(value)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 		}
 
 		switch v := ts.(type) {
@@ -166,7 +166,7 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
 func (p Time) time(v json.Result) (interface{}, error) {

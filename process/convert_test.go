@@ -17,101 +17,101 @@ var convertTests = []struct {
 	{
 		"bool true",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "bool",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":"true"}`),
-		[]byte(`{"convert":true}`),
+		[]byte(`{"foo":"true"}`),
+		[]byte(`{"foo":true}`),
 		nil,
 	},
 	{
 		"bool false",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "bool",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":"false"}`),
-		[]byte(`{"convert":false}`),
+		[]byte(`{"foo":"false"}`),
+		[]byte(`{"foo":false}`),
 		nil,
 	},
 	{
 		"int",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "int",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":"-123"}`),
-		[]byte(`{"convert":-123}`),
+		[]byte(`{"foo":"-123"}`),
+		[]byte(`{"foo":-123}`),
 		nil,
 	},
 	{
 		"float",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "float",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":"123.456"}`),
-		[]byte(`{"convert":123.456}`),
+		[]byte(`{"foo":"123.456"}`),
+		[]byte(`{"foo":123.456}`),
 		nil,
 	},
 	{
 		"uint",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "uint",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":"123"}`),
-		[]byte(`{"convert":123}`),
+		[]byte(`{"foo":"123"}`),
+		[]byte(`{"foo":123}`),
 		nil,
 	},
 	{
 		"string",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "string",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":123}`),
-		[]byte(`{"convert":"123"}`),
+		[]byte(`{"foo":123}`),
+		[]byte(`{"foo":"123"}`),
 		nil,
 	},
 	{
 		"int",
 		Convert{
-			InputKey:  "convert",
-			OutputKey: "convert",
 			Options: ConvertOptions{
 				Type: "int",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"convert":123.456}`),
-		[]byte(`{"convert":123}`),
+		[]byte(`{"foo":123.456}`),
+		[]byte(`{"foo":123}`),
 		nil,
 	},
 }
 
 func TestConvert(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range convertTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

@@ -10,9 +10,9 @@ import (
 var groupTests = []struct {
 	name     string
 	proc     Group
-	err      error
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"tuples",
@@ -20,9 +20,9 @@ var groupTests = []struct {
 			InputKey:  "group",
 			OutputKey: "group",
 		},
-		nil,
 		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
 		[]byte(`{"group":[["foo",123],["bar",456]]}`),
+		nil,
 	},
 	{
 		"objects",
@@ -33,16 +33,16 @@ var groupTests = []struct {
 			InputKey:  "group",
 			OutputKey: "group",
 		},
-		nil,
 		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
 		[]byte(`{"group":[{"name":{"test":"foo"},"size":123},{"name":{"test":"bar"},"size":456}]}`),
+		nil,
 	},
 	{
 		"invalid settings",
 		Group{},
+		[]byte{},
+		[]byte{},
 		ProcessorInvalidSettings,
-		[]byte{},
-		[]byte{},
 	},
 }
 
@@ -50,7 +50,7 @@ func TestGroup(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range groupTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

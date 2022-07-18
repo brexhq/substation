@@ -34,11 +34,11 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'convert',
 		settings: {
-			input_key: 'convert',
-			output_key: 'convert',
 			options: {
 				type: 'bool',
-			}
+			},
+			input_key: 'convert',
+			output_key: 'convert',
 		},
 	}
 */
@@ -53,14 +53,14 @@ type Convert struct {
 func (p Convert) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -82,7 +82,7 @@ func (p Convert) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Convert) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// only supports JSON, error early if there are no keys
@@ -102,5 +102,5 @@ func (p Convert) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
+	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 }

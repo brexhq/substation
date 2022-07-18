@@ -31,7 +31,7 @@ func TestCount(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range countTests {
 		res, err := test.proc.Slice(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

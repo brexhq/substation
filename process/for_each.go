@@ -20,15 +20,13 @@ type ForEachOptions struct {
 
 /*
 ForEach processes data by iterating and applying a processor to each element in a JSON array. The processor supports these patterns:
-	json:
+	JSON:
 		{"input":["ABC","DEF"]} >>> {"input":["ABC","DEF"],"output":["abc","def"]}
 
 The processor uses this Jsonnet configuration:
 	{
 		type: 'for_each',
 		settings: {
-			input_key: 'input',
-			output_key: 'output.-1',
 			options: {
 				processor: {
 					type: 'case',
@@ -39,12 +37,14 @@ The processor uses this Jsonnet configuration:
 					}
 				},
 			},
+			input_key: 'input',
+			output_key: 'output.-1',
 		},
 	}
 */
 type ForEach struct {
-	Condition condition.OperatorConfig `json:"condition"`
 	Options   ForEachOptions           `json:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
 	InputKey  string                   `json:"input_key"`
 	OutputKey string                   `json:"output_key"`
 }
@@ -53,14 +53,14 @@ type ForEach struct {
 func (p ForEach) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -97,9 +97,9 @@ above produces this temporary JSON during processing:
 	{"case":{"foo":"baz"}}
 */
 func (p ForEach) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// only supports json, error early if there are no keys
+	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	if _, ok := p.Options.Processor.Settings["input_key"]; ok {
@@ -128,18 +128,18 @@ func (p ForEach) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		var tmp []byte
 		tmp, err := json.Set(tmp, p.Options.Processor.Type, v)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 		}
 
 		tmp, err = byter.Byte(ctx, tmp)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 		}
 
 		res := json.Get(tmp, p.Options.Processor.Type)
 		data, err = json.Set(data, p.OutputKey, res)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 		}
 	}
 

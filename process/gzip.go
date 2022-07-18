@@ -32,7 +32,9 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'gzip',
 		settings: {
-			direction: 'from',
+			options: {
+				direction: 'from',
+			},
 		},
 	}
 */
@@ -45,14 +47,14 @@ type Gzip struct {
 func (p Gzip) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -74,27 +76,27 @@ func (p Gzip) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Gzip) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	switch s := p.Options.Direction; s {
 	case "from":
 		tmp, err := p.from(data)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 		}
 
 		return tmp, nil
 	case "to":
 		tmp, err := p.to(data)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 		}
 
 		return tmp, nil
-	default:
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidDirection)
 	}
+
+	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
 func (p Gzip) from(data []byte) ([]byte, error) {

@@ -58,14 +58,14 @@ type Domain struct {
 func (p Domain) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -87,7 +87,7 @@ func (p Domain) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Domain) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// JSON processing
@@ -103,11 +103,11 @@ func (p Domain) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return []byte(label), nil
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
+	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
 func (p Domain) domain(s string) (string, error) {
-	switch f := p.Options.Function; f {
+	switch p.Options.Function {
 	case "tld":
 		tld, _ := publicsuffix.PublicSuffix(s)
 		return tld, nil

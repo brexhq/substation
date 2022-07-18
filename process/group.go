@@ -19,7 +19,7 @@ type GroupOptions struct {
 
 /*
 Group processes data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
-	json array:
+	JSON array:
 		{"group":[["foo","bar"],[111,222]]} >>> {"group":[["foo",111],["bar",222]]}
 		{"group":[["foo","bar"],[111,222]]} >>> {"group":[{"name":foo","size":111},{"name":"bar","size":222}]}
 
@@ -29,7 +29,6 @@ The processor uses this Jsonnet configuration:
 		settings: {
 			input_key: 'group',
 			output_key: 'group',
-			}
 		},
 	}
 */
@@ -44,14 +43,14 @@ type Group struct {
 func (p Group) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -73,7 +72,7 @@ func (p Group) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports JSON arrays, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	if len(p.Options.Keys) == 0 {
@@ -114,7 +113,7 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		for x1, v1 := range v.Array() {
 			cache[x1], err = json.Set(cache[x1], p.Options.Keys[x], v1)
 			if err != nil {
-				return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+				return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 			}
 		}
 	}
@@ -125,12 +124,11 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	for i := 0; i < len(cache); i++ {
 		tmp, err = json.Set(tmp, fmt.Sprintf("%d", i), cache[i])
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 		}
 	}
 
 	// JSON arrays must be set using SetRaw to preserve structure
-	//
 	// [{"name":"foo","size":123},{"name":"bar","size":456}]
 	return json.SetRaw(data, p.OutputKey, tmp)
 }

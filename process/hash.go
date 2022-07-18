@@ -7,12 +7,8 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
-
-// HashUnsupportedAlgorithm is returned when the Hash processor is configured with an unsupported algorithm.
-const HashUnsupportedAlgorithm = errors.Error("HashUnsupportedAlgorithm")
 
 /*
 HashOptions contains custom options for the Hash processor:
@@ -28,7 +24,7 @@ type HashOptions struct {
 
 /*
 Hash processes data by calculating hashes. The processor supports these patterns:
-	json:
+	JSON:
 		{"hash":"foo"} >>> {"hash":"acbd18db4cc2f85cedef654fccc4a4d8"}
 	data:
 		foo >>> acbd18db4cc2f85cedef654fccc4a4d8
@@ -37,11 +33,11 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'hash',
 		settings: {
-			input_key: 'hash',
-			output_key: 'hash',
 			options: {
 				algorithm: 'md5',
-			}
+			},
+			input_key: 'hash',
+			output_key: 'hash',
 		},
 	}
 */
@@ -56,14 +52,14 @@ type Hash struct {
 func (p Hash) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -85,42 +81,35 @@ func (p Hash) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Hash) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// error early if required options are missing
 	if p.Options.Algorithm == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey)
-		b := []byte(value.String())
-		h, err := p.hash(b)
-		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+		value := json.Get(data, p.InputKey).String()
+		switch p.Options.Algorithm {
+		case "md5":
+			sum := md5.Sum([]byte(value))
+			return json.Set(data, p.OutputKey, fmt.Sprintf("%x", sum))
+		case "sha256":
+			sum := sha256.Sum256([]byte(value))
+			return json.Set(data, p.OutputKey, fmt.Sprintf("%x", sum))
 		}
-
-		return json.Set(data, p.OutputKey, h)
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		h, err := p.hash(data)
-		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+		switch p.Options.Algorithm {
+		case "md5":
+			sum := md5.Sum(data)
+			x := fmt.Sprintf("%x", sum)
+			return []byte(x), nil
+		case "sha256":
+			sum := sha256.Sum256(data)
+			x := fmt.Sprintf("%x", sum)
+			return []byte(x), nil
 		}
-		return []byte(h), nil
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
-}
-
-func (p Hash) hash(b []byte) (string, error) {
-	switch s := p.Options.Algorithm; s {
-	case "md5":
-		sum := md5.Sum(b)
-		return fmt.Sprintf("%x", sum), nil
-	case "sha256":
-		sum := sha256.Sum256(b)
-		return fmt.Sprintf("%x", sum), nil
-	default:
-		return "", fmt.Errorf("hash type %s: %v", s, HashUnsupportedAlgorithm)
-	}
+	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 }

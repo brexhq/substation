@@ -38,11 +38,11 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'base64',
 		settings: {
-			input_key: 'base64',
-			output_key: 'base64',
 			options: {
 				direction: 'from',
-			}
+			},
+			input_key: 'base64',
+			output_key: 'base64',
 		},
 	}
 */
@@ -57,14 +57,14 @@ type Base64 struct {
 func (p Base64) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -86,31 +86,29 @@ func (p Base64) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey)
-		tmp := []byte(value.String())
+		value := json.Get(data, p.InputKey).String()
+		tmp := []byte(value)
 
 		switch p.Options.Direction {
 		case "from":
 			result, err := base64.Decode(tmp)
 			if err != nil {
-				return nil, fmt.Errorf("byter settings %v: %v", p, err)
+				return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 			}
 
 			if !utf8.Valid(result) {
-				return nil, fmt.Errorf("byter settings %v: %v", p, Base64JSONDecodedBinary)
+				return nil, fmt.Errorf("byter settings %+v: %w", p, Base64JSONDecodedBinary)
 			}
 
 			return json.Set(data, p.OutputKey, result)
 		case "to":
 			result := base64.Encode(tmp)
 			return json.Set(data, p.OutputKey, string(result))
-		default:
-			return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidDirection)
 		}
 	}
 
@@ -120,15 +118,13 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		case "from":
 			result, err := base64.Decode(data)
 			if err != nil {
-				return nil, fmt.Errorf("byter settings %v: %v", p, err)
+				return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 			}
 			return result, nil
 		case "to":
 			return base64.Encode(data), nil
-		default:
-			return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidDirection)
 		}
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
+	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 }

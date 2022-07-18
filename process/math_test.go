@@ -10,9 +10,9 @@ import (
 var mathTests = []struct {
 	name     string
 	proc     Math
-	err      error
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"add",
@@ -20,12 +20,12 @@ var mathTests = []struct {
 			Options: MathOptions{
 				Operation: "add",
 			},
-			InputKey:  "math",
-			OutputKey: "math",
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
+		[]byte(`{"foo":[1,3]}`),
+		[]byte(`{"foo":4}`),
 		nil,
-		[]byte(`{"math":[1,3]}`),
-		[]byte(`{"math":4}`),
 	},
 	{
 		"subtract",
@@ -33,12 +33,25 @@ var mathTests = []struct {
 			Options: MathOptions{
 				Operation: "subtract",
 			},
-			InputKey:  "math",
-			OutputKey: "math",
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
+		[]byte(`{"foo":[5,2]}`),
+		[]byte(`{"foo":3}`),
 		nil,
-		[]byte(`{"math":[5,2]}`),
-		[]byte(`{"math":3}`),
+	},
+	{
+		"multiply",
+		Math{
+			Options: MathOptions{
+				Operation: "multiply",
+			},
+			InputKey:  "foo",
+			OutputKey: "foo",
+		},
+		[]byte(`{"foo":[10,2]}`),
+		[]byte(`{"foo":20}`),
+		nil,
 	},
 	{
 		"divide",
@@ -46,21 +59,19 @@ var mathTests = []struct {
 			Options: MathOptions{
 				Operation: "divide",
 			},
-			InputKey:  "math",
-			OutputKey: "math",
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
+		[]byte(`{"foo":[10,2]}`),
+		[]byte(`{"foo":5}`),
 		nil,
-		[]byte(`{"math":[10,2]}`),
-		[]byte(`{"math":5}`),
 	},
 	{
-		"missing required options",
-		Math{
-			Options: MathOptions{},
-		},
+		"invalid settings",
+		Math{},
+		[]byte{},
+		[]byte{},
 		ProcessorInvalidSettings,
-		[]byte{},
-		[]byte{},
 	},
 }
 
@@ -68,7 +79,7 @@ func TestMath(t *testing.T) {
 	for _, test := range mathTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

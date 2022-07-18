@@ -28,18 +28,18 @@ Lambda processes data by synchronously invoking an AWS Lambda and returning the 
 The input key's value must be a JSON object that contains settings for the Lambda. It is recommended to use the copy and insert processors to create the JSON object before calling this processor and to use the delete processor to remove the JSON object after calling this processor.
 
 The processor supports these patterns:
-	json:
+	JSON:
 		{"foo":"bar","lambda":{"lookup":"baz"}} >>> {"foo":"bar","lambda":{"baz":"qux"}}
 
 The processor uses this Jsonnet configuration:
 	{
 		type: 'lambda',
 		settings: {
-			input_key: 'lambda',
-			output_key: 'lambda',
 			options: {
 				function: 'foo-function',
-			}
+			},
+			input_key: 'lambda',
+			output_key: 'lambda',
 		},
 	}
 */
@@ -61,14 +61,14 @@ func (p Lambda) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -90,12 +90,12 @@ func (p Lambda) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	// only supports json, error early if there are no keys
+	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// lazy load API
@@ -105,12 +105,12 @@ func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 
 	payload := json.Get(data, p.InputKey)
 	if !payload.IsObject() {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, []byte(payload.Raw))
 	if err != nil {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, err)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 	}
 
 	if resp.FunctionError != nil && p.Options.ErrorOnFailure {

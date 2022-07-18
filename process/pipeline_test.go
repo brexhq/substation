@@ -12,15 +12,13 @@ import (
 var PipelineTests = []struct {
 	name     string
 	proc     Pipeline
-	err      error
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"json",
 		Pipeline{
-			InputKey:  "pipeline",
-			OutputKey: "pipeline",
 			Options: PipelineOptions{
 				Processors: []config.Config{
 					{
@@ -41,10 +39,12 @@ var PipelineTests = []struct {
 					},
 				},
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
+		[]byte(`{"foo":"H4sIAKi91GIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="}`),
+		[]byte(`{"foo":"bar"}`),
 		nil,
-		[]byte(`{"pipeline":"H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"}`),
-		[]byte(`{"pipeline":"foo"}`),
 	},
 	{
 		"data",
@@ -70,15 +70,20 @@ var PipelineTests = []struct {
 				},
 			},
 		},
-		nil,
-		[]byte(`{"pipeline":"H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"}`),
+		[]byte(`H4sIAO291GIA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA`),
 		[]byte(`foo`),
+		nil,
 	},
 	{
-		"array",
+		"invalid settings",
+		Pipeline{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
+	},
+	{
+		"invalid array input",
 		Pipeline{
-			InputKey:  "pipeline",
-			OutputKey: "pipeline",
 			Options: PipelineOptions{
 				Processors: []config.Config{
 					{
@@ -99,10 +104,12 @@ var PipelineTests = []struct {
 					},
 				},
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		PipelineArrayInput,
-		[]byte(`{"pipeline":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"]}`),
+		[]byte(`{"foo":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"]}`),
 		[]byte{},
+		PipelineArrayInput,
 	},
 }
 
@@ -110,7 +117,7 @@ func TestPipeline(t *testing.T) {
 	for _, test := range PipelineTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

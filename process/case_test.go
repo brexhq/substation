@@ -17,40 +17,40 @@ var caseTests = []struct {
 	{
 		"JSON lower",
 		Case{
-			InputKey:  "case",
-			OutputKey: "case",
 			Options: CaseOptions{
 				Case: "lower",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"case":"ABC"}`),
-		[]byte(`{"case":"abc"}`),
+		[]byte(`{"foo":"BAR"}`),
+		[]byte(`{"foo":"bar"}`),
 		nil,
 	},
 	{
 		"JSON upper",
 		Case{
-			InputKey:  "case",
-			OutputKey: "case",
 			Options: CaseOptions{
 				Case: "upper",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"case":"abc"}`),
-		[]byte(`{"case":"ABC"}`),
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"BAR"}`),
 		nil,
 	},
 	{
 		"JSON snake",
 		Case{
-			InputKey:  "case",
-			OutputKey: "case",
+			InputKey:  "foo",
+			OutputKey: "foo",
 			Options: CaseOptions{
 				Case: "snake",
 			},
 		},
-		[]byte(`{"case":"AbC"})`),
-		[]byte(`{"case":"ab_c"})`),
+		[]byte(`{"foo":"AbC"})`),
+		[]byte(`{"foo":"ab_c"})`),
 		nil,
 	},
 	{
@@ -63,10 +63,10 @@ var caseTests = []struct {
 }
 
 func TestCase(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range caseTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

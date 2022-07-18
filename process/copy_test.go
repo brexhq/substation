@@ -17,38 +17,47 @@ var copyTests = []struct {
 	{
 		"JSON",
 		Copy{
-			InputKey:  "original",
-			OutputKey: "copy",
+			InputKey:  "foo",
+			OutputKey: "baz",
 		},
-		[]byte(`{"original":"foo"}`),
-		[]byte(`{"original":"foo","copy":"foo"}`),
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"bar","baz":"bar"}`),
 		nil,
 	},
 	{
 		"from JSON",
 		Copy{
-			InputKey: "copy",
+			InputKey: "foo",
 		},
-		[]byte(`{"copy":"foo"}`),
-		[]byte(`foo`),
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`bar`),
+		nil,
+	},
+	{
+		"from JSON nested",
+		Copy{
+			InputKey: "foo",
+		},
+		[]byte(`{"foo":{"bar":"baz"}}`),
+		[]byte(`{"bar":"baz"}`),
 		nil,
 	},
 	{
 		"to JSON utf8",
 		Copy{
-			OutputKey: "copy",
+			OutputKey: "bar",
 		},
-		[]byte(`foo`),
-		[]byte(`{"copy":"foo"}`),
+		[]byte(`baz`),
+		[]byte(`{"bar":"baz"}`),
 		nil,
 	},
 	{
 		"to JSON zlib",
 		Copy{
-			OutputKey: "copy",
+			OutputKey: "bar",
 		},
-		[]byte{120, 156, 5, 192, 33, 13, 0, 0, 0, 128, 176, 182, 216, 247, 119, 44, 6, 2, 130, 1, 69},
-		[]byte(`{"copy":"eJwFwCENAAAAgLC22Pd3LAYCggFF"}`),
+		[]byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},
+		[]byte(`{"bar":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
 		nil,
 	},
 }
@@ -57,7 +66,7 @@ func TestCopy(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range copyTests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

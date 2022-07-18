@@ -15,32 +15,32 @@ var captureTests = []struct {
 	err      error
 }{
 	{
-		"json find",
+		"JSON find",
 		Capture{
-			InputKey:  "capture",
-			OutputKey: "capture",
 			Options: CaptureOptions{
 				Expression: "^([^@]*)@.*$",
 				Function:   "find",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"capture":"foo@qux.com"}`),
-		[]byte(`{"capture":"foo"}`),
+		[]byte(`{"foo":"bar@qux.corge"}`),
+		[]byte(`{"foo":"bar"}`),
 		nil,
 	},
 	{
-		"json find_all",
+		"JSON find_all",
 		Capture{
-			InputKey:  "capture",
-			OutputKey: "capture",
 			Options: CaptureOptions{
 				Expression: "(.{1})",
 				Function:   "find_all",
 				Count:      3,
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"capture":"foo"}`),
-		[]byte(`{"capture":["f","o","o"]}`),
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":["b","a","r"]}`),
 		nil,
 	},
 	{
@@ -51,12 +51,12 @@ var captureTests = []struct {
 				Function:   "find",
 			},
 		},
-		[]byte(`foo@qux.com`),
-		[]byte(`foo`),
+		[]byte(`bar@qux.corge`),
+		[]byte(`bar`),
 		nil,
 	},
 	{
-		"data",
+		"named_group",
 		Capture{
 			Options: CaptureOptions{
 				Function:   "named_group",
@@ -77,10 +77,10 @@ var captureTests = []struct {
 }
 
 func TestCapture(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range captureTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

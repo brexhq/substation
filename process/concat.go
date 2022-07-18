@@ -26,11 +26,11 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'concat',
 		settings: {
-			input_key: 'concat',
-			output_key: 'concat',
 			options: {
 				separator: '.',
-			}
+			},
+			input_key: 'concat',
+			output_key: 'concat',
 		},
 	}
 */
@@ -45,14 +45,14 @@ type Concat struct {
 func (p Concat) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -74,12 +74,12 @@ func (p Concat) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Concat) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// error early if required options are missing
 	if p.Options.Separator == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// data is processed by retrieving and iterating the

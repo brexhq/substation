@@ -15,16 +15,16 @@ var concatTests = []struct {
 	err      error
 }{
 	{
-		"concat",
+		"JSON",
 		Concat{
-			InputKey:  "concat",
-			OutputKey: "concat",
 			Options: ConcatOptions{
 				Separator: ".",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"concat":["foo","bar"]}`),
-		[]byte(`{"concat":"foo.bar"}`),
+		[]byte(`{"foo":["bar","baz"]}`),
+		[]byte(`{"foo":"bar.baz"}`),
 		nil,
 	},
 	{
@@ -37,10 +37,10 @@ var concatTests = []struct {
 }
 
 func TestConcat(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range concatTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

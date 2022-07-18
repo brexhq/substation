@@ -21,8 +21,8 @@ var base64Tests = []struct {
 				Direction: "from",
 			},
 		},
-		[]byte(`YWJjMTIzIT8kKiYoKSctPUB+`),
-		[]byte(`abc123!?$*&()'-=@~`),
+		[]byte(`YmFy`),
+		[]byte(`bar`),
 		nil,
 	},
 	{
@@ -32,8 +32,8 @@ var base64Tests = []struct {
 				Direction: "to",
 			},
 		},
-		[]byte(`abc123!?$*&()'-=@~`),
-		[]byte(`YWJjMTIzIT8kKiYoKSctPUB+`),
+		[]byte(`bar`),
+		[]byte(`YmFy`),
 		nil,
 	},
 	{
@@ -42,11 +42,11 @@ var base64Tests = []struct {
 			Options: Base64Options{
 				Direction: "from",
 			},
-			InputKey:  "base64",
-			OutputKey: "base64",
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"base64":"YWJjMTIzIT8kKiYoKSctPUB+"}`),
-		[]byte(`{"base64":"abc123!?$*&()'-=@~"}`),
+		[]byte(`{"foo":"YmFy"}`),
+		[]byte(`{"foo":"bar"}`),
 		nil,
 	},
 	{
@@ -62,12 +62,12 @@ var base64Tests = []struct {
 			Options: Base64Options{
 				Direction: "foo",
 			},
-			InputKey:  "base64",
-			OutputKey: "base64",
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"base64":"H4sIAMSJy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"}`),
+		[]byte(`{"foo":"YmFy"}`),
 		[]byte(``),
-		ProcessorInvalidDirection,
+		ProcessorInvalidSettings,
 	},
 	{
 		"JSON binary",
@@ -75,10 +75,10 @@ var base64Tests = []struct {
 			Options: Base64Options{
 				Direction: "from",
 			},
-			InputKey:  "base64",
-			OutputKey: "base64",
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
-		[]byte(`{"base64":"H4sIAMSJy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"}`),
+		[]byte(`{"foo":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
 		[]byte(``),
 		Base64JSONDecodedBinary,
 	},
@@ -88,7 +88,7 @@ func TestBase64(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range base64Tests {
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

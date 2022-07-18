@@ -24,7 +24,7 @@ type PipelineOptions struct {
 
 /*
 Pipeline processes data by applying a series of processors. This processor should be used when data requires complex processing outside of the boundaries of any data structures (see tests for examples). The processor supports these patterns:
-	json:
+	JSON:
 		{"pipeline":"H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"} >>> {"pipeline":"foo"}
 	data:
 		H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA >> foo
@@ -33,8 +33,6 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'pipeline',
 		settings: {
-			input_key: 'pipeline',
-			output_key: 'pipeline',
 			options: {
 				processors: [
 					{
@@ -54,13 +52,15 @@ The processor uses this Jsonnet configuration:
 						}
 					},
 				]
-			}
+			},
+			input_key: 'pipeline',
+			output_key: 'pipeline',
 		},
 	}
 */
 type Pipeline struct {
-	Condition condition.OperatorConfig `json:"condition"`
 	Options   PipelineOptions          `json:"options"`
+	Condition condition.OperatorConfig `json:"condition"`
 	InputKey  string                   `json:"input_key"`
 	OutputKey string                   `json:"output_key"`
 }
@@ -69,14 +69,14 @@ type Pipeline struct {
 func (p Pipeline) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -110,18 +110,18 @@ can encapsulate the Pipeline processor).
 func (p Pipeline) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	byters, err := MakeAllByters(p.Options.Processors)
 	if err != nil {
-		return nil, fmt.Errorf("byter settings %v: %v", p, err)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 	}
 
 	if p.InputKey != "" && p.OutputKey != "" {
 		value := json.Get(data, p.InputKey)
 		if value.IsArray() {
-			return nil, fmt.Errorf("byter settings %v: %v", p, PipelineArrayInput)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, PipelineArrayInput)
 		}
 
 		tmp, err := Byte(ctx, byters, []byte(value.String()))
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 		}
 
 		return json.Set(data, p.OutputKey, tmp)
@@ -131,11 +131,11 @@ func (p Pipeline) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	if p.InputKey == "" && p.OutputKey == "" {
 		tmp, err := Byte(ctx, byters, data)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %v: %v", p, err)
+			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
 		}
 
 		return tmp, nil
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
+	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 }

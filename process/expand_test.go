@@ -10,38 +10,39 @@ import (
 var expandTests = []struct {
 	name     string
 	proc     Expand
-	err      error
 	test     []byte
 	expected [][]byte
+	err      error
 }{
 	{
 		"JSON",
 		Expand{
 			InputKey: "expand",
 		},
-		nil,
 		[]byte(`{"expand":[{"foo":"bar"}]}`),
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
 		},
+		nil,
 	},
 	{
 		"JSON extra key",
 		Expand{
 			InputKey: "expand",
 		},
-		nil,
-		[]byte(`{"expand":[{"foo":"bar"}],"baz":"qux"}`),
+		[]byte(`{"expand":[{"foo":"bar"},{"quux":"corge"}],"baz":"qux"}`),
 		[][]byte{
 			[]byte(`{"foo":"bar","baz":"qux"}`),
+			[]byte(`{"quux":"corge","baz":"qux"}`),
 		},
+		nil,
 	},
 	{
 		"invalid settings",
 		Expand{},
-		ProcessorInvalidSettings,
 		[]byte{},
 		[][]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
@@ -52,16 +53,15 @@ func TestExpand(t *testing.T) {
 		slice[0] = test.test
 
 		res, err := test.proc.Slice(ctx, slice)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		count := 0
-		for _, processed := range res {
-			expected := test.expected[count]
+		for i, processed := range res {
+			expected := test.expected[i]
 			if c := bytes.Compare(expected, processed); c != 0 {
 				t.Logf("expected %s, got %s", expected, processed)
 				t.Fail()

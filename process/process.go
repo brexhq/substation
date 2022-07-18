@@ -11,13 +11,10 @@ import (
 // ProcessorInvalidSettings is returned when a processor is configured with invalid settings. Common causes include improper input and output settings (e.g., missing keys) and missing required options.
 const ProcessorInvalidSettings = errors.Error("ProcessorInvalidSettings")
 
-// ProcessorInvalidDirection is returned when an invalid direction option is configured on a processor.
-const ProcessorInvalidDirection = errors.Error("ProcessorInvalidDirection")
-
-// ByteInvalidFactoryConfig is used when an unsupported Byte is referenced in ByteFactory.
+// ByteInvalidFactoryConfig is returned when an unsupported Byte is referenced in ByteFactory.
 const ByteInvalidFactoryConfig = errors.Error("ByteInvalidFactoryConfig")
 
-// SliceInvalidFactoryConfig is used when an unsupported Slice is referenced in SliceFactory.
+// SliceInvalidFactoryConfig is returned when an unsupported Slice is referenced in SliceFactory.
 const SliceInvalidFactoryConfig = errors.Error("SliceInvalidFactoryConfig")
 
 // Slicer is an interface for applying processors to slices of bytes.
@@ -142,7 +139,7 @@ func ByterFactory(cfg config.Config) (Byter, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %v: %v", cfg.Settings, ByteInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %+v: %w", cfg.Settings, ByteInvalidFactoryConfig)
 	}
 }
 
@@ -242,7 +239,7 @@ func SlicerFactory(cfg config.Config) (Slicer, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %v: %v", cfg.Settings, SliceInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %+v: %w", cfg.Settings, SliceInvalidFactoryConfig)
 	}
 }
 

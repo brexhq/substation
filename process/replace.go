@@ -28,7 +28,7 @@ type ReplaceOptions struct {
 
 /*
 Replace processes data by replacing characters. The processor supports these patterns:
-	json:
+	JSON:
 		{"replace":"bar"} >>> {"replace":"baz"}
 	data:
 		bar >>> baz
@@ -37,12 +37,12 @@ The processor uses this Jsonnet configuration:
 	{
 		type: 'replace',
 		settings: {
-			input_key: 'replace',
-			output_key: 'replace',
 			options: {
 				old: 'r',
 				new: 'z',
-			}
+			},
+			input_key: 'replace',
+			output_key: 'replace',
 		},
 	}
 */
@@ -57,14 +57,14 @@ type Replace struct {
 func (p Replace) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 	}
 
 	slice := NewSlice(&s)
 	for _, data := range s {
 		ok, err := op.Operate(data)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %v: %v", p, err)
+			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 		}
 
 		if !ok {
@@ -86,7 +86,7 @@ func (p Replace) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 func (p Replace) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// error early if required options are missing
 	if p.Options.Old == "" || p.Options.New == "" {
-		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// default to replace all
@@ -94,25 +94,18 @@ func (p Replace) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		p.Options.Count = -1
 	}
 
-	// json processing
+	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey)
-		r := p.stringsReplace(value.String())
-		return json.Set(data, p.OutputKey, r)
+		value := json.Get(data, p.InputKey).String()
+		rep := strings.Replace(value, p.Options.Old, p.Options.New, p.Options.Count)
+		return json.Set(data, p.OutputKey, rep)
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		return p.bytesReplace(data), nil
+		rep := bytes.Replace(data, []byte(p.Options.Old), []byte(p.Options.New), p.Options.Count)
+		return rep, nil
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
-}
-
-func (p Replace) stringsReplace(s string) string {
-	return strings.Replace(s, p.Options.Old, p.Options.New, p.Options.Count)
-}
-
-func (p Replace) bytesReplace(b []byte) []byte {
-	return bytes.Replace(b, []byte(p.Options.Old), []byte(p.Options.New), p.Options.Count)
+	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 }

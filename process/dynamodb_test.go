@@ -25,30 +25,31 @@ func (m mockedQuery) QueryWithContext(ctx aws.Context, input *dynamodb.QueryInpu
 var dynamodbTests = []struct {
 	name     string
 	proc     DynamoDB
-	err      error
 	test     []byte
 	expected []byte
+	err      error
 	api      ddb.API
 }{
 	{
-		"ddb",
+		"JSON",
 		DynamoDB{
-			InputKey:  "ddb",
-			OutputKey: "ddb",
 			Options: DynamoDBOptions{
-				Table: "test",
+				Table:                  "fooer",
+				KeyConditionExpression: "barre",
 			},
+			InputKey:  "foo",
+			OutputKey: "foo",
 		},
+		[]byte(`{"foo":{"PK":"bar"}}`),
+		[]byte(`{"foo":[{"baz":"qux"}]}`),
 		nil,
-		[]byte(`{"ddb":{"PK":"foo"}}`),
-		[]byte(`{"ddb":[{"foo":"bar"}]}`),
 		ddb.API{
 			Client: mockedQuery{
 				Resp: dynamodb.QueryOutput{
 					Items: []map[string]*dynamodb.AttributeValue{
 						{
-							"foo": {
-								S: aws.String("bar"),
+							"baz": {
+								S: aws.String("qux"),
 							},
 						},
 					},
@@ -59,9 +60,9 @@ var dynamodbTests = []struct {
 	{
 		"invalid settings",
 		DynamoDB{},
-		ProcessorInvalidSettings,
-		[]byte(`{"ddb":{"PK":"foo"}}`),
+		[]byte(`{"foo":{"PK":"bar"}}`),
 		[]byte{},
+		ProcessorInvalidSettings,
 		ddb.API{
 			Client: mockedQuery{
 				Resp: dynamodb.QueryOutput{
@@ -83,7 +84,7 @@ func TestDynamoDB(t *testing.T) {
 	for _, test := range dynamodbTests {
 		dynamodbAPI = test.api
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil && errors.As(err, &test.err) {
+		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
 			t.Log(err)

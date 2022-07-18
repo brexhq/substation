@@ -5,12 +5,8 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
-
-// FlattenInvalidSettings is returned when the Flatten processor is configured with invalid Input and Output settings.
-const FlattenInvalidSettings = errors.Error("FlattenInvalidSettings")
 
 /*
 FlattenOptions contains custom options settings for the Flatten processor:
@@ -23,7 +19,7 @@ type FlattenOptions struct {
 
 /*
 Flatten processes data by flattening JSON arrays. The processor supports these patterns:
-	json:
+	JSON:
 		{"flatten":["foo",["bar"]]} >>> {"flatten":["foo","bar"]}
 
 The processor uses this Jsonnet configuration:
@@ -36,10 +32,10 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Flatten struct {
+	Options   FlattenOptions           `json:"options"`
 	Condition condition.OperatorConfig `json:"condition"`
 	InputKey  string                   `json:"input_key"`
 	OutputKey string                   `json:"output_key"`
-	Options   FlattenOptions           `json:"options"`
 }
 
 // Slice processes a slice of bytes with the Flatten processor. Conditions are optionally applied on the bytes to enable processing.
@@ -73,9 +69,9 @@ func (p Flatten) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Flatten processor.
 func (p Flatten) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// only supports json, error early if there are no keys
+	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %v: %v", p, FlattenInvalidSettings)
+		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
 	}
 
 	var value json.Result

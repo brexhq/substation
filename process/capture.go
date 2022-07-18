@@ -5,13 +5,9 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/regexp"
 )
-
-// CaptureInvalidSettings is returned when the Capture processor is configured with invalid Input and Output settings.
-const CaptureInvalidSettings = errors.Error("CaptureInvalidSettings")
 
 /*
 CaptureOptions contains custom options for the Capture processor:
@@ -35,12 +31,9 @@ type CaptureOptions struct {
 
 /*
 Capture processes data by capturing values using regular expressions. The processor supports these patterns:
-	json:
+	JSON:
 		{"capture":"foo@qux.com"} >>> {"capture":"foo"}
 		{"capture":"foo@qux.com"} >>> {"capture":["f","o","o"]}
-	json array:
-		{"capture":["foo@qux.com","bar@qux.com"]} >>> {"capture":["foo","bar"]}
-		{"capture":["foo@qux.com","bar@qux.com"]} >>> {"capture":[["f","o","o"],["b","a","r"]]}
 	data:
 		foo@qux.com >>> foo
 		bar quux >>> {"foo":"bar","qux":"quux"}
@@ -59,10 +52,10 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Capture struct {
+	Options   CaptureOptions           `json:"options"`
 	Condition condition.OperatorConfig `json:"condition"`
 	InputKey  string                   `json:"input_key"`
 	OutputKey string                   `json:"output_key"`
-	Options   CaptureOptions           `json:"options"`
 }
 
 // Slice processes a slice of bytes with the Capture processor. Conditions are optionally applied on the bytes to enable processing.
@@ -96,6 +89,11 @@ func (p Capture) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Capture processor.
 func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
+	// error early if required options are missing
+	if p.Options.Expression == "" || p.Options.Function == "" {
+		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+	}
+
 	re, err := regexp.Compile(p.Options.Expression)
 	if err != nil {
 		return nil, fmt.Errorf("byter settings %v: %v", p, err)
@@ -105,52 +103,26 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		p.Options.Count = -1
 	}
 
-	// json processing
+	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
 		value := json.Get(data, p.InputKey)
 
-		if !value.IsArray() {
-			if p.Options.Function == "find" {
-				match := re.FindStringSubmatch(value.String())
-				return json.Set(data, p.OutputKey, p.getStringMatch(match))
-			}
-
-			if p.Options.Function == "find_all" {
-				var matches []interface{}
-
-				subs := re.FindAllStringSubmatch(value.String(), p.Options.Count)
-				for _, s := range subs {
-					m := p.getStringMatch(s)
-					matches = append(matches, m)
-				}
-
-				return json.Set(data, p.OutputKey, matches)
-			}
+		if p.Options.Function == "find" {
+			match := re.FindStringSubmatch(value.String())
+			return json.Set(data, p.OutputKey, p.getStringMatch(match))
 		}
 
-		// json array processing
-		var array []interface{}
-		for _, v := range value.Array() {
+		if p.Options.Function == "find_all" {
 			var matches []interface{}
 
-			if p.Options.Function == "find" {
-				match := re.FindStringSubmatch(v.String())
-				array = append(array, p.getStringMatch(match))
-				continue
+			subs := re.FindAllStringSubmatch(value.String(), p.Options.Count)
+			for _, s := range subs {
+				m := p.getStringMatch(s)
+				matches = append(matches, m)
 			}
 
-			if p.Options.Function == "find_all" {
-				subs := re.FindAllStringSubmatch(v.String(), p.Options.Count)
-				for _, s := range subs {
-					m := p.getStringMatch(s)
-					matches = append(matches, m)
-				}
-
-				array = append(array, matches)
-			}
+			return json.Set(data, p.OutputKey, matches)
 		}
-
-		return json.Set(data, p.OutputKey, array)
 	}
 
 	// data processing
@@ -173,7 +145,7 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, CaptureInvalidSettings)
+	return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
 }
 
 func (p Capture) getStringMatch(match []string) string {

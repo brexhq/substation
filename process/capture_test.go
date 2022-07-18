@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,6 +12,7 @@ var captureTests = []struct {
 	proc     Capture
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
 		"json find",
@@ -24,6 +26,7 @@ var captureTests = []struct {
 		},
 		[]byte(`{"capture":"foo@qux.com"}`),
 		[]byte(`{"capture":"foo"}`),
+		nil,
 	},
 	{
 		"json find_all",
@@ -38,33 +41,7 @@ var captureTests = []struct {
 		},
 		[]byte(`{"capture":"foo"}`),
 		[]byte(`{"capture":["f","o","o"]}`),
-	},
-	{
-		"json array find",
-		Capture{
-			InputKey:  "capture",
-			OutputKey: "capture",
-			Options: CaptureOptions{
-				Expression: "^([^@]*)@.*$",
-				Function:   "find",
-			},
-		},
-		[]byte(`{"capture":["foo@qux.com","bar@qux.com"]}`),
-		[]byte(`{"capture":["foo","bar"]}`),
-	},
-	{
-		"json array find_all",
-		Capture{
-			InputKey:  "capture",
-			OutputKey: "capture",
-			Options: CaptureOptions{
-				Expression: "(.{1})",
-				Function:   "find_all",
-				Count:      3,
-			},
-		},
-		[]byte(`{"capture":["foo@qux.com","bar@qux.com"]}`),
-		[]byte(`{"capture":[["f","o","o"],["b","a","r"]]}`),
+		nil,
 	},
 	{
 		"data",
@@ -76,6 +53,7 @@ var captureTests = []struct {
 		},
 		[]byte(`foo@qux.com`),
 		[]byte(`foo`),
+		nil,
 	},
 	{
 		"data",
@@ -87,6 +65,14 @@ var captureTests = []struct {
 		},
 		[]byte(`bar quux`),
 		[]byte(`{"foo":"bar","qux":"quux"}`),
+		nil,
+	},
+	{
+		"invalid settings",
+		Capture{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
@@ -94,8 +80,10 @@ func TestCapture(t *testing.T) {
 	for _, test := range captureTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

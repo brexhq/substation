@@ -13,35 +13,43 @@ var copyTests = []struct {
 	expected []byte
 }{
 	{
-		"json",
+		"JSON",
 		Copy{
 			InputKey:  "original",
 			OutputKey: "copy",
 		},
-		[]byte(`{"original":"hello"}`),
-		[]byte(`{"original":"hello","copy":"hello"}`),
+		[]byte(`{"original":"foo"}`),
+		[]byte(`{"original":"foo","copy":"foo"}`),
 	},
 	{
-		"from json",
+		"from JSON",
 		Copy{
 			InputKey: "copy",
 		},
-		[]byte(`{"copy":"hello"}`),
-		[]byte(`hello`),
+		[]byte(`{"copy":"foo"}`),
+		[]byte(`foo`),
 	},
 	{
-		"to json",
+		"to JSON utf8",
 		Copy{
 			OutputKey: "copy",
 		},
-		[]byte(`hello`),
-		[]byte(`{"copy":"hello"}`),
+		[]byte(`foo`),
+		[]byte(`{"copy":"foo"}`),
+	},
+	{
+		"to JSON zlib",
+		Copy{
+			OutputKey: "copy",
+		},
+		[]byte{120, 156, 5, 192, 33, 13, 0, 0, 0, 128, 176, 182, 216, 247, 119, 44, 6, 2, 130, 1, 69},
+		[]byte(`{"copy":"eJwFwCENAAAAgLC22Pd3LAYCggFF"}`),
 	},
 }
 
 func TestCopy(t *testing.T) {
+	ctx := context.TODO()
 	for _, test := range copyTests {
-		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
 		if err != nil {
 			t.Logf("%v", err)

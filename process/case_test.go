@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -11,9 +12,10 @@ var caseTests = []struct {
 	proc     Case
 	test     []byte
 	expected []byte
+	err      error
 }{
 	{
-		"json lower",
+		"JSON lower",
 		Case{
 			InputKey:  "case",
 			OutputKey: "case",
@@ -23,9 +25,10 @@ var caseTests = []struct {
 		},
 		[]byte(`{"case":"ABC"}`),
 		[]byte(`{"case":"abc"}`),
+		nil,
 	},
 	{
-		"json upper",
+		"JSON upper",
 		Case{
 			InputKey:  "case",
 			OutputKey: "case",
@@ -35,9 +38,10 @@ var caseTests = []struct {
 		},
 		[]byte(`{"case":"abc"}`),
 		[]byte(`{"case":"ABC"}`),
+		nil,
 	},
 	{
-		"json snake",
+		"JSON snake",
 		Case{
 			InputKey:  "case",
 			OutputKey: "case",
@@ -47,29 +51,14 @@ var caseTests = []struct {
 		},
 		[]byte(`{"case":"AbC"})`),
 		[]byte(`{"case":"ab_c"})`),
-	},
-	// array support
-	{
-		"json array lower",
-		Case{
-			InputKey:  "case",
-			OutputKey: "case",
-			Options: CaseOptions{
-				Case: "lower",
-			},
-		},
-		[]byte(`{"case":["ABC","DEF"]}`),
-		[]byte(`{"case":["abc","def"]}`),
+		nil,
 	},
 	{
-		"data",
-		Case{
-			Options: CaseOptions{
-				Case: "upper",
-			},
-		},
-		[]byte(`foo`),
-		[]byte(`FOO`),
+		"invalid settings",
+		Case{},
+		[]byte{},
+		[]byte{},
+		ProcessorInvalidSettings,
 	},
 }
 
@@ -77,8 +66,10 @@ func TestCase(t *testing.T) {
 	for _, test := range caseTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

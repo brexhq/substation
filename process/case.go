@@ -9,12 +9,8 @@ import (
 	"github.com/iancoleman/strcase"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
-
-// CaseInvalidSettings is returned when the Case processor is configured with invalid Input and Output settings.
-const CaseInvalidSettings = errors.Error("CaseInvalidSettings")
 
 /*
 CaseOptions contains custom options for the Case processor:
@@ -31,10 +27,8 @@ type CaseOptions struct {
 
 /*
 Case processes data by changing the case of a string or byte slice. The processor supports these patterns:
-	json:
+	JSON:
 		{"case":"foo"} >>> {"case":"FOO"}
-	json array:
-		{"case":["foo","bar"]} >>> {"case":["FOO","BAR"]}
 	data:
 		foo >>> FOO
 
@@ -89,21 +83,16 @@ func (p Case) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Case processor.
 func (p Case) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// json processing
+	// error early if required options are missing
+	if p.Options.Case == "" {
+		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
+	}
+
+	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
 		value := json.Get(data, p.InputKey)
-		if !value.IsArray() {
-			s := p.stringsCase(value.String())
-			return json.Set(data, p.OutputKey, s)
-		}
-		// json array processing
-		var array []string
-		for _, v := range value.Array() {
-			s := p.stringsCase(v.String())
-			array = append(array, s)
-		}
-
-		return json.Set(data, p.OutputKey, array)
+		s := p.stringsCase(value.String())
+		return json.Set(data, p.OutputKey, s)
 	}
 
 	// data processing
@@ -111,7 +100,7 @@ func (p Case) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return p.bytesCase(data), nil
 	}
 
-	return nil, fmt.Errorf("byter settings %v: %v", p, CaseInvalidSettings)
+	return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
 }
 
 func (p Case) stringsCase(s string) string {

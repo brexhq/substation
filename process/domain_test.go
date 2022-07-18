@@ -3,12 +3,14 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 )
 
 var domainTests = []struct {
 	name     string
 	proc     Domain
+	err      error
 	test     []byte
 	expected []byte
 }{
@@ -21,6 +23,7 @@ var domainTests = []struct {
 				Function: "tld",
 			},
 		},
+		nil,
 		[]byte(`{"domain":"example.com"}`),
 		[]byte(`{"domain":"example.com","tld":"com"}`),
 	},
@@ -33,6 +36,7 @@ var domainTests = []struct {
 				Function: "domain",
 			},
 		},
+		nil,
 		[]byte(`{"domain":"www.example.com"}`),
 		[]byte(`{"domain":"example.com"}`),
 	},
@@ -45,6 +49,7 @@ var domainTests = []struct {
 				Function: "subdomain",
 			},
 		},
+		nil,
 		[]byte(`{"domain":"www.example.com"}`),
 		[]byte(`{"domain":"www.example.com","subdomain":"www"}`),
 	},
@@ -58,45 +63,9 @@ var domainTests = []struct {
 				Function: "subdomain",
 			},
 		},
+		nil,
 		[]byte(`{"domain":"example.com"}`),
 		[]byte(`{"domain":"example.com","subdomain":""}`),
-	},
-	// array support
-	{
-		"json array tld",
-		Domain{
-			InputKey:  "domain",
-			OutputKey: "tld",
-			Options: DomainOptions{
-				Function: "tld",
-			},
-		},
-		[]byte(`{"domain":["example.com","example.top"]}`),
-		[]byte(`{"domain":["example.com","example.top"],"tld":["com","top"]}`),
-	},
-	{
-		"json array domain",
-		Domain{
-			InputKey:  "domain",
-			OutputKey: "domain",
-			Options: DomainOptions{
-				Function: "domain",
-			},
-		},
-		[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
-		[]byte(`{"domain":["example.com","example.top"]}`),
-	},
-	{
-		"json array subdomain",
-		Domain{
-			InputKey:  "domain",
-			OutputKey: "subdomain",
-			Options: DomainOptions{
-				Function: "subdomain",
-			},
-		},
-		[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
-		[]byte(`{"domain":["www.example.com","mail.example.top"],"subdomain":["www","mail"]}`),
 	},
 	{
 		"data",
@@ -105,8 +74,16 @@ var domainTests = []struct {
 				Function: "subdomain",
 			},
 		},
+		nil,
 		[]byte(`www.example.com`),
 		[]byte(`www`),
+	},
+	{
+		"invalid settings",
+		Domain{},
+		ProcessorInvalidSettings,
+		[]byte{},
+		[]byte{},
 	},
 }
 
@@ -114,8 +91,10 @@ func TestDomain(t *testing.T) {
 	for _, test := range domainTests {
 		ctx := context.TODO()
 		res, err := test.proc.Byte(ctx, test.test)
-		if err != nil {
-			t.Logf("%v", err)
+		if err != nil && errors.As(err, &test.err) {
+			continue
+		} else if err != nil {
+			t.Log(err)
 			t.Fail()
 		}
 

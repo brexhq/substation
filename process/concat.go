@@ -5,12 +5,8 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
-
-// ConcatInvalidSettings is returned when the Concat processor is configured with invalid Input and Output settings.
-const ConcatInvalidSettings = errors.Error("ConcatInvalidSettings")
 
 /*
 ConcatOptions contains custom options for the Concat processor:
@@ -23,10 +19,8 @@ type ConcatOptions struct {
 
 /*
 Concat processes data by concatenating multiple values together with a separator. The processor supports these patterns:
-	json:
+	JSON:
 		{"concat":["foo","bar"]} >>> {"concat":"foo.bar"}
-	json array:
-		{"concat":[["foo","baz"],["bar","qux"]]} >>> {"concat":["foo.bar","baz.qux"]}
 
 The processor uses this Jsonnet configuration:
 	{
@@ -41,10 +35,10 @@ The processor uses this Jsonnet configuration:
 	}
 */
 type Concat struct {
+	Options   ConcatOptions            `json:"options"`
 	Condition condition.OperatorConfig `json:"condition"`
 	InputKey  string                   `json:"input_key"`
 	OutputKey string                   `json:"output_key"`
-	Options   ConcatOptions            `json:"options"`
 }
 
 // Slice processes a slice of bytes with the Concat processor. Conditions are optionally applied on the bytes to enable processing.
@@ -78,38 +72,32 @@ func (p Concat) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 // Byte processes bytes with the Concat processor.
 func (p Concat) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	// only supports json and json arrays, error early if there are no keys
-	if p.InputKey == "" && p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %v: %v", p, ConcatInvalidSettings)
+	// error early if required options are missing
+	if p.Options.Separator == "" {
+		return nil, fmt.Errorf("byter settings %+v: %v", p, ProcessorInvalidSettings)
 	}
 
-	cache := make(map[int]string)
+	// only supports JSON, error early if there are no keys
+	if p.InputKey == "" && p.OutputKey == "" {
+		return nil, fmt.Errorf("byter settings %v: %v", p, ProcessorInvalidSettings)
+	}
+
+	// data is processed by retrieving and iterating the
+	// array (InputKey) containing string values and joining
+	// each one with the separator string
+	//
+	// root:
+	// 	{"concat":["foo","bar","baz"]}
+	// concatenated:
+	// 	{"concat:"foo.bar.baz"}
+	var tmp string
 	value := json.Get(data, p.InputKey)
-	for x, v := range value.Array() {
-		var idx int
-
-		for x1, v1 := range v.Array() {
-			if v.IsArray() {
-				idx = x1
-			}
-
-			cache[idx] += v1.String()
-			if x != len(value.Array())-1 {
-				cache[idx] += p.Options.Separator
-			}
+	for idx, val := range value.Array() {
+		tmp += val.String()
+		if idx != len(value.Array())-1 {
+			tmp += p.Options.Separator
 		}
 	}
 
-	// json processing
-	if len(cache) == 1 {
-		return json.Set(data, p.OutputKey, cache[0])
-	}
-
-	// json array processing
-	var array []string
-	for i := 0; i < len(cache); i++ {
-		array = append(array, cache[i])
-	}
-
-	return json.Set(data, p.OutputKey, array)
+	return json.Set(data, p.OutputKey, tmp)
 }

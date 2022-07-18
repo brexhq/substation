@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/brexhq/substation/compare/v0.2.0...v0.3.0) (2022-07-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* Migrate to Meta Processors (#7)
+
+### Features
+
+* Migrate to Meta Processors ([#7](https://github.com/brexhq/substation/issues/7)) ([f0aabce](https://github.com/brexhq/substation/commit/f0aabce1e60b6be31ab3151e70b472a912741116))
+
 ## [0.2.0](https://github.com/brexhq/substation/compare/v0.1.0...v0.2.0) (2022-06-17)
 
 

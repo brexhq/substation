@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-xray-sdk-go/xray"
 )
 
-//New creates and returns a new session connection to DynamoDB
+// New returns a configured DynamoDB client.
 func New() *dynamodb.DynamoDB {
 	conf := aws.NewConfig()
 
@@ -40,22 +40,22 @@ func New() *dynamodb.DynamoDB {
 	return c
 }
 
-// API wraps a DynamoDB client interface
+// API wraps the DynamoDB API interface.
 type API struct {
 	Client dynamodbiface.DynamoDBAPI
 }
 
-// Setup creates a DynamoDB client and sets the DynamoDB.stream
+// Setup creates a new DynamoDB client.
 func (a *API) Setup() {
 	a.Client = New()
 }
 
-// IsEnabled checks whether a new client has been set
+// IsEnabled returns true if the client is enabled and ready for use.
 func (a *API) IsEnabled() bool {
 	return a.Client != nil
 }
 
-// PutItem is a convenience wrapper for executing the PutItem API on DynamoDB.table
+// PutItem is a convenience wrapper for putting items into a DynamoDB table.
 func (a *API) PutItem(ctx aws.Context, table string, item map[string]*dynamodb.AttributeValue) (resp *dynamodb.PutItemOutput, err error) {
 	resp, err = a.Client.PutItemWithContext(
 		ctx,
@@ -71,7 +71,7 @@ func (a *API) PutItem(ctx aws.Context, table string, item map[string]*dynamodb.A
 	return resp, nil
 }
 
-// Query is a convenience wrapper for querying a DynamoDB table
+// Query is a convenience wrapper for querying a DynamoDB table.
 func (a *API) Query(ctx aws.Context, table, partitionKey, sortKey, keyConditionExpression string, limit int64, scanIndexForward bool) (resp *dynamodb.QueryOutput, err error) {
 	var expression map[string]*dynamodb.AttributeValue
 

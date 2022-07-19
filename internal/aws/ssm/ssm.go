@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-xray-sdk-go/xray"
 )
 
-//New creates and returns a new session connection to ssm
+// New returns a configured Systems Manager client.
 func New() *ssm.SSM {
 	conf := aws.NewConfig()
 
@@ -40,22 +40,22 @@ func New() *ssm.SSM {
 	return c
 }
 
-// API wraps a ssm interface
+// API wraps the Systems Manager API interface.
 type API struct {
 	Client ssmiface.SSMAPI
 }
 
-// Setup creates a ssm client
+// Setup creates a new Systems Manager client.
 func (a *API) Setup() {
 	a.Client = New()
 }
 
-// IsEnabled checks if the client is set
+// IsEnabled returns true if the client is enabled and ready for use.
 func (a *API) IsEnabled() bool {
 	return a.Client != nil
 }
 
-// GetParameter is a convinience wrapper around ssm's GetParameter which returns the value for a given parameter
+// GetParameter is a convenience wrapper for getting a parameter from Systems Manager.
 func (a *API) GetParameter(ctx aws.Context, param string) (val string, err error) {
 	input := &ssm.GetParameterInput{
 		Name:           aws.String(param),

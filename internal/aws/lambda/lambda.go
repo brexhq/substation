@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-xray-sdk-go/xray"
 )
 
-//New creates a new session connection to Lambda
+// New returns a configured Lambda client.
 func New() *lambda.Lambda {
 	conf := aws.NewConfig()
 
@@ -40,22 +40,22 @@ func New() *lambda.Lambda {
 	return c
 }
 
-// API wraps a lambda client interface
+// API wraps the Lambda API interface.
 type API struct {
 	Client lambdaiface.LambdaAPI
 }
 
-// Setup creates and sets a lambda client
+// Setup creates a new Lambda client.
 func (a *API) Setup() {
 	a.Client = New()
 }
 
-//IsEnabled returns the boolean on whether the client is enabled
+// IsEnabled returns true if the client is enabled and ready for use.
 func (a *API) IsEnabled() bool {
 	return a.Client != nil
 }
 
-//Invoke is a convenience wrapper around the AWS Lambda Invoke call with triggers a lambda
+// Invoke is a convenience wrapper for synchronously invoking a Lambda function.
 func (a *API) Invoke(ctx aws.Context, function string, payload []byte) (resp *lambda.InvokeOutput, err error) {
 	resp, err = a.Client.InvokeWithContext(
 		ctx,

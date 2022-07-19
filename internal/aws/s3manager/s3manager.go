@@ -20,7 +20,7 @@ import (
 
 const scannerMaxCapacity = 1024 * 1024 * 100
 
-//NewS3 creates a new session connection to S3
+// NewS3 returns a configured S3 client.
 func NewS3() *s3.S3 {
 	conf := aws.NewConfig()
 
@@ -48,27 +48,27 @@ func NewS3() *s3.S3 {
 	return c
 }
 
-// DownloaderAPI wraps a S3 client interface
-type DownloaderAPI struct {
-	Client s3manageriface.DownloaderAPI
-}
-
-// NewS3Downloader returns an XRay-enabled S3 Downloader client
+// NewS3Downloader returns a configured Downloader client.
 func NewS3Downloader() *s3manager.Downloader {
 	return s3manager.NewDownloaderWithClient(NewS3())
 }
 
-// Setup initialiazes Client with an XRay-enabled S3Uploader client
+// DownloaderAPI wraps the Downloader API interface.
+type DownloaderAPI struct {
+	Client s3manageriface.DownloaderAPI
+}
+
+// Setup creates a new Downloader client.
 func (a *DownloaderAPI) Setup() {
 	a.Client = NewS3Downloader()
 }
 
-//IsEnabled checks if the client has been set
+// IsEnabled returns true if the client is enabled and ready for use.
 func (a *DownloaderAPI) IsEnabled() bool {
 	return a.Client != nil
 }
 
-// Download wraps AWS S3Downloader DownloadWithContext API with optional XRay support
+// Download is a convenience wrapper for downloading an object from S3.
 func (a *DownloaderAPI) Download(ctx aws.Context, bucket, key string) ([]byte, int64, error) {
 	buf := aws.NewWriteAtBuffer([]byte{})
 	input := &s3.GetObjectInput{
@@ -83,7 +83,7 @@ func (a *DownloaderAPI) Download(ctx aws.Context, bucket, key string) ([]byte, i
 	return buf.Bytes(), size, nil
 }
 
-// DownloadAsScanner wraps DownloaderClient.DownloadWithContext and returns object as a decoded scanner
+// DownloadAsScanner is a convenience wrapper for downloading an object from S3 as a scanner.
 func (a *DownloaderAPI) DownloadAsScanner(ctx aws.Context, bucket, key string) (*bufio.Scanner, error) {
 	buf, size, err := a.Download(ctx, bucket, key)
 	if err != nil {
@@ -104,7 +104,7 @@ func (a *DownloaderAPI) DownloadAsScanner(ctx aws.Context, bucket, key string) (
 	return s, nil
 }
 
-// decode converts bytes into a decoded io.Reader
+// decode converts bytes into a decoded io.Reader.
 func decode(buf []byte, contentType string) (io.Reader, error) {
 	switch t := contentType; t {
 	case "application/x-gzip":
@@ -118,7 +118,7 @@ func decode(buf []byte, contentType string) (io.Reader, error) {
 	}
 }
 
-// createScanner creates a bufio.Scanner from an io.Reader
+// createScanner creates a bufio.Scanner from an io.Reader.
 func createScanner(content io.Reader) *bufio.Scanner {
 	scanner := bufio.NewScanner(content)
 	b := make([]byte, scannerMaxCapacity)
@@ -126,27 +126,27 @@ func createScanner(content io.Reader) *bufio.Scanner {
 	return scanner
 }
 
-//NewS3Uploader creates a new S3 uploader client connection
+// NewS3Uploader returns a configured Uploader client.
 func NewS3Uploader() *s3manager.Uploader {
 	return s3manager.NewUploaderWithClient(NewS3())
 }
 
-// UploaderAPI wraps a S3 client interface
+// UploaderAPI wraps the Uploader API interface.
 type UploaderAPI struct {
 	Client s3manageriface.UploaderAPI
 }
 
-// IsEnabled checks if the client has been set
-func (a *UploaderAPI) IsEnabled() bool {
-	return a.Client != nil
-}
-
-// Setup initialiazes Client with an XRay-enabled S3Uploader client
+// Setup creates a new Uploader client.
 func (a *UploaderAPI) Setup() {
 	a.Client = NewS3Uploader()
 }
 
-// Upload wraps AWS S3manager's UploadInput API
+// IsEnabled returns true if the client is enabled and ready for use.
+func (a *UploaderAPI) IsEnabled() bool {
+	return a.Client != nil
+}
+
+// Upload is a convenience wrapper for uploading an object to S3.
 func (a *UploaderAPI) Upload(ctx aws.Context, buffer []byte, bucket, key string) (*s3manager.UploadOutput, error) {
 	input := &s3manager.UploadInput{
 		Bucket:      aws.String(bucket),

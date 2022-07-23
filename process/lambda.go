@@ -94,7 +94,7 @@ func (p Lambda) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" && p.OutputKey == "" {
+	if p.InputKey == "" || p.OutputKey == "" {
 		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 

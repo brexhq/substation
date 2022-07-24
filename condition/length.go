@@ -20,14 +20,13 @@ The inspector has these settings:
 		must be one of:
 			byte (number of bytes)
 			rune (number of characters)
+		defaults to byte
 	Function:
 		the length evaluation function used during inspection
 		must be one of:
-			equals (equals)
-			greaterthan (greater than)
-			greaterthaneq (greater than equal to)
-			lessthan (less than)
-			lessthaneq (less than equal to)
+			equals
+			greaterthan
+			lessthan
 	Negate (optional):
 		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
 		defaults to false
@@ -45,7 +44,7 @@ The inspector uses this Jsonnet configuration:
 		settings: {
 			key: 'foo',
 			value: 3,
-			_function: 'lessthaneq',
+			'function': 'equals',
 		},
 	}
 */
@@ -78,7 +77,7 @@ func (c Length) Inspect(data []byte) (output bool, err error) {
 	case "rune":
 		length = utf8.RuneCountInString(check)
 	default:
-		return false, fmt.Errorf("inspector settings %+v: %w", c, InspectorInvalidSettings)
+		length = len(check)
 	}
 
 	return c.match(length)
@@ -95,16 +94,8 @@ func (c Length) match(length int) (bool, error) {
 		if length > c.Value {
 			matched = true
 		}
-	case "greaterthaneq":
-		if length >= c.Value {
-			matched = true
-		}
 	case "lessthan":
 		if length < c.Value {
-			matched = true
-		}
-	case "lessthaneq":
-		if length <= c.Value {
 			matched = true
 		}
 	default:

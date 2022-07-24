@@ -90,44 +90,6 @@ var lengthTests = []struct {
 		"pass",
 		Length{
 			Key:      "foo",
-			Value:    3,
-			Function: "lessthaneq",
-		},
-		[]byte(`{"foo":"bar"}`),
-		true,
-	},
-	{
-		"pass",
-		Length{
-			Value:    3,
-			Function: "lessthaneq",
-		},
-		[]byte(`bar`),
-		true,
-	},
-	{
-		"fail",
-		Length{
-			Key:      "foo",
-			Value:    2,
-			Function: "lessthaneq",
-		},
-		[]byte(`{"foo":"bar"}`),
-		false,
-	},
-	{
-		"fail",
-		Length{
-			Value:    2,
-			Function: "lessthaneq",
-		},
-		[]byte(`bar`),
-		false,
-	},
-	{
-		"pass",
-		Length{
-			Key:      "foo",
 			Value:    2,
 			Function: "greaterthan",
 		},
@@ -158,44 +120,6 @@ var lengthTests = []struct {
 		Length{
 			Value:    3,
 			Function: "greaterthan",
-		},
-		[]byte(`bar`),
-		false,
-	},
-	{
-		"pass",
-		Length{
-			Key:      "foo",
-			Value:    3,
-			Function: "greaterthaneq",
-		},
-		[]byte(`{"foo":"bar"}`),
-		true,
-	},
-	{
-		"pass",
-		Length{
-			Value:    3,
-			Function: "greaterthaneq",
-		},
-		[]byte(`bar`),
-		true,
-	},
-	{
-		"fail",
-		Length{
-			Key:      "foo",
-			Value:    4,
-			Function: "greaterthaneq",
-		},
-		[]byte(`{"foo":"bar"}`),
-		false,
-	},
-	{
-		"fail",
-		Length{
-			Value:    4,
-			Function: "greaterthaneq",
 		},
 		[]byte(`bar`),
 		false,
@@ -246,27 +170,6 @@ var lengthTests = []struct {
 		"!pass",
 		Length{
 			Key:      "foo",
-			Value:    3,
-			Function: "lessthaneq",
-			Negate:   true,
-		},
-		[]byte(`{"foo":"bar"}`),
-		false,
-	},
-	{
-		"!pass",
-		Length{
-			Value:    3,
-			Function: "lessthaneq",
-			Negate:   true,
-		},
-		[]byte(`bar`),
-		false,
-	},
-	{
-		"!pass",
-		Length{
-			Key:      "foo",
 			Value:    2,
 			Function: "greaterthan",
 			Negate:   true,
@@ -279,27 +182,6 @@ var lengthTests = []struct {
 		Length{
 			Value:    2,
 			Function: "greaterthan",
-			Negate:   true,
-		},
-		[]byte(`bar`),
-		false,
-	},
-	{
-		"!pass",
-		Length{
-			Key:      "foo",
-			Value:    3,
-			Function: "greaterthaneq",
-			Negate:   true,
-		},
-		[]byte(`{"foo":"bar"}`),
-		false,
-	},
-	{
-		"!pass",
-		Length{
-			Value:    3,
-			Function: "greaterthaneq",
 			Negate:   true,
 		},
 		[]byte(`bar`),
@@ -329,11 +211,13 @@ var lengthTests = []struct {
 }
 
 func TestLength(t *testing.T) {
-	for _, testing := range lengthTests {
-		check, _ := testing.inspector.Inspect(testing.test)
+	for _, test := range lengthTests {
+		check, _ := test.inspector.Inspect(test.test)
 
-		if testing.expected != check {
-			t.Logf("expected %v, got %v", testing.expected, check)
+		if test.expected != check {
+			t.Logf("expected %v, got %v", test.expected, check)
+			t.Logf("settings: %+v", test.inspector)
+			t.Logf("test: %+v", string(test.test))
 			t.Fail()
 		}
 	}

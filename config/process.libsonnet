@@ -1,4 +1,14 @@
 {
+  aggregate(output, 
+            aggregate_key='', separator='', max_count=1000, max_size=10000,
+            condition_operator='', condition_inspectors=[]): {
+    type: 'aggregate',
+    settings: {
+      options: { aggregate_key: aggregate_key, separator: separator, max_count: max_count, max_size: max_size },
+      condition: { operator: condition_operator, inspectors: condition_inspectors},
+      output_key: output,
+    },
+  },
   base64(input, output, direction, 
          condition_operator='', condition_inspectors=[]): {
     type: 'base64',
@@ -104,6 +114,15 @@
       input_key: input, output_key: output,
     },
   },
+  for_each(input, output, processor, 
+           condition_operator='', condition_inspectors=[]): {
+    type: 'for_each',
+    settings: {
+      options: { processor: processor },
+      condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
+    },
+  },
   group(input, output, 
         keys=[], 
         condition_operator='', condition_inspectors=[]): {
@@ -160,12 +179,30 @@
       input_key: input, output_key: output,
     },
   },
+  pipeline(input, output, processors, 
+           condition_operator='', condition_inspectors=[]): {
+    type: 'pipeline',
+    settings: {
+      options: { processors: processors },
+      condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
+    },
+  },
   replace(input, output, old, new, 
           count=-1, 
           condition_operator='', condition_inspectors=[]): {
     type: 'replace',
     settings: {
       options: { old: old, new: new, count: count },
+      condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
+    },
+  },
+  split(input, output, separator,
+        condition_operator='', condition_inspectors=[]): {
+    type: 'split',
+    settings: {
+      options: { separator: separator },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
       input_key: input, output_key: output,
     },

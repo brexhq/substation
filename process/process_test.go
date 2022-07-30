@@ -71,6 +71,23 @@ var processTests = []struct {
 	{
 		[]config.Config{
 			{
+				Type: "pretty_print",
+				Settings: map[string]interface{}{
+					"options": map[string]interface{}{
+						"direction": "to",
+					},
+				},
+			},
+		},
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{
+  "foo": "bar"
+}
+`),
+	},
+	{
+		[]config.Config{
+			{
 				Type: "time",
 				Settings: map[string]interface{}{
 					"input_key":  "foo",

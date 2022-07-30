@@ -130,6 +130,10 @@ func ByterFactory(cfg config.Config) (Byter, error) {
 		var p Pipeline
 		config.Decode(cfg.Settings, &p)
 		return p, nil
+	case "pretty_print":
+		var p PrettyPrint
+		config.Decode(cfg.Settings, &p)
+		return p, nil
 	case "replace":
 		var p Replace
 		config.Decode(cfg.Settings, &p)
@@ -228,6 +232,10 @@ func SlicerFactory(cfg config.Config) (Slicer, error) {
 		return p, nil
 	case "pipeline":
 		var p Pipeline
+		config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "pretty_print":
+		var p PrettyPrint
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "replace":

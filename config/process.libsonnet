@@ -58,7 +58,7 @@
     type: 'delete',
     settings: {
       condition: { operator: condition_operator, inspectors: condition_inspectors},
-      input: input,
+      input_key: input,
     },
   },
   domain(input, output, _function, 
@@ -91,7 +91,7 @@
     type: 'expand',
     settings: {
       condition: { operator: condition_operator, inspectors: condition_inspectors},
-      input: input,
+      input_key: input,
     },
   },
   flatten(input, output, 
@@ -104,6 +104,15 @@
       input_key: input, output_key: output,
     },
   },
+  for_each(input, output, processor, 
+           condition_operator='', condition_inspectors=[]): {
+    type: 'for_each',
+    settings: {
+      options: { processor: processor },
+      condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
+    },
+  },  
   group(input, output, 
         keys=[], 
         condition_operator='', condition_inspectors=[]): {
@@ -138,7 +147,7 @@
     settings: {
       options: { value: value },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
-      output: output,
+      output_key: output,
     },
   },
   lambda(input, output, _function, 
@@ -156,6 +165,15 @@
     type: 'math',
     settings: {
       options: { operation: operation },
+      condition: { operator: condition_operator, inspectors: condition_inspectors},
+      input_key: input, output_key: output,
+    },
+  },
+  pipeline(input, output, processors, 
+           condition_operator='', condition_inspectors=[]): {
+    type: 'pipeline',
+    settings: {
+      options: { processors: processors },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
       input_key: input, output_key: output,
     },

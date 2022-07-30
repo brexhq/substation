@@ -103,6 +103,8 @@ func (p ForEach) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
+	// processor settings loaded via Jsonnet may create invalid keys such as
+	// `foo.bar.` -- the trailing dot creates an invalid path, so it is trimmed
 	if _, ok := p.Options.Processor.Settings["input_key"]; ok {
 		p.Options.Processor.Settings["input_key"] = p.Options.Processor.Type + "." + p.Options.Processor.Settings["input_key"].(string)
 	} else {

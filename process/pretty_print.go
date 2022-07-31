@@ -135,7 +135,7 @@ func (p PrettyPrint) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 				if count == 0 {
 					var buf bytes.Buffer
 					if err := gojson.Compact(&buf, stack); err != nil {
-						return nil, err
+						return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
 					}
 
 					if json.Valid(buf.Bytes()) {

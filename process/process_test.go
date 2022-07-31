@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/brexhq/substation/internal/config"
+	"github.com/brexhq/substation/config"
 )
 
 var processTests = []struct {

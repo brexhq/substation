@@ -1,5 +1,5 @@
-local conditionlib = import '../../condition.libsonnet';
-local processlib = import '../../process.libsonnet';
+local conditionlib = import '../../config/condition.libsonnet';
+local processlib = import '../../config/process.libsonnet';
 
 local event_created = 'event.created';
 local event_hash = 'event.hash';
@@ -19,7 +19,6 @@ local processors = [
   },
 ];
 
-// flattens the `processors` array into a single array; required for compiling into config.jsonnet
 {
   processors: std.flattenArrays([p.processors for p in processors]),
 }

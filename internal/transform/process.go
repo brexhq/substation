@@ -3,7 +3,7 @@ package transform
 import (
 	"context"
 
-	"github.com/brexhq/substation/internal/config"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/process"
 )
 

@@ -1,5 +1,5 @@
 local event = import './event.libsonnet';
-local sinklib = import '../sink.libsonnet';
+local sinklib = import '../../config/sink.libsonnet';
 
 {
   sink: sinklib.stdout,

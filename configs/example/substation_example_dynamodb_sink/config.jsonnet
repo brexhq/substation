@@ -1,4 +1,4 @@
-local sinklib = import '../../sink.libsonnet';
+local sinklib = import '../../../config/../config/sink.libsonnet';
 
 local dynamodb = import './dynamodb.libsonnet';
 

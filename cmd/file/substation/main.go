@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"runtime"
 	"sync"
 	"time"
 
@@ -31,7 +30,6 @@ func main() {
 	input := flag.String("input", "", "file to parse from local disk")
 	config := flag.String("config", "", "Substation configuration file")
 	timeout := flag.Duration("timeout", 10*time.Second, "timeout")
-	transforms := flag.Int("transforms", runtime.NumCPU(), "number of transform goroutines to execute")
 	flag.Parse()
 
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
@@ -39,13 +37,18 @@ func main() {
 
 	loadConfig(*config)
 
-	if err := file(ctx, *input, *transforms); err != nil {
+	if err := file(ctx, *input); err != nil {
 		panic(fmt.Errorf("main: %v", err))
 	}
 }
 
-func file(ctx context.Context, filename string, transforms int) error {
-	sub.CreateChannels(transforms)
+func file(ctx context.Context, filename string) error {
+	concurrency, err := cmd.GetConcurrency()
+	if err != nil {
+		return fmt.Errorf("file concurrency: %v", err)
+	}
+
+	sub.CreateChannels(concurrency)
 	defer sub.KillSignal()
 
 	go func() {
@@ -55,7 +58,7 @@ func file(ctx context.Context, filename string, transforms int) error {
 		go sub.Sink(ctx, &sinkWg)
 
 		var transformWg sync.WaitGroup
-		for w := 1; w <= transforms; w++ {
+		for w := 1; w <= concurrency; w++ {
 			transformWg.Add(1)
 			go sub.Transform(ctx, &transformWg)
 		}

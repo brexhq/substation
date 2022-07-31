@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brexhq/substation/internal/config"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 )
 

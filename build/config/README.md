@@ -1,6 +1,6 @@
 # compile.sh
 
-Used for recursively compiling Substation Jsonnet config files (`config.jsonnet`) into JSON; compiled files are stored in the same directory as the Jsonnet files. The script should be executed from the project root: `sh build/config/compile.sh`.
+Used for recursively compiling Substation [Jsonnet](https://jsonnet.org/) config files (`config.jsonnet`) into JSON; compiled files are stored in the same directory as the Jsonnet files. The script should be executed from the project root: `sh build/config/compile.sh`.
 
 # aws/appconfig_upload.py
 

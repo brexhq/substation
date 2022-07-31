@@ -1,5 +1,5 @@
-local conditionlib = import '../../condition.libsonnet';
-local processlib = import '../../process.libsonnet';
+local conditionlib = import '../../../config/condition.libsonnet';
+local processlib = import '../../../config/process.libsonnet';
 
 local processors = [
   {

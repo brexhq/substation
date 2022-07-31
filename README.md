@@ -1,14 +1,14 @@
 # Substation
 
-Substation is a cloud native data pipeline toolkit.
+Substation is a toolkit for creating highly configurable, no maintenance, and cost efficient serverless data pipelines.
 
 ## What is Substation?
 
-Substation is a modular ingest, transform, load (ITL) application for moving data between distributed systems. Originally designed to collect, normalize, and enrich security event data, the application provides methods for achieving [high quality data](https://en.wikipedia.org/wiki/Data_quality#Definitions) through interconnected data pipelines.
+Originally designed to collect, normalize, and enrich security event data, Substation provides methods for achieving [high quality data](https://en.wikipedia.org/wiki/Data_quality#Definitions) through interconnected, serverless data pipelines.
 
 Substation also provides Go packages for filtering and modifying JSON data.
 
-### Features
+## Features
 
 As an event-driven ITL application, Substation has these features:
 
@@ -25,7 +25,7 @@ As a package, Substation has these features:
 - [evaluate and filter JSON objects](condition/)
 - [modify data from, to, and in-place as JSON objects](process/)
 
-### Use Cases
+## Use Cases
 
 Substation was originally designed to support the mission of achieving high quality data for threat hunting, threat detection, and incident response, but it can be used to move data between many distributed systems and services. Here are some example use cases:
 
@@ -33,9 +33,9 @@ Substation was originally designed to support the mission of achieving high qual
 - data consistency: normalize data across every dataset using a permissive schema such as the [Elastic Common Schema](https://www.elastic.co/guide/en/ecs/current/index.html)
 - data completeness: enrich data by integrating AWS Lambda functions and building self-populating AWS DynamoDB tables for low latency, real-time event context
 
-### Example Data Pipelines
+## Example Data Pipelines
 
-#### Simple
+### Simple
 
 The simplest data pipeline is one with a single source (ingest), a single transform, and a single sink (load). The diagram below shows pipelines that ingest data from different sources and sink it unmodified to a data warehouse where it can be used for analysis.
 
@@ -67,7 +67,7 @@ graph TD
     processing_b ---|Push| sink
 ```
 
-#### Complex
+### Complex
 
 The complexity of a data pipeline, including its features and how it connects with other pipelines, is up to the user. The diagram below shows two complex data pipelines that have these feature:
 

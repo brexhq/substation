@@ -138,7 +138,10 @@ func (p PrettyPrint) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 						return nil, err
 					}
 
-					slice = append(slice, buf.Bytes())
+					if json.Valid(buf.Bytes()) {
+						slice = append(slice, buf.Bytes())
+					}
+
 					stack = []byte{}
 				}
 			}

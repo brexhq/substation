@@ -164,7 +164,7 @@ func ConvertEventsRecords(records []events.KinesisEventRecord) []*kinesis.Record
 	return output
 }
 
-// New creates a new session connection to Kinesis
+// New returns a configured Kinesis client.
 func New() *kinesis.Kinesis {
 	conf := aws.NewConfig()
 
@@ -192,22 +192,22 @@ func New() *kinesis.Kinesis {
 	return c
 }
 
-// API wraps a Kinesis client interface
+// API wraps the Kinesis API interface.
 type API struct {
 	Client kinesisiface.KinesisAPI
 }
 
-// IsEnabled cheks if a client is initiated and connected to Kensis
-func (a *API) IsEnabled() bool {
-	return a.Client != nil
-}
-
-// Setup creates a Kinesis client and sets the Kinesis.stream
+// Setup creates a new Kinesis client.
 func (a *API) Setup() {
 	a.Client = New()
 }
 
-// PutRecord is a convenience wrapper for executing the PutRecord API on Kinesis.stream
+// IsEnabled returns true if the client is enabled and ready for use.
+func (a *API) IsEnabled() bool {
+	return a.Client != nil
+}
+
+// PutRecord is a convenience wrapper for putting a record into a Kinesis stream.
 func (a *API) PutRecord(ctx aws.Context, data []byte, stream, partitionKey string) (*kinesis.PutRecordOutput, error) {
 	resp, err := a.Client.PutRecordWithContext(
 		ctx,
@@ -224,7 +224,7 @@ func (a *API) PutRecord(ctx aws.Context, data []byte, stream, partitionKey strin
 	return resp, nil
 }
 
-// ActiveShards returns the number of in-use shards for a Kinesis stream
+// ActiveShards returns the number of in-use shards for a Kinesis stream.
 func (a *API) ActiveShards(ctx aws.Context, stream string) (int64, error) {
 	var shards int64
 	params := &kinesis.ListShardsInput{
@@ -257,7 +257,7 @@ LOOP:
 	return shards, nil
 }
 
-// UpdateShards uniformly updates a Kinesis stream's shard count and returns when the update is complete
+// UpdateShards uniformly updates a Kinesis stream's shard count and returns when the update is complete.
 func (a *API) UpdateShards(ctx aws.Context, stream string, shards int64) error {
 	params := &kinesis.UpdateShardCountInput{
 		StreamName:       aws.String(stream),

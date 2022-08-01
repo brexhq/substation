@@ -92,7 +92,7 @@ var processByteTests = []struct {
 		[]byte(`{"foo":["bar","baz"]}`),
 	},
 	{
-		"time",
+		"pretty_print",
 		[]config.Config{
 			{
 				Type: "pretty_print",
@@ -110,6 +110,7 @@ var processByteTests = []struct {
 `),
 	},
 	{
+		"time",
 		[]config.Config{
 			{
 				Type: "time",

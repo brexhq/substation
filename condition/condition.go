@@ -7,6 +7,9 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
+// InspectorInvalidSettings is returned when an inspector is configured with invalid settings.
+const InspectorInvalidSettings = errors.Error("InspectorInvalidSettings")
+
 // InspectorInvalidFactoryConfig is returned when an unsupported Inspector is referenced in InspectorFactory.
 const InspectorInvalidFactoryConfig = errors.Error("InspectorInvalidFactoryConfig")
 
@@ -39,17 +42,17 @@ func (o AND) Operate(data []byte) (bool, error) {
 
 	for _, i := range o.Inspectors {
 		ok, err := i.Inspect(data)
-
 		if err != nil {
 			return false, err
 		}
-		// return false if any Check fails
+
+		// return false if any check fails
 		if !ok {
 			return false, nil
 		}
 	}
 
-	// return tue if all Checks pass
+	// return tue if all checks pass
 	return true, nil
 }
 
@@ -69,13 +72,14 @@ func (o OR) Operate(data []byte) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		// return true if any Check passes
+
+		// return true if any check passes
 		if ok {
 			return true, nil
 		}
 	}
 
-	// return false if all Checks fail
+	// return false if all checks fail
 	return false, nil
 }
 
@@ -84,7 +88,7 @@ type NAND struct {
 	Inspectors []Inspector
 }
 
-// Operate returns true if all Inspectors return false, otherwise it returns true.
+// Operate returns true if any Inspectors return false, otherwise it returns true.
 func (o NAND) Operate(data []byte) (bool, error) {
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
@@ -95,13 +99,14 @@ func (o NAND) Operate(data []byte) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		// return true if any Check fails
+
+		// return true if any check fails
 		if !ok {
 			return true, nil
 		}
 	}
 
-	// return false if all Checks pass
+	// return false if all checks pass
 	return false, nil
 }
 
@@ -121,20 +126,21 @@ func (o NOR) Operate(data []byte) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		// return false if any Check passes
+
+		// return false if any check passes
 		if ok {
 			return false, nil
 		}
 	}
 
-	// return true if all Checks fail
+	// return true if all checks fail
 	return true, nil
 }
 
 // Default implements the Operator interface.
 type Default struct{}
 
-// Operate always returns true. This is the default operator returned by  OperatorFactory.
+// Operate always returns true. This is the default operator returned by OperatorFactory.
 func (o Default) Operate(data []byte) (bool, error) {
 	return true, nil
 }
@@ -185,6 +191,10 @@ func InspectorFactory(cfg config.Config) (Inspector, error) {
 		var i JSONValid
 		config.Decode(cfg.Settings, &i)
 		return i, nil
+	case "length":
+		var i Length
+		config.Decode(cfg.Settings, &i)
+		return i, nil
 	case "regexp":
 		var i RegExp
 		config.Decode(cfg.Settings, &i)
@@ -198,7 +208,7 @@ func InspectorFactory(cfg config.Config) (Inspector, error) {
 	}
 }
 
-// MakeInspectors is a convenience function for creating several Inspectors.
+// MakeInspectors is a convenience function for creating mulitple Inspectors.
 func MakeInspectors(cfg []config.Config) ([]Inspector, error) {
 	var inspectors []Inspector
 	for _, c := range cfg {

@@ -71,7 +71,7 @@ func (p Group) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 // Byte processes bytes with the Group processor.
 func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// only supports JSON arrays, error early if there are no keys
-	if p.InputKey == "" && p.OutputKey == "" {
+	if p.InputKey == "" || p.OutputKey == "" {
 		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 

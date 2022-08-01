@@ -134,6 +134,10 @@ func ByterFactory(cfg config.Config) (Byter, error) {
 		var p Replace
 		config.Decode(cfg.Settings, &p)
 		return p, nil
+	case "split":
+		var p Split
+		config.Decode(cfg.Settings, &p)
+		return p, nil
 	case "time":
 		var p Time
 		config.Decode(cfg.Settings, &p)
@@ -146,6 +150,10 @@ func ByterFactory(cfg config.Config) (Byter, error) {
 // SlicerFactory loads a Slicer from a Config. This is the recommended function for retrieving ready-to-use Slicers.
 func SlicerFactory(cfg config.Config) (Slicer, error) {
 	switch t := cfg.Type; t {
+	case "aggregate":
+		var p Aggregate
+		config.Decode(cfg.Settings, &p)
+		return p, nil
 	case "base64":
 		var p Base64
 		config.Decode(cfg.Settings, &p)
@@ -232,6 +240,10 @@ func SlicerFactory(cfg config.Config) (Slicer, error) {
 		return p, nil
 	case "replace":
 		var p Replace
+		config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "split":
+		var p Split
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "time":

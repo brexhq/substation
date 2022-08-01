@@ -86,20 +86,22 @@ func (p Convert) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	// only supports JSON, error early if there are no keys
-	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey)
-		switch p.Options.Type {
-		case "bool":
-			return json.Set(data, p.OutputKey, value.Bool())
-		case "int":
-			return json.Set(data, p.OutputKey, value.Int())
-		case "float":
-			return json.Set(data, p.OutputKey, value.Float())
-		case "uint":
-			return json.Set(data, p.OutputKey, value.Uint())
-		case "string":
-			return json.Set(data, p.OutputKey, value.String())
-		}
+	if p.InputKey == "" || p.OutputKey == "" {
+		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	}
+
+	value := json.Get(data, p.InputKey)
+	switch p.Options.Type {
+	case "bool":
+		return json.Set(data, p.OutputKey, value.Bool())
+	case "int":
+		return json.Set(data, p.OutputKey, value.Int())
+	case "float":
+		return json.Set(data, p.OutputKey, value.Float())
+	case "uint":
+		return json.Set(data, p.OutputKey, value.Uint())
+	case "string":
+		return json.Set(data, p.OutputKey, value.String())
 	}
 
 	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)

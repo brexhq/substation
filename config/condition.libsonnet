@@ -33,6 +33,20 @@
       settings: { key: key, type: 'unspecified', negate: negate },
     },
   },
+  length: {
+    equals(key, value, type='byte', negate=false): {
+      type: 'length',
+      settings: { key: key, value: value, type: type, 'function': 'equals', negate: negate },
+    },
+    greaterthan(key, value, type='byte', negate=false): {
+      type: 'length',
+      settings: { key: key, value: value, type: type, 'function': 'greaterthan', negate: negate },
+    },
+    lessthan(key, value, type='byte', negate=false): {
+      type: 'length',
+      settings: { key: key, value: value, type: type, 'function': 'lessthan', negate: negate },
+    },
+  },
   regexp(key, expression, negate=false): {
     type: 'regexp',
     settings: { key: key, expression: expression, negate: negate },

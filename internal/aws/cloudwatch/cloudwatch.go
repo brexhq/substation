@@ -13,17 +13,16 @@ import (
 )
 
 const (
-	// constants for managing Kinesis stream autoscaling alarms
 	kinesisMetricsPeriod = 60
 	// scale Kinesis stream down if it is below threshold for 1 hour
 	kinesisDownscaleEvaluationPeriod = 1 * 60
-	kinesisDownscaleThreshold        = 0.15
-	// scale Kinesis stream up if it is above threshold for 1 minute
-	kinesisUpscaleEvaluationPeriod = 1
-	kinesisUpscaleThreshold        = 0.5
+	kinesisDownscaleThreshold        = 0.25
+	// scale Kinesis stream up if it is above threshold for 5 minutes
+	kinesisUpscaleEvaluationPeriod = 1 * 5
+	kinesisUpscaleThreshold        = 0.75
 )
 
-//New returns a new session connection to Cloudwatch
+// New returns a configured CloudWatch client.
 func New() *cloudwatch.CloudWatch {
 	conf := aws.NewConfig()
 
@@ -51,22 +50,22 @@ func New() *cloudwatch.CloudWatch {
 	return c
 }
 
-// API wraps a CloudWatch client interface
+// API wraps the CloudWatch API interface.
 type API struct {
 	Client cloudwatchiface.CloudWatchAPI
 }
 
-//Setup creates a cloudwtach client
+// Setup creates a new CloudWatch client.
 func (a *API) Setup() {
 	a.Client = New()
 }
 
-//IsEnabled returns the boolean on whether the client is enabled
+// IsEnabled returns true if the client is enabled and ready for use.
 func (a *API) IsEnabled() bool {
 	return a.Client != nil
 }
 
-//UpdateKinesisDownscaleAlarm is the function that is responsible for downscaling the metrics which trigger the shard counts on Kinesis streams
+// UpdateKinesisDownscaleAlarm updates CloudWatch alarms that manage the scale down tracking for Kinesis streams.
 func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic string, shards int64) error {
 	if _, err := a.Client.PutMetricAlarmWithContext(
 		ctx,
@@ -76,7 +75,7 @@ func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic s
 			ActionsEnabled:     aws.Bool(true),
 			AlarmActions:       []*string{aws.String(topic)},
 			EvaluationPeriods:  aws.Int64(kinesisDownscaleEvaluationPeriod),
-			DatapointsToAlarm:  aws.Int64(kinesisDownscaleEvaluationPeriod),
+			DatapointsToAlarm:  aws.Int64(kinesisDownscaleEvaluationPeriod * 0.95),
 			Threshold:          aws.Float64(kinesisDownscaleThreshold),
 			ComparisonOperator: aws.String("LessThanOrEqualToThreshold"),
 			TreatMissingData:   aws.String("ignore"),
@@ -121,13 +120,13 @@ func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic s
 				},
 				{
 					Id:         aws.String("e1"),
-					Expression: aws.String("FILL(m1,0)"),
+					Expression: aws.String("FILL(m1,REPEAT)"),
 					Label:      aws.String("FillMissingDataPointsForIncomingRecords"),
 					ReturnData: aws.Bool(false),
 				},
 				{
 					Id:         aws.String("e2"),
-					Expression: aws.String("FILL(m2,0)"),
+					Expression: aws.String("FILL(m2,REPEAT)"),
 					Label:      aws.String("FillMissingDataPointsForIncomingBytes"),
 					ReturnData: aws.Bool(false),
 				},
@@ -170,7 +169,7 @@ func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic s
 	return nil
 }
 
-//UpdateKinesisUpscaleAlarm is the function that is responsible for upscaling the metrics which trigger the shard counts change on Kinesis streams
+// UpdateKinesisUpscaleAlarm updates CloudWatch alarms that manage the scale up tracking for Kinesis streams.
 func (a *API) UpdateKinesisUpscaleAlarm(ctx aws.Context, name, stream, topic string, shards int64) error {
 	if _, err := a.Client.PutMetricAlarmWithContext(
 		ctx,
@@ -225,13 +224,13 @@ func (a *API) UpdateKinesisUpscaleAlarm(ctx aws.Context, name, stream, topic str
 				},
 				{
 					Id:         aws.String("e1"),
-					Expression: aws.String("FILL(m1,0)"),
+					Expression: aws.String("FILL(m1,REPEAT)"),
 					Label:      aws.String("FillMissingDataPointsForIncomingRecords"),
 					ReturnData: aws.Bool(false),
 				},
 				{
 					Id:         aws.String("e2"),
-					Expression: aws.String("FILL(m2,0)"),
+					Expression: aws.String("FILL(m2,REPEAT)"),
 					Label:      aws.String("FillMissingDataPointsForIncomingBytes"),
 					ReturnData: aws.Bool(false),
 				},

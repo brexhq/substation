@@ -3,6 +3,7 @@ package process
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/internal/config"
@@ -102,17 +103,21 @@ func (p ForEach) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
+	// processor settings loaded via Jsonnet may create invalid keys such as
+	// `foo.bar.` -- the trailing dot creates an invalid path, so it is trimmed
 	if _, ok := p.Options.Processor.Settings["input_key"]; ok {
 		p.Options.Processor.Settings["input_key"] = p.Options.Processor.Type + "." + p.Options.Processor.Settings["input_key"].(string)
 	} else {
 		p.Options.Processor.Settings["input_key"] = p.Options.Processor.Type
 	}
+	p.Options.Processor.Settings["input_key"] = strings.TrimSuffix(p.Options.Processor.Settings["input_key"].(string), ".")
 
 	if _, ok := p.Options.Processor.Settings["output_key"]; ok {
 		p.Options.Processor.Settings["output_key"] = p.Options.Processor.Type + "." + p.Options.Processor.Settings["output_key"].(string)
 	} else {
 		p.Options.Processor.Settings["output_key"] = p.Options.Processor.Type
 	}
+	p.Options.Processor.Settings["output_key"] = strings.TrimSuffix(p.Options.Processor.Settings["output_key"].(string), ".")
 
 	byter, err := ByterFactory(p.Options.Processor)
 	if err != nil {

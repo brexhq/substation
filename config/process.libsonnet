@@ -68,7 +68,7 @@
     type: 'delete',
     settings: {
       condition: { operator: condition_operator, inspectors: condition_inspectors},
-      input: input,
+      input_key: input,
     },
   },
   domain(input, output, _function, 
@@ -101,7 +101,7 @@
     type: 'expand',
     settings: {
       condition: { operator: condition_operator, inspectors: condition_inspectors},
-      input: input,
+      input_key: input,
     },
   },
   flatten(input, output, 
@@ -157,7 +157,7 @@
     settings: {
       options: { value: value },
       condition: { operator: condition_operator, inspectors: condition_inspectors},
-      output: output,
+      output_key: output,
     },
   },
   lambda(input, output, _function, 

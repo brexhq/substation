@@ -41,6 +41,16 @@ var getTests = []struct {
 		test:     []byte(`{"foo":false}`),
 		expected: false,
 	},
+	{
+		name: "multi-line",
+		key:  "foo",
+		test: []byte(`{
+"foo":
+"string"
+}
+`),
+		expected: "string",
+	},
 }
 
 func TestGetJson(t *testing.T) {

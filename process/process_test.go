@@ -3,17 +3,20 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/internal/config"
 )
 
-var processTests = []struct {
+var processByteTests = []struct {
+	name     string
 	conf     []config.Config
 	test     []byte
 	expected []byte
 }{
 	{
+		"copy",
 		[]config.Config{
 			{
 				Type: "copy",
@@ -26,6 +29,7 @@ var processTests = []struct {
 		[]byte(`{"foo":"bar"}`),
 	},
 	{
+		"insert",
 		[]config.Config{
 			{
 				Type: "insert",
@@ -41,6 +45,7 @@ var processTests = []struct {
 		[]byte(`{"hello":"world","foo":"bar"}`),
 	},
 	{
+		"gzip",
 		[]config.Config{
 			{
 				Type: "gzip",
@@ -55,6 +60,7 @@ var processTests = []struct {
 		[]byte(`{"hello":"goodbye"}`),
 	},
 	{
+		"base64",
 		[]config.Config{
 			{
 				Type: "base64",
@@ -69,6 +75,24 @@ var processTests = []struct {
 		[]byte(`{"hello":"world"}`),
 	},
 	{
+		"split",
+		[]config.Config{
+			{
+				Type: "split",
+				Settings: map[string]interface{}{
+					"options": map[string]interface{}{
+						"separator": ".",
+					},
+					"input_key":  "foo",
+					"output_key": "foo",
+				},
+			},
+		},
+		[]byte(`{"foo":"bar.baz"}`),
+		[]byte(`{"foo":["bar","baz"]}`),
+	},
+	{
+		"time",
 		[]config.Config{
 			{
 				Type: "pretty_print",
@@ -107,7 +131,7 @@ var processTests = []struct {
 func TestByterAll(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range processTests {
+	for _, test := range processByteTests {
 		byters, err := MakeAllByters(test.conf)
 		if err != nil {
 			t.Log(err)
@@ -128,127 +152,188 @@ func TestByterAll(t *testing.T) {
 }
 
 func TestByterFactory(t *testing.T) {
-	ctx := context.TODO()
-
-	for _, test := range processTests {
-		conf := test.conf[0]
-		byter, err := ByterFactory(conf)
+	for _, test := range processByteTests {
+		_, err := ByterFactory(test.conf[0])
 		if err != nil {
 			t.Log(err)
-			t.Fail()
-		}
-
-		processed, err := byter.Byte(ctx, test.test)
-		if err != nil {
-			t.Log(err)
-			t.Fail()
-		}
-
-		if c := bytes.Compare(processed, test.expected); c != 0 {
-			t.Logf("expected %v, got %v", test.expected, processed)
 			t.Fail()
 		}
 	}
 }
 
+func benchmarkByterFactory(b *testing.B, conf config.Config) {
+	for i := 0; i < b.N; i++ {
+		ByterFactory(conf)
+	}
+}
+
+func BenchmarkByterFactory(b *testing.B) {
+	for _, test := range processByteTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkByterFactory(b, test.conf[0])
+			},
+		)
+	}
+}
+
+func benchmarkByte(b *testing.B, conf []config.Config, data []byte) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		byters, _ := MakeAllByters(conf)
+		Byte(ctx, byters, data)
+	}
+}
+
+func BenchmarkByte(b *testing.B) {
+	for _, test := range processByteTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkByte(b, test.conf, test.test)
+			},
+		)
+	}
+}
+
+var processSliceTests = []struct {
+	name     string
+	conf     []config.Config
+	test     [][]byte
+	expected [][]byte
+	err      error
+}{
+	{
+		"aggregate",
+		[]config.Config{
+			{
+				Type: "aggregate",
+				Settings: map[string]interface{}{
+					"options": map[string]interface{}{
+						"aggregate_key": "foo",
+					},
+					"output_key": "aggregate.-1",
+				},
+			},
+			{
+				Type: "copy",
+				Settings: map[string]interface{}{
+					"input_key":  "aggregate.#",
+					"output_key": "aggregate.0.count",
+				},
+			},
+			{
+				Type: "copy",
+				Settings: map[string]interface{}{
+					"input_key": "aggregate.0",
+				},
+			},
+		},
+		[][]byte{
+			[]byte(`{"foo":"bar"}`),
+			[]byte(`{"foo":"baz"}`),
+			[]byte(`{"foo":"bar"}`),
+			[]byte(`{"foo":"qux"}`),
+			[]byte(`{"foo":"bar"}`),
+			[]byte(`{"foo":"qux"}`),
+		},
+		[][]byte{
+			[]byte(`{"foo":"bar","count":3}`),
+			[]byte(`{"foo":"baz","count":1}`),
+			[]byte(`{"foo":"qux","count":2}`),
+		},
+		nil,
+	},
+	{
+		"split",
+		[]config.Config{
+			{
+				Type: "split",
+				Settings: map[string]interface{}{
+					"options": map[string]interface{}{
+						"separator": `\n`,
+					},
+				},
+			},
+		},
+		[][]byte{
+			[]byte(`foo\nbar\nbaz`),
+		},
+		[][]byte{
+			[]byte(`foo`),
+			[]byte(`bar`),
+			[]byte(`baz`),
+		},
+		nil,
+	},
+}
+
 func TestSlice(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range processTests {
-		slice := make([][]byte, 1, 1)
-		slice[0] = test.test
-
+	for _, test := range processSliceTests {
 		slicers, err := MakeAllSlicers(test.conf)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		processed, err := Slice(ctx, slicers, slice)
-		if err != nil {
+		res, err := Slice(ctx, slicers, test.test)
+		if err != nil && errors.Is(err, test.err) {
+			continue
+		} else if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		if c := bytes.Compare(processed[0], test.expected); c != 0 {
-			t.Logf("expected %v, got %v", test.expected, processed)
-			t.Fail()
+		for i, processed := range res {
+			expected := test.expected[i]
+			if c := bytes.Compare(expected, processed); c != 0 {
+				t.Logf("expected %s, got %s", expected, string(processed))
+				t.Fail()
+			}
 		}
 	}
 }
 
-func TestSliceFactory(t *testing.T) {
-	ctx := context.TODO()
-
-	for _, test := range processTests {
-		slice := make([][]byte, 1, 1)
-		slice[0] = test.test
-
-		conf := test.conf[0]
-		slicer, err := SlicerFactory(conf)
-		if err != nil {
-			t.Log(err)
-			t.Fail()
-		}
-
-		processed, err := slicer.Slice(ctx, slice)
-		if err != nil {
-			t.Log(err)
-			t.Fail()
-		}
-
-		if c := bytes.Compare(processed[0], test.expected); c != 0 {
-			t.Logf("expected %v, got %v", test.expected, processed)
-			t.Fail()
-		}
-	}
-}
-
-func BenchmarkByterFactory(b *testing.B) {
+func benchmarkSlice(b *testing.B, conf []config.Config, data [][]byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter, err := ByterFactory(processTests[0].conf[0])
-		if err != nil {
-			b.Log(err)
-			b.Fail()
-		}
-
-		byter.Byte(ctx, processTests[0].test)
+		slicers, _ := MakeAllSlicers(conf)
+		Slice(ctx, slicers, data)
 	}
 }
 
-var byter, _ = ByterFactory(processTests[0].conf[0])
+func BenchmarkSlice(b *testing.B) {
+	for _, test := range processSliceTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkSlice(b, test.conf, test.test)
+			},
+		)
+	}
+}
 
-func BenchmarkByte(b *testing.B) {
-	ctx := context.TODO()
+func TestSlicerFactory(t *testing.T) {
+	for _, test := range processSliceTests {
+		_, err := SlicerFactory(test.conf[0])
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
+	}
+}
+
+func benchmarkSlicerFactory(b *testing.B, conf config.Config) {
 	for i := 0; i < b.N; i++ {
-		byter.Byte(ctx, processTests[0].test)
+		SlicerFactory(conf)
 	}
 }
 
 func BenchmarkSlicerFactory(b *testing.B) {
-	slice := make([][]byte, 1, 1)
-	slice[0] = processTests[0].test
-
-	ctx := context.TODO()
-	for i := 0; i < b.N; i++ {
-		slicer, err := SlicerFactory(processTests[0].conf[0])
-		if err != nil {
-			b.Log(err)
-			b.Fail()
-		}
-
-		slicer.Slice(ctx, slice)
-	}
-}
-
-var slicer, _ = SlicerFactory(processTests[0].conf[0])
-
-func BenchmarkSlice(b *testing.B) {
-	slice := make([][]byte, 1, 1)
-	slice[0] = processTests[0].test
-
-	ctx := context.TODO()
-	for i := 0; i < b.N; i++ {
-		slicer.Slice(ctx, slice)
+	for _, test := range processSliceTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				benchmarkSlicerFactory(b, test.conf[0])
+			},
+		)
 	}
 }

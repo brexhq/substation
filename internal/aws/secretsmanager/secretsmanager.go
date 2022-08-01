@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-xray-sdk-go/xray"
 )
 
-//New creates and returns a new session connection to Secrets manager
+// New returns a configured Secrets Manager client.
 func New() *secretsmanager.SecretsManager {
 	conf := aws.NewConfig()
 
@@ -40,22 +40,22 @@ func New() *secretsmanager.SecretsManager {
 	return c
 }
 
-// API wraps a secrets manager client interface
+// API wraps the Secrets Manager API interface.
 type API struct {
 	Client secretsmanageriface.SecretsManagerAPI
 }
 
-// Setup creates a secrets manager client
+// Setup creates a new Secrets Manager client.
 func (a *API) Setup() {
 	a.Client = New()
 }
 
-// IsEnabled checks if the client is set
+// IsEnabled returns true if the client is enabled and ready for use.
 func (a *API) IsEnabled() bool {
 	return a.Client != nil
 }
 
-// GetSecret wraps AWS SecretsManager GetSecretValue API
+// GetSecret is a convenience wrapper for getting a secret from Secrets Manager.
 func (a *API) GetSecret(ctx aws.Context, secretName string) (secret string, err error) {
 	input := &secretsmanager.GetSecretValueInput{
 		SecretId:     aws.String(secretName),

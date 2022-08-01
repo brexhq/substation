@@ -92,6 +92,24 @@ var processByteTests = []struct {
 		[]byte(`{"foo":["bar","baz"]}`),
 	},
 	{
+		"pretty_print",
+		[]config.Config{
+			{
+				Type: "pretty_print",
+				Settings: map[string]interface{}{
+					"options": map[string]interface{}{
+						"direction": "to",
+					},
+				},
+			},
+		},
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{
+  "foo": "bar"
+}
+`),
+	},
+	{
 		"time",
 		[]config.Config{
 			{

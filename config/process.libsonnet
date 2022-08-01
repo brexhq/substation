@@ -188,6 +188,14 @@
       input_key: input, output_key: output,
     },
   },
+  pretty_print(direction,
+               condition_operator='', condition_inspectors=[]): {
+    type: 'pretty_print',
+    settings: {
+      options: { direction: direction },
+      condition: { operator: condition_operator, inspectors: condition_inspectors},
+    },
+  },
   replace(input, output, old, new, 
           count=-1, 
           condition_operator='', condition_inspectors=[]): {

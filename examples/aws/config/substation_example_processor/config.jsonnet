@@ -1,4 +1,4 @@
-local sinklib = import '../../../config/sink.libsonnet';
+local sinklib = import '../../../../config/sink.libsonnet';
 
 local event = import './event.libsonnet';
 

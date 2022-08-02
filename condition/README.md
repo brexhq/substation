@@ -4,7 +4,7 @@ Contains interfaces and methods for evaluating data for success or failure crite
 - evaluating JSON values
 - evaluating bytes
 
-The package can be used like this:
+The package can be used like this ([more examples are also available](/examples/condition/)):
 
 ```go
 package main

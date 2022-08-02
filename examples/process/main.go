@@ -1,29 +1,25 @@
+// example of reading data from a file and applying a single processor
 package main
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/process"
 )
 
 func main() {
-	cfg := []byte(`{
-		"settings": {
-			"output_key": "baz",
-			"options": {
-				"value": "qux"
-			}
-		},
-		"type": "insert"
-	 }`)
+	cfg, err := os.ReadFile("./config.json")
+	if err != nil {
+		panic(err)
+	}
 
 	// unmarshal JSON object into Substation config
 	var sub config.Config
-	err := json.Unmarshal(cfg, &sub)
-	if err != nil {
+	if err := json.Unmarshal(cfg, &sub); err != nil {
 		panic(err)
 	}
 
@@ -33,8 +29,10 @@ func main() {
 		panic(err)
 	}
 
-	data := []byte(`{"foo":"bar"}`)
-	fmt.Println(string(data))
+	data, err := os.ReadFile("./data.json")
+	if err != nil {
+		panic(err)
+	}
 
 	// inserts "qux" into key "baz"
 	data, err = byter.Byte(context.TODO(), data)

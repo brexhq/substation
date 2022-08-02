@@ -149,11 +149,10 @@ $ sh build/config/compile.sh
 
 ### Step 3: Test Substation
 
-From the project root, run the commands below to create a sample events file and test Substation. After this, we recommend reviewing the [config](/config/) documentation and running more tests with other event processors to learn how the app works.
+From the project root, run the command below to test Substation. After this, we recommend reviewing the [config](/config/) documentation and running more tests with other event processors to learn how the app works.
 
 ```bash
-$ echo '{"hello":"world"}' > quickstart.json
-$ ./cmd/file/substation/substation -input quickstart.json -config examples/quickstart/config.json
+$ ./cmd/file/substation/substation -input examples/quickstart/data.json -config examples/quickstart/config.json
 ```
 
 ### Step 4: Test Substation in AWS

@@ -1,3 +1,12 @@
+# Ignore all
+*
+
+# Unignore all with extensions
+!*.*
+
+# Unignore all dirs
+!*/
+
 # CHANGELOG is handled by Release Please
 CHANGELOG.md
 
@@ -7,6 +16,10 @@ CHANGELOG.md
 !.devcontainer/devcontainer.json
 # allow Visual Studio Code settings config file
 !.vscode/settings.json
+# allow static JSON files in the examples/ directory
+!examples/condition/data.json
+!examples/*/data.json
+!examples/quickstart/data.json
 
 # Archive files
 *.zip

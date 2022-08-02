@@ -1,27 +1,24 @@
+// example of reading data from a file and applying a inspector
 package main
 
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
 func main() {
-	cfg := []byte(`{
-		"settings": {
-			"key": "foo",
-			"expression": "bar",
-			"function": "equals"
-		},
-		"type": "strings"
-	 }`)
+	cfg, err := os.ReadFile("./config.json")
+	if err != nil {
+		panic(err)
+	}
 
 	// unmarshal JSON object into Substation config
 	var sub config.Config
-	err := json.Unmarshal(cfg, &sub)
-	if err != nil {
+	if err := json.Unmarshal(cfg, &sub); err != nil {
 		panic(err)
 	}
 
@@ -31,7 +28,11 @@ func main() {
 		panic(err)
 	}
 
-	data := []byte(`{"foo":"bar"}`)
+	data, err := os.ReadFile("./data.json")
+	if err != nil {
+		panic(err)
+	}
+
 	ok, err := inspector.Inspect(data)
 	if err != nil {
 		panic(err)

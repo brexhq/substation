@@ -4,7 +4,7 @@
 ################################################
 
 module "s3_example_processed_sink" {
-  source  = "./modules/s3"
+  source  = "/workspaces/substation/build/terraform/aws/s3"
   kms_arn = module.kms_substation.arn
   bucket  = "substation-example-processed"
 }
@@ -15,7 +15,7 @@ module "s3_example_processed_sink" {
 ################################################
 
 module "lambda_example_processed_s3_sink" {
-  source        = "./modules/lambda"
+  source        = "/workspaces/substation/build/terraform/aws/lambda"
   function_name = "substation_example_processed_s3_sink"
   description   = "Substation Lambda that is triggered from the processed Kinesis stream and writes data to S3"
   appconfig_id  = aws_appconfig_application.substation.id
@@ -48,14 +48,14 @@ resource "aws_lambda_event_source_mapping" "lambda_esm_example_processed_s3_sink
 ################################################
 
 module "iam_lambda_example_processed_s3_sink_write" {
-  source = "./modules/iam"
+  source = "/workspaces/substation/build/terraform/aws/iam"
   resources = [
     "${module.s3_example_processed_sink.arn}/*",
   ]
 }
 
 module "iam_lambda_example_processed_s3_sink_write_attachment" {
-  source = "./modules/iam_attachment"
+  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
   id     = "${module.lambda_example_processed_s3_sink.name}_write"
   policy = module.iam_lambda_example_processed_s3_sink_write.s3_write_policy
   roles = [

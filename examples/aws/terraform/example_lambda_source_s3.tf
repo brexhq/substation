@@ -4,7 +4,7 @@
 ################################################
 
 module "s3_example_source" {
-  source  = "./modules/s3"
+  source  = "/workspaces/substation/build/terraform/aws/s3"
   kms_arn = module.kms_substation.arn
   bucket  = "substation-example-source"
 }
@@ -15,7 +15,7 @@ module "s3_example_source" {
 ################################################
 
 module "lambda_example_s3_source" {
-  source        = "./modules/lambda"
+  source        = "/workspaces/substation/build/terraform/aws/lambda"
   function_name = "substation_example_s3_source"
   description   = "Substation Lambda that is triggered from S3 and writes data to the raw Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id
@@ -69,14 +69,14 @@ resource "aws_lambda_permission" "lambda_example_s3_source" {
 }
 
 module "iam_lambda_example_s3_source_read" {
-  source = "./modules/iam"
+  source = "/workspaces/substation/build/terraform/aws/iam"
   resources = [
     "${module.s3_example_source.arn}/*",
   ]
 }
 
 module "iam_lambda_example_s3_source_read_attachment" {
-  source = "./modules/iam_attachment"
+  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
   id     = "${module.lambda_example_s3_source.name}_s3_read"
   policy = module.iam_lambda_example_s3_source_read.s3_read_policy
   roles = [

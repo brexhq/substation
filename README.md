@@ -141,7 +141,7 @@ $ ./substation -h
 
 ### Step 2: Compile the quickstart Configuration File
 
-From the project root, run the commands below to compile the [quickstart Jsonnet configuration files](configs/quickstart) into a Substation JSON config.
+From the project root, run the command below to compile the [quickstart Jsonnet configuration files](examples/quickstart/) into a Substation JSON config.
 
 ```bash
 $ sh build/config/compile.sh
@@ -149,25 +149,25 @@ $ sh build/config/compile.sh
 
 ### Step 3: Test Substation
 
-From the project root, run the commands below to create a sample events file and test Substation. After this, we recommend reviewing the [configs](configs/) documentation and running more tests with other event processors to learn how the app works.
+From the project root, run the commands below to create a sample events file and test Substation. After this, we recommend reviewing the [config](/config/) documentation and running more tests with other event processors to learn how the app works.
 
 ```bash
-$ echo '{"hello":"world"}' >> quickstart.json
-$ ./cmd/file/substation/substation -input quickstart.json -config configs/quickstart/config.json
+$ echo '{"hello":"world"}' > quickstart.json
+$ ./cmd/file/substation/substation -input quickstart.json -config examples/quickstart/config.json
 ```
 
 ### Step 4: Test Substation in AWS
 
-Navigate to the [build](build/) directory and review the `terraform`, `container`, and `config` documentation. [build/terraform/aws/](build/terraform/aws/) contains a fully-featured data pipeline that can be used as an example of how to deploy pipelines in AWS.
+The [examples/aws](/examples/aws/) directory contains a fully-featured data pipeline that can be used as an example of how to deploy custom pipelines in AWS.
 
 ## Additional Documentation
 
 More documentation about Substation can be found across the project, including:
 
-- [Configuration Syntax](configs/)
-- [Deploying to AWS](build/terraform/aws/)
-- [Using Conditions to Evaluate JSON Objects](condition/)
-- [Using Processors to Modify JSON Objects](process/)
+- [Configuration Syntax](/config/)
+- [Deploying to AWS](/examples/aws/)
+- [Using Conditions to Evaluate JSON Objects](/condition/)
+- [Using Processors to Modify JSON Objects](/process/)
 
 ## Licensing
 

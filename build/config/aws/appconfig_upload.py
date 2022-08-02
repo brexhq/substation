@@ -1,6 +1,6 @@
 # manages upload and deployment of Substation configurations in AWS AppConfig
-# this script is intended to be deployed to CI/CD pipelines (e.g., GitHb Actions, Circle CI, Jenkins, etc.) for automated config management
-# example invocation: APPCONFIG_APPLICATION_NAME=substation APPCONFIG_ENVIRONMENT=prod APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 build/config/config.py
+# this script is intended to be deployed to a CI/CD pipeline (e.g., GitHub Actions, Circle CI, Jenkins, etc.) for automated config management
+# example invocation: SUBSTATION_CONFIG_DIRECTORY=examples APPCONFIG_APPLICATION_NAME=substation APPCONFIG_ENVIRONMENT=prod APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 build/config/aws/appconfig_upload.py
 
 import json
 import os
@@ -26,6 +26,11 @@ def main():
     strategy_name = os.environ.get("APPCONFIG_DEPLOYMENT_STRATEGY")
     if not strategy_name:
         print(f"environment variable APPCONFIG_DEPLOYMENT_STRATEGY missing")
+        return
+
+    configs = os.environ.get("SUBSTATION_CONFIG_DIRECTORY")
+    if not configs:
+        print(f"environment variable SUBSTATION_CONFIG_DIRECTORY missing")
         return
 
     applications = client.list_applications()
@@ -88,12 +93,12 @@ def main():
         if items:
             profile_versions[profile] = items[0].get("VersionNumber")
 
-    # file_map is populated with entries that match this pattern (observed from the project root):
-    #   substation_example_dynamodb = config/example/substation_example_dynamodb/config.json
-    #   substation_example_kinesis = config/example/substation_example_kinesis/config.json
-    #   substation_autoscaling = config/substation_autoscaling/config.json
+    # file_map is populated with entries that match this pattern:
+    #   substation_example_dynamodb = examples/aws/config/substation_example_dynamodb/config.json
+    #   substation_example_kinesis = examples/aws/config/substation_example_kinesis/config.json
+    #   substation_autoscaling = examples/aws/config/substation_autoscaling/config.json
     file_map = {}
-    for r, d, f in os.walk("config"):
+    for r, d, f in os.walk(configs):
         for file_ in f:
             if file_ == "config.json":
                 path = r.split("/")[-1]

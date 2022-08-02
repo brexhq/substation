@@ -8,6 +8,6 @@ Used for uploading and deploying compiled Substation JSON config files to AWS Ap
 
 - boto3 must be installed
 - AWS credentials for reading and writing to AppConfig
-- AppConfig infrastructure should be built using `build/terraform/aws/bootstrap.tf` (or similar settings should be managed externally)
+- AppConfig infrastructure must be ready to use (see [examples/aws/terraform/bootstrap.tf](/examples/aws/terraform/bootstrap.tf) for an example)
 
-This script is designed to run in a CI/CD tool such as GitHub Actions (but can be run locally if needed) and should be executed from the project root: `python3 build/config/aws/appconfig_upload.py`.
+This script is intended to be deployed to a CI / CD pipeline (e.g., GitHub Actions, Circle CI, Jenkins, etc.), but can be run locally if needed. See [examples/aws/](/examples/aws/) for example usage.

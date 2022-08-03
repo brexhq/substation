@@ -9,7 +9,7 @@ module "kinesis_example_raw" {
   autoscaling_topic = aws_sns_topic.autoscaling_topic.arn
 
   tags = {
-    "Owner" = "example"
+    owner = "example"
   }
 }
 
@@ -37,7 +37,6 @@ module "iam_example_kinesis_raw_read_attachment" {
 
 ################################################
 ## raw data stream write permissions
-## all source Lambda must have this policy
 ################################################
 
 module "iam_example_kinesis_raw_write" {
@@ -54,7 +53,7 @@ module "iam_example_kinesis_raw_write_attachment" {
   roles = [
     module.lambda_example_gateway_source.role,
     module.lambda_example_s3_source.role,
-    module.example_gateway_kinesis.role,
+    module.gateway_example_kinesis_source.role,
   ]
 }
 
@@ -67,11 +66,14 @@ module "kinesis_example_processed" {
   kms_key_id        = module.kms_substation.arn
   stream_name       = "substation_example_processed"
   autoscaling_topic = aws_sns_topic.autoscaling_topic.arn
+
+  tags = {
+    owner = "example"
+  }
 }
 
 ################################################
 ## processed data stream read permissions
-## all sink Lambda must have this policy
 ################################################
 
 module "iam_example_kinesis_processed_read" {
@@ -93,7 +95,6 @@ module "iam_example_kinesis_processed_read_attachment" {
 
 ################################################
 ## processed data stream write permissions
-## by default, only the processor Lambda should have this policy
 ################################################
 
 module "iam_example_kinesis_processed_write" {

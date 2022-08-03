@@ -30,7 +30,7 @@ module "lambda_example_s3_source" {
     "SUBSTATION_DEBUG" : 1
   }
   tags = {
-    "Owner" = "example"
+    owner = "example"
   }
 
   depends_on = [

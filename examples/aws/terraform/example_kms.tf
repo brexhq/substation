@@ -23,7 +23,7 @@ module "iam_example_kms_read_attachment" {
     module.lambda_example_raw_s3_sink.role,
     module.lambda_example_gateway_source.role,
     module.lambda_example_s3_source.role,
-    module.example_gateway_kinesis.role,
+    module.gateway_example_kinesis_source.role,
   ]
 }
 
@@ -40,7 +40,7 @@ module "iam_example_kms_write" {
   ]
 }
 
-module "example_kms_write_attachment" {
+module "iam_example_kms_write_attachment" {
   source = "/workspaces/substation/build/terraform/aws/iam_attachment"
   id     = "substation_example_kms_write"
   policy = module.iam_example_kms_write.kms_write_policy
@@ -52,6 +52,6 @@ module "example_kms_write_attachment" {
     module.lambda_example_raw_s3_sink.role,
     module.lambda_example_gateway_source.role,
     module.lambda_example_s3_source.role,
-    module.example_gateway_kinesis.role,
+    module.gateway_example_kinesis_source.role,
   ]
 }

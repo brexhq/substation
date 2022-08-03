@@ -37,7 +37,7 @@ module "lambda_example_dynamodb_sink" {
     "SUBSTATION_DEBUG" : 1
   }
   tags = {
-    "Owner" = "example"
+    owner = "example"
   }
 }
 

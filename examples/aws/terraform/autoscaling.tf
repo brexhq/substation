@@ -3,8 +3,9 @@
 resource "aws_sns_topic" "autoscaling_topic" {
   name              = "substation_autoscaling"
   kms_master_key_id = module.kms_substation.key_id
+
   tags = {
-    "Owner" : "example",
+    owner = "example"
   }
 }
 
@@ -22,7 +23,7 @@ module "lambda_autoscaling" {
     AWS_APPCONFIG_EXTENSION_PREFETCH_LIST : "/applications/substation/environments/prod/configurations/substation_autoscaling"
   }
   tags = {
-    "Owner" : "example",
+    owner = "example"
   }
 
   depends_on = [

@@ -30,7 +30,7 @@ module "lambda_example_raw_s3_sink" {
     "SUBSTATION_DEBUG" : 1
   }
   tags = {
-    "Owner" = "example"
+    owner = "example"
   }
 }
 

@@ -19,7 +19,7 @@ module "lambda_example_processor" {
     "SUBSTATION_DEBUG" : 1
   }
   tags = {
-    "Owner" = "example"
+    owner = "example"
   }
 }
 

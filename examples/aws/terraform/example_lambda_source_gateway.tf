@@ -3,7 +3,7 @@
 # sends data to Lambda
 ################################################
 
-module "example_gateway_lambda" {
+module "gateway_example_lambda_source" {
   source       = "/workspaces/substation/build/terraform/aws/api_gateway/lambda"
   name         = "substation_lambda_example"
   function_arn = module.lambda_example_gateway_source.arn
@@ -30,6 +30,6 @@ module "lambda_example_gateway_source" {
     "SUBSTATION_DEBUG" : 1
   }
   tags = {
-    "Owner" = "example"
+    owner = "example"
   }
 }

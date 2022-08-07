@@ -129,30 +129,40 @@ As a toolkit, Substation makes no assumptions about how data pipelines are confi
 
 Users can use the steps below to test Substation's functionality. We recommend doing the steps below in a Docker container (we've included [Visual Studio Code configurations](https://code.visualstudio.com/docs/remote/containers) for developing and testing Substation in `.devcontainer/` and `.vscode/`).
 
-### Step 1: Compile the File Binary
-
-From the project root, run the commands below to compile the Substation `file` app.
+### Step 0: Set Environment Variable
 
 ```bash
-$ cd cmd/file/substation/
-$ go build .
-$ ./substation -h
+export SUBSTATION_ROOT=/path/to/repository
+```
+
+### Step 1: Compile the File Binary
+
+Run the commands below to compile the Substation `file` app.
+
+```bash
+cd $SUBSTATION_ROOT/cmd/file/substation/ && \
+go build . && \
+./substation -h
 ```
 
 ### Step 2: Compile the quickstart Configuration File
 
-From the project root, run the command below to compile the [quickstart Jsonnet configuration files](examples/quickstart/) into a Substation JSON config.
+Run the command below to compile the [quickstart Jsonnet configuration files](examples/quickstart/) into a Substation JSON config.
 
 ```bash
-$ sh build/config/compile.sh
+cd $SUBSTATION_ROOT && \
+sh build/config/compile.sh
 ```
 
 ### Step 3: Test Substation
 
-From the project root, run the command below to test Substation. After this, we recommend reviewing the [config](/config/) documentation and running more tests with other event processors to learn how the app works.
+Run the command below to test Substation. 
+
+After this, we recommend reviewing the [config](/config/) documentation and running more tests with other event processors to learn how the app works.
 
 ```bash
-$ ./cmd/file/substation/substation -input examples/quickstart/data.json -config examples/quickstart/config.json
+cd $SUBSTATION_ROOT && \
+./cmd/file/substation/substation -input examples/quickstart/data.json -config examples/quickstart/config.json
 ```
 
 ### Step 4: Test Substation in AWS

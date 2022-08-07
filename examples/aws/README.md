@@ -45,16 +45,17 @@ graph TD
 
 ### notes
 
-- First time deployments will fail due to missing images in ECR; if this is a first time deployment, then ignore any Terraform errors related to Lambda + ECR invalid source images and work through step 5
+- First time deployments will fail due to missing images in ECR
+  - If this is a first time deployment, then ignore any Terraform errors related to Lambda + ECR invalid source images and work through step 6
 - Lambda are deployed on the [arm64 architecture](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html)
-  - if arm64 isn't preferred, then switch to the x86 architecture by changing the AWS_ARCHITECTURE environment variable to `x86_64`
+  - If arm64 isn't preferred, then switch to the x86 architecture by changing the AWS_ARCHITECTURE environment variable and all Terraform Lambda architectures to `x86_64`
 - ECR images are tagged `latest` -- we strongly recommend tagging production images with Substation's version number
   - `docker tag substation:latest-$AWS_ARCHITECTURE $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation:$(git describe --abbrev=0 --tags)`
 - Large deployments require complex Terraform configurations, so we recommend the following naming convention: `[pipeline name]_[AWS service]_[sink|source|processor]_[short_description].tf`
 
 ### steps
 
-0. Setup environment variables
+0. Set Environment Variables
 ```bash
 export SUBSTATION_ROOT=/path/to/repository
 export AWS_ACCOUNT_ID=[AWS_ACCOUNT_ID]
@@ -64,26 +65,26 @@ export AWS_DEFAULT_REGION=$AWS_REGION
 export AWS_ARCHITECTURE=arm64
 ```
 
-1. Bootstrap the infrastructure: 
+1. Bootstrap the Infrastructure
 ```bash
 cd $SUBSTATION_ROOT/examples/aws/terraform && \
 terraform init && \
 terraform apply
 ```
 
-2. Build the configurations: 
+2. Build the Configurations
 ```bash
 cd $SUBSTATION_ROOT && \
 sh build/config/compile.sh
 ```
 
-3. Upload the configurations:
+3. Upload the Configurations
 ```bash
 cd $SUBSTATION_ROOT && \
 SUBSTATION_CONFIG_DIRECTORY=examples/aws/ APPCONFIG_APPLICATION_NAME=substation APPCONFIG_ENVIRONMENT=prod APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 build/config/aws/appconfig_upload.py
 ```
 
-3. Build the containers:
+4. Build the Containers
 ```bash
 cd $SUBSTATION_ROOT && \
 sh build/scripts/aws/lambda/get_appconfig_extension.sh && \
@@ -94,7 +95,7 @@ docker tag substation_autoscaling:latest-$AWS_ARCHITECTURE $AWS_ACCOUNT_ID.dkr.e
 docker images
 ```
 
-4. Upload the containers:
+5. Upload the Containers
 ```bash
 cd $SUBSTATION_ROOT && \
 sh build/scripts/aws/ecr_login.sh && \
@@ -102,7 +103,7 @@ docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation:latest 
 docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation_autoscaling:latest
 ```
 
-5. Finish deploying infrastructure:
+6. Finish Deploying Infrastructure
 ```bash
 cd $SUBSTATION_ROOT/examples/aws/terraform && \
 terraform init && \
@@ -118,7 +119,7 @@ terraform apply
 
 ## config
 
-These examples follow the best practices described in [config/](/config/).
+These examples follow the best practices described in [config](/config/).
 
 ## terraform
 
@@ -134,8 +135,8 @@ This file acts as a deployment bootstrap and includes the following:
 
 There are a few things to be aware of when running a fresh deployment:
 
-- Terraform does not manage the build and deployment of container images; after the image repositories are created, then container build and upload should happen externally via Docker (see [build/container/aws/](/build/container/aws/) for more information)
-- Terraform does not manage the application configurations; after the AppConfig application is created, then hosted configurations should be compiled and uploaded (see [build/config/](/build/config/) for more information)
+- Terraform does not manage the build and deployment of container images; after the image repositories are created, then container build and upload should happen externally via Docker (see [build/container](/build/container/) for more information)
+- Terraform does not manage the application configurations; after the AppConfig application is created, then hosted configurations should be compiled and uploaded (see [build/config](/build/config/) for more information)
   - As a best practice, we recommend using the "prod" environment for production data pipelines and the "dev" environment for development data pipelines
 - "instant deployment" is useful for immediately deploying net-new data pipelines
 

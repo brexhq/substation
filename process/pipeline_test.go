@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/brexhq/substation/internal/config"
+	"github.com/brexhq/substation/config"
 )
 
 var PipelineTests = []struct {

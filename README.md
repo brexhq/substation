@@ -1,14 +1,14 @@
 # Substation
 
-Substation is a cloud native data pipeline toolkit.
+Substation is a toolkit for creating highly configurable, no maintenance, and cost efficient serverless data pipelines.
 
 ## What is Substation?
 
-Substation is a modular ingest, transform, load (ITL) application for moving data between distributed systems. Originally designed to collect, normalize, and enrich security event data, the application provides methods for achieving [high quality data](https://en.wikipedia.org/wiki/Data_quality#Definitions) through interconnected data pipelines.
+Originally designed to collect, normalize, and enrich security event data, Substation provides methods for achieving [high quality data](https://en.wikipedia.org/wiki/Data_quality#Definitions) through interconnected, serverless data pipelines.
 
 Substation also provides Go packages for filtering and modifying JSON data.
 
-### Features
+## Features
 
 As an event-driven ITL application, Substation has these features:
 
@@ -25,7 +25,7 @@ As a package, Substation has these features:
 - [evaluate and filter JSON objects](condition/)
 - [modify data from, to, and in-place as JSON objects](process/)
 
-### Use Cases
+## Use Cases
 
 Substation was originally designed to support the mission of achieving high quality data for threat hunting, threat detection, and incident response, but it can be used to move data between many distributed systems and services. Here are some example use cases:
 
@@ -33,9 +33,9 @@ Substation was originally designed to support the mission of achieving high qual
 - data consistency: normalize data across every dataset using a permissive schema such as the [Elastic Common Schema](https://www.elastic.co/guide/en/ecs/current/index.html)
 - data completeness: enrich data by integrating AWS Lambda functions and building self-populating AWS DynamoDB tables for low latency, real-time event context
 
-### Example Data Pipelines
+## Example Data Pipelines
 
-#### Simple
+### Simple
 
 The simplest data pipeline is one with a single source (ingest), a single transform, and a single sink (load). The diagram below shows pipelines that ingest data from different sources and sink it unmodified to a data warehouse where it can be used for analysis.
 
@@ -67,7 +67,7 @@ graph TD
     processing_b ---|Push| sink
 ```
 
-#### Complex
+### Complex
 
 The complexity of a data pipeline, including its features and how it connects with other pipelines, is up to the user. The diagram below shows two complex data pipelines that have these feature:
 
@@ -129,45 +129,54 @@ As a toolkit, Substation makes no assumptions about how data pipelines are confi
 
 Users can use the steps below to test Substation's functionality. We recommend doing the steps below in a Docker container (we've included [Visual Studio Code configurations](https://code.visualstudio.com/docs/remote/containers) for developing and testing Substation in `.devcontainer/` and `.vscode/`).
 
-### Step 1: Compile the File Binary
-
-From the project root, run the commands below to compile the Substation `file` app.
+### Step 0: Set Environment Variable
 
 ```bash
-$ cd cmd/file/substation/
-$ go build .
-$ ./substation -h
+export SUBSTATION_ROOT=/path/to/repository
+```
+
+### Step 1: Compile the File Binary
+
+Run the commands below to compile the Substation `file` app.
+
+```bash
+cd $SUBSTATION_ROOT/cmd/file/substation/ && \
+go build . && \
+./substation -h
 ```
 
 ### Step 2: Compile the quickstart Configuration File
 
-From the project root, run the commands below to compile the [quickstart Jsonnet configuration files](config/quickstart) into a Substation JSON config.
+Run the command below to compile the [quickstart Jsonnet configuration files](examples/quickstart/) into a Substation JSON config.
 
 ```bash
-$ sh build/config/compile.sh
+cd $SUBSTATION_ROOT && \
+sh build/config/compile.sh
 ```
 
 ### Step 3: Test Substation
 
-From the project root, run the commands below to create a sample events file and test Substation. After this, we recommend reviewing the [config](config/) documentation and running more tests with other event processors to learn how the app works.
+Run the command below to test Substation. 
+
+After this, we recommend reviewing the [config](/config/) documentation and running more tests with other event processors to learn how the app works.
 
 ```bash
-$ echo '{"hello":"world"}' >> quickstart.json
-$ ./cmd/file/substation/substation -input quickstart.json -config config/quickstart/config.json
+cd $SUBSTATION_ROOT && \
+./cmd/file/substation/substation -input examples/quickstart/data.json -config examples/quickstart/config.json
 ```
 
 ### Step 4: Test Substation in AWS
 
-Navigate to the [build](build/) directory and review the `terraform`, `container`, and `config` documentation. [build/terraform/aws/](build/terraform/aws/) contains a fully-featured data pipeline that can be used as an example of how to deploy pipelines in AWS.
+The [examples/aws](/examples/aws/) directory contains a fully-featured data pipeline that can be used as an example of how to deploy custom pipelines in AWS.
 
 ## Additional Documentation
 
 More documentation about Substation can be found across the project, including:
 
-- [Configuration Syntax](config/)
-- [Deploying to AWS](build/terraform/aws/)
-- [Using Conditions to Evaluate JSON Objects](condition/)
-- [Using Processors to Modify JSON Objects](process/)
+- [Configuration Syntax](/config/)
+- [Deploying to AWS](/examples/aws/)
+- [Using Conditions to Evaluate JSON Objects](/condition/)
+- [Using Processors to Modify JSON Objects](/process/)
 
 ## Licensing
 

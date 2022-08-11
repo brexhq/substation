@@ -1,9 +1,10 @@
 # process
 Contains interfaces and methods for atomically processing data. Each processor defines its own data processing patterns, but there are a set of common patterns shared among most processors:
-- processing JSON values, including arrays
+- processing JSON values
+- processing JSON arrays
 - processing bytes
 
-The package can be used like this:
+The package can be used like this ([more examples are also available](/examples/process/)):
 ```go
 package main
 

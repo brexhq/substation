@@ -2,9 +2,12 @@ package cmd
 
 import (
 	"context"
+	"os"
+	"runtime"
+	"strconv"
 	"sync"
 
-	"github.com/brexhq/substation/internal/config"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/log"
 	"github.com/brexhq/substation/internal/sink"
 	"github.com/brexhq/substation/internal/transform"
@@ -138,4 +141,17 @@ func (sub *Substation) Sink(ctx context.Context, wg *sync.WaitGroup) {
 	}
 
 	sub.DoneSignal()
+}
+
+// GetConcurrency retrieves a concurrency value from the SUBSTATION_CONCURRENCY environment variable. If the environment variable is missing, then the concurrency value is the number of CPUs on the operating system. In native Substation applications, this value determines the number of transform goroutines; if set to 1, then multi-core processing is not enabled.
+func GetConcurrency() (int, error) {
+	if val, found := os.LookupEnv("SUBSTATION_CONCURRENCY"); found {
+		v, err := strconv.Atoi(val)
+		if err != nil {
+			return 0, err
+		}
+		return v, nil
+	}
+
+	return runtime.NumCPU(), nil
 }

@@ -1,8 +1,54 @@
 # config
+Contains functions for loading Substation data processing configurations. Substation includes [Jsonnet](https://jsonnet.org/) functions (`*.libsonnet`) to ease the burden of managing large, complex JSON configurations. Jsonnet examples can be found in the [configs/](configs/) directory.
 
-All configuration (config) files for Substation are written in JSON and use of Jsonnet is encouraged due to the complexity of large configs and config reuse. Although we recommend storing Substation configs in a separate Git repository, we've included some global Jsonnet code and example configs to help teams get started.
+The package can be used like this:
+```go
+package main
 
-## jsonnet
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/process"
+)
+
+func main() {
+	cfg := []byte(`{
+		"settings": {
+			"output_key": "foo",
+			"options": {
+				"value": "bar"
+			}
+		},
+		"type": "insert"
+	 }`)
+
+	// unmarshal JSON object into Substation config
+	var sub config.Config
+	err := json.Unmarshal(cfg, &sub)
+	if err != nil {
+		panic(err)
+	}
+
+	// retrieve byter from the factory
+	byter, err := process.ByterFactory(sub)
+	if err != nil {
+		panic(err)
+	}
+
+	// creates a new JSON object by inserting "bar" into key "foo"
+	data, err := byter.Byte(context.TODO(), byte{})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(string(data))
+}
+```
+
+## Jsonnet
 
 Below is a complete example that shows the advantages of Jsonnet over JSON. The Jsonnet code below contains four processors that process S3 object metadata from CloudTrail events and map the data to the Elastic Common Schema. Note that the config uses imported functions and local variables -- these increase config reuse and reduce the chances of error-prone JSON.
 
@@ -231,13 +277,13 @@ Put simply, Jsonnet is easier to use and more manageable than JSON for projects 
 
 ## organization
 
-Substation config files should be organized by pipeline and app using this folder structure: `config/[pipeline]/[app]/`.
+Substation config files should be organized by pipeline and app using a tiered folder structure: `root/[pipeline]/[app]/`.
 
 This folder structure supports three levels of configuration:
 
-- global -- configs used in multiple pipelines, stored in `config/foo.libsonnet`
-- regional -- configs used in multiple apps of a single pipeline, stored in `config/[pipeline]/foo.libsonnet`
-- local -- configs used in one component of a single pipeline, stored in `config/[pipeline]/[app]/foo.libsonnet`
+- global -- configs used in multiple pipelines, stored in `root/foo.libsonnet`
+- regional -- configs used in multiple apps of a single pipeline, stored in `root/[pipeline]/foo.libsonnet`
+- local -- configs used in one component of a single pipeline, stored in `root/[pipeline]/[app]/foo.libsonnet`
 
 Further segmentation of files at the local level is recommended if users want to logically group configs or if a single config becomes too large (the larger the config, the harder it is to understand). For example, configs for processing event data into the [Elastic Common Schema](https://www.elastic.co/guide/en/ecs/current/ecs-field-reference.html) (ECS) are easier to manage if they are logically grouped according to the ECS data model (e.g., `client.*` fields are in `client.libsonnet`, `process.*` fields are in `process.libsonnet`, `user.*` fields are in `user.libsonnet`, etc.).
 

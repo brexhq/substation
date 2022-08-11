@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"runtime"
 	"sync"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -21,6 +20,7 @@ import (
 )
 
 var sub cmd.Substation
+var concurrency int
 var handler string
 
 // LambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
@@ -32,13 +32,13 @@ const LambdaUnsupportedHandler = errors.Error("LambdaUnsupportedHandler")
 func main() {
 	switch h := handler; h {
 	case "GATEWAY":
-		lambda.Start(gateway)
+		lambda.Start(gatewayHandler)
 	case "KINESIS":
 		lambda.Start(kinesisHandler)
 	case "S3":
-		lambda.Start(s3)
+		lambda.Start(s3Handler)
 	case "SNS":
-		lambda.Start(sns)
+		lambda.Start(snsHandler)
 	default:
 		panic(fmt.Errorf("main handler %s: %v", h, LambdaUnsupportedHandler))
 	}
@@ -50,16 +50,23 @@ func init() {
 	if !found {
 		panic(fmt.Errorf("init handler %s: %v", handler, LambdaMissingHandler))
 	}
+
+	// retrieves concurrency value from SUBSTATION_CONCURRENCY environment variable
+	var err error
+	concurrency, err = cmd.GetConcurrency()
+	if err != nil {
+		panic(fmt.Errorf("init concurrency: %v", err))
+	}
 }
 
-func gateway(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(runtime.NumCPU())
+	sub.CreateChannels(concurrency)
 	defer sub.KillSignal()
 
 	go func() {
@@ -96,7 +103,7 @@ func kinesisHandler(ctx context.Context, kinesisEvent events.KinesisEvent) error
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(runtime.NumCPU())
+	sub.CreateChannels(concurrency)
 	defer sub.KillSignal()
 
 	go func() {
@@ -106,7 +113,7 @@ func kinesisHandler(ctx context.Context, kinesisEvent events.KinesisEvent) error
 		sinkWg.Add(1)
 		go sub.Sink(ctx, &sinkWg)
 
-		for w := 0; w <= runtime.NumCPU(); w++ {
+		for w := 0; w <= concurrency; w++ {
 			transformWg.Add(1)
 			go sub.Transform(ctx, &transformWg)
 		}
@@ -139,14 +146,14 @@ func kinesisHandler(ctx context.Context, kinesisEvent events.KinesisEvent) error
 	return nil
 }
 
-func s3(ctx context.Context, s3Event events.S3Event) error {
+func s3Handler(ctx context.Context, s3Event events.S3Event) error {
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return fmt.Errorf("s3 handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(runtime.NumCPU())
+	sub.CreateChannels(concurrency)
 	defer sub.KillSignal()
 
 	go func() {
@@ -159,7 +166,7 @@ func s3(ctx context.Context, s3Event events.S3Event) error {
 		sinkWg.Add(1)
 		go sub.Sink(ctx, &sinkWg)
 
-		for w := 0; w <= runtime.NumCPU(); w++ {
+		for w := 0; w <= concurrency; w++ {
 			transformWg.Add(1)
 			go sub.Transform(ctx, &transformWg)
 		}
@@ -203,14 +210,14 @@ func s3(ctx context.Context, s3Event events.S3Event) error {
 	return nil
 }
 
-func sns(ctx context.Context, snsEvent events.SNSEvent) error {
+func snsHandler(ctx context.Context, snsEvent events.SNSEvent) error {
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return fmt.Errorf("sns handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(runtime.NumCPU())
+	sub.CreateChannels(concurrency)
 	defer sub.KillSignal()
 
 	go func() {
@@ -224,7 +231,7 @@ func sns(ctx context.Context, snsEvent events.SNSEvent) error {
 		sinkWg.Add(1)
 		go sub.Sink(ctx, &sinkWg)
 
-		for w := 0; w <= runtime.NumCPU(); w++ {
+		for w := 0; w <= concurrency; w++ {
 			transformWg.Add(1)
 			go sub.Transform(ctx, &transformWg)
 		}

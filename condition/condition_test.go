@@ -3,7 +3,7 @@ package condition
 import (
 	"testing"
 
-	"github.com/brexhq/substation/internal/config"
+	"github.com/brexhq/substation/config"
 )
 
 // all inspectors must return true for AND to return true

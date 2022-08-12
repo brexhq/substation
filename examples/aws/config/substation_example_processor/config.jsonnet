@@ -6,7 +6,7 @@ local event = import './event.libsonnet';
   sink: sinklib.kinesis(stream='substation_example_processed'),
   // use the process transform to modify data pushed to the processed Kinesis Data Stream; processors are imported and compiled from local libsonnet files
   transform: {
-    type: 'process',
+    type: 'batch',
     settings: {
       processors:
         event.processors

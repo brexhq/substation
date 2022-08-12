@@ -15,6 +15,7 @@ graph TD
     s3_source_bucket(S3 Data Storage)
     s3_lake_bucket(Data Lake S3 Storage)
     s3_warehouse_bucket(Data Warehouse S3 Storage)
+    sqs_queue(SQS Queue)
 
     %% Lambda data processing
     dynamodb_lambda[DynamoDB Sink Lambda]
@@ -24,11 +25,13 @@ graph TD
     s3_warehouse_sink_lambda[S3 Sink Lambda]
     s3_source_lambda[S3 Source Lambda]
     s3_lake_sink_lambda[S3 Sink Lambda]
+    sqs_source_lambda[SQS Source Lambda]
 
     %% ingest
     gateway ---|Push| gateway_lambda ---|Push| kinesis_raw
     gateway_kinesis ---|Push| kinesis_raw
     s3_source_bucket ---|Pull| s3_source_lambda ---|Push| kinesis_raw
+    sqs_queue ---|Pull| sqs_source_lambda ---|Push| kinesis_raw
     kinesis_raw ---|Pull| s3_lake_sink_lambda ---|Push| s3_lake_bucket
 
     %% transform

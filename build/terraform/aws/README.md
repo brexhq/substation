@@ -95,3 +95,9 @@ Read more about S3 [here](https://aws.amazon.com/s3/).
 #### WORM
 
 This module creates a write once, read many (WORM) S3 bucket using [Object Lock](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock-overview.html) and applies the [Compliance](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock-overview.html#object-lock-retention-modes) retention mode setting. Objects written to these buckets _*cannot be deleted*_.
+
+### SQS
+
+This module is used for creating SQS queues. Queues can be standard or first-in-first-out (FIFO).
+
+Read more about SQS [here](https://aws.amazon.com/sqs/).

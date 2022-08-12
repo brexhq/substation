@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 )
@@ -47,5 +48,437 @@ func BenchmarkDecode(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		Decode(BenchmarkCfg.Settings, &instance)
+	}
+}
+
+/*
+Capsule Delete unit testing:
+
+- data and metadata are added to a new Capsule
+
+- JSON value is deleted using key
+
+- JSON values are compared to expected
+*/
+var capsuleDeleteTests = []struct {
+	name             string
+	data             []byte
+	metadata         interface{}
+	dataExpected     []byte
+	metadataExpected []byte
+	key              string
+	err              error
+}{
+	{
+		"data",
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		map[string]interface{}{
+			"quux":   "corge",
+			"grault": "garply",
+		},
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"quux":"corge","grault":"garply"}`),
+		"baz",
+		nil,
+	},
+	{
+		"metadata",
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		map[string]interface{}{
+			"quux":   "corge",
+			"grault": "garply",
+		},
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		[]byte(`{"grault":"garply"}`),
+		"__metadata.quux",
+		nil,
+	},
+	// deletes all metadata
+	{
+		"metadata",
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		map[string]interface{}{
+			"quux":   "corge",
+			"grault": "garply",
+		},
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		[]byte{},
+		"__metadata",
+		nil,
+	},
+}
+
+func TestCapsuleDelete(t *testing.T) {
+	for _, test := range capsuleDeleteTests {
+		cap := NewCapsule()
+		cap.SetData(test.data).SetMetadata(test.metadata)
+
+		cap.Delete(test.key)
+		if bytes.Compare(cap.GetData(), test.dataExpected) != 0 &&
+			bytes.Compare(cap.GetMetadata(), test.metadataExpected) != 0 {
+			t.Logf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, cap.GetData(), cap.GetMetadata())
+			t.Fail()
+		}
+	}
+}
+
+func benchmarkTestCapsuleDelete(b *testing.B, key string, cap Capsule) {
+	for i := 0; i < b.N; i++ {
+		cap.Delete(key)
+	}
+}
+
+func BenchmarkTestCapsuleDelete(b *testing.B) {
+	for _, test := range capsuleSetTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				cap := NewCapsule()
+				cap.SetData(test.data).SetMetadata(test.metadata)
+				benchmarkTestCapsuleDelete(b, test.key, cap)
+			},
+		)
+	}
+}
+
+/*
+Capsule Get unit testing:
+
+- data and metadata are added to a new Capsule
+
+- JSON value is retrieved using key
+
+- JSON value is compared to expected
+*/
+var capsuleGetTests = []struct {
+	name     string
+	data     []byte
+	metadata interface{}
+	expected string
+	key      string
+	err      error
+}{
+	{
+		"data",
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		map[string]interface{}{
+			"quux":   "corge",
+			"grault": "garply",
+		},
+		"bar",
+		"foo",
+		nil,
+	},
+	{
+		"metadata",
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		map[string]interface{}{
+			"quux":   "corge",
+			"grault": "garply",
+		},
+		"corge",
+		"__metadata.quux",
+		nil,
+	},
+	{
+		"metadata",
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		"quux",
+		"quux",
+		"__metadata",
+		nil,
+	},
+}
+
+func TestCapsuleGet(t *testing.T) {
+	for _, test := range capsuleGetTests {
+		cap := NewCapsule()
+		cap.SetData(test.data).SetMetadata(test.metadata)
+
+		result := cap.Get(test.key).String()
+		if result != test.expected {
+			t.Logf("expected %s, got %s", test.expected, result)
+			t.Fail()
+		}
+	}
+}
+
+func benchmarkTestCapsuleGet(b *testing.B, key string, cap Capsule) {
+	for i := 0; i < b.N; i++ {
+		cap.Get(key)
+	}
+}
+
+func BenchmarkTestCapsuleGet(b *testing.B) {
+	for _, test := range capsuleGetTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				cap := NewCapsule()
+				cap.SetData(test.data).SetMetadata(test.metadata)
+				benchmarkTestCapsuleGet(b, test.key, cap)
+			},
+		)
+	}
+}
+
+/*
+Capsule Set unit testing:
+
+- data and metadata are added to a new Capsule
+
+- JSON value is set using key
+
+- JSON values are compared to expected
+*/
+var capsuleSetTests = []struct {
+	name             string
+	data             []byte
+	metadata         interface{}
+	dataExpected     []byte
+	metadataExpected []byte
+	key              string
+	value            interface{}
+	err              error
+}{
+	{
+		"data",
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		map[string]interface{}{
+			"quux":   "corge",
+			"grault": "garply",
+		},
+		[]byte(`{"foo":"bar","baz":"qux","waldo":"fred"}`),
+		[]byte(`{"quux":"corge","grault":"garply"}`),
+		"waldo",
+		"fred",
+		nil,
+	},
+	{
+		"metadata",
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		map[string]interface{}{
+			"quux":   "corge",
+			"grault": "garply",
+		},
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		[]byte(`{"quux":"corge","grault":"garply","waldo":"fred"}`),
+		"__metadata.waldo",
+		"fred",
+		nil,
+	},
+}
+
+func TestCapsuleSet(t *testing.T) {
+	for _, test := range capsuleSetTests {
+		cap := NewCapsule()
+		cap.SetData(test.data).SetMetadata(test.metadata)
+
+		cap.Set(test.key, test.value)
+		if bytes.Compare(cap.GetData(), test.dataExpected) != 0 &&
+			bytes.Compare(cap.GetMetadata(), test.metadataExpected) != 0 {
+			t.Logf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, cap.GetData(), cap.GetMetadata())
+			t.Fail()
+		}
+	}
+}
+
+func benchmarkTestCapsuleSet(b *testing.B, key string, val interface{}, cap Capsule) {
+	for i := 0; i < b.N; i++ {
+		cap.Set(key, val)
+	}
+}
+
+func BenchmarkTestCapsuleSet(b *testing.B) {
+	for _, test := range capsuleSetTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				cap := NewCapsule()
+				cap.SetData(test.data).SetMetadata(test.metadata)
+				benchmarkTestCapsuleSet(b, test.key, test.value, cap)
+			},
+		)
+	}
+}
+
+/*
+Capsule SetRaw unit testing:
+
+- data and metadata are added to a new Capsule
+
+- JSON value is set using key
+
+- JSON values are compared to expected
+*/
+var capsuleSetRawTests = []struct {
+	name             string
+	data             []byte
+	metadata         interface{}
+	dataExpected     []byte
+	metadataExpected []byte
+	key              string
+	value            interface{}
+	err              error
+}{
+	{
+		"data",
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		map[string]interface{}{
+			"quux":   "corge",
+			"grault": "garply",
+		},
+		[]byte(`{"foo":"bar","baz":"qux","waldo":{"fred":["plugh","xyzzy","thud"]}}`),
+		[]byte(`{"quux":"corge","grault":"garply"}`),
+		"waldo",
+		`{"fred":["plugh","xyzzy","thud"]}`,
+		nil,
+	},
+	{
+		"metadata",
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		map[string]interface{}{
+			"quux":   "corge",
+			"grault": "garply",
+		},
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		[]byte(`{"quux":"corge","grault":"garply","waldo":{"fred":["plugh","xyzzy","thud"]}}`),
+		"__metadata.waldo",
+		`{"fred":["plugh","xyzzy","thud"]}`,
+		nil,
+	},
+}
+
+func TestCapsuleSetRaw(t *testing.T) {
+	for _, test := range capsuleSetRawTests {
+		cap := NewCapsule()
+		cap.SetData(test.data).SetMetadata(test.metadata)
+
+		cap.Set(test.key, test.value)
+		if bytes.Compare(cap.GetData(), test.dataExpected) != 0 &&
+			bytes.Compare(cap.GetMetadata(), test.metadataExpected) != 0 {
+			t.Logf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, cap.GetData(), cap.GetMetadata())
+			t.Fail()
+		}
+	}
+}
+
+func benchmarkTestCapsuleSetRaw(b *testing.B, key string, val interface{}, cap Capsule) {
+	for i := 0; i < b.N; i++ {
+		cap.SetRaw(key, val)
+	}
+}
+
+func BenchmarkTestCapsuleSetRaw(b *testing.B) {
+	for _, test := range capsuleSetRawTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				cap := NewCapsule()
+				cap.SetData(test.data).SetMetadata(test.metadata)
+				benchmarkTestCapsuleSetRaw(b, test.key, test.value, cap)
+			},
+		)
+	}
+}
+
+/*
+Capsule SetData unit testing:
+
+- data is added to a new Capsule
+
+- data is compared to expected
+*/
+var capsuleSetDataTests = []struct {
+	name     string
+	data     []byte
+	expected []byte
+	err      error
+}{
+	{
+		"data",
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		[]byte(`{"foo":"bar","baz":"qux"}`),
+		nil,
+	},
+}
+
+func TestCapsuleSetData(t *testing.T) {
+	for _, test := range capsuleSetDataTests {
+		cap := NewCapsule()
+		cap.SetData(test.data)
+
+		if bytes.Compare(cap.GetData(), test.expected) != 0 {
+			t.Logf("expected %s, got %s", test.expected, cap.GetMetadata())
+			t.Fail()
+		}
+	}
+}
+
+func benchmarkTestCapsuleSetData(b *testing.B, val []byte, cap Capsule) {
+	for i := 0; i < b.N; i++ {
+		cap.SetData(val)
+	}
+}
+
+func BenchmarkTestCapsuleSetData(b *testing.B) {
+	for _, test := range capsuleSetDataTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				cap := NewCapsule()
+				benchmarkTestCapsuleSetMetadata(b, test.data, cap)
+			},
+		)
+	}
+}
+
+/*
+Capsule SetMetadata unit testing:
+
+- metadata is added to a new Capsule
+
+- metadata is compared to expected
+*/
+var capsuleSetMetadataTests = []struct {
+	name     string
+	metadata interface{}
+	expected []byte
+	err      error
+}{
+	{
+		"metadata",
+		map[string]interface{}{
+			"quux":   "corge",
+			"grault": "garply",
+		},
+		// marshaling to JSON does not preserve order of keys
+		// from the interface
+		[]byte(`{"grault":"garply","quux":"corge"}`),
+		nil,
+	},
+}
+
+func TestCapsuleSetMetadata(t *testing.T) {
+	for _, test := range capsuleSetMetadataTests {
+		cap := NewCapsule()
+		cap.SetMetadata(test.metadata)
+
+		if bytes.Compare(cap.GetMetadata(), test.expected) != 0 {
+			t.Logf("expected %s, got %s", test.expected, cap.GetMetadata())
+			t.Fail()
+		}
+	}
+}
+
+func benchmarkTestCapsuleSetMetadata(b *testing.B, val interface{}, cap Capsule) {
+	for i := 0; i < b.N; i++ {
+		cap.SetMetadata(val)
+	}
+}
+
+func BenchmarkTestCapsuleSetMetadata(b *testing.B) {
+	for _, test := range capsuleSetMetadataTests {
+		b.Run(string(test.name),
+			func(b *testing.B) {
+				cap := NewCapsule()
+				benchmarkTestCapsuleSetMetadata(b, test.metadata, cap)
+			},
+		)
 	}
 }

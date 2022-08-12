@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/json"
 )
 
 // IPInvalidType is returned when the IP inspector is configured with an invalid type.
@@ -52,13 +52,13 @@ type IP struct {
 	Negate bool   `json:"negate"`
 }
 
-// Inspect evaluates data with the IP inspector.
-func (c IP) Inspect(data []byte) (output bool, err error) {
+// Inspect evaluates encapsulated data with the IP inspector.
+func (c IP) Inspect(cap config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
-		check = string(data)
+		check = string(cap.GetData())
 	} else {
-		check = json.Get(data, c.Key).String()
+		check = cap.Get(c.Key).String()
 	}
 
 	ip := net.ParseIP(check)

@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
 
@@ -50,17 +51,17 @@ type JSONSchema struct {
 	Negate bool `json:"negate"`
 }
 
-// Inspect evaluates data with the JSONSchema inspector.
-func (c JSONSchema) Inspect(data []byte) (output bool, err error) {
+// Inspect evaluates encapsulated data with the JSONSchema inspector.
+func (c JSONSchema) Inspect(cap config.Capsule) (output bool, err error) {
 	matched := true
 
 	for _, schema := range c.Schema {
-		value := json.Get(data, schema.Key)
-		vtype := json.Types[value.Type]
+		result := cap.Get(schema.Key)
+		rtype := json.Types[result.Type]
 
 		// Null values don't exist in the JSON
 		// 	and cannot be validated
-		if vtype == "Null" {
+		if rtype == "Null" {
 			continue
 		}
 
@@ -69,9 +70,9 @@ func (c JSONSchema) Inspect(data []byte) (output bool, err error) {
 		// 	number OR number array
 		// 	boolean OR boolean array
 		// 	pre-formatted JSON
-		if value.IsArray() && vtype+"/array" != schema.Type {
+		if result.IsArray() && rtype+"/array" != schema.Type {
 			matched = false
-		} else if vtype != schema.Type {
+		} else if rtype != schema.Type {
 			matched = false
 		}
 
@@ -110,9 +111,9 @@ type JSONValid struct {
 	Negate bool `json:"negate"`
 }
 
-// Inspect evaluates data with the JSONValid inspector.
-func (c JSONValid) Inspect(data []byte) (output bool, err error) {
-	matched := json.Valid(data)
+// Inspect evaluates encapsulated data with the JSONValid inspector.
+func (c JSONValid) Inspect(cap config.Capsule) (output bool, err error) {
+	matched := json.Valid(cap.GetData())
 
 	if c.Negate {
 		return !matched, nil

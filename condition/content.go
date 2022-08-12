@@ -3,10 +3,12 @@ package condition
 import (
 	"net/http"
 	"strings"
+
+	"github.com/brexhq/substation/config"
 )
 
 /*
-Content evaluates bytes by their content type. This inspector uses the standard library's net/http package to identify the content type of data (more information is available here: https://pkg.go.dev/net/http#DetectContentType). When used in Substation pipelines, it is most effective when using processors that change the format of data (e.g., process/gzip). The inspector supports MIME types that follow this specification: https://mimesniff.spec.whatwg.org/.
+Content evaluates encapsulated data by its content type. This inspector uses the standard library's net/http package to identify the content type of data (more information is available here: https://pkg.go.dev/net/http#DetectContentType). When used in Substation pipelines, it is most effective when using processors that change the format of data (e.g., process/gzip). The inspector supports MIME types that follow this specification: https://mimesniff.spec.whatwg.org/.
 
 The inspector has these settings:
 	Type:
@@ -34,11 +36,11 @@ type Content struct {
 	Negate bool   `json:"negate"`
 }
 
-// Inspect evaluates data with the Content inspector.
-func (c Content) Inspect(data []byte) (output bool, err error) {
+// Inspect evaluates encapsulated data with the Content inspector.
+func (c Content) Inspect(cap config.Capsule) (output bool, err error) {
 	var matched bool
 
-	content := http.DetectContentType(data)
+	content := http.DetectContentType(cap.GetData())
 	if strings.Compare(content, c.Type) == 0 {
 		matched = true
 	} else {

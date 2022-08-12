@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/json"
 )
 
 // StringsInvalidFunction is returned when the Strings inspector is configured with an invalid function.
 const StringsInvalidFunction = errors.Error("StringsInvalidFunction")
 
 /*
-Strings evaluates data using string functions. This inspector uses the standard library's strings package.
+Strings evaluates encapsulated data using string functions. This inspector uses the standard library's strings package.
 
 The inspector has these settings:
 	Key (optional):
@@ -53,13 +53,13 @@ type Strings struct {
 	Negate     bool   `json:"negate"`
 }
 
-// Inspect evaluates data with the Strings inspector.
-func (c Strings) Inspect(data []byte) (output bool, err error) {
+// Inspect evaluates encapsulated data with the Strings inspector.
+func (c Strings) Inspect(cap config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
-		check = string(data)
+		check = string(cap.GetData())
 	} else {
-		check = json.Get(data, c.Key).String()
+		check = cap.Get(c.Key).String()
 	}
 
 	var matched bool

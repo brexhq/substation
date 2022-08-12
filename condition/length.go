@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"unicode/utf8"
 
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 )
 
 /*
@@ -57,12 +57,12 @@ type Length struct {
 }
 
 // Inspect evaluates data with the Length inspector.
-func (c Length) Inspect(data []byte) (output bool, err error) {
+func (c Length) Inspect(cap config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
-		check = string(data)
+		check = string(cap.GetData())
 	} else {
-		v := json.Get(data, c.Key)
+		v := cap.Get(c.Key)
 		if v.IsArray() {
 			return c.match(len(v.Array()))
 		}

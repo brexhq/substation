@@ -2,6 +2,8 @@ package condition
 
 import (
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var contentTests = []struct {
@@ -68,27 +70,31 @@ var contentTests = []struct {
 }
 
 func TestContent(t *testing.T) {
-	for _, testing := range contentTests {
-		check, _ := testing.inspector.Inspect(testing.test)
+	cap := config.NewCapsule()
+	for _, test := range contentTests {
+		cap.SetData(test.test)
+		check, _ := test.inspector.Inspect(cap)
 
-		if testing.expected != check {
-			t.Logf("expected %v, got %v", testing.expected, check)
+		if test.expected != check {
+			t.Logf("expected %v, got %v", test.expected, check)
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkContentByte(b *testing.B, inspector Content, test []byte) {
+func benchmarkContentByte(b *testing.B, inspector Content, cap config.Capsule) {
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(test)
+		inspector.Inspect(cap)
 	}
 }
 
 func BenchmarkContentByte(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range contentTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkContentByte(b, test.inspector, test.test)
+				cap.SetData(test.test)
+				benchmarkContentByte(b, test.inspector, cap)
 			},
 		)
 	}

@@ -3,12 +3,12 @@ package condition
 import (
 	"fmt"
 
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/regexp"
 )
 
 /*
-RegExp evaluates data using a regular expression. This inspector uses a regexp cache provided by internal/regexp.
+RegExp evaluates encapsulated data using a regular expression. This inspector uses a regexp cache provided by internal/regexp.
 
 The inspector has these settings:
 	Key (optional):
@@ -40,8 +40,8 @@ type RegExp struct {
 	Negate     bool   `json:"negate"`
 }
 
-// Inspect evaluates data with the RegExp inspector.
-func (c RegExp) Inspect(data []byte) (output bool, err error) {
+// Inspect evaluates encapsulated data with the RegExp inspector.
+func (c RegExp) Inspect(cap config.Capsule) (output bool, err error) {
 	re, err := regexp.Compile(c.Expression)
 	if err != nil {
 		return false, fmt.Errorf("inspector settings %v: %v", c, err)
@@ -49,9 +49,9 @@ func (c RegExp) Inspect(data []byte) (output bool, err error) {
 
 	var matched bool
 	if c.Key == "" {
-		matched = re.Match(data)
+		matched = re.Match(cap.GetData())
 	} else {
-		s := json.Get(data, c.Key).String()
+		s := cap.Get(c.Key).String()
 		matched = re.MatchString(s)
 	}
 

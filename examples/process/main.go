@@ -1,7 +1,9 @@
-// example of reading data from a file and applying a single processor
+// example of reading data from a file and applying a
+// single processor to a batch of data
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -12,33 +14,44 @@ import (
 )
 
 func main() {
+	// read data file into slice of encapsulated data
+	open, err := os.Open("./data.json")
+	if err != nil {
+		panic(err)
+	}
+
+	var caps []config.Capsule
+	cap := config.NewCapsule()
+
+	scanner := bufio.NewScanner(open)
+	for scanner.Scan() {
+		cap.SetData(scanner.Bytes())
+		caps = append(caps, cap)
+	}
+
+	// read config file and create a new batch processor
 	cfg, err := os.ReadFile("./config.json")
 	if err != nil {
 		panic(err)
 	}
 
-	// unmarshal JSON object into Substation config
 	var sub config.Config
 	if err := json.Unmarshal(cfg, &sub); err != nil {
 		panic(err)
 	}
 
-	// retrieve byter from the factory
-	byter, err := process.ByterFactory(sub)
+	proc, err := process.BatchFactory(sub)
 	if err != nil {
 		panic(err)
 	}
 
-	data, err := os.ReadFile("./data.json")
+	// apply batch processor to encapsulated data
+	caps, err = process.ApplyBatch(context.TODO(), caps, proc)
 	if err != nil {
 		panic(err)
 	}
 
-	// inserts "qux" into key "baz"
-	data, err = byter.Byte(context.TODO(), data)
-	if err != nil {
-		panic(err)
+	for _, cap := range caps {
+		fmt.Printf("%s\n", cap.GetData())
 	}
-
-	fmt.Println(string(data))
 }

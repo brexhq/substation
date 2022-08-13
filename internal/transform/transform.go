@@ -13,14 +13,14 @@ const TransformInvalidFactoryConfig = errors.Error("TransformInvalidFactoryConfi
 
 // Transform is an interface for transforming data as it moves from a source to a sink. Transforms read bytes from and write bytes to channels, may optionally modify bytes, and are interruptable via an anonymous struct channel.
 type Transform interface {
-	Transform(context.Context, <-chan []byte, chan<- []byte, chan struct{}) error
+	Transform(context.Context, <-chan config.Capsule, chan<- config.Capsule, chan struct{}) error
 }
 
 // Factory loads Transforms from a Config. This is the recommended function for retrieving ready-to-use Transforms.
 func Factory(cfg config.Config) (Transform, error) {
 	switch t := cfg.Type; t {
-	case "process":
-		var t Process
+	case "batch":
+		var t Batch
 		config.Decode(cfg.Settings, &t)
 		return &t, nil
 	case "transfer":

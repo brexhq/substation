@@ -8,7 +8,7 @@ import (
 )
 
 /*
-Process transforms data by applying processors. Each processor is enabled through conditions. This transform uses process Slicers to iteratively modify slices of bytes.
+Batch transforms data by applying a series of processors to a slice of encapsulated data. Data processing is iterative and each processor is enabled through conditions.
 
 Below is an example that shows how a single JSON object is iteratively modified through this transform:
 	{"hello":"world"} // input event
@@ -18,7 +18,7 @@ Below is an example that shows how a single JSON object is iteratively modified 
 
 The transform uses this Jsonnet configuration:
 	{
-		type: 'process',
+		type: 'batch',
 		processors: [
 			{
 				"settings": {
@@ -26,53 +26,53 @@ The transform uses this Jsonnet configuration:
 						"inspectors": [ ],
 						"operator": ""
 					},
-					"input": {
-						"key": "@this"
-					},
+					"input_key": "@this",
+					"output_key": "event.hash"
 					"options": {
 						"algorithm": "sha256"
 					},
-					"output": {
-						"key": "event.hash"
-					}
 				},
 				"type": "hash"
 			},
 		]
 	}
 */
-type Process struct {
+type Batch struct {
 	Processors []config.Config `json:"processors"`
 }
 
-// Transform processes a channel of bytes with the Process transform.
-func (transform *Process) Transform(ctx context.Context, in <-chan []byte, out chan<- []byte, kill chan struct{}) error {
-	slicers, err := process.MakeAllSlicers(transform.Processors)
+// Transform processes a channel of encapsulated data with the Batch transform.
+func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule, out chan<- config.Capsule, kill chan struct{}) error {
+	applicators, err := process.MakeAllBatchApplicators(transform.Processors)
 	if err != nil {
 		return err
 	}
 
-	slice := make([][]byte, 0, 10)
-	for data := range in {
+	// read encapsulated data from the input channel into a batch
+	batch := make([]config.Capsule, 0, 10)
+	for cap := range in {
 		select {
 		case <-kill:
 			return nil
 		default:
-			slice = append(slice, data)
+			batch = append(batch, cap)
 		}
 	}
 
-	slice, err = process.Slice(ctx, slicers, slice)
+	// iteratively process the batch of encapsulated data
+	batch, err = process.ApplyBatch(ctx, batch, applicators...)
 	if err != nil {
 		return err
 	}
 
-	for _, data := range slice {
+	// write the processed, encapsulated data to the output channel
+	// if a signal is received on the kill channel, then this is interrupted
+	for _, cap := range batch {
 		select {
 		case <-kill:
 			return nil
 		default:
-			out <- data
+			out <- cap
 		}
 	}
 

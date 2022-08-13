@@ -37,8 +37,6 @@ func main() {
 		lambda.Start(gatewayHandler)
 	case "KINESIS":
 		lambda.Start(kinesisHandler)
-	case "KINESIS_FIREHOSE":
-		lambda.Start(kinesisFirehoseHandler)
 	case "S3":
 		lambda.Start(s3Handler)
 	case "SNS":
@@ -169,70 +167,6 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 				*record.ApproximateArrivalTimestamp,
 				*record.PartitionKey,
 				*record.SequenceNumber,
-			})
-
-			sub.SendTransform(cap)
-		}
-
-		sub.TransformSignal()
-		transformWg.Wait()
-		sub.SinkSignal()
-		sinkWg.Wait()
-	}()
-
-	if err := sub.Block(ctx); err != nil {
-		return fmt.Errorf("kinesis handler: %v", err)
-	}
-
-	return nil
-}
-
-type kinesisFirehoseMetadata struct {
-	InvocationID                string                       `json:"invocation_id"`
-	DeliveryStreamArn           string                       `json:"delivery_stream_arn"`
-	RecordID                    string                       `json:"record_id"`
-	ApproximateArrivalTimestamp events.MilliSecondsEpochTime `json:"approximate_arrival_timestamp"`
-	PartitionKey                string                       `json:"partition_key"`
-	SequenceNumber              string                       `json:"sequence_number"`
-}
-
-// experimental, this is untested
-func kinesisFirehoseHandler(ctx context.Context, event events.KinesisFirehoseEvent) error {
-	conf, err := appconfig.GetPrefetch(ctx)
-	if err != nil {
-		return fmt.Errorf("kinesis handler: %v", err)
-	}
-	json.Unmarshal(conf, &sub.Config)
-
-	sub.CreateChannels(concurrency)
-	defer sub.KillSignal()
-
-	go func() {
-		var sinkWg sync.WaitGroup
-		var transformWg sync.WaitGroup
-
-		sinkWg.Add(1)
-		go sub.Sink(ctx, &sinkWg)
-
-		for w := 0; w <= concurrency; w++ {
-			transformWg.Add(1)
-			go sub.Transform(ctx, &transformWg)
-		}
-
-		for _, record := range event.Records {
-			if len(record.Data) == 0 {
-				continue
-			}
-
-			cap := config.NewCapsule()
-			cap.SetData(record.Data)
-			cap.SetMetadata(kinesisFirehoseMetadata{
-				event.InvocationID,
-				event.DeliveryStreamArn,
-				record.RecordID,
-				record.KinesisFirehoseRecordMetadata.ApproximateArrivalTimestamp,
-				record.KinesisFirehoseRecordMetadata.PartitionKey,
-				record.KinesisFirehoseRecordMetadata.SequenceNumber,
 			})
 
 			sub.SendTransform(cap)

@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var splitByteTests = []struct {
@@ -45,7 +47,10 @@ var splitByteTests = []struct {
 func TestSplitByte(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range splitByteTests {
-		processed, err := test.proc.Byte(ctx, test.test)
+		cap := config.NewCapsule()
+		cap.SetData(test.test)
+
+		res, err := test.proc.Apply(ctx, cap)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -54,17 +59,17 @@ func TestSplitByte(t *testing.T) {
 		}
 
 		expected := test.expected
-		if c := bytes.Compare(expected, processed); c != 0 {
-			t.Logf("expected %s, got %s", expected, string(processed))
+		if c := bytes.Compare(expected, res.GetData()); c != 0 {
+			t.Logf("expected %s, got %s", expected, string(res.GetData()))
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkSplitByte(b *testing.B, byter Split, data []byte) {
+func benchmarkSplitByte(b *testing.B, proc Split, cap config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Byte(ctx, data)
+		proc.Apply(ctx, cap)
 	}
 }
 
@@ -72,7 +77,9 @@ func BenchmarkSplitByte(b *testing.B) {
 	for _, test := range splitByteTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkSplitByte(b, test.proc, test.test)
+				cap := config.NewCapsule()
+				cap.SetData(test.test)
+				benchmarkSplitByte(b, test.proc, cap)
 			},
 		)
 	}
@@ -119,7 +126,14 @@ var splitSliceTests = []struct {
 func TestSplitSlice(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range splitSliceTests {
-		res, err := test.proc.Slice(ctx, test.test)
+		var caps []config.Capsule
+		cap := config.NewCapsule()
+		for _, t := range test.test {
+			cap.SetData(t)
+			caps = append(caps, cap)
+		}
+
+		res, err := test.proc.ApplyBatch(ctx, caps)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -127,20 +141,20 @@ func TestSplitSlice(t *testing.T) {
 			t.Fail()
 		}
 
-		for i, processed := range res {
+		for i, r := range res {
 			expected := test.expected[i]
-			if c := bytes.Compare(expected, processed); c != 0 {
-				t.Logf("expected %s, got %s", expected, string(processed))
+			if c := bytes.Compare(expected, r.GetData()); c != 0 {
+				t.Logf("expected %s, got %s", expected, string(r.GetData()))
 				t.Fail()
 			}
 		}
 	}
 }
 
-func benchmarkSplitSlice(b *testing.B, slicer Split, slice [][]byte) {
+func benchmarkSplitSlice(b *testing.B, proc Split, caps []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		slicer.Slice(ctx, slice)
+		proc.ApplyBatch(ctx, caps)
 	}
 }
 
@@ -148,7 +162,13 @@ func BenchmarkSplitSlice(b *testing.B) {
 	for _, test := range splitSliceTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkSplitSlice(b, test.proc, test.test)
+				var caps []config.Capsule
+				cap := config.NewCapsule()
+				for _, t := range test.test {
+					cap.SetData(t)
+					caps = append(caps, cap)
+				}
+				benchmarkSplitSlice(b, test.proc, caps)
 			},
 		)
 	}

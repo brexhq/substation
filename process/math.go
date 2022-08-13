@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 )
 
 /*
@@ -23,7 +23,7 @@ type MathOptions struct {
 }
 
 /*
-Math processes data by applying mathematic operations. The processor supports these patterns:
+Math processes encapsulated data by applying mathematic operations. The processor supports these patterns:
 	JSON:
 		{"math":[1,3]} >>> {"math":4}
 
@@ -46,66 +46,53 @@ type Math struct {
 	OutputKey string                   `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the Math processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Math) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Math processor. Conditions are optionally applied to the data to enable processing.
+func (p Math) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Math processor.
-func (p Math) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Math processor.
+func (p Math) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Operation == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" || p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	if p.InputKey == "" && p.OutputKey == "" {
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	var tmp int64
-	value := json.Get(data, p.InputKey)
-	for x, v := range value.Array() {
-		if x == 0 {
-			tmp = v.Int()
+	res := cap.Get(p.InputKey)
+	for idx, val := range res.Array() {
+		if idx == 0 {
+			tmp = val.Int()
 			continue
 		}
 
 		switch p.Options.Operation {
 		case "add":
-			tmp += v.Int()
+			tmp += val.Int()
 		case "subtract":
-			tmp -= v.Int()
+			tmp -= val.Int()
 		case "multiply":
-			tmp = tmp * v.Int()
+			tmp = tmp * val.Int()
 		case "divide":
-			tmp = tmp / v.Int()
+			tmp = tmp / val.Int()
 		}
 	}
 
-	return json.Set(data, p.OutputKey, tmp)
+	cap.Set(p.OutputKey, tmp)
+	return cap, nil
 }

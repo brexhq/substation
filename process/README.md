@@ -16,22 +16,20 @@ import (
 )
 
 func main() {
-	processor := process.Insert{
+	proc := process.Insert{
+		OutputKey: "baz",
 		Options: process.InsertOptions{
-			Value: "bar",
+			Value: "qux",
 		},
-		OutputKey: "foo",
 	}
 
-	ctx := context.TODO()
-	data := []byte(`{"hello":"world"}`)
-	processed, err := processor.Byte(ctx, data)
+	data := []byte(`{"foo":"bar"}`)
+	data, err := process.Byte(context.TODO(), proc, data)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(string(data))
-	fmt.Println(string(processed))
+	fmt.Printf("%s\n", data)
 }
 ```
 

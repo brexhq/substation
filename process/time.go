@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
 
@@ -41,7 +42,7 @@ type TimeOptions struct {
 }
 
 /*
-Time processes data by converting time values between formats. The processor supports these patterns:
+Time processes encapsulated data by converting time values between formats. The processor supports these patterns:
 	JSON:
 		{"time":1639877490.061} >>> {"time":"2021-12-19T01:31:30.061000Z"}
 	data:
@@ -67,40 +68,26 @@ type Time struct {
 	OutputKey string                   `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the Time processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Time) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Time processor. Conditions are optionally applied to the data to enable processing.
+func (p Time) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Time processor.
-func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Time processor.
+func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.InputFormat == "" || p.Options.OutputFormat == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// "now" processing, supports json and data
@@ -118,55 +105,65 @@ func (p Time) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 
 		if p.OutputKey != "" {
-			return json.Set(data, p.OutputKey, output)
+			cap.Set(p.OutputKey, output)
+			return cap, nil
 		}
 
 		switch v := output.(type) {
 		case int64:
-			return []byte(strconv.FormatInt(v, 10)), nil
+			cap.SetData([]byte(strconv.FormatInt(v, 10)))
 		case string:
-			return []byte(v), nil
+			cap.SetData([]byte(v))
 		}
+
+		return cap, nil
 	}
 
 	// json processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey)
+		result := cap.Get(p.InputKey)
 
 		// return input, otherwise time defaults to 1970
-		if value.Type.String() == "Null" {
-			return data, nil
+		if result.Type.String() == "Null" {
+			return cap, nil
 		}
 
-		ts, err := p.time(value)
+		ts, err := p.time(result)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 		}
-		return json.Set(data, p.OutputKey, ts)
+
+		if err := cap.Set(p.OutputKey, ts); err != nil {
+			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+		}
+
+		return cap, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		tmp, err := json.Set([]byte{}, "_tmp", data)
+		tmp, err := json.Set([]byte{}, "_tmp", cap.GetData())
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 		}
 
 		value := json.Get(tmp, "_tmp")
 		ts, err := p.time(value)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 		}
 
 		switch v := ts.(type) {
 		case int64:
-			return []byte(strconv.FormatInt(v, 10)), nil
+			cap.SetData([]byte(strconv.FormatInt(v, 10)))
 		case string:
-			return []byte(v), nil
+			cap.SetData([]byte(v))
 		}
+
+		return cap, nil
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
 func (p Time) time(v json.Result) (interface{}, error) {

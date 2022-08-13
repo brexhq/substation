@@ -53,11 +53,11 @@ func Get(json []byte, key string) Result {
 /*
 Set inserts values into JSON and operates under these conditions (in order):
 
-- If the value is valid JSON (bytes, string, or Result), then it is inserted using SetRaw to properly insert it as nested JSON; this avoids encoding that would otherwise create invalid JSON (e.g. `{\"hello\":\"world\"}`)
+- If the value is valid JSON (bytes, string, or Result), then it is inserted using SetRaw to properly insert it as nested JSON; this avoids encoding that would otherwise create invalid JSON (e.g. `{\"foo\":\"bar\"}`)
 
--If the value is bytes, then it is converted to a base64 encoded string (this is the behavior of the standard library's encoding/json package)
+- If the value is bytes, then it is converted to a base64 encoded string (this is the behavior of the standard library's encoding/json package)
 
-- If the value is Result, then it is converted to the underlying gjson Value
+- If the value is Result, then it is converted to the underlying GJSON Value
 
 - All other values are inserted as interfaces and are converted by SJSON to the proper format
 */
@@ -107,10 +107,15 @@ func SetRaw(json []byte, key string, value interface{}) (tmp []byte, err error) 
 	return tmp, nil
 }
 
-// Unmarshal wraps json.Unmarshal.
-func Unmarshal(data []byte, v interface{}) error {
-	return json.Unmarshal(data, v)
-}
+// // Marshal wraps the standard library's json.Marshal function.
+// func Marshal(v interface{}) ([]byte, error) {
+// 	return json.Marshal(v)
+// }
+
+// // Unmarshal wraps the standard library's json.Unmarshal function.
+// func Unmarshal(data []byte, v interface{}) error {
+// 	return json.Unmarshal(data, v)
+// }
 
 // Valid conditionally checks if bytes, strings, or Results are valid JSON objects.
 func Valid(data interface{}) bool {
@@ -138,11 +143,11 @@ func Valid(data interface{}) bool {
 func DeepEquals(s1, s2 []byte) (bool, error) {
 	var j1, j2 interface{}
 
-	if err := Unmarshal(s1, &j1); err != nil {
+	if err := json.Unmarshal(s1, &j1); err != nil {
 		return false, err
 	}
 
-	if err := Unmarshal(s2, &j2); err != nil {
+	if err := json.Unmarshal(s2, &j2); err != nil {
 		return false, err
 	}
 

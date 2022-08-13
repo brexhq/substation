@@ -3,13 +3,14 @@ package process
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 )
 
 /*
-Copy processes data by copying it. The processor supports these patterns:
+Copy processes encapsulated data by copying it. The processor supports these patterns:
 	JSON:
 	  	{"hello":"world"} >>> {"hello":"world","goodbye":"world"}
 	from JSON:
@@ -32,53 +33,52 @@ type Copy struct {
 	OutputKey string                   `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the Copy processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Copy) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Copy processor. Conditions are optionally applied to the data to enable processing.
+func (p Copy) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Copy processor.
-func (p Copy) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Copy processor.
+func (p Copy) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		v := json.Get(data, p.InputKey)
-		return json.Set(data, p.OutputKey, v)
+		cap.Set(p.OutputKey, cap.Get(p.InputKey))
+		return cap, nil
 	}
 
 	// from JSON processing
 	if p.InputKey != "" && p.OutputKey == "" {
-		v := json.Get(data, p.InputKey)
-		return []byte(v.String()), nil
+		res := cap.Get(p.InputKey).String()
+
+		if strings.HasPrefix(p.InputKey, "__metadata") {
+			cap.SetMetadata([]byte(res))
+			return cap, nil
+		}
+
+		cap.SetData([]byte(res))
+		return cap, nil
 	}
 
 	// to JSON processing
 	if p.InputKey == "" && p.OutputKey != "" {
-		return json.Set([]byte{}, p.OutputKey, data)
+		if strings.HasPrefix(p.OutputKey, "__metadata") {
+			cap.Set(p.OutputKey, cap.GetMetadata())
+			return cap, nil
+		}
+
+		cap.Set(p.OutputKey, cap.GetData())
+		return cap, nil
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, nil
 }

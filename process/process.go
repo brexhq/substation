@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 )
@@ -11,52 +12,52 @@ import (
 // ProcessorInvalidSettings is returned when a processor is configured with invalid settings. Common causes include improper input and output settings (e.g., missing keys) and missing required options.
 const ProcessorInvalidSettings = errors.Error("ProcessorInvalidSettings")
 
-// ByteInvalidFactoryConfig is returned when an unsupported Byte is referenced in ByteFactory.
-const ByteInvalidFactoryConfig = errors.Error("ByteInvalidFactoryConfig")
+// ApplyInvalidFactoryConfig is returned when an unsupported Task processor is referenced in Factory.
+const ApplyInvalidFactoryConfig = errors.Error("ApplyInvalidFactoryConfig")
 
-// SliceInvalidFactoryConfig is returned when an unsupported Slice is referenced in SliceFactory.
-const SliceInvalidFactoryConfig = errors.Error("SliceInvalidFactoryConfig")
+// ApplyBatchInvalidFactoryConfig is returned when an unsupported Batch processor is referenced in BatchFactory.
+const ApplyBatchInvalidFactoryConfig = errors.Error("ApplyBatchInvalidFactoryConfig")
 
-// Slicer is an interface for applying processors to slices of bytes.
-type Slicer interface {
-	Slice(context.Context, [][]byte) ([][]byte, error)
+// Applicator is an interface for applying a processor to encapsulated data.
+type Applicator interface {
+	Apply(context.Context, config.Capsule) (config.Capsule, error)
 }
 
-// Slice accepts an array of Slicers and applies all processors to the data.
-func Slice(ctx context.Context, slicers []Slicer, slice [][]byte) ([][]byte, error) {
+// BatchApplicator is an interface for applying a processor to a slice of encapsulated data.
+type BatchApplicator interface {
+	ApplyBatch(context.Context, []config.Capsule) ([]config.Capsule, error)
+}
+
+// Apply accepts one or many Applicators and applies the processors in series to encapsulated data.
+func Apply(ctx context.Context, cap config.Capsule, applicators ...Applicator) (config.Capsule, error) {
 	var err error
 
-	for _, slicer := range slicers {
-		slice, err = slicer.Slice(ctx, slice)
+	for _, app := range applicators {
+		cap, err = app.Apply(ctx, cap)
+		if err != nil {
+			return cap, err
+		}
+	}
+
+	return cap, nil
+}
+
+// ApplyBatch accepts one or many BatchApplicators and applies the processors in series to a slice of encapsulated data.
+func ApplyBatch(ctx context.Context, batch []config.Capsule, applicators ...BatchApplicator) ([]config.Capsule, error) {
+	var err error
+
+	for _, app := range applicators {
+		batch, err = app.ApplyBatch(ctx, batch)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return slice, nil
+	return batch, nil
 }
 
-// Byter is an interface for applying processors to bytes.
-type Byter interface {
-	Byte(context.Context, []byte) ([]byte, error)
-}
-
-// Byte accepts an array of Byters and applies all processors to the data.
-func Byte(ctx context.Context, byters []Byter, data []byte) ([]byte, error) {
-	var err error
-
-	for _, byter := range byters {
-		data, err = byter.Byte(ctx, data)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return data, nil
-}
-
-// ByterFactory loads a Byter from a Config. This is the recommended function for retrieving ready-to-use Byters.
-func ByterFactory(cfg config.Config) (Byter, error) {
+// Factory returns a configured Applicator from a config. This is the recommended method for retrieving ready-to-use Applicators.
+func Factory(cfg config.Config) (Applicator, error) {
 	switch t := cfg.Type; t {
 	case "base64":
 		var p Base64
@@ -147,12 +148,12 @@ func ByterFactory(cfg config.Config) (Byter, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %w", cfg.Settings, ByteInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %+v: %w", cfg.Settings, ApplyInvalidFactoryConfig)
 	}
 }
 
-// SlicerFactory loads a Slicer from a Config. This is the recommended function for retrieving ready-to-use Slicers.
-func SlicerFactory(cfg config.Config) (Slicer, error) {
+// BatchFactory returns a configured BatchApplicator from a config. This is the recommended method for retrieving ready-to-use BatchApplicators.
+func BatchFactory(cfg config.Config) (BatchApplicator, error) {
 	switch t := cfg.Type; t {
 	case "aggregate":
 		var p Aggregate
@@ -259,44 +260,82 @@ func SlicerFactory(cfg config.Config) (Slicer, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %w", cfg.Settings, SliceInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %+v: %w", cfg.Settings, ApplyBatchInvalidFactoryConfig)
 	}
 }
 
-// MakeAllByters accepts an array of Config and returns populated Byters. This a conveience function for loading many Byters.
-func MakeAllByters(cfg []config.Config) ([]Byter, error) {
-	var byters []Byter
+// MakeAll accepts multiple processor configs and returns populated Applicators. This is a convenience function for generating many Applicators.
+func MakeAll(cfg []config.Config) ([]Applicator, error) {
+	var applicators []Applicator
 
 	for _, c := range cfg {
-		byter, err := ByterFactory(c)
+		applicator, err := Factory(c)
 		if err != nil {
 			return nil, err
 		}
-		byters = append(byters, byter)
+		applicators = append(applicators, applicator)
 	}
 
-	return byters, nil
+	return applicators, nil
 }
 
-// MakeAllSlicers accepts an array of Config and returns populated Slicers. This a conveience function for loading many Slicers.
-func MakeAllSlicers(cfg []config.Config) ([]Slicer, error) {
-	var slicers []Slicer
+// MakeAllBatchApplicators accepts multiple processor configs and returns populated BatchApplicators. This is a convenience function for generating many BatchApplicators.
+func MakeAllBatchApplicators(cfg []config.Config) ([]BatchApplicator, error) {
+	var applicators []BatchApplicator
 
 	for _, c := range cfg {
-		slicer, err := SlicerFactory(c)
+		applicator, err := BatchFactory(c)
 		if err != nil {
 			return nil, err
 		}
-		slicers = append(slicers, slicer)
+
+		applicators = append(applicators, applicator)
 	}
 
-	return slicers, nil
+	return applicators, nil
 }
 
-// NewSlice returns a byte slice with a minimum capacity of 10.
-func NewSlice(s *[][]byte) [][]byte {
+// NewBatch returns a Capsule slice with a minimum capacity of 10. This is most frequently used to speed up batch processing.
+func NewBatch(s *[]config.Capsule) []config.Capsule {
 	if len(*s) > 10 {
-		return make([][]byte, 0, len(*s))
+		return make([]config.Capsule, 0, len(*s))
 	}
-	return make([][]byte, 0, 10)
+	return make([]config.Capsule, 0, 10)
+}
+
+// Byte applies an Applicator to data.
+func Byte(ctx context.Context, a Applicator, data []byte) ([]byte, error) {
+	cap := config.NewCapsule()
+	cap.SetData(data)
+
+	newCap, err := a.Apply(ctx, cap)
+	if err != nil {
+		return nil, fmt.Errorf("byte settings %+v: %w", a, ProcessorInvalidSettings)
+	}
+
+	return newCap.GetData(), nil
+}
+
+// conditionallyApplyBatch uses conditions to dynamically apply processors to a slice of encapsulated data. This is a convenience function for the ApplyBatch method used in most processors.
+func conditionallyApplyBatch(ctx context.Context, caps []config.Capsule, op condition.Operator, applicators ...Applicator) ([]config.Capsule, error) {
+	slice := NewBatch(&caps)
+
+	for _, cap := range caps {
+		ok, err := op.Operate(cap)
+		if err != nil {
+			return nil, fmt.Errorf("filterbatch settings %+v: %w", op, err)
+		}
+
+		if !ok {
+			slice = append(slice, cap)
+			continue
+		}
+
+		cap, err := Apply(ctx, cap, applicators...)
+		if err != nil {
+			return nil, fmt.Errorf("filterbatch settings %+v: %w", op, err)
+		}
+		slice = append(slice, cap)
+	}
+	return slice, nil
 }

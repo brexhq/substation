@@ -7,7 +7,6 @@ import (
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/json"
 )
 
 // PipelineArrayInput is returned when the Pipeline processor is configured to process JSON, but the input is an array. Array values are not supported by this processor, instead the input should be run through the ForEach processor (which can encapsulate the Pipeline processor).
@@ -23,7 +22,7 @@ type PipelineOptions struct {
 }
 
 /*
-Pipeline processes data by applying a series of processors. This processor should be used when data requires complex processing outside of the boundaries of any data structures (see tests for examples). The processor supports these patterns:
+Pipeline processes encapsulated data by applying a series of processors. This processor should be used when data requires complex processing outside of the boundaries of any data structures (see tests for examples). The processor supports these patterns:
 	JSON:
 		{"pipeline":"H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"} >>> {"pipeline":"foo"}
 	data:
@@ -65,77 +64,68 @@ type Pipeline struct {
 	OutputKey string                   `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the Pipeline processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Pipeline) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Pipeline processor. Conditions are optionally applied to the data to enable processing.
+func (p Pipeline) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
 /*
-Byte processes bytes with the Pipeline processor.
+Apply processes encapsulated data with the Pipeline processor.
 
-Process Byters only accept bytes, so when processing
+Applicators only accept encapsulated data, so when processing
 JSON the input value is converted from Result to its
-string representation to bytes. The conversion from
-Result to string is safe for strings and objects, but
-not arrays (e.g., ["foo","bar"]).
+string representation to bytes and put into a new capsule.
+The conversion from Result to string is safe for strings and
+objects, but not arrays (e.g., ["foo","bar"]).
 
 If the input is an array, then an error is raised; the
 input should be run through the ForEach processor (which
 can encapsulate the Pipeline processor).
 */
-func (p Pipeline) Byte(ctx context.Context, data []byte) ([]byte, error) {
-	byters, err := MakeAllByters(p.Options.Processors)
+func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+	applicators, err := MakeAll(p.Options.Processors)
 	if err != nil {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 	}
 
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey)
+		value := cap.Get(p.InputKey)
 		if value.IsArray() {
-			return nil, fmt.Errorf("byter settings %+v: %w", p, PipelineArrayInput)
+			return cap, fmt.Errorf("applicator settings %+v: %w", p, PipelineArrayInput)
 		}
 
-		tmp, err := Byte(ctx, byters, []byte(value.String()))
+		c2 := config.NewCapsule()
+		c2.SetData([]byte(value.String()))
+
+		tmp, err := Apply(ctx, c2, applicators...)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 		}
 
-		return json.Set(data, p.OutputKey, tmp)
+		cap.Set(p.OutputKey, tmp.GetData())
+
+		return cap, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		tmp, err := Byte(ctx, byters, data)
+		tmp, err := Apply(ctx, cap, applicators...)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 		}
 
 		return tmp, nil
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 }

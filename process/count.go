@@ -2,13 +2,12 @@ package process
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 )
 
 /*
-Count processes data by counting it.
+Count processes encapsulated data by counting it.
 
 The processor uses this Jsonnet configuration:
 	{
@@ -17,15 +16,12 @@ The processor uses this Jsonnet configuration:
 */
 type Count struct{}
 
-// Slice processes a slice of bytes with the Count processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Count) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
-	processed, err := json.Set([]byte{}, "count", len(s))
-	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-	}
+// ApplyBatch processes a slice of encapsulated data with the Count processor. Conditions are optionally applied to the data to enable processing.
+func (p Count) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+	newCap := config.NewCapsule()
+	newCap.Set("count", len(caps))
 
-	slice := make([][]byte, 1, 1)
-	slice[0] = processed
-
-	return slice, nil
+	newCaps := make([]config.Capsule, 1, 1)
+	newCaps = append(newCaps, newCap)
+	return newCaps, nil
 }

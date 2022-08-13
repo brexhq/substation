@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 )
 
 /*
@@ -23,7 +23,7 @@ type HashOptions struct {
 }
 
 /*
-Hash processes data by calculating hashes. The processor supports these patterns:
+Hash processes encapsulated data by calculating hashes. The processor supports these patterns:
 	JSON:
 		{"hash":"foo"} >>> {"hash":"acbd18db4cc2f85cedef654fccc4a4d8"}
 	data:
@@ -48,68 +48,58 @@ type Hash struct {
 	OutputKey string                   `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the Hash processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Hash) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Hash processor. Conditions are optionally applied to the data to enable processing.
+func (p Hash) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Hash processor.
-func (p Hash) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Hash processor.
+func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Algorithm == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey).String()
+		result := cap.Get(p.InputKey).String()
 		switch p.Options.Algorithm {
 		case "md5":
-			sum := md5.Sum([]byte(value))
-			return json.Set(data, p.OutputKey, fmt.Sprintf("%x", sum))
+			sum := md5.Sum([]byte(result))
+			cap.Set(p.OutputKey, fmt.Sprintf("%x", sum))
 		case "sha256":
-			sum := sha256.Sum256([]byte(value))
-			return json.Set(data, p.OutputKey, fmt.Sprintf("%x", sum))
+			sum := sha256.Sum256([]byte(result))
+			cap.Set(p.OutputKey, fmt.Sprintf("%x", sum))
 		}
+
+		return cap, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
 		switch p.Options.Algorithm {
 		case "md5":
-			sum := md5.Sum(data)
-			x := fmt.Sprintf("%x", sum)
-			return []byte(x), nil
+			sum := md5.Sum(cap.GetData())
+			sf := fmt.Sprintf("%x", sum)
+			cap.SetData([]byte(sf))
 		case "sha256":
-			sum := sha256.Sum256(data)
-			x := fmt.Sprintf("%x", sum)
-			return []byte(x), nil
+			sum := sha256.Sum256(cap.GetData())
+			sf := fmt.Sprintf("%x", sum)
+			cap.SetData([]byte(sf))
 		}
+
+		return cap, nil
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 }

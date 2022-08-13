@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var caseTests = []struct {
@@ -65,7 +67,11 @@ var caseTests = []struct {
 func TestCase(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range caseTests {
-		res, err := test.proc.Byte(ctx, test.test)
+
+		cap := config.NewCapsule()
+		cap.SetData(test.test)
+
+		res, err := test.proc.Apply(ctx, cap)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -73,25 +79,27 @@ func TestCase(t *testing.T) {
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res)
+		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
+			t.Logf("expected %s, got %s", test.expected, res.GetData())
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkCaseByte(b *testing.B, byter Case, test []byte) {
+func benchmarkCaseCapByte(b *testing.B, applicator Case, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Byte(ctx, test)
+		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkCaseByte(b *testing.B) {
+func BenchmarkCaseCapByte(b *testing.B) {
 	for _, test := range caseTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkCaseByte(b, test.proc, test.test)
+				cap := config.NewCapsule()
+				cap.SetData(test.test)
+				benchmarkCaseCapByte(b, test.proc, cap)
 			},
 		)
 	}

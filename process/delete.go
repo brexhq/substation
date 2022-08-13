@@ -5,15 +5,15 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/json"
 )
 
 // DeleteInvalidSettings is returned when the Copy processor is configured with invalid Input and Output settings.
 const DeleteInvalidSettings = errors.Error("DeleteInvalidSettings")
 
 /*
-Delete processes data by deleting JSON keys. The processor supports these patterns:
+Delete processes encapsulated data by deleting JSON keys. The processor supports these patterns:
 	JSON:
 	  	{"foo":"bar","baz":"qux"} >>> {"foo":"bar"}
 
@@ -30,41 +30,29 @@ type Delete struct {
 	InputKey  string                   `json:"input_key"`
 }
 
-// Slice processes a slice of bytes with the Delete processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Delete) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Delete processor. Conditions are optionally applied to the data to enable processing.
+func (p Delete) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
+
 }
 
-// Byte processes bytes with the Delete processor.
-func (p Delete) Byte(ctx context.Context, object []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Delete processor.
+func (p Delete) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	return json.Delete(object, p.InputKey)
+	cap.Delete(p.InputKey)
+	return cap, nil
 }

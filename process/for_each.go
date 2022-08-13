@@ -2,8 +2,8 @@ package process
 
 import (
 	"context"
+	gojson "encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
@@ -20,7 +20,7 @@ type ForEachOptions struct {
 }
 
 /*
-ForEach processes data by iterating and applying a processor to each element in a JSON array. The processor supports these patterns:
+ForEach processes encapsulated data by iterating and applying a processor to each element in a JSON array. The processor supports these patterns:
 	JSON:
 		{"input":["ABC","DEF"]} >>> {"input":["ABC","DEF"],"output":["abc","def"]}
 
@@ -50,103 +50,87 @@ type ForEach struct {
 	OutputKey string                   `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the ForEach processor. Conditions are optionally applied on the bytes to enable processing.
-func (p ForEach) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the ForEach processor. Conditions are optionally applied to the data to enable processing.
+func (p ForEach) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
 /*
-Byte processes bytes with the ForEach processor.
+Apply processes encapsulated data with the ForEeach processor.
 
-Data is processed by iterating an input JSON array,
-encapsulating the elements in a temporary JSON
-object, and running the configured processor. This
-technique avoids parsing errors when handling arrays
-that contain JSON objects, such as:
-	{"for_each":[{"foo":"bar"},{"foo":"baz"}]}
-
-The temporary JSON object uses the configured
-processor's name as its key (e.g., "case"). If the
-configured processor has keys set (e.g., "foo"), then
-the keys are concatenated (e.g., "case.foo"). The example
-above produces this temporary JSON during processing:
-	{"case":{"foo":"bar"}}
-	{"case":{"foo":"baz"}}
+JSON values are treated as arrays and the configured
+processor is applied to each element in the array. If multiple
+processors need to be applied to each element, then the
+Pipeline processor should be used to create a nested data
+processing workflow. For example:
+	ForEach -> Pipeline -> [Copy, Delete, Copy]
 */
-func (p ForEach) Byte(ctx context.Context, data []byte) ([]byte, error) {
+func (p ForEach) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" || p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	if p.InputKey == "" && p.OutputKey == "" {
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	// processor settings loaded via Jsonnet may create invalid keys such as
-	// `foo.bar.` -- the trailing dot creates an invalid path, so it is trimmed
+	// configured processor is converted to a JSON object so that the
+	// settings can be modified and put into a new processor
+	// we cannot directly modify p.Options.Processor, otherwise we will
+	// cause errors during iteration
+	conf, _ := gojson.Marshal(p.Options.Processor)
+
+	var inputKey, outputKey string
 	if _, ok := p.Options.Processor.Settings["input_key"]; ok {
-		p.Options.Processor.Settings["input_key"] = p.Options.Processor.Type + "." + p.Options.Processor.Settings["input_key"].(string)
+		inputKey = p.Options.Processor.Type + "." + p.Options.Processor.Settings["input_key"].(string)
 	} else {
-		p.Options.Processor.Settings["input_key"] = p.Options.Processor.Type
+		inputKey = p.Options.Processor.Type
 	}
-	p.Options.Processor.Settings["input_key"] = strings.TrimSuffix(p.Options.Processor.Settings["input_key"].(string), ".")
+	conf, _ = json.Set(conf, "settings.input_key", inputKey)
 
 	if _, ok := p.Options.Processor.Settings["output_key"]; ok {
-		p.Options.Processor.Settings["output_key"] = p.Options.Processor.Type + "." + p.Options.Processor.Settings["output_key"].(string)
+		outputKey = p.Options.Processor.Type + "." + p.Options.Processor.Settings["output_key"].(string)
 	} else {
-		p.Options.Processor.Settings["output_key"] = p.Options.Processor.Type
+		outputKey = p.Options.Processor.Type
 	}
-	p.Options.Processor.Settings["output_key"] = strings.TrimSuffix(p.Options.Processor.Settings["output_key"].(string), ".")
+	conf, _ = json.Set(conf, "settings.output_key", outputKey)
 
-	byter, err := ByterFactory(p.Options.Processor)
+	var processor config.Config
+	gojson.Unmarshal(conf, &processor)
+
+	applicator, err := Factory(processor)
 	if err != nil {
-		return nil, err
+		return cap, err
 	}
 
-	value := json.Get(data, p.InputKey)
+	value := cap.Get(p.InputKey)
 	if !value.IsArray() {
-		return data, nil
+		return cap, nil
 	}
 
 	for _, v := range value.Array() {
-		var tmp []byte
-		tmp, err := json.Set(tmp, p.Options.Processor.Type, v)
-		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+		tmpCap := config.NewCapsule()
+		if err = tmpCap.Set(processor.Type, v); err != nil {
+			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 		}
 
-		tmp, err = byter.Byte(ctx, tmp)
+		tmpCap, err = applicator.Apply(ctx, tmpCap)
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 		}
 
-		res := json.Get(tmp, p.Options.Processor.Type)
-		data, err = json.Set(data, p.OutputKey, res)
-		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+		res := tmpCap.Get(processor.Type)
+		if err = cap.Set(p.OutputKey, res); err != nil {
+			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 		}
 	}
 
-	return data, nil
+	return cap, nil
 }

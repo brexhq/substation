@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 )
 
 /*
@@ -46,64 +46,68 @@ type Split struct {
 	OutputKey string                   `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the Split processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Split) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Split processor. Conditions are optionally applied to the data to enable processing.
+func (p Split) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
+	slice := NewBatch(&caps)
+	for _, cap := range caps {
+		ok, err := op.Operate(cap)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+			return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 		}
 
 		if !ok {
-			slice = append(slice, data)
+			slice = append(slice, cap)
 			continue
 		}
 
 		// JSON processing
 		if p.InputKey != "" && p.OutputKey != "" {
-			processed, err := p.Byte(ctx, data)
+			pcap, err := p.Apply(ctx, cap)
 			if err != nil {
-				return nil, fmt.Errorf("slicer: %v", err)
+				return nil, fmt.Errorf("applybatch: %v", err)
 			}
-			slice = append(slice, processed)
+			slice = append(slice, pcap)
 
 			continue
 		}
 
 		// data processing
 		if p.InputKey == "" && p.OutputKey == "" {
-			for _, x := range bytes.Split(data, []byte(p.Options.Separator)) {
-				slice = append(slice, x)
+			newCap := config.NewCapsule()
+			for _, x := range bytes.Split(cap.GetData(), []byte(p.Options.Separator)) {
+				newCap.SetData(x)
+				slice = append(slice, newCap)
 			}
 
 			continue
 		}
 
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	return slice, nil
 }
 
-// Byte processes bytes with the Split processor.
-func (p Split) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Split processor.
+func (p Split) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Separator == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" || p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	value := json.Get(data, p.InputKey).String()
-	split := strings.Split(value, p.Options.Separator)
-	return json.Set(data, p.OutputKey, split)
+	str := cap.Get(p.InputKey).String()
+	split := strings.Split(str, p.Options.Separator)
+
+	cap.Set(p.OutputKey, split)
+	return cap, nil
 }

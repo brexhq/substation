@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
 	"github.com/brexhq/substation/internal/json"
 )
@@ -34,7 +35,7 @@ type DynamoDBOptions struct {
 }
 
 /*
-DynamoDB processes data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The processor supports these patterns:
+DynamoDB processes encapsulated data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The processor supports these patterns:
 	JSON:
 		{"ddb":{"PK":"foo"}} >>> {"ddb":[{"foo":"bar"}]}
 
@@ -64,45 +65,26 @@ type DynamoDB struct {
 
 var dynamodbAPI dynamodb.API
 
-// Slice processes a slice of bytes with the DynamoDB processor. Conditions are optionally applied on the bytes to enable processing.
-func (p DynamoDB) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
-	// lazy load API
-	if !dynamodbAPI.IsEnabled() {
-		dynamodbAPI.Setup()
-	}
-
+// ApplyBatch processes a slice of encapsulated data with the DynamoDB processor. Conditions are optionally applied to the data to enable processing.
+func (p DynamoDB) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the DynamoDB processor.
-func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the DynamoDB processor.
+func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// lazy load API
@@ -111,34 +93,55 @@ func (p DynamoDB) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" || p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	if p.InputKey == "" && p.OutputKey == "" {
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	request := json.Get(data, p.InputKey)
-	if !request.IsObject() {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	result := cap.Get(p.InputKey)
+	if !result.IsObject() {
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// PK is a required field
-	pk := json.Get([]byte(request.Raw), "PK").String()
+	pk := json.Get([]byte(result.Raw), "PK").String()
 	if pk == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	sk := json.Get([]byte(request.Raw), "SK").String()
+	// SK is an optional field
+	sk := json.Get([]byte(result.Raw), "SK").String()
 
 	items, err := p.dynamodb(ctx, pk, sk)
 	if err != nil {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 	}
 
 	// no match
 	if len(items) == 0 {
-		return data, nil
+		return cap, nil
 	}
 
-	return json.Set(data, p.OutputKey, items)
+	cap.Set(p.OutputKey, items)
+	return cap, nil
+
+	// // JSON processing
+	// if p.InputKey != "" && p.OutputKey != "" {
+	// 	res := cap.Get(p.InputKey).String()
+	// 	label, _ := p.domain(res)
+
+	// 	cap.Set(p.OutputKey, label)
+	// 	return cap, nil
+	// }
+
+	// // data processing
+	// if p.InputKey == "" && p.OutputKey == "" {
+	// 	label, _ := p.domain(string(cap.GetData()))
+
+	// 	cap.SetData([]byte(label))
+	// 	return cap, nil
+	// }
+
+	// return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
 func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {

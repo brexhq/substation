@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var convertTests = []struct {
@@ -110,7 +112,11 @@ var convertTests = []struct {
 func TestConvert(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range convertTests {
-		res, err := test.proc.Byte(ctx, test.test)
+
+		cap := config.NewCapsule()
+		cap.SetData(test.test)
+
+		res, err := test.proc.Apply(ctx, cap)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -118,25 +124,27 @@ func TestConvert(t *testing.T) {
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res)
+		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
+			t.Logf("expected %s, got %s", test.expected, res.GetData())
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkConvertByte(b *testing.B, byter Convert, test []byte) {
+func benchmarkConvertCapByte(b *testing.B, applicator Convert, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Byte(ctx, test)
+		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkConvertByte(b *testing.B) {
+func BenchmarkConvertCapByte(b *testing.B) {
 	for _, test := range convertTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkConvertByte(b, test.proc, test.test)
+				cap := config.NewCapsule()
+				cap.SetData(test.test)
+				benchmarkConvertCapByte(b, test.proc, cap)
 			},
 		)
 	}

@@ -8,8 +8,8 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/json"
 )
 
 // DomainNoSubdomain is returned when a domain without a subdomain is processed.
@@ -29,7 +29,7 @@ type DomainOptions struct {
 }
 
 /*
-Domain processes data by parsing fully qualified domain names into labels. The processor supports these patterns:
+Domain processes encapsulated data by parsing fully qualified domain names into labels. The processor supports these patterns:
 	JSON:
 		{"domain":"example.com"} >>> {"domain":"example.com","tld":"com"}
 	data:
@@ -54,56 +54,46 @@ type Domain struct {
 	OutputKey string                   `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the Domain processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Domain) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Domain processor. Conditions are optionally applied to the data to enable processing.
+func (p Domain) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Domain processor.
-func (p Domain) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Domain processor.
+func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey)
-		label, _ := p.domain(value.String())
-		return json.Set(data, p.OutputKey, label)
+		res := cap.Get(p.InputKey).String()
+		label, _ := p.domain(res)
+
+		cap.Set(p.OutputKey, label)
+		return cap, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		label, _ := p.domain(string(data))
-		return []byte(label), nil
+		label, _ := p.domain(string(cap.GetData()))
+
+		cap.SetData([]byte(label))
+		return cap, nil
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
 func (p Domain) domain(s string) (string, error) {

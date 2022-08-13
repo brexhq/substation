@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/brexhq/substation/config"
 	ddb "github.com/brexhq/substation/internal/aws/dynamodb"
 )
 
@@ -83,7 +84,11 @@ func TestDynamoDB(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range dynamodbTests {
 		dynamodbAPI = test.api
-		res, err := test.proc.Byte(ctx, test.test)
+
+		cap := config.NewCapsule()
+		cap.SetData(test.test)
+
+		res, err := test.proc.Apply(ctx, cap)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -91,26 +96,28 @@ func TestDynamoDB(t *testing.T) {
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res)
+		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
+			t.Logf("expected %s, got %s", test.expected, res.GetData())
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkDynamoDBByte(b *testing.B, byter DynamoDB, test []byte) {
+func benchmarkDynamoDBCapByte(b *testing.B, applicator DynamoDB, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Byte(ctx, test)
+		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkDynamoDBByte(b *testing.B) {
+func BenchmarkDynamoDBCapByte(b *testing.B) {
 	for _, test := range dynamodbTests {
-		dynamodbAPI = test.api
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkDynamoDBByte(b, test.proc, test.test)
+				dynamodbAPI = test.api
+				cap := config.NewCapsule()
+				cap.SetData(test.test)
+				benchmarkDynamoDBCapByte(b, test.proc, cap)
 			},
 		)
 	}

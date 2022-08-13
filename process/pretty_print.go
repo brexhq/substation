@@ -11,6 +11,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
@@ -76,7 +77,8 @@ type PrettyPrint struct {
 }
 
 /*
-Slice processes bytes with the PrettyPrint processor.
+ApplyBatch processes a slice of encapsulated data
+with the PrettyPrint processor.
 
 Applying prettyprint formatting is handled by the
 gjson PrettyPrint modifier and is applied to the root
@@ -89,57 +91,60 @@ and close curly brackets ( { } ) are observed,
 then the stack of bytes has JSON compaction
 applied and the result is emitted as a new object.
 */
-func (p PrettyPrint) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("unary settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("batch settings %+v: %w", p, err)
 	}
 
 	var count int
 	var stack []byte
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
+	slice := NewBatch(&caps)
+	for _, cap := range caps {
+		ok, err := op.Operate(cap)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+			return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 		}
 
 		if !ok {
-			slice = append(slice, data)
+			slice = append(slice, cap)
 			continue
 		}
 
 		switch p.Options.Direction {
 		case "to":
-			s := json.Get(data, ppModifier).String()
-			slice = append(slice, []byte(s))
+			s := cap.Get(ppModifier).String()
+			cap.SetData([]byte(s))
+			slice = append(slice, cap)
 
 		case "from":
-			for _, d := range data {
-				stack = append(stack, d)
+			for _, data := range cap.GetData() {
+				stack = append(stack, data)
 
-				if d == openCurlyBracket {
+				if data == openCurlyBracket {
 					count++
 				}
 
-				if d == closeCurlyBracket {
+				if data == closeCurlyBracket {
 					count--
 				}
 
 				if count == 0 {
 					var buf bytes.Buffer
 					if err := gojson.Compact(&buf, stack); err != nil {
-						return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+						return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 					}
 
 					if json.Valid(buf.Bytes()) {
-						slice = append(slice, buf.Bytes())
+						newCap := config.NewCapsule()
+						newCap.SetData(buf.Bytes())
+						slice = append(slice, newCap)
 					}
 
 					stack = []byte{}
@@ -147,19 +152,20 @@ func (p PrettyPrint) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 			}
 
 		default:
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, ProcessorInvalidSettings)
+			return nil, fmt.Errorf("applybatch settings %+v: %w", p, ProcessorInvalidSettings)
 		}
 	}
 
 	if count != 0 {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, PrettyPrintUnbalancedBrackets)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, PrettyPrintUnbalancedBrackets)
 	}
 
 	return slice, nil
 }
 
 /*
-Byte processes bytes with the PrettyPrint processor.
+Apply processes encapsulated data with the PrettyPrint
+processor.
 
 Applying prettyprint formatting is handled by the
 gjson PrettyPrint modifier and is applied to the root
@@ -169,16 +175,16 @@ Byte _does not_ support reversing prettyprint formatting;
 this support is unnecessary for multi-line JSON objects
 that are stored in a single byte array.
 */
-func (p PrettyPrint) Byte(ctx context.Context, data []byte) ([]byte, error) {
+func (p PrettyPrint) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("unary settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	if p.Options.Direction == "to" {
-		value := json.Get(data, ppModifier).String()
-		return []byte(value), nil
+		cap.SetData([]byte(cap.Get(ppModifier).String()))
+		return cap, nil
 	}
 
-	return nil, fmt.Errorf("slicer settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("unary settings %+v: %w", p, ProcessorInvalidSettings)
 }

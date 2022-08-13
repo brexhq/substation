@@ -9,7 +9,7 @@ import (
 	"github.com/iancoleman/strcase"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 )
 
 /*
@@ -26,7 +26,7 @@ type CaseOptions struct {
 }
 
 /*
-Case processes data by changing the case of a string or byte slice. The processor supports these patterns:
+Case processes encapsulated data by changing the case of a string or byte slice. The processor supports these patterns:
 	JSON:
 		{"case":"foo"} >>> {"case":"FOO"}
 	data:
@@ -51,64 +51,54 @@ type Case struct {
 	OutputKey string                   `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the Case processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Case) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Case processor. Conditions are optionally applied to the data to enable processing.
+func (p Case) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Case processor.
-func (p Case) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Case processor.
+func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Case == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey).String()
+		res := cap.Get(p.InputKey).String()
 		switch p.Options.Case {
 		case "upper":
-			return json.Set(data, p.OutputKey, strings.ToUpper(value))
+			cap.Set(p.OutputKey, strings.ToUpper(res))
 		case "lower":
-			return json.Set(data, p.OutputKey, strings.ToLower(value))
+			cap.Set(p.OutputKey, strings.ToLower(res))
 		case "snake":
-			return json.Set(data, p.OutputKey, strcase.ToSnake(value))
+			cap.Set(p.OutputKey, strcase.ToSnake(res))
 		}
+
+		return cap, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
 		switch p.Options.Case {
 		case "upper":
-			return bytes.ToUpper(data), nil
+			cap.SetData(bytes.ToUpper(cap.GetData()))
 		case "lower":
-			return bytes.ToLower(data), nil
+			cap.SetData(bytes.ToLower(cap.GetData()))
 		}
+
+		return cap, nil
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 }

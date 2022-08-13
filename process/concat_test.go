@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var concatTests = []struct {
@@ -39,7 +41,11 @@ var concatTests = []struct {
 func TestConcat(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range concatTests {
-		res, err := test.proc.Byte(ctx, test.test)
+
+		cap := config.NewCapsule()
+		cap.SetData(test.test)
+
+		res, err := test.proc.Apply(ctx, cap)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -47,25 +53,27 @@ func TestConcat(t *testing.T) {
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res)
+		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
+			t.Logf("expected %s, got %s", test.expected, res.GetData())
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkConcatByte(b *testing.B, byter Concat, test []byte) {
+func benchmarkConcatCapByte(b *testing.B, applicator Concat, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Byte(ctx, test)
+		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkConcatByte(b *testing.B) {
+func BenchmarkConcatCapByte(b *testing.B) {
 	for _, test := range concatTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkConcatByte(b, test.proc, test.test)
+				cap := config.NewCapsule()
+				cap.SetData(test.test)
+				benchmarkConcatCapByte(b, test.proc, cap)
 			},
 		)
 	}

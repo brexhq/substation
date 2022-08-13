@@ -7,9 +7,9 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/base64"
 	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/json"
 )
 
 // Base64JSONDecodedBinary is returned when the Base64 processor is configured to decode output to JSON, but the output contains binary data and cannot be written as valid JSON.
@@ -28,7 +28,7 @@ type Base64Options struct {
 }
 
 /*
-Base64 processes data by converting it to and from base64. The processor supports these patterns:
+Base64 processes encapsulated data by converting it to and from base64. The processor supports these patterns:
 	JSON:
 	  	{"base64":"Zm9v"} >>> {"base64":"foo"}
 	data:
@@ -53,62 +53,49 @@ type Base64 struct {
 	OutputKey string                   `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the Base64 processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Base64) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Base64 processor. Conditions are optionally applied to the data to enable processing.
+func (p Base64) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Base64 processor.
-func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Base64 processor.
+func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey).String()
-		tmp := []byte(value)
+		res := cap.Get(p.InputKey).String()
+		tmp := []byte(res)
 
 		switch p.Options.Direction {
 		case "from":
 			result, err := base64.Decode(tmp)
 			if err != nil {
-				return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+				return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 			}
 
 			if !utf8.Valid(result) {
-				return nil, fmt.Errorf("byter settings %+v: %w", p, Base64JSONDecodedBinary)
+				return cap, fmt.Errorf("applicator settings %+v: %w", p, Base64JSONDecodedBinary)
 			}
 
-			return json.Set(data, p.OutputKey, result)
+			cap.Set(p.OutputKey, result)
+			return cap, nil
 		case "to":
-			result := base64.Encode(tmp)
-			return json.Set(data, p.OutputKey, string(result))
+			cap.Set(p.OutputKey, base64.Encode(tmp))
+			return cap, nil
 		}
 	}
 
@@ -116,15 +103,18 @@ func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	if p.InputKey == "" && p.OutputKey == "" {
 		switch p.Options.Direction {
 		case "from":
-			result, err := base64.Decode(data)
+			result, err := base64.Decode(cap.GetData())
 			if err != nil {
-				return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+				return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 			}
-			return result, nil
+
+			cap.SetData(result)
+			return cap, nil
 		case "to":
-			return base64.Encode(data), nil
+			cap.SetData(base64.Encode(cap.GetData()))
+			return cap, nil
 		}
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 }

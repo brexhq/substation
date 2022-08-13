@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
 
@@ -18,7 +19,7 @@ type GroupOptions struct {
 }
 
 /*
-Group processes data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
+Group processes encapsulated data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
 	JSON array:
 		{"group":[["foo","bar"],[111,222]]} >>> {"group":[["foo",111],["bar",222]]}
 		{"group":[["foo","bar"],[111,222]]} >>> {"group":[{"name":foo","size":111},{"name":"bar","size":222}]}
@@ -39,40 +40,26 @@ type Group struct {
 	OutputKey string                   `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the Group processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Group) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Group processor. Conditions are optionally applied to the data to enable processing.
+func (p Group) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Group processor.
-func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Group processor.
+func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON arrays, error early if there are no keys
-	if p.InputKey == "" || p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	if p.InputKey == "" && p.OutputKey == "" {
+		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	if len(p.Options.Keys) == 0 {
@@ -83,10 +70,10 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		// 	cache[0][]interface{}{"foo",123}
 		// 	cache[1][]interface{}{"bar",456}
 		cache := make(map[int][]interface{})
-		value := json.Get(data, p.InputKey)
-		for _, v := range value.Array() {
-			for x, v1 := range v.Array() {
-				cache[x] = append(cache[x], v1.Value())
+		res := cap.Get(p.InputKey)
+		for _, val := range res.Array() {
+			for x, v := range val.Array() {
+				cache[x] = append(cache[x], v.Value())
 			}
 		}
 
@@ -96,7 +83,8 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		}
 
 		// [["foo",123],["bar",456]]
-		return json.Set(data, p.OutputKey, array)
+		cap.Set(p.OutputKey, array)
+		return cap, nil
 	}
 
 	// elements in the values array are stored at their
@@ -108,12 +96,12 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// 	cache[1][]byte(`{"name":"bar","size":456}`)
 	cache := make(map[int][]byte)
 	var err error
-	value := json.Get(data, p.InputKey)
-	for x, v := range value.Array() {
-		for x1, v1 := range v.Array() {
+	res := cap.Get(p.InputKey)
+	for x, val := range res.Array() {
+		for x1, v1 := range val.Array() {
 			cache[x1], err = json.Set(cache[x1], p.Options.Keys[x], v1)
 			if err != nil {
-				return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+				return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 			}
 		}
 	}
@@ -124,11 +112,12 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	for i := 0; i < len(cache); i++ {
 		tmp, err = json.Set(tmp, fmt.Sprintf("%d", i), cache[i])
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 		}
 	}
 
 	// JSON arrays must be set using SetRaw to preserve structure
 	// [{"name":"foo","size":123},{"name":"bar","size":456}]
-	return json.SetRaw(data, p.OutputKey, tmp)
+	cap.SetRaw(p.OutputKey, tmp)
+	return cap, nil
 }

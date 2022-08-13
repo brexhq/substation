@@ -11,6 +11,10 @@
     type: 'kinesis',
     settings: { stream: stream, partition: partition, partition_key: partition_key, shard_redistribution: shard_redistribution },
   },
+  kinesis_firehose(stream): {
+    type: 'kinesis_firehose',
+    settings: { stream: stream },
+  },
   s3(bucket, prefix='', prefix_key=''): {
     type: 's3',
     settings: { bucket: bucket, prefix: prefix, prefix_key: prefix_key },
@@ -21,5 +25,9 @@
   sumologic(url, category='', category_key=''): {
     type: 'sumologic',
     settings: { url: url, category: category, category_key: category_key },
+  },
+  sqs(queue): {
+    type: 'sqs',
+    settings: { queue: queue },
   },
 }

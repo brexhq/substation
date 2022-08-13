@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
 )
@@ -50,8 +51,8 @@ type HTTP struct {
 
 var httpClient http.HTTP
 
-// Send sinks a channel of bytes with the HTTP sink.
-func (sink *HTTP) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
+// Send sinks a channel of encapsulated data with the HTTP sink.
+func (sink *HTTP) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
 	if !httpClient.IsEnabled() {
 		httpClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -59,14 +60,14 @@ func (sink *HTTP) Send(ctx context.Context, ch chan []byte, kill chan struct{}) 
 		}
 	}
 
-	for data := range ch {
+	for cap := range ch {
 		select {
 		case <-kill:
 			return nil
 		default:
 			var headers []http.Header
 
-			if json.Valid(data) {
+			if json.Valid(cap.GetData()) {
 				headers = append(headers, http.Header{
 					Key:   "Content-Type",
 					Value: "application/json",
@@ -83,7 +84,7 @@ func (sink *HTTP) Send(ctx context.Context, ch chan []byte, kill chan struct{}) 
 			}
 
 			if sink.HeadersKey != "" {
-				h := json.Get(data, sink.HeadersKey).Array()
+				h := cap.Get(sink.HeadersKey).Array()
 				for _, header := range h {
 					for k, v := range header.Map() {
 						headers = append(headers, http.Header{
@@ -94,7 +95,7 @@ func (sink *HTTP) Send(ctx context.Context, ch chan []byte, kill chan struct{}) 
 				}
 			}
 
-			_, err := httpClient.Post(ctx, sink.URL, string(data), headers...)
+			_, err := httpClient.Post(ctx, sink.URL, string(cap.GetData()), headers...)
 			if err != nil {
 				// Post err returns metadata
 				return fmt.Errorf("sink http: %v", err)

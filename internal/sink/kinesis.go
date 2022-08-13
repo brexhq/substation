@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/kinesis"
-	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
 )
 
@@ -44,15 +44,15 @@ type Kinesis struct {
 
 var kinesisAPI kinesis.API
 
-// Send sinks a channel of bytes with the Kinesis sink.
-func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
+// Send sinks a channel of encapsulated data with the Kinesis sink.
+func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
 	if !kinesisAPI.IsEnabled() {
 		kinesisAPI.Setup()
 	}
 
 	buffer := map[string]*kinesis.Aggregate{}
 
-	for data := range ch {
+	for cap := range ch {
 		select {
 		case <-kill:
 			return nil
@@ -61,7 +61,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 			if sink.Partition != "" {
 				partitionKey = sink.Partition
 			} else if sink.PartitionKey != "" {
-				partitionKey = json.Get(data, sink.PartitionKey).String()
+				partitionKey = cap.Get(sink.PartitionKey).String()
 			}
 
 			if partitionKey == "" {
@@ -83,7 +83,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok := buffer[aggregationKey].Add(data, partitionKey)
+			ok := buffer[aggregationKey].Add(cap.GetData(), partitionKey)
 			if !ok {
 				agg := buffer[aggregationKey].Get()
 				aggPK := buffer[aggregationKey].PartitionKey
@@ -102,7 +102,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 				).Debug("put records into Kinesis")
 
 				buffer[aggregationKey].New()
-				buffer[aggregationKey].Add(data, partitionKey)
+				buffer[aggregationKey].Add(cap.GetData(), partitionKey)
 			}
 		}
 	}

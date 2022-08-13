@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jshlbrd/go-aggregate"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/s3manager"
-	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
 )
 
@@ -47,8 +47,8 @@ type S3 struct {
 
 var s3managerAPI s3manager.UploaderAPI
 
-// Send sinks a channel of bytes with the S3 sink.
-func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
+// Send sinks a channel of encapsulated data with the S3 sink.
+func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
 	if !s3managerAPI.IsEnabled() {
 		s3managerAPI.Setup()
 	}
@@ -61,13 +61,13 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 	}
 
 	sep := []byte("\n")
-	for data := range ch {
+	for cap := range ch {
 		select {
 		case <-kill:
 			return nil
 		default:
 			if sink.PrefixKey != "" {
-				prefix = json.Get(data, sink.PrefixKey).String()
+				prefix = cap.Get(sink.PrefixKey).String()
 			}
 
 			if _, ok := buffer[prefix]; !ok {
@@ -78,7 +78,7 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok, err := buffer[prefix].Add(data)
+			ok, err := buffer[prefix].Add(cap.GetData())
 			if err != nil {
 				return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
 			}
@@ -107,7 +107,7 @@ func (sink *S3) Send(ctx context.Context, ch chan []byte, kill chan struct{}) er
 				).Debug("uploaded data to S3")
 
 				buffer[prefix].Reset()
-				buffer[prefix].Add(data)
+				buffer[prefix].Add(cap.GetData())
 			}
 		}
 	}

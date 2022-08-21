@@ -35,7 +35,7 @@ Each capsule contains two unexported fields that are accessed by getters and set
 
 - metadata: stores structured metadata that describes the data
 
-The metadata field is accessed through a special JSON key named "!metadata", any references to this key will get or set the structured data stored in the field. JSON values can be moved between the data and metadata fields.
+Values in the metadata field are accessed using the pattern "!metadata [key]". JSON values can be freely moved between the data and metadata fields.
 
 Capsules can be created and initialized using this pattern, where b is a []byte and v is an interface{}:
 	cap := NewCapsule()
@@ -60,13 +60,14 @@ func NewCapsule() Capsule {
 // Delete removes a key from a JSON object stored in the capsule's data or metadata fields.
 func (c *Capsule) Delete(key string) (err error) {
 	if strings.HasPrefix(key, "!metadata") {
-		// zeroes out metadata
-		if key == "!metadata" {
+		key = strings.TrimPrefix(key, "!metadata")
+		key = strings.TrimLeft(key, " ")
+
+		if key == "" {
 			c.metadata = nil
 			return nil
 		}
 
-		key = strings.TrimPrefix(key, "!metadata.")
 		c.metadata, err = json.Delete(c.metadata, key)
 		if err != nil {
 			return err
@@ -86,12 +87,14 @@ func (c *Capsule) Delete(key string) (err error) {
 // Get retrieves a value from a JSON object stored in the capsule's data or metadata fields.
 func (c *Capsule) Get(key string) json.Result {
 	if strings.HasPrefix(key, "!metadata") {
+		key = strings.TrimPrefix(key, "!metadata")
+		key = strings.TrimLeft(key, " ")
+
 		// returns entire metadata object
-		if key == "!metadata" {
+		if key == "" {
 			return json.Get(c.metadata, "@this")
 		}
 
-		key = strings.TrimPrefix(key, "!metadata.")
 		return json.Get(c.metadata, key)
 	}
 
@@ -101,12 +104,14 @@ func (c *Capsule) Get(key string) json.Result {
 // Set writes a value to a JSON object stored in the capsule's data or metadata fields.
 func (c *Capsule) Set(key string, value interface{}) (err error) {
 	if strings.HasPrefix(key, "!metadata") {
+		key = strings.TrimPrefix(key, "!metadata")
+		key = strings.TrimLeft(key, " ")
+
 		// values should not be written directly to the metadata field
-		if key == "!metadata" {
+		if key == "" {
 			return SetInvalidKey
 		}
 
-		key = strings.TrimPrefix(key, "!metadata.")
 		c.metadata, err = json.Set(c.metadata, key, value)
 		if err != nil {
 			return err
@@ -125,13 +130,14 @@ func (c *Capsule) Set(key string, value interface{}) (err error) {
 
 // SetRaw writes a raw value to a JSON object stored in the capsule's data or metadata fields. These values are usually pre-formatted JSON (e.g., entire objects or arrays).
 func (c *Capsule) SetRaw(key string, value interface{}) (err error) {
-	if strings.HasPrefix(key, "!metadata") {
+	if strings.HasPrefix(key, "!metadata ") {
+		key = strings.TrimPrefix(key, "!metadata ")
+
 		// values should not be written directly to the metadata field
-		if key == "!metadata" {
+		if key == "" {
 			return SetInvalidKey
 		}
 
-		key = strings.TrimPrefix(key, "!metadata.")
 		c.metadata, err = json.SetRaw(c.metadata, key, value)
 		if err != nil {
 			return err

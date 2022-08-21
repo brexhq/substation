@@ -1,4 +1,4 @@
-package kinesis_firehose
+package firehose
 
 import (
 	"fmt"
@@ -83,7 +83,8 @@ func (a *API) PutRecordBatch(ctx aws.Context, data [][]byte, stream string) (*fi
 		&firehose.PutRecordBatchInput{
 			DeliveryStreamName: aws.String(stream),
 			Records:            records,
-		})
+		},
+	)
 
 	// failed records are identified by the existence of an error code.
 	// if an error code exists, then data is stored in a new slice and

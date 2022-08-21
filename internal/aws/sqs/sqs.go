@@ -57,11 +57,19 @@ func (a *API) Setup() {
 
 // SendMessage is a convenience wrapper for sending a message to an SQS queue.
 func (a *API) SendMessage(ctx aws.Context, data []byte, queue string) (*sqs.SendMessageOutput, error) {
+	url, err := a.Client.GetQueueUrlWithContext(
+		ctx,
+		&sqs.GetQueueUrlInput{
+			QueueName: aws.String(queue),
+		})
+	if err != nil {
+		return nil, fmt.Errorf("sendmessagebatch queue %s: %w", queue, err)
+	}
 	resp, err := a.Client.SendMessageWithContext(
 		ctx,
 		&sqs.SendMessageInput{
 			MessageBody: aws.String(string(data)),
-			QueueUrl:    aws.String(queue),
+			QueueUrl:    url.QueueUrl,
 		})
 
 	if err != nil {

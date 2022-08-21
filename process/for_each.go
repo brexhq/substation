@@ -117,7 +117,7 @@ func (p ForEach) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 
 	for _, v := range value.Array() {
 		tmpCap := config.NewCapsule()
-		if err = tmpCap.Set(processor.Type, v); err != nil {
+		if err := tmpCap.Set(processor.Type, v); err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
@@ -127,7 +127,7 @@ func (p ForEach) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		}
 
 		res := tmpCap.Get(processor.Type)
-		if err = cap.Set(p.OutputKey, res); err != nil {
+		if err := cap.Set(p.OutputKey, res); err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 	}

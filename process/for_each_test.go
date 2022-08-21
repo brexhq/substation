@@ -348,27 +348,6 @@ func TestForEach(t *testing.T) {
 	}
 }
 
-func Test2ForEach(t *testing.T) {
-	ctx := context.TODO()
-	for _, test := range foreachTests {
-
-		cap := config.NewCapsule()
-		cap.SetData(test.test)
-		res, err := test.proc.Apply(ctx, cap)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
-			t.Log(err)
-			t.Fail()
-		}
-
-		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res.GetData())
-			t.Fail()
-		}
-	}
-}
-
 func benchmarkCapForEachByte(b *testing.B, applicator ForEach, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
@@ -385,6 +364,5 @@ func BenchmarkCapForEachByte(b *testing.B) {
 				benchmarkCapForEachByte(b, test.proc, cap)
 			},
 		)
-		break
 	}
 }

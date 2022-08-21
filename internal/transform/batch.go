@@ -16,11 +16,12 @@ Below is an example that shows how a single JSON object is iteratively modified 
 	{"hello":"world","foo":"bar","baz":"qux"} // insert value "qux" into key "bar"
 	{"hello":"world","foo":"bar.qux"} // concat vaues from "foo" and "baz" into key "foo" with separator "."
 
-The transform uses this Jsonnet configuration:
+When loaded with a factory, the transform uses this JSON configuration:
 	{
-		type: 'batch',
-		processors: [
+		"type": "batch",
+		"processors": [
 			{
+				"type": "hash",
 				"settings": {
 					"condition": {
 						"inspectors": [ ],
@@ -30,10 +31,9 @@ The transform uses this Jsonnet configuration:
 					"output_key": "event.hash"
 					"options": {
 						"algorithm": "sha256"
-					},
-				},
-				"type": "hash"
-			},
+					}
+				}
+			}
 		]
 	}
 */
@@ -43,7 +43,7 @@ type Batch struct {
 
 // Transform processes a channel of encapsulated data with the Batch transform.
 func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule, out chan<- config.Capsule, kill chan struct{}) error {
-	applicators, err := process.MakeAllBatchApplicators(transform.Processors)
+	applicators, err := process.MakeBatchApplicators(transform.Processors)
 	if err != nil {
 		return err
 	}

@@ -7,11 +7,11 @@ import (
 )
 
 /*
-Transfer transforms data without modification. This transform should be used when data needs to be moved from a source to a sink without processing data.
+Transfer transforms data without modification. This transform should be used when data needs to be moved from a source to a sink without processing.
 
-The transform uses this Jsonnet configuration:
+When loaded with a factory, the transform uses this JSON configuration:
 	{
-		type: 'transfer',
+		"type": "transfer"
 	}
 */
 type Transfer struct{}

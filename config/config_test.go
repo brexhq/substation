@@ -90,7 +90,7 @@ var capsuleDeleteTests = []struct {
 		},
 		[]byte(`{"foo":"bar","baz":"qux"}`),
 		[]byte(`{"grault":"garply"}`),
-		"__metadata.quux",
+		"!metadata.quux",
 		nil,
 	},
 	// deletes all metadata
@@ -103,7 +103,7 @@ var capsuleDeleteTests = []struct {
 		},
 		[]byte(`{"foo":"bar","baz":"qux"}`),
 		[]byte{},
-		"__metadata",
+		"!metadata",
 		nil,
 	},
 }
@@ -176,7 +176,7 @@ var capsuleGetTests = []struct {
 			"grault": "garply",
 		},
 		"corge",
-		"__metadata.quux",
+		"!metadata.quux",
 		nil,
 	},
 	{
@@ -184,7 +184,7 @@ var capsuleGetTests = []struct {
 		[]byte(`{"foo":"bar","baz":"qux"}`),
 		"quux",
 		"quux",
-		"__metadata",
+		"!metadata",
 		nil,
 	},
 }
@@ -261,7 +261,7 @@ var capsuleSetTests = []struct {
 		},
 		[]byte(`{"foo":"bar","baz":"qux"}`),
 		[]byte(`{"quux":"corge","grault":"garply","waldo":"fred"}`),
-		"__metadata.waldo",
+		"!metadata.waldo",
 		"fred",
 		nil,
 	},
@@ -340,7 +340,7 @@ var capsuleSetRawTests = []struct {
 		},
 		[]byte(`{"foo":"bar","baz":"qux"}`),
 		[]byte(`{"quux":"corge","grault":"garply","waldo":{"fred":["plugh","xyzzy","thud"]}}`),
-		"__metadata.waldo",
+		"!metadata.waldo",
 		`{"fred":["plugh","xyzzy","thud"]}`,
 		nil,
 	},

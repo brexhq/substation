@@ -17,7 +17,7 @@ type Config struct {
 	Settings map[string]interface{} `json:"settings"`
 }
 
-// Decode marshals and unmarshals the input structure into the output structure using the standard library's json package. This should be used when decoding JSON configurations (i.e., Config) in Substation interface factories.
+// Decode marshals and unmarshals an input interface into the output interface using the standard library's json package. This should be used when decoding JSON configurations (i.e., Config) in Substation interface factories.
 func Decode(input interface{}, output interface{}) error {
 	b, err := gojson.Marshal(input)
 	if err != nil {
@@ -35,12 +35,11 @@ Each capsule contains two unexported fields that are accessed by getters and set
 
 - metadata: stores structured metadata that describes the data
 
-The metadata field is accessed through a unique JSON key named "__metadata", any references to this key will get or set the structured data stored in the field. JSON values can be moved between the data and metadata fields.
+The metadata field is accessed through a special JSON key named "!metadata", any references to this key will get or set the structured data stored in the field. JSON values can be moved between the data and metadata fields.
 
 Capsules can be created and initialized using this pattern, where b is a []byte and v is an interface{}:
 	cap := NewCapsule()
 	cap.SetData(b).SetMetadata(v)
-
 
 Substation applications follow these rules when handling capsules:
 
@@ -60,14 +59,14 @@ func NewCapsule() Capsule {
 
 // Delete removes a key from a JSON object stored in the capsule's data or metadata fields.
 func (c *Capsule) Delete(key string) (err error) {
-	if strings.HasPrefix(key, "__metadata") {
+	if strings.HasPrefix(key, "!metadata") {
 		// zeroes out metadata
-		if key == "__metadata" {
+		if key == "!metadata" {
 			c.metadata = nil
 			return nil
 		}
 
-		key = strings.TrimPrefix(key, "__metadata.")
+		key = strings.TrimPrefix(key, "!metadata.")
 		c.metadata, err = json.Delete(c.metadata, key)
 		if err != nil {
 			return err
@@ -86,13 +85,13 @@ func (c *Capsule) Delete(key string) (err error) {
 
 // Get retrieves a value from a JSON object stored in the capsule's data or metadata fields.
 func (c *Capsule) Get(key string) json.Result {
-	if strings.HasPrefix(key, "__metadata") {
+	if strings.HasPrefix(key, "!metadata") {
 		// returns entire metadata object
-		if key == "__metadata" {
+		if key == "!metadata" {
 			return json.Get(c.metadata, "@this")
 		}
 
-		key = strings.TrimPrefix(key, "__metadata.")
+		key = strings.TrimPrefix(key, "!metadata.")
 		return json.Get(c.metadata, key)
 	}
 
@@ -101,13 +100,13 @@ func (c *Capsule) Get(key string) json.Result {
 
 // Set writes a value to a JSON object stored in the capsule's data or metadata fields.
 func (c *Capsule) Set(key string, value interface{}) (err error) {
-	if strings.HasPrefix(key, "__metadata") {
+	if strings.HasPrefix(key, "!metadata") {
 		// values should not be written directly to the metadata field
-		if key == "__metadata" {
+		if key == "!metadata" {
 			return SetInvalidKey
 		}
 
-		key = strings.TrimPrefix(key, "__metadata.")
+		key = strings.TrimPrefix(key, "!metadata.")
 		c.metadata, err = json.Set(c.metadata, key, value)
 		if err != nil {
 			return err
@@ -126,13 +125,13 @@ func (c *Capsule) Set(key string, value interface{}) (err error) {
 
 // SetRaw writes a raw value to a JSON object stored in the capsule's data or metadata fields. These values are usually pre-formatted JSON (e.g., entire objects or arrays).
 func (c *Capsule) SetRaw(key string, value interface{}) (err error) {
-	if strings.HasPrefix(key, "__metadata") {
+	if strings.HasPrefix(key, "!metadata") {
 		// values should not be written directly to the metadata field
-		if key == "__metadata" {
+		if key == "!metadata" {
 			return SetInvalidKey
 		}
 
-		key = strings.TrimPrefix(key, "__metadata.")
+		key = strings.TrimPrefix(key, "!metadata.")
 		c.metadata, err = json.SetRaw(c.metadata, key, value)
 		if err != nil {
 			return err

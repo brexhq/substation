@@ -1,5 +1,5 @@
-local processlib = import '../../config/process.libsonnet';
-local conditionlib = import '../../config/condition.libsonnet';
+local processlib = import '../../../build/config/process.libsonnet';
+local conditionlib = import '../../../build/config/condition.libsonnet';
 
 // applies the Insert processor if any of these conditions match
 local conditions = [

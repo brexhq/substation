@@ -10,7 +10,7 @@ Please use the official [Terraform documentation](https://registry.terraform.io/
 
 ## Modules
 
-Due to the potentially endless number of deployment configurations, Substation comes with Terraform modules that act as component templates for different parts of the system. These modules are designed to be flexible enough to support every known deployment configuration. For an example deployment, see `example.tf`.
+Due to the potentially endless number of deployment configurations, Substation comes with Terraform modules that act as component templates for different parts of the system. These modules are designed to be flexible enough to support every known deployment configuration. For an example deployment, see `example.tf` .
 
 ### API Gateway
 
@@ -19,9 +19,11 @@ This module is used as a template for deploying new API Gateway endpoints.
 Read more about API Gateway [here](https://aws.amazon.com/api-gateway/).
 
 #### Kinesis
+
 This module creates an API Gateway that sends a record to a Kinesis Data Stream. To prevent hot shards, the partition key is the request ID of the HTTP request.
 
 #### Lambda
+
 This module creates an API Gateway that invokes and sends a record to a Lambda function.
 
 ### DynamoDB
@@ -36,8 +38,8 @@ This module is used as a template for deploying new image repositories to the AW
 
 There are two things to be aware of when deploying new image repositories:
 
-- Terraform does not manage the build and deployment of container images; after an image repository is created, then container build and upload should happen externally via Docker (see `build/docker` for more information)
-- By default all Lambda deployments use containers, but a Lambda deployment will fail if the image repository is empty; prevent deployment failures by building and uploading images before deploying Lambda
+* Terraform does not manage the build and deployment of container images; after an image repository is created, then container build and upload should happen externally via Docker (see `build/docker` for more information)
+* By default all Lambda deployments use containers, but a Lambda deployment will fail if the image repository is empty; prevent deployment failures by building and uploading images before deploying Lambda
 
 Read more about ECR [here](https://aws.amazon.com/ecr/).
 
@@ -75,14 +77,14 @@ Read more about the Key Management Service [here](https://aws.amazon.com/kms/).
 
 ### Lambda
 
-This module is used to create and manage Lambda, which is the recommended service for data processing. At release, the Lambda Substation app (`cmd/aws/lambda/substation`) supports these Lambda triggers:
+This module is used to create and manage Lambda, which is the recommended service for data processing. At release, the Lambda Substation app ( `cmd/aws/lambda/substation` ) supports these Lambda triggers:
 
-- API Gateway
-- Kinesis Data Streams
-- SNS via S3
-- S3
+* API Gateway
+* Kinesis Data Streams
+* SNS via S3
+* S3
 
-This module is flexible enough to deploy supporting apps (such as `cmd/aws/lambda/kinesis_autoscaling`) and custom apps (such as apps that provide data enrichment functionality). When new Lambda are created with this module, an accompanying AppConfig configuration profile is created under the `substation` application.
+This module is flexible enough to deploy supporting apps (such as `cmd/aws/lambda/kinesis_autoscaling` ) and custom apps (such as apps that provide data enrichment functionality). When new Lambda are created with this module, an accompanying AppConfig configuration profile is created under the `substation` application.
 
 Read more about AWS Lambda [here](https://aws.amazon.com/lambda/).
 

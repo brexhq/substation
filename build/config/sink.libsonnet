@@ -11,8 +11,8 @@
     type: 'kinesis',
     settings: { stream: stream, partition: partition, partition_key: partition_key, shard_redistribution: shard_redistribution },
   },
-  kinesis_firehose(stream): {
-    type: 'kinesis_firehose',
+  firehose(stream): {
+    type: 'firehose',
     settings: { stream: stream },
   },
   s3(bucket, prefix='', prefix_key=''): {

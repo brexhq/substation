@@ -16,6 +16,32 @@ import (
 const Base64JSONDecodedBinary = errors.Error("Base64JSONDecodedBinary")
 
 /*
+Base64 processes data by converting it to and from base64 encoding. The processor supports these patterns:
+	JSON:
+	  	{"base64":"Zm9v"} >>> {"base64":"foo"}
+	data:
+		Zm9v >>> foo
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "base64",
+		"settings": {
+			"options": {
+				"direction": "from"
+			},
+			"input_key": "base64",
+			"output_key": "base64"
+		}
+	}
+*/
+type Base64 struct {
+	Options   Base64Options    `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 Base64Options contains custom options for the Base64 processor:
 	Direction:
 		the direction of the encoding
@@ -25,32 +51,6 @@ Base64Options contains custom options for the Base64 processor:
 */
 type Base64Options struct {
 	Direction string `json:"direction"`
-}
-
-/*
-Base64 processes encapsulated data by converting it to and from base64. The processor supports these patterns:
-	JSON:
-	  	{"base64":"Zm9v"} >>> {"base64":"foo"}
-	data:
-		Zm9v >>> foo
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'base64',
-		settings: {
-			options: {
-				direction: 'from',
-			},
-			input_key: 'base64',
-			output_key: 'base64',
-		},
-	}
-*/
-type Base64 struct {
-	Options   Base64Options            `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Base64 processor. Conditions are optionally applied to the data to enable processing.

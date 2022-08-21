@@ -11,6 +11,33 @@ import (
 )
 
 /*
+Replace processes data by replacing characters. The processor supports these patterns:
+	JSON:
+		{"replace":"bar"} >>> {"replace":"baz"}
+	data:
+		bar >>> baz
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "replace",
+		"settings": {
+			"options": {
+				"old": "r",
+				"new": "z"
+			},
+			"input_key": "replace",
+			"output_key": "replace"
+		}
+	}
+*/
+type Replace struct {
+	Options   ReplaceOptions   `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 ReplaceOptions contains custom options for the Replace processor:
 	Old:
 		the character(s) to replace in the data
@@ -24,33 +51,6 @@ type ReplaceOptions struct {
 	Old   string `json:"old"`
 	New   string `json:"new"`
 	Count int    `json:"count"`
-}
-
-/*
-Replace processes encapsulated data by replacing characters. The processor supports these patterns:
-	JSON:
-		{"replace":"bar"} >>> {"replace":"baz"}
-	data:
-		bar >>> baz
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'replace',
-		settings: {
-			options: {
-				old: 'r',
-				new: 'z',
-			},
-			input_key: 'replace',
-			output_key: 'replace',
-		},
-	}
-*/
-type Replace struct {
-	Options   ReplaceOptions           `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Replcae processor. Conditions are optionally applied to the data to enable processing.

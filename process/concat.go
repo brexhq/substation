@@ -9,36 +9,36 @@ import (
 )
 
 /*
+Concat processes data by concatenating multiple values together with a separator. The processor supports these patterns:
+	JSON:
+		{"concat":["foo","bar"]} >>> {"concat":"foo.bar"}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "concat",
+		"settings": {
+			"options": {
+				"separator": "."
+			},
+			"input_key": "concat",
+			"output_key": "concat"
+		}
+	}
+*/
+type Concat struct {
+	Options   ConcatOptions    `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 ConcatOptions contains custom options for the Concat processor:
 	Separator:
 		the string that separates the concatenated values
 */
 type ConcatOptions struct {
 	Separator string `json:"separator"`
-}
-
-/*
-Concat processes encapsulated data by concatenating multiple values together with a separator. The processor supports these patterns:
-	JSON:
-		{"concat":["foo","bar"]} >>> {"concat":"foo.bar"}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'concat',
-		settings: {
-			options: {
-				separator: '.',
-			},
-			input_key: 'concat',
-			output_key: 'concat',
-		},
-	}
-*/
-type Concat struct {
-	Options   ConcatOptions            `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Concat processor. Conditions are optionally applied to the data to enable processing.

@@ -9,6 +9,30 @@ import (
 )
 
 /*
+Math processes data by applying mathematic operations. The processor supports these patterns:
+	JSON:
+		{"math":[1,3]} >>> {"math":4}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "math",
+		"settings": {
+			"options": {
+				"operation": "add"
+			},
+			"input_key": "math",
+			"output_key": "math"
+		}
+	}
+*/
+type Math struct {
+	Options   MathOptions      `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 MathOptions contains custom options for the Math processor:
 	Operation:
 		the operator applied to the data
@@ -20,30 +44,6 @@ MathOptions contains custom options for the Math processor:
 */
 type MathOptions struct {
 	Operation string `json:"operation"`
-}
-
-/*
-Math processes encapsulated data by applying mathematic operations. The processor supports these patterns:
-	JSON:
-		{"math":[1,3]} >>> {"math":4}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'math',
-		settings: {
-			options: {
-				operation: 'add',
-			},
-			input_key: 'math',
-			output_key: 'math',
-		},
-	}
-*/
-type Math struct {
-	Options   MathOptions              `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Math processor. Conditions are optionally applied to the data to enable processing.

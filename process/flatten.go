@@ -9,33 +9,33 @@ import (
 )
 
 /*
+Flatten processes data by flattening JSON arrays. The processor supports these patterns:
+	JSON:
+		{"flatten":["foo",["bar"]]} >>> {"flatten":["foo","bar"]}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "flatten",
+		"settings": {
+			"input_key": "flatten",
+			"output_key": "flatten"
+		}
+	}
+*/
+type Flatten struct {
+	Options   FlattenOptions   `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 FlattenOptions contains custom options settings for the Flatten processor:
 	Deep (optional):
 		deeply flattens nested arrays
 */
 type FlattenOptions struct {
 	Deep bool `json:"deep"`
-}
-
-/*
-Flatten processes encapsulated data by flattening JSON arrays. The processor supports these patterns:
-	JSON:
-		{"flatten":["foo",["bar"]]} >>> {"flatten":["foo","bar"]}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'flatten',
-		settings: {
-			input_key: 'flatten',
-			output_key: 'flatten',
-		},
-	}
-*/
-type Flatten struct {
-	Options   FlattenOptions           `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Flatten processor. Conditions are optionally applied to the data to enable processing.

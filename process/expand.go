@@ -10,21 +10,21 @@ import (
 )
 
 /*
-Expand processes encapsulated data by creating individual events from objects in JSON arrays. The processor supports these patterns:
+Expand processes data by creating individual events from objects in JSON arrays. The processor supports these patterns:
 	JSON:
 		{"expand":[{"foo":"bar"}],"baz":"qux"} >>> {"foo":"bar","baz":"qux"}
 
-The processor uses this Jsonnet configuration:
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'expand',
-		settings: {
-			input_key: 'expand',
-		},
+		"type": "expand",
+		"settings": {
+			"input_key": "expand"
+		}
 	}
 */
 type Expand struct {
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Expand processor. Conditions are optionally applied to the data to enable processing.
@@ -39,7 +39,7 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	newCaps := NewBatch(&caps)
+	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(cap)
 		if err != nil {

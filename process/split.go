@@ -11,15 +11,6 @@ import (
 )
 
 /*
-SplitOptions contains custom options settings for the Split processor:
-	Separator:
-		the string that separates aggregated data
-*/
-type SplitOptions struct {
-	Separator string `json:"separator"`
-}
-
-/*
 Split processes data by splitting it into multiple elements or items. The processor supports these patterns:
 	JSON:
 		{"split":"foo.bar"} >>> {"split":["foo","bar"]}
@@ -27,23 +18,32 @@ Split processes data by splitting it into multiple elements or items. The proces
 		foo\nbar\nbaz\qux >>> foo bar baz qux
 		{"foo":"bar"}\n{"baz":"qux"} >>> {"foo":"bar"} {"baz":"qux"}
 
-The processor uses this Jsonnet configuration:
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'split',
-		settings: {
-			options: {
-				separator: '.',
+		"type": "split",
+		"settings": {
+			"options": {
+				"separator": "."
 			},
-			input_key: 'split',
-			output_key: 'split',
-		},
+			"input_key": "split",
+			"output_key": "split"
+		}
 	}
 */
 type Split struct {
-	Options   SplitOptions             `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
+	Options   SplitOptions     `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
+SplitOptions contains custom options settings for the Split processor:
+	Separator:
+		the string that separates aggregated data
+*/
+type SplitOptions struct {
+	Separator string `json:"separator"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Split processor. Conditions are optionally applied to the data to enable processing.
@@ -53,7 +53,7 @@ func (p Split) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	slice := NewBatch(&caps)
+	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(cap)
 		if err != nil {
@@ -61,7 +61,7 @@ func (p Split) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 		}
 
 		if !ok {
-			slice = append(slice, cap)
+			newCaps = append(newCaps, cap)
 			continue
 		}
 
@@ -71,7 +71,7 @@ func (p Split) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 			if err != nil {
 				return nil, fmt.Errorf("applybatch: %v", err)
 			}
-			slice = append(slice, pcap)
+			newCaps = append(newCaps, pcap)
 
 			continue
 		}
@@ -81,7 +81,7 @@ func (p Split) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 			newCap := config.NewCapsule()
 			for _, x := range bytes.Split(cap.GetData(), []byte(p.Options.Separator)) {
 				newCap.SetData(x)
-				slice = append(slice, newCap)
+				newCaps = append(newCaps, newCap)
 			}
 
 			continue
@@ -90,7 +90,7 @@ func (p Split) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 		return nil, fmt.Errorf("applybatch settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	return slice, nil
+	return newCaps, nil
 }
 
 // Apply processes encapsulated data with the Split processor.

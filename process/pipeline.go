@@ -13,55 +13,55 @@ import (
 const PipelineArrayInput = errors.Error("PipelineArrayInput")
 
 /*
+Pipeline processes data by applying a series of processors. This processor should be used when data requires complex processing outside of the boundaries of any data structures (see tests for examples). The processor supports these patterns:
+	JSON:
+		{"pipeline":"H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"} >>> {"pipeline":"foo"}
+	data:
+		H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA >> foo
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "pipeline",
+		"settings": {
+			"options": {
+				"processors": [
+					{
+						"type": "base64",
+						"settings": {
+							"options": {
+								"direction": "from"
+							}
+						}
+					},
+					{
+						"type": "gzip",
+						"settings": {
+							"options": {
+								"direction": "from"
+							}
+						}
+					}
+				]
+			},
+			"input_key": "pipeline",
+			"output_key": "pipeline"
+		},
+	}
+*/
+type Pipeline struct {
+	Options   PipelineOptions  `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 PipelineOptions contains custom options for the Pipeline processor:
 	Processors:
 		array of processors to apply to the data
 */
 type PipelineOptions struct {
 	Processors []config.Config
-}
-
-/*
-Pipeline processes encapsulated data by applying a series of processors. This processor should be used when data requires complex processing outside of the boundaries of any data structures (see tests for examples). The processor supports these patterns:
-	JSON:
-		{"pipeline":"H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"} >>> {"pipeline":"foo"}
-	data:
-		H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA >> foo
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'pipeline',
-		settings: {
-			options: {
-				processors: [
-					{
-						type: 'base64',
-						settings: {
-							options: {
-								direction: 'from',
-							}
-						}
-					},
-					{
-						type: 'gzip',
-						settings: {
-							options: {
-								direction: 'from',
-							}
-						}
-					},
-				]
-			},
-			input_key: 'pipeline',
-			output_key: 'pipeline',
-		},
-	}
-*/
-type Pipeline struct {
-	Options   PipelineOptions          `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Pipeline processor. Conditions are optionally applied to the data to enable processing.
@@ -93,7 +93,7 @@ input should be run through the ForEach processor (which
 can encapsulate the Pipeline processor).
 */
 func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
-	applicators, err := MakeAll(p.Options.Processors)
+	applicators, err := MakeApplicators(p.Options.Processors)
 	if err != nil {
 		return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
 	}

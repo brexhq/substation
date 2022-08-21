@@ -12,6 +12,27 @@ import (
 )
 
 /*
+Gzip processes data by compressing or decompressing gzip. The processor supports these patterns:
+	data:
+		[31 139 8 0 0 0 0 0 0 255 74 203 207 7 4 0 0 255 255 33 101 115 140 3 0 0 0] >>> foo
+		foo >>> [31 139 8 0 0 0 0 0 0 255 74 203 207 7 4 0 0 255 255 33 101 115 140 3 0 0 0]
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "gzip",
+		"settings": {
+			"options": {
+				"direction": "from"
+			}
+		}
+	}
+*/
+type Gzip struct {
+	Options   GzipOptions      `json:"options"`
+	Condition condition.Config `json:"condition"`
+}
+
+/*
 GzipOptions contains custom options settings for the Gzip processor:
 	Direction:
 		the direction of the compression
@@ -21,27 +42,6 @@ GzipOptions contains custom options settings for the Gzip processor:
 */
 type GzipOptions struct {
 	Direction string `json:"direction"`
-}
-
-/*
-Gzip processes encapsulated data by compressing or decompressing gzip. The processor supports these patterns:
-	data:
-		[31 139 8 0 0 0 0 0 0 255 74 203 207 7 4 0 0 255 255 33 101 115 140 3 0 0 0] >>> foo
-		foo >>> [31 139 8 0 0 0 0 0 0 255 74 203 207 7 4 0 0 255 255 33 101 115 140 3 0 0 0]
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'gzip',
-		settings: {
-			options: {
-				direction: 'from',
-			},
-		},
-	}
-*/
-type Gzip struct {
-	Options   GzipOptions              `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
 }
 
 func (p Gzip) from(data []byte) ([]byte, error) {

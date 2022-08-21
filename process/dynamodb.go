@@ -12,6 +12,35 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
+var dynamodbAPI dynamodb.API
+
+/*
+DynamoDB processes data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The processor supports these patterns:
+	JSON:
+		{"ddb":{"PK":"foo"}} >>> {"ddb":[{"foo":"bar"}]}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "dynamodb",
+		"settings": {
+			"options": {
+				"table": "foo-table",
+				"key_condition_expression": "pk = :partitionkeyval",
+				"limit": 1,
+				"scan_index_forward": true
+			},
+			"input_key": "ddb",
+			"output_key": "ddb"
+		}
+	}
+*/
+type DynamoDB struct {
+	Options   DynamoDBOptions  `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
 /*
 DynamoDBOptions contains custom options settings for the DynamoDB processor (https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#API_Query_RequestSyntax):
 	Table:
@@ -33,37 +62,6 @@ type DynamoDBOptions struct {
 	Limit                  int64  `json:"limit"`
 	ScanIndexForward       bool   `json:"scan_index_forward"`
 }
-
-/*
-DynamoDB processes encapsulated data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The processor supports these patterns:
-	JSON:
-		{"ddb":{"PK":"foo"}} >>> {"ddb":[{"foo":"bar"}]}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'dynamodb',
-		settings: {
-			// the input key is expected to be a map containing a partition key ("PK") and an optional sort key ("SK")
-			// if the value of the PK is "foo", then this queries DynamoDB by using "foo" as the paritition key value for the table attribute "pk" and returns the last indexed item from the table.
-			options: {
-				table: 'foo-table',
-				key_condition_expression: 'pk = :partitionkeyval',
-				limit: 1,
-				scan_index_forward: true,
-			},
-			input_key: 'ddb',
-			output_key: 'ddb',
-		},
-	}
-*/
-type DynamoDB struct {
-	Options   DynamoDBOptions          `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
-}
-
-var dynamodbAPI dynamodb.API
 
 // ApplyBatch processes a slice of encapsulated data with the DynamoDB processor. Conditions are optionally applied to the data to enable processing.
 func (p DynamoDB) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {

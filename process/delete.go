@@ -13,21 +13,21 @@ import (
 const DeleteInvalidSettings = errors.Error("DeleteInvalidSettings")
 
 /*
-Delete processes encapsulated data by deleting JSON keys. The processor supports these patterns:
+Delete processes data by deleting JSON keys. The processor supports these patterns:
 	JSON:
 	  	{"foo":"bar","baz":"qux"} >>> {"foo":"bar"}
 
-The processor uses this Jsonnet configuration:
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'delete',
-		settings: {
-			input_key: 'delete',
+		"type": "delete",
+		"settings": {
+			"input_key": "delete"
 		}
 	}
 */
 type Delete struct {
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Delete processor. Conditions are optionally applied to the data to enable processing.

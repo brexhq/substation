@@ -10,7 +10,7 @@ import (
 )
 
 /*
-Copy processes encapsulated data by copying it. The processor supports these patterns:
+Copy processes data by copying it. The processor supports these patterns:
 	JSON:
 	  	{"hello":"world"} >>> {"hello":"world","goodbye":"world"}
 	from JSON:
@@ -18,19 +18,19 @@ Copy processes encapsulated data by copying it. The processor supports these pat
 	to JSON:
   		world >>> {"hello":"world"}
 
-The processor uses this Jsonnet configuration:
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'copy',
-		settings: {
-			input_key: 'hello',
-			output_key: 'goodbye',
-		},
+		"type": "copy",
+		"settings": {
+			"input_key": "hello",
+			"output_key": "goodbye"
+		}
 	}
 */
 type Copy struct {
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Copy processor. Conditions are optionally applied to the data to enable processing.

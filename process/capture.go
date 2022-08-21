@@ -10,6 +10,35 @@ import (
 )
 
 /*
+Capture processes data by capturing values using regular expressions. The processor supports these patterns:
+	JSON:
+		{"capture":"foo@qux.com"} >>> {"capture":"foo"}
+		{"capture":"foo@qux.com"} >>> {"capture":["f","o","o"]}
+	data:
+		foo@qux.com >>> foo
+		bar quux >>> {"foo":"bar","qux":"quux"}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "capture",
+		"settings": {
+			"options": {
+				"expression": "^([^@]*)@.*$",
+				"function": "find"
+			},
+			"input_key": "capture",
+			"output_key": "capture"
+		}
+	}
+*/
+type Capture struct {
+	Options   CaptureOptions   `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 CaptureOptions contains custom options for the Capture processor:
 	Expression:
 		the regular expression used to capture values
@@ -27,35 +56,6 @@ type CaptureOptions struct {
 	Expression string `json:"expression"`
 	Function   string `json:"function"`
 	Count      int    `json:"count"`
-}
-
-/*
-Capture processes encapsulated data by capturing values using regular expressions. The processor supports these patterns:
-	JSON:
-		{"capture":"foo@qux.com"} >>> {"capture":"foo"}
-		{"capture":"foo@qux.com"} >>> {"capture":["f","o","o"]}
-	data:
-		foo@qux.com >>> foo
-		bar quux >>> {"foo":"bar","qux":"quux"}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'capture',
-		settings: {
-			options: {
-				expression: '^([^@]*)@.*$',
-				_function: 'find',
-			},
-			input_key: 'capture',
-			output_key: 'capture',
-		},
-	}
-*/
-type Capture struct {
-	Options   CaptureOptions           `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Capture processor. Conditions are optionally applied to the data to enable processing.

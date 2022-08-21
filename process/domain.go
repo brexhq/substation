@@ -16,6 +16,32 @@ import (
 const DomainNoSubdomain = errors.Error("DomainNoSubdomain")
 
 /*
+Domain processes data by parsing fully qualified domain names into labels. The processor supports these patterns:
+	JSON:
+		{"domain":"example.com"} >>> {"domain":"example.com","tld":"com"}
+	data:
+		example.com >>> com
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "domain",
+		"settings": {
+			"options": {
+				"function": "tld"
+			},
+			"input_key": "domain",
+			"output_key": "tld"
+		}
+	}
+*/
+type Domain struct {
+	Options   DomainOptions    `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 DomainOptions contains custom options for the Domain processor:
 	Function:
 		the domain processing function to apply to the data
@@ -26,32 +52,6 @@ DomainOptions contains custom options for the Domain processor:
 */
 type DomainOptions struct {
 	Function string `json:"function"`
-}
-
-/*
-Domain processes encapsulated data by parsing fully qualified domain names into labels. The processor supports these patterns:
-	JSON:
-		{"domain":"example.com"} >>> {"domain":"example.com","tld":"com"}
-	data:
-		example.com >>> com
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'domain',
-		settings: {
-			input_key: 'domain',
-			input_key: 'tld',
-			options: {
-				_function: 'tld',
-			}
-		},
-	}
-*/
-type Domain struct {
-	Options   DomainOptions            `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Domain processor. Conditions are optionally applied to the data to enable processing.

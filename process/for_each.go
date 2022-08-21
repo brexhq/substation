@@ -11,43 +11,43 @@ import (
 )
 
 /*
+ForEach processes data by iterating and applying a processor to each element in a JSON array. The processor supports these patterns:
+	JSON:
+		{"input":["ABC","DEF"]} >>> {"input":["ABC","DEF"],"output":["abc","def"]}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "for_each",
+		"settings": {
+			"options": {
+				"processor": {
+					"type": "case",
+					"settings": {
+						"options": {
+							"case": "lower"
+						}
+					}
+				}
+			},
+			input_key: "input",
+			output_key: "output.-1"
+		}
+	}
+*/
+type ForEach struct {
+	Options   ForEachOptions   `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 ForEachOptions contains custom options for the ForEach processor:
 	Processor:
 		processor to apply to the data
 */
 type ForEachOptions struct {
 	Processor config.Config
-}
-
-/*
-ForEach processes encapsulated data by iterating and applying a processor to each element in a JSON array. The processor supports these patterns:
-	JSON:
-		{"input":["ABC","DEF"]} >>> {"input":["ABC","DEF"],"output":["abc","def"]}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'for_each',
-		settings: {
-			options: {
-				processor: {
-					type: 'case',
-					settings: {
-						options: {
-							case: 'lower',
-						}
-					}
-				},
-			},
-			input_key: 'input',
-			output_key: 'output.-1',
-		},
-	}
-*/
-type ForEach struct {
-	Options   ForEachOptions           `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the ForEach processor. Conditions are optionally applied to the data to enable processing.
@@ -105,7 +105,7 @@ func (p ForEach) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 	var processor config.Config
 	gojson.Unmarshal(conf, &processor)
 
-	applicator, err := Factory(processor)
+	applicator, err := ApplicatorFactory(processor)
 	if err != nil {
 		return cap, err
 	}

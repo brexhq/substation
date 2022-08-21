@@ -1,10 +1,11 @@
 # process
-Contains interfaces and methods for atomically processing data. Each processor defines its own data processing patterns, but there are a set of common patterns shared among most processors:
-- processing JSON values
-- processing JSON arrays
-- processing bytes
+
+Contains interfaces and methods for processing data. Processors contain methods for processing data singletons and batches (slices). Each processor defines its own data processing patterns, but there are a common set of patterns shared among most processors:
+* processing unstructured data
+* processing JSON objects
 
 The package can be used like this ([more examples are also available](/examples/process/)):
+
 ```go
 package main
 
@@ -24,7 +25,7 @@ func main() {
 	}
 
 	data := []byte(`{"foo":"bar"}`)
-	data, err := process.Byte(context.TODO(), proc, data)
+	data, err := process.Byte(context.TODO(), data, proc)
 	if err != nil {
 		panic(err)
 	}

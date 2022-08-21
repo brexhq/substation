@@ -30,18 +30,6 @@ curly brackets ( } ). The most common causes of this error are invalid input JSO
 const PrettyPrintUnbalancedBrackets = errors.Error("PrettyPrintUnbalancedBrackets")
 
 /*
-PrettyPrintOptions contains custom options settings for the PrettyPrint processor:
-	Direction:
-		the direction of the pretty transformation
-		must be one of:
-			to: applies prettyprint formatting
-			from: reverses prettyprint formatting
-*/
-type PrettyPrintOptions struct {
-	Direction string `json:"direction"`
-}
-
-/*
 PrettyPrint processes data by applying or reversing prettyprint formatting to JSON.
 This processor has significant limitations when used to reverse prettyprint, including:
 	- cannot support multi-core processing
@@ -61,19 +49,31 @@ The processor supports these patterns:
 			"foo": "bar"
 		}
 
-The processor uses this Jsonnet configuration:
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'pretty_print',
-		settings: {
-			options: {
-				direction: 'from',
-			},
-		},
+		"type": "pretty_print",
+		"settings": {
+			"options": {
+				"direction": "from"
+			}
+		}
 	}
 */
 type PrettyPrint struct {
-	Options   PrettyPrintOptions       `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
+	Options   PrettyPrintOptions `json:"options"`
+	Condition condition.Config   `json:"condition"`
+}
+
+/*
+PrettyPrintOptions contains custom options settings for the PrettyPrint processor:
+	Direction:
+		the direction of the pretty transformation
+		must be one of:
+			to: applies prettyprint formatting
+			from: reverses prettyprint formatting
+*/
+type PrettyPrintOptions struct {
+	Direction string `json:"direction"`
 }
 
 /*
@@ -105,7 +105,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 	var count int
 	var stack []byte
 
-	slice := NewBatch(&caps)
+	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(cap)
 		if err != nil {
@@ -113,7 +113,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 		}
 
 		if !ok {
-			slice = append(slice, cap)
+			newCaps = append(newCaps, cap)
 			continue
 		}
 
@@ -121,7 +121,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 		case "to":
 			s := cap.Get(ppModifier).String()
 			cap.SetData([]byte(s))
-			slice = append(slice, cap)
+			newCaps = append(newCaps, cap)
 
 		case "from":
 			for _, data := range cap.GetData() {
@@ -144,7 +144,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 					if json.Valid(buf.Bytes()) {
 						newCap := config.NewCapsule()
 						newCap.SetData(buf.Bytes())
-						slice = append(slice, newCap)
+						newCaps = append(newCaps, newCap)
 					}
 
 					stack = []byte{}
@@ -160,7 +160,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 		return nil, fmt.Errorf("applybatch settings %+v: %w", p, PrettyPrintUnbalancedBrackets)
 	}
 
-	return slice, nil
+	return newCaps, nil
 }
 
 /*

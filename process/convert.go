@@ -9,6 +9,32 @@ import (
 )
 
 /*
+Convert processes data by converting values between types (e.g., string to integer, integer to float). The processor supports these patterns:
+	JSON:
+		{"convert":"true"} >>> {"convert":true}
+		{"convert":"-123"} >>> {"convert":-123}
+		{"convert":123} >>> {"convert":"123"}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "convert",
+		"settings": {
+			"options": {
+				"type": "bool"
+			},
+			"input_key": "convert",
+			"output_key": "convert"
+		}
+	}
+*/
+type Convert struct {
+	Options   ConvertOptions   `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 ConvertOptions contains custom options for the Convert processor:
 	Type:
 		the type that the value should be converted to
@@ -21,32 +47,6 @@ ConvertOptions contains custom options for the Convert processor:
 */
 type ConvertOptions struct {
 	Type string `json:"type"`
-}
-
-/*
-Convert processes encapsulated data by converting values between types (e.g., string to integer, integer to float). The processor supports these patterns:
-	JSON:
-		{"convert":"true"} >>> {"convert":true}
-		{"convert":"-123"} >>> {"convert":-123}
-		{"convert":123} >>> {"convert":"123"}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'convert',
-		settings: {
-			options: {
-				type: 'bool',
-			},
-			input_key: 'convert',
-			output_key: 'convert',
-		},
-	}
-*/
-type Convert struct {
-	Options   ConvertOptions           `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Convert processor. Conditions are optionally applied to the data to enable processing.

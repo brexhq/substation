@@ -13,6 +13,32 @@ import (
 )
 
 /*
+Case processes data by changing the case of a string or byte slice. The processor supports these patterns:
+	JSON:
+		{"case":"foo"} >>> {"case":"FOO"}
+	data:
+		foo >>> FOO
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "case",
+		"settings": {
+			"options": {
+				"case": "upper"
+			},
+			"input_key": "case",
+			"output_key": "case"
+		}
+	}
+*/
+type Case struct {
+	Options   CaseOptions      `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 CaseOptions contains custom options for the Case processor:
 	Case:
 		the case to convert the string or byte to
@@ -23,32 +49,6 @@ CaseOptions contains custom options for the Case processor:
 */
 type CaseOptions struct {
 	Case string `json:"case"`
-}
-
-/*
-Case processes encapsulated data by changing the case of a string or byte slice. The processor supports these patterns:
-	JSON:
-		{"case":"foo"} >>> {"case":"FOO"}
-	data:
-		foo >>> FOO
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'case',
-		settings: {
-			options: {
-				case: 'upper',
-			},
-			input_key: 'case',
-			output_key: 'case',
-		},
-	}
-*/
-type Case struct {
-	Options   CaseOptions              `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Case processor. Conditions are optionally applied to the data to enable processing.

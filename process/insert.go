@@ -9,34 +9,34 @@ import (
 )
 
 /*
+Insert processes data by inserting a value into a JSON object. The processor supports these patterns:
+	JSON:
+		{"foo":"bar"} >>> {"foo":"bar","baz":"qux"}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "insert",
+		"settings": {
+			"options": {
+				"value": "qux"
+			},
+			"output_key": "baz"
+		}
+	}
+*/
+type Insert struct {
+	Options   InsertOptions    `json:"options"`
+	Condition condition.Config `json:"condition"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 InsertOptions contains custom options for the Insert processor:
 	value:
 		the value to insert
 */
 type InsertOptions struct {
 	Value interface{} `json:"value"`
-}
-
-/*
-Insert processes encapsulated data by inserting a value into a JSON object. The processor supports these patterns:
-	JSON:
-		{"foo":"bar"} >>> {"foo":"bar","baz":"qux"}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'insert',
-		settings: {
-			options: {
-				value: 'qux',
-			},
-			output_key: 'baz',
-		},
-	}
-*/
-type Insert struct {
-	Options   InsertOptions            `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Insert processor. Conditions are optionally applied to the data to enable processing.

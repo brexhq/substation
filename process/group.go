@@ -10,34 +10,34 @@ import (
 )
 
 /*
-GroupOptions contains custom options for the Group processor:
-	Keys (optional):
-		where values from Inputs.Keys are written to, creating new JSON objects
-*/
-type GroupOptions struct {
-	Keys []string `json:"keys"`
-}
-
-/*
-Group processes encapsulated data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
+Group processes data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
 	JSON array:
 		{"group":[["foo","bar"],[111,222]]} >>> {"group":[["foo",111],["bar",222]]}
 		{"group":[["foo","bar"],[111,222]]} >>> {"group":[{"name":foo","size":111},{"name":"bar","size":222}]}
 
-The processor uses this Jsonnet configuration:
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'group',
-		settings: {
-			input_key: 'group',
-			output_key: 'group',
-		},
+		"type": "group",
+		"settings": {
+			"input_key": "group",
+			"output_key": "group"
+		}
 	}
 */
 type Group struct {
-	Options   GroupOptions             `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
+	Options   GroupOptions     `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
+GroupOptions contains custom options for the Group processor:
+	Keys (optional):
+		where values from InputKey are written to, creating new JSON objects
+*/
+type GroupOptions struct {
+	Keys []string `json:"keys"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Group processor. Conditions are optionally applied to the data to enable processing.

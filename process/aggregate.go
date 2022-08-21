@@ -16,28 +16,6 @@ import (
 const AggregateBufferSizeLimit = errors.Error("AggregateBufferSizeLimit")
 
 /*
-AggregateOptions contains custom options settings for the Aggregate processor:
-	AggregateKey (optional):
-		the JSON key-value that is used to organize aggregated data
-		defaults to empty string, only applies to JSON
-	Separator (optional):
-		the string that separates aggregated data
-		defaults to empty string, only applies to data
-	MaxCount (optional):
-		the maximum number of items stored in a buffer when aggregating data
-		defaults to 1000
-	MaxSize (optional):
-		the maximum size, in bytes, of items stored in a buffer when aggregating data
-		defaults to 10000 (10KB)
-*/
-type AggregateOptions struct {
-	AggregateKey string `json:"aggregate_key"`
-	Separator    string `json:"separator"`
-	MaxCount     int    `json:"max_count"`
-	MaxSize      int    `json:"max_size"`
-}
-
-/*
 Aggregate processes data by buffering and aggregating it
 into a single item.
 
@@ -60,22 +38,44 @@ The processor supports these patterns:
 		foo bar baz qux >>> foo\nbar\nbaz\qux
 		{"foo":"bar"} {"baz":"qux"} >>> {"foo":"bar"}\n{"baz":"qux"}
 
-The processor uses this Jsonnet configuration:
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'aggregate',
-		settings: {
-			options: {
-				max_count: 1000,
-				max_size: 1000,
+		"type": "aggregate",
+		"settings": {
+			"options": {
+				"max_count": 1000,
+				"max_size": 1000
 			},
-			output_key: 'aggregate.-1',
-		},
+			"output_key": "aggregate.-1"
+		}
 	}
 */
 type Aggregate struct {
-	Options   AggregateOptions         `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	OutputKey string                   `json:"output_key"`
+	Options   AggregateOptions `json:"options"`
+	Condition condition.Config `json:"condition"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
+AggregateOptions contains custom options settings for the Aggregate processor:
+	AggregateKey (optional):
+		the JSON key-value that is used to organize aggregated data
+		defaults to empty string, only applies to JSON
+	Separator (optional):
+		the string that separates aggregated data
+		defaults to empty string, only applies to data
+	MaxCount (optional):
+		the maximum number of items stored in a buffer when aggregating data
+		defaults to 1000
+	MaxSize (optional):
+		the maximum size, in bytes, of items stored in a buffer when aggregating data
+		defaults to 10000 (10KB)
+*/
+type AggregateOptions struct {
+	AggregateKey string `json:"aggregate_key"`
+	Separator    string `json:"separator"`
+	MaxCount     int    `json:"max_count"`
+	MaxSize      int    `json:"max_size"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Aggregate processor. Conditions are optionally applied to the data to enable processing.
@@ -100,7 +100,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	newCaps := NewBatch(&caps)
+	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(cap)
 		if err != nil {

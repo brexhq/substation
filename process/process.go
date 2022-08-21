@@ -23,16 +23,11 @@ type Applicator interface {
 	Apply(context.Context, config.Capsule) (config.Capsule, error)
 }
 
-// BatchApplicator is an interface for applying a processor to a slice of encapsulated data.
-type BatchApplicator interface {
-	ApplyBatch(context.Context, []config.Capsule) ([]config.Capsule, error)
-}
-
-// Apply accepts one or many Applicators and applies the processors in series to encapsulated data.
-func Apply(ctx context.Context, cap config.Capsule, applicators ...Applicator) (config.Capsule, error) {
+// Apply accepts one or many Applicators and applies processors in series to encapsulated data.
+func Apply(ctx context.Context, cap config.Capsule, apps ...Applicator) (config.Capsule, error) {
 	var err error
 
-	for _, app := range applicators {
+	for _, app := range apps {
 		cap, err = app.Apply(ctx, cap)
 		if err != nil {
 			return cap, err
@@ -42,22 +37,36 @@ func Apply(ctx context.Context, cap config.Capsule, applicators ...Applicator) (
 	return cap, nil
 }
 
-// ApplyBatch accepts one or many BatchApplicators and applies the processors in series to a slice of encapsulated data.
-func ApplyBatch(ctx context.Context, batch []config.Capsule, applicators ...BatchApplicator) ([]config.Capsule, error) {
-	var err error
+// ApplyByte is a convenience function for applying one or many Applicators to bytes.
+func ApplyByte(ctx context.Context, data []byte, apps ...Applicator) ([]byte, error) {
+	cap := config.NewCapsule()
+	cap.SetData(data)
 
-	for _, app := range applicators {
-		batch, err = app.ApplyBatch(ctx, batch)
+	newCap, err := Apply(ctx, cap, apps...)
+	if err != nil {
+		return nil, err
+	}
+
+	return newCap.GetData(), nil
+}
+
+// MakeApplicators accepts multiple processor configs and returns populated Applicators. This is a convenience function for generating many Applicators.
+func MakeApplicators(cfg []config.Config) ([]Applicator, error) {
+	var apps []Applicator
+
+	for _, c := range cfg {
+		app, err := ApplicatorFactory(c)
 		if err != nil {
 			return nil, err
 		}
+		apps = append(apps, app)
 	}
 
-	return batch, nil
+	return apps, nil
 }
 
-// Factory returns a configured Applicator from a config. This is the recommended method for retrieving ready-to-use Applicators.
-func Factory(cfg config.Config) (Applicator, error) {
+// ApplicatorFactory returns a configured Applicator from a config. This is the recommended method for retrieving ready-to-use Applicators.
+func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 	switch t := cfg.Type; t {
 	case "base64":
 		var p Base64
@@ -152,8 +161,43 @@ func Factory(cfg config.Config) (Applicator, error) {
 	}
 }
 
-// BatchFactory returns a configured BatchApplicator from a config. This is the recommended method for retrieving ready-to-use BatchApplicators.
-func BatchFactory(cfg config.Config) (BatchApplicator, error) {
+// BatchApplicator is an interface for applying a processor to a slice of encapsulated data.
+type BatchApplicator interface {
+	ApplyBatch(context.Context, []config.Capsule) ([]config.Capsule, error)
+}
+
+// ApplyBatch accepts one or many BatchApplicators and applies processors in series to a slice of encapsulated data.
+func ApplyBatch(ctx context.Context, batch []config.Capsule, apps ...BatchApplicator) ([]config.Capsule, error) {
+	var err error
+
+	for _, app := range apps {
+		batch, err = app.ApplyBatch(ctx, batch)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return batch, nil
+}
+
+// MakeBatchApplicators accepts multiple processor configs and returns populated BatchApplicators. This is a convenience function for generating many BatchApplicators.
+func MakeBatchApplicators(cfg []config.Config) ([]BatchApplicator, error) {
+	var apps []BatchApplicator
+
+	for _, c := range cfg {
+		app, err := BatchApplicatorFactory(c)
+		if err != nil {
+			return nil, err
+		}
+
+		apps = append(apps, app)
+	}
+
+	return apps, nil
+}
+
+// BatchApplicatorFactory returns a configured BatchApplicator from a config. This is the recommended method for retrieving ready-to-use BatchApplicators.
+func BatchApplicatorFactory(cfg config.Config) (BatchApplicator, error) {
 	switch t := cfg.Type; t {
 	case "aggregate":
 		var p Aggregate
@@ -264,78 +308,36 @@ func BatchFactory(cfg config.Config) (BatchApplicator, error) {
 	}
 }
 
-// MakeAll accepts multiple processor configs and returns populated Applicators. This is a convenience function for generating many Applicators.
-func MakeAll(cfg []config.Config) ([]Applicator, error) {
-	var applicators []Applicator
-
-	for _, c := range cfg {
-		applicator, err := Factory(c)
-		if err != nil {
-			return nil, err
-		}
-		applicators = append(applicators, applicator)
-	}
-
-	return applicators, nil
-}
-
-// MakeAllBatchApplicators accepts multiple processor configs and returns populated BatchApplicators. This is a convenience function for generating many BatchApplicators.
-func MakeAllBatchApplicators(cfg []config.Config) ([]BatchApplicator, error) {
-	var applicators []BatchApplicator
-
-	for _, c := range cfg {
-		applicator, err := BatchFactory(c)
-		if err != nil {
-			return nil, err
-		}
-
-		applicators = append(applicators, applicator)
-	}
-
-	return applicators, nil
-}
-
-// NewBatch returns a Capsule slice with a minimum capacity of 10. This is most frequently used to speed up batch processing.
-func NewBatch(s *[]config.Capsule) []config.Capsule {
+// newBatch returns a Capsule slice with a minimum capacity of 10. This is used to speed up batch processing.
+func newBatch(s *[]config.Capsule) []config.Capsule {
 	if len(*s) > 10 {
 		return make([]config.Capsule, 0, len(*s))
 	}
 	return make([]config.Capsule, 0, 10)
 }
 
-// Byte applies an Applicator to data.
-func Byte(ctx context.Context, a Applicator, data []byte) ([]byte, error) {
-	cap := config.NewCapsule()
-	cap.SetData(data)
-
-	newCap, err := a.Apply(ctx, cap)
-	if err != nil {
-		return nil, fmt.Errorf("byte settings %+v: %w", a, ProcessorInvalidSettings)
-	}
-
-	return newCap.GetData(), nil
-}
-
 // conditionallyApplyBatch uses conditions to dynamically apply processors to a slice of encapsulated data. This is a convenience function for the ApplyBatch method used in most processors.
-func conditionallyApplyBatch(ctx context.Context, caps []config.Capsule, op condition.Operator, applicators ...Applicator) ([]config.Capsule, error) {
-	slice := NewBatch(&caps)
+func conditionallyApplyBatch(ctx context.Context, caps []config.Capsule, op condition.Operator, apps ...Applicator) ([]config.Capsule, error) {
+	newCaps := newBatch(&caps)
 
 	for _, cap := range caps {
 		ok, err := op.Operate(cap)
 		if err != nil {
-			return nil, fmt.Errorf("filterbatch settings %+v: %w", op, err)
+			return nil, err
 		}
 
 		if !ok {
-			slice = append(slice, cap)
+			newCaps = append(newCaps, cap)
 			continue
 		}
 
-		cap, err := Apply(ctx, cap, applicators...)
+		cap, err := Apply(ctx, cap, apps...)
 		if err != nil {
-			return nil, fmt.Errorf("filterbatch settings %+v: %w", op, err)
+			return nil, err
 		}
-		slice = append(slice, cap)
+
+		newCaps = append(newCaps, cap)
 	}
-	return slice, nil
+
+	return newCaps, nil
 }

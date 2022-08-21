@@ -7,11 +7,11 @@ import (
 )
 
 /*
-Count processes encapsulated data by counting it.
+Count processes data by counting it.
 
-The processor uses this Jsonnet configuration:
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'count',
+		"type": "count"
 	}
 */
 type Count struct{}

@@ -13,6 +13,33 @@ import (
 )
 
 /*
+Time processes data by converting time values between formats. The processor supports these patterns:
+	JSON:
+		{"time":1639877490.061} >>> {"time":"2021-12-19T01:31:30.061000Z"}
+	data:
+		1639877490.061 >>> 2021-12-19T01:31:30.061000Z
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "time",
+		"settings": {
+			"options": {
+				"input_format": "unix",
+				"output_format": "2006-01-02T15:04:05.000000Z"
+			},
+			"input_key": "time",
+			"output_key": "time"
+		}
+	}
+*/
+type Time struct {
+	Options   TimeOptions      `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 TimeOptions contains custom options for the Time processor:
 	InputFormat:
 		time format of the input
@@ -39,33 +66,6 @@ type TimeOptions struct {
 	OutputFormat   string `json:"output_format"`
 	InputLocation  string `json:"input_location"`
 	OutputLocation string `json:"output_location"`
-}
-
-/*
-Time processes encapsulated data by converting time values between formats. The processor supports these patterns:
-	JSON:
-		{"time":1639877490.061} >>> {"time":"2021-12-19T01:31:30.061000Z"}
-	data:
-		1639877490.061 >>> 2021-12-19T01:31:30.061000Z
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'time',
-		settings: {
-			options: {
-				input_format: 'unix',
-				output_format: '2006-01-02T15:04:05.000000Z',
-			},
-			input_key: 'time',
-			output_key: 'time',
-		},
-	}
-*/
-type Time struct {
-	Options   TimeOptions              `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Time processor. Conditions are optionally applied to the data to enable processing.

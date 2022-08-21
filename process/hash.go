@@ -11,6 +11,32 @@ import (
 )
 
 /*
+Hash processes data by calculating hashes. The processor supports these patterns:
+	JSON:
+		{"hash":"foo"} >>> {"hash":"acbd18db4cc2f85cedef654fccc4a4d8"}
+	data:
+		foo >>> acbd18db4cc2f85cedef654fccc4a4d8
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "hash",
+		"settings": {
+			"options": {
+				"algorithm": "md5"
+			},
+			"input_key": "hash",
+			"output_key": "hash"
+		}
+	}
+*/
+type Hash struct {
+	Options   HashOptions      `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
+
+/*
 HashOptions contains custom options for the Hash processor:
 	Algorithm:
 		the hashing algorithm to apply
@@ -20,32 +46,6 @@ HashOptions contains custom options for the Hash processor:
 */
 type HashOptions struct {
 	Algorithm string `json:"algorithm"`
-}
-
-/*
-Hash processes encapsulated data by calculating hashes. The processor supports these patterns:
-	JSON:
-		{"hash":"foo"} >>> {"hash":"acbd18db4cc2f85cedef654fccc4a4d8"}
-	data:
-		foo >>> acbd18db4cc2f85cedef654fccc4a4d8
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'hash',
-		settings: {
-			options: {
-				algorithm: 'md5',
-			},
-			input_key: 'hash',
-			output_key: 'hash',
-		},
-	}
-*/
-type Hash struct {
-	Options   HashOptions              `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Hash processor. Conditions are optionally applied to the data to enable processing.

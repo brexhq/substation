@@ -128,10 +128,10 @@ var processTests = []struct {
 	},
 }
 
-func TestByterAll(t *testing.T) {
+func TestApply(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range processTests {
-		applicators, err := MakeAll(test.conf)
+		applicators, err := MakeApplicators(test.conf)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
@@ -153,104 +153,98 @@ func TestByterAll(t *testing.T) {
 	}
 }
 
-// func TestSlice(t *testing.T) {
-// 	ctx := context.TODO()
-// 	for _, test := range processTests {
-// 		slice := make([][]byte, 1, 1)
-// 		slice[0] = test.test
+func TestApplicatorFactory(t *testing.T) {
+	ctx := context.TODO()
+	cap := config.NewCapsule()
 
-// 		slicers, err := MakeAllSlicers(test.conf)
-// 		if err != nil {
-// 			t.Log(err)
-// 			t.Fail()
-// 		}
+	for _, test := range processTests {
+		cap.SetData(test.test)
 
-// 		processed, err := Slice(ctx, slicers, slice)
-// 		if err != nil {
-// 			t.Log(err)
-// 			t.Fail()
-// 		}
+		conf := test.conf[0]
+		applicator, err := ApplicatorFactory(conf)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
 
-// 		if c := bytes.Compare(processed[0], test.expected); c != 0 {
-// 			t.Logf("expected %v, got %v", test.expected, processed)
-// 			t.Fail()
-// 		}
-// 	}
-// }
+		processed, err := applicator.Apply(ctx, cap)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
 
-// func TestSliceFactory(t *testing.T) {
-// 	ctx := context.TODO()
+		if c := bytes.Compare(processed.GetData(), test.expected); c != 0 {
+			t.Logf("expected %v, got %v", test.expected, processed)
+			t.Fail()
+		}
+	}
+}
 
-// 	for _, test := range processTests {
-// 		slice := make([][]byte, 1, 1)
-// 		slice[0] = test.test
+func TestApplyBatch(t *testing.T) {
+	ctx := context.TODO()
+	for _, test := range processTests {
+		cap := config.NewCapsule()
+		cap.SetData(test.test)
 
-// 		conf := test.conf[0]
-// 		slicer, err := SlicerFactory(conf)
-// 		if err != nil {
-// 			t.Log(err)
-// 			t.Fail()
-// 		}
+		batch := make([]config.Capsule, 1, 1)
+		batch[0] = cap
 
-// 		processed, err := slicer.Slice(ctx, slice)
-// 		if err != nil {
-// 			t.Log(err)
-// 			t.Fail()
-// 		}
+		applicators, err := MakeBatchApplicators(test.conf)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
 
-// 		if c := bytes.Compare(processed[0], test.expected); c != 0 {
-// 			t.Logf("expected %v, got %v", test.expected, processed)
-// 			t.Fail()
-// 		}
-// 	}
-// }
+		processed, err := ApplyBatch(ctx, batch, applicators...)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
 
-// func BenchmarkByterFactory(b *testing.B) {
-// 	ctx := context.TODO()
-// 	for i := 0; i < b.N; i++ {
-// 		applicator, err := ByterFactory(processTests[0].conf[0])
-// 		if err != nil {
-// 			b.Log(err)
-// 			b.Fail()
-// 		}
+		if c := bytes.Compare(processed[0].GetData(), test.expected); c != 0 {
+			t.Logf("expected %v, got %v", test.expected, processed)
+			t.Fail()
+		}
+	}
+}
 
-// 		applicator.Byte(ctx, processTests[0].test)
-// 	}
-// }
+func TestBatchApplicatorFactory(t *testing.T) {
+	ctx := context.TODO()
+	cap := config.NewCapsule()
+	batch := make([]config.Capsule, 1, 1)
 
-// var applicator, _ = ByterFactory(processTests[0].conf[0])
+	for _, test := range processTests {
+		cap.SetData(test.test)
+		batch[0] = cap
 
-// func BenchmarkByte(b *testing.B) {
-// 	ctx := context.TODO()
-// 	for i := 0; i < b.N; i++ {
-// 		applicator.Byte(ctx, processTests[0].test)
-// 	}
-// }
+		conf := test.conf[0]
+		applicator, err := BatchApplicatorFactory(conf)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
 
-// func BenchmarkSlicerFactory(b *testing.B) {
-// 	slice := make([][]byte, 1, 1)
-// 	slice[0] = processTests[0].test
+		processed, err := applicator.ApplyBatch(ctx, batch)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
 
-// 	ctx := context.TODO()
-// 	for i := 0; i < b.N; i++ {
-// 		slicer, err := SlicerFactory(processTests[0].conf[0])
-// 		if err != nil {
-// 			b.Log(err)
-// 			b.Fail()
-// 		}
+		if c := bytes.Compare(processed[0].GetData(), test.expected); c != 0 {
+			t.Logf("expected %v, got %v", test.expected, processed)
+			t.Fail()
+		}
+	}
+}
 
-// 		slicer.Slice(ctx, slice)
-// 	}
-// }
+func BenchmarkApplicatorFactory(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		ApplicatorFactory(processTests[0].conf[0])
+	}
+}
 
-// var slicer, _ = SlicerFactory(processTests[0].conf[0])
-
-// func BenchmarkSlice(b *testing.B) {
-// 	slice := make([][]byte, 1, 1)
-// 	slice[0] = processTests[0].test
-
-// 	ctx := context.TODO()
-// 	for i := 0; i < b.N; i++ {
-// 		slicer.Slice(ctx, slice)
-// 	}
-// }
+func BenchmarkBatchApplicatorFactory(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		BatchApplicatorFactory(processTests[0].conf[0])
+	}
+}

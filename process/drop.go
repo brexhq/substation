@@ -9,13 +9,15 @@ import (
 )
 
 /*
-Drop processes encapsulated data by dropping it from a data channel. The processor uses this Jsonnet configuration:
+Drop processes data by "dropping" it -- the data is entirely removed and not emitted.
+
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'drop',
+		type: "drop"
 	}
 */
 type Drop struct {
-	Condition condition.OperatorConfig `json:"condition"`
+	Condition condition.Config `json:"condition"`
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Drop processor. Conditions are optionally applied to the data to enable processing.
@@ -25,7 +27,7 @@ func (p Drop) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
 	}
 
-	newCaps := NewBatch(&caps)
+	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(cap)
 		if err != nil {

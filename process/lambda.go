@@ -57,12 +57,12 @@ type LambdaOptions struct {
 func (p Lambda) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	return caps, nil
@@ -72,12 +72,12 @@ func (p Lambda) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// lazy load API
@@ -87,17 +87,17 @@ func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 
 	payload := cap.Get(p.InputKey)
 	if !payload.IsObject() {
-		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, []byte(payload.Raw))
 	if err != nil {
-		return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 	}
 
 	if resp.FunctionError != nil && p.Options.ErrorOnFailure {
 		resErr := json.Get(resp.Payload, "errorMessage").String()
-		return cap, fmt.Errorf("applicator settings %+v: %v", p, resErr)
+		return cap, fmt.Errorf("apply settings %+v: %v", p, resErr)
 	}
 
 	if resp.FunctionError != nil {

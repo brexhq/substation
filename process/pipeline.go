@@ -68,12 +68,12 @@ type PipelineOptions struct {
 func (p Pipeline) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	return caps, nil
@@ -95,13 +95,13 @@ can encapsulate the Pipeline processor).
 func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	applicators, err := MakeApplicators(p.Options.Processors)
 	if err != nil {
-		return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 	}
 
 	if p.InputKey != "" && p.OutputKey != "" {
 		value := cap.Get(p.InputKey)
 		if value.IsArray() {
-			return cap, fmt.Errorf("applicator settings %+v: %w", p, PipelineArrayInput)
+			return cap, fmt.Errorf("apply settings %+v: %w", p, PipelineArrayInput)
 		}
 
 		c2 := config.NewCapsule()
@@ -109,7 +109,7 @@ func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 
 		tmp, err := Apply(ctx, c2, applicators...)
 		if err != nil {
-			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
 		cap.Set(p.OutputKey, tmp.GetData())
@@ -121,11 +121,11 @@ func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 	if p.InputKey == "" && p.OutputKey == "" {
 		tmp, err := Apply(ctx, cap, applicators...)
 		if err != nil {
-			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
 		return tmp, nil
 	}
 
-	return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 }

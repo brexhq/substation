@@ -76,12 +76,12 @@ func (p Gzip) to(data []byte) ([]byte, error) {
 func (p Gzip) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	return caps, nil
@@ -91,14 +91,14 @@ func (p Gzip) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Gzip) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	switch s := p.Options.Direction; s {
 	case "from":
 		tmp, err := p.from(cap.GetData())
 		if err != nil {
-			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
 		cap.SetData(tmp)
@@ -106,12 +106,12 @@ func (p Gzip) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 	case "to":
 		tmp, err := p.to(cap.GetData())
 		if err != nil {
-			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
 		cap.SetData(tmp)
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 }

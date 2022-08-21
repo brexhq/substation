@@ -62,12 +62,12 @@ type CaptureOptions struct {
 func (p Capture) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	return caps, nil
@@ -77,12 +77,12 @@ func (p Capture) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]confi
 func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Expression == "" || p.Options.Function == "" {
-		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	re, err := regexp.Compile(p.Options.Expression)
 	if err != nil {
-		return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 	}
 
 	if p.Options.Count == 0 {
@@ -132,7 +132,7 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		}
 	}
 
-	return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
 func (p Capture) getStringMatch(match []string) string {

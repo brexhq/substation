@@ -97,14 +97,14 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(cap)
 		if err != nil {
-			return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+			return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 		}
 
 		if !ok {

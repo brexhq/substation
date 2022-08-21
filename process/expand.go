@@ -36,14 +36,14 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(cap)
 		if err != nil {
-			return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+			return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 		}
 
 		if !ok {
@@ -76,7 +76,7 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 
 				expand, err = json.Set(expand, key, val)
 				if err != nil {
-					return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+					return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 				}
 			}
 

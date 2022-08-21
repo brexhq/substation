@@ -44,12 +44,12 @@ type GroupOptions struct {
 func (p Group) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	return caps, nil
@@ -59,7 +59,7 @@ func (p Group) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON arrays, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	if len(p.Options.Keys) == 0 {
@@ -101,7 +101,7 @@ func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 		for x1, v1 := range val.Array() {
 			cache[x1], err = json.Set(cache[x1], p.Options.Keys[x], v1)
 			if err != nil {
-				return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 			}
 		}
 	}
@@ -112,7 +112,7 @@ func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 	for i := 0; i < len(cache); i++ {
 		tmp, err = json.Set(tmp, fmt.Sprintf("%d", i), cache[i])
 		if err != nil {
-			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 	}
 

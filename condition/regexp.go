@@ -43,7 +43,7 @@ type RegExp struct {
 func (c RegExp) Inspect(cap config.Capsule) (output bool, err error) {
 	re, err := regexp.Compile(c.Expression)
 	if err != nil {
-		return false, fmt.Errorf("inspector settings %v: %v", c, err)
+		return false, fmt.Errorf("inspector settings %+v: %v", c, err)
 	}
 
 	var matched bool

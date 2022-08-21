@@ -72,12 +72,12 @@ type TimeOptions struct {
 func (p Time) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	return caps, nil
@@ -87,7 +87,7 @@ func (p Time) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.InputFormat == "" || p.Options.OutputFormat == "" {
-		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// "now" processing, supports json and data
@@ -130,11 +130,11 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 		ts, err := p.time(result)
 		if err != nil {
-			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
 		if err := cap.Set(p.OutputKey, ts); err != nil {
-			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
 		return cap, nil
@@ -144,13 +144,13 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 	if p.InputKey == "" && p.OutputKey == "" {
 		tmp, err := json.Set([]byte{}, "_tmp", cap.GetData())
 		if err != nil {
-			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
 		value := json.Get(tmp, "_tmp")
 		ts, err := p.time(value)
 		if err != nil {
-			return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
 		switch v := ts.(type) {
@@ -163,7 +163,7 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
 func (p Time) time(v json.Result) (interface{}, error) {

@@ -80,7 +80,7 @@ func (c IP) Inspect(cap config.Capsule) (output bool, err error) {
 	case "unspecified":
 		matched = ip.IsUnspecified()
 	default:
-		return false, fmt.Errorf("inspector settings %v: %v", c, IPInvalidType)
+		return false, fmt.Errorf("inspector settings %+v: %w", c, IPInvalidType)
 	}
 
 	if c.Negate {

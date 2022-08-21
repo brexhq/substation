@@ -57,12 +57,12 @@ type Base64Options struct {
 func (p Base64) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
 	return caps, nil
@@ -72,7 +72,7 @@ func (p Base64) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// JSON processing
@@ -84,11 +84,11 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		case "from":
 			result, err := base64.Decode(tmp)
 			if err != nil {
-				return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 			}
 
 			if !utf8.Valid(result) {
-				return cap, fmt.Errorf("applicator settings %+v: %w", p, Base64JSONDecodedBinary)
+				return cap, fmt.Errorf("apply settings %+v: %w", p, Base64JSONDecodedBinary)
 			}
 
 			cap.Set(p.OutputKey, result)
@@ -105,7 +105,7 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		case "from":
 			result, err := base64.Decode(cap.GetData())
 			if err != nil {
-				return cap, fmt.Errorf("applicator settings %+v: %w", p, err)
+				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 			}
 
 			cap.SetData(result)
@@ -116,5 +116,5 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		}
 	}
 
-	return cap, fmt.Errorf("applicator settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 }

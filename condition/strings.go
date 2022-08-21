@@ -74,7 +74,7 @@ func (c Strings) Inspect(cap config.Capsule) (output bool, err error) {
 	case "startswith":
 		matched = strings.HasPrefix(check, c.Expression)
 	default:
-		return false, fmt.Errorf("inspector settings %v: %v", c, StringsInvalidFunction)
+		return false, fmt.Errorf("inspector settings %+v: %w", c, StringsInvalidFunction)
 	}
 
 	if c.Negate {

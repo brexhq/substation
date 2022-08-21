@@ -78,7 +78,7 @@ func (a *DownloaderAPI) Download(ctx aws.Context, bucket, key string) ([]byte, i
 
 	size, err := a.Client.DownloadWithContext(ctx, buf, input)
 	if err != nil {
-		return nil, 0, fmt.Errorf("download bucket %s key %s: %w", bucket, key, err)
+		return nil, 0, fmt.Errorf("download bucket %s key %s: %v", bucket, key, err)
 	}
 	return buf.Bytes(), size, nil
 }
@@ -157,7 +157,7 @@ func (a *UploaderAPI) Upload(ctx aws.Context, buffer []byte, bucket, key string)
 
 	resp, err := a.Client.UploadWithContext(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("upload bucket %s key %s: %w", bucket, key, err)
+		return nil, fmt.Errorf("upload bucket %s key %s: %v", bucket, key, err)
 	}
 	return resp, nil
 }

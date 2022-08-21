@@ -65,7 +65,7 @@ func (a *API) PutRecord(ctx aws.Context, data []byte, stream string) (*firehose.
 		})
 
 	if err != nil {
-		return nil, fmt.Errorf("putrecord stream %s: %w", stream, err)
+		return nil, fmt.Errorf("putrecord stream %s: %v", stream, err)
 	}
 
 	return resp, nil
@@ -105,7 +105,7 @@ func (a *API) PutRecordBatch(ctx aws.Context, data [][]byte, stream string) (*fi
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("putrecordbatch stream %s: %w", stream, err)
+		return nil, fmt.Errorf("putrecordbatch stream %s: %v", stream, err)
 	}
 
 	return resp, nil

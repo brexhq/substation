@@ -63,7 +63,7 @@ func (a *API) SendMessage(ctx aws.Context, data []byte, queue string) (*sqs.Send
 			QueueName: aws.String(queue),
 		})
 	if err != nil {
-		return nil, fmt.Errorf("sendmessagebatch queue %s: %w", queue, err)
+		return nil, fmt.Errorf("sendmessagebatch queue %s: %v", queue, err)
 	}
 	resp, err := a.Client.SendMessageWithContext(
 		ctx,
@@ -73,7 +73,7 @@ func (a *API) SendMessage(ctx aws.Context, data []byte, queue string) (*sqs.Send
 		})
 
 	if err != nil {
-		return nil, fmt.Errorf("sendmessage queue %s: %w", queue, err)
+		return nil, fmt.Errorf("sendmessage queue %s: %v", queue, err)
 	}
 
 	return resp, nil
@@ -95,7 +95,7 @@ func (a *API) SendMessageBatch(ctx aws.Context, data [][]byte, queue string) (*s
 			QueueName: aws.String(queue),
 		})
 	if err != nil {
-		return nil, fmt.Errorf("sendmessagebatch queue %s: %w", queue, err)
+		return nil, fmt.Errorf("sendmessagebatch queue %s: %v", queue, err)
 	}
 
 	resp, err := a.Client.SendMessageBatchWithContext(
@@ -114,7 +114,7 @@ func (a *API) SendMessageBatch(ctx aws.Context, data [][]byte, queue string) (*s
 		for _, r := range resp.Failed {
 			idx, err := strconv.Atoi(aws.StringValue(r.Id))
 			if err != nil {
-				return nil, fmt.Errorf("sendmessagebatch queue %s: %w", queue, err)
+				return nil, fmt.Errorf("sendmessagebatch queue %s: %v", queue, err)
 			}
 
 			retryData = append(retryData, data[idx])
@@ -126,7 +126,7 @@ func (a *API) SendMessageBatch(ctx aws.Context, data [][]byte, queue string) (*s
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("sendmessagebatch queue %s: %w", queue, err)
+		return nil, fmt.Errorf("sendmessagebatch queue %s: %v", queue, err)
 	}
 
 	return resp, nil

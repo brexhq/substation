@@ -65,7 +65,7 @@ func (a *API) PutItem(ctx aws.Context, table string, item map[string]*dynamodb.A
 		})
 
 	if err != nil {
-		return nil, fmt.Errorf("putitem table %s: %w", table, err)
+		return nil, fmt.Errorf("putitem table %s: %v", table, err)
 	}
 
 	return resp, nil
@@ -102,7 +102,7 @@ func (a *API) Query(ctx aws.Context, table, partitionKey, sortKey, keyConditionE
 			ScanIndexForward:          aws.Bool(scanIndexForward),
 		})
 	if err != nil {
-		return nil, fmt.Errorf("query table %s key condition expression %s: %w", table, keyConditionExpression, err)
+		return nil, fmt.Errorf("query table %s key condition expression %s: %v", table, keyConditionExpression, err)
 	}
 
 	return resp, nil

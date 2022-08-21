@@ -66,7 +66,7 @@ func (a *API) Invoke(ctx aws.Context, function string, payload []byte) (resp *la
 		})
 
 	if err != nil {
-		return nil, fmt.Errorf("invoke function %s: %w", function, err)
+		return nil, fmt.Errorf("invoke function %s: %v", function, err)
 	}
 
 	return resp, nil

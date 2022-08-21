@@ -11,6 +11,8 @@ import (
 	"github.com/brexhq/substation/internal/log"
 )
 
+var kinesisAPI kinesis.API
+
 /*
 Kinesis sinks data to an AWS Kinesis Data Stream using Kinesis Producer Library (KPL) compliant aggregated records. This sink can automatically redistribute data across shards by retrieving partition keys from JSON data; by default, it uses random strings to avoid hot shards. More information about the KPL and its schema is available here: https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html.
 
@@ -26,13 +28,12 @@ The sink has these settings:
 		if enabled with an empty partition key, then data aggregation is disabled
 		defaults to false, data is randomly distributed across shards
 
-The sink uses this Jsonnet configuration:
+When loaded with a factory, the sink uses this JSON configuration:
 	{
-		type: 'kinesis',
-		settings: {
-			stream: 'foo',
-			partition: 'bar',
-		},
+		"type": "kinesis",
+		"settings": {
+			"stream": "foo"
+		}
 	}
 */
 type Kinesis struct {
@@ -41,8 +42,6 @@ type Kinesis struct {
 	PartitionKey        string `json:"partition_key"`
 	ShardRedistribution bool   `json:"shard_redistribution"`
 }
-
-var kinesisAPI kinesis.API
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
 func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {

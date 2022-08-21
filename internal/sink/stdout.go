@@ -10,9 +10,9 @@ import (
 /*
 Stdout sinks data to stdout.
 
-The sink uses this Jsonnet configuration:
+When loaded with a factory, the sink uses this JSON configuration:
 	{
-		type: 'stdout',
+		"type": "stdout"
 	}
 */
 type Stdout struct{}

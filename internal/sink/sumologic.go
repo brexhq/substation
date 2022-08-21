@@ -15,6 +15,8 @@ import (
 	"github.com/brexhq/substation/internal/log"
 )
 
+var sumoLogicClient http.HTTP
+
 // SumoLogicSinkInvalidJSON is returned when the Sumo Logic sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
 const SumoLogicSinkInvalidJSON = errors.Error("SumoLogicSinkInvalidJSON")
 
@@ -31,13 +33,12 @@ The sink has these settings:
 		JSON key-value that is used as the Sumo Logic source category, overrides Category
 		defaults to no source category, which sends data to the source category configured for URL
 
-The sink uses this Jsonnet configuration:
+When loaded with a factory, the sink uses this JSON configuration:
 	{
-		type: 'sumologic',
-		settings: {
-			url: 'foo.com/bar',
-			category: 'foo',
-		},
+		"type": "sumologic",
+		"settings": {
+			"url": "foo.com/bar"
+		}
 	}
 */
 type SumoLogic struct {
@@ -45,8 +46,6 @@ type SumoLogic struct {
 	Category    string `json:"category"`
 	CategoryKey string `json:"category_key"`
 }
-
-var sumoLogicClient http.HTTP
 
 // Send sinks a channel of encapsulated data with the SumoLogic sink.
 func (sink *SumoLogic) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {

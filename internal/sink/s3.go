@@ -16,6 +16,8 @@ import (
 	"github.com/brexhq/substation/internal/log"
 )
 
+var s3managerAPI s3manager.UploaderAPI
+
 const layout = "2006-01-02"
 
 /*
@@ -31,12 +33,12 @@ The sink has these settings:
 		JSON key-value that is used as the prefix prepended to the S3 object name, overrides Prefix
 		defaults to no prefix
 
-The sink uses this Jsonnet configuration:
+When loaded with a factory, the sink uses this JSON configuration:
 	{
-		type: 's3',
-		settings: {
-			bucket: 'foo-bucket',
-		},
+		"type": "s3",
+		"settings": {
+			"bucket": "foo-bucket"
+		}
 	}
 */
 type S3 struct {
@@ -44,8 +46,6 @@ type S3 struct {
 	Prefix    string `json:"prefix"`
 	PrefixKey string `json:"prefix_key"`
 }
-
-var s3managerAPI s3manager.UploaderAPI
 
 // Send sinks a channel of encapsulated data with the S3 sink.
 func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {

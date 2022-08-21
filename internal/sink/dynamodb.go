@@ -12,8 +12,10 @@ import (
 	"github.com/brexhq/substation/internal/log"
 )
 
-// dynamoDBSinkInvalidJSON is returned when the DynamoDB sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
-const dynamoDBSinkInvalidJSON = errors.Error("dynamoDBSinkInvalidJSON")
+var dynamodbAPI dynamodb.API
+
+// DynamoDBSinkInvalidJSON is returned when the DynamoDB sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
+const DynamoDBSinkInvalidJSON = errors.Error("DynamoDBSinkInvalidJSON")
 
 /*
 DynamoDB sinks JSON data to an AWS DynamoDB table. This sink supports sinking multiple rows from the same event to a table.
@@ -35,21 +37,19 @@ The sink has these settings:
 				}
 			]
 
-The sink uses this Jsonnet configuration:
+When loaded with a factory, the sink uses this JSON configuration:
 	{
-		type: 'dynamodb',
-		settings: {
-			table: 'foo-table',
-			items_key: 'foo',
-		},
+		"type": "dynamodb",
+		"settings": {
+			"table": "foo-table",
+			"items_key": "foo"
+		}
 	}
 */
 type DynamoDB struct {
 	Table    string `json:"table"`
 	ItemsKey string `json:"items_key"`
 }
-
-var dynamodbAPI dynamodb.API
 
 // Send sinks a channel of encapsulated data with the DynamoDB sink.
 func (sink *DynamoDB) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
@@ -64,7 +64,7 @@ func (sink *DynamoDB) Send(ctx context.Context, ch chan config.Capsule, kill cha
 			return nil
 		default:
 			if !json.Valid(cap.GetData()) {
-				return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, dynamoDBSinkInvalidJSON)
+				return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, DynamoDBSinkInvalidJSON)
 			}
 
 			items := cap.Get(sink.ItemsKey).Array()

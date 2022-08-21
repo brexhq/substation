@@ -10,6 +10,8 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
+var httpClient http.HTTP
+
 /*
 HTTP sinks JSON data to an HTTP(S) endpoint.
 
@@ -31,13 +33,12 @@ The sink has these settings:
 				}
 			]
 
-The sink uses this Jsonnet configuration:
+When loaded with a factory, the sink uses this JSON configuration:
 	{
-		type: 'http',
-		settings: {
-			url: 'foo.com/bar',
-			headers_key: 'foo',
-		},
+		"type": "http",
+		"settings": {
+			"url": "foo.com/bar"
+		}
 	}
 */
 type HTTP struct {
@@ -48,8 +49,6 @@ type HTTP struct {
 	} `json:"headers"`
 	HeadersKey string `json:"headers_key"`
 }
-
-var httpClient http.HTTP
 
 // Send sinks a channel of encapsulated data with the HTTP sink.
 func (sink *HTTP) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {

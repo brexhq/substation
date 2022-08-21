@@ -11,38 +11,38 @@ import (
 	"github.com/jshlbrd/go-aggregate"
 )
 
+var sqsAPI sqs.API
+
 // records greater than 256 KB in size cannot be
-// put into Kinesis Firehose
-const sqsMessageSizeLimit = 1024 * 1000 * 256
+// put into an SQS queue
+const sqsMessageSizeLimit = 1024 * 1024 * 256
 
 /*
-sqsDataExceededSizeLimit is returned when data exceeds
+SQSDataExceededSizeLimit is returned when data exceeds
 the SQS message size limit. If this error occurs, then
 conditions or processors should be applied to either drop
 or reduce the size of the data.
 */
-const sqsDataExceededSizeLimit = errors.Error("KinesisFirehoseDataExceededSizeLimit")
+const SQSDataExceededSizeLimit = errors.Error("KinesisFirehoseDataExceededSizeLimit")
 
 /*
 SQS sinks data to an AWS SQS queue.
 
 The sink has these settings:
 	Queue:
+		SQS queue name that data is sent to
 
-
-The sink uses this Jsonnet configuration:
+When loaded with a factory, the sink uses this JSON configuration:
 	{
-		type: 'sqs',
-		settings: {
-			queue: 'foo',
-		},
+		"type": "sqs",
+		"settings": {
+			"queue": "foo"
+		}
 	}
 */
 type SQS struct {
 	Queue string `json:"queue"`
 }
-
-var sqsAPI sqs.API
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
 func (sink *SQS) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
@@ -62,7 +62,7 @@ func (sink *SQS) Send(ctx context.Context, ch chan config.Capsule, kill chan str
 			return nil
 		default:
 			if len(cap.GetData()) > sqsMessageSizeLimit {
-				return fmt.Errorf("sink sqs: %v", sqsDataExceededSizeLimit)
+				return fmt.Errorf("sink sqs: %v", SQSDataExceededSizeLimit)
 			}
 
 			ok, err := buffer.Add(cap.GetData())

@@ -107,16 +107,6 @@ func SetRaw(json []byte, key string, value interface{}) (tmp []byte, err error) 
 	return tmp, nil
 }
 
-// // Marshal wraps the standard library's json.Marshal function.
-// func Marshal(v interface{}) ([]byte, error) {
-// 	return json.Marshal(v)
-// }
-
-// // Unmarshal wraps the standard library's json.Unmarshal function.
-// func Unmarshal(data []byte, v interface{}) error {
-// 	return json.Unmarshal(data, v)
-// }
-
 // Valid conditionally checks if bytes, strings, or Results are valid JSON objects.
 func Valid(data interface{}) bool {
 	switch v := data.(type) {

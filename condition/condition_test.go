@@ -93,7 +93,7 @@ var conditionANDTests = []struct {
 func TestAND(t *testing.T) {
 	cap := config.NewCapsule()
 	for _, test := range conditionANDTests {
-		cfg := OperatorConfig{
+		cfg := Config{
 			Operator:   "and",
 			Inspectors: test.conf,
 		}
@@ -220,7 +220,7 @@ var conditionORTests = []struct {
 func TestOR(t *testing.T) {
 	cap := config.NewCapsule()
 	for _, test := range conditionORTests {
-		cfg := OperatorConfig{
+		cfg := Config{
 			Operator:   "or",
 			Inspectors: test.conf,
 		}
@@ -319,7 +319,7 @@ var conditionNANDTests = []struct {
 func TestNAND(t *testing.T) {
 	cap := config.NewCapsule()
 	for _, test := range conditionNANDTests {
-		cfg := OperatorConfig{
+		cfg := Config{
 			Operator:   "nand",
 			Inspectors: test.conf,
 		}
@@ -418,7 +418,7 @@ var conditionNORTests = []struct {
 func TestNOR(t *testing.T) {
 	cap := config.NewCapsule()
 	for _, test := range conditionNORTests {
-		cfg := OperatorConfig{
+		cfg := Config{
 			Operator:   "nor",
 			Inspectors: test.conf,
 		}

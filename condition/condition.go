@@ -24,7 +24,65 @@ type Inspector interface {
 	Inspect(config.Capsule) (bool, error)
 }
 
-// Operator is the interface shared by all operator methods. Most operators contain a list of Inspectors that the operand applies to.
+// InspectByte is a convenience function for applying an Inspector to bytes.
+func InspectByte(data []byte, inspect Inspector) (bool, error) {
+	cap := config.NewCapsule()
+	cap.SetData(data)
+
+	return inspect.Inspect(cap)
+}
+
+// MakeInspectors accepts multiple inspector configs and returns populated Inspectors. This is a convenience function for generating many Inspectors.
+func MakeInspectors(cfg []config.Config) ([]Inspector, error) {
+	var inspectors []Inspector
+	for _, c := range cfg {
+		inspector, err := InspectorFactory(c)
+		if err != nil {
+			return nil, err
+		}
+		inspectors = append(inspectors, inspector)
+	}
+
+	return inspectors, nil
+}
+
+// InspectorFactory returns a configured Inspector from a config. This is the recommended method for retrieving ready-to-use Inspectors.
+func InspectorFactory(cfg config.Config) (Inspector, error) {
+	switch cfg.Type {
+	case "content":
+		var i Content
+		config.Decode(cfg.Settings, &i)
+		return i, nil
+	case "ip":
+		var i IP
+		config.Decode(cfg.Settings, &i)
+		return i, nil
+	case "json_schema":
+		var i JSONSchema
+		config.Decode(cfg.Settings, &i)
+		return i, nil
+	case "json_valid":
+		var i JSONValid
+		config.Decode(cfg.Settings, &i)
+		return i, nil
+	case "length":
+		var i Length
+		config.Decode(cfg.Settings, &i)
+		return i, nil
+	case "regexp":
+		var i RegExp
+		config.Decode(cfg.Settings, &i)
+		return i, nil
+	case "strings":
+		var i Strings
+		config.Decode(cfg.Settings, &i)
+		return i, nil
+	default:
+		return nil, fmt.Errorf("condition settings %v: %v", cfg.Settings, InspectorInvalidFactoryConfig)
+	}
+}
+
+// Operator is the interface shared by all operator methods. Operators apply a series of Inspectors to and verify the state (aka "condition") of data.
 type Operator interface {
 	Operate(config.Capsule) (bool, error)
 }
@@ -146,20 +204,14 @@ func (o Default) Operate(cap config.Capsule) (bool, error) {
 	return true, nil
 }
 
-// OperatorConfig contains an array of Inspector configurations that are used to evaluate data.
-type OperatorConfig struct {
-	Operator   string
-	Inspectors []config.Config
-}
-
-// OperatorFactory loads Operators from an OperatorConfig. This function is the preferred way to create Operators.
-func OperatorFactory(cfg OperatorConfig) (Operator, error) {
+// OperatorFactory returns a configured Operator from a config. This is the recommended method for retrieving ready-to-use Operators.
+func OperatorFactory(cfg Config) (Operator, error) {
 	inspectors, err := MakeInspectors(cfg.Inspectors)
 	if err != nil {
 		return nil, err
 	}
 
-	switch op := cfg.Operator; op {
+	switch cfg.Operator {
 	case "and":
 		return AND{inspectors}, nil
 	case "nand":
@@ -173,52 +225,8 @@ func OperatorFactory(cfg OperatorConfig) (Operator, error) {
 	}
 }
 
-// InspectorFactory loads Inspectors from an InspectorConfig. This function is the preferred way to create Inspectors.
-func InspectorFactory(cfg config.Config) (Inspector, error) {
-	switch t := cfg.Type; t {
-	case "content":
-		var i Content
-		config.Decode(cfg.Settings, &i)
-		return i, nil
-	case "ip":
-		var i IP
-		config.Decode(cfg.Settings, &i)
-		return i, nil
-	case "json_schema":
-		var i JSONSchema
-		config.Decode(cfg.Settings, &i)
-		return i, nil
-	case "json_valid":
-		var i JSONValid
-		config.Decode(cfg.Settings, &i)
-		return i, nil
-	case "length":
-		var i Length
-		config.Decode(cfg.Settings, &i)
-		return i, nil
-	case "regexp":
-		var i RegExp
-		config.Decode(cfg.Settings, &i)
-		return i, nil
-	case "strings":
-		var i Strings
-		config.Decode(cfg.Settings, &i)
-		return i, nil
-	default:
-		return nil, fmt.Errorf("condition settings %v: %v", cfg.Settings, InspectorInvalidFactoryConfig)
-	}
-}
-
-// MakeInspectors is a convenience function for creating mulitple Inspectors.
-func MakeInspectors(cfg []config.Config) ([]Inspector, error) {
-	var inspectors []Inspector
-	for _, c := range cfg {
-		inspector, err := InspectorFactory(c)
-		if err != nil {
-			return nil, err
-		}
-		inspectors = append(inspectors, inspector)
-	}
-
-	return inspectors, nil
+// Config is used with OperatorFactory to produce new Operators from JSON configurations.
+type Config struct {
+	Operator   string
+	Inspectors []config.Config
 }

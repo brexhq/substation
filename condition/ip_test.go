@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"context"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -80,10 +81,11 @@ var ipTests = []struct {
 }
 
 func TestIP(t *testing.T) {
+	ctx := context.TODO()
 	cap := config.NewCapsule()
 	for _, test := range ipTests {
 		cap.SetData(test.test)
-		check, _ := test.inspector.Inspect(cap)
+		check, _ := test.inspector.Inspect(ctx, cap)
 
 		if test.expected != check {
 			t.Logf("expected %v, got %v, %v", test.expected, check, string(test.test))
@@ -93,8 +95,9 @@ func TestIP(t *testing.T) {
 }
 
 func benchmarkIPByte(b *testing.B, inspector IP, cap config.Capsule) {
+	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(cap)
+		inspector.Inspect(ctx, cap)
 	}
 }
 

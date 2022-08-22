@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -53,7 +54,7 @@ type Strings struct {
 }
 
 // Inspect evaluates encapsulated data with the Strings inspector.
-func (c Strings) Inspect(cap config.Capsule) (output bool, err error) {
+func (c Strings) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
 		check = string(cap.GetData())

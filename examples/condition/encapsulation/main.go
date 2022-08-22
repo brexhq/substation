@@ -3,6 +3,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -45,7 +46,7 @@ func main() {
 
 	// apply inspector to encapsulated data
 	for _, cap := range caps {
-		ok, err := inspector.Inspect(cap)
+		ok, err := inspector.Inspect(context.TODO(), cap)
 		if err != nil {
 			panic(err)
 		}

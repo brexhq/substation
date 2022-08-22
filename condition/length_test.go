@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"context"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -213,10 +214,11 @@ var lengthTests = []struct {
 }
 
 func TestLength(t *testing.T) {
+	ctx := context.TODO()
 	cap := config.NewCapsule()
 	for _, test := range lengthTests {
 		cap.SetData(test.test)
-		check, _ := test.inspector.Inspect(cap)
+		check, _ := test.inspector.Inspect(ctx, cap)
 
 		if test.expected != check {
 			t.Logf("expected %v, got %v", test.expected, check)
@@ -228,8 +230,9 @@ func TestLength(t *testing.T) {
 }
 
 func benchmarkLengthByte(b *testing.B, inspector Length, cap config.Capsule) {
+	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(cap)
+		inspector.Inspect(ctx, cap)
 	}
 }
 

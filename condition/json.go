@@ -1,6 +1,8 @@
 package condition
 
 import (
+	"context"
+
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
@@ -52,7 +54,7 @@ type JSONSchema struct {
 }
 
 // Inspect evaluates encapsulated data with the JSONSchema inspector.
-func (c JSONSchema) Inspect(cap config.Capsule) (output bool, err error) {
+func (c JSONSchema) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	matched := true
 
 	for _, schema := range c.Schema {
@@ -112,7 +114,7 @@ type JSONValid struct {
 }
 
 // Inspect evaluates encapsulated data with the JSONValid inspector.
-func (c JSONValid) Inspect(cap config.Capsule) (output bool, err error) {
+func (c JSONValid) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	matched := json.Valid(cap.GetData())
 
 	if c.Negate {

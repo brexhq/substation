@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/brexhq/substation/config"
@@ -40,7 +41,7 @@ type RegExp struct {
 }
 
 // Inspect evaluates encapsulated data with the RegExp inspector.
-func (c RegExp) Inspect(cap config.Capsule) (output bool, err error) {
+func (c RegExp) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	re, err := regexp.Compile(c.Expression)
 	if err != nil {
 		return false, fmt.Errorf("inspector settings %+v: %v", c, err)

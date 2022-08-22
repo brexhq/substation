@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -53,7 +54,7 @@ type IP struct {
 }
 
 // Inspect evaluates encapsulated data with the IP inspector.
-func (c IP) Inspect(cap config.Capsule) (output bool, err error) {
+func (c IP) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
 		check = string(cap.GetData())

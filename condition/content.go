@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/brexhq/substation/config"
@@ -34,7 +35,7 @@ type Content struct {
 }
 
 // Inspect evaluates encapsulated data with the Content inspector.
-func (c Content) Inspect(cap config.Capsule) (output bool, err error) {
+func (c Content) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	matched := false
 
 	content := http.DetectContentType(cap.GetData())

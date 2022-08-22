@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"context"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -137,10 +138,11 @@ var stringsTests = []struct {
 }
 
 func TestStrings(t *testing.T) {
+	ctx := context.TODO()
 	cap := config.NewCapsule()
 	for _, test := range stringsTests {
 		cap.SetData(test.test)
-		check, _ := test.inspector.Inspect(cap)
+		check, _ := test.inspector.Inspect(ctx, cap)
 
 		if test.expected != check {
 			t.Logf("expected %v, got %v", test.expected, check)
@@ -150,8 +152,9 @@ func TestStrings(t *testing.T) {
 }
 
 func benchmarkStringsByte(b *testing.B, inspector Strings, cap config.Capsule) {
+	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(cap)
+		inspector.Inspect(ctx, cap)
 	}
 }
 

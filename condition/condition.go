@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/brexhq/substation/config"
@@ -21,15 +22,15 @@ const OperatorMissingInspectors = errors.Error("OperatorMissingInspectors")
 
 // Inspector is the interface shared by all inspector methods.
 type Inspector interface {
-	Inspect(config.Capsule) (bool, error)
+	Inspect(context.Context, config.Capsule) (bool, error)
 }
 
 // InspectByte is a convenience function for applying an Inspector to bytes.
-func InspectByte(data []byte, inspect Inspector) (bool, error) {
+func InspectByte(ctx context.Context, data []byte, inspect Inspector) (bool, error) {
 	cap := config.NewCapsule()
 	cap.SetData(data)
 
-	return inspect.Inspect(cap)
+	return inspect.Inspect(ctx, cap)
 }
 
 // MakeInspectors accepts multiple inspector configs and returns populated Inspectors. This is a convenience function for generating many Inspectors.
@@ -84,7 +85,7 @@ func InspectorFactory(cfg config.Config) (Inspector, error) {
 
 // Operator is the interface shared by all operator methods. Operators apply a series of Inspectors to and verify the state (aka "condition") of data.
 type Operator interface {
-	Operate(config.Capsule) (bool, error)
+	Operate(context.Context, config.Capsule) (bool, error)
 }
 
 // AND implements the Operator interface and applies the boolean AND logic to configured inspectors.
@@ -93,13 +94,13 @@ type AND struct {
 }
 
 // Operate returns true if all Inspectors return true, otherwise it returns false.
-func (o AND) Operate(cap config.Capsule) (bool, error) {
+func (o AND) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("operator settings %+v: %w", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(cap)
+		ok, err := i.Inspect(ctx, cap)
 
 		if err != nil {
 			return false, err
@@ -121,13 +122,13 @@ type OR struct {
 }
 
 // Operate returns true if any Inspectors return true, otherwise it returns false.
-func (o OR) Operate(cap config.Capsule) (bool, error) {
+func (o OR) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("operator settings %+v: %w", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(cap)
+		ok, err := i.Inspect(ctx, cap)
 		if err != nil {
 			return false, err
 		}
@@ -148,13 +149,13 @@ type NAND struct {
 }
 
 // Operate returns true if all Inspectors return false, otherwise it returns true.
-func (o NAND) Operate(cap config.Capsule) (bool, error) {
+func (o NAND) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("operator settings %+v: %w", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(cap)
+		ok, err := i.Inspect(ctx, cap)
 		if err != nil {
 			return false, err
 		}
@@ -175,13 +176,13 @@ type NOR struct {
 }
 
 // Operate returns true if any Inspectors return false, otherwise it returns true.
-func (o NOR) Operate(cap config.Capsule) (bool, error) {
+func (o NOR) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("operator settings %+v: %w", o, OperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(cap)
+		ok, err := i.Inspect(ctx, cap)
 		if err != nil {
 			return false, err
 		}
@@ -200,7 +201,7 @@ func (o NOR) Operate(cap config.Capsule) (bool, error) {
 type Default struct{}
 
 // Operate always returns true. This is the default operator returned by  OperatorFactory.
-func (o Default) Operate(cap config.Capsule) (bool, error) {
+func (o Default) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
 	return true, nil
 }
 

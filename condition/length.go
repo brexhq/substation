@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"context"
 	"fmt"
 	"unicode/utf8"
 
@@ -60,7 +61,7 @@ type Length struct {
 }
 
 // Inspect evaluates encapsulated data with the Length inspector.
-func (c Length) Inspect(cap config.Capsule) (output bool, err error) {
+func (c Length) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
 		check = string(cap.GetData())

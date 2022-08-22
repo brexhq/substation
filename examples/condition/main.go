@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
@@ -15,7 +16,7 @@ func main() {
 	}
 
 	data := []byte(`{"foo":"bar"}`)
-	ok, err := condition.InspectByte(data, inspector)
+	ok, err := condition.InspectByte(context.TODO(), data, inspector)
 	if err != nil {
 		panic(err)
 	}

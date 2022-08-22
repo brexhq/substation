@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"context"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -49,10 +50,11 @@ var regexpTests = []struct {
 }
 
 func TestRegExp(t *testing.T) {
+	ctx := context.TODO()
 	cap := config.NewCapsule()
 	for _, test := range regexpTests {
 		cap.SetData(test.test)
-		check, _ := test.inspector.Inspect(cap)
+		check, _ := test.inspector.Inspect(ctx, cap)
 
 		if test.expected != check {
 			t.Logf("expected %v, got %v", test.expected, check)
@@ -62,8 +64,9 @@ func TestRegExp(t *testing.T) {
 }
 
 func benchmarkRegExpByte(b *testing.B, inspector RegExp, cap config.Capsule) {
+	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(cap)
+		inspector.Inspect(ctx, cap)
 	}
 }
 

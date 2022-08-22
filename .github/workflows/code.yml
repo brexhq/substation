@@ -18,8 +18,8 @@ jobs:
 
     - name: lint
       run: |
-        go get golang.org/x/lint/golint
-        golint -set_exit_status ./...
+        go install honnef.co/go/tools/cmd/staticcheck@latest
+        staticcheck -checks all,-ST1000 ./...
 
     - name: tests
       run: go test -timeout 30s -v ./... 

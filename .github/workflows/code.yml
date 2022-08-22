@@ -10,19 +10,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-
+      with:
+        fetch-depth: 1
+  
     - name: setup
       uses: actions/setup-go@v2
       with:
         go-version: 1.17
 
-    - name: lint
-      run: |
-        go get golang.org/x/lint/golint
-        golint -set_exit_status ./...
-
     - name: tests
       run: go test -timeout 30s -v ./... 
+
+    - name: lint
+      uses: dominikh/staticcheck-action@v1.2.0
+      with:
+        install-go: false
+        checks: "all,-ST1000"
 
   python:
     runs-on: ubuntu-latest

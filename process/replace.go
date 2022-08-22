@@ -53,7 +53,7 @@ type ReplaceOptions struct {
 	Count int    `json:"count"`
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Replcae processor. Conditions are optionally applied to the data to enable processing.
+// ApplyBatch processes a slice of encapsulated data with the Replace processor. Conditions are optionally applied to the data to enable processing.
 func (p Replace) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {

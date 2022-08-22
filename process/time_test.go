@@ -198,9 +198,8 @@ var timeTests = []struct {
 
 func TestTime(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range timeTests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -218,20 +217,20 @@ func TestTime(t *testing.T) {
 	}
 }
 
-func benchmarkTimeCapByte(b *testing.B, applicator Time, test config.Capsule) {
+func benchmarkTime(b *testing.B, applicator Time, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkTimeCapByte(b *testing.B) {
+func BenchmarkTime(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range timeTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkTimeCapByte(b, test.proc, cap)
+				benchmarkTime(b, test.proc, cap)
 			},
 		)
 	}

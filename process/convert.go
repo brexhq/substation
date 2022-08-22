@@ -75,17 +75,22 @@ func (p Convert) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 	if p.InputKey != "" && p.OutputKey != "" {
 		result := cap.Get(p.InputKey)
 
+		var value interface{}
 		switch p.Options.Type {
 		case "bool":
-			cap.Set(p.OutputKey, result.Bool())
+			value = result.Bool()
 		case "int":
-			cap.Set(p.OutputKey, result.Int())
+			value = result.Int()
 		case "float":
-			cap.Set(p.OutputKey, result.Float())
+			value = result.Float()
 		case "uint":
-			cap.Set(p.OutputKey, result.Uint())
+			value = result.Uint()
 		case "string":
-			cap.Set(p.OutputKey, result.String())
+			value = result.String()
+		}
+
+		if err := cap.Set(p.OutputKey, value); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
 		return cap, nil

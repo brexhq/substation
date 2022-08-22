@@ -56,9 +56,8 @@ var flattenTests = []struct {
 
 func TestFlatten(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range flattenTests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -76,20 +75,20 @@ func TestFlatten(t *testing.T) {
 	}
 }
 
-func benchmarkFlattenCapByte(b *testing.B, applicator Flatten, test config.Capsule) {
+func benchmarkFlatten(b *testing.B, applicator Flatten, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkFlattenCapByte(b *testing.B) {
+func BenchmarkFlatten(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range flattenTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkFlattenCapByte(b, test.proc, cap)
+				benchmarkFlatten(b, test.proc, cap)
 			},
 		)
 	}

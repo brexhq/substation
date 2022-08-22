@@ -66,9 +66,8 @@ var caseTests = []struct {
 
 func TestCase(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range caseTests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -86,20 +85,20 @@ func TestCase(t *testing.T) {
 	}
 }
 
-func benchmarkCaseCapByte(b *testing.B, applicator Case, test config.Capsule) {
+func benchmarkCase(b *testing.B, applicator Case, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkCaseCapByte(b *testing.B) {
+func BenchmarkCase(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range caseTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkCaseCapByte(b, test.proc, cap)
+				benchmarkCase(b, test.proc, cap)
 			},
 		)
 	}

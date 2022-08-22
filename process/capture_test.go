@@ -80,9 +80,8 @@ var captureTests = []struct {
 
 func TestCapture(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range captureTests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -100,20 +99,20 @@ func TestCapture(t *testing.T) {
 	}
 }
 
-func benchmarkCaptureCapByte(b *testing.B, applicator Capture, test config.Capsule) {
+func benchmarkCapture(b *testing.B, applicator Capture, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkCaptureCapByte(b *testing.B) {
+func BenchmarkCapture(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range captureTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkCaptureCapByte(b, test.proc, cap)
+				benchmarkCapture(b, test.proc, cap)
 			},
 		)
 	}

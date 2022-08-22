@@ -12,6 +12,9 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
+// Base64InvalidDirection is returned when the Base64 processor is configured with an invalid direction.
+const Base64InvalidDirection = errors.Error("Base64InvalidDirection")
+
 // Base64JSONDecodedBinary is returned when the Base64 processor is configured to decode output to JSON, but the output contains binary data and cannot be written as valid JSON.
 const Base64JSONDecodedBinary = errors.Error("Base64JSONDecodedBinary")
 
@@ -80,40 +83,51 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		res := cap.Get(p.InputKey).String()
 		tmp := []byte(res)
 
+		var value []byte
 		switch p.Options.Direction {
 		case "from":
-			result, err := base64.Decode(tmp)
+			decode, err := base64.Decode(tmp)
 			if err != nil {
 				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 			}
 
-			if !utf8.Valid(result) {
+			if !utf8.Valid(decode) {
 				return cap, fmt.Errorf("apply settings %+v: %w", p, Base64JSONDecodedBinary)
 			}
 
-			cap.Set(p.OutputKey, result)
-			return cap, nil
+			value = decode
 		case "to":
-			cap.Set(p.OutputKey, base64.Encode(tmp))
-			return cap, nil
+			value = base64.Encode(tmp)
+		default:
+			return cap, fmt.Errorf("apply settings %+v: %w", p, Base64InvalidDirection)
 		}
+
+		if err := cap.Set(p.OutputKey, value); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		}
+
+		return cap, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
+		var value []byte
 		switch p.Options.Direction {
 		case "from":
-			result, err := base64.Decode(cap.GetData())
+			decode, err := base64.Decode(cap.GetData())
 			if err != nil {
 				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 			}
 
-			cap.SetData(result)
-			return cap, nil
+			value = decode
 		case "to":
-			cap.SetData(base64.Encode(cap.GetData()))
-			return cap, nil
+			value = base64.Encode(cap.GetData())
+		default:
+			return cap, fmt.Errorf("apply settings %+v: %w", p, Base64InvalidDirection)
 		}
+
+		cap.SetData(value)
+		return cap, nil
 	}
 
 	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)

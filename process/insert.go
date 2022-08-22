@@ -61,6 +61,9 @@ func (p Insert) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	cap.Set(p.OutputKey, p.Options.Value)
+	if err := cap.Set(p.OutputKey, p.Options.Value); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
+
 	return cap, nil
 }

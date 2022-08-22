@@ -10,7 +10,11 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
+
+// CaseInvalidCase is returned when the Case processor is configured with an invalid case.
+const CaseInvalidCase = errors.Error("CaseInvalidCase")
 
 /*
 Case processes data by changing the case of a string or byte slice. The processor supports these patterns:
@@ -75,14 +79,22 @@ func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		res := cap.Get(p.InputKey).String()
+		result := cap.Get(p.InputKey).String()
+
+		var value string
 		switch p.Options.Case {
 		case "upper":
-			cap.Set(p.OutputKey, strings.ToUpper(res))
+			value = strings.ToUpper(result)
 		case "lower":
-			cap.Set(p.OutputKey, strings.ToLower(res))
+			value = strings.ToLower(result)
 		case "snake":
-			cap.Set(p.OutputKey, strcase.ToSnake(res))
+			value = strcase.ToSnake(result)
+		default:
+			return cap, fmt.Errorf("apply settings %+v: %w", p, CaseInvalidCase)
+		}
+
+		if err := cap.Set(p.OutputKey, value); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
 		return cap, nil
@@ -90,13 +102,17 @@ func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
+		var value []byte
 		switch p.Options.Case {
 		case "upper":
-			cap.SetData(bytes.ToUpper(cap.GetData()))
+			value = bytes.ToUpper(cap.GetData())
 		case "lower":
-			cap.SetData(bytes.ToLower(cap.GetData()))
+			value = bytes.ToLower(cap.GetData())
+		default:
+			return cap, fmt.Errorf("apply settings %+v: %w", p, CaseInvalidCase)
 		}
 
+		cap.SetData(value)
 		return cap, nil
 	}
 

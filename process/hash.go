@@ -8,7 +8,11 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
+
+// HashInvalidAlgorithm is returned when the Hash processor is configured with an invalid algorithm.
+const HashInvalidAlgorithm = errors.Error("HashInvalidAlgorithm")
 
 /*
 Hash processes data by calculating hashes. The processor supports these patterns:
@@ -73,13 +77,21 @@ func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
 		result := cap.Get(p.InputKey).String()
+
+		var value string
 		switch p.Options.Algorithm {
 		case "md5":
 			sum := md5.Sum([]byte(result))
-			cap.Set(p.OutputKey, fmt.Sprintf("%x", sum))
+			value = fmt.Sprintf("%x", sum)
 		case "sha256":
 			sum := sha256.Sum256([]byte(result))
-			cap.Set(p.OutputKey, fmt.Sprintf("%x", sum))
+			value = fmt.Sprintf("%x", sum)
+		default:
+			return cap, fmt.Errorf("apply settings %+v: %w", p, HashInvalidAlgorithm)
+		}
+
+		if err := cap.Set(p.OutputKey, value); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
 		return cap, nil
@@ -87,17 +99,19 @@ func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
+		var value string
 		switch p.Options.Algorithm {
 		case "md5":
 			sum := md5.Sum(cap.GetData())
-			sf := fmt.Sprintf("%x", sum)
-			cap.SetData([]byte(sf))
+			value = fmt.Sprintf("%x", sum)
 		case "sha256":
 			sum := sha256.Sum256(cap.GetData())
-			sf := fmt.Sprintf("%x", sum)
-			cap.SetData([]byte(sf))
+			value = fmt.Sprintf("%x", sum)
+		default:
+			return cap, fmt.Errorf("apply settings %+v: %w", p, HashInvalidAlgorithm)
 		}
 
+		cap.SetData([]byte(value))
 		return cap, nil
 	}
 

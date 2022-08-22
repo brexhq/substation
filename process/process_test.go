@@ -130,15 +130,15 @@ var processTests = []struct {
 
 func TestApply(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range processTests {
+		cap.SetData(test.test)
+
 		applicators, err := MakeApplicators(test.conf)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
-
-		cap := config.NewCapsule()
-		cap.SetData(test.test)
 
 		processed, err := Apply(ctx, cap, applicators...)
 		if err != nil {
@@ -156,7 +156,6 @@ func TestApply(t *testing.T) {
 func TestApplicatorFactory(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
-
 	for _, test := range processTests {
 		cap.SetData(test.test)
 
@@ -182,8 +181,8 @@ func TestApplicatorFactory(t *testing.T) {
 
 func TestApplyBatch(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range processTests {
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		batch := make([]config.Capsule, 1, 1)

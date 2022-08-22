@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var prettyPrintSliceTests = []struct {
+var prettyPrintBatchTests = []struct {
 	name     string
 	proc     PrettyPrint
 	test     [][]byte
@@ -72,7 +72,7 @@ var prettyPrintSliceTests = []struct {
 		nil,
 	},
 	{
-		"invalid settings",
+		"invalid direction",
 		PrettyPrint{
 			Options: PrettyPrintOptions{
 				Direction: "foo",
@@ -82,7 +82,7 @@ var prettyPrintSliceTests = []struct {
 			[]byte(`{"foo":"bar"}`),
 		},
 		[][]byte{},
-		ProcessorInvalidSettings,
+		PrettyPrintInvalidDirection,
 	},
 	{
 		"unbalanced brackets",
@@ -101,9 +101,9 @@ var prettyPrintSliceTests = []struct {
 	},
 }
 
-func TestPrettyPrintSlice(t *testing.T) {
+func TestPrettyPrintBatch(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range prettyPrintSliceTests {
+	for _, test := range prettyPrintBatchTests {
 		var caps []config.Capsule
 		cap := config.NewCapsule()
 		for _, t := range test.test {
@@ -129,15 +129,15 @@ func TestPrettyPrintSlice(t *testing.T) {
 	}
 }
 
-func benchmarkPrettyPrintSlice(b *testing.B, batcher PrettyPrint, caps []config.Capsule) {
+func benchmarkPrettyPrintBatch(b *testing.B, batcher PrettyPrint, caps []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		batcher.ApplyBatch(ctx, caps)
 	}
 }
 
-func BenchmarkPrettyPrintSlice(b *testing.B) {
-	for _, test := range prettyPrintSliceTests {
+func BenchmarkPrettyPrintBatch(b *testing.B) {
+	for _, test := range prettyPrintBatchTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
 				caps := make([]config.Capsule, 1, 1)
@@ -147,13 +147,13 @@ func BenchmarkPrettyPrintSlice(b *testing.B) {
 					caps = append(caps, cap)
 				}
 
-				benchmarkPrettyPrintSlice(b, test.proc, caps)
+				benchmarkPrettyPrintBatch(b, test.proc, caps)
 			},
 		)
 	}
 }
 
-var prettyPrintByteTests = []struct {
+var prettyPrintTests = []struct {
 	name     string
 	proc     PrettyPrint
 	test     []byte
@@ -174,7 +174,7 @@ var prettyPrintByteTests = []struct {
 `),
 		nil,
 	},
-	// PrettyPrint from is not supported in Byter
+	// PrettyPrint from is not supported in Apply
 	{
 		"invalid settings",
 		PrettyPrint{
@@ -188,10 +188,10 @@ var prettyPrintByteTests = []struct {
 	},
 }
 
-func TestPrettyPrintByte(t *testing.T) {
+func TestPrettyPrint(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range prettyPrintByteTests {
-		cap := config.NewCapsule()
+	cap := config.NewCapsule()
+	for _, test := range prettyPrintTests {
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -209,20 +209,20 @@ func TestPrettyPrintByte(t *testing.T) {
 	}
 }
 
-func benchmarkPrettyPrintByte(b *testing.B, proc PrettyPrint, cap config.Capsule) {
+func benchmarkPrettyPrint(b *testing.B, proc PrettyPrint, cap config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		proc.Apply(ctx, cap)
 	}
 }
 
-func BenchmarkPrettyPrintByte(b *testing.B) {
-	for _, test := range prettyPrintByteTests {
+func BenchmarkPrettyPrint(b *testing.B) {
+	cap := config.NewCapsule()
+	for _, test := range prettyPrintTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkPrettyPrintByte(b, test.proc, cap)
+				benchmarkPrettyPrint(b, test.proc, cap)
 			},
 		)
 	}

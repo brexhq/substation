@@ -73,26 +73,29 @@ func (p Math) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	var tmp int64
-	res := cap.Get(p.InputKey)
-	for idx, val := range res.Array() {
-		if idx == 0 {
-			tmp = val.Int()
+	var value int64
+	result := cap.Get(p.InputKey)
+	for i, res := range result.Array() {
+		if i == 0 {
+			value = res.Int()
 			continue
 		}
 
 		switch p.Options.Operation {
 		case "add":
-			tmp += val.Int()
+			value += res.Int()
 		case "subtract":
-			tmp -= val.Int()
+			value -= res.Int()
 		case "multiply":
-			tmp = tmp * val.Int()
+			value = value * res.Int()
 		case "divide":
-			tmp = tmp / val.Int()
+			value = value / res.Int()
 		}
 	}
 
-	cap.Set(p.OutputKey, tmp)
+	if err := cap.Set(p.OutputKey, value); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
+
 	return cap, nil
 }

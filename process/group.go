@@ -70,20 +70,23 @@ func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 		// 	cache[0][]interface{}{"foo",123}
 		// 	cache[1][]interface{}{"bar",456}
 		cache := make(map[int][]interface{})
-		res := cap.Get(p.InputKey)
-		for _, val := range res.Array() {
-			for x, v := range val.Array() {
-				cache[x] = append(cache[x], v.Value())
+		result := cap.Get(p.InputKey)
+		for _, res := range result.Array() {
+			for i, r := range res.Array() {
+				cache[i] = append(cache[i], r.Value())
 			}
 		}
 
-		var array []interface{}
+		var value []interface{}
 		for i := 0; i < len(cache); i++ {
-			array = append(array, cache[i])
+			value = append(value, cache[i])
 		}
 
 		// [["foo",123],["bar",456]]
-		cap.Set(p.OutputKey, array)
+		if err := cap.Set(p.OutputKey, value); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		}
+
 		return cap, nil
 	}
 
@@ -95,11 +98,12 @@ func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 	// 	cache[0][]byte(`{"name":"foo","size":123}`)
 	// 	cache[1][]byte(`{"name":"bar","size":456}`)
 	cache := make(map[int][]byte)
+
 	var err error
-	res := cap.Get(p.InputKey)
-	for x, val := range res.Array() {
-		for x1, v1 := range val.Array() {
-			cache[x1], err = json.Set(cache[x1], p.Options.Keys[x], v1)
+	result := cap.Get(p.InputKey)
+	for i, res := range result.Array() {
+		for j, r := range res.Array() {
+			cache[j], err = json.Set(cache[j], p.Options.Keys[i], r)
 			if err != nil {
 				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 			}
@@ -108,9 +112,9 @@ func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 
 	// inserts pre-formatted JSON into an array based
 	// on the length of the map
-	var tmp []byte
+	var value []byte
 	for i := 0; i < len(cache); i++ {
-		tmp, err = json.Set(tmp, fmt.Sprintf("%d", i), cache[i])
+		value, err = json.Set(value, fmt.Sprintf("%d", i), cache[i])
 		if err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
@@ -118,6 +122,9 @@ func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 
 	// JSON arrays must be set using SetRaw to preserve structure
 	// [{"name":"foo","size":123},{"name":"bar","size":456}]
-	cap.SetRaw(p.OutputKey, tmp)
+	if err := cap.SetRaw(p.OutputKey, value); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
+
 	return cap, nil
 }

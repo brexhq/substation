@@ -102,7 +102,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
-		ok, err := op.Operate(cap)
+		ok, err := op.Operate(ctx, cap)
 		if err != nil {
 			return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 		}
@@ -144,22 +144,22 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 		newCap := config.NewCapsule()
 		elements := buffer[aggregateKey].Get()
 		if p.OutputKey != "" {
-			var tmp []byte
+			var value []byte
 			for _, element := range elements {
 				var err error
 
-				tmp, err = json.Set(tmp, p.OutputKey, element)
+				value, err = json.Set(value, p.OutputKey, element)
 				if err != nil {
 					return nil, fmt.Errorf("aggregate: %v", err)
 				}
 			}
 
-			newCap.SetData(tmp)
+			newCap.SetData(value)
 			newCaps = append(newCaps, newCap)
 		} else {
-			tmp := bytes.Join(elements, []byte(p.Options.Separator))
+			value := bytes.Join(elements, []byte(p.Options.Separator))
 
-			newCap.SetData(tmp)
+			newCap.SetData(value)
 			newCaps = append(newCaps, newCap)
 		}
 
@@ -178,21 +178,22 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 		elements := buffer[key].Get()
 		if p.OutputKey != "" {
-			var tmp []byte
+			var value []byte
 			for _, element := range elements {
 				var err error
 
-				tmp, err = json.Set(tmp, p.OutputKey, element)
+				value, err = json.Set(value, p.OutputKey, element)
 				if err != nil {
 					return nil, fmt.Errorf("aggregate: %v", err)
 				}
 			}
-			newCap.SetData(tmp)
+
+			newCap.SetData(value)
 			newCaps = append(newCaps, newCap)
 		} else {
-			tmp := bytes.Join(elements, []byte(p.Options.Separator))
+			value := bytes.Join(elements, []byte(p.Options.Separator))
 
-			newCap.SetData(tmp)
+			newCap.SetData(value)
 			newCaps = append(newCaps, newCap)
 		}
 	}

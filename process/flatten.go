@@ -60,10 +60,15 @@ func (p Flatten) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
+	var value interface{}
 	if p.Options.Deep {
-		cap.Set(p.OutputKey, cap.Get(p.InputKey+`|@flatten:{"deep":true}`))
+		value = cap.Get(p.InputKey + `|@flatten:{"deep":true}`)
 	} else {
-		cap.Set(p.OutputKey, cap.Get(p.InputKey+`|@flatten`))
+		value = cap.Get(p.InputKey + `|@flatten`)
+	}
+
+	if err := cap.Set(p.OutputKey, value); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 	}
 
 	return cap, nil

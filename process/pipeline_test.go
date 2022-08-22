@@ -114,9 +114,9 @@ var PipelineTests = []struct {
 }
 
 func TestPipeline(t *testing.T) {
+	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range PipelineTests {
-		ctx := context.TODO()
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -134,20 +134,20 @@ func TestPipeline(t *testing.T) {
 	}
 }
 
-func benchmarkPipelineCapByte(b *testing.B, applicator Pipeline, test config.Capsule) {
+func benchmarkPipeline(b *testing.B, applicator Pipeline, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkPipelineCapByte(b *testing.B) {
+func BenchmarkPipeline(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range PipelineTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkPipelineCapByte(b, test.proc, cap)
+				benchmarkPipeline(b, test.proc, cap)
 			},
 		)
 	}

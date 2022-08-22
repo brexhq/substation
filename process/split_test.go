@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var splitByteTests = []struct {
+var splitTests = []struct {
 	name     string
 	proc     Split
 	test     []byte
@@ -44,10 +44,10 @@ var splitByteTests = []struct {
 	},
 }
 
-func TestSplitByte(t *testing.T) {
+func TestSplit(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range splitByteTests {
-		cap := config.NewCapsule()
+	cap := config.NewCapsule()
+	for _, test := range splitTests {
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -66,26 +66,26 @@ func TestSplitByte(t *testing.T) {
 	}
 }
 
-func benchmarkSplitByte(b *testing.B, proc Split, cap config.Capsule) {
+func benchmarkSplit(b *testing.B, proc Split, cap config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		proc.Apply(ctx, cap)
 	}
 }
 
-func BenchmarkSplitByte(b *testing.B) {
-	for _, test := range splitByteTests {
+func BenchmarkSplit(b *testing.B) {
+	cap := config.NewCapsule()
+	for _, test := range splitTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkSplitByte(b, test.proc, cap)
+				benchmarkSplit(b, test.proc, cap)
 			},
 		)
 	}
 }
 
-var splitSliceTests = []struct {
+var splitBatchTests = []struct {
 	name     string
 	proc     Split
 	test     [][]byte
@@ -123,11 +123,11 @@ var splitSliceTests = []struct {
 	},
 }
 
-func TestSplitSlice(t *testing.T) {
+func TestSplitBatch(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range splitSliceTests {
+	cap := config.NewCapsule()
+	for _, test := range splitBatchTests {
 		var caps []config.Capsule
-		cap := config.NewCapsule()
 		for _, t := range test.test {
 			cap.SetData(t)
 			caps = append(caps, cap)
@@ -151,24 +151,24 @@ func TestSplitSlice(t *testing.T) {
 	}
 }
 
-func benchmarkSplitSlice(b *testing.B, proc Split, caps []config.Capsule) {
+func benchmarkSplitBatch(b *testing.B, proc Split, caps []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		proc.ApplyBatch(ctx, caps)
 	}
 }
 
-func BenchmarkSplitSlice(b *testing.B) {
-	for _, test := range splitSliceTests {
+func BenchmarkSplitBatch(b *testing.B) {
+	cap := config.NewCapsule()
+	for _, test := range splitBatchTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
 				var caps []config.Capsule
-				cap := config.NewCapsule()
 				for _, t := range test.test {
 					cap.SetData(t)
 					caps = append(caps, cap)
 				}
-				benchmarkSplitSlice(b, test.proc, caps)
+				benchmarkSplitBatch(b, test.proc, caps)
 			},
 		)
 	}

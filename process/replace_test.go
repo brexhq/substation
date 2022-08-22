@@ -53,9 +53,8 @@ var replaceTests = []struct {
 
 func TestReplace(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range replaceTests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -73,20 +72,20 @@ func TestReplace(t *testing.T) {
 	}
 }
 
-func benchmarkReplaceCapByte(b *testing.B, applicator Replace, test config.Capsule) {
+func benchmarkReplace(b *testing.B, applicator Replace, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkReplaceCapByte(b *testing.B) {
+func BenchmarkReplace(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range replaceTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkReplaceCapByte(b, test.proc, cap)
+				benchmarkReplace(b, test.proc, cap)
 			},
 		)
 	}

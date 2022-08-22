@@ -79,9 +79,8 @@ var mathTests = []struct {
 
 func TestMath(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range mathTests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -99,20 +98,20 @@ func TestMath(t *testing.T) {
 	}
 }
 
-func benchmarkMathCapByte(b *testing.B, applicator Math, test config.Capsule) {
+func benchmarkMath(b *testing.B, applicator Math, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkMathCapByte(b *testing.B) {
+func BenchmarkMath(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range mathTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkMathCapByte(b, test.proc, cap)
+				benchmarkMath(b, test.proc, cap)
 			},
 		)
 	}

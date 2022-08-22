@@ -55,7 +55,7 @@ func (p Split) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
-		ok, err := op.Operate(cap)
+		ok, err := op.Operate(ctx, cap)
 		if err != nil {
 			return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 		}
@@ -69,7 +69,7 @@ func (p Split) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 		if p.InputKey != "" && p.OutputKey != "" {
 			pcap, err := p.Apply(ctx, cap)
 			if err != nil {
-				return nil, fmt.Errorf("applybatch: %v", err)
+				return nil, fmt.Errorf("ApplyBatch: %v", err)
 			}
 			newCaps = append(newCaps, pcap)
 
@@ -105,9 +105,12 @@ func (p Split) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 		return cap, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	str := cap.Get(p.InputKey).String()
-	split := strings.Split(str, p.Options.Separator)
+	res := cap.Get(p.InputKey).String()
+	value := strings.Split(res, p.Options.Separator)
 
-	cap.Set(p.OutputKey, split)
+	if err := cap.Set(p.OutputKey, value); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
+
 	return cap, nil
 }

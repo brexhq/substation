@@ -111,9 +111,8 @@ var convertTests = []struct {
 
 func TestConvert(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range convertTests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -131,20 +130,20 @@ func TestConvert(t *testing.T) {
 	}
 }
 
-func benchmarkConvertCapByte(b *testing.B, applicator Convert, test config.Capsule) {
+func benchmarkConvert(b *testing.B, applicator Convert, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkConvertCapByte(b *testing.B) {
+func BenchmarkConvert(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range convertTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkConvertCapByte(b, test.proc, cap)
+				benchmarkConvert(b, test.proc, cap)
 			},
 		)
 	}

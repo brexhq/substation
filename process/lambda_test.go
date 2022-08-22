@@ -69,10 +69,9 @@ var lambdaTests = []struct {
 
 func TestLambda(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range lambdaTests {
-
 		lambdaAPI = test.api
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -90,20 +89,20 @@ func TestLambda(t *testing.T) {
 	}
 }
 
-func benchmarkLambdaCapByte(b *testing.B, applicator Lambda, test config.Capsule) {
+func benchmarkLambda(b *testing.B, applicator Lambda, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkLambdaCapByte(b *testing.B) {
+func BenchmarkLambda(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range lambdaTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkLambdaCapByte(b, test.proc, cap)
+				benchmarkLambda(b, test.proc, cap)
 			},
 		)
 	}

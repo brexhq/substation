@@ -21,6 +21,9 @@ const ppModifier = `@this|@pretty`
 const openCurlyBracket = 123  // {
 const closeCurlyBracket = 125 // }
 
+// PrettyPrintInvalidDirection is returned when the PrettyPrint processor is configured with an invalid direction.
+const PrettyPrintInvalidDirection = errors.Error("PrettyPrintInvalidDirection")
+
 /*
 PrettyPrintUnbalancedBrackets is returned when the processor is given input
 that does not contain an equal number of open curly brackets ( { ) and close
@@ -107,7 +110,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
-		ok, err := op.Operate(cap)
+		ok, err := op.Operate(ctx, cap)
 		if err != nil {
 			return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 		}
@@ -152,7 +155,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 			}
 
 		default:
-			return nil, fmt.Errorf("applybatch settings %+v: %w", p, ProcessorInvalidSettings)
+			return nil, fmt.Errorf("applybatch settings %+v: %w", p, PrettyPrintInvalidDirection)
 		}
 	}
 
@@ -171,7 +174,7 @@ Applying prettyprint formatting is handled by the
 gjson PrettyPrint modifier and is applied to the root
 JSON object.
 
-Byte _does not_ support reversing prettyprint formatting;
+This _does not_ support reversing prettyprint formatting;
 this support is unnecessary for multi-line JSON objects
 that are stored in a single byte array.
 */
@@ -181,10 +184,11 @@ func (p PrettyPrint) Apply(ctx context.Context, cap config.Capsule) (config.Caps
 		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	if p.Options.Direction == "to" {
+	switch p.Options.Direction {
+	case "to":
 		cap.SetData([]byte(cap.Get(ppModifier).String()))
 		return cap, nil
+	default:
+		return cap, fmt.Errorf("applybatch settings %+v: %w", p, ProcessorInvalidSettings)
 	}
-
-	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 }

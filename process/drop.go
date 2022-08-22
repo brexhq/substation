@@ -29,7 +29,7 @@ func (p Drop) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
-		ok, err := op.Operate(cap)
+		ok, err := op.Operate(ctx, cap)
 		if err != nil {
 			return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 		}

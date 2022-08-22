@@ -99,20 +99,22 @@ func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 	}
 
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := cap.Get(p.InputKey)
-		if value.IsArray() {
+		result := cap.Get(p.InputKey)
+		if result.IsArray() {
 			return cap, fmt.Errorf("apply settings %+v: %w", p, PipelineArrayInput)
 		}
 
-		c2 := config.NewCapsule()
-		c2.SetData([]byte(value.String()))
+		newCap := config.NewCapsule()
+		newCap.SetData([]byte(result.String()))
 
-		tmp, err := Apply(ctx, c2, applicators...)
+		newCap, err = Apply(ctx, newCap, applicators...)
 		if err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
-		cap.Set(p.OutputKey, tmp.GetData())
+		if err := cap.Set(p.OutputKey, newCap.GetData()); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		}
 
 		return cap, nil
 	}

@@ -49,9 +49,8 @@ var gzipTests = []struct {
 
 func TestGzip(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range gzipTests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -69,20 +68,20 @@ func TestGzip(t *testing.T) {
 	}
 }
 
-func benchmarkGzipCapByte(b *testing.B, applicator Gzip, test config.Capsule) {
+func benchmarkGzip(b *testing.B, applicator Gzip, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkGzipCapByte(b *testing.B) {
+func BenchmarkGzip(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range gzipTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkGzipCapByte(b, test.proc, cap)
+				benchmarkGzip(b, test.proc, cap)
 			},
 		)
 	}

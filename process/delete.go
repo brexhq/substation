@@ -53,6 +53,9 @@ func (p Delete) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	cap.Delete(p.InputKey)
+	if err := cap.Delete(p.InputKey); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
+
 	return cap, nil
 }

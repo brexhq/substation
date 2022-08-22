@@ -109,37 +109,21 @@ func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 	// SK is an optional field
 	sk := json.Get([]byte(result.Raw), "SK").String()
 
-	items, err := p.dynamodb(ctx, pk, sk)
+	value, err := p.dynamodb(ctx, pk, sk)
 	if err != nil {
 		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 	}
 
 	// no match
-	if len(items) == 0 {
+	if len(value) == 0 {
 		return cap, nil
 	}
 
-	cap.Set(p.OutputKey, items)
+	if err := cap.Set(p.OutputKey, value); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
+
 	return cap, nil
-
-	// // JSON processing
-	// if p.InputKey != "" && p.OutputKey != "" {
-	// 	res := cap.Get(p.InputKey).String()
-	// 	label, _ := p.domain(res)
-
-	// 	cap.Set(p.OutputKey, label)
-	// 	return cap, nil
-	// }
-
-	// // data processing
-	// if p.InputKey == "" && p.OutputKey == "" {
-	// 	label, _ := p.domain(string(cap.GetData()))
-
-	// 	cap.SetData([]byte(label))
-	// 	return cap, nil
-	// }
-
-	// return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
 func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {

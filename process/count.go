@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/config"
 )
@@ -19,7 +20,9 @@ type Count struct{}
 // ApplyBatch processes a slice of encapsulated data with the Count processor. Conditions are optionally applied to the data to enable processing.
 func (p Count) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	newCap := config.NewCapsule()
-	newCap.Set("count", len(caps))
+	if err := newCap.Set("count", len(caps)); err != nil {
+		return caps, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
 
 	newCaps := make([]config.Capsule, 1, 1)
 	newCaps = append(newCaps, newCap)

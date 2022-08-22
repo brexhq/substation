@@ -85,12 +85,12 @@ func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		lambdaAPI.Setup()
 	}
 
-	payload := cap.Get(p.InputKey)
-	if !payload.IsObject() {
+	result := cap.Get(p.InputKey)
+	if !result.IsObject() {
 		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, []byte(payload.Raw))
+	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, []byte(result.Raw))
 	if err != nil {
 		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 	}
@@ -104,6 +104,9 @@ func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		return cap, nil
 	}
 
-	cap.Set(p.OutputKey, resp.Payload)
+	if err := cap.Set(p.OutputKey, resp.Payload); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
+
 	return cap, nil
 }

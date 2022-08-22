@@ -69,7 +69,7 @@ var base64Tests = []struct {
 		},
 		[]byte(`{"foo":"YmFy"}`),
 		[]byte(``),
-		ProcessorInvalidSettings,
+		Base64InvalidDirection,
 	},
 	{
 		"JSON binary",
@@ -88,9 +88,8 @@ var base64Tests = []struct {
 
 func TestBase64(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range base64Tests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -108,20 +107,20 @@ func TestBase64(t *testing.T) {
 	}
 }
 
-func benchmarkBase64CapByte(b *testing.B, applicator Base64, test config.Capsule) {
+func benchmarkBase64(b *testing.B, applicator Base64, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkBase64CapByte(b *testing.B) {
+func BenchmarkBase64(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range base64Tests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkBase64CapByte(b, test.proc, cap)
+				benchmarkBase64(b, test.proc, cap)
 			},
 		)
 	}

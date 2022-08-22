@@ -96,7 +96,10 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		switch p.Options.Function {
 		case "find":
 			match := re.FindStringSubmatch(result)
-			cap.Set(p.OutputKey, p.getStringMatch(match))
+			if err := cap.Set(p.OutputKey, p.getStringMatch(match)); err != nil {
+				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+			}
+
 			return cap, nil
 		case "find_all":
 			var matches []interface{}
@@ -107,7 +110,10 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 				matches = append(matches, m)
 			}
 
-			cap.Set(p.OutputKey, matches)
+			if err := cap.Set(p.OutputKey, matches); err != nil {
+				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+			}
+
 			return cap, nil
 		}
 	}
@@ -118,6 +124,7 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		case "find":
 			match := re.FindSubmatch(cap.GetData())
 			cap.SetData(match[1])
+
 			return cap, nil
 		case "named_group":
 			newCap := config.NewCapsule()
@@ -125,7 +132,13 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 			names := re.SubexpNames()
 			matches := re.FindSubmatch(cap.GetData())
 			for i, m := range matches {
-				newCap.Set(names[i], m)
+				if i == 0 {
+					continue
+				}
+
+				if err := newCap.Set(names[i], m); err != nil {
+					return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+				}
 			}
 
 			return newCap, nil

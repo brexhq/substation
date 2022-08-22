@@ -50,9 +50,9 @@ var expandTests = []struct {
 
 func TestExpand(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range expandTests {
 		slice := make([]config.Capsule, 1, 1)
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 		slice[0] = cap
 
@@ -74,23 +74,23 @@ func TestExpand(t *testing.T) {
 	}
 }
 
-func benchmarkExpandCapSlice(b *testing.B, slicer Expand, slice []config.Capsule) {
+func benchmarkExpand(b *testing.B, slicer Expand, slice []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		slicer.ApplyBatch(ctx, slice)
 	}
 }
 
-func BenchmarkExpandCapSlice(b *testing.B) {
+func BenchmarkExpand(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range expandTests {
 		slice := make([]config.Capsule, 1, 1)
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 		slice[0] = cap
 
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkExpandCapSlice(b, test.proc, slice)
+				benchmarkExpand(b, test.proc, slice)
 			},
 		)
 	}

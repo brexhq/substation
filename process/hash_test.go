@@ -88,9 +88,8 @@ var hashTests = []struct {
 
 func TestHash(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range hashTests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -108,20 +107,20 @@ func TestHash(t *testing.T) {
 	}
 }
 
-func benchmarkHashCapByte(b *testing.B, applicator Hash, test config.Capsule) {
+func benchmarkHash(b *testing.B, applicator Hash, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkHashCapByte(b *testing.B) {
+func BenchmarkHash(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range hashTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkHashCapByte(b, test.proc, cap)
+				benchmarkHash(b, test.proc, cap)
 			},
 		)
 	}

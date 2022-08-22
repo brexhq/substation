@@ -321,7 +321,7 @@ func conditionallyApplyBatch(ctx context.Context, caps []config.Capsule, op cond
 	newCaps := newBatch(&caps)
 
 	for _, cap := range caps {
-		ok, err := op.Operate(cap)
+		ok, err := op.Operate(ctx, cap)
 		if err != nil {
 			return nil, err
 		}

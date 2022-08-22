@@ -76,15 +76,18 @@ func (p Concat) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 	// 	{"concat":["foo","bar","baz"]}
 	// concatenated:
 	// 	{"concat:"foo.bar.baz"}
-	var tmp string
-	res := cap.Get(p.InputKey)
-	for idx, val := range res.Array() {
-		tmp += val.String()
-		if idx != len(res.Array())-1 {
-			tmp += p.Options.Separator
+	var value string
+	result := cap.Get(p.InputKey)
+	for i, res := range result.Array() {
+		value += res.String()
+		if i != len(result.Array())-1 {
+			value += p.Options.Separator
 		}
 	}
 
-	cap.Set(p.OutputKey, tmp)
+	if err := cap.Set(p.OutputKey, value); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
+
 	return cap, nil
 }

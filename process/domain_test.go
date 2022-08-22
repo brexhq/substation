@@ -91,9 +91,8 @@ var domainTests = []struct {
 
 func TestDomain(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range domainTests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -111,20 +110,20 @@ func TestDomain(t *testing.T) {
 	}
 }
 
-func benchmarkDomainCapByte(b *testing.B, applicator Domain, test config.Capsule) {
+func benchmarkDomain(b *testing.B, applicator Domain, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkDomainCapByte(b *testing.B) {
+func BenchmarkDomain(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range domainTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkDomainCapByte(b, test.proc, cap)
+				benchmarkDomain(b, test.proc, cap)
 			},
 		)
 	}

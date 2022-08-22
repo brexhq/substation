@@ -41,7 +41,7 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
-		ok, err := op.Operate(cap)
+		ok, err := op.Operate(ctx, cap)
 		if err != nil {
 			return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 		}
@@ -62,13 +62,13 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 		// 	{"foo":"bar","quux":"corge"}
 		// 	{"baz":"qux","quux":"corge"}
 		root := cap.Get("@this")
-		// root := json.Get(data, "@this")
-		res := cap.Get(p.InputKey)
-		// v := json.Get(data, p.InputKey)
-		for _, result := range res.Array() {
+		result := cap.Get(p.InputKey)
+
+		newCap := config.NewCapsule()
+		for _, res := range result.Array() {
 			var err error
 
-			expand := []byte(result.String())
+			expand := []byte(res.String())
 			for key, val := range root.Map() {
 				if key == p.InputKey {
 					continue
@@ -80,9 +80,7 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 				}
 			}
 
-			newCap := config.NewCapsule()
 			newCap.SetData(expand)
-
 			newCaps = append(newCaps, newCap)
 		}
 	}

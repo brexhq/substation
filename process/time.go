@@ -93,23 +93,26 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 	// "now" processing, supports json and data
 	if p.Options.InputFormat == "now" {
 		ts := time.Now()
-		var output interface{}
 
+		var value interface{}
 		switch p.Options.OutputFormat {
 		case "unix":
-			output = ts.Unix()
+			value = ts.Unix()
 		case "unix_milli":
-			output = ts.UnixMilli()
+			value = ts.UnixMilli()
 		default:
-			output = ts.Format(p.Options.OutputFormat)
+			value = ts.Format(p.Options.OutputFormat)
 		}
 
 		if p.OutputKey != "" {
-			cap.Set(p.OutputKey, output)
+			if err := cap.Set(p.OutputKey, value); err != nil {
+				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+			}
+
 			return cap, nil
 		}
 
-		switch v := output.(type) {
+		switch v := value.(type) {
 		case int64:
 			cap.SetData([]byte(strconv.FormatInt(v, 10)))
 		case string:
@@ -128,12 +131,12 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 			return cap, nil
 		}
 
-		ts, err := p.time(result)
+		value, err := p.time(result)
 		if err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
-		if err := cap.Set(p.OutputKey, ts); err != nil {
+		if err := cap.Set(p.OutputKey, value); err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
@@ -142,18 +145,18 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		tmp, err := json.Set([]byte{}, "_tmp", cap.GetData())
+		tmp, err := json.Set([]byte{}, "tmp", cap.GetData())
 		if err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
-		value := json.Get(tmp, "_tmp")
-		ts, err := p.time(value)
+		res := json.Get(tmp, "tmp")
+		value, err := p.time(res)
 		if err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
-		switch v := ts.(type) {
+		switch v := value.(type) {
 		case int64:
 			cap.SetData([]byte(strconv.FormatInt(v, 10)))
 		case string:
@@ -166,15 +169,15 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
-func (p Time) time(v json.Result) (interface{}, error) {
+func (p Time) time(result json.Result) (interface{}, error) {
 	var timeDate time.Time
 	switch p.Options.InputFormat {
 	case "unix":
-		secs := math.Floor(v.Float())
-		nanos := math.Round((v.Float() - secs) * 1000000000)
+		secs := math.Floor(result.Float())
+		nanos := math.Round((result.Float() - secs) * 1000000000)
 		timeDate = time.Unix(int64(secs), int64(nanos))
 	case "unix_milli":
-		secs := math.Floor(v.Float())
+		secs := math.Floor(result.Float())
 		timeDate = time.Unix(0, int64(secs)*1000000)
 	default:
 		if p.Options.InputLocation != "" {
@@ -183,13 +186,13 @@ func (p Time) time(v json.Result) (interface{}, error) {
 				return nil, fmt.Errorf("time location %s: %v", p.Options.InputLocation, err)
 			}
 
-			timeDate, err = time.ParseInLocation(p.Options.InputFormat, v.String(), loc)
+			timeDate, err = time.ParseInLocation(p.Options.InputFormat, result.String(), loc)
 			if err != nil {
 				return nil, fmt.Errorf("time parse format %s location %s: %v", p.Options.InputFormat, p.Options.InputLocation, err)
 			}
 		} else {
 			var err error
-			timeDate, err = time.Parse(p.Options.InputFormat, v.String())
+			timeDate, err = time.Parse(p.Options.InputFormat, result.String())
 			if err != nil {
 				return nil, fmt.Errorf("time parse format %s: %v", p.Options.InputFormat, err)
 			}

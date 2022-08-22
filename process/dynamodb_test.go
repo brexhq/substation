@@ -82,10 +82,9 @@ var dynamodbTests = []struct {
 
 func TestDynamoDB(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range dynamodbTests {
 		dynamodbAPI = test.api
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -103,21 +102,21 @@ func TestDynamoDB(t *testing.T) {
 	}
 }
 
-func benchmarkDynamoDBCapByte(b *testing.B, applicator DynamoDB, test config.Capsule) {
+func benchmarkDynamoDB(b *testing.B, applicator DynamoDB, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkDynamoDBCapByte(b *testing.B) {
+func BenchmarkDynamoDB(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range dynamodbTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
 				dynamodbAPI = test.api
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkDynamoDBCapByte(b, test.proc, cap)
+				benchmarkDynamoDB(b, test.proc, cap)
 			},
 		)
 	}

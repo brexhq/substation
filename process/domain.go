@@ -79,17 +79,20 @@ func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
 		res := cap.Get(p.InputKey).String()
-		label, _ := p.domain(res)
+		value, _ := p.domain(res)
 
-		cap.Set(p.OutputKey, label)
+		if err := cap.Set(p.OutputKey, value); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		}
+
 		return cap, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		label, _ := p.domain(string(cap.GetData()))
+		value, _ := p.domain(string(cap.GetData()))
+		cap.SetData([]byte(value))
 
-		cap.SetData([]byte(label))
 		return cap, nil
 	}
 

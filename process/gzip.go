@@ -9,7 +9,11 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
+
+// GzipInvalidDirection is returned when the Gzip processor is configured with an invalid direction.
+const GzipInvalidDirection = errors.Error("GzipInvalidDirection")
 
 /*
 Gzip processes data by compressing or decompressing gzip. The processor supports these patterns:
@@ -94,24 +98,26 @@ func (p Gzip) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	switch s := p.Options.Direction; s {
+	var value []byte
+	switch p.Options.Direction {
 	case "from":
-		tmp, err := p.from(cap.GetData())
+		from, err := p.from(cap.GetData())
 		if err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
-		cap.SetData(tmp)
-		return cap, nil
+		value = from
 	case "to":
-		tmp, err := p.to(cap.GetData())
+		to, err := p.to(cap.GetData())
 		if err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
-		cap.SetData(tmp)
-		return cap, nil
+		value = to
+	default:
+		return cap, fmt.Errorf("apply settings %+v: %w", p, GzipInvalidDirection)
 	}
 
-	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+	cap.SetData(value)
+	return cap, nil
 }

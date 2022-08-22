@@ -110,14 +110,14 @@ func (p ForEach) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		return cap, err
 	}
 
-	value := cap.Get(p.InputKey)
-	if !value.IsArray() {
+	result := cap.Get(p.InputKey)
+	if !result.IsArray() {
 		return cap, nil
 	}
 
-	for _, v := range value.Array() {
+	for _, res := range result.Array() {
 		tmpCap := config.NewCapsule()
-		if err := tmpCap.Set(processor.Type, v); err != nil {
+		if err := tmpCap.Set(processor.Type, res); err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
@@ -126,8 +126,8 @@ func (p ForEach) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 
-		res := tmpCap.Get(processor.Type)
-		if err := cap.Set(p.OutputKey, res); err != nil {
+		value := tmpCap.Get(processor.Type)
+		if err := cap.Set(p.OutputKey, value); err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 	}

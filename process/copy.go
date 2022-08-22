@@ -52,31 +52,42 @@ func (p Copy) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Copy) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		cap.Set(p.OutputKey, cap.Get(p.InputKey))
+		if err := cap.Set(p.OutputKey, cap.Get(p.InputKey)); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		}
+
 		return cap, nil
 	}
 
 	// from JSON processing
 	if p.InputKey != "" && p.OutputKey == "" {
-		res := cap.Get(p.InputKey).String()
+		result := cap.Get(p.InputKey).String()
 
-		if strings.HasPrefix(p.InputKey, "__metadata") {
-			cap.SetMetadata([]byte(res))
+		// metadata requires special handling
+		if strings.HasPrefix(p.InputKey, "!metadata") {
+			cap.SetMetadata([]byte(result))
 			return cap, nil
 		}
 
-		cap.SetData([]byte(res))
+		cap.SetData([]byte(result))
 		return cap, nil
 	}
 
 	// to JSON processing
 	if p.InputKey == "" && p.OutputKey != "" {
-		if strings.HasPrefix(p.OutputKey, "__metadata") {
-			cap.Set(p.OutputKey, cap.GetMetadata())
-			return cap, nil
+		var value []byte
+
+		// metadata requires special handling
+		if strings.HasPrefix(p.OutputKey, "!metadata") {
+			value = cap.GetMetadata()
+		} else {
+			value = cap.GetData()
 		}
 
-		cap.Set(p.OutputKey, cap.GetData())
+		if err := cap.Set(p.OutputKey, value); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		}
+
 		return cap, nil
 	}
 

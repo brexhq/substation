@@ -113,9 +113,8 @@ var insertTests = []struct {
 
 func TestInsert(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range insertTests {
-
-		cap := config.NewCapsule()
 		cap.SetData(test.test)
 
 		res, err := test.proc.Apply(ctx, cap)
@@ -133,20 +132,20 @@ func TestInsert(t *testing.T) {
 	}
 }
 
-func benchmarkInsertCapByte(b *testing.B, applicator Insert, test config.Capsule) {
+func benchmarkInsert(b *testing.B, applicator Insert, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkInsertCapByte(b *testing.B) {
+func BenchmarkInsert(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range insertTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := config.NewCapsule()
 				cap.SetData(test.test)
-				benchmarkInsertCapByte(b, test.proc, cap)
+				benchmarkInsert(b, test.proc, cap)
 			},
 		)
 	}

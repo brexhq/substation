@@ -74,6 +74,10 @@ func TestGet(t *testing.T) {
 
 	for _, test := range tests {
 		resp, err := h.Get(ctx, serv.URL)
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
+
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {

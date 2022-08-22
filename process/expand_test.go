@@ -52,7 +52,7 @@ func TestExpand(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
 	for _, test := range expandTests {
-		slice := make([]config.Capsule, 1, 1)
+		slice := make([]config.Capsule, 1)
 		cap.SetData(test.test)
 		slice[0] = cap
 
@@ -84,7 +84,7 @@ func benchmarkExpand(b *testing.B, slicer Expand, slice []config.Capsule) {
 func BenchmarkExpand(b *testing.B) {
 	cap := config.NewCapsule()
 	for _, test := range expandTests {
-		slice := make([]config.Capsule, 1, 1)
+		slice := make([]config.Capsule, 1)
 		cap.SetData(test.test)
 		slice[0] = cap
 

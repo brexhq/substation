@@ -69,8 +69,7 @@ func (sink *DynamoDB) Send(ctx context.Context, ch chan config.Capsule, kill cha
 
 			items := cap.Get(sink.ItemsKey).Array()
 			for _, item := range items {
-				var cache map[string]interface{}
-				cache = make(map[string]interface{})
+				cache := make(map[string]interface{})
 				for k, v := range item.Map() {
 					cache[k] = v.Value()
 				}

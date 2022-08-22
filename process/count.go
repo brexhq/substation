@@ -24,7 +24,7 @@ func (p Count) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 		return caps, fmt.Errorf("apply settings %+v: %v", p, err)
 	}
 
-	newCaps := make([]config.Capsule, 1, 1)
+	newCaps := make([]config.Capsule, 0, 1)
 	newCaps = append(newCaps, newCap)
 	return newCaps, nil
 }

@@ -16,9 +16,6 @@ import (
 // HTTPInvalidPayload is returned by Post when it receives an unexpected payload interface.
 const HTTPInvalidPayload = errors.Error("HTTPInvalidPayload")
 
-// maxBytesPerPayload is the maxmimum size of an aggregated HTTP payload. Substation uses a constant max size of 1MB.
-const maxBytesPerPayload = 1000 * 1000
-
 // Header contains a single HTTP header that can be passed to HTTP.Post. Multiple headers can be passed to HTTP.Post as a slice.
 type Header struct {
 	Key   string

@@ -185,7 +185,7 @@ func TestApplyBatch(t *testing.T) {
 	for _, test := range processTests {
 		cap.SetData(test.test)
 
-		batch := make([]config.Capsule, 1, 1)
+		batch := make([]config.Capsule, 1)
 		batch[0] = cap
 
 		applicators, err := MakeBatchApplicators(test.conf)
@@ -210,7 +210,7 @@ func TestApplyBatch(t *testing.T) {
 func TestBatchApplicatorFactory(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
-	batch := make([]config.Capsule, 1, 1)
+	batch := make([]config.Capsule, 1)
 
 	for _, test := range processTests {
 		cap.SetData(test.test)

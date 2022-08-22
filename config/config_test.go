@@ -114,8 +114,8 @@ func TestCapsuleDelete(t *testing.T) {
 		cap.SetData(test.data).SetMetadata(test.metadata)
 
 		cap.Delete(test.key)
-		if bytes.Compare(cap.GetData(), test.dataExpected) != 0 &&
-			bytes.Compare(cap.GetMetadata(), test.metadataExpected) != 0 {
+		if !bytes.Equal(cap.GetData(), test.dataExpected) &&
+			!bytes.Equal(cap.GetMetadata(), test.metadataExpected) {
 			t.Logf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, cap.GetData(), cap.GetMetadata())
 			t.Fail()
 		}
@@ -273,8 +273,8 @@ func TestCapsuleSet(t *testing.T) {
 		cap.SetData(test.data).SetMetadata(test.metadata)
 
 		cap.Set(test.key, test.value)
-		if bytes.Compare(cap.GetData(), test.dataExpected) != 0 &&
-			bytes.Compare(cap.GetMetadata(), test.metadataExpected) != 0 {
+		if !bytes.Equal(cap.GetData(), test.dataExpected) &&
+			!bytes.Equal(cap.GetMetadata(), test.metadataExpected) {
 			t.Logf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, cap.GetData(), cap.GetMetadata())
 			t.Fail()
 		}
@@ -352,8 +352,8 @@ func TestCapsuleSetRaw(t *testing.T) {
 		cap.SetData(test.data).SetMetadata(test.metadata)
 
 		cap.Set(test.key, test.value)
-		if bytes.Compare(cap.GetData(), test.dataExpected) != 0 &&
-			bytes.Compare(cap.GetMetadata(), test.metadataExpected) != 0 {
+		if !bytes.Equal(cap.GetData(), test.dataExpected) &&
+			!bytes.Equal(cap.GetMetadata(), test.metadataExpected) {
 			t.Logf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, cap.GetData(), cap.GetMetadata())
 			t.Fail()
 		}
@@ -404,7 +404,7 @@ func TestCapsuleSetData(t *testing.T) {
 		cap := NewCapsule()
 		cap.SetData(test.data)
 
-		if bytes.Compare(cap.GetData(), test.expected) != 0 {
+		if !bytes.Equal(cap.GetData(), test.expected) {
 			t.Logf("expected %s, got %s", test.expected, cap.GetMetadata())
 			t.Fail()
 		}
@@ -422,7 +422,7 @@ func BenchmarkTestCapsuleSetData(b *testing.B) {
 		b.Run(string(test.name),
 			func(b *testing.B) {
 				cap := NewCapsule()
-				benchmarkTestCapsuleSetMetadata(b, test.data, cap)
+				benchmarkTestCapsuleSetData(b, test.data, cap)
 			},
 		)
 	}
@@ -459,7 +459,7 @@ func TestCapsuleSetMetadata(t *testing.T) {
 		cap := NewCapsule()
 		cap.SetMetadata(test.metadata)
 
-		if bytes.Compare(cap.GetMetadata(), test.expected) != 0 {
+		if !bytes.Equal(cap.GetMetadata(), test.expected) {
 			t.Logf("expected %s, got %s", test.expected, cap.GetMetadata())
 			t.Fail()
 		}

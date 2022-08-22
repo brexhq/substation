@@ -17,7 +17,7 @@ import (
 )
 
 // used with json.Get, returns a pretty printed root JSON object
-const ppModifier = `@this|@pretty`
+const  ppModifier = `@this|@pretty`
 const openCurlyBracket = 123  // {
 const closeCurlyBracket = 125 // }
 

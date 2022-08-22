@@ -19,6 +19,7 @@ func (m mockedSendMessage) SendMessageWithContext(ctx aws.Context, in *sqs.SendM
 	return &m.Resp, nil
 }
 
+//lint:ignore ST1003 mocks the AWS API call which does not use correct abbrevation syntax (should be GetQueueURLWithContext)
 func (m mockedSendMessage) GetQueueUrlWithContext(ctx aws.Context, in *sqs.GetQueueUrlInput, opts ...request.Option) (*sqs.GetQueueUrlOutput, error) {
 	return &sqs.GetQueueUrlOutput{
 		QueueUrl: aws.String("foo"),
@@ -66,6 +67,7 @@ func (m mockedSendMessageBatch) SendMessageBatchWithContext(ctx aws.Context, in 
 	return &m.Resp, nil
 }
 
+//lint:ignore ST1003 mocks the AWS API call which does not use correct abbrevation syntax (should be GetQueueURLWithContext)
 func (m mockedSendMessageBatch) GetQueueUrlWithContext(ctx aws.Context, in *sqs.GetQueueUrlInput, opts ...request.Option) (*sqs.GetQueueUrlOutput, error) {
 	return &sqs.GetQueueUrlOutput{
 		QueueUrl: aws.String("foo"),

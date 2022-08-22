@@ -14,11 +14,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/kinesis/kinesisiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
 	rec "github.com/awslabs/kinesis-aggregation/go/records"
+
+	//lint:ignore SA1019 not ready to switch package
 	"github.com/golang/protobuf/proto"
 )
-
-// Magic File Header for a KPL Aggregated Record
-var kplMagicHeader = fmt.Sprintf("%q", []byte("\xf3\x89\x9a\xc2"))
 
 const (
 	kplMagicLen   = 4  // Length of magic header for KPL Aggregate Record checking.

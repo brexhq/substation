@@ -140,7 +140,7 @@ func BenchmarkPrettyPrintBatch(b *testing.B) {
 	for _, test := range prettyPrintBatchTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				caps := make([]config.Capsule, 1, 1)
+				caps := make([]config.Capsule, 1)
 				for _, t := range test.test {
 					cap := config.NewCapsule()
 					cap.SetData(t)

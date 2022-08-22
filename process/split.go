@@ -105,8 +105,8 @@ func (p Split) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 		return cap, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	res := cap.Get(p.InputKey).String()
-	value := strings.Split(res, p.Options.Separator)
+	result := cap.Get(p.InputKey).String()
+	value := strings.Split(result, p.Options.Separator)
 
 	if err := cap.Set(p.OutputKey, value); err != nil {
 		return cap, fmt.Errorf("apply settings %+v: %v", p, err)

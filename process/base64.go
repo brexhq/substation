@@ -80,8 +80,8 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		res := cap.Get(p.InputKey).String()
-		tmp := []byte(res)
+		result := cap.Get(p.InputKey).String()
+		tmp := []byte(result)
 
 		var value []byte
 		switch p.Options.Direction {

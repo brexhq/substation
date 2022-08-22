@@ -78,8 +78,8 @@ func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		res := cap.Get(p.InputKey).String()
-		value, _ := p.domain(res)
+		result := cap.Get(p.InputKey).String()
+		value, _ := p.domain(result)
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
 			return cap, fmt.Errorf("apply settings %+v: %v", p, err)

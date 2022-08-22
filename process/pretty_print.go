@@ -122,8 +122,8 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 
 		switch p.Options.Direction {
 		case "to":
-			s := cap.Get(ppModifier).String()
-			cap.SetData([]byte(s))
+			result := cap.Get(ppModifier).String()
+			cap.SetData([]byte(result))
 			newCaps = append(newCaps, cap)
 
 		case "from":

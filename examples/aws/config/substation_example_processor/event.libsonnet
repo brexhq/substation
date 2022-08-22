@@ -1,5 +1,5 @@
-local conditionlib = import '../../../../config/condition.libsonnet';
-local processlib = import '../../../../config/process.libsonnet';
+local conditionlib = import '../../../../build/config/condition.libsonnet';
+local processlib = import '../../../../build/config/process.libsonnet';
 
 local event_created = 'event.created';
 local event_hash = 'event.hash';

@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/brexhq/substation/config"
@@ -21,160 +22,34 @@ const OperatorMissingInspectors = errors.Error("OperatorMissingInspectors")
 
 // Inspector is the interface shared by all inspector methods.
 type Inspector interface {
-	Inspect([]byte) (bool, error)
+	Inspect(context.Context, config.Capsule) (bool, error)
 }
 
-// Operator is the interface shared by all operator methods. Most operators contain a list of Inspectors that the operand applies to.
-type Operator interface {
-	Operate([]byte) (bool, error)
+// InspectByte is a convenience function for applying an Inspector to bytes.
+func InspectByte(ctx context.Context, data []byte, inspect Inspector) (bool, error) {
+	cap := config.NewCapsule()
+	cap.SetData(data)
+
+	return inspect.Inspect(ctx, cap)
 }
 
-// AND implements the Operator interface and applies the boolean AND logic to configured inspectors.
-type AND struct {
-	Inspectors []Inspector
-}
-
-// Operate returns true if all Inspectors return true, otherwise it returns false.
-func (o AND) Operate(data []byte) (bool, error) {
-	if len(o.Inspectors) == 0 {
-		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
-	}
-
-	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(data)
+// MakeInspectors accepts multiple inspector configs and returns populated Inspectors. This is a convenience function for generating many Inspectors.
+func MakeInspectors(cfg []config.Config) ([]Inspector, error) {
+	var inspectors []Inspector
+	for _, c := range cfg {
+		inspector, err := InspectorFactory(c)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
-
-		// return false if any check fails
-		if !ok {
-			return false, nil
-		}
+		inspectors = append(inspectors, inspector)
 	}
 
-	// return tue if all checks pass
-	return true, nil
+	return inspectors, nil
 }
 
-// OR implements the Operator interface and applies the boolean OR logic to configured inspectors.
-type OR struct {
-	Inspectors []Inspector
-}
-
-// Operate returns true if any Inspectors return true, otherwise it returns false.
-func (o OR) Operate(data []byte) (bool, error) {
-	if len(o.Inspectors) == 0 {
-		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
-	}
-
-	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(data)
-		if err != nil {
-			return false, err
-		}
-
-		// return true if any check passes
-		if ok {
-			return true, nil
-		}
-	}
-
-	// return false if all checks fail
-	return false, nil
-}
-
-// NAND implements the Operator interface and applies the boolean NAND logic to configured inspectors.
-type NAND struct {
-	Inspectors []Inspector
-}
-
-// Operate returns true if any Inspectors return false, otherwise it returns true.
-func (o NAND) Operate(data []byte) (bool, error) {
-	if len(o.Inspectors) == 0 {
-		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
-	}
-
-	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(data)
-		if err != nil {
-			return false, err
-		}
-
-		// return true if any check fails
-		if !ok {
-			return true, nil
-		}
-	}
-
-	// return false if all checks pass
-	return false, nil
-}
-
-// NOR implements the Operator interface and applies the boolean NOR logic to configured inspectors.
-type NOR struct {
-	Inspectors []Inspector
-}
-
-// Operate returns true if any Inspectors return false, otherwise it returns true.
-func (o NOR) Operate(data []byte) (bool, error) {
-	if len(o.Inspectors) == 0 {
-		return false, fmt.Errorf("operator settings %v: %v", o, OperatorMissingInspectors)
-	}
-
-	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(data)
-		if err != nil {
-			return false, err
-		}
-
-		// return false if any check passes
-		if ok {
-			return false, nil
-		}
-	}
-
-	// return true if all checks fail
-	return true, nil
-}
-
-// Default implements the Operator interface.
-type Default struct{}
-
-// Operate always returns true. This is the default operator returned by OperatorFactory.
-func (o Default) Operate(data []byte) (bool, error) {
-	return true, nil
-}
-
-// OperatorConfig contains an array of Inspector configurations that are used to evaluate data.
-type OperatorConfig struct {
-	Operator   string
-	Inspectors []config.Config
-}
-
-// OperatorFactory loads Operators from an OperatorConfig. This function is the preferred way to create Operators.
-func OperatorFactory(cfg OperatorConfig) (Operator, error) {
-	inspectors, err := MakeInspectors(cfg.Inspectors)
-	if err != nil {
-		return nil, err
-	}
-
-	switch op := cfg.Operator; op {
-	case "and":
-		return AND{inspectors}, nil
-	case "nand":
-		return NAND{inspectors}, nil
-	case "or":
-		return OR{inspectors}, nil
-	case "nor":
-		return NOR{inspectors}, nil
-	default:
-		return Default{}, nil
-	}
-}
-
-// InspectorFactory loads Inspectors from an InspectorConfig. This function is the preferred way to create Inspectors.
+// InspectorFactory returns a configured Inspector from a config. This is the recommended method for retrieving ready-to-use Inspectors.
 func InspectorFactory(cfg config.Config) (Inspector, error) {
-	switch t := cfg.Type; t {
+	switch cfg.Type {
 	case "content":
 		var i Content
 		config.Decode(cfg.Settings, &i)
@@ -204,20 +79,155 @@ func InspectorFactory(cfg config.Config) (Inspector, error) {
 		config.Decode(cfg.Settings, &i)
 		return i, nil
 	default:
-		return nil, fmt.Errorf("condition settings %v: %v", cfg.Settings, InspectorInvalidFactoryConfig)
+		return nil, fmt.Errorf("condition settings %v: %w", cfg.Settings, InspectorInvalidFactoryConfig)
 	}
 }
 
-// MakeInspectors is a convenience function for creating mulitple Inspectors.
-func MakeInspectors(cfg []config.Config) ([]Inspector, error) {
-	var inspectors []Inspector
-	for _, c := range cfg {
-		inspector, err := InspectorFactory(c)
-		if err != nil {
-			return nil, err
-		}
-		inspectors = append(inspectors, inspector)
+// Operator is the interface shared by all operator methods. Operators apply a series of Inspectors to and verify the state (aka "condition") of data.
+type Operator interface {
+	Operate(context.Context, config.Capsule) (bool, error)
+}
+
+// AND implements the Operator interface and applies the boolean AND logic to configured inspectors.
+type AND struct {
+	Inspectors []Inspector
+}
+
+// Operate returns true if all Inspectors return true, otherwise it returns false.
+func (o AND) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
+	if len(o.Inspectors) == 0 {
+		return false, fmt.Errorf("operator settings %+v: %w", o, OperatorMissingInspectors)
 	}
 
-	return inspectors, nil
+	for _, i := range o.Inspectors {
+		ok, err := i.Inspect(ctx, cap)
+
+		if err != nil {
+			return false, err
+		}
+
+		// return false if any check fails
+		if !ok {
+			return false, nil
+		}
+	}
+
+	// return tue if all checks pass
+	return true, nil
+}
+
+// OR implements the Operator interface and applies the boolean OR logic to configured inspectors.
+type OR struct {
+	Inspectors []Inspector
+}
+
+// Operate returns true if any Inspectors return true, otherwise it returns false.
+func (o OR) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
+	if len(o.Inspectors) == 0 {
+		return false, fmt.Errorf("operator settings %+v: %w", o, OperatorMissingInspectors)
+	}
+
+	for _, i := range o.Inspectors {
+		ok, err := i.Inspect(ctx, cap)
+		if err != nil {
+			return false, err
+		}
+
+		// return true if any check passes
+		if ok {
+			return true, nil
+		}
+	}
+
+	// return false if all checks fail
+	return false, nil
+}
+
+// NAND implements the Operator interface and applies the boolean NAND logic to configured inspectors.
+type NAND struct {
+	Inspectors []Inspector
+}
+
+// Operate returns true if all Inspectors return false, otherwise it returns true.
+func (o NAND) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
+	if len(o.Inspectors) == 0 {
+		return false, fmt.Errorf("operator settings %+v: %w", o, OperatorMissingInspectors)
+	}
+
+	for _, i := range o.Inspectors {
+		ok, err := i.Inspect(ctx, cap)
+		if err != nil {
+			return false, err
+		}
+
+		// return true if any check fails
+		if !ok {
+			return true, nil
+		}
+	}
+
+	// return false if all checks pass
+	return false, nil
+}
+
+// NOR implements the Operator interface and applies the boolean NOR logic to configured inspectors.
+type NOR struct {
+	Inspectors []Inspector
+}
+
+// Operate returns true if any Inspectors return false, otherwise it returns true.
+func (o NOR) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
+	if len(o.Inspectors) == 0 {
+		return false, fmt.Errorf("operator settings %+v: %w", o, OperatorMissingInspectors)
+	}
+
+	for _, i := range o.Inspectors {
+		ok, err := i.Inspect(ctx, cap)
+		if err != nil {
+			return false, err
+		}
+
+		// return false if any check passes
+		if ok {
+			return false, nil
+		}
+	}
+
+	// return true if all checks fail
+	return true, nil
+}
+
+// Default implements the Operator interface.
+type Default struct{}
+
+// Operate always returns true. This is the default operator returned by  OperatorFactory.
+func (o Default) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
+	return true, nil
+}
+
+// OperatorFactory returns a configured Operator from a config. This is the recommended method for retrieving ready-to-use Operators.
+func OperatorFactory(cfg Config) (Operator, error) {
+	inspectors, err := MakeInspectors(cfg.Inspectors)
+	if err != nil {
+		return nil, err
+	}
+
+	switch cfg.Operator {
+	case "and":
+		return AND{inspectors}, nil
+	case "nand":
+		return NAND{inspectors}, nil
+	case "or":
+		return OR{inspectors}, nil
+	case "nor":
+		return NOR{inspectors}, nil
+	default:
+		return Default{}, nil
+	}
+}
+
+// Config is used with OperatorFactory to produce new Operators from JSON configurations.
+type Config struct {
+	Operator   string
+	Inspectors []config.Config
 }

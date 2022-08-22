@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var countTests = []struct {
@@ -29,8 +31,15 @@ var countTests = []struct {
 
 func TestCount(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range countTests {
-		res, err := test.proc.Slice(ctx, test.test)
+		var caps []config.Capsule
+		for _, t := range test.test {
+			cap.SetData(t)
+			caps = append(caps, cap)
+		}
+
+		res, err := test.proc.ApplyBatch(ctx, caps)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -38,29 +47,33 @@ func TestCount(t *testing.T) {
 			t.Fail()
 		}
 
-		if len(res) != 1 {
-			t.Log("result pipe wrong size")
-		}
-
-		if c := bytes.Compare(test.expected, res[0]); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res[0])
+		count := res[0].GetData()
+		if !bytes.Equal(count, test.expected) {
+			t.Logf("expected %s, got %s", test.expected, count)
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkCountSlice(b *testing.B, slicer Count, test [][]byte) {
+func benchmarkCount(b *testing.B, applicator Count, caps []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		slicer.Slice(ctx, test)
+		applicator.ApplyBatch(ctx, caps)
 	}
 }
 
-func BenchmarkCountSlice(b *testing.B) {
+func BenchmarkCount(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range countTests {
+		var caps []config.Capsule
+		for _, t := range test.test {
+			cap.SetData(t)
+			caps = append(caps, cap)
+		}
+
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkCountSlice(b, test.proc, test.test)
+				benchmarkCount(b, test.proc, caps)
 			},
 		)
 	}

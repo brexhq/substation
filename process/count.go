@@ -4,28 +4,27 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 )
 
 /*
 Count processes data by counting it.
 
-The processor uses this Jsonnet configuration:
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'count',
+		"type": "count"
 	}
 */
 type Count struct{}
 
-// Slice processes a slice of bytes with the Count processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Count) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
-	processed, err := json.Set([]byte{}, "count", len(s))
-	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+// ApplyBatch processes a slice of encapsulated data with the Count processor. Conditions are optionally applied to the data to enable processing.
+func (p Count) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+	newCap := config.NewCapsule()
+	if err := newCap.Set("count", len(caps)); err != nil {
+		return caps, fmt.Errorf("apply settings %+v: %v", p, err)
 	}
 
-	slice := make([][]byte, 1, 1)
-	slice[0] = processed
-
-	return slice, nil
+	newCaps := make([]config.Capsule, 0, 1)
+	newCaps = append(newCaps, newCap)
+	return newCaps, nil
 }

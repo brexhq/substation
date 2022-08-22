@@ -5,37 +5,40 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 )
 
 /*
-Drop processes data by dropping it from a data channel. The processor uses this Jsonnet configuration:
+Drop processes data by "dropping" it -- the data is entirely removed and not emitted.
+
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'drop',
+		type: "drop"
 	}
 */
 type Drop struct {
-	Condition condition.OperatorConfig `json:"condition"`
+	Condition condition.Config `json:"condition"`
 }
 
-// Slice processes a slice of bytes with the Drop processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Drop) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Drop processor. Conditions are optionally applied to the data to enable processing.
+func (p Drop) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
+	newCaps := newBatch(&caps)
+	for _, cap := range caps {
+		ok, err := op.Operate(ctx, cap)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+			return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 		}
 
 		if !ok {
-			slice = append(slice, data)
+			newCaps = append(newCaps, cap)
 			continue
 		}
 	}
 
-	return slice, nil
+	return newCaps, nil
 }

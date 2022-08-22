@@ -1,32 +1,37 @@
 package condition
 
 import (
+	"context"
 	"fmt"
 	"unicode/utf8"
 
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
+
+// LengthInvalidFunction is returned when the Length inspector is configured with an invalid function.
+const LengthInvalidFunction = errors.Error("LengthInvalidFunction")
 
 /*
 Length evaluates data using len functions. This inspector supports evaluating byte and rune (character) length of strings. If a JSON array is input, then the length is evaluated against the number of elements in the array.
 
 The inspector has these settings:
-	Key (optional):
-		the JSON key-value to retrieve for inspection
-	Value:
-		the length value used during inspection
-	Type:
-		the length type used during inpsection
-		must be one of:
-			byte (number of bytes)
-			rune (number of characters)
-		defaults to byte
 	Function:
 		the length evaluation function used during inspection
 		must be one of:
 			equals
 			greaterthan
 			lessthan
+	Value:
+		the length value used during inspection
+	Type (optional):
+		the length type used during inpsection
+		must be one of:
+			byte (number of bytes)
+			rune (number of characters)
+		defaults to byte
+	Key (optional):
+		the JSON key-value to retrieve for inspection
 	Negate (optional):
 		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
 		defaults to false
@@ -38,36 +43,35 @@ The inspector supports these patterns:
 	data:
 		bar == 3
 
-The inspector uses this Jsonnet configuration:
+When loaded with a factory, the inspector uses this JSON configuration:
 	{
-		type: 'length',
-		settings: {
-			key: 'foo',
-			value: 3,
-			'function': 'equals',
-		},
+		"type": "length",
+		"settings": {
+			"function": "equals",
+			"value": 3
+		}
 	}
 */
 type Length struct {
-	Key      string `json:"key"`
+	Function string `json:"function"`
 	Value    int    `json:"value"`
 	Type     string `json:"type"`
-	Function string `json:"function"`
+	Key      string `json:"key"`
 	Negate   bool   `json:"negate"`
 }
 
-// Inspect evaluates data with the Length inspector.
-func (c Length) Inspect(data []byte) (output bool, err error) {
+// Inspect evaluates encapsulated data with the Length inspector.
+func (c Length) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
-		check = string(data)
+		check = string(cap.GetData())
 	} else {
-		v := json.Get(data, c.Key)
-		if v.IsArray() {
-			return c.match(len(v.Array()))
+		result := cap.Get(c.Key)
+		if result.IsArray() {
+			return c.match(len(result.Array()))
 		}
 
-		check = string(v.String())
+		check = result.String()
 	}
 
 	var length int
@@ -99,7 +103,7 @@ func (c Length) match(length int) (bool, error) {
 			matched = true
 		}
 	default:
-		return false, fmt.Errorf("inspector settings %+v: %w", c, InspectorInvalidSettings)
+		return false, fmt.Errorf("inspector settings %+v: %w", c, LengthInvalidFunction)
 	}
 
 	if c.Negate {

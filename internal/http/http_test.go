@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -44,8 +45,9 @@ func TestPost(t *testing.T) {
 
 	for _, test := range tests {
 		_, err := h.Post(ctx, serv.URL, test.payload)
-		if err != test.expected {
+		if !errors.Is(err, test.expected) {
 			t.Logf("expected %+v, got %+v", test.expected, err)
+			t.Fail()
 		}
 	}
 }
@@ -72,6 +74,10 @@ func TestGet(t *testing.T) {
 
 	for _, test := range tests {
 		resp, err := h.Get(ctx, serv.URL)
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
+
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {

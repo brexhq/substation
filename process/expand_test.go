@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var expandTests = []struct {
@@ -48,11 +50,13 @@ var expandTests = []struct {
 
 func TestExpand(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range expandTests {
-		slice := make([][]byte, 1, 1)
-		slice[0] = test.test
+		slice := make([]config.Capsule, 1)
+		cap.SetData(test.test)
+		slice[0] = cap
 
-		res, err := test.proc.Slice(ctx, slice)
+		res, err := test.proc.ApplyBatch(ctx, slice)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -62,7 +66,7 @@ func TestExpand(t *testing.T) {
 
 		for i, processed := range res {
 			expected := test.expected[i]
-			if c := bytes.Compare(expected, processed); c != 0 {
+			if c := bytes.Compare(expected, processed.GetData()); c != 0 {
 				t.Logf("expected %s, got %s", expected, processed)
 				t.Fail()
 			}
@@ -70,21 +74,23 @@ func TestExpand(t *testing.T) {
 	}
 }
 
-func benchmarkExpandSlice(b *testing.B, slicer Expand, slice [][]byte) {
+func benchmarkExpand(b *testing.B, slicer Expand, slice []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		slicer.Slice(ctx, slice)
+		slicer.ApplyBatch(ctx, slice)
 	}
 }
 
-func BenchmarkExpandSlice(b *testing.B) {
+func BenchmarkExpand(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range expandTests {
-		slice := make([][]byte, 1, 1)
-		slice[0] = test.test
+		slice := make([]config.Capsule, 1)
+		cap.SetData(test.test)
+		slice[0] = cap
 
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkExpandSlice(b, test.proc, slice)
+				benchmarkExpand(b, test.proc, slice)
 			},
 		)
 	}

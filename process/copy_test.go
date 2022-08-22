@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var copyTests = []struct {
@@ -64,8 +66,11 @@ var copyTests = []struct {
 
 func TestCopy(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range copyTests {
-		res, err := test.proc.Byte(ctx, test.test)
+		cap.SetData(test.test)
+
+		res, err := test.proc.Apply(ctx, cap)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -73,25 +78,27 @@ func TestCopy(t *testing.T) {
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res)
+		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
+			t.Logf("expected %s, got %s", test.expected, res.GetData())
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkCopyByte(b *testing.B, byter Copy, test []byte) {
+func benchmarkCopy(b *testing.B, applicator Copy, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Byte(ctx, test)
+		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkCopyByte(b *testing.B) {
+func BenchmarkCopy(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range copyTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkCopyByte(b, test.proc, test.test)
+				cap.SetData(test.test)
+				benchmarkCopy(b, test.proc, cap)
 			},
 		)
 	}

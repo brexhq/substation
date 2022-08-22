@@ -3,13 +3,12 @@ package process
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
 )
 
-var processByteTests = []struct {
+var processTests = []struct {
 	name     string
 	conf     []config.Config
 	test     []byte
@@ -129,212 +128,122 @@ var processByteTests = []struct {
 	},
 }
 
-func TestByterAll(t *testing.T) {
+func TestApply(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
+	for _, test := range processTests {
+		cap.SetData(test.test)
 
-	for _, test := range processByteTests {
-		byters, err := MakeAllByters(test.conf)
+		applicators, err := MakeApplicators(test.conf)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		processed, err := Byte(ctx, byters, test.test)
+		processed, err := Apply(ctx, cap, applicators...)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		if c := bytes.Compare(processed, test.expected); c != 0 {
+		if c := bytes.Compare(processed.GetData(), test.expected); c != 0 {
 			t.Logf("expected %v, got %v", test.expected, processed)
 			t.Fail()
 		}
 	}
 }
 
-func TestByterFactory(t *testing.T) {
-	for _, test := range processByteTests {
-		_, err := ByterFactory(test.conf[0])
-		if err != nil {
-			t.Log(err)
-			t.Fail()
-		}
-	}
-}
-
-func benchmarkByterFactory(b *testing.B, conf config.Config) {
-	for i := 0; i < b.N; i++ {
-		ByterFactory(conf)
-	}
-}
-
-func BenchmarkByterFactory(b *testing.B) {
-	for _, test := range processByteTests {
-		b.Run(string(test.name),
-			func(b *testing.B) {
-				benchmarkByterFactory(b, test.conf[0])
-			},
-		)
-	}
-}
-
-func benchmarkByte(b *testing.B, conf []config.Config, data []byte) {
+func TestApplicatorFactory(t *testing.T) {
 	ctx := context.TODO()
-	for i := 0; i < b.N; i++ {
-		byters, _ := MakeAllByters(conf)
-		Byte(ctx, byters, data)
-	}
-}
+	cap := config.NewCapsule()
+	for _, test := range processTests {
+		cap.SetData(test.test)
 
-func BenchmarkByte(b *testing.B) {
-	for _, test := range processByteTests {
-		b.Run(string(test.name),
-			func(b *testing.B) {
-				benchmarkByte(b, test.conf, test.test)
-			},
-		)
-	}
-}
-
-var processSliceTests = []struct {
-	name     string
-	conf     []config.Config
-	test     [][]byte
-	expected [][]byte
-	err      error
-}{
-	{
-		"aggregate",
-		[]config.Config{
-			{
-				Type: "aggregate",
-				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"aggregate_key": "foo",
-					},
-					"output_key": "aggregate.-1",
-				},
-			},
-			{
-				Type: "copy",
-				Settings: map[string]interface{}{
-					"input_key":  "aggregate.#",
-					"output_key": "aggregate.0.count",
-				},
-			},
-			{
-				Type: "copy",
-				Settings: map[string]interface{}{
-					"input_key": "aggregate.0",
-				},
-			},
-		},
-		[][]byte{
-			[]byte(`{"foo":"bar"}`),
-			[]byte(`{"foo":"baz"}`),
-			[]byte(`{"foo":"bar"}`),
-			[]byte(`{"foo":"qux"}`),
-			[]byte(`{"foo":"bar"}`),
-			[]byte(`{"foo":"qux"}`),
-		},
-		[][]byte{
-			[]byte(`{"foo":"bar","count":3}`),
-			[]byte(`{"foo":"baz","count":1}`),
-			[]byte(`{"foo":"qux","count":2}`),
-		},
-		nil,
-	},
-	{
-		"split",
-		[]config.Config{
-			{
-				Type: "split",
-				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"separator": `\n`,
-					},
-				},
-			},
-		},
-		[][]byte{
-			[]byte(`foo\nbar\nbaz`),
-		},
-		[][]byte{
-			[]byte(`foo`),
-			[]byte(`bar`),
-			[]byte(`baz`),
-		},
-		nil,
-	},
-}
-
-func TestSlice(t *testing.T) {
-	ctx := context.TODO()
-	for _, test := range processSliceTests {
-		slicers, err := MakeAllSlicers(test.conf)
+		conf := test.conf[0]
+		applicator, err := ApplicatorFactory(conf)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		res, err := Slice(ctx, slicers, test.test)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
-			t.Log(err)
-			t.Fail()
-		}
-
-		for i, processed := range res {
-			expected := test.expected[i]
-			if c := bytes.Compare(expected, processed); c != 0 {
-				t.Logf("expected %s, got %s", expected, string(processed))
-				t.Fail()
-			}
-		}
-	}
-}
-
-func benchmarkSlice(b *testing.B, conf []config.Config, data [][]byte) {
-	ctx := context.TODO()
-	for i := 0; i < b.N; i++ {
-		slicers, _ := MakeAllSlicers(conf)
-		Slice(ctx, slicers, data)
-	}
-}
-
-func BenchmarkSlice(b *testing.B) {
-	for _, test := range processSliceTests {
-		b.Run(string(test.name),
-			func(b *testing.B) {
-				benchmarkSlice(b, test.conf, test.test)
-			},
-		)
-	}
-}
-
-func TestSlicerFactory(t *testing.T) {
-	for _, test := range processSliceTests {
-		_, err := SlicerFactory(test.conf[0])
+		processed, err := applicator.Apply(ctx, cap)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
+
+		if c := bytes.Compare(processed.GetData(), test.expected); c != 0 {
+			t.Logf("expected %v, got %v", test.expected, processed)
+			t.Fail()
+		}
 	}
 }
 
-func benchmarkSlicerFactory(b *testing.B, conf config.Config) {
+func TestApplyBatch(t *testing.T) {
+	ctx := context.TODO()
+	cap := config.NewCapsule()
+	for _, test := range processTests {
+		cap.SetData(test.test)
+
+		batch := make([]config.Capsule, 1)
+		batch[0] = cap
+
+		applicators, err := MakeBatchApplicators(test.conf)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
+
+		processed, err := ApplyBatch(ctx, batch, applicators...)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
+
+		if c := bytes.Compare(processed[0].GetData(), test.expected); c != 0 {
+			t.Logf("expected %v, got %v", test.expected, processed)
+			t.Fail()
+		}
+	}
+}
+
+func TestBatchApplicatorFactory(t *testing.T) {
+	ctx := context.TODO()
+	cap := config.NewCapsule()
+	batch := make([]config.Capsule, 1)
+
+	for _, test := range processTests {
+		cap.SetData(test.test)
+		batch[0] = cap
+
+		conf := test.conf[0]
+		applicator, err := BatchApplicatorFactory(conf)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
+
+		processed, err := applicator.ApplyBatch(ctx, batch)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
+
+		if c := bytes.Compare(processed[0].GetData(), test.expected); c != 0 {
+			t.Logf("expected %v, got %v", test.expected, processed)
+			t.Fail()
+		}
+	}
+}
+
+func BenchmarkApplicatorFactory(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		SlicerFactory(conf)
+		ApplicatorFactory(processTests[0].conf[0])
 	}
 }
 
-func BenchmarkSlicerFactory(b *testing.B) {
-	for _, test := range processSliceTests {
-		b.Run(string(test.name),
-			func(b *testing.B) {
-				benchmarkSlicerFactory(b, test.conf[0])
-			},
-		)
+func BenchmarkBatchApplicatorFactory(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		BatchApplicatorFactory(processTests[0].conf[0])
 	}
 }

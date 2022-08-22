@@ -1,39 +1,22 @@
-// example of reading data from a file and applying a inspector
+// example from condition/README.md
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"os"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/config"
 )
 
 func main() {
-	cfg, err := os.ReadFile("./config.json")
-	if err != nil {
-		panic(err)
+	inspector := condition.Strings{
+		Key:        "foo",
+		Function:   "equals",
+		Expression: "bar",
 	}
 
-	// unmarshal JSON object into Substation config
-	var sub config.Config
-	if err := json.Unmarshal(cfg, &sub); err != nil {
-		panic(err)
-	}
-
-	// retrieve inspector from the factory
-	inspector, err := condition.InspectorFactory(sub)
-	if err != nil {
-		panic(err)
-	}
-
-	data, err := os.ReadFile("./data.json")
-	if err != nil {
-		panic(err)
-	}
-
-	ok, err := inspector.Inspect(data)
+	data := []byte(`{"foo":"bar"}`)
+	ok, err := condition.InspectByte(context.TODO(), data, inspector)
 	if err != nil {
 		panic(err)
 	}

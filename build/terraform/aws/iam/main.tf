@@ -74,6 +74,16 @@ data "aws_iam_policy_document" "kinesis_write" {
   }
 }
 
+data "aws_iam_policy_document" "kinesis_firehose_write" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "firehose:PutRecordBatch",
+    ]
+    resources = var.resources
+  }
+}
+
 data "aws_iam_policy_document" "dynamodb_read" {
   statement {
     effect = "Allow"
@@ -151,6 +161,30 @@ data "aws_iam_policy_document" "secretsmanager_read" {
     effect = "Allow"
     actions = [
       "secretsmanager:GetSecretValue",
+    ]
+    resources = var.resources
+  }
+}
+
+
+data "aws_iam_policy_document" "sqs_read" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes",
+    ]
+    resources = var.resources
+  }
+}
+
+data "aws_iam_policy_document" "sqs_write" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "sqs:GetQueueUrl",
+      "sqs:SendMessage*",
     ]
     resources = var.resources
   }

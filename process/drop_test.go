@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var dropTests = []struct {
@@ -26,8 +28,15 @@ var dropTests = []struct {
 
 func TestDrop(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range dropTests {
-		res, err := test.proc.Slice(ctx, test.test)
+		var caps []config.Capsule
+		for _, t := range test.test {
+			cap.SetData(t)
+			caps = append(caps, cap)
+		}
+
+		res, err := test.proc.ApplyBatch(ctx, caps)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -35,25 +44,33 @@ func TestDrop(t *testing.T) {
 			t.Fail()
 		}
 
-		if len(res) != 0 {
-			t.Log("result pipe wrong size")
+		length := len(res)
+		if length != 0 {
+			t.Logf("got %d", length)
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkDropSlice(b *testing.B, slicer Drop, test [][]byte) {
+func benchmarkDrop(b *testing.B, applicator Drop, caps []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		slicer.Slice(ctx, test)
+		applicator.ApplyBatch(ctx, caps)
 	}
 }
 
-func BenchmarkDropSlice(b *testing.B) {
+func BenchmarkDrop(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range dropTests {
+		var caps []config.Capsule
+		for _, t := range test.test {
+			cap.SetData(t)
+			caps = append(caps, cap)
+		}
+
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkDropSlice(b, test.proc, test.test)
+				benchmarkDrop(b, test.proc, caps)
 			},
 		)
 	}

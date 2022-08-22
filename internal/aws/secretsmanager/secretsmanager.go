@@ -64,7 +64,7 @@ func (a *API) GetSecret(ctx aws.Context, secretName string) (secret string, err 
 
 	result, err := a.Client.GetSecretValueWithContext(ctx, input)
 	if err != nil {
-		return secret, fmt.Errorf("getsecretvalue secret %s: %w", secretName, err)
+		return secret, fmt.Errorf("getsecretvalue secret %s: %v", secretName, err)
 	}
 
 	if result.SecretString != nil {

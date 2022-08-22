@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var domainTests = []struct {
@@ -89,8 +91,11 @@ var domainTests = []struct {
 
 func TestDomain(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range domainTests {
-		res, err := test.proc.Byte(ctx, test.test)
+		cap.SetData(test.test)
+
+		res, err := test.proc.Apply(ctx, cap)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -98,25 +103,27 @@ func TestDomain(t *testing.T) {
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res)
+		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
+			t.Logf("expected %s, got %s", test.expected, res.GetData())
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkDomainByte(b *testing.B, byter Domain, test []byte) {
+func benchmarkDomain(b *testing.B, applicator Domain, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Byte(ctx, test)
+		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkDomainByte(b *testing.B) {
+func BenchmarkDomain(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range domainTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkDomainByte(b, test.proc, test.test)
+				cap.SetData(test.test)
+				benchmarkDomain(b, test.proc, cap)
 			},
 		)
 	}

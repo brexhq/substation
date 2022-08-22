@@ -7,13 +7,42 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/base64"
 	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/json"
 )
+
+// Base64InvalidDirection is returned when the Base64 processor is configured with an invalid direction.
+const Base64InvalidDirection = errors.Error("Base64InvalidDirection")
 
 // Base64JSONDecodedBinary is returned when the Base64 processor is configured to decode output to JSON, but the output contains binary data and cannot be written as valid JSON.
 const Base64JSONDecodedBinary = errors.Error("Base64JSONDecodedBinary")
+
+/*
+Base64 processes data by converting it to and from base64 encoding. The processor supports these patterns:
+	JSON:
+	  	{"base64":"Zm9v"} >>> {"base64":"foo"}
+	data:
+		Zm9v >>> foo
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "base64",
+		"settings": {
+			"options": {
+				"direction": "from"
+			},
+			"input_key": "base64",
+			"output_key": "base64"
+		}
+	}
+*/
+type Base64 struct {
+	Options   Base64Options    `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
 
 /*
 Base64Options contains custom options for the Base64 processor:
@@ -27,104 +56,79 @@ type Base64Options struct {
 	Direction string `json:"direction"`
 }
 
-/*
-Base64 processes data by converting it to and from base64. The processor supports these patterns:
-	JSON:
-	  	{"base64":"Zm9v"} >>> {"base64":"foo"}
-	data:
-		Zm9v >>> foo
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'base64',
-		settings: {
-			options: {
-				direction: 'from',
-			},
-			input_key: 'base64',
-			output_key: 'base64',
-		},
-	}
-*/
-type Base64 struct {
-	Options   Base64Options            `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
-}
-
-// Slice processes a slice of bytes with the Base64 processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Base64) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Base64 processor. Conditions are optionally applied to the data to enable processing.
+func (p Base64) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Base64 processor.
-func (p Base64) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Base64 processor.
+func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey).String()
-		tmp := []byte(value)
+		result := cap.Get(p.InputKey).String()
+		tmp := []byte(result)
 
+		var value []byte
 		switch p.Options.Direction {
 		case "from":
-			result, err := base64.Decode(tmp)
+			decode, err := base64.Decode(tmp)
 			if err != nil {
-				return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 			}
 
-			if !utf8.Valid(result) {
-				return nil, fmt.Errorf("byter settings %+v: %w", p, Base64JSONDecodedBinary)
+			if !utf8.Valid(decode) {
+				return cap, fmt.Errorf("apply settings %+v: %w", p, Base64JSONDecodedBinary)
 			}
 
-			return json.Set(data, p.OutputKey, result)
+			value = decode
 		case "to":
-			result := base64.Encode(tmp)
-			return json.Set(data, p.OutputKey, string(result))
+			value = base64.Encode(tmp)
+		default:
+			return cap, fmt.Errorf("apply settings %+v: %w", p, Base64InvalidDirection)
 		}
+
+		if err := cap.Set(p.OutputKey, value); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		}
+
+		return cap, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
+		var value []byte
 		switch p.Options.Direction {
 		case "from":
-			result, err := base64.Decode(data)
+			decode, err := base64.Decode(cap.GetData())
 			if err != nil {
-				return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 			}
-			return result, nil
+
+			value = decode
 		case "to":
-			return base64.Encode(data), nil
+			value = base64.Encode(cap.GetData())
+		default:
+			return cap, fmt.Errorf("apply settings %+v: %w", p, Base64InvalidDirection)
 		}
+
+		cap.SetData(value)
+		return cap, nil
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 }

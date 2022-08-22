@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/cmd"
+	"github.com/brexhq/substation/config"
 )
 
 var sub cmd.Substation
@@ -24,6 +25,12 @@ func loadConfig(f string) error {
 	json.Unmarshal(bytes, &sub.Config)
 
 	return nil
+}
+
+type metadata struct {
+	Name             string    `json:"name"`
+	Size             int64     `json:"size"`
+	ModificationTime time.Time `json:"modification_time"`
 }
 
 func main() {
@@ -69,9 +76,24 @@ func file(ctx context.Context, filename string) error {
 			return
 		}
 		defer fileHandle.Close()
+
+		fi, err := fileHandle.Stat()
+		if err != nil {
+			sub.SendErr(fmt.Errorf("file filename %s: %v", filename, err))
+			return
+		}
+
+		cap := config.NewCapsule()
+		cap.SetMetadata(metadata{
+			fi.Name(),
+			fi.Size(),
+			fi.ModTime(),
+		})
+
 		scanner := bufio.NewScanner(fileHandle)
 		for scanner.Scan() {
-			sub.SendTransform([]byte(scanner.Text()))
+			cap.SetData([]byte(scanner.Text()))
+			sub.SendTransform(cap)
 		}
 
 		sub.TransformSignal()

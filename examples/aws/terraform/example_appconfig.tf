@@ -20,5 +20,6 @@ module "iam_example_appconfig_read_attachment" {
     module.lambda_example_processed_s3_sink.role,
     module.lambda_example_gateway_source.role,
     module.lambda_example_s3_source.role,
+    module.lambda_example_sqs_source.role,
   ]
 }

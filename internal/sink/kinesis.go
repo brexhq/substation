@@ -6,10 +6,12 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/kinesis"
-	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
 )
+
+var kinesisAPI kinesis.API
 
 /*
 Kinesis sinks data to an AWS Kinesis Data Stream using Kinesis Producer Library (KPL) compliant aggregated records. This sink can automatically redistribute data across shards by retrieving partition keys from JSON data; by default, it uses random strings to avoid hot shards. More information about the KPL and its schema is available here: https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html.
@@ -26,13 +28,12 @@ The sink has these settings:
 		if enabled with an empty partition key, then data aggregation is disabled
 		defaults to false, data is randomly distributed across shards
 
-The sink uses this Jsonnet configuration:
+When loaded with a factory, the sink uses this JSON configuration:
 	{
-		type: 'kinesis',
-		settings: {
-			stream: 'foo',
-			partition: 'bar',
-		},
+		"type": "kinesis",
+		"settings": {
+			"stream": "foo"
+		}
 	}
 */
 type Kinesis struct {
@@ -42,17 +43,15 @@ type Kinesis struct {
 	ShardRedistribution bool   `json:"shard_redistribution"`
 }
 
-var kinesisAPI kinesis.API
-
-// Send sinks a channel of bytes with the Kinesis sink.
-func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
+// Send sinks a channel of encapsulated data with the Kinesis sink.
+func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
 	if !kinesisAPI.IsEnabled() {
 		kinesisAPI.Setup()
 	}
 
 	buffer := map[string]*kinesis.Aggregate{}
 
-	for data := range ch {
+	for cap := range ch {
 		select {
 		case <-kill:
 			return nil
@@ -61,7 +60,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 			if sink.Partition != "" {
 				partitionKey = sink.Partition
 			} else if sink.PartitionKey != "" {
-				partitionKey = json.Get(data, sink.PartitionKey).String()
+				partitionKey = cap.Get(sink.PartitionKey).String()
 			}
 
 			if partitionKey == "" {
@@ -83,7 +82,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok := buffer[aggregationKey].Add(data, partitionKey)
+			ok := buffer[aggregationKey].Add(cap.GetData(), partitionKey)
 			if !ok {
 				agg := buffer[aggregationKey].Get()
 				aggPK := buffer[aggregationKey].PartitionKey
@@ -102,7 +101,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan []byte, kill chan struct{
 				).Debug("put records into Kinesis")
 
 				buffer[aggregationKey].New()
-				buffer[aggregationKey].Add(data, partitionKey)
+				buffer[aggregationKey].Add(cap.GetData(), partitionKey)
 			}
 		}
 	}

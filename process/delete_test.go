@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var deleteTests = []struct {
@@ -36,8 +38,11 @@ var deleteTests = []struct {
 
 func TestDelete(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range deleteTests {
-		res, err := test.proc.Byte(ctx, test.test)
+	cap := config.NewCapsule()
+	for _, test := range convertTests {
+		cap.SetData(test.test)
+
+		res, err := test.proc.Apply(ctx, cap)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -45,24 +50,27 @@ func TestDelete(t *testing.T) {
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res)
+		if !bytes.Equal(res.GetData(), test.expected) {
+			t.Logf("expected %s, got %s", test.expected, res.GetData())
 			t.Fail()
 		}
 	}
 }
-func benchmarkDeleteByte(b *testing.B, byter Delete, test []byte) {
+
+func benchmarkDelete(b *testing.B, applicator Delete, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Byte(ctx, test)
+		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkDeleteByte(b *testing.B) {
+func BenchmarkDelete(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range deleteTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkDeleteByte(b, test.proc, test.test)
+				cap.SetData(test.test)
+				benchmarkDelete(b, test.proc, cap)
 			},
 		)
 	}

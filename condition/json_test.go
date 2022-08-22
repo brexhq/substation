@@ -1,7 +1,10 @@
 package condition
 
 import (
+	"context"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var jsonSchemaTests = []struct {
@@ -55,27 +58,33 @@ var jsonSchemaTests = []struct {
 }
 
 func TestJSONSchema(t *testing.T) {
-	for _, testing := range jsonSchemaTests {
-		ok, _ := testing.inspector.Inspect(testing.test)
+	ctx := context.TODO()
+	cap := config.NewCapsule()
+	for _, test := range jsonSchemaTests {
+		cap.SetData(test.test)
+		check, _ := test.inspector.Inspect(ctx, cap)
 
-		if testing.expected != ok {
-			t.Logf("expected %v, got %v, %v", testing.expected, ok, string(testing.test))
+		if test.expected != check {
+			t.Logf("expected %v, got %v, %v", test.expected, check, string(test.test))
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkJSONSchemaByte(b *testing.B, inspector JSONSchema, test []byte) {
+func benchmarkJSONSchemaByte(b *testing.B, inspector JSONSchema, cap config.Capsule) {
+	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(test)
+		inspector.Inspect(ctx, cap)
 	}
 }
 
 func BenchmarkJSONSchemaByte(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range jsonSchemaTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkJSONSchemaByte(b, test.inspector, test.test)
+				cap.SetData(test.test)
+				benchmarkJSONSchemaByte(b, test.inspector, cap)
 			},
 		)
 	}
@@ -118,27 +127,33 @@ var jsonValidTests = []struct {
 }
 
 func TestJSONValid(t *testing.T) {
-	for _, testing := range jsonValidTests {
-		ok, _ := testing.inspector.Inspect(testing.test)
+	ctx := context.TODO()
+	cap := config.NewCapsule()
+	for _, test := range jsonValidTests {
+		cap.SetData(test.test)
+		check, _ := test.inspector.Inspect(ctx, cap)
 
-		if testing.expected != ok {
-			t.Logf("expected %v, got %v, %v", testing.expected, ok, string(testing.test))
+		if test.expected != check {
+			t.Logf("expected %v, got %v, %v", test.expected, check, string(test.test))
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkJSONValidByte(b *testing.B, inspector JSONValid, test []byte) {
+func benchmarkJSONValidByte(b *testing.B, inspector JSONValid, cap config.Capsule) {
+	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(test)
+		inspector.Inspect(ctx, cap)
 	}
 }
 
 func BenchmarkJSONValidByte(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range jsonValidTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkJSONValidByte(b, test.inspector, test.test)
+				cap.SetData(test.test)
+				benchmarkJSONValidByte(b, test.inspector, cap)
 			},
 		)
 	}

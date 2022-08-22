@@ -8,11 +8,14 @@ import (
 
 	"github.com/jshlbrd/go-aggregate"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
 )
+
+var sumoLogicClient http.HTTP
 
 // SumoLogicSinkInvalidJSON is returned when the Sumo Logic sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
 const SumoLogicSinkInvalidJSON = errors.Error("SumoLogicSinkInvalidJSON")
@@ -30,13 +33,12 @@ The sink has these settings:
 		JSON key-value that is used as the Sumo Logic source category, overrides Category
 		defaults to no source category, which sends data to the source category configured for URL
 
-The sink uses this Jsonnet configuration:
+When loaded with a factory, the sink uses this JSON configuration:
 	{
-		type: 'sumologic',
-		settings: {
-			url: 'foo.com/bar',
-			category: 'foo',
-		},
+		"type": "sumologic",
+		"settings": {
+			"url": "foo.com/bar"
+		}
 	}
 */
 type SumoLogic struct {
@@ -45,10 +47,8 @@ type SumoLogic struct {
 	CategoryKey string `json:"category_key"`
 }
 
-var sumoLogicClient http.HTTP
-
-// Send sinks a channel of bytes with the SumoLogic sink.
-func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
+// Send sinks a channel of encapsulated data with the SumoLogic sink.
+func (sink *SumoLogic) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
 	if !sumoLogicClient.IsEnabled() {
 		sumoLogicClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -70,17 +70,17 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 		category = sink.Category
 	}
 
-	for data := range ch {
+	for cap := range ch {
 		select {
 		case <-kill:
 			return nil
 		default:
-			if !json.Valid(data) {
+			if !json.Valid(cap.GetData()) {
 				return fmt.Errorf("sink sumologic category %s: %v", category, SumoLogicSinkInvalidJSON)
 			}
 
 			if sink.CategoryKey != "" {
-				category = json.Get(data, sink.CategoryKey).String()
+				category = cap.Get(sink.CategoryKey).String()
 			}
 
 			if _, ok := buffer[category]; !ok {
@@ -92,7 +92,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok, err := buffer[category].Add(data)
+			ok, err := buffer[category].Add(cap.GetData())
 			if err != nil {
 				return fmt.Errorf("sink sumologic category %s: %v", category, err)
 			}
@@ -122,7 +122,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan []byte, kill chan struc
 				).Debug("sent events to Sumo Logic")
 
 				buffer[category].Reset()
-				buffer[category].Add(data)
+				buffer[category].Add(cap.GetData())
 			}
 		}
 	}

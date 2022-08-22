@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var outputFmt = "2006-01-02T15:04:05.000000Z"
@@ -196,8 +198,11 @@ var timeTests = []struct {
 
 func TestTime(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range timeTests {
-		res, err := test.proc.Byte(ctx, test.test)
+		cap.SetData(test.test)
+
+		res, err := test.proc.Apply(ctx, cap)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -205,25 +210,27 @@ func TestTime(t *testing.T) {
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res)
+		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
+			t.Logf("expected %s, got %s", test.expected, res.GetData())
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkTimeByte(b *testing.B, byter Time, test []byte) {
+func benchmarkTime(b *testing.B, applicator Time, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Byte(ctx, test)
+		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkTimeByte(b *testing.B) {
+func BenchmarkTime(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range timeTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkTimeByte(b, test.proc, test.test)
+				cap.SetData(test.test)
+				benchmarkTime(b, test.proc, cap)
 			},
 		)
 	}

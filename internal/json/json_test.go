@@ -164,7 +164,7 @@ func BenchmarkSetJSON(b *testing.B) {
 	for _, test := range setTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkGetJSON(b, test.test, test.key)
+				benchmarkSetJSON(b, test.test, test.key, test.value)
 			},
 		)
 	}
@@ -212,7 +212,7 @@ func BenchmarkSetRawJSON(b *testing.B) {
 	for _, test := range setRawTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkGetJSON(b, test.test, test.key)
+				benchmarkSetRawJSON(b, test.test, test.key, test.value)
 			},
 		)
 	}

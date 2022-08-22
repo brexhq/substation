@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
 
@@ -13,40 +14,40 @@ Expand processes data by creating individual events from objects in JSON arrays.
 	JSON:
 		{"expand":[{"foo":"bar"}],"baz":"qux"} >>> {"foo":"bar","baz":"qux"}
 
-The processor uses this Jsonnet configuration:
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'expand',
-		settings: {
-			input_key: 'expand',
-		},
+		"type": "expand",
+		"settings": {
+			"input_key": "expand"
+		}
 	}
 */
 type Expand struct {
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
 }
 
-// Slice processes a slice of bytes with the Expand processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Expand processor. Conditions are optionally applied to the data to enable processing.
+func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	// only supports JSON, error early if there is no input key
 	if p.InputKey == "" {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("applybatch settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
+	newCaps := newBatch(&caps)
+	for _, cap := range caps {
+		ok, err := op.Operate(ctx, cap)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+			return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 		}
 
 		if !ok {
-			slice = append(slice, data)
+			newCaps = append(newCaps, cap)
 			continue
 		}
 
@@ -60,26 +61,29 @@ func (p Expand) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 		// expanded:
 		// 	{"foo":"bar","quux":"corge"}
 		// 	{"baz":"qux","quux":"corge"}
-		root := json.Get(data, "@this")
-		v := json.Get(data, p.InputKey)
-		for _, value := range v.Array() {
+		root := cap.Get("@this")
+		result := cap.Get(p.InputKey)
+
+		newCap := config.NewCapsule()
+		for _, res := range result.Array() {
 			var err error
 
-			expand := []byte(value.String())
-			for k, v := range root.Map() {
-				if k == p.InputKey {
+			expand := []byte(res.String())
+			for key, val := range root.Map() {
+				if key == p.InputKey {
 					continue
 				}
 
-				expand, err = json.Set(expand, k, v)
+				expand, err = json.Set(expand, key, val)
 				if err != nil {
-					return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+					return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 				}
 			}
 
-			slice = append(slice, expand)
+			newCap.SetData(expand)
+			newCaps = append(newCaps, newCap)
 		}
 	}
 
-	return slice, nil
+	return newCaps, nil
 }

@@ -11,12 +11,12 @@ import (
 // SinkInvalidFactoryConfig is returned when an unsupported Sink is referenced in Factory.
 const SinkInvalidFactoryConfig = errors.Error("SinkInvalidFactoryConfig")
 
-// Sink is an interface for sending data to external services. Sinks read channels of bytes and are interruptable via an anonymous struct channel.
+// Sink is an interface for sending data to external services. Sinks read channels of capsules and are interruptable via an anonymous struct channel.
 type Sink interface {
-	Send(context.Context, chan []byte, chan struct{}) error
+	Send(context.Context, chan config.Capsule, chan struct{}) error
 }
 
-// Factory loads a Sink from a Config. This is the recommended function for retrieving ready-to-use Sinks.
+// Factory returns a configured Sink from a config. This is the recommended method for retrieving ready-to-use Sinks.
 func Factory(cfg config.Config) (Sink, error) {
 	switch t := cfg.Type; t {
 	case "dynamodb":
@@ -25,6 +25,10 @@ func Factory(cfg config.Config) (Sink, error) {
 		return &s, nil
 	case "http":
 		var s HTTP
+		config.Decode(cfg.Settings, &s)
+		return &s, nil
+	case "firehose":
+		var s Firehose
 		config.Decode(cfg.Settings, &s)
 		return &s, nil
 	case "kinesis":
@@ -41,6 +45,10 @@ func Factory(cfg config.Config) (Sink, error) {
 		return &s, nil
 	case "sumologic":
 		var s SumoLogic
+		config.Decode(cfg.Settings, &s)
+		return &s, nil
+	case "sqs":
+		var s SQS
 		config.Decode(cfg.Settings, &s)
 		return &s, nil
 	default:

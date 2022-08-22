@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
 var aggregateTests = []struct {
@@ -82,6 +84,7 @@ var aggregateTests = []struct {
 		},
 		[][]byte{
 			[]byte(`{"aggregate":[{"foo":"bar"},{"baz":"qux"},{"quux":"corge"}]}`),
+			[]byte(`{"aggregate":[{"fofo":"bar"},{"baz":"qux"},{"quux":"corge"}]}`),
 		},
 		nil,
 	},
@@ -187,8 +190,15 @@ var aggregateTests = []struct {
 
 func TestAggregate(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range aggregateTests {
-		res, err := test.proc.Slice(ctx, test.test)
+		var caps []config.Capsule
+		for _, t := range test.test {
+			cap.SetData(t)
+			caps = append(caps, cap)
+		}
+
+		res, err := test.proc.ApplyBatch(ctx, caps)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -198,26 +208,33 @@ func TestAggregate(t *testing.T) {
 
 		for i, processed := range res {
 			expected := test.expected[i]
-			if c := bytes.Compare(expected, processed); c != 0 {
-				t.Logf("expected %s, got %s", expected, string(processed))
+			if c := bytes.Compare(expected, processed.GetData()); c != 0 {
+				t.Logf("expected %s, got %s", expected, string(processed.GetData()))
 				t.Fail()
 			}
 		}
 	}
 }
 
-func benchmarkAggregateSlice(b *testing.B, slicer Aggregate, slice [][]byte) {
+func benchmarkAggregate(b *testing.B, batcher Aggregate, caps []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		slicer.Slice(ctx, slice)
+		batcher.ApplyBatch(ctx, caps)
 	}
 }
 
-func BenchmarkAggregateSlice(b *testing.B) {
+func BenchmarkAggregate(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range aggregateTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkAggregateSlice(b, test.proc, test.test)
+				var caps []config.Capsule
+				for _, t := range test.test {
+					cap.SetData(t)
+					caps = append(caps, cap)
+				}
+
+				benchmarkAggregate(b, test.proc, caps)
 			},
 		)
 	}

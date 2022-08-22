@@ -13,11 +13,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// HTTPInvalidPayload is returned by HTTP.Post when it receives an unexpected payload interface.
+// HTTPInvalidPayload is returned by Post when it receives an unexpected payload interface.
 const HTTPInvalidPayload = errors.Error("HTTPInvalidPayload")
-
-// MaxBytesPerPayload is the maxmimum size of an aggregated HTTP payload. Substation uses a constant max size of 1MB.
-const MaxBytesPerPayload = 1000 * 1000
 
 // Header contains a single HTTP header that can be passed to HTTP.Post. Multiple headers can be passed to HTTP.Post as a slice.
 type Header struct {
@@ -71,7 +68,7 @@ func (h *HTTP) Post(ctx context.Context, url string, payload interface{}, header
 	case string:
 		tmp = []byte(p)
 	default:
-		return nil, fmt.Errorf("http post URL %s: %v", url, err)
+		return nil, fmt.Errorf("http post URL %s: %w", url, HTTPInvalidPayload)
 	}
 
 	req, err := retryablehttp.NewRequest("POST", url, tmp)

@@ -5,8 +5,32 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 )
+
+/*
+Concat processes data by concatenating multiple values together with a separator. The processor supports these patterns:
+	JSON:
+		{"concat":["foo","bar"]} >>> {"concat":"foo.bar"}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "concat",
+		"settings": {
+			"options": {
+				"separator": "."
+			},
+			"input_key": "concat",
+			"output_key": "concat"
+		}
+	}
+*/
+type Concat struct {
+	Options   ConcatOptions    `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
 
 /*
 ConcatOptions contains custom options for the Concat processor:
@@ -17,69 +41,31 @@ type ConcatOptions struct {
 	Separator string `json:"separator"`
 }
 
-/*
-Concat processes data by concatenating multiple values together with a separator. The processor supports these patterns:
-	JSON:
-		{"concat":["foo","bar"]} >>> {"concat":"foo.bar"}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'concat',
-		settings: {
-			options: {
-				separator: '.',
-			},
-			input_key: 'concat',
-			output_key: 'concat',
-		},
-	}
-*/
-type Concat struct {
-	Options   ConcatOptions            `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
-}
-
-// Slice processes a slice of bytes with the Concat processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Concat) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Concat processor. Conditions are optionally applied to the data to enable processing.
+func (p Concat) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Concat processor.
-func (p Concat) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Concat processor.
+func (p Concat) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Separator == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" || p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	if p.InputKey == "" && p.OutputKey == "" {
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// data is processed by retrieving and iterating the
@@ -90,14 +76,18 @@ func (p Concat) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// 	{"concat":["foo","bar","baz"]}
 	// concatenated:
 	// 	{"concat:"foo.bar.baz"}
-	var tmp string
-	value := json.Get(data, p.InputKey)
-	for idx, val := range value.Array() {
-		tmp += val.String()
-		if idx != len(value.Array())-1 {
-			tmp += p.Options.Separator
+	var value string
+	result := cap.Get(p.InputKey)
+	for i, res := range result.Array() {
+		value += res.String()
+		if i != len(result.Array())-1 {
+			value += p.Options.Separator
 		}
 	}
 
-	return json.Set(data, p.OutputKey, tmp)
+	if err := cap.Set(p.OutputKey, value); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
+
+	return cap, nil
 }

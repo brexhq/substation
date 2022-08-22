@@ -5,11 +5,14 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
 )
+
+var dynamodbAPI dynamodb.API
 
 // DynamoDBSinkInvalidJSON is returned when the DynamoDB sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
 const DynamoDBSinkInvalidJSON = errors.Error("DynamoDBSinkInvalidJSON")
@@ -34,13 +37,13 @@ The sink has these settings:
 				}
 			]
 
-The sink uses this Jsonnet configuration:
+When loaded with a factory, the sink uses this JSON configuration:
 	{
-		type: 'dynamodb',
-		settings: {
-			table: 'foo-table',
-			items_key: 'foo',
-		},
+		"type": "dynamodb",
+		"settings": {
+			"table": "foo-table",
+			"items_key": "foo"
+		}
 	}
 */
 type DynamoDB struct {
@@ -48,28 +51,25 @@ type DynamoDB struct {
 	ItemsKey string `json:"items_key"`
 }
 
-var dynamodbAPI dynamodb.API
-
-// Send sinks a channel of bytes with the DynamoDB sink.
-func (sink *DynamoDB) Send(ctx context.Context, ch chan []byte, kill chan struct{}) error {
+// Send sinks a channel of encapsulated data with the DynamoDB sink.
+func (sink *DynamoDB) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
 	if !dynamodbAPI.IsEnabled() {
 		dynamodbAPI.Setup()
 	}
 
 	var count int
-	for data := range ch {
+	for cap := range ch {
 		select {
 		case <-kill:
 			return nil
 		default:
-			if !json.Valid(data) {
+			if !json.Valid(cap.GetData()) {
 				return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, DynamoDBSinkInvalidJSON)
 			}
 
-			items := json.Get(data, sink.ItemsKey).Array()
+			items := cap.Get(sink.ItemsKey).Array()
 			for _, item := range items {
-				var cache map[string]interface{}
-				cache = make(map[string]interface{})
+				cache := make(map[string]interface{})
 				for k, v := range item.Map() {
 					cache[k] = v.Value()
 				}

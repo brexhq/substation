@@ -1,4 +1,4 @@
-local sinklib = import '../../../../config/sink.libsonnet';
+local sinklib = import '../../../../build/config/sink.libsonnet';
 
 {
   // writes objects to this S3 path: substation-example-processed/example/2022/01/01/*

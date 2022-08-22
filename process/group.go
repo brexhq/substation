@@ -5,17 +5,9 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
-
-/*
-GroupOptions contains custom options for the Group processor:
-	Keys (optional):
-		where values from Inputs.Keys are written to, creating new JSON objects
-*/
-type GroupOptions struct {
-	Keys []string `json:"keys"`
-}
 
 /*
 Group processes data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
@@ -23,56 +15,51 @@ Group processes data by grouping JSON arrays into an array of tuples or array of
 		{"group":[["foo","bar"],[111,222]]} >>> {"group":[["foo",111],["bar",222]]}
 		{"group":[["foo","bar"],[111,222]]} >>> {"group":[{"name":foo","size":111},{"name":"bar","size":222}]}
 
-The processor uses this Jsonnet configuration:
+When loaded with a factory, the processor uses this JSON configuration:
 	{
-		type: 'group',
-		settings: {
-			input_key: 'group',
-			output_key: 'group',
-		},
+		"type": "group",
+		"settings": {
+			"input_key": "group",
+			"output_key": "group"
+		}
 	}
 */
 type Group struct {
-	Options   GroupOptions             `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
+	Options   GroupOptions     `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
 }
 
-// Slice processes a slice of bytes with the Group processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Group) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+/*
+GroupOptions contains custom options for the Group processor:
+	Keys (optional):
+		where values from InputKey are written to, creating new JSON objects
+*/
+type GroupOptions struct {
+	Keys []string `json:"keys"`
+}
+
+// ApplyBatch processes a slice of encapsulated data with the Group processor. Conditions are optionally applied to the data to enable processing.
+func (p Group) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Group processor.
-func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Group processor.
+func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON arrays, error early if there are no keys
-	if p.InputKey == "" || p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	if p.InputKey == "" && p.OutputKey == "" {
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	if len(p.Options.Keys) == 0 {
@@ -83,20 +70,24 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 		// 	cache[0][]interface{}{"foo",123}
 		// 	cache[1][]interface{}{"bar",456}
 		cache := make(map[int][]interface{})
-		value := json.Get(data, p.InputKey)
-		for _, v := range value.Array() {
-			for x, v1 := range v.Array() {
-				cache[x] = append(cache[x], v1.Value())
+		result := cap.Get(p.InputKey)
+		for _, res := range result.Array() {
+			for i, r := range res.Array() {
+				cache[i] = append(cache[i], r.Value())
 			}
 		}
 
-		var array []interface{}
+		var value []interface{}
 		for i := 0; i < len(cache); i++ {
-			array = append(array, cache[i])
+			value = append(value, cache[i])
 		}
 
 		// [["foo",123],["bar",456]]
-		return json.Set(data, p.OutputKey, array)
+		if err := cap.Set(p.OutputKey, value); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		}
+
+		return cap, nil
 	}
 
 	// elements in the values array are stored at their
@@ -107,28 +98,33 @@ func (p Group) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	// 	cache[0][]byte(`{"name":"foo","size":123}`)
 	// 	cache[1][]byte(`{"name":"bar","size":456}`)
 	cache := make(map[int][]byte)
+
 	var err error
-	value := json.Get(data, p.InputKey)
-	for x, v := range value.Array() {
-		for x1, v1 := range v.Array() {
-			cache[x1], err = json.Set(cache[x1], p.Options.Keys[x], v1)
+	result := cap.Get(p.InputKey)
+	for i, res := range result.Array() {
+		for j, r := range res.Array() {
+			cache[j], err = json.Set(cache[j], p.Options.Keys[i], r)
 			if err != nil {
-				return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 			}
 		}
 	}
 
 	// inserts pre-formatted JSON into an array based
 	// on the length of the map
-	var tmp []byte
+	var value []byte
 	for i := 0; i < len(cache); i++ {
-		tmp, err = json.Set(tmp, fmt.Sprintf("%d", i), cache[i])
+		value, err = json.Set(value, fmt.Sprintf("%d", i), cache[i])
 		if err != nil {
-			return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 		}
 	}
 
 	// JSON arrays must be set using SetRaw to preserve structure
 	// [{"name":"foo","size":123},{"name":"bar","size":456}]
-	return json.SetRaw(data, p.OutputKey, tmp)
+	if err := cap.SetRaw(p.OutputKey, value); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
+
+	return cap, nil
 }

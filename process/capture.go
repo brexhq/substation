@@ -5,9 +5,38 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/regexp"
 )
+
+/*
+Capture processes data by capturing values using regular expressions. The processor supports these patterns:
+	JSON:
+		{"capture":"foo@qux.com"} >>> {"capture":"foo"}
+		{"capture":"foo@qux.com"} >>> {"capture":["f","o","o"]}
+	data:
+		foo@qux.com >>> foo
+		bar quux >>> {"foo":"bar","qux":"quux"}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "capture",
+		"settings": {
+			"options": {
+				"expression": "^([^@]*)@.*$",
+				"function": "find"
+			},
+			"input_key": "capture",
+			"output_key": "capture"
+		}
+	}
+*/
+type Capture struct {
+	Options   CaptureOptions   `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
 
 /*
 CaptureOptions contains custom options for the Capture processor:
@@ -29,74 +58,31 @@ type CaptureOptions struct {
 	Count      int    `json:"count"`
 }
 
-/*
-Capture processes data by capturing values using regular expressions. The processor supports these patterns:
-	JSON:
-		{"capture":"foo@qux.com"} >>> {"capture":"foo"}
-		{"capture":"foo@qux.com"} >>> {"capture":["f","o","o"]}
-	data:
-		foo@qux.com >>> foo
-		bar quux >>> {"foo":"bar","qux":"quux"}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'capture',
-		settings: {
-			options: {
-				expression: '^([^@]*)@.*$',
-				_function: 'find',
-			},
-			input_key: 'capture',
-			output_key: 'capture',
-		},
-	}
-*/
-type Capture struct {
-	Options   CaptureOptions           `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
-}
-
-// Slice processes a slice of bytes with the Capture processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Capture) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Capture processor. Conditions are optionally applied to the data to enable processing.
+func (p Capture) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Capture processor.
-func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Capture processor.
+func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Expression == "" || p.Options.Function == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	re, err := regexp.Compile(p.Options.Expression)
 	if err != nil {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, err)
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
 	}
 
 	if p.Options.Count == 0 {
@@ -105,22 +91,30 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey)
+		result := cap.Get(p.InputKey).String()
 
 		switch p.Options.Function {
 		case "find":
-			match := re.FindStringSubmatch(value.String())
-			return json.Set(data, p.OutputKey, p.getStringMatch(match))
+			match := re.FindStringSubmatch(result)
+			if err := cap.Set(p.OutputKey, p.getStringMatch(match)); err != nil {
+				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+			}
+
+			return cap, nil
 		case "find_all":
 			var matches []interface{}
 
-			subs := re.FindAllStringSubmatch(value.String(), p.Options.Count)
+			subs := re.FindAllStringSubmatch(result, p.Options.Count)
 			for _, s := range subs {
 				m := p.getStringMatch(s)
 				matches = append(matches, m)
 			}
 
-			return json.Set(data, p.OutputKey, matches)
+			if err := cap.Set(p.OutputKey, matches); err != nil {
+				return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+			}
+
+			return cap, nil
 		}
 	}
 
@@ -128,22 +122,30 @@ func (p Capture) Byte(ctx context.Context, data []byte) ([]byte, error) {
 	if p.InputKey == "" && p.OutputKey == "" {
 		switch p.Options.Function {
 		case "find":
-			match := re.FindSubmatch(data)
-			return match[1], nil
-		case "named_group":
-			names := re.SubexpNames()
+			match := re.FindSubmatch(cap.GetData())
+			cap.SetData(match[1])
 
-			var tmp []byte
-			matches := re.FindSubmatch(data)
+			return cap, nil
+		case "named_group":
+			newCap := config.NewCapsule()
+
+			names := re.SubexpNames()
+			matches := re.FindSubmatch(cap.GetData())
 			for i, m := range matches {
-				tmp, err = json.Set(tmp, names[i], m)
+				if i == 0 {
+					continue
+				}
+
+				if err := newCap.Set(names[i], m); err != nil {
+					return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+				}
 			}
 
-			return tmp, nil
+			return newCap, nil
 		}
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 }
 
 func (p Capture) getStringMatch(match []string) string {

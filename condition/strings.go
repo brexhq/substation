@@ -1,11 +1,12 @@
 package condition
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/json"
 )
 
 // StringsInvalidFunction is returned when the Strings inspector is configured with an invalid function.
@@ -15,10 +16,6 @@ const StringsInvalidFunction = errors.Error("StringsInvalidFunction")
 Strings evaluates data using string functions. This inspector uses the standard library's strings package.
 
 The inspector has these settings:
-	Key (optional):
-		the JSON key-value to retrieve for inspection
-	Expression:
-		the substring expression to use during inspection
 	Function:
 		the string evaluation function to use during inspection
 		must be one of:
@@ -26,40 +23,43 @@ The inspector has these settings:
 			contains
 			endswith
 			startswith
+	Expression:
+		the substring expression to use during inspection
+	Key (optional):
+		the JSON key-value to retrieve for inspection
 	Negate (optional):
 		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
 		defaults to false
 
 The inspector supports these patterns:
-	json:
+	JSON:
 		{"foo":"bar"} == bar
 	data:
 		bar == bar
 
-The inspector uses this Jsonnet configuration:
+When loaded with a factory, the inspector uses this JSON configuration:
 	{
-		type: 'strings',
-		settings: {
-			key: 'foo',
-			expression: 'bar',
-			function: 'endswith',
-		},
+		"type": "strings",
+		"settings": {
+			"function": "endswith",
+			"expression": "bar"
+		}
 	}
 */
 type Strings struct {
-	Key        string `json:"key"`
-	Expression string `json:"expression"`
 	Function   string `json:"function"`
+	Expression string `json:"expression"`
+	Key        string `json:"key"`
 	Negate     bool   `json:"negate"`
 }
 
-// Inspect evaluates data with the Strings inspector.
-func (c Strings) Inspect(data []byte) (output bool, err error) {
+// Inspect evaluates encapsulated data with the Strings inspector.
+func (c Strings) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
-		check = string(data)
+		check = string(cap.GetData())
 	} else {
-		check = json.Get(data, c.Key).String()
+		check = cap.Get(c.Key).String()
 	}
 
 	var matched bool
@@ -75,7 +75,7 @@ func (c Strings) Inspect(data []byte) (output bool, err error) {
 	case "startswith":
 		matched = strings.HasPrefix(check, c.Expression)
 	default:
-		return false, fmt.Errorf("inspector settings %v: %v", c, StringsInvalidFunction)
+		return false, fmt.Errorf("inspector settings %+v: %w", c, StringsInvalidFunction)
 	}
 
 	if c.Negate {

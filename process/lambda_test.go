@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/lambda/lambdaiface"
+	"github.com/brexhq/substation/config"
 	lamb "github.com/brexhq/substation/internal/aws/lambda"
 )
 
@@ -68,9 +69,12 @@ var lambdaTests = []struct {
 
 func TestLambda(t *testing.T) {
 	ctx := context.TODO()
+	cap := config.NewCapsule()
 	for _, test := range lambdaTests {
 		lambdaAPI = test.api
-		res, err := test.proc.Byte(ctx, test.test)
+		cap.SetData(test.test)
+
+		res, err := test.proc.Apply(ctx, cap)
 		if err != nil && errors.Is(err, test.err) {
 			continue
 		} else if err != nil {
@@ -78,26 +82,27 @@ func TestLambda(t *testing.T) {
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res)
+		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
+			t.Logf("expected %s, got %s", test.expected, res.GetData())
 			t.Fail()
 		}
 	}
 }
 
-func benchmarkLambdaByte(b *testing.B, byter Lambda, test []byte) {
+func benchmarkLambda(b *testing.B, applicator Lambda, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		byter.Byte(ctx, test)
+		applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkLambdaByte(b *testing.B) {
+func BenchmarkLambda(b *testing.B) {
+	cap := config.NewCapsule()
 	for _, test := range lambdaTests {
-		lambdaAPI = test.api
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				benchmarkLambdaByte(b, test.proc, test.test)
+				cap.SetData(test.test)
+				benchmarkLambda(b, test.proc, cap)
 			},
 		)
 	}

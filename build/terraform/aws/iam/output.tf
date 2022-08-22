@@ -22,6 +22,10 @@ output "kinesis_write_policy" {
   value = data.aws_iam_policy_document.kinesis_write.json
 }
 
+output "kinesis_firehose_write_policy" {
+  value = data.aws_iam_policy_document.kinesis_firehose_write.json
+}
+
 output "dynamodb_read_policy" {
   value = data.aws_iam_policy_document.dynamodb_read.json
 }
@@ -52,4 +56,12 @@ output "s3_write_policy" {
 
 output "secretsmanager_read_policy" {
   value = data.aws_iam_policy_document.secretsmanager_read.json
+}
+
+output "sqs_read_policy" {
+  value = data.aws_iam_policy_document.sqs_read.json
+}
+
+output "sqs_write_policy" {
+  value = data.aws_iam_policy_document.sqs_write.json
 }

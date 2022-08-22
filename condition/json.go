@@ -1,11 +1,14 @@
 package condition
 
 import (
+	"context"
+
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
 
 /*
-JSONSchema evaluates JSON objects against a schema.
+JSONSchema evaluates JSON objects against a minimal schema parser.
 
 The inspector has these settings:
 	Schema.Key:
@@ -22,24 +25,24 @@ The inspector has these settings:
 		defaults to false
 
 The inspector supports these patterns:
-	json:
-		{"foo":"foo","bar":123} == string,number
+	JSON:
+		{"foo":"bar","baz":123} == string,number
 
-The inspector uses this Jsonnet configuration:
+When loaded with a factory, the inspector uses this JSON configuration:
 	{
-		type: 'json_schema',
-		settings: {
-			schema: [
+		"type": "json_schema",
+		"settings": {
+			"schema": [
 				{
-					key: "foo",
-					type: "string",
+					"key": "foo",
+					"type": "string"
 				},
 				{
-					key: "bar",
-					type: "number",
+					"key": "bar",
+					"type": "number"
 				}
-			],
-		},
+			]
+		}
 	}
 */
 type JSONSchema struct {
@@ -50,17 +53,17 @@ type JSONSchema struct {
 	Negate bool `json:"negate"`
 }
 
-// Inspect evaluates data with the JSONSchema inspector.
-func (c JSONSchema) Inspect(data []byte) (output bool, err error) {
+// Inspect evaluates encapsulated data with the JSONSchema inspector.
+func (c JSONSchema) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	matched := true
 
 	for _, schema := range c.Schema {
-		value := json.Get(data, schema.Key)
-		vtype := json.Types[value.Type]
+		result := cap.Get(schema.Key)
+		rtype := json.Types[result.Type]
 
 		// Null values don't exist in the JSON
 		// 	and cannot be validated
-		if vtype == "Null" {
+		if rtype == "Null" {
 			continue
 		}
 
@@ -69,9 +72,9 @@ func (c JSONSchema) Inspect(data []byte) (output bool, err error) {
 		// 	number OR number array
 		// 	boolean OR boolean array
 		// 	pre-formatted JSON
-		if value.IsArray() && vtype+"/array" != schema.Type {
+		if result.IsArray() && rtype+"/array" != schema.Type {
 			matched = false
-		} else if vtype != schema.Type {
+		} else if rtype != schema.Type {
 			matched = false
 		}
 
@@ -97,22 +100,22 @@ The inspector has these settings:
 		defaults to false
 
 The inspector supports these patterns:
-	json:
-		{"foo":"foo","bar":123} == valid
+	data:
+		{"foo":"bar","baz":123} == valid
 		foo == invalid
 
-The inspector uses this Jsonnet configuration:
+When loaded with a factory, the inspector uses this JSON configuration:
 	{
-		type: 'json_valid',
+		"type": "json_valid"
 	}
 */
 type JSONValid struct {
 	Negate bool `json:"negate"`
 }
 
-// Inspect evaluates data with the JSONValid inspector.
-func (c JSONValid) Inspect(data []byte) (output bool, err error) {
-	matched := json.Valid(data)
+// Inspect evaluates encapsulated data with the JSONValid inspector.
+func (c JSONValid) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
+	matched := json.Valid(cap.GetData())
 
 	if c.Negate {
 		return !matched, nil

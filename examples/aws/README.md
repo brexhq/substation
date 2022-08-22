@@ -15,6 +15,7 @@ graph TD
     s3_source_bucket(S3 Data Storage)
     s3_lake_bucket(Data Lake S3 Storage)
     s3_warehouse_bucket(Data Warehouse S3 Storage)
+    sqs_queue(SQS Queue)
 
     %% Lambda data processing
     dynamodb_lambda[DynamoDB Sink Lambda]
@@ -24,11 +25,13 @@ graph TD
     s3_warehouse_sink_lambda[S3 Sink Lambda]
     s3_source_lambda[S3 Source Lambda]
     s3_lake_sink_lambda[S3 Sink Lambda]
+    sqs_source_lambda[SQS Source Lambda]
 
     %% ingest
     gateway ---|Push| gateway_lambda ---|Push| kinesis_raw
     gateway_kinesis ---|Push| kinesis_raw
     s3_source_bucket ---|Pull| s3_source_lambda ---|Push| kinesis_raw
+    sqs_queue ---|Pull| sqs_source_lambda ---|Push| kinesis_raw
     kinesis_raw ---|Pull| s3_lake_sink_lambda ---|Push| s3_lake_bucket
 
     %% transform
@@ -41,21 +44,20 @@ graph TD
     kinesis_processed ---|Pull| dynamodb_lambda ---|Push| dynamodb_table
 ```
 
-## deployment 
+## Deployment 
 
-### notes
+### Notes
 
-- First time deployments will fail due to missing images in ECR
-  - If this is a first time deployment, then ignore any Terraform errors related to Lambda + ECR invalid source images and work through step 6
-- Lambda are deployed on the [arm64 architecture](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html)
-  - If arm64 isn't preferred, then switch to the x86 architecture by changing the AWS_ARCHITECTURE environment variable and all Terraform Lambda architectures to `x86_64`
-- ECR images are tagged `latest` -- we strongly recommend tagging production images with Substation's version number
-  - `docker tag substation:latest-$AWS_ARCHITECTURE $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation:$(git describe --abbrev=0 --tags)`
-- Large deployments require complex Terraform configurations, so we recommend the following naming convention: `[pipeline name]_[AWS service]_[sink|source|processor]_[short_description].tf`
+* First time deployments will fail due to missing images in ECR
+  + If this is a first time deployment, then ignore any Terraform errors related to Lambda + ECR invalid source images and work through step 6
+* Lambda are deployed on the [arm64 architecture](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html)
+  + If arm64 isn't preferred, then switch to the x86 architecture by changing the AWS_ARCHITECTURE environment variable and all Terraform Lambda architectures to `x86_64`
+* ECR images are tagged `latest` -- we strongly recommend tagging production images with Substation's version number
+  + `docker tag substation:latest-$AWS_ARCHITECTURE $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation:$(git describe --abbrev=0 --tags)`
+* Large deployments require complex Terraform configurations, so we recommend the following naming convention: `[pipeline name]_[AWS service]_[sink|source|processor]_[short_description].tf`
 
-### steps
+### Step 0: Set Environment Variables
 
-0. Set Environment Variables
 ```bash
 export SUBSTATION_ROOT=/path/to/repository
 export AWS_ACCOUNT_ID=[AWS_ACCOUNT_ID]
@@ -65,26 +67,30 @@ export AWS_DEFAULT_REGION=$AWS_REGION
 export AWS_ARCHITECTURE=arm64
 ```
 
-1. Bootstrap the Infrastructure
+### Step 1: Bootstrap the Infrastructure
+
 ```bash
 cd $SUBSTATION_ROOT/examples/aws/terraform && \
 terraform init && \
 terraform apply
 ```
 
-2. Build the Configurations
+### Step 2: Build the Configurations
+
 ```bash
 cd $SUBSTATION_ROOT && \
 sh build/config/compile.sh
 ```
 
-3. Upload the Configurations
+### Step 3: Upload the Configurations
+
 ```bash
 cd $SUBSTATION_ROOT && \
 SUBSTATION_CONFIG_DIRECTORY=examples/aws/ APPCONFIG_APPLICATION_NAME=substation APPCONFIG_ENVIRONMENT=prod APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 build/config/aws/appconfig_upload.py
 ```
 
-4. Build the Containers
+### Step 4: Build the Containers
+
 ```bash
 cd $SUBSTATION_ROOT && \
 sh build/scripts/aws/lambda/get_appconfig_extension.sh && \
@@ -95,7 +101,8 @@ docker tag substation_autoscaling:latest-$AWS_ARCHITECTURE $AWS_ACCOUNT_ID.dkr.e
 docker images
 ```
 
-5. Upload the Containers
+### Step 5: Upload the Containers
+
 ```bash
 cd $SUBSTATION_ROOT && \
 sh build/scripts/aws/ecr_login.sh && \
@@ -103,19 +110,20 @@ docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation:latest 
 docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation_autoscaling:latest
 ```
 
-6. Finish Deploying Infrastructure
+### Step 6: Finish Deploying Infrastructure
+
 ```bash
 cd $SUBSTATION_ROOT/examples/aws/terraform && \
 terraform init && \
 terraform apply
 ```
 
-### testing
+### Testing
 
-- Upload data to the source S3 bucket
-- HTTP POST data to the API Gateways
-- Put records into the raw Kinesis stream
-- Modify configurations and re-run steps 2 + 3
+* Upload data to the source S3 bucket
+* HTTP POST data to the API Gateways
+* Put records into the raw Kinesis stream
+* Modify configurations and re-run steps 2 + 3
 
 ## config
 
@@ -127,18 +135,18 @@ These examples follow the best practices described in [config](/config/).
 
 This file acts as a deployment bootstrap and includes the following:
 
-- creation of a deployment-wide KMS key
-- creation of a deployment-wide AppConfig application with "prod" and "dev" environments
-- creation of an "instant deployment" strategy for AppConfig
-- creation of the AWS Lambda Substation ECR image repository
-- creation of the AWS Lambda autoscaling ECR image repository
+* creation of a deployment-wide KMS key
+* creation of a deployment-wide AppConfig application with "prod" and "dev" environments
+* creation of an "instant deployment" strategy for AppConfig
+* creation of the AWS Lambda Substation ECR image repository
+* creation of the AWS Lambda autoscaling ECR image repository
 
 There are a few things to be aware of when running a fresh deployment:
 
-- Terraform does not manage the build and deployment of container images; after the image repositories are created, then container build and upload should happen externally via Docker (see [build/container](/build/container/) for more information)
-- Terraform does not manage the application configurations; after the AppConfig application is created, then hosted configurations should be compiled and uploaded (see [build/config](/build/config/) for more information)
-  - As a best practice, we recommend using the "prod" environment for production data pipelines and the "dev" environment for development data pipelines
-- "instant deployment" is useful for immediately deploying net-new data pipelines
+* Terraform does not manage the build and deployment of container images; after the image repositories are created, then container build and upload should happen externally via Docker (see [build/container](/build/container/) for more information)
+* Terraform does not manage the application configurations; after the AppConfig application is created, then hosted configurations should be compiled and uploaded (see [build/config](/build/config/) for more information)
+  + As a best practice, we recommend using the "prod" environment for production data pipelines and the "dev" environment for development data pipelines
+* "instant deployment" is useful for immediately deploying net-new data pipelines
 
 ### xray.tf
 
@@ -148,7 +156,7 @@ Read more about AWS X-Ray [here](https://aws.amazon.com/xray/).
 
 ### autoscaling.tf
 
-This file includes everything required to deploy the AWS Lambda autoscaling application (`cmd/aws/lambda/autoscaling`). This is required for any data pipelines that use Kinesis Data Streams.
+This file includes everything required to deploy the AWS Lambda autoscaling application ( `cmd/aws/lambda/autoscaling` ). This is required for any data pipelines that use Kinesis Data Streams.
 
 ### example_appconfig.tf
 

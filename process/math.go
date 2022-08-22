@@ -5,8 +5,32 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 )
+
+/*
+Math processes data by applying mathematic operations. The processor supports these patterns:
+	JSON:
+		{"math":[1,3]} >>> {"math":4}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "math",
+		"settings": {
+			"options": {
+				"operation": "add"
+			},
+			"input_key": "math",
+			"output_key": "math"
+		}
+	}
+*/
+type Math struct {
+	Options   MathOptions      `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
 
 /*
 MathOptions contains custom options for the Math processor:
@@ -22,90 +46,56 @@ type MathOptions struct {
 	Operation string `json:"operation"`
 }
 
-/*
-Math processes data by applying mathematic operations. The processor supports these patterns:
-	JSON:
-		{"math":[1,3]} >>> {"math":4}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'math',
-		settings: {
-			options: {
-				operation: 'add',
-			},
-			input_key: 'math',
-			output_key: 'math',
-		},
-	}
-*/
-type Math struct {
-	Options   MathOptions              `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
-}
-
-// Slice processes a slice of bytes with the Math processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Math) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Math processor. Conditions are optionally applied to the data to enable processing.
+func (p Math) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Math processor.
-func (p Math) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Math processor.
+func (p Math) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Operation == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" || p.OutputKey == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	if p.InputKey == "" && p.OutputKey == "" {
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
-	var tmp int64
-	value := json.Get(data, p.InputKey)
-	for x, v := range value.Array() {
-		if x == 0 {
-			tmp = v.Int()
+	var value int64
+	result := cap.Get(p.InputKey)
+	for i, res := range result.Array() {
+		if i == 0 {
+			value = res.Int()
 			continue
 		}
 
 		switch p.Options.Operation {
 		case "add":
-			tmp += v.Int()
+			value += res.Int()
 		case "subtract":
-			tmp -= v.Int()
+			value -= res.Int()
 		case "multiply":
-			tmp = tmp * v.Int()
+			value = value * res.Int()
 		case "divide":
-			tmp = tmp / v.Int()
+			value = value / res.Int()
 		}
 	}
 
-	return json.Set(data, p.OutputKey, tmp)
+	if err := cap.Set(p.OutputKey, value); err != nil {
+		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+	}
+
+	return cap, nil
 }

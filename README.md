@@ -10,28 +10,28 @@ Substation also provides Go packages for filtering and modifying JSON data.
 
 ## Features
 
-As an event-driven ITL application, Substation has these features:
+As an event-driven ingest, transform, and load application, Substation has these features:
 
-- real-time event filtering and processing
-- cross-dataset event correlation and enrichment
-- concurrent event routing to downstream systems
-- runs on containers, built for extensibility
-  - support for new event filters and processors
-  - support for new ingest sources and load destinations
-  - supports creation of custom applications (e.g., multi-cloud)
+* real-time event filtering and processing
+* cross-dataset event correlation and enrichment
+* concurrent event routing to downstream systems
+* runs on containers, built for extensibility
+  + support for new event filters and processors
+  + support for new ingest sources and load destinations
+  + supports creation of custom applications (e.g., multi-cloud)
 
 As a package, Substation has these features:
 
-- [evaluate and filter JSON objects](condition/)
-- [modify data from, to, and in-place as JSON objects](process/)
+* [evaluate and filter JSON objects](condition/)
+* [modify data from, to, and in-place as JSON objects](process/)
 
 ## Use Cases
 
 Substation was originally designed to support the mission of achieving high quality data for threat hunting, threat detection, and incident response, but it can be used to move data between many distributed systems and services. Here are some example use cases:
 
-- data availability: sink data to an intermediary streaming service such as AWS Kinesis, then concurrently sink it to a data lake, data warehouse, and SIEM
-- data consistency: normalize data across every dataset using a permissive schema such as the [Elastic Common Schema](https://www.elastic.co/guide/en/ecs/current/index.html)
-- data completeness: enrich data by integrating AWS Lambda functions and building self-populating AWS DynamoDB tables for low latency, real-time event context
+* data availability: sink data to an intermediary streaming service such as AWS Kinesis, then concurrently sink it to a data lake, data warehouse, and SIEM
+* data consistency: normalize data across every dataset using a permissive schema such as the [Elastic Common Schema](https://www.elastic.co/guide/en/ecs/current/index.html)
+* data completeness: enrich data by integrating AWS Lambda functions and building self-populating AWS DynamoDB tables for low latency, real-time event context
 
 ## Example Data Pipelines
 
@@ -71,10 +71,9 @@ graph TD
 
 The complexity of a data pipeline, including its features and how it connects with other pipelines, is up to the user. The diagram below shows two complex data pipelines that have these feature:
 
-- both pipelines write unmodified data to intermediary streaming data storage (e.g., AWS Kinesis) to support concurrent consumers and downstream systems
-- both pipelines transform data by enriching it from their own inter-pipeline metadata lookup (e.g., AWS DynamoDB)
-- pipeline Y additionally transforms data by enriching it from pipeline X's metadata lookup
-
+* both pipelines write unmodified data to intermediary streaming data storage (e.g., AWS Kinesis) to support concurrent consumers and downstream systems
+* both pipelines transform data by enriching it from their own inter-pipeline metadata lookup (e.g., AWS DynamoDB)
+* pipeline Y additionally transforms data by enriching it from pipeline X's metadata lookup
 
 ```mermaid
 
@@ -127,7 +126,7 @@ As a toolkit, Substation makes no assumptions about how data pipelines are confi
 
 ## Quickstart
 
-Users can use the steps below to test Substation's functionality. We recommend doing the steps below in a Docker container (we've included [Visual Studio Code configurations](https://code.visualstudio.com/docs/remote/containers) for developing and testing Substation in `.devcontainer/` and `.vscode/`).
+Users can use the steps below to test Substation's functionality. We recommend doing the steps below in a Docker container (we've included [Visual Studio Code configurations](https://code.visualstudio.com/docs/remote/containers) for developing and testing Substation in `.devcontainer/` and `.vscode/` ).
 
 ### Step 0: Set Environment Variable
 
@@ -173,10 +172,10 @@ The [examples/aws](/examples/aws/) directory contains a fully-featured data pipe
 
 More documentation about Substation can be found across the project, including:
 
-- [Configuration Syntax](/config/)
-- [Deploying to AWS](/examples/aws/)
-- [Using Conditions to Evaluate JSON Objects](/condition/)
-- [Using Processors to Modify JSON Objects](/process/)
+* [Configuration Syntax](/config/)
+* [Deploying to AWS](/examples/aws/)
+* [Using Conditions to Evaluate JSON Objects](/condition/)
+* [Using Processors to Modify JSON Objects](/process/)
 
 ## Licensing
 

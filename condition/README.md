@@ -1,8 +1,8 @@
 # condition
 
-Contains interfaces and methods for evaluating data for success or failure criteria. Conditions are a combination of operators (e.g., AND, OR) and inspectors (e.g. string equals "foo", regular expression matches "^foo") that can be used by applications that need to verify data before applying other processing functions. Each inspector defines its own data processing patterns, but there are a set of common patterns shared among most inspector:
-- evaluating JSON values
-- evaluating bytes
+Contains interfaces and methods for evaluating data using success or failure criteria. Conditions combine inspectors (e.g. string equals "foo", string matches "^foo") and an operator (e.g., AND, OR) to verify the state of data before applying other functions. Each inspector defines its own data processing patterns, but there are a set of common patterns shared among most inspectors:
+* evaluating unstructured data
+* evaluating JSON objects
 
 The package can be used like this ([more examples are also available](/examples/condition/)):
 
@@ -17,12 +17,12 @@ import (
 
 func main() {
 	inspector := condition.Strings{
-		Key:        "hello",
-		Expression: "world",
+		Key:        "foo",
 		Function:   "equals",
+		Expression: "bar",
 	}
 
-	data := []byte(`{"hello":"world"}`)
+	data := []byte(`{"foo":"bar"}`)
 	ok, err := inspector.Inspect(data)
 	if err != nil {
 		panic(err)
@@ -36,4 +36,4 @@ func main() {
 }
 ```
 
-Information for each operator and inspector is available in the [GoDoc](https://pkg.go.dev/github.com/brexhq/substation/condition).
+Information for each inspector and operator is available in the [GoDoc](https://pkg.go.dev/github.com/brexhq/substation/condition).

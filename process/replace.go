@@ -7,8 +7,35 @@ import (
 	"strings"
 
 	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/config"
 )
+
+/*
+Replace processes data by replacing characters. The processor supports these patterns:
+	JSON:
+		{"replace":"bar"} >>> {"replace":"baz"}
+	data:
+		bar >>> baz
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "replace",
+		"settings": {
+			"options": {
+				"old": "r",
+				"new": "z"
+			},
+			"input_key": "replace",
+			"output_key": "replace"
+		}
+	}
+*/
+type Replace struct {
+	Options   ReplaceOptions   `json:"options"`
+	Condition condition.Config `json:"condition"`
+	InputKey  string           `json:"input_key"`
+	OutputKey string           `json:"output_key"`
+}
 
 /*
 ReplaceOptions contains custom options for the Replace processor:
@@ -26,67 +53,26 @@ type ReplaceOptions struct {
 	Count int    `json:"count"`
 }
 
-/*
-Replace processes data by replacing characters. The processor supports these patterns:
-	JSON:
-		{"replace":"bar"} >>> {"replace":"baz"}
-	data:
-		bar >>> baz
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'replace',
-		settings: {
-			options: {
-				old: 'r',
-				new: 'z',
-			},
-			input_key: 'replace',
-			output_key: 'replace',
-		},
-	}
-*/
-type Replace struct {
-	Options   ReplaceOptions           `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	InputKey  string                   `json:"input_key"`
-	OutputKey string                   `json:"output_key"`
-}
-
-// Slice processes a slice of bytes with the Replace processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Replace) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
+// ApplyBatch processes a slice of encapsulated data with the Replace processor. Conditions are optionally applied to the data to enable processing.
+func (p Replace) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-		}
-
-		if !ok {
-			slice = append(slice, data)
-			continue
-		}
-
-		processed, err := p.Byte(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("slicer: %v", err)
-		}
-		slice = append(slice, processed)
+	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 	}
 
-	return slice, nil
+	return caps, nil
 }
 
-// Byte processes bytes with the Replace processor.
-func (p Replace) Byte(ctx context.Context, data []byte) ([]byte, error) {
+// Apply processes encapsulated data with the Replace processor.
+func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Old == "" || p.Options.New == "" {
-		return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 	}
 
 	// default to replace all
@@ -96,16 +82,33 @@ func (p Replace) Byte(ctx context.Context, data []byte) ([]byte, error) {
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		value := json.Get(data, p.InputKey).String()
-		rep := strings.Replace(value, p.Options.Old, p.Options.New, p.Options.Count)
-		return json.Set(data, p.OutputKey, rep)
+		result := cap.Get(p.InputKey).String()
+		value := strings.Replace(
+			result,
+			p.Options.Old,
+			p.Options.New,
+			p.Options.Count,
+		)
+
+		if err := cap.Set(p.OutputKey, value); err != nil {
+			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		}
+
+		return cap, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		rep := bytes.Replace(data, []byte(p.Options.Old), []byte(p.Options.New), p.Options.Count)
-		return rep, nil
+		value := bytes.Replace(
+			cap.GetData(),
+			[]byte(p.Options.Old),
+			[]byte(p.Options.New),
+			p.Options.Count,
+		)
+		cap.SetData(value)
+
+		return cap, nil
 	}
 
-	return nil, fmt.Errorf("byter settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
 }

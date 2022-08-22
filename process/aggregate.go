@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/jshlbrd/go-aggregate"
@@ -13,6 +14,47 @@ import (
 
 // AggregateBufferSizeLimit is returned when the aggregate's buffer size limit is reached. If this error occurs, then increase the size of the buffer or use the Drop processor to remove data that exceeds the buffer limit.
 const AggregateBufferSizeLimit = errors.Error("AggregateBufferSizeLimit")
+
+/*
+Aggregate processes data by buffering and aggregating it
+into a single item.
+
+Data is processed by aggregating it into in-memory buffers
+until the configured count or size of the aggregate meets
+a threshold and new data is produced. This supports multiple
+data aggregation patterns:
+
+- concatenate batches of data with a separator value
+
+- store batches of data in a JSON array
+
+- organize nested JSON in a JSON array based on unique keys
+
+The processor supports these patterns:
+	JSON array:
+		foo bar baz qux >>> {"aggregate":["foo","bar","baz","qux"]}
+		{"foo":"bar"} {"baz":"qux"} >>> {"aggregate":[{"foo":"bar"},{"baz":"qux"}]}
+	data:
+		foo bar baz qux >>> foo\nbar\nbaz\qux
+		{"foo":"bar"} {"baz":"qux"} >>> {"foo":"bar"}\n{"baz":"qux"}
+
+When loaded with a factory, the processor uses this JSON configuration:
+	{
+		"type": "aggregate",
+		"settings": {
+			"options": {
+				"max_count": 1000,
+				"max_size": 1000
+			},
+			"output_key": "aggregate.-1"
+		}
+	}
+*/
+type Aggregate struct {
+	Options   AggregateOptions `json:"options"`
+	Condition condition.Config `json:"condition"`
+	OutputKey string           `json:"output_key"`
+}
 
 /*
 AggregateOptions contains custom options settings for the Aggregate processor:
@@ -36,51 +78,8 @@ type AggregateOptions struct {
 	MaxSize      int    `json:"max_size"`
 }
 
-/*
-Aggregate processes data by buffering and aggregating it
-into a single item.
-
-Data is processed by aggregating it into in-memory buffers
-until the configured count or size of the aggregate meets
-a threshold and new data is produced. This supports multiple
-data aggregation patterns:
-	- concatenate batches of data with a separator value
-	- store batches of data in a JSON array
-	- organize nested JSON in a JSON array based on unique keys
-
-The processor supports these patterns:
-	JSON array:
-		foo bar baz qux >>> {"aggregate":["foo","bar","baz","qux"]}
-		{"foo":"bar"} {"baz":"qux"} >>> {"aggregate":[{"foo":"bar"},{"baz":"qux"}]}
-	data:
-		foo bar baz qux >>> foo\nbar\nbaz\qux
-		{"foo":"bar"} {"baz":"qux"} >>> {"foo":"bar"}\n{"baz":"qux"}
-
-The processor uses this Jsonnet configuration:
-	{
-		type: 'aggregate',
-		settings: {
-			options: {
-				max_count: 1000,
-				max_size: 1000,
-			},
-			output_key: 'aggregate.-1',
-		},
-	}
-*/
-type Aggregate struct {
-	Options   AggregateOptions         `json:"options"`
-	Condition condition.OperatorConfig `json:"condition"`
-	OutputKey string                   `json:"output_key"`
-}
-
-// Slice processes a slice of bytes with the Aggregate processor. Conditions are optionally applied on the bytes to enable processing.
-func (p Aggregate) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
-	}
-
+// ApplyBatch processes a slice of encapsulated data with the Aggregate processor. Conditions are optionally applied to the data to enable processing.
+func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	// aggregateKeys is used to return elements stored in the
 	// buffer in order if the aggregate doesn't meet the
 	// configured threshold. any aggregate that meets the
@@ -96,27 +95,33 @@ func (p Aggregate) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 		p.Options.MaxSize = 10000
 	}
 
-	slice := NewSlice(&s)
-	for _, data := range s {
-		ok, err := op.Operate(data)
+	op, err := condition.OperatorFactory(p.Condition)
+	if err != nil {
+		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+	}
+
+	newCaps := newBatch(&caps)
+	for _, cap := range caps {
+		ok, err := op.Operate(ctx, cap)
 		if err != nil {
-			return nil, fmt.Errorf("slicer settings %+v: %w", p, err)
+			return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
 		}
 
 		if !ok {
-			slice = append(slice, data)
+			newCaps = append(newCaps, cap)
 			continue
 		}
 
 		// data that exceeds the size of the buffer will never
 		// fit within it
-		if len(data) > p.Options.MaxSize {
-			return nil, fmt.Errorf("aggregate: size limit %d reached (%d): %w", p.Options.MaxSize, len(data), AggregateBufferSizeLimit)
+		length := len(cap.GetData())
+		if length > p.Options.MaxSize {
+			return nil, fmt.Errorf("aggregate: size limit %d reached (%d): %w", p.Options.MaxSize, length, AggregateBufferSizeLimit)
 		}
 
 		var aggregateKey string
 		if p.Options.AggregateKey != "" {
-			aggregateKey = json.Get(data, p.Options.AggregateKey).String()
+			aggregateKey = cap.Get(p.Options.AggregateKey).String()
 		}
 
 		if _, ok := buffer[aggregateKey]; !ok {
@@ -125,7 +130,7 @@ func (p Aggregate) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 			aggregateKeys = append(aggregateKeys, aggregateKey)
 		}
 
-		ok, err = buffer[aggregateKey].Add(data)
+		ok, err = buffer[aggregateKey].Add(cap.GetData())
 		if err != nil {
 			return nil, fmt.Errorf("aggregate: %v", err)
 		}
@@ -136,31 +141,36 @@ func (p Aggregate) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 			continue
 		}
 
+		newCap := config.NewCapsule()
 		elements := buffer[aggregateKey].Get()
 		if p.OutputKey != "" {
-			var tmp []byte
+			var value []byte
 			for _, element := range elements {
 				var err error
 
-				tmp, err = json.Set(tmp, p.OutputKey, element)
+				value, err = json.Set(value, p.OutputKey, element)
 				if err != nil {
 					return nil, fmt.Errorf("aggregate: %v", err)
 				}
 			}
 
-			slice = append(slice, tmp)
+			newCap.SetData(value)
+			newCaps = append(newCaps, newCap)
 		} else {
-			tmp := bytes.Join(elements, []byte(p.Options.Separator))
-			slice = append(slice, tmp)
+			value := bytes.Join(elements, []byte(p.Options.Separator))
+
+			newCap.SetData(value)
+			newCaps = append(newCaps, newCap)
 		}
 
 		// by this point, addition of the failed data is guaranteed to
 		// succeed after the buffer is reset
 		buffer[aggregateKey].Reset()
-		buffer[aggregateKey].Add(data)
+		buffer[aggregateKey].Add(cap.GetData())
 	}
 
 	// remaining items must be drained from the buffer, otherwise data is lost
+	newCap := config.NewCapsule()
 	for _, key := range aggregateKeys {
 		if buffer[key].Count() == 0 {
 			continue
@@ -168,22 +178,25 @@ func (p Aggregate) Slice(ctx context.Context, s [][]byte) ([][]byte, error) {
 
 		elements := buffer[key].Get()
 		if p.OutputKey != "" {
-			var tmp []byte
+			var value []byte
 			for _, element := range elements {
 				var err error
 
-				tmp, err = json.Set(tmp, p.OutputKey, element)
+				value, err = json.Set(value, p.OutputKey, element)
 				if err != nil {
 					return nil, fmt.Errorf("aggregate: %v", err)
 				}
 			}
 
-			slice = append(slice, tmp)
+			newCap.SetData(value)
+			newCaps = append(newCaps, newCap)
 		} else {
-			tmp := bytes.Join(elements, []byte(p.Options.Separator))
-			slice = append(slice, tmp)
+			value := bytes.Join(elements, []byte(p.Options.Separator))
+
+			newCap.SetData(value)
+			newCaps = append(newCaps, newCap)
 		}
 	}
 
-	return slice, nil
+	return newCaps, nil
 }

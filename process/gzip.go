@@ -9,11 +9,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/errors"
 )
-
-// GzipInvalidDirection is returned when the Gzip processor is configured with an invalid direction.
-const GzipInvalidDirection = errors.Error("GzipInvalidDirection")
 
 /*
 Gzip processes data by compressing or decompressing gzip. The processor supports these patterns:

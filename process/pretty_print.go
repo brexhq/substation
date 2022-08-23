@@ -17,12 +17,11 @@ import (
 )
 
 // used with json.Get, returns a pretty printed root JSON object
-const ppModifier = `@this|@pretty`
-const openCurlyBracket = 123  // {
-const closeCurlyBracket = 125 // }
-
-// PrettyPrintInvalidDirection is returned when the PrettyPrint processor is configured with an invalid direction.
-const PrettyPrintInvalidDirection = errors.Error("PrettyPrintInvalidDirection")
+const (
+	ppModifier        = `@this|@pretty`
+	openCurlyBracket  = 123 // {
+	closeCurlyBracket = 125 // }
+)
 
 /*
 PrettyPrintUnbalancedBrackets is returned when the processor is given input

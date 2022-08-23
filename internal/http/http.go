@@ -68,7 +68,7 @@ func (h *HTTP) Post(ctx context.Context, url string, payload interface{}, header
 	case string:
 		tmp = []byte(p)
 	default:
-		return nil, fmt.Errorf("http post URL %s: %w", url, HTTPInvalidPayload)
+		return nil, fmt.Errorf("http post URL %s: %v", url, HTTPInvalidPayload)
 	}
 
 	req, err := retryablehttp.NewRequest("POST", url, tmp)

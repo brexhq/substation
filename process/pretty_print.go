@@ -155,7 +155,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 			}
 
 		default:
-			return nil, fmt.Errorf("process pretty_print applybatch: direction %s: %w", p.Options.Direction, ProcessorInvalidDirection)
+			return nil, fmt.Errorf("process pretty_print applybatch: direction %s: %v", p.Options.Direction, ProcessorInvalidDirection)
 		}
 	}
 
@@ -189,6 +189,6 @@ func (p PrettyPrint) Apply(ctx context.Context, cap config.Capsule) (config.Caps
 		cap.SetData([]byte(cap.Get(ppModifier).String()))
 		return cap, nil
 	default:
-		return cap, fmt.Errorf("process pretty_print apply: direction %s: %w", p.Options.Direction, ProcessorInvalidDirection)
+		return cap, fmt.Errorf("process pretty_print apply: direction %s: %v", p.Options.Direction, ProcessorInvalidDirection)
 	}
 }

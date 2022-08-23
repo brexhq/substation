@@ -163,7 +163,7 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %w", cfg.Settings, ApplyInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, ApplyInvalidFactoryConfig)
 	}
 }
 
@@ -310,7 +310,7 @@ func BatchApplicatorFactory(cfg config.Config) (BatchApplicator, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %w", cfg.Settings, ApplyBatchInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, ApplyBatchInvalidFactoryConfig)
 	}
 }
 

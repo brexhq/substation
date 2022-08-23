@@ -107,13 +107,13 @@ func (p Domain) domain(s string) (string, error) {
 	case "domain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("domain %s: %w", s, DomainNoSubdomain)
+			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
 		}
 		return domain, nil
 	case "subdomain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("domain %s: %w", s, DomainNoSubdomain)
+			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
 		}
 
 		// subdomain is the input string minus the domain and a leading dot:
@@ -122,7 +122,7 @@ func (p Domain) domain(s string) (string, error) {
 		// subdomain == "foo" ("foo.bar.com" minus ".bar.com")
 		subdomain := strings.Replace(s, "."+domain, "", 1)
 		if subdomain == domain {
-			return "", fmt.Errorf("domain %s: %w", s, DomainNoSubdomain)
+			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
 		}
 		return subdomain, nil
 	default:

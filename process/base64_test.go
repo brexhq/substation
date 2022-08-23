@@ -3,7 +3,6 @@ package process
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -51,57 +50,23 @@ var base64Tests = []struct {
 		[]byte(`{"foo":"bar"}`),
 		nil,
 	},
-	{
-		"invalid settings",
-		Base64{},
-		[]byte{},
-		[]byte{},
-		ProcessorInvalidSettings,
-	},
-	{
-		"invalid direction",
-		Base64{
-			Options: Base64Options{
-				Direction: "foo",
-			},
-			InputKey:  "foo",
-			OutputKey: "foo",
-		},
-		[]byte(`{"foo":"YmFy"}`),
-		[]byte(``),
-		Base64InvalidDirection,
-	},
-	{
-		"JSON binary",
-		Base64{
-			Options: Base64Options{
-				Direction: "from",
-			},
-			InputKey:  "foo",
-			OutputKey: "foo",
-		},
-		[]byte(`{"foo":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
-		[]byte(``),
-		Base64JSONDecodedBinary,
-	},
 }
 
 func TestBase64(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range base64Tests {
 		cap.SetData(test.test)
 
-		res, err := test.proc.Apply(ctx, cap)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
+		result, err := test.proc.Apply(ctx, cap)
+		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res.GetData())
+		if !bytes.Equal(result.GetData(), test.expected) {
+			t.Logf("expected %s, got %s", test.expected, result.GetData())
 			t.Fail()
 		}
 	}

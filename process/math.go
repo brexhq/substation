@@ -50,12 +50,12 @@ type MathOptions struct {
 func (p Math) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process math applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process math applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -65,12 +65,12 @@ func (p Math) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Math) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Operation == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process math apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process math apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
 	}
 
 	var value int64
@@ -94,7 +94,7 @@ func (p Math) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 	}
 
 	if err := cap.Set(p.OutputKey, value); err != nil {
-		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		return cap, fmt.Errorf("process math apply: %v", err)
 	}
 
 	return cap, nil

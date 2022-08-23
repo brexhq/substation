@@ -2,7 +2,6 @@ package process
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -29,6 +28,7 @@ var dropTests = []struct {
 func TestDrop(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range dropTests {
 		var caps []config.Capsule
 		for _, t := range test.test {
@@ -36,15 +36,13 @@ func TestDrop(t *testing.T) {
 			caps = append(caps, cap)
 		}
 
-		res, err := test.proc.ApplyBatch(ctx, caps)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
+		result, err := test.proc.ApplyBatch(ctx, caps)
+		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		length := len(res)
+		length := len(result)
 		if length != 0 {
 			t.Logf("got %d", length)
 			t.Fail()

@@ -58,12 +58,12 @@ type DomainOptions struct {
 func (p Domain) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process domain applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process domain applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -73,7 +73,7 @@ func (p Domain) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process domain apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -82,7 +82,7 @@ func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		value, _ := p.domain(result)
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+			return cap, fmt.Errorf("process domain apply: %v", err)
 		}
 
 		return cap, nil
@@ -96,7 +96,7 @@ func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("process domain apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
 }
 
 func (p Domain) domain(s string) (string, error) {

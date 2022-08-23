@@ -3,7 +3,6 @@ package process
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -39,19 +38,18 @@ var deleteTests = []struct {
 func TestDelete(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range convertTests {
 		cap.SetData(test.test)
 
-		res, err := test.proc.Apply(ctx, cap)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
+		result, err := test.proc.Apply(ctx, cap)
+		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		if !bytes.Equal(res.GetData(), test.expected) {
-			t.Logf("expected %s, got %s", test.expected, res.GetData())
+		if !bytes.Equal(result.GetData(), test.expected) {
+			t.Logf("expected %s, got %s", test.expected, result.GetData())
 			t.Fail()
 		}
 	}

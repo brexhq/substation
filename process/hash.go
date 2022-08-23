@@ -56,12 +56,12 @@ type HashOptions struct {
 func (p Hash) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process hash applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process hash applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -71,7 +71,7 @@ func (p Hash) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Algorithm == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process hash apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -87,11 +87,11 @@ func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 			sum := sha256.Sum256([]byte(result))
 			value = fmt.Sprintf("%x", sum)
 		default:
-			return cap, fmt.Errorf("apply settings %+v: %w", p, HashInvalidAlgorithm)
+			return cap, fmt.Errorf("process hash apply: algorithm %s: %v", p.Options.Algorithm, HashInvalidAlgorithm)
 		}
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+			return cap, fmt.Errorf("process hash apply: %v", err)
 		}
 
 		return cap, nil
@@ -108,12 +108,12 @@ func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 			sum := sha256.Sum256(cap.GetData())
 			value = fmt.Sprintf("%x", sum)
 		default:
-			return cap, fmt.Errorf("apply settings %+v: %w", p, HashInvalidAlgorithm)
+			return cap, fmt.Errorf("process hash apply: algorithm %s: %v", p.Options.Algorithm, HashInvalidAlgorithm)
 		}
 
 		cap.SetData([]byte(value))
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("process hash apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
 }

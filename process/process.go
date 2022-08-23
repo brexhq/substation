@@ -9,8 +9,14 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// ProcessorInvalidSettings is returned when a processor is configured with invalid settings. Common causes include improper input and output settings (e.g., missing keys) and missing required options.
-const ProcessorInvalidSettings = errors.Error("ProcessorInvalidSettings")
+// ProcessorInvalidDataPattern is returned when a processor is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
+const ProcessorInvalidDataPattern = errors.Error("ProcessorIncorrectDataSettings")
+
+// ProcessorInvalidDirection is returned when a processor is configured with an invalid direction setting.
+const ProcessorInvalidDirection = errors.Error("ProcessorInvalidDirection")
+
+// ProcessorMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
+const ProcessorMissingRequiredOptions = errors.Error("ProcessorMissingRequiredOptions")
 
 // ApplyInvalidFactoryConfig is returned when an unsupported Task processor is referenced in Factory.
 const ApplyInvalidFactoryConfig = errors.Error("ApplyInvalidFactoryConfig")

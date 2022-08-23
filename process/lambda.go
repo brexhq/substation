@@ -7,10 +7,14 @@ import (
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/lambda"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
 var lambdaAPI lambda.API
+
+// LambdaInputNotAnObject is returned ...
+const LambdaInputNotAnObject = errors.Error("LambdaInputNotAnObject")
 
 /*
 Lambda processes data by synchronously invoking an AWS Lambda and returning the payload. The average latency of synchronously invoking a Lambda function is 10s of milliseconds, but latency can take 100s to 1000s of milliseconds depending on the function which can have significant impact on total event latency. If Substation is running in AWS Lambda with Kinesis, then this latency can be mitigated by increasing the parallelization factor of the Lambda (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
@@ -57,12 +61,12 @@ type LambdaOptions struct {
 func (p Lambda) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process lambda applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process lambda applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -72,12 +76,12 @@ func (p Lambda) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process lambda apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process lambda apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
 	}
 
 	// lazy load API
@@ -87,17 +91,17 @@ func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 
 	result := cap.Get(p.InputKey)
 	if !result.IsObject() {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process lambda apply: inputkey %s: %v", p.InputKey, LambdaInputNotAnObject)
 	}
 
 	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, []byte(result.Raw))
 	if err != nil {
-		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		return cap, fmt.Errorf("process lambda apply: %v", err)
 	}
 
 	if resp.FunctionError != nil && p.Options.ErrorOnFailure {
 		resErr := json.Get(resp.Payload, "errorMessage").String()
-		return cap, fmt.Errorf("apply settings %+v: %v", p, resErr)
+		return cap, fmt.Errorf("process lambda apply: %v", resErr)
 	}
 
 	if resp.FunctionError != nil {
@@ -105,7 +109,7 @@ func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 	}
 
 	if err := cap.Set(p.OutputKey, resp.Payload); err != nil {
-		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		return cap, fmt.Errorf("process lambda apply: %v", err)
 	}
 
 	return cap, nil

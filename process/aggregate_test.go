@@ -3,7 +3,6 @@ package process
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -170,27 +169,12 @@ var aggregateTests = []struct {
 		},
 		nil,
 	},
-	// results in error AggregateBufferSizeLimit due to MaxSize limit of 1 byte
-	{
-		"buffer size limit",
-		Aggregate{
-			Options: AggregateOptions{
-				Separator: `\n`,
-				MaxSize:   1,
-			},
-		},
-		[][]byte{
-			[]byte(`{"foo":"bar"}`),
-			[]byte(`{"baz":"qux"}`),
-		},
-		[][]byte{},
-		AggregateBufferSizeLimit,
-	},
 }
 
 func TestAggregate(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range aggregateTests {
 		var caps []config.Capsule
 		for _, t := range test.test {
@@ -198,18 +182,16 @@ func TestAggregate(t *testing.T) {
 			caps = append(caps, cap)
 		}
 
-		res, err := test.proc.ApplyBatch(ctx, caps)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
+		result, err := test.proc.ApplyBatch(ctx, caps)
+		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		for i, processed := range res {
+		for i, res := range result {
 			expected := test.expected[i]
-			if c := bytes.Compare(expected, processed.GetData()); c != 0 {
-				t.Logf("expected %s, got %s", expected, string(processed.GetData()))
+			if !bytes.Equal(expected, res.GetData()) {
+				t.Logf("expected %s, got %s", expected, string(res.GetData()))
 				t.Fail()
 			}
 		}

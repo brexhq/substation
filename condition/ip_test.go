@@ -83,9 +83,15 @@ var ipTests = []struct {
 func TestIP(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range ipTests {
 		cap.SetData(test.test)
-		check, _ := test.inspector.Inspect(ctx, cap)
+
+		check, err := test.inspector.Inspect(ctx, cap)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+		}
 
 		if test.expected != check {
 			t.Logf("expected %v, got %v, %v", test.expected, check, string(test.test))

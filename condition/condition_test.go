@@ -94,7 +94,10 @@ var conditionANDTests = []struct {
 func TestAND(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range conditionANDTests {
+		cap.SetData(test.test)
+
 		cfg := Config{
 			Operator:   "and",
 			Inspectors: test.conf,
@@ -106,7 +109,6 @@ func TestAND(t *testing.T) {
 			t.Fail()
 		}
 
-		cap.SetData(test.test)
 		ok, err := op.Operate(ctx, cap)
 		if err != nil {
 			t.Log(err)
@@ -223,7 +225,10 @@ var conditionORTests = []struct {
 func TestOR(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range conditionORTests {
+		cap.SetData(test.test)
+
 		cfg := Config{
 			Operator:   "or",
 			Inspectors: test.conf,
@@ -235,7 +240,6 @@ func TestOR(t *testing.T) {
 			t.Fail()
 		}
 
-		cap.SetData(test.test)
 		ok, err := op.Operate(ctx, cap)
 		if err != nil {
 			t.Log(err)
@@ -324,7 +328,10 @@ var conditionNANDTests = []struct {
 func TestNAND(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range conditionNANDTests {
+		cap.SetData(test.test)
+
 		cfg := Config{
 			Operator:   "nand",
 			Inspectors: test.conf,
@@ -336,7 +343,6 @@ func TestNAND(t *testing.T) {
 			t.Fail()
 		}
 
-		cap.SetData(test.test)
 		ok, err := op.Operate(ctx, cap)
 		if err != nil {
 			t.Log(err)
@@ -425,7 +431,10 @@ var conditionNORTests = []struct {
 func TestNOR(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range conditionNORTests {
+		cap.SetData(test.test)
+
 		cfg := Config{
 			Operator:   "nor",
 			Inspectors: test.conf,
@@ -437,7 +446,6 @@ func TestNOR(t *testing.T) {
 			t.Fail()
 		}
 
-		cap.SetData(test.test)
 		ok, err := op.Operate(ctx, cap)
 		if err != nil {
 			t.Log(err)

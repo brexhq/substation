@@ -3,7 +3,6 @@ package process
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -32,6 +31,7 @@ var countTests = []struct {
 func TestCount(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range countTests {
 		var caps []config.Capsule
 		for _, t := range test.test {
@@ -39,15 +39,13 @@ func TestCount(t *testing.T) {
 			caps = append(caps, cap)
 		}
 
-		res, err := test.proc.ApplyBatch(ctx, caps)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
+		result, err := test.proc.ApplyBatch(ctx, caps)
+		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		count := res[0].GetData()
+		count := result[0].GetData()
 		if !bytes.Equal(count, test.expected) {
 			t.Logf("expected %s, got %s", test.expected, count)
 			t.Fail()

@@ -3,7 +3,6 @@ package process
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -38,31 +37,23 @@ var gzipTests = []struct {
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0},
 		nil,
 	},
-	{
-		"missing required options",
-		Gzip{},
-		[]byte{},
-		[]byte{},
-		ProcessorInvalidSettings,
-	},
 }
 
 func TestGzip(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range gzipTests {
 		cap.SetData(test.test)
 
-		res, err := test.proc.Apply(ctx, cap)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
+		result, err := test.proc.Apply(ctx, cap)
+		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res.GetData())
+		if !bytes.Equal(result.GetData(), test.expected) {
+			t.Logf("expected %s, got %s", test.expected, result.GetData())
 			t.Fail()
 		}
 	}

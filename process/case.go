@@ -59,12 +59,12 @@ type CaseOptions struct {
 func (p Case) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process case applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process case applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -74,7 +74,7 @@ func (p Case) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Case == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process case apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -90,11 +90,11 @@ func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		case "snake":
 			value = strcase.ToSnake(result)
 		default:
-			return cap, fmt.Errorf("apply settings %+v: %w", p, CaseInvalidCase)
+			return cap, fmt.Errorf("process case apply: case %s: %v", p.Options.Case, CaseInvalidCase)
 		}
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+			return cap, fmt.Errorf("process case apply: %v", err)
 		}
 
 		return cap, nil
@@ -109,12 +109,12 @@ func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		case "lower":
 			value = bytes.ToLower(cap.GetData())
 		default:
-			return cap, fmt.Errorf("apply settings %+v: %w", p, CaseInvalidCase)
+			return cap, fmt.Errorf("process case apply: case %s: %v", p.Options.Case, CaseInvalidCase)
 		}
 
 		cap.SetData(value)
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("process case apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
 }

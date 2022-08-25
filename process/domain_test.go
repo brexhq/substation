@@ -3,7 +3,6 @@ package process
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -80,31 +79,23 @@ var domainTests = []struct {
 		[]byte(`www`),
 		nil,
 	},
-	{
-		"invalid settings",
-		Domain{},
-		[]byte{},
-		[]byte{},
-		ProcessorInvalidSettings,
-	},
 }
 
 func TestDomain(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range domainTests {
 		cap.SetData(test.test)
 
-		res, err := test.proc.Apply(ctx, cap)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
+		result, err := test.proc.Apply(ctx, cap)
+		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res.GetData())
+		if !bytes.Equal(result.GetData(), test.expected) {
+			t.Logf("expected %s, got %s", test.expected, result.GetData())
 			t.Fail()
 		}
 	}

@@ -42,12 +42,12 @@ type FlattenOptions struct {
 func (p Flatten) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process flatten applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process flatten applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -57,7 +57,7 @@ func (p Flatten) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]confi
 func (p Flatten) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process flatten apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
 	}
 
 	var value interface{}
@@ -68,7 +68,7 @@ func (p Flatten) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 	}
 
 	if err := cap.Set(p.OutputKey, value); err != nil {
-		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		return cap, fmt.Errorf("process flatten apply: %v", err)
 	}
 
 	return cap, nil

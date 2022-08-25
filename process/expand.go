@@ -31,19 +31,19 @@ type Expand struct {
 func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	// only supports JSON, error early if there is no input key
 	if p.InputKey == "" {
-		return nil, fmt.Errorf("applybatch settings %+v: %w", p, ProcessorInvalidSettings)
+		return nil, fmt.Errorf("process expand applybatch: inputkey %s: %v", p.InputKey, ProcessorInvalidDataPattern)
 	}
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process expand applybatch: %v", err)
 	}
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(ctx, cap)
 		if err != nil {
-			return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+			return nil, fmt.Errorf("process expand applybatch: %v", err)
 		}
 
 		if !ok {
@@ -76,7 +76,7 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 
 				expand, err = json.Set(expand, key, val)
 				if err != nil {
-					return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+					return nil, fmt.Errorf("process expand applybatch: %v", err)
 				}
 			}
 

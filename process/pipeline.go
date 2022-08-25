@@ -68,12 +68,12 @@ type PipelineOptions struct {
 func (p Pipeline) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process pipeline applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process pipeline applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -95,13 +95,13 @@ can encapsulate the Pipeline processor).
 func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	applicators, err := MakeApplicators(p.Options.Processors)
 	if err != nil {
-		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		return cap, fmt.Errorf("process pipeline apply: processors %+v: %v", p.Options.Processors, err)
 	}
 
 	if p.InputKey != "" && p.OutputKey != "" {
 		result := cap.Get(p.InputKey)
 		if result.IsArray() {
-			return cap, fmt.Errorf("apply settings %+v: %w", p, PipelineArrayInput)
+			return cap, fmt.Errorf("process pipeline apply: inputkey %s: %v", p.InputKey, PipelineArrayInput)
 		}
 
 		newCap := config.NewCapsule()
@@ -109,11 +109,11 @@ func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 
 		newCap, err = Apply(ctx, newCap, applicators...)
 		if err != nil {
-			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+			return cap, fmt.Errorf("process pipeline apply: %v", err)
 		}
 
 		if err := cap.Set(p.OutputKey, newCap.GetData()); err != nil {
-			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+			return cap, fmt.Errorf("process pipeline apply: %v", err)
 		}
 
 		return cap, nil
@@ -123,11 +123,11 @@ func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 	if p.InputKey == "" && p.OutputKey == "" {
 		tmp, err := Apply(ctx, cap, applicators...)
 		if err != nil {
-			return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+			return cap, fmt.Errorf("process pipeline apply: %v", err)
 		}
 
 		return tmp, nil
 	}
 
-	return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+	return cap, fmt.Errorf("process pipeline apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
 }

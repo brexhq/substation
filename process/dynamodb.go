@@ -9,10 +9,17 @@ import (
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
 var dynamodbAPI dynamodb.API
+
+// DynamoDBInputNotAnObject is returned ...
+const DynamoDBInputNotAnObject = errors.Error("DynamoDBInputNotAnObject")
+
+// DynamoDBInputMissingPK is returned ...
+const DynamoDBInputMissingPK = errors.Error("DynamoDBInputMissingPK")
 
 /*
 DynamoDB processes data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The processor supports these patterns:
@@ -67,12 +74,12 @@ type DynamoDBOptions struct {
 func (p DynamoDB) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process dynamodb applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process dynamodb applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -82,7 +89,12 @@ func (p DynamoDB) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]conf
 func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process dynamodb apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+	}
+
+	// only supports JSON, error early if there are no keys
+	if p.InputKey == "" && p.OutputKey == "" {
+		return cap, fmt.Errorf("process dynamodb apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
 	}
 
 	// lazy load API
@@ -90,20 +102,15 @@ func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 		dynamodbAPI.Setup()
 	}
 
-	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
-	}
-
 	result := cap.Get(p.InputKey)
 	if !result.IsObject() {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process dynamodb apply: inputkey %s: %v", p.InputKey, DynamoDBInputNotAnObject)
 	}
 
 	// PK is a required field
 	pk := json.Get([]byte(result.Raw), "PK").String()
 	if pk == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process dynamodb apply: inputkey %s: %v", p.InputKey, DynamoDBInputMissingPK)
 	}
 
 	// SK is an optional field
@@ -111,7 +118,7 @@ func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 
 	value, err := p.dynamodb(ctx, pk, sk)
 	if err != nil {
-		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		return cap, fmt.Errorf("process dynamodb apply: %v", err)
 	}
 
 	// no match
@@ -120,7 +127,7 @@ func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 	}
 
 	if err := cap.Set(p.OutputKey, value); err != nil {
-		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		return cap, fmt.Errorf("process dynamodb apply: %v", err)
 	}
 
 	return cap, nil

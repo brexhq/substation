@@ -109,11 +109,11 @@ var capsuleDeleteTests = []struct {
 }
 
 func TestCapsuleDelete(t *testing.T) {
+	cap := NewCapsule()
 	for _, test := range capsuleDeleteTests {
-		cap := NewCapsule()
 		cap.SetData(test.data).SetMetadata(test.metadata)
-
 		cap.Delete(test.key)
+
 		if !bytes.Equal(cap.GetData(), test.dataExpected) &&
 			!bytes.Equal(cap.GetMetadata(), test.metadataExpected) {
 			t.Logf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, cap.GetData(), cap.GetMetadata())
@@ -129,10 +129,10 @@ func benchmarkTestCapsuleDelete(b *testing.B, key string, cap Capsule) {
 }
 
 func BenchmarkTestCapsuleDelete(b *testing.B) {
+	cap := NewCapsule()
 	for _, test := range capsuleSetTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := NewCapsule()
 				cap.SetData(test.data).SetMetadata(test.metadata)
 				benchmarkTestCapsuleDelete(b, test.key, cap)
 			},
@@ -190,8 +190,8 @@ var capsuleGetTests = []struct {
 }
 
 func TestCapsuleGet(t *testing.T) {
+	cap := NewCapsule()
 	for _, test := range capsuleGetTests {
-		cap := NewCapsule()
 		cap.SetData(test.data).SetMetadata(test.metadata)
 
 		result := cap.Get(test.key).String()
@@ -209,10 +209,10 @@ func benchmarkTestCapsuleGet(b *testing.B, key string, cap Capsule) {
 }
 
 func BenchmarkTestCapsuleGet(b *testing.B) {
+	cap := NewCapsule()
 	for _, test := range capsuleGetTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := NewCapsule()
 				cap.SetData(test.data).SetMetadata(test.metadata)
 				benchmarkTestCapsuleGet(b, test.key, cap)
 			},
@@ -288,10 +288,10 @@ func benchmarkTestCapsuleSet(b *testing.B, key string, val interface{}, cap Caps
 }
 
 func BenchmarkTestCapsuleSet(b *testing.B) {
+	cap := NewCapsule()
 	for _, test := range capsuleSetTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := NewCapsule()
 				cap.SetData(test.data).SetMetadata(test.metadata)
 				benchmarkTestCapsuleSet(b, test.key, test.value, cap)
 			},
@@ -347,11 +347,11 @@ var capsuleSetRawTests = []struct {
 }
 
 func TestCapsuleSetRaw(t *testing.T) {
+	cap := NewCapsule()
 	for _, test := range capsuleSetRawTests {
-		cap := NewCapsule()
 		cap.SetData(test.data).SetMetadata(test.metadata)
-
 		cap.Set(test.key, test.value)
+
 		if !bytes.Equal(cap.GetData(), test.dataExpected) &&
 			!bytes.Equal(cap.GetMetadata(), test.metadataExpected) {
 			t.Logf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, cap.GetData(), cap.GetMetadata())
@@ -367,10 +367,10 @@ func benchmarkTestCapsuleSetRaw(b *testing.B, key string, val interface{}, cap C
 }
 
 func BenchmarkTestCapsuleSetRaw(b *testing.B) {
+	cap := NewCapsule()
 	for _, test := range capsuleSetRawTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := NewCapsule()
 				cap.SetData(test.data).SetMetadata(test.metadata)
 				benchmarkTestCapsuleSetRaw(b, test.key, test.value, cap)
 			},
@@ -400,8 +400,8 @@ var capsuleSetDataTests = []struct {
 }
 
 func TestCapsuleSetData(t *testing.T) {
+	cap := NewCapsule()
 	for _, test := range capsuleSetDataTests {
-		cap := NewCapsule()
 		cap.SetData(test.data)
 
 		if !bytes.Equal(cap.GetData(), test.expected) {
@@ -418,10 +418,10 @@ func benchmarkTestCapsuleSetData(b *testing.B, val []byte, cap Capsule) {
 }
 
 func BenchmarkTestCapsuleSetData(b *testing.B) {
+	cap := NewCapsule()
 	for _, test := range capsuleSetDataTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := NewCapsule()
 				benchmarkTestCapsuleSetData(b, test.data, cap)
 			},
 		)
@@ -455,8 +455,8 @@ var capsuleSetMetadataTests = []struct {
 }
 
 func TestCapsuleSetMetadata(t *testing.T) {
+	cap := NewCapsule()
 	for _, test := range capsuleSetMetadataTests {
-		cap := NewCapsule()
 		cap.SetMetadata(test.metadata)
 
 		if !bytes.Equal(cap.GetMetadata(), test.expected) {
@@ -473,10 +473,10 @@ func benchmarkTestCapsuleSetMetadata(b *testing.B, val interface{}, cap Capsule)
 }
 
 func BenchmarkTestCapsuleSetMetadata(b *testing.B) {
+	cap := NewCapsule()
 	for _, test := range capsuleSetMetadataTests {
 		b.Run(string(test.name),
 			func(b *testing.B) {
-				cap := NewCapsule()
 				benchmarkTestCapsuleSetMetadata(b, test.metadata, cap)
 			},
 		)

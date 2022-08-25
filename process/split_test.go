@@ -3,7 +3,6 @@ package process
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -29,38 +28,23 @@ var splitTests = []struct {
 		[]byte(`{"split":["foo","bar"]}`),
 		nil,
 	},
-	// the test case below is invalid because the Byter
-	// cannot split a single item into multiple items
-	{
-		"invalid settings",
-		Split{
-			Options: SplitOptions{
-				Separator: ".",
-			},
-		},
-		[]byte(`foo.bar`),
-		[]byte{},
-		ProcessorInvalidSettings,
-	},
 }
 
 func TestSplit(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range splitTests {
 		cap.SetData(test.test)
 
-		res, err := test.proc.Apply(ctx, cap)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
+		result, err := test.proc.Apply(ctx, cap)
+		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		expected := test.expected
-		if c := bytes.Compare(expected, res.GetData()); c != 0 {
-			t.Logf("expected %s, got %s", expected, string(res.GetData()))
+		if !bytes.Equal(result.GetData(), test.expected) {
+			t.Logf("expected %s, got %s", test.expected, result.GetData())
 			t.Fail()
 		}
 	}
@@ -109,18 +93,6 @@ var splitBatchTests = []struct {
 		},
 		nil,
 	},
-	{
-		"invalid settings",
-		Split{
-			InputKey: "split",
-			Options: SplitOptions{
-				Separator: ".",
-			},
-		},
-		[][]byte{},
-		[][]byte{},
-		ProcessorInvalidSettings,
-	},
 }
 
 func TestSplitBatch(t *testing.T) {
@@ -133,18 +105,16 @@ func TestSplitBatch(t *testing.T) {
 			caps = append(caps, cap)
 		}
 
-		res, err := test.proc.ApplyBatch(ctx, caps)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
+		result, err := test.proc.ApplyBatch(ctx, caps)
+		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		for i, r := range res {
+		for i, res := range result {
 			expected := test.expected[i]
-			if c := bytes.Compare(expected, r.GetData()); c != 0 {
-				t.Logf("expected %s, got %s", expected, string(r.GetData()))
+			if !bytes.Equal(expected, res.GetData()) {
+				t.Logf("expected %s, got %s", expected, string(res.GetData()))
 				t.Fail()
 			}
 		}

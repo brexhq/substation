@@ -103,7 +103,7 @@ func (c Length) match(length int) (bool, error) {
 			matched = true
 		}
 	default:
-		return false, fmt.Errorf("inspector settings %+v: %w", c, LengthInvalidFunction)
+		return false, fmt.Errorf("condition length: function %s: %v", c.Function, LengthInvalidFunction)
 	}
 
 	if c.Negate {

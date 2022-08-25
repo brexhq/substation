@@ -3,7 +3,6 @@ package process
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -39,35 +38,27 @@ var expandTests = []struct {
 		},
 		nil,
 	},
-	{
-		"invalid settings",
-		Expand{},
-		[]byte{},
-		[][]byte{},
-		ProcessorInvalidSettings,
-	},
 }
 
 func TestExpand(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range expandTests {
 		slice := make([]config.Capsule, 1)
 		cap.SetData(test.test)
 		slice[0] = cap
 
-		res, err := test.proc.ApplyBatch(ctx, slice)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
+		result, err := test.proc.ApplyBatch(ctx, slice)
+		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		for i, processed := range res {
+		for i, res := range result {
 			expected := test.expected[i]
-			if c := bytes.Compare(expected, processed.GetData()); c != 0 {
-				t.Logf("expected %s, got %s", expected, processed)
+			if !bytes.Equal(expected, res.GetData()) {
+				t.Logf("expected %s, got %s", expected, res)
 				t.Fail()
 			}
 		}

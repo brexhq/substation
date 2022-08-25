@@ -3,7 +3,6 @@ package process
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -77,31 +76,23 @@ var hashTests = []struct {
 		[]byte(`2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae`),
 		nil,
 	},
-	{
-		"invalid settings",
-		Hash{},
-		[]byte{},
-		[]byte{},
-		ProcessorInvalidSettings,
-	},
 }
 
 func TestHash(t *testing.T) {
 	ctx := context.TODO()
 	cap := config.NewCapsule()
+
 	for _, test := range hashTests {
 		cap.SetData(test.test)
 
-		res, err := test.proc.Apply(ctx, cap)
-		if err != nil && errors.Is(err, test.err) {
-			continue
-		} else if err != nil {
+		result, err := test.proc.Apply(ctx, cap)
+		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		if c := bytes.Compare(res.GetData(), test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, res.GetData())
+		if !bytes.Equal(result.GetData(), test.expected) {
+			t.Logf("expected %s, got %s", test.expected, result.GetData())
 			t.Fail()
 		}
 	}

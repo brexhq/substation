@@ -6,11 +6,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/errors"
 )
-
-// DeleteInvalidSettings is returned when the Copy processor is configured with invalid Input and Output settings.
-const DeleteInvalidSettings = errors.Error("DeleteInvalidSettings")
 
 /*
 Delete processes data by deleting JSON keys. The processor supports these patterns:
@@ -34,12 +30,12 @@ type Delete struct {
 func (p Delete) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process delete applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("applybatch settings %+v: %v", p, err)
+		return nil, fmt.Errorf("process delete applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -50,11 +46,11 @@ func (p Delete) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Delete) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" {
-		return cap, fmt.Errorf("apply settings %+v: %w", p, ProcessorInvalidSettings)
+		return cap, fmt.Errorf("process delete apply: inputkey %s: %v", p.InputKey, ProcessorInvalidDataPattern)
 	}
 
 	if err := cap.Delete(p.InputKey); err != nil {
-		return cap, fmt.Errorf("apply settings %+v: %v", p, err)
+		return cap, fmt.Errorf("process delete apply: %v", err)
 	}
 
 	return cap, nil

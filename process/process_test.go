@@ -140,14 +140,14 @@ func TestApply(t *testing.T) {
 			t.Fail()
 		}
 
-		processed, err := Apply(ctx, cap, applicators...)
+		result, err := Apply(ctx, cap, applicators...)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		if c := bytes.Compare(processed.GetData(), test.expected); c != 0 {
-			t.Logf("expected %v, got %v", test.expected, processed)
+		if !bytes.Equal(result.GetData(), test.expected) {
+			t.Logf("expected %v, got %v", test.expected, result)
 			t.Fail()
 		}
 	}
@@ -166,14 +166,14 @@ func TestApplicatorFactory(t *testing.T) {
 			t.Fail()
 		}
 
-		processed, err := applicator.Apply(ctx, cap)
+		result, err := applicator.Apply(ctx, cap)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		if c := bytes.Compare(processed.GetData(), test.expected); c != 0 {
-			t.Logf("expected %v, got %v", test.expected, processed)
+		if !bytes.Equal(result.GetData(), test.expected) {
+			t.Logf("expected %v, got %v", test.expected, result)
 			t.Fail()
 		}
 	}
@@ -194,14 +194,14 @@ func TestApplyBatch(t *testing.T) {
 			t.Fail()
 		}
 
-		processed, err := ApplyBatch(ctx, batch, applicators...)
+		result, err := ApplyBatch(ctx, batch, applicators...)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		if c := bytes.Compare(processed[0].GetData(), test.expected); c != 0 {
-			t.Logf("expected %v, got %v", test.expected, processed)
+		if !bytes.Equal(result[0].GetData(), test.expected) {
+			t.Logf("expected %v, got %v", test.expected, result)
 			t.Fail()
 		}
 	}
@@ -223,14 +223,14 @@ func TestBatchApplicatorFactory(t *testing.T) {
 			t.Fail()
 		}
 
-		processed, err := applicator.ApplyBatch(ctx, batch)
+		result, err := applicator.ApplyBatch(ctx, batch)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 
-		if c := bytes.Compare(processed[0].GetData(), test.expected); c != 0 {
-			t.Logf("expected %v, got %v", test.expected, processed)
+		if !bytes.Equal(result[0].GetData(), test.expected) {
+			t.Logf("expected %v, got %v", test.expected, result)
 			t.Fail()
 		}
 	}

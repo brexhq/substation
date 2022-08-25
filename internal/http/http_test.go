@@ -25,10 +25,6 @@ func TestPost(t *testing.T) {
 			payload:  []byte("test"),
 			expected: nil,
 		},
-		{
-			payload:  1337,
-			expected: HTTPInvalidPayload,
-		},
 	}
 
 	serv := httptest.NewServer(

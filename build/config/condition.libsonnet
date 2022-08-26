@@ -33,6 +33,11 @@
       settings: { key: key, type: 'unspecified', negate: negate },
     },
   },
+  json: {
+    valid(): {
+      type: 'json_valid',
+    },
+  },
   length: {
     equals(key, value, type='byte', negate=false): {
       type: 'length',
@@ -46,6 +51,9 @@
       type: 'length',
       settings: { key: key, value: value, type: type, 'function': 'lessthan', negate: negate },
     },
+  },
+  random: {
+    type: 'random',
   },
   regexp(key, expression, negate=false): {
     type: 'regexp',

@@ -70,6 +70,10 @@ func InspectorFactory(cfg config.Config) (Inspector, error) {
 		var i Length
 		config.Decode(cfg.Settings, &i)
 		return i, nil
+	case "random":
+		var i Random
+		config.Decode(cfg.Settings, &i)
+		return i, nil
 	case "regexp":
 		var i RegExp
 		config.Decode(cfg.Settings, &i)

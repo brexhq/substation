@@ -34,7 +34,7 @@
     },
   },
   json: {
-    valid(): {
+    valid: {
       type: 'json_valid',
     },
   },

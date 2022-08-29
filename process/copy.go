@@ -3,7 +3,6 @@ package process
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
@@ -63,28 +62,13 @@ func (p Copy) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 	if p.InputKey != "" && p.OutputKey == "" {
 		result := cap.Get(p.InputKey).String()
 
-		// metadata requires special handling
-		if strings.HasPrefix(p.InputKey, "!metadata") {
-			cap.SetMetadata([]byte(result))
-			return cap, nil
-		}
-
 		cap.SetData([]byte(result))
 		return cap, nil
 	}
 
 	// to JSON processing
 	if p.InputKey == "" && p.OutputKey != "" {
-		var value []byte
-
-		// metadata requires special handling
-		if strings.HasPrefix(p.OutputKey, "!metadata") {
-			value = cap.GetMetadata()
-		} else {
-			value = cap.GetData()
-		}
-
-		if err := cap.Set(p.OutputKey, value); err != nil {
+		if err := cap.Set(p.OutputKey, cap.GetData()); err != nil {
 			return cap, fmt.Errorf("process copy apply: %v", err)
 		}
 

@@ -155,10 +155,6 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 		}
 
 		for _, record := range deaggregated {
-			if len(record.Data) == 0 {
-				continue
-			}
-
 			cap := config.NewCapsule()
 			cap.SetData(record.Data)
 			cap.SetMetadata(kinesisMetadata{
@@ -187,9 +183,9 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 
 type s3Metadata struct {
 	EventSource string `json:"event_source"`
-	Bucket      string `json:"bucket_name"`
-	Key         string `json:"object_key"`
-	Size        int64  `json:"object_size"`
+	Bucket      string `json:"bucket"`
+	Key         string `json:"key"`
+	Size        int64  `json:"size"`
 }
 
 func s3Handler(ctx context.Context, event events.S3Event) error {
@@ -243,12 +239,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			})
 
 			for scanner.Scan() {
-				data := scanner.Bytes()
-				if len(data) == 0 {
-					continue
-				}
-
-				cap.SetData(data)
+				cap.SetData([]byte(scanner.Text()))
 				sub.SendTransform(cap)
 			}
 		}
@@ -326,12 +317,7 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 				})
 
 				for scanner.Scan() {
-					data := scanner.Bytes()
-					if len(data) == 0 {
-						continue
-					}
-
-					cap.SetData(data)
+					cap.SetData([]byte(scanner.Text()))
 					sub.SendTransform(cap)
 				}
 			}

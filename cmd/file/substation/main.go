@@ -91,6 +91,13 @@ func file(ctx context.Context, filename string) error {
 		})
 
 		scanner := bufio.NewScanner(fileHandle)
+
+		// ensures that files containing a single line can fit
+		// within the scanner
+		s := int(float64(fi.Size()) * 1.1)
+		buf := make([]byte, s)
+		scanner.Buffer(buf, s)
+
 		for scanner.Scan() {
 			cap.SetData([]byte(scanner.Text()))
 			sub.SendTransform(cap)

@@ -18,8 +18,6 @@ import (
 	"github.com/aws/aws-xray-sdk-go/xray"
 )
 
-const scannerMaxCapacity = 1024 * 1024 * 100
-
 // NewS3 returns a configured S3 client.
 func NewS3() *s3.S3 {
 	conf := aws.NewConfig()
@@ -100,8 +98,15 @@ func (a *DownloaderAPI) DownloadAsScanner(ctx aws.Context, bucket, key string) (
 		return nil, fmt.Errorf("decode bucket %s key %s: %v", bucket, key, err)
 	}
 
-	s := createScanner(decoded)
-	return s, nil
+	scanner := bufio.NewScanner(decoded)
+
+	// ensures that files containing a single line can fit
+	// within the scanner
+	s := int(float64(size) * 1.1)
+	b := make([]byte, s)
+	scanner.Buffer(b, s)
+
+	return scanner, nil
 }
 
 // decode converts bytes into a decoded io.Reader.
@@ -116,14 +121,6 @@ func decode(buf []byte, contentType string) (io.Reader, error) {
 	default:
 		return bytes.NewBuffer(buf), nil
 	}
-}
-
-// createScanner creates a bufio.Scanner from an io.Reader.
-func createScanner(content io.Reader) *bufio.Scanner {
-	scanner := bufio.NewScanner(content)
-	b := make([]byte, scannerMaxCapacity)
-	scanner.Buffer(b, scannerMaxCapacity)
-	return scanner
 }
 
 // NewS3Uploader returns a configured Uploader client.

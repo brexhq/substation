@@ -90,13 +90,9 @@ func file(ctx context.Context, filename string) error {
 			fi.ModTime(),
 		})
 
+		// a scanner token can be up to 100MB
 		scanner := bufio.NewScanner(fileHandle)
-
-		// ensures that files containing a single line can fit
-		// within the scanner
-		s := int(float64(fi.Size()) * 1.1)
-		buf := make([]byte, s)
-		scanner.Buffer(buf, s)
+		scanner.Buffer([]byte{}, 100*1024*1024)
 
 		for scanner.Scan() {
 			cap.SetData([]byte(scanner.Text()))

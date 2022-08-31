@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.0](https://github.com/brexhq/substation/compare/v0.3.0...v0.4.0) (2022-08-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* Encapsulation (#15)
+
+### Features
+
+* Add Random Condition ([#18](https://github.com/brexhq/substation/issues/18)) ([302f24a](https://github.com/brexhq/substation/commit/302f24aae56f8f7ed8d7aee1f16ef6a335dee1a2))
+* Data Aggregation ([#10](https://github.com/brexhq/substation/issues/10)) ([6cab3f7](https://github.com/brexhq/substation/commit/6cab3f75862d5a299a2aaa33d00f82c42283b895))
+* Encapsulation ([#15](https://github.com/brexhq/substation/issues/15)) ([e46e780](https://github.com/brexhq/substation/commit/e46e780a1f3c0544046a41966073ce9b99e7e14f))
+* PrettyPrint Processor ([#12](https://github.com/brexhq/substation/issues/12)) ([fa7a8f7](https://github.com/brexhq/substation/commit/fa7a8f7e1d7d326f65ddb95ca92fbf4e08fc2a8f))
+
+
+### Bug Fixes
+
+* Handling Large S3 Files ([#20](https://github.com/brexhq/substation/issues/20)) ([2791b91](https://github.com/brexhq/substation/commit/2791b912877bd722fea66a0bffb383552cab1400))
+* Process Jsonnet Errors ([#11](https://github.com/brexhq/substation/issues/11)) ([9507c83](https://github.com/brexhq/substation/commit/9507c8324dc47a40547bb65c67baf827c422ec4c))
+* replace golint with staticcheck ([#16](https://github.com/brexhq/substation/issues/16)) ([3898992](https://github.com/brexhq/substation/commit/3898992e4888e2c7d6a5c9ca0ec54eb0fa993a25))
+
 ## [0.3.0](https://github.com/brexhq/substation/compare/v0.2.0...v0.3.0) (2022-07-18)
 
 

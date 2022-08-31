@@ -61,10 +61,20 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 		// expanded:
 		// 	{"foo":"bar","quux":"corge"}
 		// 	{"baz":"qux","quux":"corge"}
+
+		// the JSON Get / Delete routine is a hack to speed up processing
+		// very large JSON objects, like those output by AWS CloudTrail
 		root := cap.Get("@this")
+		rootBytes, err := json.Delete([]byte(root.String()), p.InputKey)
+		if err != nil {
+			return nil, fmt.Errorf("process expand applybatch: %v", err)
+		}
+
+		root = json.Get(rootBytes, "@this")
 		result := cap.Get(p.InputKey)
 
-		newCap := config.NewCapsule()
+		// retains metadata from the original capsule
+		newCap := cap
 		for _, res := range result.Array() {
 			var err error
 

@@ -32,7 +32,7 @@ func init() {
 			panic(fmt.Errorf("s3manager init: %v", err))
 		}
 
-		maxCapacity = v * 1024 * 1024
+		maxCapacity = v * 1024 * 1024 / 2
 	}
 }
 

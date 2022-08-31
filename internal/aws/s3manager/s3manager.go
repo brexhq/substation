@@ -18,6 +18,24 @@ import (
 	"github.com/aws/aws-xray-sdk-go/xray"
 )
 
+// maxCapacity limits the size of tokens in bufio scanners
+var maxCapacity int
+
+func init() {
+	// by default a scanner token can be up to 100MB. if
+	// executed in Lambda, then the capacity is half of the
+	// function's memory.
+	maxCapacity = 100 * 1024 * 1024
+	if val, ok := os.LookupEnv("AWS_LAMBDA_FUNCTION_MEMORY_SIZE"); ok {
+		v, err := strconv.Atoi(val)
+		if err != nil {
+			panic(fmt.Errorf("s3manager init: %v", err))
+		}
+
+		maxCapacity = v * 1024 * 1024 / 2
+	}
+}
+
 // NewS3 returns a configured S3 client.
 func NewS3() *s3.S3 {
 	conf := aws.NewConfig()
@@ -99,12 +117,7 @@ func (a *DownloaderAPI) DownloadAsScanner(ctx aws.Context, bucket, key string) (
 	}
 
 	scanner := bufio.NewScanner(decoded)
-
-	// ensures that files containing a single line can fit
-	// within the scanner
-	s := int(float64(size) * 1.1)
-	b := make([]byte, s)
-	scanner.Buffer(b, s)
+	scanner.Buffer([]byte{}, maxCapacity)
 
 	return scanner, nil
 }

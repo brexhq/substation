@@ -117,10 +117,10 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 }
 
 type kinesisMetadata struct {
-	EventSourceArn              string    `json:"event_source_arn"`
-	ApproximateArrivalTimestamp time.Time `json:"approximate_arrival_timestamp"`
-	PartitionKey                string    `json:"partition_key"`
-	SequenceNumber              string    `json:"sequence_number"`
+	ApproximateArrivalTimestamp time.Time `json:"approximateArrivalTimestamp"`
+	EventSourceArn              string    `json:"eventSourceArn"`
+	PartitionKey                string    `json:"partitionKey"`
+	SequenceNumber              string    `json:"sequenceNumber"`
 }
 
 func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
@@ -158,8 +158,8 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 			cap := config.NewCapsule()
 			cap.SetData(record.Data)
 			cap.SetMetadata(kinesisMetadata{
-				eventSourceArn,
 				*record.ApproximateArrivalTimestamp,
+				eventSourceArn,
 				*record.PartitionKey,
 				*record.SequenceNumber,
 			})
@@ -181,10 +181,11 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 }
 
 type s3Metadata struct {
-	BucketArn  string `json:"bucket_arn"`
-	BucketName string `json:"bucket_name"`
-	ObjectKey  string `json:"object_key"`
-	ObjectSize int64  `json:"object_size"`
+	EventTime  time.Time `json:"eventTime"`
+	BucketArn  string    `json:"bucketArn"`
+	BucketName string    `json:"bucketName"`
+	ObjectKey  string    `json:"objectKey"`
+	ObjectSize int64     `json:"objectSize"`
 }
 
 func s3Handler(ctx context.Context, event events.S3Event) error {
@@ -231,6 +232,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 
 			cap := config.NewCapsule()
 			cap.SetMetadata(s3Metadata{
+				record.EventTime,
 				record.S3.Bucket.Arn,
 				record.S3.Bucket.Name,
 				record.S3.Object.Key,
@@ -308,6 +310,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 
 				cap := config.NewCapsule()
 				cap.SetMetadata(s3Metadata{
+					record.EventTime,
 					record.S3.Bucket.Arn,
 					record.S3.Bucket.Name,
 					record.S3.Object.Key,
@@ -335,10 +338,10 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 }
 
 type snsMetadata struct {
-	EventSubscriptionArn string    `json:"event_subscription_arn"`
-	MessageID            string    `json:"message_id"`
-	Subject              string    `json:"subject"`
 	Timestamp            time.Time `json:"timestamp"`
+	EventSubscriptionArn string    `json:"eventSubscriptionArn"`
+	MessageID            string    `json:"messageId"`
+	Subject              string    `json:"subject"`
 }
 
 func snsHandler(ctx context.Context, event events.SNSEvent) error {
@@ -366,10 +369,10 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 		for _, record := range event.Records {
 			cap := config.NewCapsule()
 			cap.SetMetadata(snsMetadata{
+				record.SNS.Timestamp,
 				record.EventSubscriptionArn,
 				record.SNS.MessageID,
 				record.SNS.Subject,
-				record.SNS.Timestamp,
 			})
 
 			cap.SetData([]byte(record.SNS.Message))
@@ -390,9 +393,9 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 }
 
 type sqsMetadata struct {
-	EventSourceArn string            `json:"event_source_arn"`
-	MessageID      string            `json:"message_id"`
-	BodyMd5        string            `json:"body_md5"`
+	EventSourceArn string            `json:"eventSourceArn"`
+	MessageID      string            `json:"messageId"`
+	BodyMd5        string            `json:"bodyMd5"`
 	Attributes     map[string]string `json:"attributes"`
 }
 

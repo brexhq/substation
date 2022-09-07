@@ -39,6 +39,8 @@ func main() {
 		lambda.Start(kinesisHandler)
 	case "S3":
 		lambda.Start(s3Handler)
+	case "S3-SNS":
+		lambda.Start(s3SnsHandler)
 	case "SNS":
 		lambda.Start(snsHandler)
 	case "SQS":
@@ -115,11 +117,10 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 }
 
 type kinesisMetadata struct {
-	EventID                     string    `json:"event_id"`
-	EventSourceArn              string    `json:"event_source_arn"`
-	ApproximateArrivalTimestamp time.Time `json:"approximate_arrival_timestamp"`
-	PartitionKey                string    `json:"partition_key"`
-	SequenceNumber              string    `json:"sequence_number"`
+	ApproximateArrivalTimestamp time.Time `json:"approximateArrivalTimestamp"`
+	EventSourceArn              string    `json:"eventSourceArn"`
+	PartitionKey                string    `json:"partitionKey"`
+	SequenceNumber              string    `json:"sequenceNumber"`
 }
 
 func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
@@ -132,7 +133,6 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 	sub.CreateChannels(concurrency)
 	defer sub.KillSignal()
 
-	eventID := event.Records[len(event.Records)-1].EventID
 	eventSourceArn := event.Records[len(event.Records)-1].EventSourceArn
 
 	go func() {
@@ -158,9 +158,8 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 			cap := config.NewCapsule()
 			cap.SetData(record.Data)
 			cap.SetMetadata(kinesisMetadata{
-				eventID,
-				eventSourceArn,
 				*record.ApproximateArrivalTimestamp,
+				eventSourceArn,
 				*record.PartitionKey,
 				*record.SequenceNumber,
 			})
@@ -182,10 +181,11 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 }
 
 type s3Metadata struct {
-	EventSource string `json:"event_source"`
-	Bucket      string `json:"bucket"`
-	Key         string `json:"key"`
-	Size        int64  `json:"size"`
+	EventTime  time.Time `json:"eventTime"`
+	BucketArn  string    `json:"bucketArn"`
+	BucketName string    `json:"bucketName"`
+	ObjectKey  string    `json:"objectKey"`
+	ObjectSize int64     `json:"objectSize"`
 }
 
 func s3Handler(ctx context.Context, event events.S3Event) error {
@@ -232,7 +232,8 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 
 			cap := config.NewCapsule()
 			cap.SetMetadata(s3Metadata{
-				record.EventSource,
+				record.EventTime,
+				record.S3.Bucket.Arn,
 				record.S3.Bucket.Name,
 				record.S3.Object.Key,
 				record.S3.Object.Size,
@@ -257,10 +258,10 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	return nil
 }
 
-func snsHandler(ctx context.Context, event events.SNSEvent) error {
+func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
-		return fmt.Errorf("sns handler: %v", err)
+		return fmt.Errorf("sns-s3 handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
@@ -268,7 +269,6 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 	defer sub.KillSignal()
 
 	go func() {
-		// SNS pulls data from S3
 		api := s3manager.DownloaderAPI{}
 		api.Setup()
 
@@ -287,7 +287,7 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 			var s3Event events.S3Event
 			err := json.Unmarshal([]byte(record.SNS.Message), &s3Event)
 			if err != nil {
-				sub.SendErr(fmt.Errorf("sns handler: %v", err))
+				sub.SendErr(fmt.Errorf("sns-s3 handler: %v", err))
 				return
 			}
 
@@ -304,13 +304,14 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 					record.S3.Object.Key,
 				)
 				if err != nil {
-					sub.SendErr(fmt.Errorf("sns handler: %v", err))
+					sub.SendErr(fmt.Errorf("sns-s3 handler: %v", err))
 					return
 				}
 
 				cap := config.NewCapsule()
 				cap.SetMetadata(s3Metadata{
-					record.EventSource,
+					record.EventTime,
+					record.S3.Bucket.Arn,
 					record.S3.Bucket.Name,
 					record.S3.Object.Key,
 					record.S3.Object.Size,
@@ -330,6 +331,61 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 	}()
 
 	if err := sub.Block(ctx); err != nil {
+		return fmt.Errorf("sns-s3 handler: %v", err)
+	}
+
+	return nil
+}
+
+type snsMetadata struct {
+	Timestamp            time.Time `json:"timestamp"`
+	EventSubscriptionArn string    `json:"eventSubscriptionArn"`
+	MessageID            string    `json:"messageId"`
+	Subject              string    `json:"subject"`
+}
+
+func snsHandler(ctx context.Context, event events.SNSEvent) error {
+	conf, err := appconfig.GetPrefetch(ctx)
+	if err != nil {
+		return fmt.Errorf("sns handler: %v", err)
+	}
+	json.Unmarshal(conf, &sub.Config)
+
+	sub.CreateChannels(concurrency)
+	defer sub.KillSignal()
+
+	go func() {
+		var sinkWg sync.WaitGroup
+		var transformWg sync.WaitGroup
+
+		sinkWg.Add(1)
+		go sub.Sink(ctx, &sinkWg)
+
+		for w := 0; w <= concurrency; w++ {
+			transformWg.Add(1)
+			go sub.Transform(ctx, &transformWg)
+		}
+
+		for _, record := range event.Records {
+			cap := config.NewCapsule()
+			cap.SetMetadata(snsMetadata{
+				record.SNS.Timestamp,
+				record.EventSubscriptionArn,
+				record.SNS.MessageID,
+				record.SNS.Subject,
+			})
+
+			cap.SetData([]byte(record.SNS.Message))
+			sub.SendTransform(cap)
+		}
+
+		sub.TransformSignal()
+		transformWg.Wait()
+		sub.SinkSignal()
+		sinkWg.Wait()
+	}()
+
+	if err := sub.Block(ctx); err != nil {
 		return fmt.Errorf("sns handler: %v", err)
 	}
 
@@ -337,13 +393,12 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 }
 
 type sqsMetadata struct {
-	EventSourceArn string            `json:"event_source_arn"`
-	MessageID      string            `json:"message_id"`
-	BodyMd5        string            `json:"body_md5"`
+	EventSourceArn string            `json:"eventSourceArn"`
+	MessageID      string            `json:"messageId"`
+	BodyMd5        string            `json:"bodyMd5"`
 	Attributes     map[string]string `json:"attributes"`
 }
 
-// experimental source, this is untested
 func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {

@@ -53,6 +53,8 @@ module "iam_example_kinesis_raw_write_attachment" {
   roles = [
     module.lambda_example_gateway_source.role,
     module.lambda_example_s3_source.role,
+    module.lambda_example_sns_source.role,
+    module.lambda_example_sqs_source.role,
     module.gateway_example_kinesis_source.role,
   ]
 }

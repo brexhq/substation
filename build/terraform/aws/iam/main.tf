@@ -166,7 +166,6 @@ data "aws_iam_policy_document" "secretsmanager_read" {
   }
 }
 
-
 data "aws_iam_policy_document" "sqs_read" {
   statement {
     effect = "Allow"

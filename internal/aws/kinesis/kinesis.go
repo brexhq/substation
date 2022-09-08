@@ -245,8 +245,7 @@ LOOP:
 
 		if output.NextToken != nil {
 			params = &kinesis.ListShardsInput{
-				StreamName: aws.String(stream),
-				NextToken:  output.NextToken,
+				NextToken: output.NextToken,
 			}
 		} else {
 			break LOOP

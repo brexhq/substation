@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -110,8 +111,7 @@ func (a *DownloaderAPI) DownloadAsScanner(ctx aws.Context, bucket, key string) (
 		return nil, nil
 	}
 
-	ct := http.DetectContentType(buf)
-	decoded, err := decode(buf, ct)
+	decoded, err := decode(buf, key)
 	if err != nil {
 		return nil, fmt.Errorf("decode bucket %s key %s: %v", bucket, key, err)
 	}
@@ -122,9 +122,29 @@ func (a *DownloaderAPI) DownloadAsScanner(ctx aws.Context, bucket, key string) (
 	return scanner, nil
 }
 
-// decode converts bytes into a decoded io.Reader.
-func decode(buf []byte, contentType string) (io.Reader, error) {
-	switch t := contentType; t {
+/*
+decode converts bytes into a decoded io.Reader using two different file identification techniques:
+
+- file extension matching
+
+- MIME type matching
+
+If either technque fails, then the content is returned with no decoding.
+*/
+func decode(buf []byte, file string) (io.Reader, error) {
+	s := strings.Split(file, ".")
+	extension := s[len(s)-1]
+
+	switch extension {
+	case "gz":
+		content, err := gzip.NewReader(bytes.NewBuffer(buf))
+		if err != nil {
+			return nil, fmt.Errorf("decode file extension %s: %v", extension, err)
+		}
+		return content, nil
+	}
+
+	switch contentType := http.DetectContentType(buf); contentType {
 	case "application/x-gzip":
 		content, err := gzip.NewReader(bytes.NewBuffer(buf))
 		if err != nil {

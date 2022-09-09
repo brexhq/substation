@@ -16,6 +16,7 @@ import (
 )
 
 var sub cmd.Substation
+var scanMethod string
 
 func loadConfig(f string) error {
 	bytes, err := ioutil.ReadFile(f)
@@ -50,10 +51,14 @@ func main() {
 }
 
 func file(ctx context.Context, filename string) error {
+	// retrieves concurrency value from SUBSTATION_CONCURRENCY environment variable
 	concurrency, err := cmd.GetConcurrency()
 	if err != nil {
 		return fmt.Errorf("file concurrency: %v", err)
 	}
+
+	// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable
+	scanMethod = cmd.GetScanMethod()
 
 	sub.CreateChannels(concurrency)
 	defer sub.KillSignal()
@@ -95,7 +100,13 @@ func file(ctx context.Context, filename string) error {
 		scanner.Buffer([]byte{}, 100*1024*1024)
 
 		for scanner.Scan() {
-			cap.SetData([]byte(scanner.Text()))
+			switch scanMethod {
+			case "bytes":
+				cap.SetData(scanner.Bytes())
+			case "text":
+				cap.SetData([]byte(scanner.Text()))
+			}
+
 			sub.SendTransform(cap)
 		}
 

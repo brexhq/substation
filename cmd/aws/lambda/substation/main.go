@@ -24,6 +24,7 @@ import (
 var sub cmd.Substation
 var concurrency int
 var handler string
+var scanMethod string
 
 // LambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
 const LambdaMissingHandler = errors.Error("LambdaMissingHandler")
@@ -63,6 +64,9 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("init concurrency: %v", err))
 	}
+
+	// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable
+	scanMethod = cmd.GetScanMethod()
 }
 
 type gatewayMetadata struct {
@@ -240,7 +244,13 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			})
 
 			for scanner.Scan() {
-				cap.SetData([]byte(scanner.Text()))
+				switch scanMethod {
+				case "bytes":
+					cap.SetData(scanner.Bytes())
+				case "text":
+					cap.SetData([]byte(scanner.Text()))
+				}
+
 				sub.SendTransform(cap)
 			}
 		}
@@ -318,7 +328,13 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 				})
 
 				for scanner.Scan() {
-					cap.SetData([]byte(scanner.Text()))
+					switch scanMethod {
+					case "bytes":
+						cap.SetData(scanner.Bytes())
+					case "text":
+						cap.SetData([]byte(scanner.Text()))
+					}
+
 					sub.SendTransform(cap)
 				}
 			}

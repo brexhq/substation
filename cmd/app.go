@@ -151,7 +151,7 @@ func (sub *Substation) Sink(ctx context.Context, wg *sync.WaitGroup) {
 	sub.DoneSignal()
 }
 
-// GetConcurrency retrieves a concurrency value from the SUBSTATION_CONCURRENCY environment variable. If the environment variable is missing, then the concurrency value is the number of CPUs on the operating system. In native Substation applications, this value determines the number of transform goroutines; if set to 1, then multi-core processing is not enabled.
+// GetConcurrency retrieves a concurrency value from the SUBSTATION_CONCURRENCY environment variable. If the environment variable is missing, then the concurrency value is the number of CPUs on the host. In native Substation applications, this value determines the number of transform goroutines; if set to 1, then multi-core processing is not enabled.
 func GetConcurrency() (int, error) {
 	if val, found := os.LookupEnv("SUBSTATION_CONCURRENCY"); found {
 		v, err := strconv.Atoi(val)
@@ -162,4 +162,23 @@ func GetConcurrency() (int, error) {
 	}
 
 	return runtime.NumCPU(), nil
+}
+
+/*
+GetScanMethod retrieves a scan method from the SUBSTATION_SCAN_METHOD environment variable. This impacts the behavior of bufio scanners that are used throughout the application to read files. The options for this variable are:
+
+- "bytes" (https://pkg.go.dev/bufio#Scanner.Bytes)
+
+- "text" (https://pkg.go.dev/bufio#Scanner.Text)
+
+If the environment variable is missing, then the default method is "text".
+*/
+func GetScanMethod() string {
+	if val, found := os.LookupEnv("SUBSTATION_SCAN_METHOD"); found {
+		if val == "bytes" || val == "text" {
+			return val
+		}
+	}
+
+	return "text"
 }

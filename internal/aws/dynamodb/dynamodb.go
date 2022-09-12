@@ -71,24 +71,22 @@ func (a *API) PutItem(ctx aws.Context, table string, item map[string]*dynamodb.A
 	return resp, nil
 }
 
-// Query is a convenience wrapper for querying a DynamoDB table.
-func (a *API) Query(ctx aws.Context, table, partitionKey, sortKey, keyConditionExpression string, limit int64, scanIndexForward bool) (resp *dynamodb.QueryOutput, err error) {
-	var expression map[string]*dynamodb.AttributeValue
+/*
+Query is a convenience wrapper for querying a DynamoDB table. The paritition and sort keys are always referenced in the key condition expression as ":pk" and ":sk". Refer to the DynamoDB documentation for the Query operation's request syntax and key condition expression patterns:
 
-	if len(sortKey) != 0 {
-		expression = map[string]*dynamodb.AttributeValue{
-			":partitionkeyval": {
-				S: aws.String(partitionKey),
-			},
-			":sortkeyval": {
-				S: aws.String(sortKey),
-			},
-		}
-	} else {
-		expression = map[string]*dynamodb.AttributeValue{
-			":partitionkeyval": {
-				S: aws.String(partitionKey),
-			},
+- https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#API_Query_RequestSyntax
+
+- https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html#Query.KeyConditionExpressions
+*/
+func (a *API) Query(ctx aws.Context, table, partitionKey, sortKey, keyConditionExpression string, limit int64, scanIndexForward bool) (resp *dynamodb.QueryOutput, err error) {
+	expression := make(map[string]*dynamodb.AttributeValue)
+	expression[":pk"] = &dynamodb.AttributeValue{
+		S: aws.String(partitionKey),
+	}
+
+	if sortKey != "" {
+		expression[":sk"] = &dynamodb.AttributeValue{
+			S: aws.String(sortKey),
 		}
 	}
 

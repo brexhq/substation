@@ -15,16 +15,23 @@ import (
 
 var dynamodbAPI dynamodb.API
 
-// DynamoDBInputNotAnObject is returned ...
-const DynamoDBInputNotAnObject = errors.Error("DynamoDBInputNotAnObject")
+// dynamoDBInputNotAnObject is returned when the input is not a JSON object. Refer to the DynamoDB processor documentation for input requirements.
+const dynamoDBInputNotAnObject = errors.Error("dynamoDBInputNotAnObject")
 
-// DynamoDBInputMissingPK is returned ...
-const DynamoDBInputMissingPK = errors.Error("DynamoDBInputMissingPK")
+// dynamoDBInputMissingPK is returned when the JSON key "PK" is missing in the input. Refer to the DynamoDB processor documentation for input requirements.
+const dynamoDBInputMissingPK = errors.Error("dynamoDBInputMissingPK")
 
 /*
-DynamoDB processes data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The processor supports these patterns:
+DynamoDB processes data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The input must be a JSON object containing a partition key ("PK") and optionally containing a sort key ("SK"). This processor uses the DynamoDB Query operation, refer to the DynamoDB documentation for the Query operation's request syntax and key condition expression patterns:
+
+- https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#API_Query_RequestSyntax
+
+- https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html#Query.KeyConditionExpressions
+
+The processor supports these patterns:
 	JSON:
 		{"ddb":{"PK":"foo"}} >>> {"ddb":[{"foo":"bar"}]}
+		{"ddb":{"PK":"foo","SK":"baz"}} >>> {"ddb":[{"foo":"bar"}]}
 
 When loaded with a factory, the processor uses this JSON configuration:
 	{
@@ -32,7 +39,7 @@ When loaded with a factory, the processor uses this JSON configuration:
 		"settings": {
 			"options": {
 				"table": "foo-table",
-				"key_condition_expression": "pk = :partitionkeyval",
+				"key_condition_expression": "PK = :pk and begins_with(SK, :sk)",
 				"limit": 1,
 				"scan_index_forward": true
 			},
@@ -104,13 +111,13 @@ func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 
 	result := cap.Get(p.InputKey)
 	if !result.IsObject() {
-		return cap, fmt.Errorf("process dynamodb apply: inputkey %s: %v", p.InputKey, DynamoDBInputNotAnObject)
+		return cap, fmt.Errorf("process dynamodb apply: inputkey %s: %v", p.InputKey, dynamoDBInputNotAnObject)
 	}
 
 	// PK is a required field
 	pk := json.Get([]byte(result.Raw), "PK").String()
 	if pk == "" {
-		return cap, fmt.Errorf("process dynamodb apply: inputkey %s: %v", p.InputKey, DynamoDBInputMissingPK)
+		return cap, fmt.Errorf("process dynamodb apply: inputkey %s: %v", p.InputKey, dynamoDBInputMissingPK)
 	}
 
 	// SK is an optional field

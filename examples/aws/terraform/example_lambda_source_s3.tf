@@ -28,6 +28,7 @@ module "lambda_example_s3_source" {
     "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_s3_source"
     "SUBSTATION_HANDLER" : "S3"
     "SUBSTATION_DEBUG" : 1
+    "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
   }
   tags = {
     owner = "example"

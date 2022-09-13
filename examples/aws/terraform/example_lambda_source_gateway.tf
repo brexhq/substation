@@ -28,6 +28,7 @@ module "lambda_example_gateway_source" {
     "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_gateway_source"
     "SUBSTATION_HANDLER" : "GATEWAY"
     "SUBSTATION_DEBUG" : 1
+    "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
   }
   tags = {
     owner = "example"

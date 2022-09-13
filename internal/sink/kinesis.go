@@ -9,7 +9,6 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/kinesis"
 	"github.com/brexhq/substation/internal/log"
-	"github.com/brexhq/substation/internal/metrics"
 )
 
 var kinesisAPI kinesis.API
@@ -46,11 +45,6 @@ type Kinesis struct {
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
 func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
-	// matches dimensions for AWS Kinesis Data Streams metrics (https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html#kinesis-metricdimensions)
-	metricsAttributes := map[string]string{
-		"StreamName": sink.Stream,
-	}
-
 	if !kinesisAPI.IsEnabled() {
 		kinesisAPI.Setup()
 	}
@@ -106,12 +100,6 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan
 					"count", buffer[aggregationKey].Count,
 				).Debug("put records into Kinesis")
 
-				metrics.Generate(ctx, metrics.Data{
-					Attributes: metricsAttributes,
-					Name:       "CapsulesSent",
-					Value:      buffer[aggregationKey].Count,
-				})
-
 				buffer[aggregationKey].New()
 				buffer[aggregationKey].Add(cap.GetData(), partitionKey)
 			}
@@ -141,12 +129,6 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan
 		).WithField(
 			"count", buffer[aggregationKey].Count,
 		).Debug("put records into Kinesis")
-
-		metrics.Generate(ctx, metrics.Data{
-			Attributes: metricsAttributes,
-			Name:       "CapsulesSent",
-			Value:      buffer[aggregationKey].Count,
-		})
 	}
 
 	return nil

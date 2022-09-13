@@ -13,7 +13,6 @@ import (
 
 	"github.com/brexhq/substation/cmd"
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/metrics"
 )
 
 var sub cmd.Substation
@@ -112,12 +111,6 @@ func file(ctx context.Context, filename string) error {
 			sub.SendTransform(cap)
 			count++
 		}
-
-		metrics.Generate(ctx, metrics.Data{
-			Attributes: map[string]string{"FileName": fi.Name()},
-			Name:       "CapsulesReceived",
-			Value:      count,
-		})
 
 		sub.TransformSignal()
 		transformWg.Wait()

@@ -8,7 +8,6 @@ import (
 	"github.com/brexhq/substation/internal/aws/firehose"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/log"
-	"github.com/brexhq/substation/internal/metrics"
 	"github.com/jshlbrd/go-aggregate"
 )
 
@@ -49,11 +48,6 @@ type Firehose struct {
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
 func (sink *Firehose) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
-	// matches dimensions for AWS Kinesis Data Firehose metrics (https://docs.aws.amazon.com/firehose/latest/dev/monitoring-with-cloudwatch-metrics.html#firehose-metric-dimensions)
-	metricsAttributes := map[string]string{
-		"DeliveryStreamName": sink.Stream,
-	}
-
 	if !firehoseAPI.IsEnabled() {
 		firehoseAPI.Setup()
 	}
@@ -91,12 +85,6 @@ func (sink *Firehose) Send(ctx context.Context, ch chan config.Capsule, kill cha
 					"count", buffer.Count(),
 				).Debug("put records into Kinesis Firehose")
 
-				metrics.Generate(ctx, metrics.Data{
-					Attributes: metricsAttributes,
-					Name:       "CapsulesSent",
-					Value:      buffer.Count(),
-				})
-
 				buffer.Reset()
 				buffer.Add(cap.GetData())
 			}
@@ -116,12 +104,6 @@ func (sink *Firehose) Send(ctx context.Context, ch chan config.Capsule, kill cha
 		).WithField(
 			"count", buffer.Count(),
 		).Debug("put records into Kinesis Firehose")
-
-		metrics.Generate(ctx, metrics.Data{
-			Attributes: metricsAttributes,
-			Name:       "CapsulesSent",
-			Value:      buffer.Count(),
-		})
 	}
 
 	return nil

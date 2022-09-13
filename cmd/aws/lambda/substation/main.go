@@ -19,7 +19,6 @@ import (
 	"github.com/brexhq/substation/internal/aws/s3manager"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/log"
-	"github.com/brexhq/substation/internal/metrics"
 )
 
 var sub cmd.Substation
@@ -96,7 +95,6 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 		transformWg.Add(1)
 		go sub.Transform(ctx, &transformWg)
 
-		var count int
 		if len(request.Body) != 0 {
 			cap := config.NewCapsule()
 			cap.SetData([]byte(request.Body))
@@ -107,13 +105,7 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 			})
 
 			sub.SendTransform(cap)
-			count++
 		}
-
-		metrics.Generate(ctx, metrics.Data{
-			Name:  "CapsulesReceived",
-			Value: count,
-		})
 
 		sub.TransformSignal()
 		transformWg.Wait()
@@ -166,7 +158,6 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 			return
 		}
 
-		var count int
 		for _, record := range deaggregated {
 			cap := config.NewCapsule()
 			cap.SetData(record.Data)
@@ -178,13 +169,7 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 			})
 
 			sub.SendTransform(cap)
-			count++
 		}
-
-		metrics.Generate(ctx, metrics.Data{
-			Name:  "CapsulesReceived",
-			Value: count,
-		})
 
 		sub.TransformSignal()
 		transformWg.Wait()
@@ -258,7 +243,6 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				record.S3.Object.Size,
 			})
 
-			var count int
 			for scanner.Scan() {
 				switch scanMethod {
 				case "bytes":
@@ -268,13 +252,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				}
 
 				sub.SendTransform(cap)
-				count++
 			}
-
-			metrics.Generate(ctx, metrics.Data{
-				Name:  "CapsulesReceived",
-				Value: count,
-			})
 		}
 
 		sub.TransformSignal()
@@ -349,7 +327,6 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					record.S3.Object.Size,
 				})
 
-				var count int
 				for scanner.Scan() {
 					switch scanMethod {
 					case "bytes":
@@ -359,13 +336,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					}
 
 					sub.SendTransform(cap)
-					count++
 				}
-
-				metrics.Generate(ctx, metrics.Data{
-					Name:  "CapsulesReceived",
-					Value: count,
-				})
 			}
 		}
 
@@ -411,7 +382,6 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 			go sub.Transform(ctx, &transformWg)
 		}
 
-		var count int
 		for _, record := range event.Records {
 			cap := config.NewCapsule()
 			cap.SetMetadata(snsMetadata{
@@ -423,13 +393,7 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 
 			cap.SetData([]byte(record.SNS.Message))
 			sub.SendTransform(cap)
-			count++
 		}
-
-		metrics.Generate(ctx, metrics.Data{
-			Name:  "CapsulesReceived",
-			Value: count,
-		})
 
 		sub.TransformSignal()
 		transformWg.Wait()
@@ -473,7 +437,6 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 			go sub.Transform(ctx, &transformWg)
 		}
 
-		var count int
 		for _, msg := range event.Records {
 			cap := config.NewCapsule()
 			cap.SetData([]byte(msg.Body))
@@ -483,15 +446,9 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 				msg.Md5OfBody,
 				msg.Attributes,
 			})
+
 			sub.SendTransform(cap)
-
-			count++
 		}
-
-		metrics.Generate(ctx, metrics.Data{
-			Name:  "CapsulesReceived",
-			Value: count,
-		})
 
 		sub.TransformSignal()
 		transformWg.Wait()

@@ -14,7 +14,6 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/s3manager"
 	"github.com/brexhq/substation/internal/log"
-	"github.com/brexhq/substation/internal/metrics"
 )
 
 var s3managerAPI s3manager.UploaderAPI
@@ -50,11 +49,6 @@ type S3 struct {
 
 // Send sinks a channel of encapsulated data with the S3 sink.
 func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
-	// matches dimensions for AWS S3 metrics (https://docs.aws.amazon.com/AmazonS3/latest/userguide/metrics-dimensions.html#s3-cloudwatch-dimensions)
-	metricsAttributes := map[string]string{
-		"BucketName": sink.Bucket,
-	}
-
 	if !s3managerAPI.IsEnabled() {
 		s3managerAPI.Setup()
 	}
@@ -112,12 +106,6 @@ func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan stru
 					"count", buffer[prefix].Count(),
 				).Debug("uploaded data to S3")
 
-				metrics.Generate(ctx, metrics.Data{
-					Attributes: metricsAttributes,
-					Name:       "CapsulesSent",
-					Value:      buffer[prefix].Count,
-				})
-
 				buffer[prefix].Reset()
 				buffer[prefix].Add(cap.GetData())
 			}
@@ -153,12 +141,6 @@ func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan stru
 		).WithField(
 			"count", buffer[prefix].Count(),
 		).Debug("uploaded data to S3")
-
-		metrics.Generate(ctx, metrics.Data{
-			Attributes: metricsAttributes,
-			Name:       "CapsulesSent",
-			Value:      buffer[prefix].Count,
-		})
 	}
 
 	return nil

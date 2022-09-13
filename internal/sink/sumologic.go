@@ -13,6 +13,7 @@ import (
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
+	"github.com/brexhq/substation/internal/metrics"
 )
 
 var sumoLogicClient http.HTTP
@@ -121,6 +122,16 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan config.Capsule, kill ch
 					"count", buffer[category].Count(),
 				).Debug("sent events to Sumo Logic")
 
+				metricsAttributes := map[string]string{
+					"SourceCategory": category,
+				}
+
+				metrics.Generate(ctx, metrics.Data{
+					Attributes: metricsAttributes,
+					Name:       "CapsulesSent",
+					Value:      buffer[category].Count(),
+				})
+
 				buffer[category].Reset()
 				buffer[category].Add(cap.GetData())
 			}
@@ -156,6 +167,16 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan config.Capsule, kill ch
 		).WithField(
 			"category", category,
 		).Debug("sent events to Sumo Logic")
+
+		metricsAttributes := map[string]string{
+			"SourceCategory": category,
+		}
+
+		metrics.Generate(ctx, metrics.Data{
+			Attributes: metricsAttributes,
+			Name:       "CapsulesSent",
+			Value:      buffer[category].Count(),
+		})
 	}
 
 	return nil

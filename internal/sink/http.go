@@ -8,6 +8,7 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/internal/metrics"
 )
 
 var httpClient http.HTTP
@@ -59,6 +60,7 @@ func (sink *HTTP) Send(ctx context.Context, ch chan config.Capsule, kill chan st
 		}
 	}
 
+	var count int
 	for cap := range ch {
 		select {
 		case <-kill:
@@ -99,8 +101,15 @@ func (sink *HTTP) Send(ctx context.Context, ch chan config.Capsule, kill chan st
 				// Post err returns metadata
 				return fmt.Errorf("sink http: %v", err)
 			}
+
+			count++
 		}
 	}
+
+	metrics.Generate(ctx, metrics.Data{
+		Name:  "CapsulesSent",
+		Value: count,
+	})
 
 	return nil
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/brexhq/substation/cmd"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/metrics"
 )
 
 var sub cmd.Substation
@@ -99,6 +100,7 @@ func file(ctx context.Context, filename string) error {
 		scanner := bufio.NewScanner(fileHandle)
 		scanner.Buffer([]byte{}, 100*1024*1024)
 
+		var count int
 		for scanner.Scan() {
 			switch scanMethod {
 			case "bytes":
@@ -108,7 +110,14 @@ func file(ctx context.Context, filename string) error {
 			}
 
 			sub.SendTransform(cap)
+			count++
 		}
+
+		metrics.Generate(ctx, metrics.Data{
+			Attributes: map[string]string{"FileName": fi.Name()},
+			Name:       "CapsulesReceived",
+			Value:      count,
+		})
 
 		sub.TransformSignal()
 		transformWg.Wait()

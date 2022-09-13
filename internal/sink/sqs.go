@@ -8,6 +8,7 @@ import (
 	"github.com/brexhq/substation/internal/aws/sqs"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/log"
+	"github.com/brexhq/substation/internal/metrics"
 	"github.com/jshlbrd/go-aggregate"
 )
 
@@ -46,6 +47,11 @@ type SQS struct {
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
 func (sink *SQS) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+	// matches dimensions for AWS SQS metrics (https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-available-cloudwatch-metrics.html)
+	metricsAttributes := map[string]string{
+		"QueueName": sink.Queue,
+	}
+
 	if !sqsAPI.IsEnabled() {
 		sqsAPI.Setup()
 	}
@@ -83,6 +89,12 @@ func (sink *SQS) Send(ctx context.Context, ch chan config.Capsule, kill chan str
 					"count", buffer.Count(),
 				).Debug("sent messages to SQS")
 
+				metrics.Generate(ctx, metrics.Data{
+					Attributes: metricsAttributes,
+					Name:       "CapsulesSent",
+					Value:      buffer.Count(),
+				})
+
 				buffer.Reset()
 				buffer.Add(cap.GetData())
 			}
@@ -102,6 +114,12 @@ func (sink *SQS) Send(ctx context.Context, ch chan config.Capsule, kill chan str
 		).WithField(
 			"count", buffer.Count(),
 		).Debug("sent messages to SQS")
+
+		metrics.Generate(ctx, metrics.Data{
+			Attributes: metricsAttributes,
+			Name:       "CapsulesSent",
+			Value:      buffer.Count(),
+		})
 	}
 
 	return nil

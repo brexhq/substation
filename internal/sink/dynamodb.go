@@ -10,6 +10,7 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
+	"github.com/brexhq/substation/internal/metrics"
 )
 
 var dynamodbAPI dynamodb.API
@@ -53,6 +54,11 @@ type DynamoDB struct {
 
 // Send sinks a channel of encapsulated data with the DynamoDB sink.
 func (sink *DynamoDB) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+	// matches dimensions for AWS DynamoDB metrics (https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/metrics-dimensions.html)
+	metricsAttributes := map[string]string{
+		"TableName": sink.Table,
+	}
+
 	if !dynamodbAPI.IsEnabled() {
 		dynamodbAPI.Setup()
 	}
@@ -84,16 +90,23 @@ func (sink *DynamoDB) Send(ctx context.Context, ch chan config.Capsule, kill cha
 					// PutItem err returns metadata
 					return fmt.Errorf("sink dynamodb: %v", err)
 				}
+
 				count++
 			}
 		}
 	}
 
 	log.WithField(
-		"count", count,
-	).WithField(
 		"table", sink.Table,
+	).WithField(
+		"count", count,
 	).Debug("put items into DynamoDB")
+
+	metrics.Generate(ctx, metrics.Data{
+		Attributes: metricsAttributes,
+		Name:       "CapsulesSent",
+		Value:      count,
+	})
 
 	return nil
 }

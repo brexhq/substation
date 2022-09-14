@@ -21,7 +21,8 @@ type Transfer struct{}
 func (transform *Transfer) Transform(ctx context.Context, in <-chan config.Capsule, out chan<- config.Capsule, kill chan struct{}) error {
 	var count int
 
-	// read and write encapsulated data from and to channels
+	// read and write encapsulated data from input and to output channels
+	// if a signal is received on the kill channel, then this is interrupted
 	for cap := range in {
 		select {
 		case <-kill:

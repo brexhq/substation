@@ -84,15 +84,16 @@ func (sink *DynamoDB) Send(ctx context.Context, ch chan config.Capsule, kill cha
 					// PutItem err returns metadata
 					return fmt.Errorf("sink dynamodb: %v", err)
 				}
+
 				count++
 			}
 		}
 	}
 
 	log.WithField(
-		"count", count,
-	).WithField(
 		"table", sink.Table,
+	).WithField(
+		"count", count,
 	).Debug("put items into DynamoDB")
 
 	return nil

@@ -35,6 +35,7 @@ module "lambda_example_dynamodb_sink" {
     "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_dynamodb_sink"
     "SUBSTATION_HANDLER" : "KINESIS"
     "SUBSTATION_DEBUG" : 1
+    "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
   }
   tags = {
     owner = "example"

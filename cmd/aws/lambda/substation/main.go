@@ -446,6 +446,7 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 				msg.Md5OfBody,
 				msg.Attributes,
 			})
+
 			sub.SendTransform(cap)
 		}
 

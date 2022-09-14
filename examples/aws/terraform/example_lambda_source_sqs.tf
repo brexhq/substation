@@ -31,6 +31,7 @@ module "lambda_example_sqs_source" {
     "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_sqs_source"
     "SUBSTATION_HANDLER" : "SQS"
     "SUBSTATION_DEBUG" : 1
+    "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
   }
   tags = {
     owner = "example"

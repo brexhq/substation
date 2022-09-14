@@ -29,6 +29,7 @@ module "lambda_example_sns_source" {
     "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_sns_source"
     "SUBSTATION_HANDLER" : "SNS"
     "SUBSTATION_DEBUG" : 1
+    "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
   }
   tags = {
     owner = "example"

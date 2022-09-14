@@ -93,11 +93,11 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan
 				}
 
 				log.WithField(
-					"count", buffer[aggregationKey].Count,
-				).WithField(
 					"stream", sink.Stream,
 				).WithField(
 					"partition_key", aggPK,
+				).WithField(
+					"count", buffer[aggregationKey].Count,
 				).Debug("put records into Kinesis")
 
 				buffer[aggregationKey].New()
@@ -123,11 +123,11 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan
 		}
 
 		log.WithField(
-			"count", buffer[aggregationKey].Count,
-		).WithField(
 			"stream", sink.Stream,
 		).WithField(
 			"partition_key", aggPK,
+		).WithField(
+			"count", buffer[aggregationKey].Count,
 		).Debug("put records into Kinesis")
 	}
 

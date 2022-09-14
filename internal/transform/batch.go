@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/metrics"
 	"github.com/brexhq/substation/process"
 )
 
@@ -48,6 +49,7 @@ func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule,
 		return err
 	}
 
+	var received int
 	// read encapsulated data from the input channel into a batch
 	batch := make([]config.Capsule, 0, 10)
 	for cap := range in {
@@ -56,6 +58,7 @@ func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule,
 			return nil
 		default:
 			batch = append(batch, cap)
+			received++
 		}
 	}
 
@@ -65,6 +68,7 @@ func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule,
 		return err
 	}
 
+	var sent int
 	// write the processed, encapsulated data to the output channel
 	// if a signal is received on the kill channel, then this is interrupted
 	for _, cap := range batch {
@@ -73,8 +77,19 @@ func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule,
 			return nil
 		default:
 			out <- cap
+			sent++
 		}
 	}
+
+	metrics.Generate(ctx, metrics.Data{
+		Name:  "CapsulesReceived",
+		Value: received,
+	})
+
+	metrics.Generate(ctx, metrics.Data{
+		Name:  "CapsulesSent",
+		Value: sent,
+	})
 
 	return nil
 }

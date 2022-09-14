@@ -75,6 +75,7 @@ func (m AWSCloudWatchEmbeddedMetrics) Generate(ctx context.Context, data Data) (
 		return fmt.Errorf("metrics log_embedded_metrics: %v", err)
 	}
 
+	// logging EMF to standard out in AWS Lambda automatically sends metrics to CloudWatch
 	fmt.Println(string(emf))
 
 	return nil

@@ -99,6 +99,7 @@ func file(ctx context.Context, filename string) error {
 		scanner := bufio.NewScanner(fileHandle)
 		scanner.Buffer([]byte{}, 100*1024*1024)
 
+		var count int
 		for scanner.Scan() {
 			switch scanMethod {
 			case "bytes":
@@ -108,6 +109,7 @@ func file(ctx context.Context, filename string) error {
 			}
 
 			sub.SendTransform(cap)
+			count++
 		}
 
 		sub.TransformSignal()

@@ -99,11 +99,11 @@ func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan stru
 				}
 
 				log.WithField(
-					"count", buffer[prefix].Count(),
-				).WithField(
 					"bucket", sink.Bucket,
 				).WithField(
 					"key", key,
+				).WithField(
+					"count", buffer[prefix].Count(),
 				).Debug("uploaded data to S3")
 
 				buffer[prefix].Reset()
@@ -135,11 +135,11 @@ func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan stru
 		}
 
 		log.WithField(
-			"count", count,
-		).WithField(
 			"bucket", sink.Bucket,
 		).WithField(
 			"key", key,
+		).WithField(
+			"count", buffer[prefix].Count(),
 		).Debug("uploaded data to S3")
 	}
 

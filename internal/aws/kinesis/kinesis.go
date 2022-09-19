@@ -283,3 +283,33 @@ func (a *API) UpdateShards(ctx aws.Context, stream string, shards int64) error {
 
 	return nil
 }
+
+// GetTags recursively retrieves all tags for a Kinesis stream.
+func (a *API) GetTags(ctx aws.Context, stream string) ([]*kinesis.Tag, error) {
+	var tags []*kinesis.Tag
+	var lastTag string
+
+	more := true
+	for more {
+		req := &kinesis.ListTagsForStreamInput{
+			StreamName: aws.String(stream),
+		}
+
+		if lastTag != "" {
+			req.ExclusiveStartTagKey = aws.String(lastTag)
+		}
+
+		resp, err := a.Client.ListTagsForStreamWithContext(ctx, req)
+		if err != nil {
+			return nil, fmt.Errorf("listtags stream %s: %v", stream, err)
+		}
+
+		tags = append(tags, resp.Tags...)
+
+		// enables recursion
+		more = *resp.HasMoreTags
+		lastTag = *resp.Tags[len(resp.Tags)-1].Key
+	}
+
+	return tags, nil
+}

@@ -14,16 +14,16 @@ import (
 
 const (
 	kinesisMetricsPeriod = 60
-	// AWS Kinesis streams will scale down / in if they are less than 25% of the Kinesis service limits within a 2 hour period.
-	kinesisDownscaleEvaluationPeriod, kinesisDownscaleThreshold = 2 * 60, 0.25
-	// AWS Kinesis streams will scale up / out if they are greater than 75% of the Kinesis service limits within a 10 minute period.
-	kinesisUpscaleEvaluationPeriod, kinesisUpscaleThreshold = 1 * 10, 0.75
+	// AWS Kinesis streams will scale down / in if they are less than 25% of the Kinesis service limits within a 60 minute / 1 hour period.
+	kinesisDownscaleEvaluationPeriod, kinesisDownscaleThreshold = 1 * 60, 0.25
+	// AWS Kinesis streams will scale up / out if they are greater than 75% of the Kinesis service limits within a 5 minute period.
+	kinesisUpscaleEvaluationPeriod, kinesisUpscaleThreshold = 1 * 5, 0.75
 )
 
 var (
-	// By default, AWS Kinesis streams must be below the lower threshold for at least 95% of the evaluation period (114 minutes) to scale down. This value can be overriden by the environment variable SUBSTATION_AUTOSCALING_DOWNSCALE_DATAPOINTS, but it cannot exceed 120 minutes.
-	kinesisDownscaleDatapoints = 114
-	// By default, AWS Kinesis streams must be above the upper threshold for at least 50% of the evaluation period (5 minutes) to scale up. This value can be overriden by the environment variable SUBSTATION_AUTOSCALING_UPSCALE_DATAPOINTS, but it cannot exceed 10 minutes.
+	// By default, AWS Kinesis streams must be below the lower threshold for 95% of the evaluation period (57 minutes) to scale down. This value can be overriden by the environment variable SUBSTATION_AUTOSCALING_DOWNSCALE_DATAPOINTS, but it cannot exceed 60 minutes.
+	kinesisDownscaleDatapoints = 57
+	// By default, AWS Kinesis streams must be above the upper threshold for 100% of the evaluation period (5 minutes) to scale up. This value can be overriden by the environment variable SUBSTATION_AUTOSCALING_UPSCALE_DATAPOINTS, but it cannot exceed 5 minutes.
 	kinesisUpscaleDatapoints = 5
 )
 

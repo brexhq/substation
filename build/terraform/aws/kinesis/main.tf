@@ -16,8 +16,8 @@ resource "aws_cloudwatch_metric_alarm" "metric_alarm_downscale" {
   alarm_description   = var.stream_name
   actions_enabled     = true
   alarm_actions       = [var.autoscaling_topic]
-  evaluation_periods  = 120
-  datapoints_to_alarm = 114
+  evaluation_periods  = 60
+  datapoints_to_alarm = 57
   threshold           = 0.25
   comparison_operator = "LessThanOrEqualToThreshold"
   treat_missing_data  = "ignore"
@@ -100,7 +100,7 @@ resource "aws_cloudwatch_metric_alarm" "metric_alarm_upscale" {
   alarm_description   = var.stream_name
   actions_enabled     = true
   alarm_actions       = [var.autoscaling_topic]
-  evaluation_periods  = 10
+  evaluation_periods  = 5
   datapoints_to_alarm = 5
   threshold           = 0.75
   comparison_operator = "GreaterThanOrEqualToThreshold"

@@ -2,11 +2,11 @@
 Contains Substation apps deployed as AWS Lambda functions. All Lambda functions get their configurations from [AWS AppConfig](https://docs.aws.amazon.com/appconfig/latest/userguide/what-is-appconfig.html).
 
 ## autoscaling
-This app handles Kinesis Data Stream autoscaling through SNS notifications and CloudWatch alarms. The scaling behavior is to scale up / out if stream utilization is greater than 75% of the Kinesis service limits within a 10 minute period and scale down / in if stream utilization are less than 25% of the Kinesis service limits within a 60 minute period. In both cases, streams scale by 50%.
+This app handles Kinesis Data Stream autoscaling through SNS notifications and CloudWatch alarms. The scaling behavior is to scale up / out if stream utilization is greater than 75% of the Kinesis service limits within a 5 minute period and scale down / in if stream utilization is less than 25% of the Kinesis service limits within a 60 minute period. In both cases, streams scale by 50%.
 
 Stream utilization is based on volume (i.e., 60,000 events per minute) and size (i.e., 10GB data per minute); these values are converted to a percentage (0.0 to 1.0) and the maximum of either is considered the stream's current utilization.
 
-By default, streams must be above the upper threshold for at least 5 minutes to scale up and below the lower threshold for at least 57 minutes to scale down. These values can be overriden by the environment variables SUBSTATION_AUTOSCALING_UPSCALE_DATAPOINTS (cannot exceed 10 minutes) and SUBSTATION_AUTOSCALING_DOWNSCALE_DATAPOINTS (cannot exceed 60 minutes).
+By default, streams must be above the upper threshold for all 5 minutes to scale up and below the lower threshold for at least 57 minutes to scale down. These values can be overriden by the environment variables SUBSTATION_AUTOSCALING_UPSCALE_DATAPOINTS (cannot exceed 10 minutes) and SUBSTATION_AUTOSCALING_DOWNSCALE_DATAPOINTS (cannot exceed 60 minutes).
 
 For example:
 

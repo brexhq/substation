@@ -16,8 +16,8 @@ resource "aws_cloudwatch_metric_alarm" "metric_alarm_downscale" {
   alarm_description   = var.stream_name
   actions_enabled     = true
   alarm_actions       = [var.autoscaling_topic]
-  evaluation_periods  = 60
-  datapoints_to_alarm = 57
+  evaluation_periods  = 120
+  datapoints_to_alarm = 114
   threshold           = 0.25
   comparison_operator = "LessThanOrEqualToThreshold"
   treat_missing_data  = "ignore"

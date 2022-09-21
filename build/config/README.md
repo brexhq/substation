@@ -10,12 +10,21 @@ Used for recursively compiling Substation Jsonnet config files ( `config.jsonnet
 
 This script is intended to be deployed to a CI / CD pipeline (e.g., GitHub Actions, Circle CI, Jenkins, etc.), but can be run locally if needed.
 
-## aws/appconfig_upload.py
+## aws/appconfig_delete.py
 
-Used for uploading and deploying compiled Substation JSON config files to AWS AppConfig. This script has some dependencies:
+Deletes application profiles, including all hosted configurations, in AWS AppConfig. This script has some dependencies:
 
 * boto3 must be installed
-* AWS credentials for reading and writing to AppConfig
+* AWS credentials for reading from and deleting in AppConfig
+
+This script can be used after deleting any AWS Lambda that have application profiles.
+
+## aws/appconfig_upload.py
+
+Manages the upload and deployment of compiled Substation JSON configuration files in AWS AppConfig. This script has some dependencies:
+
+* boto3 must be installed
+* AWS credentials for reading from and writing to AppConfig
 * AppConfig infrastructure must be ready to use (see [examples/aws/terraform/bootstrap.tf](/examples/aws/terraform/bootstrap.tf) for an example)
 
 This script is intended to be deployed to a CI / CD pipeline (e.g., GitHub Actions, Circle CI, Jenkins, etc.), but can be run locally if needed. See [examples/aws/](/examples/aws/) for example usage.

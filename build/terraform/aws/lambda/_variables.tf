@@ -30,7 +30,8 @@ variable "memory_size" {
 }
 
 variable "env" {
-  type = map(any)
+  type    = map(any)
+  default = null
 }
 
 variable "kms_arn" {

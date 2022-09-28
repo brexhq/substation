@@ -10,9 +10,11 @@ import (
 )
 
 /*
-Expand processes data by creating individual events from objects in JSON arrays. The processor supports these patterns:
+Expand processes data by creating individual events from objects in arrays. The processor supports these patterns:
 	JSON:
 		{"expand":[{"foo":"bar"}],"baz":"qux"} >>> {"foo":"bar","baz":"qux"}
+	data:
+		[{"foo":"bar"}] >>> {"foo":"bar"}
 
 When loaded with a factory, the processor uses this JSON configuration:
 	{
@@ -29,11 +31,6 @@ type Expand struct {
 
 // ApplyBatch processes a slice of encapsulated data with the Expand processor. Conditions are optionally applied to the data to enable processing.
 func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
-	// only supports JSON, error early if there is no input key
-	if p.InputKey == "" {
-		return nil, fmt.Errorf("process expand applybatch: inputkey %s: %v", p.InputKey, ProcessorInvalidDataPattern)
-	}
-
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process expand applybatch: %v", err)
@@ -52,26 +49,31 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 		}
 
 		// data is processed by retrieving and iterating the
-		// array (InputKey) containing JSON objects and setting
+		// array containing JSON objects and setting
 		// any additional keys from the root object into each
-		// expanded object
+		// expanded object. if there is no InputKey, then the
+		// input is processed as an array.
 		//
 		// root:
 		// 	{"expand":[{"foo":"bar"},{"baz":"qux"}],"quux":"corge"}
 		// expanded:
 		// 	{"foo":"bar","quux":"corge"}
 		// 	{"baz":"qux","quux":"corge"}
-
-		// the JSON Get / Delete routine is a hack to speed up processing
-		// very large JSON objects, like those output by AWS CloudTrail
 		root := cap.Get("@this")
-		rootBytes, err := json.Delete([]byte(root.String()), p.InputKey)
-		if err != nil {
-			return nil, fmt.Errorf("process expand applybatch: %v", err)
-		}
+		result := root
 
-		root = json.Get(rootBytes, "@this")
-		result := cap.Get(p.InputKey)
+		// JSON processing
+		// the Get / Delete routine is a hack to speed up processing
+		// very large objects, like those output by AWS CloudTrail.
+		if p.InputKey != "" {
+			rootBytes, err := json.Delete([]byte(root.String()), p.InputKey)
+			if err != nil {
+				return nil, fmt.Errorf("process expand applybatch: %v", err)
+			}
+
+			root = json.Get(rootBytes, "@this")
+			result = cap.Get(p.InputKey)
+		}
 
 		// retains metadata from the original capsule
 		newCap := cap

@@ -38,6 +38,16 @@ var expandTests = []struct {
 		},
 		nil,
 	},
+	{
+		"data",
+		Expand{},
+		[]byte(`[{"foo":"bar"},{"quux":"corge"}]`),
+		[][]byte{
+			[]byte(`{"foo":"bar"}`),
+			[]byte(`{"quux":"corge"}`),
+		},
+		nil,
+	},
 }
 
 func TestExpand(t *testing.T) {

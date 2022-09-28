@@ -26,6 +26,16 @@ var copyTests = []struct {
 		nil,
 	},
 	{
+		"JSON unescape",
+		Copy{
+			InputKey:  "foo",
+			OutputKey: "foo",
+		},
+		[]byte(`{"foo":"{\"bar\":\"baz\"}"`),
+		[]byte(`{"foo":{"bar":"baz"}`),
+		nil,
+	},
+	{
 		"from JSON",
 		Copy{
 			InputKey: "foo",

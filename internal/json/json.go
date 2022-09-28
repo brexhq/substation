@@ -122,8 +122,18 @@ func Valid(data interface{}) bool {
 		}
 
 		return json.Valid([]byte(v))
+	// a Result can have one of many underlying structs, so we need to check for multiple conditions
 	case Result:
-		return v.IsObject()
+		if v.IsObject() {
+			return true
+		}
+
+		s := v.String()
+		if !strings.HasPrefix(s, `{`) {
+			return false
+		}
+
+		return json.Valid([]byte(s))
 	default:
 		return false
 	}

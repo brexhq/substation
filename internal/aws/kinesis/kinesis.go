@@ -289,8 +289,7 @@ func (a *API) GetTags(ctx aws.Context, stream string) ([]*kinesis.Tag, error) {
 	var tags []*kinesis.Tag
 	var lastTag string
 
-	more := true
-	for more {
+	for {
 		req := &kinesis.ListTagsForStreamInput{
 			StreamName: aws.String(stream),
 		}
@@ -305,10 +304,12 @@ func (a *API) GetTags(ctx aws.Context, stream string) ([]*kinesis.Tag, error) {
 		}
 
 		tags = append(tags, resp.Tags...)
+		lastTag = *resp.Tags[len(resp.Tags)-1].Key
 
 		// enables recursion
-		more = *resp.HasMoreTags
-		lastTag = *resp.Tags[len(resp.Tags)-1].Key
+		if !*resp.HasMoreTags {
+			break
+		}
 	}
 
 	return tags, nil

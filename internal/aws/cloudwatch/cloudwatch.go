@@ -15,9 +15,9 @@ import (
 const (
 	kinesisMetricsPeriod = 60
 	// AWS Kinesis streams will scale down / in if they are less than 25% of the Kinesis service limits within a 60 minute / 1 hour period.
-	kinesisDownscaleEvaluationPeriod, kinesisDownscaleThreshold = 1 * 60, 0.25
+	kinesisDownscaleEvaluationPeriod, kinesisDownscaleThreshold = 60, 0.25
 	// AWS Kinesis streams will scale up / out if they are greater than 75% of the Kinesis service limits within a 5 minute period.
-	kinesisUpscaleEvaluationPeriod, kinesisUpscaleThreshold = 1 * 5, 0.75
+	kinesisUpscaleEvaluationPeriod, kinesisUpscaleThreshold = 5, 0.75
 )
 
 var (

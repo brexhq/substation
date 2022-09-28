@@ -14,13 +14,42 @@ import (
 
 const (
 	kinesisMetricsPeriod = 60
-	// scale Kinesis stream down if it is below threshold for 1 hour
-	kinesisDownscaleEvaluationPeriod = 1 * 60
-	kinesisDownscaleThreshold        = 0.25
-	// scale Kinesis stream up if it is above threshold for 5 minutes
-	kinesisUpscaleEvaluationPeriod = 1 * 5
-	kinesisUpscaleThreshold        = 0.75
+	// AWS Kinesis streams will scale down / in if they are less than 25% of the Kinesis service limits within a 60 minute / 1 hour period.
+	kinesisDownscaleEvaluationPeriod, kinesisDownscaleThreshold = 60, 0.25
+	// AWS Kinesis streams will scale up / out if they are greater than 75% of the Kinesis service limits within a 5 minute period.
+	kinesisUpscaleEvaluationPeriod, kinesisUpscaleThreshold = 5, 0.75
 )
+
+var (
+	// By default, AWS Kinesis streams must be below the lower threshold for 95% of the evaluation period (57 minutes) to scale down. This value can be overriden by the environment variable SUBSTATION_AUTOSCALING_DOWNSCALE_DATAPOINTS, but it cannot exceed 60 minutes.
+	kinesisDownscaleDatapoints = 57
+	// By default, AWS Kinesis streams must be above the upper threshold for 100% of the evaluation period (5 minutes) to scale up. This value can be overriden by the environment variable SUBSTATION_AUTOSCALING_UPSCALE_DATAPOINTS, but it cannot exceed 5 minutes.
+	kinesisUpscaleDatapoints = 5
+)
+
+func init() {
+	if v, found := os.LookupEnv("SUBSTATION_AUTOSCALING_DOWNSCALE_DATAPOINTS"); found {
+		downscale, err := strconv.Atoi(v)
+		if err != nil {
+			panic(err)
+		}
+
+		if downscale <= kinesisDownscaleEvaluationPeriod {
+			kinesisDownscaleDatapoints = downscale
+		}
+	}
+
+	if v, found := os.LookupEnv("SUBSTATION_AUTOSCALING_UPSCALE_DATAPOINTS"); found {
+		upscale, err := strconv.Atoi(v)
+		if err != nil {
+			panic(err)
+		}
+
+		if upscale <= kinesisUpscaleEvaluationPeriod {
+			kinesisUpscaleDatapoints = upscale
+		}
+	}
+}
 
 // New returns a configured CloudWatch client.
 func New() *cloudwatch.CloudWatch {
@@ -75,7 +104,7 @@ func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic s
 			ActionsEnabled:     aws.Bool(true),
 			AlarmActions:       []*string{aws.String(topic)},
 			EvaluationPeriods:  aws.Int64(kinesisDownscaleEvaluationPeriod),
-			DatapointsToAlarm:  aws.Int64(kinesisDownscaleEvaluationPeriod * 0.95),
+			DatapointsToAlarm:  aws.Int64(int64(kinesisDownscaleDatapoints)),
 			Threshold:          aws.Float64(kinesisDownscaleThreshold),
 			ComparisonOperator: aws.String("LessThanOrEqualToThreshold"),
 			TreatMissingData:   aws.String("ignore"),
@@ -179,7 +208,7 @@ func (a *API) UpdateKinesisUpscaleAlarm(ctx aws.Context, name, stream, topic str
 			ActionsEnabled:     aws.Bool(true),
 			AlarmActions:       []*string{aws.String(topic)},
 			EvaluationPeriods:  aws.Int64(kinesisUpscaleEvaluationPeriod),
-			DatapointsToAlarm:  aws.Int64(kinesisUpscaleEvaluationPeriod),
+			DatapointsToAlarm:  aws.Int64(int64(kinesisUpscaleDatapoints)),
 			Threshold:          aws.Float64(kinesisUpscaleThreshold),
 			ComparisonOperator: aws.String("GreaterThanOrEqualToThreshold"),
 			TreatMissingData:   aws.String("ignore"),

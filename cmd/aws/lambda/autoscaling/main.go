@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/brexhq/substation/internal/aws/appconfig"
 	"github.com/brexhq/substation/internal/aws/cloudwatch"
 	"github.com/brexhq/substation/internal/aws/kinesis"
 	"github.com/brexhq/substation/internal/json"
@@ -32,11 +32,6 @@ func main() {
 }
 
 func handler(ctx context.Context, snsEvent events.SNSEvent) error {
-	conf, err := appconfig.GetPrefetch(ctx)
-	if err != nil {
-		return fmt.Errorf("handler: %v", err)
-	}
-
 	payload := snsEvent.Records[0].SNS
 	topicArn := payload.TopicArn
 	message := payload.Message
@@ -70,9 +65,38 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 		newShards = downscale(float64(shards), autoscalePercentage)
 	}
 
-	min := json.Get(conf, stream+".min").Int()
-	if newShards < min {
-		newShards = min
+	tags, err := kinesisAPI.GetTags(ctx, stream)
+	if err != nil {
+		return fmt.Errorf("handler: %v", err)
+	}
+
+	var minShard, maxShard int64
+	for _, tag := range tags {
+		if *tag.Key == "MinimumShards" {
+			minShard, err = strconv.ParseInt(*tag.Value, 10, 64)
+			if err != nil {
+				return fmt.Errorf("handler: %v", err)
+			}
+
+			log.WithField("stream", stream).WithField("count", minShard).Info("retrieved minimum shard count")
+		}
+
+		if *tag.Key == "MaximumShards" {
+			maxShard, err = strconv.ParseInt(*tag.Value, 10, 64)
+			if err != nil {
+				return fmt.Errorf("handler: %v", err)
+			}
+
+			log.WithField("stream", stream).WithField("count", maxShard).Info("retrieved maximum shard count")
+		}
+	}
+
+	if minShard != 0 && newShards < minShard {
+		newShards = minShard
+	}
+
+	if maxShard != 0 && newShards > maxShard {
+		newShards = maxShard
 	}
 
 	if newShards < 1 {

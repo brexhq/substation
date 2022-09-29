@@ -17,12 +17,12 @@ resource "aws_cloudwatch_metric_alarm" "metric_alarm_downscale" {
   actions_enabled     = true
   alarm_actions       = [var.autoscaling_topic]
   evaluation_periods  = 60
-  datapoints_to_alarm = 60
-  threshold           = 0.15
+  datapoints_to_alarm = 57
+  threshold           = 0.25
   comparison_operator = "LessThanOrEqualToThreshold"
   treat_missing_data  = "ignore"
   lifecycle {
-    ignore_changes = [metric_query]
+    ignore_changes = [metric_query, datapoints_to_alarm]
   }
 
   metric_query {
@@ -100,13 +100,13 @@ resource "aws_cloudwatch_metric_alarm" "metric_alarm_upscale" {
   alarm_description   = var.stream_name
   actions_enabled     = true
   alarm_actions       = [var.autoscaling_topic]
-  evaluation_periods  = 1
-  datapoints_to_alarm = 1
-  threshold           = 0.5
+  evaluation_periods  = 5
+  datapoints_to_alarm = 5
+  threshold           = 0.75
   comparison_operator = "GreaterThanOrEqualToThreshold"
   treat_missing_data  = "ignore"
   lifecycle {
-    ignore_changes = [metric_query]
+    ignore_changes = [metric_query, datapoints_to_alarm]
   }
 
   metric_query {

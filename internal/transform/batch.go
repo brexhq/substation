@@ -2,6 +2,7 @@ package transform
 
 import (
 	"context"
+	"time"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/metrics"
@@ -51,6 +52,7 @@ func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule,
 
 	var received int
 	// read encapsulated data from the input channel into a batch
+	// if a signal is received on the kill channel, then this is interrupted
 	batch := make([]config.Capsule, 0, 10)
 	for cap := range in {
 		select {
@@ -59,6 +61,10 @@ func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule,
 		default:
 			batch = append(batch, cap)
 			received++
+
+			// sleep load balances data across transform goroutines, otherwise a single goroutine may receive more capsules than others
+			// this creates 1 second of delay for every 100,000 capsules put into the input channel
+			time.Sleep(time.Duration(10) * time.Microsecond)
 		}
 	}
 

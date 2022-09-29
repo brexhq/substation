@@ -19,9 +19,6 @@ module "lambda_autoscaling" {
   image_uri     = "${module.ecr_autoscaling.repository_url}:latest"
   architectures = ["arm64"]
 
-  env = {
-    AWS_APPCONFIG_EXTENSION_PREFETCH_LIST : "/applications/substation/environments/prod/configurations/substation_autoscaling"
-  }
   tags = {
     owner = "example"
   }

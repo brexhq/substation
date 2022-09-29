@@ -1,3 +1,8 @@
+# var.map[*] is a convenience function for handling empty maps
+locals {
+  env = var.env[*]
+}
+
 resource "aws_lambda_function" "lambda_function" {
   function_name = var.function_name
   description   = var.description
@@ -12,8 +17,12 @@ resource "aws_lambda_function" "lambda_function" {
     mode = "Active"
   }
 
-  environment {
-    variables = var.env
+  # required for avoiding errors due to missing environment variables
+  dynamic "environment" {
+    for_each = local.env
+    content {
+      variables = environment.value
+    }
   }
 
   kms_key_arn = var.kms_arn

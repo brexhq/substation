@@ -164,18 +164,17 @@ cd $SUBSTATION_ROOT && \
 ./cmd/file/substation/substation -input examples/quickstart/data.json -config examples/quickstart/config.json
 ```
 
-### Step 4: Test Substation in AWS
-
-The [examples/aws](/examples/aws/) directory contains a fully-featured data pipeline that can be used as an example of how to deploy custom pipelines in AWS.
+Users can continue exploring the system by iterating on the quickstart config, building and running custom [example](/examples/conditions/data/) [applications](/examples/process/data/), and deploying a [fully-featured data pipeline in AWS](/examples/aws/).
 
 ## Additional Documentation
 
 More documentation about Substation can be found across the project, including:
 
-* [Configuration Syntax](/config/)
-* [Deploying to AWS](/examples/aws/)
 * [Using Conditions to Evaluate JSON Objects](/condition/)
 * [Using Processors to Modify JSON Objects](/process/)
+* [Configuration Syntax](/build/config/)
+* [Deploying to AWS](/examples/aws/)
+* [How to Contribute](/CONTRIBUTING.md)
 
 ## Licensing
 

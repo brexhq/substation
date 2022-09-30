@@ -50,8 +50,8 @@ func (sub *Substation) CreateChannels(size int) {
 	sub.Channels.Done = make(chan struct{})
 	sub.Channels.Kill = make(chan struct{})
 	sub.Channels.Errs = make(chan error, size)
-	sub.Channels.Transform = make(chan config.Capsule, size)
-	sub.Channels.Sink = make(chan config.Capsule, size)
+	sub.Channels.Transform = make(chan config.Capsule)
+	sub.Channels.Sink = make(chan config.Capsule)
 }
 
 // DoneSignal closes the Done channel. This signals that all data was sent to a sink. This should only be called by the Sink goroutine.
@@ -78,6 +78,27 @@ func (sub *Substation) SinkSignal() {
 	close(sub.Channels.Sink)
 }
 
+// used with errgroup branch
+func (sub *Substation) TransformWait(wg *sync.WaitGroup) {
+	close(sub.Channels.Transform)
+	wg.Wait()
+
+	log.Debug("Substation closed transform channel")
+}
+
+// used with errgroup branch
+func (sub *Substation) SinkWait(wg *sync.WaitGroup) {
+	close(sub.Channels.Sink)
+	wg.Wait()
+
+	log.Debug("Substation closed sink channel")
+}
+
+// Send puts byte data into the Transform channel.
+func (sub *Substation) Send(cap config.Capsule) {
+	sub.Channels.Transform <- cap
+}
+
 // SendTransform puts byte data into the Transform channel.
 func (sub *Substation) SendTransform(cap config.Capsule) {
 	sub.Channels.Transform <- cap
@@ -86,6 +107,12 @@ func (sub *Substation) SendTransform(cap config.Capsule) {
 // SendErr puts an error into the Errs channel.
 func (sub *Substation) SendErr(err error) {
 	sub.Channels.Errs <- err
+}
+
+// used with errgroup branch
+func (sub *Substation) CloseChannels() {
+	close(sub.Channels.Sink)
+	close(sub.Channels.Transform)
 }
 
 /*
@@ -116,39 +143,39 @@ func (sub *Substation) Block(ctx context.Context) error {
 }
 
 // Transform is the data transformation method for the app. Data is input on the Transform channel, transformed by a Transform interface (see: internal/transform), and output on the Sink channel. All Transform goroutines complete when the Transform channel is closed and all data is flushed.
-func (sub *Substation) Transform(ctx context.Context, wg *sync.WaitGroup) {
+func (sub *Substation) Transform(ctx context.Context, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
 	t, err := transform.Factory(sub.Config.Transform)
 	if err != nil {
-		sub.SendErr(err)
-		return
+		return err
 	}
 
 	log.WithField("transform", sub.Config.Transform.Type).Debug("Substation starting transform process")
 	if err := t.Transform(ctx, sub.Channels.Transform, sub.Channels.Sink, sub.Channels.Kill); err != nil {
-		sub.SendErr(err)
-		return
+		return err
 	}
+
+	return nil
 }
 
 // Sink is the data sink method for the app. Data is input on the Sink channel and sent to the configured sink. The Sink goroutine completes when the Sink channel is closed and all data is flushed.
-func (sub *Substation) Sink(ctx context.Context, wg *sync.WaitGroup) {
+func (sub *Substation) Sink(ctx context.Context, wg *sync.WaitGroup) error {
+	defer close(sub.Channels.Done)
 	defer wg.Done()
 
 	s, err := sink.Factory(sub.Config.Sink)
 	if err != nil {
 		sub.SendErr(err)
-		return
+		return err
 	}
 
 	log.WithField("sink", sub.Config.Sink.Type).Debug("Substation starting sink process")
 	if err := s.Send(ctx, sub.Channels.Sink, sub.Channels.Kill); err != nil {
-		sub.SendErr(err)
-		return
+		return err
 	}
 
-	sub.DoneSignal()
+	return nil
 }
 
 // GetConcurrency retrieves a concurrency value from the SUBSTATION_CONCURRENCY environment variable. If the environment variable is missing, then the concurrency value is the number of CPUs on the host. In native Substation applications, this value determines the number of transform goroutines; if set to 1, then multi-core processing is not enabled.

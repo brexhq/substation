@@ -56,7 +56,7 @@ func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule,
 	batch := make([]config.Capsule, 0, 10)
 	for cap := range in {
 		select {
-		case <-kill:
+		case <-ctx.Done():
 			return nil
 		default:
 			batch = append(batch, cap)
@@ -79,7 +79,7 @@ func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule,
 	// if a signal is received on the kill channel, then this is interrupted
 	for _, cap := range batch {
 		select {
-		case <-kill:
+		case <-ctx.Done():
 			return nil
 		default:
 			out <- cap

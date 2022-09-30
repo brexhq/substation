@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
 	"github.com/brexhq/substation/cmd"
 	"github.com/brexhq/substation/config"
+	"golang.org/x/sync/errgroup"
 )
 
 var sub cmd.Substation
@@ -31,7 +33,7 @@ func loadConfig(f string) error {
 type metadata struct {
 	Name             string    `json:"name"`
 	Size             int64     `json:"size"`
-	ModificationTime time.Time `json:"modification_time"`
+	ModificationTime time.Time `json:"modificationTime"`
 }
 
 func main() {
@@ -51,6 +53,8 @@ func main() {
 }
 
 func file(ctx context.Context, filename string) error {
+	defer fmt.Println(runtime.NumGoroutine())
+
 	// retrieves concurrency value from SUBSTATION_CONCURRENCY environment variable
 	concurrency, err := cmd.GetConcurrency()
 	if err != nil {
@@ -61,31 +65,46 @@ func file(ctx context.Context, filename string) error {
 	scanMethod = cmd.GetScanMethod()
 
 	sub.CreateChannels(concurrency)
-	defer sub.KillSignal()
 
+	g, ctx := errgroup.WithContext(ctx)
+
+	// this seems bad, but it enforces panics in any goroutine producer that is blocked due to a dead consumer
 	go func() {
-		var sinkWg sync.WaitGroup
-
-		sinkWg.Add(1)
-		go sub.Sink(ctx, &sinkWg)
-
-		var transformWg sync.WaitGroup
-		for w := 1; w <= concurrency; w++ {
-			transformWg.Add(1)
-			go sub.Transform(ctx, &transformWg)
+		for {
+			time.Sleep(500 * time.Millisecond)
+			if ctx.Err() != nil {
+				sub.CloseChannels()
+			}
 		}
+	}()
 
+	var sinkWg sync.WaitGroup
+	var transformWg sync.WaitGroup
+
+	// sink
+	sinkWg.Add(1)
+	g.Go(func() error {
+		return sub.Sink(ctx, &sinkWg)
+	})
+
+	// transforms
+	for w := 0; w < concurrency; w++ {
+		transformWg.Add(1)
+		g.Go(func() error {
+			return sub.Transform(ctx, &transformWg)
+		})
+	}
+
+	g.Go(func() error {
 		fileHandle, err := os.Open(filename)
 		if err != nil {
-			sub.SendErr(fmt.Errorf("file filename %s: %v", filename, err))
-			return
+			return err
 		}
 		defer fileHandle.Close()
 
 		fi, err := fileHandle.Stat()
 		if err != nil {
-			sub.SendErr(fmt.Errorf("file filename %s: %v", filename, err))
-			return
+			return err
 		}
 
 		cap := config.NewCapsule()
@@ -108,18 +127,24 @@ func file(ctx context.Context, filename string) error {
 				cap.SetData([]byte(scanner.Text()))
 			}
 
-			sub.SendTransform(cap)
+			select {
+			case <-ctx.Done():
+				return nil
+			default:
+				sub.SendTransform(cap)
+			}
+
 			count++
 		}
 
-		sub.TransformSignal()
-		transformWg.Wait()
-		sub.SinkSignal()
-		sinkWg.Wait()
-	}()
+		sub.TransformWait(&transformWg)
+		sub.SinkWait(&sinkWg)
 
-	if err := sub.Block(ctx); err != nil {
-		return fmt.Errorf("file: %v", err)
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
 	return nil

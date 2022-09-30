@@ -253,12 +253,12 @@ better:
 
 #### Organization
 
-Substation configuration files should be organized by pipeline and resource using a hierarchical folder structure: `root/[pipeline]/[app]/` .
+Substation configuration files should be organized by pipeline and resource using a hierarchical folder structure: `root/[pipeline]/[resource]/` .
 
 This folder structure supports three levels of configuration:
 
 * global -- configs used in multiple pipelines, stored in `root/foo.libsonnet`
 * regional -- configs used in multiple resources of a single pipeline, stored in `root/[pipeline]/foo.libsonnet`
-* local -- configs used in one resource of a single pipeline, stored in `root/[pipeline]/[app]/foo.libsonnet`
+* local -- configs used in one resource of a single pipeline, stored in `root/[pipeline]/[resource]/foo.libsonnet`
 
 Further segmentation of files at the local level is recommended if users want to logically group configs or if a single config becomes too large (the larger the config, the harder it is to understand). For example, configs for processing event data into the [Elastic Common Schema](https://www.elastic.co/guide/en/ecs/current/ecs-field-reference.html) (ECS) are easier to manage if they are logically grouped according to the ECS data model (e.g., `client.*` fields are in `client.libsonnet` , `process.*` fields are in `process.libsonnet` , `user.*` fields are in `user.libsonnet` , etc.).

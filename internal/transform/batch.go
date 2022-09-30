@@ -44,7 +44,7 @@ type Batch struct {
 }
 
 // Transform processes a channel of encapsulated data with the Batch transform.
-func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule, out chan<- config.Capsule, kill chan struct{}) error {
+func (transform *Batch) Transform(ctx context.Context, in *config.Channel, out *config.Channel) error {
 	applicators, err := process.MakeBatchApplicators(transform.Processors)
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule,
 	// read encapsulated data from the input channel into a batch
 	// if a signal is received on the kill channel, then this is interrupted
 	batch := make([]config.Capsule, 0, 10)
-	for cap := range in {
+	for cap := range in.C {
 		select {
 		case <-ctx.Done():
 			return nil
@@ -74,6 +74,12 @@ func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule,
 		return err
 	}
 
+	tmp := make(chan config.Capsule, len(batch))
+	for _, x := range batch {
+		tmp <- x
+	}
+	close(tmp)
+
 	var sent int
 	// write the processed, encapsulated data to the output channel
 	// if a signal is received on the kill channel, then this is interrupted
@@ -82,7 +88,7 @@ func (transform *Batch) Transform(ctx context.Context, in <-chan config.Capsule,
 		case <-ctx.Done():
 			return nil
 		default:
-			out <- cap
+			out.Send(cap)
 			sent++
 		}
 	}

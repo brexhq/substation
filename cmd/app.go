@@ -11,6 +11,7 @@ import (
 	"github.com/brexhq/substation/internal/log"
 	"github.com/brexhq/substation/internal/sink"
 	"github.com/brexhq/substation/internal/transform"
+	"golang.org/x/sync/errgroup"
 )
 
 type cfg struct {
@@ -41,102 +42,67 @@ type Channels struct {
 	Done      chan struct{}
 	Kill      chan struct{}
 	Errs      chan error
-	Transform chan config.Capsule
-	Sink      chan config.Capsule
+	Transform *config.Channel
+	Sink      *config.Channel
+	// Transform chan config.Capsule
+	// Sink      chan config.Capsule
 }
 
 // CreateChannels initializes channels used by the app. Non-blocking channels can leak if the caller closes before processing completes; this is most likely to happen if the caller uses context to timeout. To avoid goroutine leaks, set larger buffer sizes.
 func (sub *Substation) CreateChannels(size int) {
 	sub.Channels.Done = make(chan struct{})
-	sub.Channels.Kill = make(chan struct{})
-	sub.Channels.Errs = make(chan error, size)
-	sub.Channels.Transform = make(chan config.Capsule)
-	sub.Channels.Sink = make(chan config.Capsule)
+	sub.Channels.Transform = config.NewChannel()
+	sub.Channels.Sink = config.NewChannel()
 }
 
-// DoneSignal closes the Done channel. This signals that all data was sent to a sink. This should only be called by the Sink goroutine.
-func (sub *Substation) DoneSignal() {
-	log.Debug("Substation done signal received, closing done channel")
-	close(sub.Channels.Done)
-}
-
-// KillSignal closes the Kill channel. This signals all non-anonymous goroutines to stop running. This should always be deferred by the cmd invoking the app.
-func (sub *Substation) KillSignal() {
-	log.Debug("Substation kill signal received, closing kill channel")
-	close(sub.Channels.Kill)
-}
-
-// TransformSignal closes the Transform channel. This signals that there is no more incoming data to process. This should only be called by the cmd invoking the app.
-func (sub *Substation) TransformSignal() {
-	log.Debug("Substation transform signal received, closing transform channel")
-	close(sub.Channels.Transform)
-}
-
-// SinkSignal closes the Sink channel. This signals that there is no more data to send. This should only be called by the cmd invoking the app.
-func (sub *Substation) SinkSignal() {
-	log.Debug("Substation sink signal received, closing sink channel")
-	close(sub.Channels.Sink)
-}
-
-// used with errgroup branch
 func (sub *Substation) TransformWait(wg *sync.WaitGroup) {
-	close(sub.Channels.Transform)
+	sub.Channels.Transform.Close()
 	wg.Wait()
 
-	log.Debug("Substation closed transform channel")
+	log.Debug("closed transform channel")
 }
 
-// used with errgroup branch
 func (sub *Substation) SinkWait(wg *sync.WaitGroup) {
-	close(sub.Channels.Sink)
+	sub.Channels.Sink.Close()
 	wg.Wait()
 
-	log.Debug("Substation closed sink channel")
+	log.Debug("closed sink channel")
 }
 
 // Send puts byte data into the Transform channel.
 func (sub *Substation) Send(cap config.Capsule) {
-	sub.Channels.Transform <- cap
-}
-
-// SendTransform puts byte data into the Transform channel.
-func (sub *Substation) SendTransform(cap config.Capsule) {
-	sub.Channels.Transform <- cap
-}
-
-// SendErr puts an error into the Errs channel.
-func (sub *Substation) SendErr(err error) {
-	sub.Channels.Errs <- err
-}
-
-// used with errgroup branch
-func (sub *Substation) CloseChannels() {
-	close(sub.Channels.Sink)
-	close(sub.Channels.Transform)
+	sub.Channels.Transform.Send(cap)
 }
 
 /*
 Block blocks the handler from returning until one of these conditions is met:
 
-- the handler request times out (ctx.Done)
-
 - a data processing error occurs
 
-- all data processing is complete
+- the request times out (or is otherwise cancelled)
+
+- all data processing is successful
 
 This is usually the final call made by main() in a cmd invoking the app.
 */
-func (sub *Substation) Block(ctx context.Context) error {
+func (sub *Substation) Block(ctx context.Context, group *errgroup.Group) error {
 	for {
 		select {
 		case <-ctx.Done():
-			log.WithField("err", ctx.Err()).Debug("Substation received context signal")
-			return ctx.Err()
-		case err := <-sub.Channels.Errs:
-			log.WithField("err", err).Debug("Substation received error signal")
-			return err
+			// all channels are closed to avoid leaking goroutines
+			sub.Channels.Sink.Close()
+			sub.Channels.Transform.Close()
+
+			if group.Wait() != nil {
+				log.Debug("errored")
+				return group.Wait()
+			} else {
+				log.Debug("cancelled")
+				return nil
+			}
+
 		case <-sub.Channels.Done:
-			log.Debug("Substation received done signal")
+			log.Debug("finished")
 			return nil
 		}
 	}
@@ -152,7 +118,7 @@ func (sub *Substation) Transform(ctx context.Context, wg *sync.WaitGroup) error 
 	}
 
 	log.WithField("transform", sub.Config.Transform.Type).Debug("Substation starting transform process")
-	if err := t.Transform(ctx, sub.Channels.Transform, sub.Channels.Sink, sub.Channels.Kill); err != nil {
+	if err := t.Transform(ctx, sub.Channels.Transform, sub.Channels.Sink); err != nil {
 		return err
 	}
 
@@ -161,19 +127,19 @@ func (sub *Substation) Transform(ctx context.Context, wg *sync.WaitGroup) error 
 
 // Sink is the data sink method for the app. Data is input on the Sink channel and sent to the configured sink. The Sink goroutine completes when the Sink channel is closed and all data is flushed.
 func (sub *Substation) Sink(ctx context.Context, wg *sync.WaitGroup) error {
-	defer close(sub.Channels.Done)
 	defer wg.Done()
 
 	s, err := sink.Factory(sub.Config.Sink)
 	if err != nil {
-		sub.SendErr(err)
 		return err
 	}
 
 	log.WithField("sink", sub.Config.Sink.Type).Debug("Substation starting sink process")
-	if err := s.Send(ctx, sub.Channels.Sink, sub.Channels.Kill); err != nil {
+	if err := s.Send(ctx, sub.Channels.Sink); err != nil {
 		return err
 	}
+
+	close(sub.Channels.Done)
 
 	return nil
 }

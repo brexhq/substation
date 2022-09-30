@@ -3,13 +3,14 @@ package config
 import (
 	gojson "encoding/json"
 	"strings"
+	"sync"
 
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-// SetInvalidKey is returned when an invalid key is used in a Capsule Set function.
-const SetInvalidKey = errors.Error("SetInvalidKey")
+// setInvalidKey is returned when an invalid key is used in a Capsule Set function.
+const setInvalidKey = errors.Error("setInvalidKey")
 
 // Config is a template used by Substation interface factories to produce new instances from JSON configurations. Type refers to the type of instance and Settings contains options used in the instance. Examples of this are found in the condition and process packages.
 type Config struct {
@@ -109,7 +110,7 @@ func (c *Capsule) Set(key string, value interface{}) (err error) {
 
 		// values should not be written directly to the metadata field
 		if key == "" {
-			return SetInvalidKey
+			return setInvalidKey
 		}
 
 		c.metadata, err = json.Set(c.metadata, key, value)
@@ -135,7 +136,7 @@ func (c *Capsule) SetRaw(key string, value interface{}) (err error) {
 
 		// values should not be written directly to the metadata field
 		if key == "" {
-			return SetInvalidKey
+			return setInvalidKey
 		}
 
 		c.metadata, err = json.SetRaw(c.metadata, key, value)
@@ -179,4 +180,31 @@ func (c *Capsule) SetMetadata(i interface{}) (*Capsule, error) {
 
 	c.metadata = meta
 	return c, nil
+}
+
+type Channel struct {
+	C      chan Capsule
+	closed bool
+	mutex  sync.Mutex
+}
+
+func NewChannel() *Channel {
+	return &Channel{C: make(chan Capsule)}
+}
+
+func (c *Channel) Close() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if !c.closed {
+		close(c.C)
+		c.closed = true
+	}
+}
+
+func (c *Channel) Send(cap Capsule) {
+	defer func() {
+		recover()
+	}()
+
+	c.C <- cap
 }

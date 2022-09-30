@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/errors"
 )
 
 /*
@@ -19,23 +18,14 @@ When loaded with a factory, the sink uses this JSON configuration:
 type Stdout struct{}
 
 // Send sinks a channel of encapsulated data with the Stdout sink.
-func (sink *Stdout) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+func (sink *Stdout) Send(ctx context.Context, ch *config.Channel) error {
 	var count int
-	for cap := range ch {
+	for cap := range ch.C {
 		select {
 		case <-ctx.Done():
 			return nil
 		default:
-
-			// used with errgroup branch, simulates failure
-			if count == 10 {
-				fmt.Println("stdout error")
-				return errors.Error("stdout")
-			}
-
-			cap.GetData()
-			// fmt.Println(string(cap.GetData()))
-
+			fmt.Println(string(cap.GetData()))
 			count++
 		}
 	}

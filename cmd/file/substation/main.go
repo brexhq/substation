@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"runtime"
 	"sync"
 	"time"
 
@@ -53,8 +52,6 @@ func main() {
 }
 
 func file(ctx context.Context, filename string) error {
-	defer fmt.Println(runtime.NumGoroutine())
-
 	// retrieves concurrency value from SUBSTATION_CONCURRENCY environment variable
 	concurrency, err := cmd.GetConcurrency()
 	if err != nil {
@@ -65,37 +62,24 @@ func file(ctx context.Context, filename string) error {
 	scanMethod = cmd.GetScanMethod()
 
 	sub.CreateChannels(concurrency)
-
-	g, ctx := errgroup.WithContext(ctx)
-
-	// this seems bad, but it enforces panics in any goroutine producer that is blocked due to a dead consumer
-	go func() {
-		for {
-			time.Sleep(500 * time.Millisecond)
-			if ctx.Err() != nil {
-				sub.CloseChannels()
-			}
-		}
-	}()
+	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
-	var transformWg sync.WaitGroup
-
-	// sink
 	sinkWg.Add(1)
-	g.Go(func() error {
+	group.Go(func() error {
 		return sub.Sink(ctx, &sinkWg)
 	})
 
-	// transforms
+	var transformWg sync.WaitGroup
 	for w := 0; w < concurrency; w++ {
 		transformWg.Add(1)
-		g.Go(func() error {
+		group.Go(func() error {
 			return sub.Transform(ctx, &transformWg)
 		})
 	}
 
-	g.Go(func() error {
+	// ingest
+	group.Go(func() error {
 		fileHandle, err := os.Open(filename)
 		if err != nil {
 			return err
@@ -131,7 +115,7 @@ func file(ctx context.Context, filename string) error {
 			case <-ctx.Done():
 				return nil
 			default:
-				sub.SendTransform(cap)
+				sub.Send(cap)
 			}
 
 			count++
@@ -143,7 +127,7 @@ func file(ctx context.Context, filename string) error {
 		return nil
 	})
 
-	if err := g.Wait(); err != nil {
+	if err := sub.Block(ctx, group); err != nil {
 		return err
 	}
 

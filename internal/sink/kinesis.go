@@ -44,17 +44,17 @@ type Kinesis struct {
 }
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
-func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+func (sink *Kinesis) Send(ctx context.Context, ch *config.Channel) error {
 	if !kinesisAPI.IsEnabled() {
 		kinesisAPI.Setup()
 	}
 
 	buffer := map[string]*kinesis.Aggregate{}
 
-	for cap := range ch {
+	for cap := range ch.C {
 		select {
-		case <-kill:
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
 			var partitionKey string
 			if sink.Partition != "" {

@@ -19,38 +19,38 @@ type Sink interface {
 // Factory returns a configured Sink from a config. This is the recommended method for retrieving ready-to-use Sinks.
 func Factory(cfg config.Config) (Sink, error) {
 	switch t := cfg.Type; t {
-	// case "dynamodb":
-	// 	var s DynamoDB
-	// 	config.Decode(cfg.Settings, &s)
-	// 	return &s, nil
-	// case "http":
-	// 	var s HTTP
-	// 	config.Decode(cfg.Settings, &s)
-	// 	return &s, nil
-	// case "firehose":
-	// 	var s Firehose
-	// 	config.Decode(cfg.Settings, &s)
-	// 	return &s, nil
-	// case "kinesis":
-	// 	var s Kinesis
-	// 	config.Decode(cfg.Settings, &s)
-	// 	return &s, nil
-	// case "s3":
-	// 	var s S3
-	// 	config.Decode(cfg.Settings, &s)
-	// 	return &s, nil
+	case "dynamodb":
+		var s DynamoDB
+		config.Decode(cfg.Settings, &s)
+		return &s, nil
+	case "http":
+		var s HTTP
+		config.Decode(cfg.Settings, &s)
+		return &s, nil
+	case "firehose":
+		var s Firehose
+		config.Decode(cfg.Settings, &s)
+		return &s, nil
+	case "kinesis":
+		var s Kinesis
+		config.Decode(cfg.Settings, &s)
+		return &s, nil
+	case "s3":
+		var s S3
+		config.Decode(cfg.Settings, &s)
+		return &s, nil
+	case "sqs":
+		var s SQS
+		config.Decode(cfg.Settings, &s)
+		return &s, nil
 	case "stdout":
 		var s Stdout
 		config.Decode(cfg.Settings, &s)
 		return &s, nil
-	// case "sumologic":
-	// 	var s SumoLogic
-	// 	config.Decode(cfg.Settings, &s)
-	// 	return &s, nil
-	// case "sqs":
-	// 	var s SQS
-	// 	config.Decode(cfg.Settings, &s)
-	// 	return &s, nil
+	case "sumologic":
+		var s SumoLogic
+		config.Decode(cfg.Settings, &s)
+		return &s, nil
 	default:
 		return nil, fmt.Errorf("sink settings %v: %v", cfg.Settings, SinkInvalidFactoryConfig)
 	}

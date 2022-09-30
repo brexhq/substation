@@ -48,7 +48,7 @@ type S3 struct {
 }
 
 // Send sinks a channel of encapsulated data with the S3 sink.
-func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 	if !s3managerAPI.IsEnabled() {
 		s3managerAPI.Setup()
 	}
@@ -61,10 +61,10 @@ func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan stru
 	}
 
 	sep := []byte("\n")
-	for cap := range ch {
+	for cap := range ch.C {
 		select {
-		case <-kill:
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
 			if sink.PrefixKey != "" {
 				prefix = cap.Get(sink.PrefixKey).String()

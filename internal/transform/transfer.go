@@ -18,17 +18,17 @@ When loaded with a factory, the transform uses this JSON configuration:
 type Transfer struct{}
 
 // Transform processes a channel of encapsulated data with the Transfer transform.
-func (transform *Transfer) Transform(ctx context.Context, in <-chan config.Capsule, out chan<- config.Capsule, kill chan struct{}) error {
+func (transform *Transfer) Transform(ctx context.Context, in *config.Channel, out *config.Channel) error {
 	var count int
 
 	// read and write encapsulated data from input and to output channels
 	// if a signal is received on the kill channel, then this is interrupted
-	for cap := range in {
+	for cap := range in.C {
 		select {
-		case <-kill:
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
-			out <- cap
+			out.Send(cap)
 			count++
 		}
 	}

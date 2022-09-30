@@ -113,7 +113,7 @@ func file(ctx context.Context, filename string) error {
 
 			select {
 			case <-ctx.Done():
-				return nil
+				return ctx.Err()
 			default:
 				sub.Send(cap)
 			}

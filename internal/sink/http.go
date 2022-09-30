@@ -51,7 +51,7 @@ type HTTP struct {
 }
 
 // Send sinks a channel of encapsulated data with the HTTP sink.
-func (sink *HTTP) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+func (sink *HTTP) Send(ctx context.Context, ch *config.Channel) error {
 	if !httpClient.IsEnabled() {
 		httpClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -59,10 +59,10 @@ func (sink *HTTP) Send(ctx context.Context, ch chan config.Capsule, kill chan st
 		}
 	}
 
-	for cap := range ch {
+	for cap := range ch.C {
 		select {
-		case <-kill:
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
 			var headers []http.Header
 

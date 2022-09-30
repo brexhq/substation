@@ -23,10 +23,10 @@ func Factory(cfg config.Config) (Transform, error) {
 		var t Batch
 		config.Decode(cfg.Settings, &t)
 		return &t, nil
-	// case "transfer":
-	// 	var t Transfer
-	// 	config.Decode(cfg.Settings, &t)
-	// 	return &t, nil
+	case "transfer":
+		var t Transfer
+		config.Decode(cfg.Settings, &t)
+		return &t, nil
 	default:
 		return nil, fmt.Errorf("transform settings %v: %v", cfg.Settings, TransformInvalidFactoryConfig)
 	}

@@ -17,8 +17,8 @@ import (
 
 var sumoLogicClient http.HTTP
 
-// SumoLogicSinkInvalidJSON is returned when the Sumo Logic sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
-const SumoLogicSinkInvalidJSON = errors.Error("SumoLogicSinkInvalidJSON")
+// sumologicSinkInvalidJSON is returned when the Sumo Logic sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
+const sumologicSinkInvalidJSON = errors.Error("sumologicSinkInvalidJSON")
 
 /*
 SumoLogic sinks JSON data to Sumo Logic using an HTTP collector. More information about Sumo Logic HTTP collectors is available here: https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Data-to-an-HTTP-Source.
@@ -48,7 +48,7 @@ type SumoLogic struct {
 }
 
 // Send sinks a channel of encapsulated data with the SumoLogic sink.
-func (sink *SumoLogic) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 	if !sumoLogicClient.IsEnabled() {
 		sumoLogicClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -70,13 +70,13 @@ func (sink *SumoLogic) Send(ctx context.Context, ch chan config.Capsule, kill ch
 		category = sink.Category
 	}
 
-	for cap := range ch {
+	for cap := range ch.C {
 		select {
-		case <-kill:
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
 			if !json.Valid(cap.GetData()) {
-				return fmt.Errorf("sink sumologic category %s: %v", category, SumoLogicSinkInvalidJSON)
+				return fmt.Errorf("sink sumologic category %s: %v", category, sumologicSinkInvalidJSON)
 			}
 
 			if sink.CategoryKey != "" {

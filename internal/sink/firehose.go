@@ -18,12 +18,12 @@ var firehoseAPI firehose.API
 const firehoseRecordSizeLimit = 1024 * 1000
 
 /*
-FirehoseDataExceededSizeLimit is returned when data
+firehoseDataExceededSizeLimit is returned when data
 exceeds the Kinesis Firehose record size limit. If this
 error occurs, then conditions or processors should be
 applied to either drop or reduce the size of the data.
 */
-const FirehoseDataExceededSizeLimit = errors.Error("FirehoseDataExceededSizeLimit")
+const firehoseDataExceededSizeLimit = errors.Error("firehoseDataExceededSizeLimit")
 
 /*
 Firehose sinks data to an AWS Kinesis Firehose Delivery Stream.
@@ -47,7 +47,7 @@ type Firehose struct {
 }
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
-func (sink *Firehose) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+func (sink *Firehose) Send(ctx context.Context, ch *config.Channel) error {
 	if !firehoseAPI.IsEnabled() {
 		firehoseAPI.Setup()
 	}
@@ -58,13 +58,13 @@ func (sink *Firehose) Send(ctx context.Context, ch chan config.Capsule, kill cha
 	buffer := aggregate.Bytes{}
 	buffer.New(firehoseRecordSizeLimit*4*.99, 500)
 
-	for cap := range ch {
+	for cap := range ch.C {
 		select {
-		case <-kill:
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
 			if len(cap.GetData()) > firehoseRecordSizeLimit {
-				return fmt.Errorf("sink kinesis firehose: %v", FirehoseDataExceededSizeLimit)
+				return fmt.Errorf("sink kinesis firehose: %v", firehoseDataExceededSizeLimit)
 			}
 
 			ok, err := buffer.Add(cap.GetData())

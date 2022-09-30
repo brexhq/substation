@@ -57,7 +57,7 @@ func (transform *Batch) Transform(ctx context.Context, in *config.Channel, out *
 	for cap := range in.C {
 		select {
 		case <-ctx.Done():
-			return nil
+			return ctx.Err()
 		default:
 			batch = append(batch, cap)
 			received++
@@ -80,7 +80,7 @@ func (transform *Batch) Transform(ctx context.Context, in *config.Channel, out *
 	for _, cap := range batch {
 		select {
 		case <-ctx.Done():
-			return nil
+			return ctx.Err()
 		default:
 			out.Send(cap)
 			sent++

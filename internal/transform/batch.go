@@ -74,12 +74,6 @@ func (transform *Batch) Transform(ctx context.Context, in *config.Channel, out *
 		return err
 	}
 
-	tmp := make(chan config.Capsule, len(batch))
-	for _, x := range batch {
-		tmp <- x
-	}
-	close(tmp)
-
 	var sent int
 	// write the processed, encapsulated data to the output channel
 	// if a signal is received on the kill channel, then this is interrupted

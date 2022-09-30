@@ -30,31 +30,24 @@ Channels contains channels used by the app for managing state and sending encaps
 
 - Done: signals that all data processing (ingest, transform, load) is complete; this is always invoked by the Sink goroutine
 
-- Kill: signals that all non-anonymous goroutines should end processing
-
-- Errs: signals that an error occurred from an internal component
-
-- Transform: sends encapsulated data from the handler to the Transform goroutines
+- Transform: sends encapsulated data from the source application to the Transform goroutines
 
 - Sink: sends encapsulated data from the Transform goroutines to the Sink goroutine
 */
 type Channels struct {
 	Done      chan struct{}
-	Kill      chan struct{}
-	Errs      chan error
 	Transform *config.Channel
 	Sink      *config.Channel
-	// Transform chan config.Capsule
-	// Sink      chan config.Capsule
 }
 
-// CreateChannels initializes channels used by the app. Non-blocking channels can leak if the caller closes before processing completes; this is most likely to happen if the caller uses context to timeout. To avoid goroutine leaks, set larger buffer sizes.
+// CreateChannels initializes channels used by the app.
 func (sub *Substation) CreateChannels(size int) {
 	sub.Channels.Done = make(chan struct{})
 	sub.Channels.Transform = config.NewChannel()
 	sub.Channels.Sink = config.NewChannel()
 }
 
+// TransformWait closes the transform channel and blocks until data processing is complete.
 func (sub *Substation) TransformWait(wg *sync.WaitGroup) {
 	sub.Channels.Transform.Close()
 	wg.Wait()
@@ -62,6 +55,7 @@ func (sub *Substation) TransformWait(wg *sync.WaitGroup) {
 	log.Debug("closed transform channel")
 }
 
+// SinkWait closes the sink channel and blocks until data load is complete.
 func (sub *Substation) SinkWait(wg *sync.WaitGroup) {
 	sub.Channels.Sink.Close()
 	wg.Wait()
@@ -88,8 +82,15 @@ This is usually the final call made by main() in a cmd invoking the app.
 func (sub *Substation) Block(ctx context.Context, group *errgroup.Group) error {
 	for {
 		select {
+		// ctx must be derived from the group using WithContext and
+		// carries error and cancellation signals for all goroutines
 		case <-ctx.Done():
-			// all channels are closed to avoid leaking goroutines
+			// all channels are closed to address an edge case where
+			// a producer goroutine hangs when putting an item into a
+			// channel where the consumer goroutine has terminated
+			//
+			// this mitigates unintentional freezing of the source
+			// application and leaking its goroutines
 			sub.Channels.Sink.Close()
 			sub.Channels.Transform.Close()
 
@@ -101,6 +102,8 @@ func (sub *Substation) Block(ctx context.Context, group *errgroup.Group) error {
 				return nil
 			}
 
+		// signals that all data processing completed successfully
+		// this should only ever be called by Sink
 		case <-sub.Channels.Done:
 			log.Debug("finished")
 			return nil

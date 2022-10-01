@@ -83,7 +83,6 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -141,7 +140,7 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
+	sub.CreateChannels()
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -214,7 +213,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
+	sub.CreateChannels()
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -298,7 +297,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
+	sub.CreateChannels()
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -397,7 +396,7 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
+	sub.CreateChannels()
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -461,7 +460,7 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
+	sub.CreateChannels()
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup

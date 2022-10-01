@@ -41,26 +41,10 @@ type Channels struct {
 }
 
 // CreateChannels initializes channels used by the app.
-func (sub *Substation) CreateChannels(size int) {
+func (sub *Substation) CreateChannels() {
 	sub.Channels.Done = make(chan struct{})
 	sub.Channels.Transform = config.NewChannel()
 	sub.Channels.Sink = config.NewChannel()
-}
-
-// TransformWait closes the transform channel and blocks until data processing is complete.
-func (sub *Substation) TransformWait(wg *sync.WaitGroup) {
-	sub.Channels.Transform.Close()
-	wg.Wait()
-
-	log.Debug("closed transform channel")
-}
-
-// SinkWait closes the sink channel and blocks until data load is complete.
-func (sub *Substation) SinkWait(wg *sync.WaitGroup) {
-	sub.Channels.Sink.Close()
-	wg.Wait()
-
-	log.Debug("closed sink channel")
 }
 
 // Send puts byte data into the Transform channel.
@@ -95,17 +79,17 @@ func (sub *Substation) Block(ctx context.Context, group *errgroup.Group) error {
 			sub.Channels.Transform.Close()
 
 			if group.Wait() != nil {
-				log.Debug("errored")
+				log.Debug("processing error")
 				return group.Wait()
 			} else {
-				log.Debug("cancelled")
+				log.Debug("processing cancelled")
 				return nil
 			}
 
 		// signals that all data processing completed successfully
 		// this should only ever be called by Sink
 		case <-sub.Channels.Done:
-			log.Debug("finished")
+			log.Debug("processing completed")
 			return nil
 		}
 	}
@@ -128,6 +112,14 @@ func (sub *Substation) Transform(ctx context.Context, wg *sync.WaitGroup) error 
 	return nil
 }
 
+// TransformWait closes the transform channel and blocks until data processing is complete.
+func (sub *Substation) TransformWait(wg *sync.WaitGroup) {
+	sub.Channels.Transform.Close()
+	wg.Wait()
+
+	log.Debug("closed transform channel")
+}
+
 // Sink is the data sink method for the app. Data is input on the Sink channel and sent to the configured sink. The Sink goroutine completes when the Sink channel is closed and all data is flushed.
 func (sub *Substation) Sink(ctx context.Context, wg *sync.WaitGroup) error {
 	defer wg.Done()
@@ -145,6 +137,14 @@ func (sub *Substation) Sink(ctx context.Context, wg *sync.WaitGroup) error {
 	close(sub.Channels.Done)
 
 	return nil
+}
+
+// SinkWait closes the sink channel and blocks until data load is complete.
+func (sub *Substation) SinkWait(wg *sync.WaitGroup) {
+	sub.Channels.Sink.Close()
+	wg.Wait()
+
+	log.Debug("closed sink channel")
 }
 
 // GetConcurrency retrieves a concurrency value from the SUBSTATION_CONCURRENCY environment variable. If the environment variable is missing, then the concurrency value is the number of CPUs on the host. In native Substation applications, this value determines the number of transform goroutines; if set to 1, then multi-core processing is not enabled.

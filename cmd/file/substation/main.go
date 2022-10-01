@@ -61,7 +61,7 @@ func file(ctx context.Context, filename string) error {
 	// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable
 	scanMethod = cmd.GetScanMethod()
 
-	sub.CreateChannels(concurrency)
+	sub.CreateChannels()
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup

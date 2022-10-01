@@ -8,8 +8,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// transformInvalidFactoryConfig is returned when an unsupported Transform is referenced in Factory.
-const transformInvalidFactoryConfig = errors.Error("transformInvalidFactoryConfig")
+// errInvalidFactoryInput is returned when an unsupported Transform is referenced in Factory.
+const errInvalidFactoryInput = errors.Error("invalid factory input")
 
 // Transformer is an interface for transforming data as it moves from a source to a sink. Transformers read capsules from and write capsules to channels, may optionally modify bytes, and are interruptable.
 type Transformer interface {
@@ -28,6 +28,6 @@ func Factory(cfg config.Config) (Transformer, error) {
 		config.Decode(cfg.Settings, &t)
 		return &t, nil
 	default:
-		return nil, fmt.Errorf("transform settings %v: %v", cfg.Settings, transformInvalidFactoryConfig)
+		return nil, fmt.Errorf("transform settings %v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }

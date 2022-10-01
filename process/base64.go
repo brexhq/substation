@@ -12,8 +12,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// Base64JSONDecodedBinary is returned when the Base64 processor is configured to decode output to JSON, but the output contains binary data and cannot be written as valid JSON.
-const Base64JSONDecodedBinary = errors.Error("Base64JSONDecodedBinary")
+// base64JSONDecodedBinary is returned when the Base64 processor is configured to decode output to JSON, but the output contains binary data and cannot be written as valid JSON.
+const base64JSONDecodedBinary = errors.Error("base64JSONDecodedBinary")
 
 /*
 Base64 processes data by converting it to and from base64 encoding. The processor supports these patterns:
@@ -72,7 +72,7 @@ func (p Base64) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return cap, fmt.Errorf("process base64 apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process base64 apply: options %+v: %v", p.Options, processorMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -89,14 +89,14 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 			}
 
 			if !utf8.Valid(decode) {
-				return cap, fmt.Errorf("process base64 apply: %v", Base64JSONDecodedBinary)
+				return cap, fmt.Errorf("process base64 apply: %v", base64JSONDecodedBinary)
 			}
 
 			value = decode
 		case "to":
 			value = base64.Encode(tmp)
 		default:
-			return cap, fmt.Errorf("process base64 apply: direction %s: %v", p.Options.Direction, ProcessorInvalidDirection)
+			return cap, fmt.Errorf("process base64 apply: direction %s: %v", p.Options.Direction, processorInvalidDirection)
 		}
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
@@ -120,12 +120,12 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		case "to":
 			value = base64.Encode(cap.GetData())
 		default:
-			return cap, fmt.Errorf("process base64 apply: direction %s: %v", p.Options.Direction, ProcessorInvalidDirection)
+			return cap, fmt.Errorf("process base64 apply: direction %s: %v", p.Options.Direction, processorInvalidDirection)
 		}
 
 		cap.SetData(value)
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process base64 apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process base64 apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
 }

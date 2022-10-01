@@ -13,8 +13,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// CaseInvalidCase is returned when the Case processor is configured with an invalid case.
-const CaseInvalidCase = errors.Error("CaseInvalidCase")
+// caseInvalidCase is returned when the Case processor is configured with an invalid case.
+const caseInvalidCase = errors.Error("caseInvalidCase")
 
 /*
 Case processes data by changing the case of a string or byte slice. The processor supports these patterns:
@@ -74,7 +74,7 @@ func (p Case) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Case == "" {
-		return cap, fmt.Errorf("process case apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process case apply: options %+v: %v", p.Options, processorMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -90,7 +90,7 @@ func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		case "snake":
 			value = strcase.ToSnake(result)
 		default:
-			return cap, fmt.Errorf("process case apply: case %s: %v", p.Options.Case, CaseInvalidCase)
+			return cap, fmt.Errorf("process case apply: case %s: %v", p.Options.Case, caseInvalidCase)
 		}
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
@@ -109,12 +109,12 @@ func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		case "lower":
 			value = bytes.ToLower(cap.GetData())
 		default:
-			return cap, fmt.Errorf("process case apply: case %s: %v", p.Options.Case, CaseInvalidCase)
+			return cap, fmt.Errorf("process case apply: case %s: %v", p.Options.Case, caseInvalidCase)
 		}
 
 		cap.SetData(value)
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process case apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process case apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
 }

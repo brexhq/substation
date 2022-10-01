@@ -12,8 +12,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// DomainNoSubdomain is returned when a domain without a subdomain is processed.
-const DomainNoSubdomain = errors.Error("DomainNoSubdomain")
+// domainNoSubdomain is returned when a domain without a subdomain is processed.
+const domainNoSubdomain = errors.Error("domainNoSubdomain")
 
 /*
 Domain processes data by parsing fully qualified domain names into labels. The processor supports these patterns:
@@ -73,7 +73,7 @@ func (p Domain) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return cap, fmt.Errorf("process domain apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process domain apply: options %+v: %v", p.Options, processorMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -96,7 +96,7 @@ func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process domain apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process domain apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
 }
 
 func (p Domain) domain(s string) (string, error) {
@@ -107,13 +107,13 @@ func (p Domain) domain(s string) (string, error) {
 	case "domain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
+			return "", fmt.Errorf("domain %s: %v", s, domainNoSubdomain)
 		}
 		return domain, nil
 	case "subdomain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
+			return "", fmt.Errorf("domain %s: %v", s, domainNoSubdomain)
 		}
 
 		// subdomain is the input string minus the domain and a leading dot:
@@ -122,7 +122,7 @@ func (p Domain) domain(s string) (string, error) {
 		// subdomain == "foo" ("foo.bar.com" minus ".bar.com")
 		subdomain := strings.Replace(s, "."+domain, "", 1)
 		if subdomain == domain {
-			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
+			return "", fmt.Errorf("domain %s: %v", s, domainNoSubdomain)
 		}
 		return subdomain, nil
 	default:

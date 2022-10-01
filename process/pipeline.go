@@ -9,8 +9,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// PipelineArrayInput is returned when the Pipeline processor is configured to process JSON, but the input is an array. Array values are not supported by this processor, instead the input should be run through the ForEach processor (which can encapsulate the Pipeline processor).
-const PipelineArrayInput = errors.Error("PipelineArrayInput")
+// pipelineArrayInput is returned when the Pipeline processor is configured to process JSON, but the input is an array. Array values are not supported by this processor, instead the input should be run through the ForEach processor (which can encapsulate the Pipeline processor).
+const pipelineArrayInput = errors.Error("pipelineArrayInput")
 
 /*
 Pipeline processes data by applying a series of processors. This processor should be used when data requires complex processing outside of the boundaries of any data structures (see tests for examples). The processor supports these patterns:
@@ -101,7 +101,7 @@ func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 	if p.InputKey != "" && p.OutputKey != "" {
 		result := cap.Get(p.InputKey)
 		if result.IsArray() {
-			return cap, fmt.Errorf("process pipeline apply: inputkey %s: %v", p.InputKey, PipelineArrayInput)
+			return cap, fmt.Errorf("process pipeline apply: inputkey %s: %v", p.InputKey, pipelineArrayInput)
 		}
 
 		newCap := config.NewCapsule()
@@ -129,5 +129,5 @@ func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 		return tmp, nil
 	}
 
-	return cap, fmt.Errorf("process pipeline apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process pipeline apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
 }

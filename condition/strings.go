@@ -9,8 +9,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// StringsInvalidFunction is returned when the Strings inspector is configured with an invalid function.
-const StringsInvalidFunction = errors.Error("StringsInvalidFunction")
+// stringsInvalidFunction is returned when the Strings inspector is configured with an invalid function.
+const stringsInvalidFunction = errors.Error("stringsInvalidFunction")
 
 /*
 Strings evaluates data using string functions. This inspector uses the standard library's strings package.
@@ -75,7 +75,7 @@ func (c Strings) Inspect(ctx context.Context, cap config.Capsule) (output bool, 
 	case "startswith":
 		matched = strings.HasPrefix(check, c.Expression)
 	default:
-		return false, fmt.Errorf("condition strings: function %s: %v", c.Function, StringsInvalidFunction)
+		return false, fmt.Errorf("condition strings: function %s: %v", c.Function, stringsInvalidFunction)
 	}
 
 	if c.Negate {

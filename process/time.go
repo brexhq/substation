@@ -87,7 +87,7 @@ func (p Time) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.InputFormat == "" || p.Options.OutputFormat == "" {
-		return cap, fmt.Errorf("process time apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process time apply: options %+v: %v", p.Options, processorMissingRequiredOptions)
 	}
 
 	// "now" processing, supports json and data
@@ -166,7 +166,7 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process time apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process time apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
 }
 
 func (p Time) time(result json.Result) (interface{}, error) {

@@ -58,7 +58,7 @@ func (p Insert) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Insert) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.OutputKey == "" {
-		return cap, fmt.Errorf("process insert apply: outputkey %s: %v", p.OutputKey, ProcessorInvalidDataPattern)
+		return cap, fmt.Errorf("process insert apply: outputkey %s: %v", p.OutputKey, processorInvalidDataPattern)
 	}
 
 	if err := cap.Set(p.OutputKey, p.Options.Value); err != nil {

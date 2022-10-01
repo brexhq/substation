@@ -9,20 +9,20 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// ProcessorInvalidDataPattern is returned when a processor is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
-const ProcessorInvalidDataPattern = errors.Error("ProcessorIncorrectDataSettings")
+// processorInvalidDataPattern is returned when a processor is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
+const processorInvalidDataPattern = errors.Error("ProcessorIncorrectDataSettings")
 
-// ProcessorInvalidDirection is returned when a processor is configured with an invalid direction setting.
-const ProcessorInvalidDirection = errors.Error("ProcessorInvalidDirection")
+// processorInvalidDirection is returned when a processor is configured with an invalid direction setting.
+const processorInvalidDirection = errors.Error("processorInvalidDirection")
 
-// ProcessorMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
-const ProcessorMissingRequiredOptions = errors.Error("ProcessorMissingRequiredOptions")
+// processorMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
+const processorMissingRequiredOptions = errors.Error("processorMissingRequiredOptions")
 
-// ApplyInvalidFactoryConfig is returned when an unsupported Task processor is referenced in Factory.
-const ApplyInvalidFactoryConfig = errors.Error("ApplyInvalidFactoryConfig")
+// applyInvalidFactoryConfig is returned when an unsupported Task processor is referenced in Factory.
+const applyInvalidFactoryConfig = errors.Error("applyInvalidFactoryConfig")
 
-// ApplyBatchInvalidFactoryConfig is returned when an unsupported Batch processor is referenced in BatchFactory.
-const ApplyBatchInvalidFactoryConfig = errors.Error("ApplyBatchInvalidFactoryConfig")
+// applyBatchInvalidFactoryConfig is returned when an unsupported Batch processor is referenced in BatchFactory.
+const applyBatchInvalidFactoryConfig = errors.Error("applyBatchInvalidFactoryConfig")
 
 // Applicator is an interface for applying a processor to encapsulated data.
 type Applicator interface {
@@ -163,7 +163,7 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, ApplyInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, applyInvalidFactoryConfig)
 	}
 }
 
@@ -310,7 +310,7 @@ func BatchApplicatorFactory(cfg config.Config) (BatchApplicator, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, ApplyBatchInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, applyBatchInvalidFactoryConfig)
 	}
 }
 

@@ -13,8 +13,8 @@ import (
 
 var lambdaAPI lambda.API
 
-// LambdaInputNotAnObject is returned ...
-const LambdaInputNotAnObject = errors.Error("LambdaInputNotAnObject")
+// lambdaInputNotAnObject is returned when the input is not a JSON object.
+const lambdaInputNotAnObject = errors.Error("lambdaInputNotAnObject")
 
 /*
 Lambda processes data by synchronously invoking an AWS Lambda and returning the payload. The average latency of synchronously invoking a Lambda function is 10s of milliseconds, but latency can take 100s to 1000s of milliseconds depending on the function which can have significant impact on total event latency. If Substation is running in AWS Lambda with Kinesis, then this latency can be mitigated by increasing the parallelization factor of the Lambda (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
@@ -76,12 +76,12 @@ func (p Lambda) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return cap, fmt.Errorf("process lambda apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process lambda apply: options %+v: %v", p.Options, processorMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("process lambda apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+		return cap, fmt.Errorf("process lambda apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
 	}
 
 	// lazy load API
@@ -91,7 +91,7 @@ func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 
 	result := cap.Get(p.InputKey)
 	if !result.IsObject() {
-		return cap, fmt.Errorf("process lambda apply: inputkey %s: %v", p.InputKey, LambdaInputNotAnObject)
+		return cap, fmt.Errorf("process lambda apply: inputkey %s: %v", p.InputKey, lambdaInputNotAnObject)
 	}
 
 	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, []byte(result.Raw))

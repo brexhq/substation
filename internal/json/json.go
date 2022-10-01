@@ -18,9 +18,6 @@ import (
 // jsonSetRawInvalid is returned when SetRaw receives an invalid input.
 const jsonSetRawInvalid = errors.Error("jsonSetRawInvalid")
 
-// jsonInvalidData is returned when JSON functions return invalid JSON.
-const jsonInvalidData = errors.Error("jsonInvalidData")
-
 // Types maps gjson.Type to strings.
 var Types = map[gjson.Type]string{
 	0: "Null",

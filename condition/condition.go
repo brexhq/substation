@@ -8,14 +8,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// inspectorInvalidSettings is returned when an inspector is configured with invalid settings.
-const inspectorInvalidSettings = errors.Error("inspectorInvalidSettings")
-
 // inspectorInvalidFactoryConfig is returned when an unsupported Inspector is referenced in InspectorFactory.
 const inspectorInvalidFactoryConfig = errors.Error("inspectorInvalidFactoryConfig")
-
-// operatorInvalidFactoryConfig is returned when an unsupported Operator is referenced in OperatorFactory.
-const operatorInvalidFactoryConfig = errors.Error("operatorInvalidFactoryConfig")
 
 // operatorMissingInspectors is returned when an Operator that requres Inspectors is created with no inspectors.
 const operatorMissingInspectors = errors.Error("operatorMissingInspectors")

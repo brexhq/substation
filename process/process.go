@@ -10,7 +10,7 @@ import (
 )
 
 // processorInvalidDataPattern is returned when a processor is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
-const processorInvalidDataPattern = errors.Error("ProcessorIncorrectDataSettings")
+const processorInvalidDataPattern = errors.Error("processorInvalidDataPattern")
 
 // processorInvalidDirection is returned when a processor is configured with an invalid direction setting.
 const processorInvalidDirection = errors.Error("processorInvalidDirection")
@@ -18,7 +18,7 @@ const processorInvalidDirection = errors.Error("processorInvalidDirection")
 // processorMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
 const processorMissingRequiredOptions = errors.Error("processorMissingRequiredOptions")
 
-// applyInvalidFactoryConfig is returned when an unsupported Task processor is referenced in Factory.
+// applyInvalidFactoryConfig is returned when an unsupported Applicator processor is referenced in Factory.
 const applyInvalidFactoryConfig = errors.Error("applyInvalidFactoryConfig")
 
 // applyBatchInvalidFactoryConfig is returned when an unsupported Batch processor is referenced in BatchFactory.

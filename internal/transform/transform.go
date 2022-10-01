@@ -8,16 +8,16 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// TransformInvalidFactoryConfig is returned when an unsupported Transform is referenced in Factory.
-const TransformInvalidFactoryConfig = errors.Error("TransformInvalidFactoryConfig")
+// transformInvalidFactoryConfig is returned when an unsupported Transform is referenced in Factory.
+const transformInvalidFactoryConfig = errors.Error("transformInvalidFactoryConfig")
 
-// Transform is an interface for transforming data as it moves from a source to a sink. Transforms read capsules from and write capsules to channels, may optionally modify bytes, and are interruptable via an anonymous struct channel.
-type Transform interface {
+// Transformer is an interface for transforming data as it moves from a source to a sink. Transformers read capsules from and write capsules to channels, may optionally modify bytes, and are interruptable.
+type Transformer interface {
 	Transform(context.Context, *config.Channel, *config.Channel) error
 }
 
-// Factory returns a configured Transform from a config. This is the recommended method for retrieving ready-to-use Transforms.
-func Factory(cfg config.Config) (Transform, error) {
+// Factory returns a configured Transformer from a config. This is the recommended method for retrieving ready-to-use Transformers.
+func Factory(cfg config.Config) (Transformer, error) {
 	switch t := cfg.Type; t {
 	case "batch":
 		var t Batch
@@ -28,6 +28,6 @@ func Factory(cfg config.Config) (Transform, error) {
 		config.Decode(cfg.Settings, &t)
 		return &t, nil
 	default:
-		return nil, fmt.Errorf("transform settings %v: %v", cfg.Settings, TransformInvalidFactoryConfig)
+		return nil, fmt.Errorf("transform settings %v: %v", cfg.Settings, transformInvalidFactoryConfig)
 	}
 }

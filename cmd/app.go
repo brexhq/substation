@@ -14,15 +14,16 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type cfg struct {
-	Transform config.Config
-	Sink      config.Config
-}
-
-// Substation is the application core, all data processing and flow happens through Substation.
+// Substation is the application core that manages all data processing and flow control.
 type Substation struct {
 	Channels Channels
-	Config   cfg
+	Config   Config
+}
+
+// Config is the shared application configuration for all applications.
+type Config struct {
+	Transform config.Config
+	Sink      config.Config
 }
 
 /*
@@ -79,7 +80,7 @@ func (sub *Substation) Block(ctx context.Context, group *errgroup.Group) error {
 			sub.Channels.Transform.Close()
 
 			if group.Wait() != nil {
-				log.Debug("processing error")
+				log.Debug("processing errored")
 				return group.Wait()
 			} else {
 				log.Debug("processing cancelled")
@@ -104,7 +105,7 @@ func (sub *Substation) Transform(ctx context.Context, wg *sync.WaitGroup) error 
 		return err
 	}
 
-	log.WithField("transform", sub.Config.Transform.Type).Debug("Substation starting transform process")
+	log.WithField("transform", sub.Config.Transform.Type).Debug("starting transformer")
 	if err := t.Transform(ctx, sub.Channels.Transform, sub.Channels.Sink); err != nil {
 		return err
 	}
@@ -117,7 +118,7 @@ func (sub *Substation) TransformWait(wg *sync.WaitGroup) {
 	sub.Channels.Transform.Close()
 	wg.Wait()
 
-	log.Debug("closed transform channel")
+	log.Debug("transformers completed")
 }
 
 // Sink is the data sink method for the app. Data is input on the Sink channel and sent to the configured sink. The Sink goroutine completes when the Sink channel is closed and all data is flushed.
@@ -129,7 +130,7 @@ func (sub *Substation) Sink(ctx context.Context, wg *sync.WaitGroup) error {
 		return err
 	}
 
-	log.WithField("sink", sub.Config.Sink.Type).Debug("Substation starting sink process")
+	log.WithField("sink", sub.Config.Sink.Type).Debug("starting sink")
 	if err := s.Send(ctx, sub.Channels.Sink); err != nil {
 		return err
 	}
@@ -144,7 +145,7 @@ func (sub *Substation) SinkWait(wg *sync.WaitGroup) {
 	sub.Channels.Sink.Close()
 	wg.Wait()
 
-	log.Debug("closed sink channel")
+	log.Debug("sink completed")
 }
 
 // GetConcurrency retrieves a concurrency value from the SUBSTATION_CONCURRENCY environment variable. If the environment variable is missing, then the concurrency value is the number of CPUs on the host. In native Substation applications, this value determines the number of transform goroutines; if set to 1, then multi-core processing is not enabled.

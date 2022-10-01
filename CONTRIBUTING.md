@@ -66,7 +66,7 @@ Sources that [add metadata during encapsulation](/config/README.md) should use l
 
 #### Package Configurations
 
-Configurations for packages (for example, [process](/process/README.md) and [condition](/condition/README.md)) should always use lower_snake_case in their JSON keys. This assists with maintaining readability when reviewing large configuration files.
+Configurations for packages (for example, [process](/process/README.md) and [condition](/condition/README.md)) should always use lower_snake_case in their JSON keys. This helps maintain readability when reviewing large configuration files.
 
 We strongly urge everyone to use Jsonnet for managing configurations.
 

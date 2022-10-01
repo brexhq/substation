@@ -43,7 +43,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	sub = cmd.New().Setup()
+	sub = cmd.New()
 	loadConfig(*config)
 
 	if err := file(ctx, *input); err != nil {
@@ -52,12 +52,6 @@ func main() {
 }
 
 func file(ctx context.Context, filename string) error {
-	// retrieves concurrency value from SUBSTATION_CONCURRENCY environment variable
-	concurrency, err := cmd.GetConcurrency()
-	if err != nil {
-		return fmt.Errorf("file concurrency: %v", err)
-	}
-
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -67,7 +61,7 @@ func file(ctx context.Context, filename string) error {
 	})
 
 	var transformWg sync.WaitGroup
-	for w := 0; w < concurrency; w++ {
+	for w := 0; w < sub.Concurrency(); w++ {
 		transformWg.Add(1)
 		group.Go(func() error {
 			return sub.Transform(ctx, &transformWg)

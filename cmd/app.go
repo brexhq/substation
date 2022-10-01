@@ -16,8 +16,9 @@ import (
 
 // Substation is the application core that manages all data processing and flow control.
 type Substation struct {
-	Channels Channels
-	Config   Config
+	Channels    Channels
+	Config      Config
+	concurrency int
 }
 
 // Config is the shared application configuration for all apps.
@@ -42,21 +43,35 @@ type Channels struct {
 }
 
 /*
-New returns an uninitialized Substation app. This can be chained into Setup to create and setup a new app in a single line:
-sub := cmd.New().Setup()
+New returns an initialized Substation app. If an error occurs during initialization, then this function will panic.
+
+Concurrency is controlled using the SUBSTATION_CONCURRENCY environment variable and defaults to the number of CPUs on the host. In native Substation applications, this value determines the number of transform goroutines; if set to 1, then multi-core processing is not enabled.
 */
 func New() *Substation {
-	return &Substation{}
-}
+	sub := &Substation{}
 
-// Setup initializes a Substation app. This method should be called at least once and can be used any time the source application needs strict guarantees that the app has a fresh state.
-func (sub *Substation) Setup() *Substation {
 	sub.Channels.Done = make(chan struct{})
 	sub.Channels.Transform = config.NewChannel()
 	sub.Channels.Sink = config.NewChannel()
 	sub.Config = Config{}
 
+	sub.concurrency = runtime.NumCPU()
+	val, found := os.LookupEnv("SUBSTATION_CONCURRENCY")
+	if found {
+		v, err := strconv.Atoi(val)
+		if err != nil {
+			panic(err)
+		}
+
+		sub.concurrency = v
+	}
+
 	return sub
+}
+
+// Concurrency returns the concurrency setting of the app.
+func (sub *Substation) Concurrency() int {
+	return sub.concurrency
 }
 
 // Send writes encapsulated data into the Transform channel.
@@ -157,19 +172,6 @@ func (sub *Substation) WaitSink(wg *sync.WaitGroup) {
 	wg.Wait()
 
 	log.Debug("sink finished")
-}
-
-// GetConcurrency retrieves a concurrency value from the SUBSTATION_CONCURRENCY environment variable. If the environment variable is missing, then the concurrency value is the number of CPUs on the host. In native Substation applications, this value determines the number of transform goroutines; if set to 1, then multi-core processing is not enabled.
-func GetConcurrency() (int, error) {
-	if val, found := os.LookupEnv("SUBSTATION_CONCURRENCY"); found {
-		v, err := strconv.Atoi(val)
-		if err != nil {
-			return 0, err
-		}
-		return v, nil
-	}
-
-	return runtime.NumCPU(), nil
 }
 
 /*

@@ -22,7 +22,6 @@ import (
 	"github.com/brexhq/substation/internal/log"
 )
 
-var concurrency int
 var handler string
 var scanMethod string
 
@@ -58,13 +57,6 @@ func init() {
 		panic(fmt.Errorf("init handler %s: %v", handler, lambdaMissingHandler))
 	}
 
-	// retrieves concurrency value from SUBSTATION_CONCURRENCY environment variable
-	var err error
-	concurrency, err = cmd.GetConcurrency()
-	if err != nil {
-		panic(fmt.Errorf("init concurrency: %v", err))
-	}
-
 	// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable
 	scanMethod = cmd.GetScanMethod()
 }
@@ -76,8 +68,7 @@ type gatewayMetadata struct {
 }
 
 func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	sub := cmd.Substation{}
-	sub.Setup()
+	sub := cmd.New()
 
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
@@ -95,7 +86,7 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 	})
 
 	var transformWg sync.WaitGroup
-	for w := 0; w < concurrency; w++ {
+	for w := 0; w < sub.Concurrency(); w++ {
 		transformWg.Add(1)
 		group.Go(func() error {
 			return sub.Transform(ctx, &transformWg)
@@ -137,7 +128,7 @@ type kinesisMetadata struct {
 }
 
 func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
-	sub := cmd.New().Setup()
+	sub := cmd.New()
 
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
@@ -155,7 +146,7 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 	})
 
 	var transformWg sync.WaitGroup
-	for w := 0; w < concurrency; w++ {
+	for w := 0; w < sub.Concurrency(); w++ {
 		transformWg.Add(1)
 		group.Go(func() error {
 			return sub.Transform(ctx, &transformWg)
@@ -212,7 +203,7 @@ type s3Metadata struct {
 }
 
 func s3Handler(ctx context.Context, event events.S3Event) error {
-	sub := cmd.New().Setup()
+	sub := cmd.New()
 
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
@@ -230,7 +221,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	})
 
 	var transformWg sync.WaitGroup
-	for w := 0; w < concurrency; w++ {
+	for w := 0; w < sub.Concurrency(); w++ {
 		transformWg.Add(1)
 		group.Go(func() error {
 			return sub.Transform(ctx, &transformWg)
@@ -298,7 +289,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 }
 
 func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
-	sub := cmd.New().Setup()
+	sub := cmd.New()
 
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
@@ -316,7 +307,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	})
 
 	var transformWg sync.WaitGroup
-	for w := 0; w < concurrency; w++ {
+	for w := 0; w < sub.Concurrency(); w++ {
 		transformWg.Add(1)
 		group.Go(func() error {
 			return sub.Transform(ctx, &transformWg)
@@ -399,7 +390,7 @@ type snsMetadata struct {
 }
 
 func snsHandler(ctx context.Context, event events.SNSEvent) error {
-	sub := cmd.New().Setup()
+	sub := cmd.New()
 
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
@@ -417,7 +408,7 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 	})
 
 	var transformWg sync.WaitGroup
-	for w := 0; w < concurrency; w++ {
+	for w := 0; w < sub.Concurrency(); w++ {
 		transformWg.Add(1)
 		group.Go(func() error {
 			return sub.Transform(ctx, &transformWg)
@@ -465,7 +456,7 @@ type sqsMetadata struct {
 }
 
 func sqsHandler(ctx context.Context, event events.SQSEvent) error {
-	sub := cmd.New().Setup()
+	sub := cmd.New()
 
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
@@ -483,7 +474,7 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 	})
 
 	var transformWg sync.WaitGroup
-	for w := 0; w < concurrency; w++ {
+	for w := 0; w < sub.Concurrency(); w++ {
 		transformWg.Add(1)
 		group.Go(func() error {
 			return sub.Transform(ctx, &transformWg)

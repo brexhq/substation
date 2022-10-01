@@ -113,7 +113,7 @@ func TestAppLeaks(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	for _, test := range appLeaksTest {
-		sub := New().Setup()
+		sub := New()
 		json.Unmarshal(test.config, &sub.Config)
 
 		group, ctx := errgroup.WithContext(context.TODO())
@@ -125,7 +125,7 @@ func TestAppLeaks(t *testing.T) {
 		})
 
 		var transformWg sync.WaitGroup
-		for w := 0; w < 2; w++ {
+		for w := 0; w < sub.Concurrency(); w++ {
 			transformWg.Add(1)
 			group.Go(func() error {
 				return sub.Transform(ctx, &transformWg)

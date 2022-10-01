@@ -126,7 +126,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 			newCaps = append(newCaps, cap)
 
 		case "from":
-			for _, data := range cap.GetData() {
+			for _, data := range cap.Data() {
 				stack = append(stack, data)
 
 				if data == openCurlyBracket {

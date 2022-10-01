@@ -61,11 +61,11 @@ func (sink *SQS) Send(ctx context.Context, ch *config.Channel) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if len(cap.GetData()) > sqsMessageSizeLimit {
+			if len(cap.Data()) > sqsMessageSizeLimit {
 				return fmt.Errorf("sink sqs: %v", sqsDataExceededSizeLimit)
 			}
 
-			ok, err := buffer.Add(cap.GetData())
+			ok, err := buffer.Add(cap.Data())
 			if err != nil {
 				return fmt.Errorf("sink sqs: %v", err)
 			}
@@ -84,7 +84,7 @@ func (sink *SQS) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("sent messages to SQS")
 
 				buffer.Reset()
-				buffer.Add(cap.GetData())
+				buffer.Add(cap.Data())
 			}
 		}
 	}

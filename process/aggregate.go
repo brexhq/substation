@@ -114,7 +114,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 		// data that exceeds the size of the buffer will never
 		// fit within it
-		length := len(cap.GetData())
+		length := len(cap.Data())
 		if length > p.Options.MaxSize {
 			return nil, fmt.Errorf("process aggregate applybatch: size limit %d reached (%d): %v", p.Options.MaxSize, length, aggregateBufferSizeLimit)
 		}
@@ -130,7 +130,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 			aggregateKeys = append(aggregateKeys, aggregateKey)
 		}
 
-		ok, err = buffer[aggregateKey].Add(cap.GetData())
+		ok, err = buffer[aggregateKey].Add(cap.Data())
 		if err != nil {
 			return nil, fmt.Errorf("process aggregate applybatch: %v", err)
 		}
@@ -166,7 +166,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 		// by this point, addition of the failed data is guaranteed to
 		// succeed after the buffer is reset
 		buffer[aggregateKey].Reset()
-		buffer[aggregateKey].Add(cap.GetData())
+		buffer[aggregateKey].Add(cap.Data())
 	}
 
 	// remaining items must be drained from the buffer, otherwise data is lost

@@ -82,7 +82,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch *config.Channel) error {
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok := buffer[aggregationKey].Add(cap.GetData(), partitionKey)
+			ok := buffer[aggregationKey].Add(cap.Data(), partitionKey)
 			if !ok {
 				agg := buffer[aggregationKey].Get()
 				aggPK := buffer[aggregationKey].PartitionKey
@@ -101,7 +101,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("put records into Kinesis")
 
 				buffer[aggregationKey].New()
-				buffer[aggregationKey].Add(cap.GetData(), partitionKey)
+				buffer[aggregationKey].Add(cap.Data(), partitionKey)
 			}
 		}
 	}

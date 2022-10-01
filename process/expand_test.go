@@ -67,7 +67,7 @@ func TestExpand(t *testing.T) {
 
 		for i, res := range result {
 			expected := test.expected[i]
-			if !bytes.Equal(expected, res.GetData()) {
+			if !bytes.Equal(expected, res.Data()) {
 				t.Logf("expected %s, got %s", expected, res)
 				t.Fail()
 			}

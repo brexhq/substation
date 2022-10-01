@@ -146,7 +146,7 @@ func TestApply(t *testing.T) {
 			t.Fail()
 		}
 
-		if !bytes.Equal(result.GetData(), test.expected) {
+		if !bytes.Equal(result.Data(), test.expected) {
 			t.Logf("expected %v, got %v", test.expected, result)
 			t.Fail()
 		}
@@ -172,7 +172,7 @@ func TestApplicatorFactory(t *testing.T) {
 			t.Fail()
 		}
 
-		if !bytes.Equal(result.GetData(), test.expected) {
+		if !bytes.Equal(result.Data(), test.expected) {
 			t.Logf("expected %v, got %v", test.expected, result)
 			t.Fail()
 		}
@@ -200,7 +200,7 @@ func TestApplyBatch(t *testing.T) {
 			t.Fail()
 		}
 
-		if !bytes.Equal(result[0].GetData(), test.expected) {
+		if !bytes.Equal(result[0].Data(), test.expected) {
 			t.Logf("expected %v, got %v", test.expected, result)
 			t.Fail()
 		}
@@ -229,7 +229,7 @@ func TestBatchApplicatorFactory(t *testing.T) {
 			t.Fail()
 		}
 
-		if !bytes.Equal(result[0].GetData(), test.expected) {
+		if !bytes.Equal(result[0].Data(), test.expected) {
 			t.Logf("expected %v, got %v", test.expected, result)
 			t.Fail()
 		}

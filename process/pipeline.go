@@ -112,7 +112,7 @@ func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 			return cap, fmt.Errorf("process pipeline apply: %v", err)
 		}
 
-		if err := cap.Set(p.OutputKey, newCap.GetData()); err != nil {
+		if err := cap.Set(p.OutputKey, newCap.Data()); err != nil {
 			return cap, fmt.Errorf("process pipeline apply: %v", err)
 		}
 

@@ -155,13 +155,13 @@ func (c *Capsule) SetRaw(key string, value interface{}) (err error) {
 	return nil
 }
 
-// GetData returns the contents of the capsule's data field.
-func (c *Capsule) GetData() []byte {
+// Data returns the contents of the capsule's data field.
+func (c *Capsule) Data() []byte {
 	return c.data
 }
 
-// GetMetadata returns the contents of the capsule's metadata field.
-func (c *Capsule) GetMetadata() []byte {
+// Metadata returns the contents of the capsule's metadata field.
+func (c *Capsule) Metadata() []byte {
 	return c.metadata
 }
 

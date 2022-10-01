@@ -116,8 +116,8 @@ func TestInsert(t *testing.T) {
 			t.Fail()
 		}
 
-		if !bytes.Equal(result.GetData(), test.expected) {
-			t.Logf("expected %s, got %s", test.expected, result.GetData())
+		if !bytes.Equal(result.Data(), test.expected) {
+			t.Logf("expected %s, got %s", test.expected, result.Data())
 			t.Fail()
 		}
 	}

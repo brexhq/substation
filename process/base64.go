@@ -111,14 +111,14 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		var value []byte
 		switch p.Options.Direction {
 		case "from":
-			decode, err := base64.Decode(cap.GetData())
+			decode, err := base64.Decode(cap.Data())
 			if err != nil {
 				return cap, fmt.Errorf("process base64 apply: %v", err)
 			}
 
 			value = decode
 		case "to":
-			value = base64.Encode(cap.GetData())
+			value = base64.Encode(cap.Data())
 		default:
 			return cap, fmt.Errorf("process base64 apply: direction %s: %v", p.Options.Direction, processorInvalidDirection)
 		}

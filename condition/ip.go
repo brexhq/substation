@@ -57,7 +57,7 @@ type IP struct {
 func (c IP) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
-		check = string(cap.GetData())
+		check = string(cap.Data())
 	} else {
 		check = cap.Get(c.Key).String()
 	}

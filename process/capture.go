@@ -122,7 +122,7 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 	if p.InputKey == "" && p.OutputKey == "" {
 		switch p.Options.Function {
 		case "find":
-			match := re.FindSubmatch(cap.GetData())
+			match := re.FindSubmatch(cap.Data())
 			cap.SetData(match[1])
 
 			return cap, nil
@@ -130,7 +130,7 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 			newCap := config.NewCapsule()
 
 			names := re.SubexpNames()
-			matches := re.FindSubmatch(cap.GetData())
+			matches := re.FindSubmatch(cap.Data())
 			for i, m := range matches {
 				if i == 0 {
 					continue

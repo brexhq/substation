@@ -63,11 +63,11 @@ func (sink *Firehose) Send(ctx context.Context, ch *config.Channel) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if len(cap.GetData()) > firehoseRecordSizeLimit {
+			if len(cap.Data()) > firehoseRecordSizeLimit {
 				return fmt.Errorf("sink kinesis firehose: %v", firehoseDataExceededSizeLimit)
 			}
 
-			ok, err := buffer.Add(cap.GetData())
+			ok, err := buffer.Add(cap.Data())
 			if err != nil {
 				return fmt.Errorf("sink kinesis firehose: %v", err)
 			}
@@ -86,7 +86,7 @@ func (sink *Firehose) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("put records into Kinesis Firehose")
 
 				buffer.Reset()
-				buffer.Add(cap.GetData())
+				buffer.Add(cap.Data())
 			}
 		}
 	}

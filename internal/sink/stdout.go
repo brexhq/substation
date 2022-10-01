@@ -25,7 +25,7 @@ func (sink *Stdout) Send(ctx context.Context, ch *config.Channel) error {
 		case <-ctx.Done():
 			return nil
 		default:
-			fmt.Println(string(cap.GetData()))
+			fmt.Println(string(cap.Data()))
 			count++
 		}
 	}

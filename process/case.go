@@ -105,9 +105,9 @@ func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		var value []byte
 		switch p.Options.Case {
 		case "upper":
-			value = bytes.ToUpper(cap.GetData())
+			value = bytes.ToUpper(cap.Data())
 		case "lower":
-			value = bytes.ToLower(cap.GetData())
+			value = bytes.ToLower(cap.Data())
 		default:
 			return cap, fmt.Errorf("process case apply: case %s: %v", p.Options.Case, caseInvalidCase)
 		}

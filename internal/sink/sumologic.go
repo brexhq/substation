@@ -75,7 +75,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if !json.Valid(cap.GetData()) {
+			if !json.Valid(cap.Data()) {
 				return fmt.Errorf("sink sumologic category %s: %v", category, sumologicSinkInvalidJSON)
 			}
 
@@ -92,7 +92,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok, err := buffer[category].Add(cap.GetData())
+			ok, err := buffer[category].Add(cap.Data())
 			if err != nil {
 				return fmt.Errorf("sink sumologic category %s: %v", category, err)
 			}
@@ -122,7 +122,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("sent events to Sumo Logic")
 
 				buffer[category].Reset()
-				buffer[category].Add(cap.GetData())
+				buffer[category].Add(cap.Data())
 			}
 		}
 	}

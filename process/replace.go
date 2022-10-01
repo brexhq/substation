@@ -100,7 +100,7 @@ func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
 		value := bytes.Replace(
-			cap.GetData(),
+			cap.Data(),
 			[]byte(p.Options.Old),
 			[]byte(p.Options.New),
 			p.Options.Count,

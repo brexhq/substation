@@ -53,7 +53,7 @@ func ApplyByte(ctx context.Context, data []byte, apps ...Applicator) ([]byte, er
 		return nil, err
 	}
 
-	return newCap.GetData(), nil
+	return newCap.Data(), nil
 }
 
 // MakeApplicators accepts multiple processor configs and returns populated Applicators. This is a convenience function for generating many Applicators.

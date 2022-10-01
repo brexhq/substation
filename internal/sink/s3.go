@@ -78,7 +78,7 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok, err := buffer[prefix].Add(cap.GetData())
+			ok, err := buffer[prefix].Add(cap.Data())
 			if err != nil {
 				return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
 			}
@@ -107,7 +107,7 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("uploaded data to S3")
 
 				buffer[prefix].Reset()
-				buffer[prefix].Add(cap.GetData())
+				buffer[prefix].Add(cap.Data())
 			}
 		}
 	}

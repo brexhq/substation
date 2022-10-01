@@ -68,7 +68,7 @@ func (p Copy) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 	// to JSON processing
 	if p.InputKey == "" && p.OutputKey != "" {
-		if err := cap.Set(p.OutputKey, cap.GetData()); err != nil {
+		if err := cap.Set(p.OutputKey, cap.Data()); err != nil {
 			return cap, fmt.Errorf("process copy apply: %v", err)
 		}
 

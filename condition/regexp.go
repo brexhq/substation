@@ -49,7 +49,7 @@ func (c RegExp) Inspect(ctx context.Context, cap config.Capsule) (output bool, e
 
 	var matched bool
 	if c.Key == "" {
-		matched = re.Match(cap.GetData())
+		matched = re.Match(cap.Data())
 	} else {
 		res := cap.Get(c.Key).String()
 		matched = re.MatchString(res)

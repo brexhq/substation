@@ -63,7 +63,7 @@ func (sink *DynamoDB) Send(ctx context.Context, ch *config.Channel) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if !json.Valid(cap.GetData()) {
+			if !json.Valid(cap.Data()) {
 				return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, dynamodbSinkInvalidJSON)
 			}
 

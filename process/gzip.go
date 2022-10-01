@@ -97,14 +97,14 @@ func (p Gzip) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 	var value []byte
 	switch p.Options.Direction {
 	case "from":
-		from, err := p.from(cap.GetData())
+		from, err := p.from(cap.Data())
 		if err != nil {
 			return cap, fmt.Errorf("process gzip apply: %v", err)
 		}
 
 		value = from
 	case "to":
-		to, err := p.to(cap.GetData())
+		to, err := p.to(cap.Data())
 		if err != nil {
 			return cap, fmt.Errorf("process gzip apply: %v", err)
 		}

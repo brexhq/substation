@@ -38,7 +38,7 @@ type Content struct {
 func (c Content) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	matched := false
 
-	content := http.DetectContentType(cap.GetData())
+	content := http.DetectContentType(cap.Data())
 	if content == c.Type {
 		matched = true
 	}

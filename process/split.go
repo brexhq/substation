@@ -79,7 +79,7 @@ func (p Split) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 		// data processing
 		if p.InputKey == "" && p.OutputKey == "" {
 			newCap := config.NewCapsule()
-			for _, x := range bytes.Split(cap.GetData(), []byte(p.Options.Separator)) {
+			for _, x := range bytes.Split(cap.Data(), []byte(p.Options.Separator)) {
 				newCap.SetData(x)
 				newCaps = append(newCaps, newCap)
 			}

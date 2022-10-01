@@ -66,7 +66,7 @@ func (sink *HTTP) Send(ctx context.Context, ch *config.Channel) error {
 		default:
 			var headers []http.Header
 
-			if json.Valid(cap.GetData()) {
+			if json.Valid(cap.Data()) {
 				headers = append(headers, http.Header{
 					Key:   "Content-Type",
 					Value: "application/json",
@@ -94,7 +94,7 @@ func (sink *HTTP) Send(ctx context.Context, ch *config.Channel) error {
 				}
 			}
 
-			_, err := httpClient.Post(ctx, sink.URL, string(cap.GetData()), headers...)
+			_, err := httpClient.Post(ctx, sink.URL, string(cap.Data()), headers...)
 			if err != nil {
 				// Post err returns metadata
 				return fmt.Errorf("sink http: %v", err)

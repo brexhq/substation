@@ -110,10 +110,10 @@ func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		var value string
 		switch p.Options.Algorithm {
 		case "md5":
-			sum := md5.Sum(cap.GetData())
+			sum := md5.Sum(cap.Data())
 			value = fmt.Sprintf("%x", sum)
 		case "sha256":
-			sum := sha256.Sum256(cap.GetData())
+			sum := sha256.Sum256(cap.Data())
 			value = fmt.Sprintf("%x", sum)
 		default:
 			return cap, fmt.Errorf("process hash apply: algorithm %s: %v", p.Options.Algorithm, hashInvalidAlgorithm)

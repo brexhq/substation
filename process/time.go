@@ -145,7 +145,7 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		tmp, err := json.Set([]byte{}, "tmp", cap.GetData())
+		tmp, err := json.Set([]byte{}, "tmp", cap.Data())
 		if err != nil {
 			return cap, fmt.Errorf("process time apply: %v", err)
 		}

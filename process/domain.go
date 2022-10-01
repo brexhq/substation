@@ -90,7 +90,7 @@ func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		value, _ := p.domain(string(cap.GetData()))
+		value, _ := p.domain(string(cap.Data()))
 		cap.SetData([]byte(value))
 
 		return cap, nil

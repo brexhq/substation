@@ -64,7 +64,7 @@ type Length struct {
 func (c Length) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
-		check = string(cap.GetData())
+		check = string(cap.Data())
 	} else {
 		result := cap.Get(c.Key)
 		if result.IsArray() {

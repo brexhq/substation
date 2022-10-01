@@ -115,7 +115,7 @@ type JSONValid struct {
 
 // Inspect evaluates encapsulated data with the JSONValid inspector.
 func (c JSONValid) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
-	matched := json.Valid(cap.GetData())
+	matched := json.Valid(cap.Data())
 
 	if c.Negate {
 		return !matched, nil

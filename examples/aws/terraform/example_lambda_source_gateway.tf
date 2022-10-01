@@ -26,7 +26,7 @@ module "lambda_example_gateway_source" {
   env = {
     "AWS_MAX_ATTEMPTS" : 10
     "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_gateway_source"
-    "SUBSTATION_HANDLER" : "GATEWAY"
+    "SUBSTATION_HANDLER" : "AWS_API_GATEWAY"
     "SUBSTATION_DEBUG" : 1
     "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
   }

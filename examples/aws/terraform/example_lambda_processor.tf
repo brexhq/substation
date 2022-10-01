@@ -15,7 +15,7 @@ module "lambda_example_processor" {
   env = {
     "AWS_MAX_ATTEMPTS" : 10
     "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_processor"
-    "SUBSTATION_HANDLER" : "KINESIS"
+    "SUBSTATION_HANDLER" : "AWS_KINESIS"
     "SUBSTATION_DEBUG" : 1
     "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
   }

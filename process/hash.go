@@ -13,8 +13,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// hashInvalidAlgorithm is returned when the Hash processor is configured with an invalid algorithm.
-const hashInvalidAlgorithm = errors.Error("hashInvalidAlgorithm")
+// errHashInvalidAlgorithm is returned when the Hash processor is configured with an invalid algorithm.
+const errHashInvalidAlgorithm = errors.Error("invalid algorithm")
 
 /*
 Hash processes data by calculating hashes. The processor supports these patterns:
@@ -59,12 +59,12 @@ func (p Hash) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 	rand.Seed(time.Now().UnixNano())
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process hash applybatch: %v", err)
+		return nil, fmt.Errorf("hash applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process hash applybatch: %v", err)
+		return nil, fmt.Errorf("hash applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -79,7 +79,7 @@ func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 	// error early if required options are missing
 	if p.Options.Algorithm == "" {
-		return cap, fmt.Errorf("process hash apply: options %+v: %v", p.Options, processorMissingRequiredOptions)
+		return cap, fmt.Errorf("hash apply: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -95,11 +95,11 @@ func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 			sum := sha256.Sum256([]byte(result))
 			value = fmt.Sprintf("%x", sum)
 		default:
-			return cap, fmt.Errorf("process hash apply: algorithm %s: %v", p.Options.Algorithm, hashInvalidAlgorithm)
+			return cap, fmt.Errorf("hash apply: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
 		}
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process hash apply: %v", err)
+			return cap, fmt.Errorf("hash apply: %v", err)
 		}
 
 		return cap, nil
@@ -116,12 +116,12 @@ func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 			sum := sha256.Sum256(cap.Data())
 			value = fmt.Sprintf("%x", sum)
 		default:
-			return cap, fmt.Errorf("process hash apply: algorithm %s: %v", p.Options.Algorithm, hashInvalidAlgorithm)
+			return cap, fmt.Errorf("hash apply: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
 		}
 
 		cap.SetData([]byte(value))
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process hash apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
+	return cap, fmt.Errorf("hash apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
 }

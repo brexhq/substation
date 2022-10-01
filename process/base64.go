@@ -12,8 +12,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// base64JSONDecodedBinary is returned when the Base64 processor is configured to decode output to JSON, but the output contains binary data and cannot be written as valid JSON.
-const base64JSONDecodedBinary = errors.Error("base64JSONDecodedBinary")
+// errBase64DecodedBinary is returned when the Base64 processor is configured to decode output to JSON, but the output contains binary data and cannot be written as valid JSON.
+const errBase64DecodedBinary = errors.Error("cannot write binary as JSON")
 
 /*
 Base64 processes data by converting it to and from base64 encoding. The processor supports these patterns:
@@ -57,12 +57,12 @@ type Base64Options struct {
 func (p Base64) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process base64 applybatch: %v", err)
+		return nil, fmt.Errorf("base64 applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process base64 applybatch: %v", err)
+		return nil, fmt.Errorf("base64 applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -72,7 +72,7 @@ func (p Base64) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return cap, fmt.Errorf("process base64 apply: options %+v: %v", p.Options, processorMissingRequiredOptions)
+		return cap, fmt.Errorf("base64 apply: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -85,22 +85,22 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		case "from":
 			decode, err := base64.Decode(tmp)
 			if err != nil {
-				return cap, fmt.Errorf("process base64 apply: %v", err)
+				return cap, fmt.Errorf("base64 apply: %v", err)
 			}
 
 			if !utf8.Valid(decode) {
-				return cap, fmt.Errorf("process base64 apply: %v", base64JSONDecodedBinary)
+				return cap, fmt.Errorf("base64 apply: %v", errBase64DecodedBinary)
 			}
 
 			value = decode
 		case "to":
 			value = base64.Encode(tmp)
 		default:
-			return cap, fmt.Errorf("process base64 apply: direction %s: %v", p.Options.Direction, processorInvalidDirection)
+			return cap, fmt.Errorf("base64 apply: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
 		}
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process base64 apply: %v", err)
+			return cap, fmt.Errorf("base64 apply: %v", err)
 		}
 
 		return cap, nil
@@ -113,19 +113,19 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		case "from":
 			decode, err := base64.Decode(cap.Data())
 			if err != nil {
-				return cap, fmt.Errorf("process base64 apply: %v", err)
+				return cap, fmt.Errorf("base64 apply: %v", err)
 			}
 
 			value = decode
 		case "to":
 			value = base64.Encode(cap.Data())
 		default:
-			return cap, fmt.Errorf("process base64 apply: direction %s: %v", p.Options.Direction, processorInvalidDirection)
+			return cap, fmt.Errorf("base64 apply: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
 		}
 
 		cap.SetData(value)
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process base64 apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
+	return cap, fmt.Errorf("base64 apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
 }

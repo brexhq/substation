@@ -12,8 +12,8 @@ import (
 	"github.com/jshlbrd/go-aggregate"
 )
 
-// aggregateBufferSizeLimit is returned when the aggregate's buffer size limit is reached. If this error occurs, then increase the size of the buffer or use the Drop processor to remove data that exceeds the buffer limit.
-const aggregateBufferSizeLimit = errors.Error("aggregateBufferSizeLimit")
+// errAggregateBufferSizeLimit is returned when the aggregate's buffer size limit is reached. If this error occurs, then increase the size of the buffer or use the Drop processor to remove data that exceeds the buffer limit.
+const errAggregateBufferSizeLimit = errors.Error("buffer size limit reached")
 
 /*
 Aggregate processes data by buffering and aggregating it
@@ -97,14 +97,14 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process aggregate applybatch: %v", err)
+		return nil, fmt.Errorf("aggregate applybatch: %v", err)
 	}
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(ctx, cap)
 		if err != nil {
-			return nil, fmt.Errorf("process aggregate applybatch: %v", err)
+			return nil, fmt.Errorf("aggregate applybatch: %v", err)
 		}
 
 		if !ok {
@@ -116,7 +116,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 		// fit within it
 		length := len(cap.Data())
 		if length > p.Options.MaxSize {
-			return nil, fmt.Errorf("process aggregate applybatch: size limit %d reached (%d): %v", p.Options.MaxSize, length, aggregateBufferSizeLimit)
+			return nil, fmt.Errorf("aggregate applybatch: size %d data length %d: %v", p.Options.MaxSize, length, errAggregateBufferSizeLimit)
 		}
 
 		var aggregateKey string
@@ -132,7 +132,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 		ok, err = buffer[aggregateKey].Add(cap.Data())
 		if err != nil {
-			return nil, fmt.Errorf("process aggregate applybatch: %v", err)
+			return nil, fmt.Errorf("aggregate applybatch: %v", err)
 		}
 
 		// data was successfully added to the buffer, every item after
@@ -150,7 +150,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 				value, err = json.Set(value, p.OutputKey, element)
 				if err != nil {
-					return nil, fmt.Errorf("process aggregate applybatch: %v", err)
+					return nil, fmt.Errorf("aggregate applybatch: %v", err)
 				}
 			}
 
@@ -184,7 +184,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 				value, err = json.Set(value, p.OutputKey, element)
 				if err != nil {
-					return nil, fmt.Errorf("process aggregate applybatch: %v", err)
+					return nil, fmt.Errorf("aggregate applybatch: %v", err)
 				}
 			}
 

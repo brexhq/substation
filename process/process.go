@@ -9,20 +9,17 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// processorInvalidDataPattern is returned when a processor is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
-const processorInvalidDataPattern = errors.Error("processorInvalidDataPattern")
+// errProcessorInvalidDataPattern is returned when a processor is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
+const errProcessorInvalidDataPattern = errors.Error("invalid data access pattern")
 
-// processorInvalidDirection is returned when a processor is configured with an invalid direction setting.
-const processorInvalidDirection = errors.Error("processorInvalidDirection")
+// errProcessorInvalidDirection is returned when a processor is configured with an invalid direction setting.
+const errProcessorInvalidDirection = errors.Error("invalid direction")
 
-// processorMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
-const processorMissingRequiredOptions = errors.Error("processorMissingRequiredOptions")
+// errProcessorMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
+const errProcessorMissingRequiredOptions = errors.Error("missing required options")
 
-// applyInvalidFactoryConfig is returned when an unsupported Applicator processor is referenced in Factory.
-const applyInvalidFactoryConfig = errors.Error("applyInvalidFactoryConfig")
-
-// applyBatchInvalidFactoryConfig is returned when an unsupported Batch processor is referenced in BatchFactory.
-const applyBatchInvalidFactoryConfig = errors.Error("applyBatchInvalidFactoryConfig")
+// errInvalidFactoryInput is returned when an unsupported processor is referenced in any Factory.
+const errInvalidFactoryInput = errors.Error("invalid factory input")
 
 // Applicator is an interface for applying a processor to encapsulated data.
 type Applicator interface {
@@ -163,7 +160,7 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, applyInvalidFactoryConfig)
+		return nil, fmt.Errorf("settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }
 
@@ -310,7 +307,7 @@ func BatchApplicatorFactory(cfg config.Config) (BatchApplicator, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, applyBatchInvalidFactoryConfig)
+		return nil, fmt.Errorf("settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }
 

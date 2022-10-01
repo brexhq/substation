@@ -15,11 +15,11 @@ import (
 
 var dynamodbAPI dynamodb.API
 
-// dynamoDBInputNotAnObject is returned when the input is not a JSON object. Refer to the DynamoDB processor documentation for input requirements.
-const dynamoDBInputNotAnObject = errors.Error("dynamoDBInputNotAnObject")
+// errDynamoDBInputNotAnObject is returned when the input is not a JSON object. Refer to the DynamoDB processor documentation for input requirements.
+const errDynamoDBInputNotAnObject = errors.Error("input is not an object")
 
-// dynamoDBInputMissingPK is returned when the JSON key "PK" is missing in the input. Refer to the DynamoDB processor documentation for input requirements.
-const dynamoDBInputMissingPK = errors.Error("dynamoDBInputMissingPK")
+// errDynamoDBInputMissingPK is returned when the JSON key "PK" is missing in the input. Refer to the DynamoDB processor documentation for input requirements.
+const errDynamoDBInputMissingPK = errors.Error("input missing PK")
 
 /*
 DynamoDB processes data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The input must be a JSON object containing a partition key ("PK") and optionally containing a sort key ("SK"). This processor uses the DynamoDB Query operation, refer to the DynamoDB documentation for the Query operation's request syntax and key condition expression patterns:
@@ -81,12 +81,12 @@ type DynamoDBOptions struct {
 func (p DynamoDB) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process dynamodb applybatch: %v", err)
+		return nil, fmt.Errorf("dynamodb applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process dynamodb applybatch: %v", err)
+		return nil, fmt.Errorf("dynamodb applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -96,12 +96,12 @@ func (p DynamoDB) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]conf
 func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
-		return cap, fmt.Errorf("process dynamodb apply: options %+v: %v", p.Options, processorMissingRequiredOptions)
+		return cap, fmt.Errorf("dynamodb apply: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("process dynamodb apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
+		return cap, fmt.Errorf("dynamodb apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
 	}
 
 	// lazy load API
@@ -111,13 +111,13 @@ func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 
 	result := cap.Get(p.InputKey)
 	if !result.IsObject() {
-		return cap, fmt.Errorf("process dynamodb apply: inputkey %s: %v", p.InputKey, dynamoDBInputNotAnObject)
+		return cap, fmt.Errorf("dynamodb apply: inputkey %s: %v", p.InputKey, errDynamoDBInputNotAnObject)
 	}
 
 	// PK is a required field
 	pk := json.Get([]byte(result.Raw), "PK").String()
 	if pk == "" {
-		return cap, fmt.Errorf("process dynamodb apply: inputkey %s: %v", p.InputKey, dynamoDBInputMissingPK)
+		return cap, fmt.Errorf("dynamodb apply: inputkey %s: %v", p.InputKey, errDynamoDBInputMissingPK)
 	}
 
 	// SK is an optional field
@@ -125,7 +125,7 @@ func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 
 	value, err := p.dynamodb(ctx, pk, sk)
 	if err != nil {
-		return cap, fmt.Errorf("process dynamodb apply: %v", err)
+		return cap, fmt.Errorf("dynamodb apply: %v", err)
 	}
 
 	// no match
@@ -134,7 +134,7 @@ func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 	}
 
 	if err := cap.Set(p.OutputKey, value); err != nil {
-		return cap, fmt.Errorf("process dynamodb apply: %v", err)
+		return cap, fmt.Errorf("dynamodb apply: %v", err)
 	}
 
 	return cap, nil

@@ -53,12 +53,12 @@ type ConvertOptions struct {
 func (p Convert) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process convert applybatch: %v", err)
+		return nil, fmt.Errorf("convert applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process convert applybatch: %v", err)
+		return nil, fmt.Errorf("convert applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -68,7 +68,7 @@ func (p Convert) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]confi
 func (p Convert) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
-		return cap, fmt.Errorf("process convert apply: options %+v: %v", p.Options, processorMissingRequiredOptions)
+		return cap, fmt.Errorf("convert apply: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
@@ -90,11 +90,11 @@ func (p Convert) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		}
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process convert apply: %v", err)
+			return cap, fmt.Errorf("convert apply: %v", err)
 		}
 
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process convert apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
+	return cap, fmt.Errorf("convert apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
 }

@@ -54,12 +54,12 @@ type ForEachOptions struct {
 func (p ForEach) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process for_each applybatch: %v", err)
+		return nil, fmt.Errorf("for_each applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process for_each applybatch: %v", err)
+		return nil, fmt.Errorf("for_each applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -78,7 +78,7 @@ processing workflow. For example:
 func (p ForEach) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("process for_each apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
+		return cap, fmt.Errorf("for_each apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
 	}
 
 	// configured processor is converted to a JSON object so that the
@@ -107,7 +107,7 @@ func (p ForEach) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 
 	applicator, err := ApplicatorFactory(processor)
 	if err != nil {
-		return cap, fmt.Errorf("process for_each apply: %v", err)
+		return cap, fmt.Errorf("for_each apply: %v", err)
 	}
 
 	result := cap.Get(p.InputKey)
@@ -118,17 +118,17 @@ func (p ForEach) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 	for _, res := range result.Array() {
 		tmpCap := config.NewCapsule()
 		if err := tmpCap.Set(processor.Type, res); err != nil {
-			return cap, fmt.Errorf("process for_each apply: %v", err)
+			return cap, fmt.Errorf("for_each apply: %v", err)
 		}
 
 		tmpCap, err = applicator.Apply(ctx, tmpCap)
 		if err != nil {
-			return cap, fmt.Errorf("process for_each apply: %v", err)
+			return cap, fmt.Errorf("for_each apply: %v", err)
 		}
 
 		value := tmpCap.Get(processor.Type)
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process for_each apply: %v", err)
+			return cap, fmt.Errorf("for_each apply: %v", err)
 		}
 	}
 

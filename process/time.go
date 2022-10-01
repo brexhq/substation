@@ -72,12 +72,12 @@ type TimeOptions struct {
 func (p Time) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process time applybatch: %v", err)
+		return nil, fmt.Errorf("time applybatch: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process time applybatch: %v", err)
+		return nil, fmt.Errorf("time applybatch: %v", err)
 	}
 
 	return caps, nil
@@ -87,7 +87,7 @@ func (p Time) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.InputFormat == "" || p.Options.OutputFormat == "" {
-		return cap, fmt.Errorf("process time apply: options %+v: %v", p.Options, processorMissingRequiredOptions)
+		return cap, fmt.Errorf("time apply: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
 	}
 
 	// "now" processing, supports json and data
@@ -106,7 +106,7 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 		if p.OutputKey != "" {
 			if err := cap.Set(p.OutputKey, value); err != nil {
-				return cap, fmt.Errorf("process time apply: %v", err)
+				return cap, fmt.Errorf("time apply: %v", err)
 			}
 
 			return cap, nil
@@ -133,11 +133,11 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 		value, err := p.time(result)
 		if err != nil {
-			return cap, fmt.Errorf("process time apply: %v", err)
+			return cap, fmt.Errorf("time apply: %v", err)
 		}
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process time apply: %v", err)
+			return cap, fmt.Errorf("time apply: %v", err)
 		}
 
 		return cap, nil
@@ -147,13 +147,13 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 	if p.InputKey == "" && p.OutputKey == "" {
 		tmp, err := json.Set([]byte{}, "tmp", cap.Data())
 		if err != nil {
-			return cap, fmt.Errorf("process time apply: %v", err)
+			return cap, fmt.Errorf("time apply: %v", err)
 		}
 
 		res := json.Get(tmp, "tmp")
 		value, err := p.time(res)
 		if err != nil {
-			return cap, fmt.Errorf("process time apply: %v", err)
+			return cap, fmt.Errorf("time apply: %v", err)
 		}
 
 		switch v := value.(type) {
@@ -166,7 +166,7 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process time apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, processorInvalidDataPattern)
+	return cap, fmt.Errorf("time apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
 }
 
 func (p Time) time(result json.Result) (interface{}, error) {

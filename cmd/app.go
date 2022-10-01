@@ -41,7 +41,8 @@ type Channels struct {
 	Sink      *config.Channel
 }
 
-/* New returns an uninitialized Substation app. This can be chained into Setup to create and setup a new app in a single line:
+/*
+New returns an uninitialized Substation app. This can be chained into Setup to create and setup a new app in a single line:
 sub := cmd.New().Setup()
 */
 func New() *Substation {

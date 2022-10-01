@@ -16,8 +16,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var sub cmd.Substation
-var scanMethod string
+var sub *cmd.Substation
 
 func loadConfig(f string) error {
 	bytes, err := ioutil.ReadFile(f)
@@ -44,6 +43,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
+	sub = cmd.New().Setup()
 	loadConfig(*config)
 
 	if err := file(ctx, *input); err != nil {
@@ -58,10 +58,6 @@ func file(ctx context.Context, filename string) error {
 		return fmt.Errorf("file concurrency: %v", err)
 	}
 
-	// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable
-	scanMethod = cmd.GetScanMethod()
-
-	sub.CreateChannels()
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -102,6 +98,9 @@ func file(ctx context.Context, filename string) error {
 		scanner := bufio.NewScanner(fileHandle)
 		scanner.Buffer([]byte{}, 100*1024*1024)
 
+		// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable
+		scanMethod := cmd.GetScanMethod()
+
 		var count int
 		for scanner.Scan() {
 			switch scanMethod {
@@ -121,8 +120,8 @@ func file(ctx context.Context, filename string) error {
 			count++
 		}
 
-		sub.TransformWait(&transformWg)
-		sub.SinkWait(&sinkWg)
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
 		return nil
 	})

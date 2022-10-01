@@ -11,8 +11,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var sub Substation
-
 var appLeaksTest = []struct {
 	name   string
 	config []byte
@@ -115,9 +113,9 @@ func TestAppLeaks(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	for _, test := range appLeaksTest {
+		sub := New().Setup()
 		json.Unmarshal(test.config, &sub.Config)
 
-		sub.CreateChannels()
 		group, ctx := errgroup.WithContext(context.TODO())
 
 		var sinkWg sync.WaitGroup
@@ -148,8 +146,8 @@ func TestAppLeaks(t *testing.T) {
 				}
 			}
 
-			sub.TransformWait(&transformWg)
-			sub.SinkWait(&sinkWg)
+			sub.WaitTransform(&transformWg)
+			sub.WaitSink(&sinkWg)
 
 			return nil
 		})

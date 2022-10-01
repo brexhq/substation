@@ -22,7 +22,6 @@ import (
 	"github.com/brexhq/substation/internal/log"
 )
 
-var sub cmd.Substation
 var concurrency int
 var handler string
 var scanMethod string
@@ -77,12 +76,16 @@ type gatewayMetadata struct {
 }
 
 func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	sub := cmd.Substation{}
+	sub.Setup()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
+	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -113,8 +116,8 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 			sub.Send(cap)
 		}
 
-		sub.TransformWait(&transformWg)
-		sub.SinkWait(&sinkWg)
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
 		return nil
 	})
@@ -134,13 +137,15 @@ type kinesisMetadata struct {
 }
 
 func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
+	sub := cmd.New().Setup()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return fmt.Errorf("kinesis handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels()
+	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -185,8 +190,8 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 			}
 		}
 
-		sub.TransformWait(&transformWg)
-		sub.SinkWait(&sinkWg)
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
 		return nil
 	})
@@ -207,13 +212,15 @@ type s3Metadata struct {
 }
 
 func s3Handler(ctx context.Context, event events.S3Event) error {
+	sub := cmd.New().Setup()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return fmt.Errorf("s3 handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels()
+	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -277,8 +284,8 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			}
 		}
 
-		sub.TransformWait(&transformWg)
-		sub.SinkWait(&sinkWg)
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
 		return nil
 	})
@@ -291,13 +298,15 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 }
 
 func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
+	sub := cmd.New().Setup()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return fmt.Errorf("s3Sns handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels()
+	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -369,8 +378,8 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			}
 		}
 
-		sub.TransformWait(&transformWg)
-		sub.SinkWait(&sinkWg)
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
 		return nil
 	})
@@ -390,13 +399,15 @@ type snsMetadata struct {
 }
 
 func snsHandler(ctx context.Context, event events.SNSEvent) error {
+	sub := cmd.New().Setup()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return fmt.Errorf("sns handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels()
+	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -433,8 +444,8 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 			}
 		}
 
-		sub.TransformWait(&transformWg)
-		sub.SinkWait(&sinkWg)
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
 		return nil
 	})
@@ -454,13 +465,15 @@ type sqsMetadata struct {
 }
 
 func sqsHandler(ctx context.Context, event events.SQSEvent) error {
+	sub := cmd.New().Setup()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return fmt.Errorf("sqs handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels()
+	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -497,8 +510,8 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 			}
 		}
 
-		sub.TransformWait(&transformWg)
-		sub.SinkWait(&sinkWg)
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
 		return nil
 	})

@@ -20,7 +20,7 @@ type Substation struct {
 	Config   Config
 }
 
-// Config is the shared application configuration for all applications.
+// Config is the shared application configuration for all apps.
 type Config struct {
 	Transform config.Config
 	Sink      config.Config
@@ -41,14 +41,24 @@ type Channels struct {
 	Sink      *config.Channel
 }
 
-// CreateChannels initializes channels used by the app.
-func (sub *Substation) CreateChannels() {
+/* New returns an uninitialized Substation app. This can be chained into Setup to create and setup a new app in a single line:
+sub := cmd.New().Setup()
+*/
+func New() *Substation {
+	return &Substation{}
+}
+
+// Setup initializes a Substation app. This method should be called at least once and can be used any time the source application needs strict guarantees that the app has a fresh state.
+func (sub *Substation) Setup() *Substation {
 	sub.Channels.Done = make(chan struct{})
 	sub.Channels.Transform = config.NewChannel()
 	sub.Channels.Sink = config.NewChannel()
+	sub.Config = Config{}
+
+	return sub
 }
 
-// Send puts byte data into the Transform channel.
+// Send writes encapsulated data into the Transform channel.
 func (sub *Substation) Send(cap config.Capsule) {
 	sub.Channels.Transform.Send(cap)
 }
@@ -90,7 +100,7 @@ func (sub *Substation) Block(ctx context.Context, group *errgroup.Group) error {
 		// signals that all data processing completed successfully
 		// this should only ever be called by Sink
 		case <-sub.Channels.Done:
-			log.Debug("processing completed")
+			log.Debug("processing finished")
 			return nil
 		}
 	}
@@ -113,12 +123,12 @@ func (sub *Substation) Transform(ctx context.Context, wg *sync.WaitGroup) error 
 	return nil
 }
 
-// TransformWait closes the transform channel and blocks until data processing is complete.
-func (sub *Substation) TransformWait(wg *sync.WaitGroup) {
+// WaitTransform closes the transform channel and blocks until data processing is complete.
+func (sub *Substation) WaitTransform(wg *sync.WaitGroup) {
 	sub.Channels.Transform.Close()
 	wg.Wait()
 
-	log.Debug("transformers completed")
+	log.Debug("transformers finished")
 }
 
 // Sink is the data sink method for the app. Data is input on the Sink channel and sent to the configured sink. The Sink goroutine completes when the Sink channel is closed and all data is flushed.
@@ -140,12 +150,12 @@ func (sub *Substation) Sink(ctx context.Context, wg *sync.WaitGroup) error {
 	return nil
 }
 
-// SinkWait closes the sink channel and blocks until data load is complete.
-func (sub *Substation) SinkWait(wg *sync.WaitGroup) {
+// WaitSink closes the sink channel and blocks until data load is complete.
+func (sub *Substation) WaitSink(wg *sync.WaitGroup) {
 	sub.Channels.Sink.Close()
 	wg.Wait()
 
-	log.Debug("sink completed")
+	log.Debug("sink finished")
 }
 
 // GetConcurrency retrieves a concurrency value from the SUBSTATION_CONCURRENCY environment variable. If the environment variable is missing, then the concurrency value is the number of CPUs on the host. In native Substation applications, this value determines the number of transform goroutines; if set to 1, then multi-core processing is not enabled.

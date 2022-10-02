@@ -9,8 +9,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// ipInvalidType is returned when the IP inspector is configured with an invalid type.
-const ipInvalidType = errors.Error("ipInvalidType")
+// errIPInvalidType is returned when the IP inspector is configured with an invalid type.
+const errIPInvalidType = errors.Error("invalid type")
 
 /*
 IP evaluates IP addresses by their type and usage. This inspector uses the standard library's net package to identify the type and usage of the address (more information is available here: https://pkg.go.dev/net#IP).
@@ -81,7 +81,7 @@ func (c IP) Inspect(ctx context.Context, cap config.Capsule) (output bool, err e
 	case "unspecified":
 		matched = ip.IsUnspecified()
 	default:
-		return false, fmt.Errorf("condition ip: type %s: %v", c.Type, ipInvalidType)
+		return false, fmt.Errorf("condition ip: type %s: %v", c.Type, errIPInvalidType)
 	}
 
 	if c.Negate {

@@ -9,8 +9,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// lengthInvalidFunction is returned when the Length inspector is configured with an invalid function.
-const lengthInvalidFunction = errors.Error("lengthInvalidFunction")
+// errLengthInvalidFunction is returned when the Length inspector is configured with an invalid function.
+const errLengthInvalidFunction = errors.Error("invalid function")
 
 /*
 Length evaluates data using len functions. This inspector supports evaluating byte and rune (character) length of strings. If a JSON array is input, then the length is evaluated against the number of elements in the array.
@@ -103,7 +103,7 @@ func (c Length) match(length int) (bool, error) {
 			matched = true
 		}
 	default:
-		return false, fmt.Errorf("condition length: function %s: %v", c.Function, lengthInvalidFunction)
+		return false, fmt.Errorf("condition length: function %s: %v", c.Function, errLengthInvalidFunction)
 	}
 
 	if c.Negate {

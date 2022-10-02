@@ -87,7 +87,7 @@ func (p Split) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 			continue
 		}
 
-		return nil, fmt.Errorf("process split: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+		return nil, fmt.Errorf("process split: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
 	return newCaps, nil
@@ -97,12 +97,12 @@ func (p Split) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 func (p Split) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Separator == "" {
-		return cap, fmt.Errorf("process split: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process split: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" || p.OutputKey == "" {
-		return cap, fmt.Errorf("process split: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+		return cap, fmt.Errorf("process split: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
 	result := cap.Get(p.InputKey).String()

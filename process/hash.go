@@ -74,7 +74,7 @@ func (p Hash) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Algorithm == "" {
-		return cap, fmt.Errorf("process hash: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process hash: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -118,5 +118,5 @@ func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process hash: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process hash: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

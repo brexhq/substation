@@ -68,7 +68,7 @@ func (p Convert) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]confi
 func (p Convert) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
-		return cap, fmt.Errorf("process convert: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process convert: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
@@ -96,5 +96,5 @@ func (p Convert) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process convert: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process convert: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

@@ -59,7 +59,7 @@ func (p Group) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.
 func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON arrays, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("process group: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process group: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	if len(p.Options.Keys) == 0 {

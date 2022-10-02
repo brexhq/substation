@@ -72,7 +72,7 @@ func (p Replace) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]confi
 func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Old == "" || p.Options.New == "" {
-		return cap, fmt.Errorf("process replace: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process replace: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// default to replace all
@@ -110,5 +110,5 @@ func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process replace: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process replace: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

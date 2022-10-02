@@ -75,5 +75,5 @@ func (p Copy) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process copy: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process copy: inputkey %s outputkey %s: %w", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

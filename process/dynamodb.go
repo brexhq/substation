@@ -96,12 +96,12 @@ func (p DynamoDB) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]conf
 func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
-		return cap, fmt.Errorf("process dynamodb: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process dynamodb: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("process dynamodb: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+		return cap, fmt.Errorf("process dynamodb: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
 	// lazy load API

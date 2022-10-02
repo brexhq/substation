@@ -77,7 +77,7 @@ func (p Capture) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]confi
 func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Expression == "" || p.Options.Function == "" {
-		return cap, fmt.Errorf("process capture: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process capture: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	re, err := regexp.Compile(p.Options.Expression)
@@ -145,7 +145,7 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		}
 	}
 
-	return cap, fmt.Errorf("process capture: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process capture: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }
 
 func (p Capture) getStringMatch(match []string) string {

@@ -129,5 +129,5 @@ func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 		return tmp, nil
 	}
 
-	return cap, fmt.Errorf("process pipeline: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process pipeline: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

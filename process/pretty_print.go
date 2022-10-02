@@ -93,7 +93,7 @@ applied and the result is emitted as a new object.
 func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return nil, fmt.Errorf("process pretty_print: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return nil, fmt.Errorf("process pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	op, err := condition.OperatorFactory(p.Condition)
@@ -151,7 +151,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 			}
 
 		default:
-			return nil, fmt.Errorf("process pretty_print: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
+			return nil, fmt.Errorf("process pretty_print: direction %s: %v", p.Options.Direction, errInvalidDirection)
 		}
 	}
 
@@ -177,7 +177,7 @@ that are stored in a single byte array.
 func (p PrettyPrint) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return cap, fmt.Errorf("process pretty_print: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	switch p.Options.Direction {
@@ -185,6 +185,6 @@ func (p PrettyPrint) Apply(ctx context.Context, cap config.Capsule) (config.Caps
 		cap.SetData([]byte(cap.Get(ppModifier).String()))
 		return cap, nil
 	default:
-		return cap, fmt.Errorf("process pretty_print: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
+		return cap, fmt.Errorf("process pretty_print: direction %s: %v", p.Options.Direction, errInvalidDirection)
 	}
 }

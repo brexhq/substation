@@ -73,7 +73,7 @@ func (p Domain) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return cap, fmt.Errorf("process domain: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process domain: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -96,7 +96,7 @@ func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process domain: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process domain: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }
 
 func (p Domain) domain(s string) (string, error) {

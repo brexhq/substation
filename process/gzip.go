@@ -91,7 +91,7 @@ func (p Gzip) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Gzip) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return cap, fmt.Errorf("process gzip: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process gzip: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	var value []byte
@@ -111,7 +111,7 @@ func (p Gzip) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 		value = to
 	default:
-		return cap, fmt.Errorf("process gzip: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
+		return cap, fmt.Errorf("process gzip: direction %s: %v", p.Options.Direction, errInvalidDirection)
 	}
 
 	cap.SetData(value)

@@ -74,7 +74,7 @@ func (p Case) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Case == "" {
-		return cap, fmt.Errorf("process case: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process case: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -116,5 +116,5 @@ func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process case: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process case: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

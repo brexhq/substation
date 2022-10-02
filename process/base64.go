@@ -72,7 +72,7 @@ func (p Base64) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return cap, fmt.Errorf("process base64: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process base64: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -96,7 +96,7 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		case "to":
 			value = base64.Encode(tmp)
 		default:
-			return cap, fmt.Errorf("process base64: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
+			return cap, fmt.Errorf("process base64: direction %s: %v", p.Options.Direction, errInvalidDirection)
 		}
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
@@ -120,12 +120,12 @@ func (p Base64) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		case "to":
 			value = base64.Encode(cap.Data())
 		default:
-			return cap, fmt.Errorf("process base64: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
+			return cap, fmt.Errorf("process base64: direction %s: %v", p.Options.Direction, errInvalidDirection)
 		}
 
 		cap.SetData(value)
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process base64: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process base64: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

@@ -46,7 +46,7 @@ func (p Delete) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Delete) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" {
-		return cap, fmt.Errorf("process delete: inputkey %s: %v", p.InputKey, errProcessorInvalidDataPattern)
+		return cap, fmt.Errorf("process delete: inputkey %s: %v", p.InputKey, errInvalidDataPattern)
 	}
 
 	if err := cap.Delete(p.InputKey); err != nil {

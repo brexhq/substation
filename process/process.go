@@ -9,19 +9,19 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errProcessorInvalidDataPattern is returned when a processor is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
-const errProcessorInvalidDataPattern = errors.Error("invalid data access pattern")
+// errInvalidDataPattern is returned when a processor is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
+var errInvalidDataPattern = errors.Error("invalid data access pattern")
 
-// errProcessorInvalidDirection is returned when a processor is configured with an invalid direction setting.
-const errProcessorInvalidDirection = errors.Error("invalid direction")
+// errInvalidDirection is returned when a processor is configured with an invalid direction setting.
+const errInvalidDirection = errors.Error("invalid direction")
 
-// errProcessorMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
-const errProcessorMissingRequiredOptions = errors.Error("missing required options")
+// errMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
+const errMissingRequiredOptions = errors.Error("missing required options")
 
 // errInvalidFactoryInput is returned when an unsupported processor is referenced in any Factory.
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-// Applicator is an interface foring a processor to encapsulated data.
+// Applicator is an interface for applying a processor to encapsulated data.
 type Applicator interface {
 	Apply(context.Context, config.Capsule) (config.Capsule, error)
 }
@@ -40,7 +40,7 @@ func Apply(ctx context.Context, cap config.Capsule, apps ...Applicator) (config.
 	return cap, nil
 }
 
-// ApplyByte is a convenience function foring one or many Applicators to bytes.
+// ApplyByte is a convenience function for applying one or many Applicators to bytes.
 func ApplyByte(ctx context.Context, data []byte, apps ...Applicator) ([]byte, error) {
 	cap := config.NewCapsule()
 	cap.SetData(data)
@@ -164,7 +164,7 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 	}
 }
 
-// BatchApplicator is an interface foring a processor to a slice of encapsulated data.
+// BatchApplicator is an interface for applying a processor to a slice of encapsulated data.
 type BatchApplicator interface {
 	ApplyBatch(context.Context, []config.Capsule) ([]config.Capsule, error)
 }

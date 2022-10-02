@@ -17,8 +17,8 @@ import (
 
 var sumoLogicClient http.HTTP
 
-// sumologicSinkInvalidJSON is returned when the Sumo Logic sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
-const sumologicSinkInvalidJSON = errors.Error("sumologicSinkInvalidJSON")
+// errSumoLogicJSON is returned when the Sumo Logic sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
+const errSumoLogicJSON = errors.Error("input must be JSON")
 
 /*
 SumoLogic sinks JSON data to Sumo Logic using an HTTP collector. More information about Sumo Logic HTTP collectors is available here: https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Data-to-an-HTTP-Source.
@@ -76,7 +76,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 			return ctx.Err()
 		default:
 			if !json.Valid(cap.Data()) {
-				return fmt.Errorf("sink sumologic category %s: %v", category, sumologicSinkInvalidJSON)
+				return fmt.Errorf("sink sumologic category %s: %v", category, errSumoLogicJSON)
 			}
 
 			if sink.CategoryKey != "" {

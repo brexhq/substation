@@ -18,12 +18,11 @@ var sqsAPI sqs.API
 const sqsMessageSizeLimit = 1024 * 1024 * 256
 
 /*
-sqsDataExceededSizeLimit is returned when data exceeds
-the SQS message size limit. If this error occurs, then
-conditions or processors should be applied to either drop
-or reduce the size of the data.
+errSQSMessageSizeLimit is returned when data exceeds the SQS message
+size limit. If this error occurs, then conditions or processors
+should be applied to either drop or reduce the size of the data.
 */
-const sqsDataExceededSizeLimit = errors.Error("KinesisFirehoseDataExceededSizeLimit")
+const errSQSMessageSizeLimit = errors.Error("data exceeded size limit")
 
 /*
 SQS sinks data to an AWS SQS queue.
@@ -62,7 +61,7 @@ func (sink *SQS) Send(ctx context.Context, ch *config.Channel) error {
 			return ctx.Err()
 		default:
 			if len(cap.Data()) > sqsMessageSizeLimit {
-				return fmt.Errorf("sink sqs: %v", sqsDataExceededSizeLimit)
+				return fmt.Errorf("sink sqs: %v", errSQSMessageSizeLimit)
 			}
 
 			ok, err := buffer.Add(cap.Data())

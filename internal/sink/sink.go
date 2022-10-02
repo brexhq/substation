@@ -8,8 +8,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// sinkInvalidFactoryConfig is returned when an unsupported Sink is referenced in Factory.
-const sinkInvalidFactoryConfig = errors.Error("sinkInvalidFactoryConfig")
+// errInvalidFactoryInput is returned when an unsupported Sink is referenced in Factory.
+const errInvalidFactoryInput = errors.Error("invalid factory input")
 
 // Sink is an interface for sending data to external services. Sinks read channels of capsules and are interruptable.
 type Sink interface {
@@ -52,6 +52,6 @@ func Factory(cfg config.Config) (Sink, error) {
 		config.Decode(cfg.Settings, &s)
 		return &s, nil
 	default:
-		return nil, fmt.Errorf("sink settings %v: %v", cfg.Settings, sinkInvalidFactoryConfig)
+		return nil, fmt.Errorf("sink settings %v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }

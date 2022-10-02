@@ -52,7 +52,6 @@ func (transform *Batch) Transform(ctx context.Context, in *config.Channel, out *
 
 	var received int
 	// read encapsulated data from the input channel into a batch
-	// if a signal is received on the kill channel, then this is interrupted
 	batch := make([]config.Capsule, 0, 10)
 	for cap := range in.C {
 		select {
@@ -76,7 +75,6 @@ func (transform *Batch) Transform(ctx context.Context, in *config.Channel, out *
 
 	var sent int
 	// write the processed, encapsulated data to the output channel
-	// if a signal is received on the kill channel, then this is interrupted
 	for _, cap := range batch {
 		select {
 		case <-ctx.Done():

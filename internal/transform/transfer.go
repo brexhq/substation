@@ -22,7 +22,6 @@ func (transform *Transfer) Transform(ctx context.Context, in *config.Channel, ou
 	var count int
 
 	// read and write encapsulated data from input and to output channels
-	// if a signal is received on the kill channel, then this is interrupted
 	for cap := range in.C {
 		select {
 		case <-ctx.Done():

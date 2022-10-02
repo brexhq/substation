@@ -10,8 +10,8 @@ import (
 	"github.com/brexhq/substation/internal/http"
 )
 
-// lambdaMissingAppConfig is returned when a Lambda is deployed without a configured AppConfig URL.
-const lambdaMissingAppConfig = errors.Error("lambdaMissingAppConfig")
+// errMissingPrefetchEnvVar is returned when a Lambda is deployed without a configured AppConfig URL.
+const errMissingPrefetchEnvVar = errors.Error("missing AWS_APPCONFIG_EXTENSION_PREFETCH_LIST environment variable")
 
 var client http.HTTP
 
@@ -24,7 +24,7 @@ func GetPrefetch(ctx context.Context) ([]byte, error) {
 	env := "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST"
 	url, found := os.LookupEnv(env)
 	if !found {
-		return nil, fmt.Errorf("getprefetch lookup %s: %v", env, lambdaMissingAppConfig)
+		return nil, fmt.Errorf("getprefetch lookup: %v", errMissingPrefetchEnvVar)
 	}
 
 	local := "http://localhost:2772" + url

@@ -12,8 +12,8 @@ import (
 	"github.com/jshlbrd/go-aggregate"
 )
 
-// errAggregateBufferSizeLimit is returned when the aggregate's buffer size limit is reached. If this error occurs, then increase the size of the buffer or use the Drop processor to remove data that exceeds the buffer limit.
-const errAggregateBufferSizeLimit = errors.Error("buffer size limit reached")
+// errAggregateSizeLimit is returned when the aggregate's buffer size limit is reached. If this error occurs, then increase the size of the buffer or use the Drop processor to remove data that exceeds the buffer limit.
+const errAggregateSizeLimit = errors.Error("data exceeded size limit")
 
 /*
 Aggregate processes data by buffering and aggregating it
@@ -116,7 +116,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 		// fit within it
 		length := len(cap.Data())
 		if length > p.Options.MaxSize {
-			return nil, fmt.Errorf("aggregate applybatch: size %d data length %d: %v", p.Options.MaxSize, length, errAggregateBufferSizeLimit)
+			return nil, fmt.Errorf("aggregate applybatch: size %d data length %d: %v", p.Options.MaxSize, length, errAggregateSizeLimit)
 		}
 
 		var aggregateKey string

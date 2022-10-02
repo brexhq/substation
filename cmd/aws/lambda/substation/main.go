@@ -25,11 +25,11 @@ import (
 var handler string
 var scanMethod string
 
-// lambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
-const lambdaMissingHandler = errors.Error("lambdaMissingHandler")
+// errLambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
+const errLambdaMissingHandler = errors.Error("missing SUBSTATION_HANDLER environment variable")
 
-// lambdaUnsupportedHandler is returned when the Lambda is deployed without a supported handler.
-const lambdaUnsupportedHandler = errors.Error("lambdaUnsupportedHandler")
+// errLambdaInvalidHandler is returned when the Lambda is deployed with an unsupported handler.
+const errLambdaInvalidHandler = errors.Error("invalid handler")
 
 func main() {
 	switch h := handler; h {
@@ -46,7 +46,7 @@ func main() {
 	case "AWS_SQS":
 		lambda.Start(sqsHandler)
 	default:
-		panic(fmt.Errorf("main handler %s: %v", h, lambdaUnsupportedHandler))
+		panic(fmt.Errorf("main handler %s: %v", h, errLambdaInvalidHandler))
 	}
 }
 
@@ -54,7 +54,7 @@ func init() {
 	var found bool
 	handler, found = os.LookupEnv("SUBSTATION_HANDLER")
 	if !found {
-		panic(fmt.Errorf("init handler %s: %v", handler, lambdaMissingHandler))
+		panic(fmt.Errorf("init handler %s: %v", handler, errLambdaMissingHandler))
 	}
 
 	// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable

@@ -9,8 +9,8 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
-// setInvalidKey is returned when an invalid key is used in a Capsule Set function.
-const setInvalidKey = errors.Error("setInvalidKey")
+// errSetInvalidKey is returned when an invalid key is used in a Capsule Set function.
+const errSetInvalidKey = errors.Error("invalid set key")
 
 // Config is a template used by Substation interface factories to produce new instances from JSON configurations. Type refers to the type of instance and Settings contains options used in the instance. Examples of this are found in the condition and process packages.
 type Config struct {
@@ -110,7 +110,7 @@ func (c *Capsule) Set(key string, value interface{}) (err error) {
 
 		// values should not be written directly to the metadata field
 		if key == "" {
-			return setInvalidKey
+			return errSetInvalidKey
 		}
 
 		c.metadata, err = json.Set(c.metadata, key, value)
@@ -136,7 +136,7 @@ func (c *Capsule) SetRaw(key string, value interface{}) (err error) {
 
 		// values should not be written directly to the metadata field
 		if key == "" {
-			return setInvalidKey
+			return errSetInvalidKey
 		}
 
 		c.metadata, err = json.SetRaw(c.metadata, key, value)

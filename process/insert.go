@@ -43,12 +43,12 @@ type InsertOptions struct {
 func (p Insert) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("insert applybatch: %v", err)
+		return nil, fmt.Errorf("process insert: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("insert applybatch: %v", err)
+		return nil, fmt.Errorf("process insert: %v", err)
 	}
 
 	return caps, nil
@@ -58,11 +58,11 @@ func (p Insert) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Insert) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.OutputKey == "" {
-		return cap, fmt.Errorf("insert apply: outputkey %s: %v", p.OutputKey, errProcessorInvalidDataPattern)
+		return cap, fmt.Errorf("process insert: outputkey %s: %v", p.OutputKey, errProcessorInvalidDataPattern)
 	}
 
 	if err := cap.Set(p.OutputKey, p.Options.Value); err != nil {
-		return cap, fmt.Errorf("insert apply: %v", err)
+		return cap, fmt.Errorf("process insert: %v", err)
 	}
 
 	return cap, nil

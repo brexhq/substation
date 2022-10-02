@@ -57,12 +57,12 @@ type ReplaceOptions struct {
 func (p Replace) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("replace applybatch: %v", err)
+		return nil, fmt.Errorf("process replace: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("replace applybatch: %v", err)
+		return nil, fmt.Errorf("process replace: %v", err)
 	}
 
 	return caps, nil
@@ -72,7 +72,7 @@ func (p Replace) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]confi
 func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Old == "" || p.Options.New == "" {
-		return cap, fmt.Errorf("replace apply: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process replace: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
 	}
 
 	// default to replace all
@@ -91,7 +91,7 @@ func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		)
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("replace apply: %v", err)
+			return cap, fmt.Errorf("process replace: %v", err)
 		}
 
 		return cap, nil
@@ -110,5 +110,5 @@ func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("replace apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process replace: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
 }

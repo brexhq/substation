@@ -29,7 +29,7 @@ The most common causes of this error are invalid input JSON
 const errPrettyPrintIncompleteJSON = errors.Error("incomplete JSON object")
 
 /*
-PrettyPrint processes data by applying or reversing prettyprint formatting to JSON.
+PrettyPrint processes data bying or reversing prettyprint formatting to JSON.
 This processor has significant limitations when used to reverse prettyprint, including:
 	- cannot support multi-core processing
 	- invalid input will cause unpredictable results
@@ -93,12 +93,12 @@ applied and the result is emitted as a new object.
 func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return nil, fmt.Errorf("pretty_print applybatch: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return nil, fmt.Errorf("process pretty_print: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
 	}
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("pretty_print applybatch: %v", err)
+		return nil, fmt.Errorf("process pretty_print: %v", err)
 	}
 
 	var count int
@@ -108,7 +108,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 	for _, cap := range caps {
 		ok, err := op.Operate(ctx, cap)
 		if err != nil {
-			return nil, fmt.Errorf("pretty_print applybatch: %v", err)
+			return nil, fmt.Errorf("process pretty_print: %v", err)
 		}
 
 		if !ok {
@@ -137,7 +137,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 				if count == 0 {
 					var buf bytes.Buffer
 					if err := gojson.Compact(&buf, stack); err != nil {
-						return nil, fmt.Errorf("pretty_print applybatch: gojson compact: %v", err)
+						return nil, fmt.Errorf("process pretty_print: gojson compact: %v", err)
 					}
 
 					if json.Valid(buf.Bytes()) {
@@ -151,12 +151,12 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]c
 			}
 
 		default:
-			return nil, fmt.Errorf("pretty_print applybatch: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
+			return nil, fmt.Errorf("process pretty_print: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
 		}
 	}
 
 	if count != 0 {
-		return nil, fmt.Errorf("pretty_print applybatch: %d characters remain: %v", count, errPrettyPrintIncompleteJSON)
+		return nil, fmt.Errorf("process pretty_print: %d characters remain: %v", count, errPrettyPrintIncompleteJSON)
 	}
 
 	return newCaps, nil
@@ -177,7 +177,7 @@ that are stored in a single byte array.
 func (p PrettyPrint) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return cap, fmt.Errorf("pretty_print apply: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process pretty_print: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
 	}
 
 	switch p.Options.Direction {
@@ -185,6 +185,6 @@ func (p PrettyPrint) Apply(ctx context.Context, cap config.Capsule) (config.Caps
 		cap.SetData([]byte(cap.Get(ppModifier).String()))
 		return cap, nil
 	default:
-		return cap, fmt.Errorf("pretty_print apply: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
+		return cap, fmt.Errorf("process pretty_print: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
 	}
 }

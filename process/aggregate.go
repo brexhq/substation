@@ -97,14 +97,14 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("aggregate applybatch: %v", err)
+		return nil, fmt.Errorf("process aggregate: %v", err)
 	}
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(ctx, cap)
 		if err != nil {
-			return nil, fmt.Errorf("aggregate applybatch: %v", err)
+			return nil, fmt.Errorf("process aggregate: %v", err)
 		}
 
 		if !ok {
@@ -116,7 +116,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 		// fit within it
 		length := len(cap.Data())
 		if length > p.Options.MaxSize {
-			return nil, fmt.Errorf("aggregate applybatch: size %d data length %d: %v", p.Options.MaxSize, length, errAggregateSizeLimit)
+			return nil, fmt.Errorf("process aggregate: size %d data length %d: %v", p.Options.MaxSize, length, errAggregateSizeLimit)
 		}
 
 		var aggregateKey string
@@ -132,7 +132,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 		ok, err = buffer[aggregateKey].Add(cap.Data())
 		if err != nil {
-			return nil, fmt.Errorf("aggregate applybatch: %v", err)
+			return nil, fmt.Errorf("process aggregate: %v", err)
 		}
 
 		// data was successfully added to the buffer, every item after
@@ -150,7 +150,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 				value, err = json.Set(value, p.OutputKey, element)
 				if err != nil {
-					return nil, fmt.Errorf("aggregate applybatch: %v", err)
+					return nil, fmt.Errorf("process aggregate: %v", err)
 				}
 			}
 
@@ -184,7 +184,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 				value, err = json.Set(value, p.OutputKey, element)
 				if err != nil {
-					return nil, fmt.Errorf("aggregate applybatch: %v", err)
+					return nil, fmt.Errorf("process aggregate: %v", err)
 				}
 			}
 

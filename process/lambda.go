@@ -61,12 +61,12 @@ type LambdaOptions struct {
 func (p Lambda) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("lambda applybatch: %v", err)
+		return nil, fmt.Errorf("process lambda: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("lambda applybatch: %v", err)
+		return nil, fmt.Errorf("process lambda: %v", err)
 	}
 
 	return caps, nil
@@ -76,12 +76,12 @@ func (p Lambda) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return cap, fmt.Errorf("lambda apply: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process lambda: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("lambda apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+		return cap, fmt.Errorf("process lambda: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
 	}
 
 	// lazy load API
@@ -91,17 +91,17 @@ func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 
 	result := cap.Get(p.InputKey)
 	if !result.IsObject() {
-		return cap, fmt.Errorf("lambda apply: inputkey %s: %v", p.InputKey, errLambdaInputNotAnObject)
+		return cap, fmt.Errorf("process lambda: inputkey %s: %v", p.InputKey, errLambdaInputNotAnObject)
 	}
 
 	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, []byte(result.Raw))
 	if err != nil {
-		return cap, fmt.Errorf("lambda apply: %v", err)
+		return cap, fmt.Errorf("process lambda: %v", err)
 	}
 
 	if resp.FunctionError != nil && p.Options.ErrorOnFailure {
 		resErr := json.Get(resp.Payload, "errorMessage").String()
-		return cap, fmt.Errorf("lambda apply: %v", resErr)
+		return cap, fmt.Errorf("process lambda: %v", resErr)
 	}
 
 	if resp.FunctionError != nil {
@@ -109,7 +109,7 @@ func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 	}
 
 	if err := cap.Set(p.OutputKey, resp.Payload); err != nil {
-		return cap, fmt.Errorf("lambda apply: %v", err)
+		return cap, fmt.Errorf("process lambda: %v", err)
 	}
 
 	return cap, nil

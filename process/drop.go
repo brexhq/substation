@@ -24,14 +24,14 @@ type Drop struct {
 func (p Drop) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("drop applybatch: %v", err)
+		return nil, fmt.Errorf("process drop: %v", err)
 	}
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(ctx, cap)
 		if err != nil {
-			return nil, fmt.Errorf("drop applybatch: %v", err)
+			return nil, fmt.Errorf("process drop: %v", err)
 		}
 
 		if !ok {

@@ -81,12 +81,12 @@ type DynamoDBOptions struct {
 func (p DynamoDB) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("dynamodb applybatch: %v", err)
+		return nil, fmt.Errorf("process dynamodb: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("dynamodb applybatch: %v", err)
+		return nil, fmt.Errorf("process dynamodb: %v", err)
 	}
 
 	return caps, nil
@@ -96,12 +96,12 @@ func (p DynamoDB) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]conf
 func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
-		return cap, fmt.Errorf("dynamodb apply: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process dynamodb: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("dynamodb apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
+		return cap, fmt.Errorf("process dynamodb: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errProcessorInvalidDataPattern)
 	}
 
 	// lazy load API
@@ -111,13 +111,13 @@ func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 
 	result := cap.Get(p.InputKey)
 	if !result.IsObject() {
-		return cap, fmt.Errorf("dynamodb apply: inputkey %s: %v", p.InputKey, errDynamoDBInputNotAnObject)
+		return cap, fmt.Errorf("process dynamodb: inputkey %s: %v", p.InputKey, errDynamoDBInputNotAnObject)
 	}
 
 	// PK is a required field
 	pk := json.Get([]byte(result.Raw), "PK").String()
 	if pk == "" {
-		return cap, fmt.Errorf("dynamodb apply: inputkey %s: %v", p.InputKey, errDynamoDBInputMissingPK)
+		return cap, fmt.Errorf("process dynamodb: inputkey %s: %v", p.InputKey, errDynamoDBInputMissingPK)
 	}
 
 	// SK is an optional field
@@ -125,7 +125,7 @@ func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 
 	value, err := p.dynamodb(ctx, pk, sk)
 	if err != nil {
-		return cap, fmt.Errorf("dynamodb apply: %v", err)
+		return cap, fmt.Errorf("process dynamodb: %v", err)
 	}
 
 	// no match
@@ -134,7 +134,7 @@ func (p DynamoDB) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 	}
 
 	if err := cap.Set(p.OutputKey, value); err != nil {
-		return cap, fmt.Errorf("dynamodb apply: %v", err)
+		return cap, fmt.Errorf("process dynamodb: %v", err)
 	}
 
 	return cap, nil
@@ -150,7 +150,7 @@ func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]int
 		p.Options.ScanIndexForward,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("dynamodb: %v", err)
+		return nil, fmt.Errorf("process dynamodb: %v", err)
 	}
 
 	var items []map[string]interface{}
@@ -158,7 +158,7 @@ func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]int
 		var item map[string]interface{}
 		err = dynamodbattribute.UnmarshalMap(i, &item)
 		if err != nil {
-			return nil, fmt.Errorf("dynamodb: %v", err)
+			return nil, fmt.Errorf("process dynamodb: %v", err)
 		}
 
 		items = append(items, item)

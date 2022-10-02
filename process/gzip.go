@@ -48,12 +48,12 @@ func (p Gzip) from(data []byte) ([]byte, error) {
 	r := bytes.NewReader(data)
 	gz, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, fmt.Errorf("gzip: %v", err)
+		return nil, fmt.Errorf("process gzip: %v", err)
 	}
 
 	output, err := ioutil.ReadAll(gz)
 	if err != nil {
-		return nil, fmt.Errorf("gzip: %v", err)
+		return nil, fmt.Errorf("process gzip: %v", err)
 	}
 
 	return output, nil
@@ -63,10 +63,10 @@ func (p Gzip) to(data []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	if _, err := gz.Write(data); err != nil {
-		return nil, fmt.Errorf("gzip: %v", err)
+		return nil, fmt.Errorf("process gzip: %v", err)
 	}
 	if err := gz.Close(); err != nil {
-		return nil, fmt.Errorf("gzip: %v", err)
+		return nil, fmt.Errorf("process gzip: %v", err)
 	}
 
 	return buf.Bytes(), nil
@@ -76,12 +76,12 @@ func (p Gzip) to(data []byte) ([]byte, error) {
 func (p Gzip) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("gzip applybatch: %v", err)
+		return nil, fmt.Errorf("process gzip: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("gzip applybatch: %v", err)
+		return nil, fmt.Errorf("process gzip: %v", err)
 	}
 
 	return caps, nil
@@ -91,7 +91,7 @@ func (p Gzip) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Gzip) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return cap, fmt.Errorf("gzip apply: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process gzip: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)
 	}
 
 	var value []byte
@@ -99,19 +99,19 @@ func (p Gzip) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 	case "from":
 		from, err := p.from(cap.Data())
 		if err != nil {
-			return cap, fmt.Errorf("gzip apply: %v", err)
+			return cap, fmt.Errorf("process gzip: %v", err)
 		}
 
 		value = from
 	case "to":
 		to, err := p.to(cap.Data())
 		if err != nil {
-			return cap, fmt.Errorf("gzip apply: %v", err)
+			return cap, fmt.Errorf("process gzip: %v", err)
 		}
 
 		value = to
 	default:
-		return cap, fmt.Errorf("gzip apply: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
+		return cap, fmt.Errorf("process gzip: direction %s: %v", p.Options.Direction, errProcessorInvalidDirection)
 	}
 
 	cap.SetData(value)

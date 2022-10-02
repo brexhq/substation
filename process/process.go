@@ -21,7 +21,7 @@ const errProcessorMissingRequiredOptions = errors.Error("missing required option
 // errInvalidFactoryInput is returned when an unsupported processor is referenced in any Factory.
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-// Applicator is an interface for applying a processor to encapsulated data.
+// Applicator is an interface foring a processor to encapsulated data.
 type Applicator interface {
 	Apply(context.Context, config.Capsule) (config.Capsule, error)
 }
@@ -40,7 +40,7 @@ func Apply(ctx context.Context, cap config.Capsule, apps ...Applicator) (config.
 	return cap, nil
 }
 
-// ApplyByte is a convenience function for applying one or many Applicators to bytes.
+// ApplyByte is a convenience function foring one or many Applicators to bytes.
 func ApplyByte(ctx context.Context, data []byte, apps ...Applicator) ([]byte, error) {
 	cap := config.NewCapsule()
 	cap.SetData(data)
@@ -160,11 +160,11 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }
 
-// BatchApplicator is an interface for applying a processor to a slice of encapsulated data.
+// BatchApplicator is an interface foring a processor to a slice of encapsulated data.
 type BatchApplicator interface {
 	ApplyBatch(context.Context, []config.Capsule) ([]config.Capsule, error)
 }
@@ -307,7 +307,7 @@ func BatchApplicatorFactory(cfg config.Config) (BatchApplicator, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }
 
@@ -319,7 +319,7 @@ func newBatch(s *[]config.Capsule) []config.Capsule {
 	return make([]config.Capsule, 0, 10)
 }
 
-// conditionallyApplyBatch uses conditions to dynamically apply processors to a slice of encapsulated data. This is a convenience function for the ApplyBatch method used in most processors.
+// conditionallyApplyBatch uses conditions to dynamically processors to a slice of encapsulated data. This is a convenience function for the ApplyBatch method used in most processors.
 func conditionallyApplyBatch(ctx context.Context, caps []config.Capsule, op condition.Operator, apps ...Applicator) ([]config.Capsule, error) {
 	newCaps := newBatch(&caps)
 

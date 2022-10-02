@@ -64,19 +64,19 @@ func (sink *Firehose) Send(ctx context.Context, ch *config.Channel) error {
 			return ctx.Err()
 		default:
 			if len(cap.Data()) > firehoseRecordSizeLimit {
-				return fmt.Errorf("sink kinesis firehose: %v", errFirehoseRecordSizeLimit)
+				return fmt.Errorf("sink firehose: %v", errFirehoseRecordSizeLimit)
 			}
 
 			ok, err := buffer.Add(cap.Data())
 			if err != nil {
-				return fmt.Errorf("sink kinesis firehose: %v", err)
+				return fmt.Errorf("sink firehose: %v", err)
 			}
 
 			if !ok {
 				items := buffer.Get()
 				_, err := firehoseAPI.PutRecordBatch(ctx, items, sink.Stream)
 				if err != nil {
-					return fmt.Errorf("sink kinesis firehose: %v", err)
+					return fmt.Errorf("sink firehose: %v", err)
 				}
 
 				log.WithField(
@@ -96,7 +96,7 @@ func (sink *Firehose) Send(ctx context.Context, ch *config.Channel) error {
 		items := buffer.Get()
 		_, err := firehoseAPI.PutRecordBatch(ctx, items, sink.Stream)
 		if err != nil {
-			return fmt.Errorf("sink kinesis firehose: %v", err)
+			return fmt.Errorf("sink firehose: %v", err)
 		}
 
 		log.WithField(

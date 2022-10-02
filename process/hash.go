@@ -72,11 +72,6 @@ func (p Hash) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 
 // Apply processes encapsulated data with the Hash processor.
 func (p Hash) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
-	// if rand.Intn(2) == 1 {
-	// 	fmt.Println("error")
-	// 	return cap, errors.Error("foo")
-	// }
-
 	// error early if required options are missing
 	if p.Options.Algorithm == "" {
 		return cap, fmt.Errorf("hash apply: options %+v: %v", p.Options, errProcessorMissingRequiredOptions)

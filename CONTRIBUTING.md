@@ -17,6 +17,7 @@ Thank you so much for your interest in contributing to Substation! This document
   + [Enhancements](#submitting-enhancements)
 
 [Style Guides](#style-guides)
+  + [Design Patterns](#design-patterns)
   + [Naming Conventions](#naming-conventions)
   + [Go](#go-style-guide)
   + [Python](#python-style-guide)
@@ -48,11 +49,55 @@ The project supports development through the use of [Visual Studio Code configur
 
 ### Testing
 
-We rely on contributors to test changes before they are submitted as pull requests. Any components added or changed should be tested and public APIs should be supported by unit tests.
+We rely on contributors to test changes before they are submitted as pull requests. Any components added or changed should be tested and public packages should be supported by unit tests.
 
 ## Style Guides
 
 ### Naming Conventions
+
+#### Design Patterns
+
+##### Configurations
+
+Substation uses a single configuration pattern for all components in the system (see `Config` in [config/config.go](/config/config.go)). This pattern is highly reusable and should be nested to create complex configurations supported by Jsonnet. Below is an example that shows how configurations should be designed:
+
+```json
+   "foo": {
+	  "settings": { ... },
+	  "type": "fooer"
+   },
+   "bar": {
+      "settings": {
+         "baz": [
+            {
+               "settings": { ... },
+               "type": "bazar"
+            },
+         ]
+      },
+      "type": "barre"
+   }
+```
+
+Repeating this pattern allows components and applications to integrate with the factory pattern.
+
+##### Factories
+
+Substation relies on [factory methods](https://refactoring.guru/design-patterns/factory-method) to create objects that [satisfy interfaces](https://go.dev/doc/effective_go#interface_methods) across the system. Factories should be combined with the configuration design pattern to create pre-configured, ready-to-use objects.
+
+Factories are the preferred method for allowing users to customize the system. Example factories can be seen in [condition](/condition/condition.go) and [process](/process/process.go).
+
+#### Environment Variables
+
+Substation uses environment variables to customize runtime settings of the system (e.g., concurrency is controlled by `SUBSTATION_CONCURRENCY`). 
+
+Custom applications should implement their own runtime settings as required; for example, the [AWS Lambda application](/cmd/aws/lambda/substation/) uses `SUBSTATION_HANDLER` to manage [invocation settings](https://docs.aws.amazon.com/lambda/latest/dg/lambda-invocation.html).
+
+#### Errors
+
+Errors should always start with `err` (or `Err`, if they are public) and be defined as constants using [internal/errors](/internal/errors/errors.go).
+
+If the error is related to an object created by an interface factory, then the object should be referenced by name in the error. For example, if the factory returns objects named `Foo`, `Bar`, and `Baz`, then related errors should be `errFooShortDescription`, `errBarShortDescription`, and `errBazShortDescription`.
 
 #### Environment Variables
 

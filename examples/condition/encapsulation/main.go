@@ -52,9 +52,9 @@ func main() {
 		}
 
 		if ok {
-			fmt.Printf("passed inspection: %s\n", cap.GetData())
+			fmt.Printf("passed inspection: %s\n", cap.Data())
 		} else {
-			fmt.Printf("failed inspection: %s\n", cap.GetData())
+			fmt.Printf("failed inspection: %s\n", cap.Data())
 		}
 	}
 }

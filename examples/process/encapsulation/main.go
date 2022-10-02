@@ -52,6 +52,6 @@ func main() {
 	}
 
 	for _, cap := range caps {
-		fmt.Printf("%s\n", cap.GetData())
+		fmt.Printf("%s\n", cap.Data())
 	}
 }

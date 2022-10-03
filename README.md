@@ -164,7 +164,7 @@ cd $SUBSTATION_ROOT && \
 ./cmd/file/substation/substation -input examples/quickstart/data.json -config examples/quickstart/config.json
 ```
 
-Users can continue exploring the system by iterating on the quickstart config, building and running custom [example](/examples/condition/data/) [applications](/examples/process/data/), and deploying a [fully-featured data pipeline in AWS](/examples/aws/).
+Users can continue exploring the system by iterating on the quickstart config, building and running custom [example](/examples/condition/data/) [applications](/examples/process/data/), and deploying a [data pipeline in AWS](/examples/aws/).
 
 ## Additional Documentation
 

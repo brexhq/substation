@@ -14,7 +14,6 @@ Thank you so much for your interest in contributing to Substation! This document
 [Development](#development)
   + [Development Environment](#development-environment)
   + [Testing](#testing)
-  + [Enhancements](#submitting-enhancements)
 
 [Style Guides](#style-guides)
   + [Design Patterns](#design-patterns)
@@ -53,9 +52,7 @@ We rely on contributors to test changes before they are submitted as pull reques
 
 ## Style Guides
 
-### Naming Conventions
-
-#### Design Patterns
+### Design Patterns
 
 ##### Configurations
 
@@ -86,6 +83,8 @@ Repeating this pattern allows components and applications to integrate with the 
 Substation relies on [factory methods](https://refactoring.guru/design-patterns/factory-method) to create objects that [satisfy interfaces](https://go.dev/doc/effective_go#interface_methods) across the system. Factories should be combined with the configuration design pattern to create pre-configured, ready-to-use objects.
 
 Factories are the preferred method for allowing users to customize the system. Example factories can be seen in [condition](/condition/condition.go) and [process](/process/process.go).
+
+### Naming Conventions
 
 #### Environment Variables
 

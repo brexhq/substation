@@ -1,6 +1,6 @@
 # aws
 
-This example deploys a fully-featured data pipeline to AWS that makes use of every Substation component.
+This example deploys a data pipeline to AWS that makes use of every Substation component.
 
 The data pipeline is visualized below:
 

@@ -45,7 +45,7 @@ type Case struct {
 /*
 CaseOptions contains custom options for the Case processor:
 	Case:
-		the case to convert the string or byte to
+		case to convert the string or byte to
 		must be one of:
 			upper
 			lower

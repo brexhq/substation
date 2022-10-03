@@ -17,21 +17,21 @@ Length evaluates data using len functions. This inspector supports evaluating by
 
 The inspector has these settings:
 	Function:
-		the length evaluation function used during inspection
+		length evaluation function used during inspection
 		must be one of:
 			equals
 			greaterthan
 			lessthan
 	Value:
-		the length value used during inspection
+		length value used during inspection
 	Type (optional):
-		the length type used during inpsection
+		length type used during inpsection
 		must be one of:
 			byte (number of bytes)
 			rune (number of characters)
 		defaults to byte
 	Key (optional):
-		the JSON key-value to retrieve for inspection
+		JSON key-value to retrieve for inspection
 	Negate (optional):
 		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
 		defaults to false

@@ -45,7 +45,7 @@ type Hash struct {
 /*
 HashOptions contains custom options for the Hash processor:
 	Algorithm:
-		the hashing algorithm to
+		hashing algorithm applied to the data
 		must be one of:
 			md5
 			sha256

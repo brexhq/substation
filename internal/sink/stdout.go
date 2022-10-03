@@ -23,7 +23,7 @@ func (sink *Stdout) Send(ctx context.Context, ch *config.Channel) error {
 	for cap := range ch.C {
 		select {
 		case <-ctx.Done():
-			return nil
+			return ctx.Err()
 		default:
 			fmt.Println(string(cap.Data()))
 			count++

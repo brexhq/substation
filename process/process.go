@@ -319,7 +319,7 @@ func newBatch(s *[]config.Capsule) []config.Capsule {
 	return make([]config.Capsule, 0, 10)
 }
 
-// conditionallyApplyBatch uses conditions to dynamically processors to a slice of encapsulated data. This is a convenience function for the ApplyBatch method used in most processors.
+// conditionallyApplyBatch uses conditions to dynamically apply processors to a slice of encapsulated data. This is a convenience function for the ApplyBatch method used in most processors.
 func conditionallyApplyBatch(ctx context.Context, caps []config.Capsule, op condition.Operator, apps ...Applicator) ([]config.Capsule, error) {
 	newCaps := newBatch(&caps)
 

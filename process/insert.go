@@ -33,7 +33,7 @@ type Insert struct {
 /*
 InsertOptions contains custom options for the Insert processor:
 	value:
-		the value to insert
+		value to insert
 */
 type InsertOptions struct {
 	Value interface{} `json:"value"`

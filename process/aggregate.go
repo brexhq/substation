@@ -59,16 +59,16 @@ type Aggregate struct {
 /*
 AggregateOptions contains custom options settings for the Aggregate processor:
 	AggregateKey (optional):
-		the JSON key-value that is used to organize aggregated data
+		JSON key-value that is used to organize aggregated data
 		defaults to empty string, only applies to JSON
 	Separator (optional):
-		the string that separates aggregated data
+		string that separates aggregated data
 		defaults to empty string, only applies to data
 	MaxCount (optional):
-		the maximum number of items stored in a buffer when aggregating data
+		maximum number of items stored in a buffer when aggregating data
 		defaults to 1000
 	MaxSize (optional):
-		the maximum size, in bytes, of items stored in a buffer when aggregating data
+		maximum size, in bytes, of items stored in a buffer when aggregating data
 		defaults to 10000 (10KB)
 */
 type AggregateOptions struct {

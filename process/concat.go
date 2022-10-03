@@ -35,7 +35,7 @@ type Concat struct {
 /*
 ConcatOptions contains custom options for the Concat processor:
 	Separator:
-		the string that separates the concatenated values
+		string that separates the concatenated values
 */
 type ConcatOptions struct {
 	Separator string `json:"separator"`

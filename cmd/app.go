@@ -110,7 +110,7 @@ func (sub *Substation) Block(ctx context.Context, group *errgroup.Group) error {
 				return group.Wait()
 			} else {
 				log.Debug("processing cancelled")
-				return nil
+				return ctx.Err()
 			}
 
 		// signals that all data processing completed successfully

@@ -37,7 +37,7 @@ type Convert struct {
 /*
 ConvertOptions contains custom options for the Convert processor:
 	Type:
-		the type that the value should be converted to
+		type that the value is converted to
 		must be one of:
 			bool (boolean)
 			int (integer)

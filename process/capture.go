@@ -41,9 +41,9 @@ type Capture struct {
 /*
 CaptureOptions contains custom options for the Capture processor:
 	Expression:
-		the regular expression used to capture values
+		regular expression used to capture values
 	Function:
-		the type of regular expression applied
+		type of regular expression applied
 		must be one of:
 			find: applies the Find(String)?Submatch function
 			find_all: applies the FindAll(String)?Submatch function (see count)

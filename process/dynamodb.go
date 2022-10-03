@@ -58,7 +58,7 @@ type DynamoDB struct {
 /*
 DynamoDBOptions contains custom options settings for the DynamoDB processor (https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#API_Query_RequestSyntax):
 	Table:
-		table to query
+		DynamoDB table to query
 	KeyConditionExpression:
 		key condition expression (see documentation)
 	Limit (optional):

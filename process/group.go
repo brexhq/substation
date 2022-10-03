@@ -34,7 +34,7 @@ type Group struct {
 /*
 GroupOptions contains custom options for the Group processor:
 	Keys (optional):
-		where values from InputKey are written to, creating new JSON objects
+		path where values from InputKey are written to, creating new JSON objects
 */
 type GroupOptions struct {
 	Keys []string `json:"keys"`

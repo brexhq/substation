@@ -40,7 +40,7 @@ type Split struct {
 /*
 SplitOptions contains custom options settings for the Split processor:
 	Separator:
-		the string that separates aggregated data
+		string that separates aggregated data
 */
 type SplitOptions struct {
 	Separator string `json:"separator"`

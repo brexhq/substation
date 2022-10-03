@@ -40,11 +40,11 @@ type Replace struct {
 /*
 ReplaceOptions contains custom options for the Replace processor:
 	Old:
-		the character(s) to replace in the data
+		character(s) to replace in the data
 	New:
-		the character(s) that replace Old
+		character(s) that replace Old
 	Count (optional):
-		the number of replacements to make
+		number of replacements to make
 		defaults to -1, which replaces all matches
 */
 type ReplaceOptions struct {

@@ -55,10 +55,10 @@ TimeOptions contains custom options for the Time processor:
 			unix: epoch
 			unix_milli: epoch milliseconds
 	InputLocation (optional):
-		the time zone abbreviation for the input
+		time zone abbreviation for the input
 		defaults to UTC
 	OutputLocation (optional):
-		the time zone abbreviation for the output
+		time zone abbreviation for the output
 		defaults to UTC
 */
 type TimeOptions struct {

@@ -12,9 +12,9 @@ JSONSchema evaluates JSON objects against a minimal schema parser.
 
 The inspector has these settings:
 	Schema.Key:
-		the JSON key-value to retrieve for inspection
+		JSON key-value to retrieve for inspection
 	Schema.Type:
-		the value type used during inspection of the Schema.Key
+		value type used during inspection of the Schema.Key
 		must be one of:
 			string
 			number (float, int)

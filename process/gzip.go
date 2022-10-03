@@ -35,7 +35,7 @@ type Gzip struct {
 /*
 GzipOptions contains custom options settings for the Gzip processor:
 	Direction:
-		the direction of the compression
+		direction of the compression
 		must be one of:
 			to: compress data to gzip
 			from: decompress data from gzip

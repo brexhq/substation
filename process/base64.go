@@ -44,7 +44,7 @@ type Base64 struct {
 /*
 Base64Options contains custom options for the Base64 processor:
 	Direction:
-		the direction of the encoding
+		direction of the encoding
 		must be one of:
 			to: encode to base64
 			from: decode from base64

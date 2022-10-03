@@ -9,7 +9,7 @@ import (
 )
 
 /*
-Math processes data bying mathematic operations. The processor supports these patterns:
+Math processes data by applying mathematic operations. The processor supports these patterns:
 	JSON:
 		{"math":[1,3]} >>> {"math":4}
 
@@ -35,7 +35,7 @@ type Math struct {
 /*
 MathOptions contains custom options for the Math processor:
 	Operation:
-		the operator applied to the data
+		operator applied to the data
 		must be one of:
 			add
 			subtract

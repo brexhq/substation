@@ -12,7 +12,7 @@ Content evaluates data by its content type. This inspector uses the standard lib
 
 The inspector has these settings:
 	Type:
-		the MIME type used during inspection
+		MIME type used during inspection
 	Negate (optional):
 		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
 		defaults to false

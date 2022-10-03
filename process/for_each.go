@@ -11,7 +11,7 @@ import (
 )
 
 /*
-ForEach processes data by iterating anding a processor to each element in a JSON array. The processor supports these patterns:
+ForEach processes data by iterating and applying a processor to each element in a JSON array. The processor supports these patterns:
 	JSON:
 		{"input":["ABC","DEF"]} >>> {"input":["ABC","DEF"],"output":["abc","def"]}
 
@@ -44,7 +44,7 @@ type ForEach struct {
 /*
 ForEachOptions contains custom options for the ForEach processor:
 	Processor:
-		processor to to the data
+		processor applied to the data
 */
 type ForEachOptions struct {
 	Processor config.Config

@@ -44,7 +44,7 @@ type Domain struct {
 /*
 DomainOptions contains custom options for the Domain processor:
 	Function:
-		the domain processing function to to the data
+		domain processing function applied to the data
 		must be one of:
 			tld
 			domain

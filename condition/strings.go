@@ -17,16 +17,16 @@ Strings evaluates data using string functions. This inspector uses the standard 
 
 The inspector has these settings:
 	Function:
-		the string evaluation function to use during inspection
+		string evaluation function to use during inspection
 		must be one of:
 			equals
 			contains
 			endswith
 			startswith
 	Expression:
-		the substring expression to use during inspection
+		substring expression to use during inspection
 	Key (optional):
-		the JSON key-value to retrieve for inspection
+		JSON key-value to retrieve for inspection
 	Negate (optional):
 		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
 		defaults to false

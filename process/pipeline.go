@@ -13,7 +13,7 @@ import (
 const errPipelineArrayInput = errors.Error("input is an array")
 
 /*
-Pipeline processes data bying a series of processors. This processor should be used when data requires complex processing outside of the boundaries of any data structures (see tests for examples). The processor supports these patterns:
+Pipeline processes data by applying a series of processors. This processor should be used when data requires complex processing outside of the boundaries of any data structures (see tests for examples). The processor supports these patterns:
 	JSON:
 		{"pipeline":"H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"} >>> {"pipeline":"foo"}
 	data:
@@ -58,7 +58,7 @@ type Pipeline struct {
 /*
 PipelineOptions contains custom options for the Pipeline processor:
 	Processors:
-		array of processors to to the data
+		array of processors applied to the data
 */
 type PipelineOptions struct {
 	Processors []config.Config

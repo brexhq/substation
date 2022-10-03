@@ -29,7 +29,7 @@ The most common causes of this error are invalid input JSON
 const errPrettyPrintIncompleteJSON = errors.Error("incomplete JSON object")
 
 /*
-PrettyPrint processes data bying or reversing prettyprint formatting to JSON.
+PrettyPrint processes data by applying or reversing prettyprint formatting to JSON.
 This processor has significant limitations when used to reverse prettyprint, including:
 	- cannot support multi-core processing
 	- invalid input will cause unpredictable results
@@ -66,7 +66,7 @@ type PrettyPrint struct {
 /*
 PrettyPrintOptions contains custom options settings for the PrettyPrint processor:
 	Direction:
-		the direction of the pretty transformation
+		direction of the pretty transformation
 		must be one of:
 			to: applies prettyprint formatting
 			from: reverses prettyprint formatting

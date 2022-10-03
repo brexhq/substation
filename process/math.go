@@ -10,10 +10,12 @@ import (
 
 /*
 Math processes data by applying mathematic operations. The processor supports these patterns:
+
 	JSON:
 		{"math":[1,3]} >>> {"math":4}
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "math",
 		"settings": {
@@ -34,6 +36,7 @@ type Math struct {
 
 /*
 MathOptions contains custom options for the Math processor:
+
 	Operation:
 		operator applied to the data
 		must be one of:
@@ -47,34 +50,34 @@ type MathOptions struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Math processor. Conditions are optionally applied to the data to enable processing.
-func (p Math) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Math) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process math: %v", err)
 	}
 
-	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
 		return nil, fmt.Errorf("process math: %v", err)
 	}
 
-	return caps, nil
+	return capsules, nil
 }
 
 // Apply processes encapsulated data with the Math processor.
-func (p Math) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+func (p Math) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Operation == "" {
-		return cap, fmt.Errorf("process math: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process math: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("process math: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process math: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
 	var value int64
-	result := cap.Get(p.InputKey)
+	result := capsule.Get(p.InputKey)
 	for i, res := range result.Array() {
 		if i == 0 {
 			value = res.Int()
@@ -87,15 +90,15 @@ func (p Math) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		case "subtract":
 			value -= res.Int()
 		case "multiply":
-			value = value * res.Int()
+			value *= res.Int()
 		case "divide":
-			value = value / res.Int()
+			value /= res.Int()
 		}
 	}
 
-	if err := cap.Set(p.OutputKey, value); err != nil {
-		return cap, fmt.Errorf("process math: %v", err)
+	if err := capsule.Set(p.OutputKey, value); err != nil {
+		return capsule, fmt.Errorf("process math: %v", err)
 	}
 
-	return cap, nil
+	return capsule, nil
 }

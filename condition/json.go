@@ -11,6 +11,7 @@ import (
 JSONSchema evaluates JSON objects against a minimal schema parser.
 
 The inspector has these settings:
+
 	Schema.Key:
 		JSON key-value to retrieve for inspection
 	Schema.Type:
@@ -25,10 +26,12 @@ The inspector has these settings:
 		defaults to false
 
 The inspector supports these patterns:
+
 	JSON:
 		{"foo":"bar","baz":123} == string,number
 
 When loaded with a factory, the inspector uses this JSON configuration:
+
 	{
 		"type": "json_schema",
 		"settings": {
@@ -54,11 +57,11 @@ type JSONSchema struct {
 }
 
 // Inspect evaluates encapsulated data with the JSONSchema inspector.
-func (c JSONSchema) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
+func (c JSONSchema) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	matched := true
 
 	for _, schema := range c.Schema {
-		result := cap.Get(schema.Key)
+		result := capsule.Get(schema.Key)
 		rtype := json.Types[result.Type]
 
 		// Null values don't exist in the JSON
@@ -95,16 +98,19 @@ func (c JSONSchema) Inspect(ctx context.Context, cap config.Capsule) (output boo
 JSONValid evaluates JSON objects for validity.
 
 The inspector has these settings:
+
 	Negate (optional):
 		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
 		defaults to false
 
 The inspector supports these patterns:
+
 	data:
 		{"foo":"bar","baz":123} == valid
 		foo == invalid
 
 When loaded with a factory, the inspector uses this JSON configuration:
+
 	{
 		"type": "json_valid"
 	}
@@ -114,8 +120,8 @@ type JSONValid struct {
 }
 
 // Inspect evaluates encapsulated data with the JSONValid inspector.
-func (c JSONValid) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
-	matched := json.Valid(cap.Data())
+func (c JSONValid) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+	matched := json.Valid(capsule.Data())
 
 	if c.Negate {
 		return !matched, nil

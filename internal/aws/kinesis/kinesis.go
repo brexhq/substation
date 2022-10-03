@@ -15,7 +15,7 @@ import (
 	"github.com/aws/aws-xray-sdk-go/xray"
 	rec "github.com/awslabs/kinesis-aggregation/go/records"
 
-	//lint:ignore SA1019 not ready to switch package
+	//nolint: staticcheck // not ready to switch package
 	"github.com/golang/protobuf/proto"
 )
 
@@ -67,7 +67,7 @@ func varIntSize(i int) int {
 	var needed int
 	for i > 0 {
 		needed++
-		i = i >> 1
+		i >>= 1
 	}
 
 	bytes := needed / 7
@@ -82,13 +82,13 @@ func (a *Aggregate) calculateRecordSize(data []byte, partitionKey string) int {
 	var recordSize int
 	// https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L344-L349
 	pkSize := 1 + varIntSize(len(partitionKey)) + len(partitionKey)
-	recordSize = recordSize + pkSize
+	recordSize += pkSize
 	// https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L362-L364
 	pkiSize := 1 + varIntSize(a.Count)
-	recordSize = recordSize + pkiSize
+	recordSize += pkiSize
 	// https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L371-L374
 	dataSize := 1 + varIntSize(len(data)) + len(data)
-	recordSize = recordSize + dataSize
+	recordSize += dataSize
 	// https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L376-L378
 	recordSize = recordSize + 1 + varIntSize(pkiSize+dataSize)
 
@@ -215,7 +215,6 @@ func (a *API) PutRecord(ctx aws.Context, data []byte, stream, partitionKey strin
 			StreamName:   aws.String(stream),
 			PartitionKey: aws.String(partitionKey),
 		})
-
 	if err != nil {
 		return nil, fmt.Errorf("putrecord stream %s partitionkey %s: %v", stream, partitionKey, err)
 	}

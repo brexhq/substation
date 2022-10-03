@@ -173,50 +173,48 @@ var aggregateTests = []struct {
 
 func TestAggregate(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range aggregateTests {
-		var caps []config.Capsule
+		var capsules []config.Capsule
 		for _, t := range test.test {
-			cap.SetData(t)
-			caps = append(caps, cap)
+			capsule.SetData(t)
+			capsules = append(capsules, capsule)
 		}
 
-		result, err := test.proc.ApplyBatch(ctx, caps)
+		result, err := test.proc.ApplyBatch(ctx, capsules)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		for i, res := range result {
 			expected := test.expected[i]
 			if !bytes.Equal(expected, res.Data()) {
-				t.Logf("expected %s, got %s", expected, string(res.Data()))
-				t.Fail()
+				t.Errorf("expected %s, got %s", expected, string(res.Data()))
 			}
 		}
 	}
 }
 
-func benchmarkAggregate(b *testing.B, batcher Aggregate, caps []config.Capsule) {
+func benchmarkAggregate(b *testing.B, batcher Aggregate, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		batcher.ApplyBatch(ctx, caps)
+		_, _ = batcher.ApplyBatch(ctx, capsules)
 	}
 }
 
 func BenchmarkAggregate(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range aggregateTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				var caps []config.Capsule
+				var capsules []config.Capsule
 				for _, t := range test.test {
-					cap.SetData(t)
-					caps = append(caps, cap)
+					_ = capsule.SetData(t)
+					capsules = append(capsules, capsule)
 				}
 
-				benchmarkAggregate(b, test.proc, caps)
+				benchmarkAggregate(b, test.proc, capsules)
 			},
 		)
 	}

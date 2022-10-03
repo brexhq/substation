@@ -21,6 +21,7 @@ const errDynamoDBJSON = errors.Error("input must be JSON")
 DynamoDB sinks JSON data to an AWS DynamoDB table. This sink supports sinking multiple rows from the same event to a table.
 
 The sink has these settings:
+
 	Table:
 		DynamoDB table that data is written to
 	ItemsKey:
@@ -38,6 +39,7 @@ The sink has these settings:
 			]
 
 When loaded with a factory, the sink uses this JSON configuration:
+
 	{
 		"type": "dynamodb",
 		"settings": {
@@ -58,16 +60,16 @@ func (sink *DynamoDB) Send(ctx context.Context, ch *config.Channel) error {
 	}
 
 	var count int
-	for cap := range ch.C {
+	for capsule := range ch.C {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if !json.Valid(cap.Data()) {
+			if !json.Valid(capsule.Data()) {
 				return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, errDynamoDBJSON)
 			}
 
-			items := cap.Get(sink.ItemsKey).Array()
+			items := capsule.Get(sink.ItemsKey).Array()
 			for _, item := range items {
 				cache := make(map[string]interface{})
 				for k, v := range item.Map() {

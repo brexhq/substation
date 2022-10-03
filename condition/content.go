@@ -11,6 +11,7 @@ import (
 Content evaluates data by its content type. This inspector uses the standard library's net/http package to identify the content type of data (more information is available here: https://pkg.go.dev/net/http#DetectContentType). When used in Substation pipelines, it is most effective when using processors that change the format of data (e.g., process/gzip). The inspector supports MIME types that follow this specification: https://mimesniff.spec.whatwg.org/.
 
 The inspector has these settings:
+
 	Type:
 		MIME type used during inspection
 	Negate (optional):
@@ -18,10 +19,12 @@ The inspector has these settings:
 		defaults to false
 
 The inspector supports these patterns:
+
 	data:
 		[31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0] == application/x-gzip
 
 When loaded with a factory, the inspector uses this JSON configuration:
+
 	{
 		"type": "content",
 		"settings": {
@@ -35,10 +38,10 @@ type Content struct {
 }
 
 // Inspect evaluates encapsulated data with the Content inspector.
-func (c Content) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
+func (c Content) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	matched := false
 
-	content := http.DetectContentType(cap.Data())
+	content := http.DetectContentType(capsule.Data())
 	if content == c.Type {
 		matched = true
 	}

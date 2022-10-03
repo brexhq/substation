@@ -11,11 +11,13 @@ import (
 
 /*
 Group processes data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
+
 	JSON array:
 		{"group":[["foo","bar"],[111,222]]} >>> {"group":[["foo",111],["bar",222]]}
 		{"group":[["foo","bar"],[111,222]]} >>> {"group":[{"name":foo","size":111},{"name":"bar","size":222}]}
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "group",
 		"settings": {
@@ -33,6 +35,7 @@ type Group struct {
 
 /*
 GroupOptions contains custom options for the Group processor:
+
 	Keys (optional):
 		path where values from InputKey are written to, creating new JSON objects
 */
@@ -41,25 +44,25 @@ type GroupOptions struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Group processor. Conditions are optionally applied to the data to enable processing.
-func (p Group) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Group) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process group: %v", err)
 	}
 
-	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
 		return nil, fmt.Errorf("process group: %v", err)
 	}
 
-	return caps, nil
+	return capsules, nil
 }
 
 // Apply processes encapsulated data with the Group processor.
-func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+func (p Group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON arrays, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("process group: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process group: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	if len(p.Options.Keys) == 0 {
@@ -70,7 +73,7 @@ func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 		// 	cache[0][]interface{}{"foo",123}
 		// 	cache[1][]interface{}{"bar",456}
 		cache := make(map[int][]interface{})
-		result := cap.Get(p.InputKey)
+		result := capsule.Get(p.InputKey)
 		for _, res := range result.Array() {
 			for i, r := range res.Array() {
 				cache[i] = append(cache[i], r.Value())
@@ -83,11 +86,11 @@ func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 		}
 
 		// [["foo",123],["bar",456]]
-		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process group: %v", err)
+		if err := capsule.Set(p.OutputKey, value); err != nil {
+			return capsule, fmt.Errorf("process group: %v", err)
 		}
 
-		return cap, nil
+		return capsule, nil
 	}
 
 	// elements in the values array are stored at their
@@ -100,12 +103,12 @@ func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 	cache := make(map[int][]byte)
 
 	var err error
-	result := cap.Get(p.InputKey)
+	result := capsule.Get(p.InputKey)
 	for i, res := range result.Array() {
 		for j, r := range res.Array() {
 			cache[j], err = json.Set(cache[j], p.Options.Keys[i], r)
 			if err != nil {
-				return cap, fmt.Errorf("process group: %v", err)
+				return capsule, fmt.Errorf("process group: %v", err)
 			}
 		}
 	}
@@ -116,15 +119,15 @@ func (p Group) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, e
 	for i := 0; i < len(cache); i++ {
 		value, err = json.Set(value, fmt.Sprintf("%d", i), cache[i])
 		if err != nil {
-			return cap, fmt.Errorf("process group: %v", err)
+			return capsule, fmt.Errorf("process group: %v", err)
 		}
 	}
 
 	// JSON arrays must be set using SetRaw to preserve structure
 	// [{"name":"foo","size":123},{"name":"bar","size":456}]
-	if err := cap.SetRaw(p.OutputKey, value); err != nil {
-		return cap, fmt.Errorf("process group: %v", err)
+	if err := capsule.SetRaw(p.OutputKey, value); err != nil {
+		return capsule, fmt.Errorf("process group: %v", err)
 	}
 
-	return cap, nil
+	return capsule, nil
 }

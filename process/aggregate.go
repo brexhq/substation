@@ -31,6 +31,7 @@ data aggregation patterns:
 - organize nested JSON in a JSON array based on unique keys
 
 The processor supports these patterns:
+
 	JSON array:
 		foo bar baz qux >>> {"aggregate":["foo","bar","baz","qux"]}
 		{"foo":"bar"} {"baz":"qux"} >>> {"aggregate":[{"foo":"bar"},{"baz":"qux"}]}
@@ -39,6 +40,7 @@ The processor supports these patterns:
 		{"foo":"bar"} {"baz":"qux"} >>> {"foo":"bar"}\n{"baz":"qux"}
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "aggregate",
 		"settings": {
@@ -58,6 +60,7 @@ type Aggregate struct {
 
 /*
 AggregateOptions contains custom options settings for the Aggregate processor:
+
 	AggregateKey (optional):
 		JSON key-value that is used to organize aggregated data
 		defaults to empty string, only applies to JSON
@@ -79,7 +82,7 @@ type AggregateOptions struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Aggregate processor. Conditions are optionally applied to the data to enable processing.
-func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Aggregate) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	// aggregateKeys is used to return elements stored in the
 	// buffer in order if the aggregate doesn't meet the
 	// configured threshold. any aggregate that meets the
@@ -100,28 +103,28 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 		return nil, fmt.Errorf("process aggregate: %v", err)
 	}
 
-	newCaps := newBatch(&caps)
-	for _, cap := range caps {
-		ok, err := op.Operate(ctx, cap)
+	newCaps := newBatch(&capsules)
+	for _, capsule := range capsules {
+		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
 			return nil, fmt.Errorf("process aggregate: %v", err)
 		}
 
 		if !ok {
-			newCaps = append(newCaps, cap)
+			newCaps = append(newCaps, capsule)
 			continue
 		}
 
 		// data that exceeds the size of the buffer will never
 		// fit within it
-		length := len(cap.Data())
+		length := len(capsule.Data())
 		if length > p.Options.MaxSize {
 			return nil, fmt.Errorf("process aggregate: size %d data length %d: %v", p.Options.MaxSize, length, errAggregateSizeLimit)
 		}
 
 		var aggregateKey string
 		if p.Options.AggregateKey != "" {
-			aggregateKey = cap.Get(p.Options.AggregateKey).String()
+			aggregateKey = capsule.Get(p.Options.AggregateKey).String()
 		}
 
 		if _, ok := buffer[aggregateKey]; !ok {
@@ -130,7 +133,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 			aggregateKeys = append(aggregateKeys, aggregateKey)
 		}
 
-		ok, err = buffer[aggregateKey].Add(cap.Data())
+		ok, err = buffer[aggregateKey].Add(capsule.Data())
 		if err != nil {
 			return nil, fmt.Errorf("process aggregate: %v", err)
 		}
@@ -166,7 +169,10 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 		// by this point, addition of the failed data is guaranteed to
 		// succeed after the buffer is reset
 		buffer[aggregateKey].Reset()
-		buffer[aggregateKey].Add(cap.Data())
+		_, err = buffer[aggregateKey].Add(capsule.Data())
+		if err != nil {
+			return nil, fmt.Errorf("process aggregate: %v", err)
+		}
 	}
 
 	// remaining items must be drained from the buffer, otherwise data is lost

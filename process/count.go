@@ -11,6 +11,7 @@ import (
 Count processes data by counting it.
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "count"
 	}
@@ -18,10 +19,10 @@ When loaded with a factory, the processor uses this JSON configuration:
 type Count struct{}
 
 // ApplyBatch processes a slice of encapsulated data with the Count processor. Conditions are optionally applied to the data to enable processing.
-func (p Count) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Count) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	newCap := config.NewCapsule()
-	if err := newCap.Set("count", len(caps)); err != nil {
-		return caps, fmt.Errorf("process count: : %v", err)
+	if err := newCap.Set("count", len(capsules)); err != nil {
+		return capsules, fmt.Errorf("process count: : %v", err)
 	}
 
 	newCaps := make([]config.Capsule, 0, 1)

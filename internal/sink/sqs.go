@@ -28,10 +28,12 @@ const errSQSMessageSizeLimit = errors.Error("data exceeded size limit")
 SQS sinks data to an AWS SQS queue.
 
 The sink has these settings:
+
 	Queue:
 		SQS queue name that data is sent to
 
 When loaded with a factory, the sink uses this JSON configuration:
+
 	{
 		"type": "sqs",
 		"settings": {
@@ -55,16 +57,16 @@ func (sink *SQS) Send(ctx context.Context, ch *config.Channel) error {
 	buffer := aggregate.Bytes{}
 	buffer.New(sqsMessageSizeLimit, 500)
 
-	for cap := range ch.C {
+	for capsule := range ch.C {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if len(cap.Data()) > sqsMessageSizeLimit {
+			if len(capsule.Data()) > sqsMessageSizeLimit {
 				return fmt.Errorf("sink sqs: %v", errSQSMessageSizeLimit)
 			}
 
-			ok, err := buffer.Add(cap.Data())
+			ok, err := buffer.Add(capsule.Data())
 			if err != nil {
 				return fmt.Errorf("sink sqs: %v", err)
 			}
@@ -83,7 +85,10 @@ func (sink *SQS) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("sent messages to SQS")
 
 				buffer.Reset()
-				buffer.Add(cap.Data())
+				_, err = buffer.Add(capsule.Data())
+				if err != nil {
+					return fmt.Errorf("sink sqs: %v", err)
+				}
 			}
 		}
 	}

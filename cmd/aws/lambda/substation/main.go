@@ -22,8 +22,10 @@ import (
 	"github.com/brexhq/substation/internal/log"
 )
 
-var handler string
-var scanMethod string
+var (
+	handler    string
+	scanMethod string
+)
 
 // errLambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
 const errLambdaMissingHandler = errors.Error("missing SUBSTATION_HANDLER environment variable")
@@ -74,7 +76,9 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 	if err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway handler: %v", err)
 	}
-	json.Unmarshal(conf, &sub.Config)
+	if err := json.Unmarshal(conf, &sub.Config); err != nil {
+		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway handler: %v", err)
+	}
 
 	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
@@ -96,15 +100,18 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 	// ingest
 	group.Go(func() error {
 		if len(request.Body) != 0 {
-			cap := config.NewCapsule()
-			cap.SetData([]byte(request.Body))
-			cap.SetMetadata(gatewayMetadata{
+			capsule := config.NewCapsule()
+			capsule.SetData([]byte(request.Body))
+			_, err := capsule.SetMetadata(gatewayMetadata{
 				request.Resource,
 				request.Path,
 				request.Headers,
 			})
+			if err != nil {
+				return fmt.Errorf("gateway handler: %v", err)
+			}
 
-			sub.Send(cap)
+			sub.Send(capsule)
 		}
 
 		sub.WaitTransform(&transformWg)
@@ -134,7 +141,10 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 	if err != nil {
 		return fmt.Errorf("kinesis handler: %v", err)
 	}
-	json.Unmarshal(conf, &sub.Config)
+	err = json.Unmarshal(conf, &sub.Config)
+	if err != nil {
+		return fmt.Errorf("kinesis handler: %v", err)
+	}
 
 	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
@@ -168,16 +178,19 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
-				cap := config.NewCapsule()
-				cap.SetData(record.Data)
-				cap.SetMetadata(kinesisMetadata{
+				capsule := config.NewCapsule()
+				capsule.SetData(record.Data)
+				_, err = capsule.SetMetadata(kinesisMetadata{
 					*record.ApproximateArrivalTimestamp,
 					eventSourceArn,
 					*record.PartitionKey,
 					*record.SequenceNumber,
 				})
+				if err != nil {
+					return err
+				}
 
-				sub.Send(cap)
+				sub.Send(capsule)
 			}
 		}
 
@@ -209,7 +222,10 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	if err != nil {
 		return fmt.Errorf("s3 handler: %v", err)
 	}
-	json.Unmarshal(conf, &sub.Config)
+	err = json.Unmarshal(conf, &sub.Config)
+	if err != nil {
+		return fmt.Errorf("s3 handler: %v", err)
+	}
 
 	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
@@ -249,28 +265,31 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				return err
 			}
 
-			cap := config.NewCapsule()
-			cap.SetMetadata(s3Metadata{
+			capsule := config.NewCapsule()
+			_, err = capsule.SetMetadata(s3Metadata{
 				record.EventTime,
 				record.S3.Bucket.Arn,
 				record.S3.Bucket.Name,
 				record.S3.Object.Key,
 				record.S3.Object.Size,
 			})
+			if err != nil {
+				return fmt.Errorf("s3 handler: %v", err)
+			}
 
 			for scanner.Scan() {
 				switch scanMethod {
 				case "bytes":
-					cap.SetData(scanner.Bytes())
+					capsule.SetData(scanner.Bytes())
 				case "text":
-					cap.SetData([]byte(scanner.Text()))
+					capsule.SetData([]byte(scanner.Text()))
 				}
 
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
 				default:
-					sub.Send(cap)
+					sub.Send(capsule)
 				}
 			}
 		}
@@ -295,7 +314,10 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	if err != nil {
 		return fmt.Errorf("s3Sns handler: %v", err)
 	}
-	json.Unmarshal(conf, &sub.Config)
+	err = json.Unmarshal(conf, &sub.Config)
+	if err != nil {
+		return fmt.Errorf("s3Sns handler: %v", err)
+	}
 
 	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
@@ -342,28 +364,31 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					return err
 				}
 
-				cap := config.NewCapsule()
-				cap.SetMetadata(s3Metadata{
+				capsule := config.NewCapsule()
+				_, err = capsule.SetMetadata(s3Metadata{
 					record.EventTime,
 					record.S3.Bucket.Arn,
 					record.S3.Bucket.Name,
 					record.S3.Object.Key,
 					record.S3.Object.Size,
 				})
+				if err != nil {
+					return fmt.Errorf("s3Sns handler: %v", err)
+				}
 
 				for scanner.Scan() {
 					switch scanMethod {
 					case "bytes":
-						cap.SetData(scanner.Bytes())
+						capsule.SetData(scanner.Bytes())
 					case "text":
-						cap.SetData([]byte(scanner.Text()))
+						capsule.SetData([]byte(scanner.Text()))
 					}
 
 					select {
 					case <-ctx.Done():
 						return ctx.Err()
 					default:
-						sub.Send(cap)
+						sub.Send(capsule)
 					}
 				}
 			}
@@ -396,7 +421,10 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 	if err != nil {
 		return fmt.Errorf("sns handler: %v", err)
 	}
-	json.Unmarshal(conf, &sub.Config)
+	err = json.Unmarshal(conf, &sub.Config)
+	if err != nil {
+		return fmt.Errorf("sns handler: %v", err)
+	}
 
 	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
@@ -422,16 +450,19 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
-				cap := config.NewCapsule()
-				cap.SetData([]byte(record.SNS.Message))
-				cap.SetMetadata(snsMetadata{
+				capsule := config.NewCapsule()
+				capsule.SetData([]byte(record.SNS.Message))
+				_, err = capsule.SetMetadata(snsMetadata{
 					record.SNS.Timestamp,
 					record.EventSubscriptionArn,
 					record.SNS.MessageID,
 					record.SNS.Subject,
 				})
+				if err != nil {
+					return fmt.Errorf("sns handler: %v", err)
+				}
 
-				sub.Send(cap)
+				sub.Send(capsule)
 			}
 		}
 
@@ -462,7 +493,10 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 	if err != nil {
 		return fmt.Errorf("sqs handler: %v", err)
 	}
-	json.Unmarshal(conf, &sub.Config)
+	err = json.Unmarshal(conf, &sub.Config)
+	if err != nil {
+		return fmt.Errorf("sqs handler: %v", err)
+	}
 
 	// maintains app state
 	group, ctx := errgroup.WithContext(ctx)
@@ -488,16 +522,19 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
-				cap := config.NewCapsule()
-				cap.SetData([]byte(msg.Body))
-				cap.SetMetadata(sqsMetadata{
+				capsule := config.NewCapsule()
+				capsule.SetData([]byte(msg.Body))
+				_, err = capsule.SetMetadata(sqsMetadata{
 					msg.EventSourceARN,
 					msg.MessageId,
 					msg.Md5OfBody,
 					msg.Attributes,
 				})
+				if err != nil {
+					return fmt.Errorf("sqs handler: %v", err)
+				}
 
-				sub.Send(cap)
+				sub.Send(capsule)
 			}
 		}
 
@@ -508,7 +545,7 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 	})
 
 	if err := sub.Block(ctx, group); err != nil {
-		return fmt.Errorf("sns handler: %v", err)
+		return fmt.Errorf("sqs handler: %v", err)
 	}
 
 	return nil

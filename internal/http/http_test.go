@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestPost(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		payload  interface{}
 		expected error
 	}{
@@ -29,7 +29,7 @@ func TestPost(t *testing.T) {
 
 	serv := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			w.WriteHeader(200)
+			w.WriteHeader(http.StatusOK)
 		}))
 	defer serv.Close()
 
@@ -42,13 +42,13 @@ func TestPost(t *testing.T) {
 	for _, test := range tests {
 		_, err := h.Post(ctx, serv.URL, test.payload)
 		if !errors.Is(err, test.expected) {
-			t.Logf("expected %+v, got %+v", test.expected, err)
-			t.Fail()
+			t.Errorf("expected %+v, got %+v", test.expected, err)
 		}
 	}
 }
+
 func TestGet(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		expected []byte
 	}{
 		{
@@ -58,7 +58,7 @@ func TestGet(t *testing.T) {
 
 	serv := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			w.Write([]byte("foo"))
+			_, _ = w.Write([]byte("foo"))
 		}))
 	defer serv.Close()
 
@@ -75,13 +75,13 @@ func TestGet(t *testing.T) {
 		}
 
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatalf("%v", err)
 		}
 
 		if c := bytes.Compare(body, test.expected); c != 0 {
-			t.Logf("expected %+v, got %+v", test.expected, body)
+			t.Errorf("expected %+v, got %+v", test.expected, body)
 		}
 	}
 }

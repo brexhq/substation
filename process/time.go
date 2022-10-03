@@ -14,12 +14,14 @@ import (
 
 /*
 Time processes data by converting time values between formats. The processor supports these patterns:
+
 	JSON:
 		{"time":1639877490.061} >>> {"time":"2021-12-19T01:31:30.061000Z"}
 	data:
 		1639877490.061 >>> 2021-12-19T01:31:30.061000Z
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "time",
 		"settings": {
@@ -41,6 +43,7 @@ type Time struct {
 
 /*
 TimeOptions contains custom options for the Time processor:
+
 	InputFormat:
 		time format of the input
 		must be one of:
@@ -69,25 +72,25 @@ type TimeOptions struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Time processor. Conditions are optionally applied to the data to enable processing.
-func (p Time) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Time) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process time: %v", err)
 	}
 
-	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
 		return nil, fmt.Errorf("process time: %v", err)
 	}
 
-	return caps, nil
+	return capsules, nil
 }
 
 // Apply processes encapsulated data with the Time processor.
-func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+func (p Time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.InputFormat == "" || p.Options.OutputFormat == "" {
-		return cap, fmt.Errorf("process time: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process time: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// "now" processing, supports json and data
@@ -105,68 +108,68 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		}
 
 		if p.OutputKey != "" {
-			if err := cap.Set(p.OutputKey, value); err != nil {
-				return cap, fmt.Errorf("process time: %v", err)
+			if err := capsule.Set(p.OutputKey, value); err != nil {
+				return capsule, fmt.Errorf("process time: %v", err)
 			}
 
-			return cap, nil
+			return capsule, nil
 		}
 
 		switch v := value.(type) {
 		case int64:
-			cap.SetData([]byte(strconv.FormatInt(v, 10)))
+			capsule.SetData([]byte(strconv.FormatInt(v, 10)))
 		case string:
-			cap.SetData([]byte(v))
+			capsule.SetData([]byte(v))
 		}
 
-		return cap, nil
+		return capsule, nil
 	}
 
 	// json processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		result := cap.Get(p.InputKey)
+		result := capsule.Get(p.InputKey)
 
 		// return input, otherwise time defaults to 1970
 		if result.Type.String() == "Null" {
-			return cap, nil
+			return capsule, nil
 		}
 
 		value, err := p.time(result)
 		if err != nil {
-			return cap, fmt.Errorf("process time: %v", err)
+			return capsule, fmt.Errorf("process time: %v", err)
 		}
 
-		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process time: %v", err)
+		if err := capsule.Set(p.OutputKey, value); err != nil {
+			return capsule, fmt.Errorf("process time: %v", err)
 		}
 
-		return cap, nil
+		return capsule, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		tmp, err := json.Set([]byte{}, "tmp", cap.Data())
+		tmp, err := json.Set([]byte{}, "tmp", capsule.Data())
 		if err != nil {
-			return cap, fmt.Errorf("process time: %v", err)
+			return capsule, fmt.Errorf("process time: %v", err)
 		}
 
 		res := json.Get(tmp, "tmp")
 		value, err := p.time(res)
 		if err != nil {
-			return cap, fmt.Errorf("process time: %v", err)
+			return capsule, fmt.Errorf("process time: %v", err)
 		}
 
 		switch v := value.(type) {
 		case int64:
-			cap.SetData([]byte(strconv.FormatInt(v, 10)))
+			capsule.SetData([]byte(strconv.FormatInt(v, 10)))
 		case string:
-			cap.SetData([]byte(v))
+			capsule.SetData([]byte(v))
 		}
 
-		return cap, nil
+		return capsule, nil
 	}
 
-	return cap, fmt.Errorf("process time: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process time: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }
 
 func (p Time) time(result json.Result) (interface{}, error) {

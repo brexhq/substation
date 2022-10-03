@@ -27,48 +27,46 @@ var dropTests = []struct {
 
 func TestDrop(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range dropTests {
-		var caps []config.Capsule
+		var capsules []config.Capsule
 		for _, t := range test.test {
-			cap.SetData(t)
-			caps = append(caps, cap)
+			capsule.SetData(t)
+			capsules = append(capsules, capsule)
 		}
 
-		result, err := test.proc.ApplyBatch(ctx, caps)
+		result, err := test.proc.ApplyBatch(ctx, capsules)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		length := len(result)
 		if length != 0 {
-			t.Logf("got %d", length)
-			t.Fail()
+			t.Errorf("got %d", length)
 		}
 	}
 }
 
-func benchmarkDrop(b *testing.B, applicator Drop, caps []config.Capsule) {
+func benchmarkDrop(b *testing.B, applicator Drop, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		applicator.ApplyBatch(ctx, caps)
+		_, _ = applicator.ApplyBatch(ctx, capsules)
 	}
 }
 
 func BenchmarkDrop(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range dropTests {
-		var caps []config.Capsule
+		var capsules []config.Capsule
 		for _, t := range test.test {
-			cap.SetData(t)
-			caps = append(caps, cap)
+			capsule.SetData(t)
+			capsules = append(capsules, capsule)
 		}
 
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkDrop(b, test.proc, caps)
+				benchmarkDrop(b, test.proc, capsules)
 			},
 		)
 	}

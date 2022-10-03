@@ -21,7 +21,7 @@ func (m mockedPutItem) PutItemWithContext(ctx aws.Context, input *dynamodb.PutIt
 }
 
 func TestPutItem(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp     dynamodb.PutItemOutput
 		expected string
 	}{
@@ -58,8 +58,7 @@ func TestPutItem(t *testing.T) {
 		}
 
 		if item["foo"] != test.expected {
-			t.Logf("expected %+v, got %s", item["foo"], test.expected)
-			t.Fail()
+			t.Errorf("expected %+v, got %s", item["foo"], test.expected)
 		}
 	}
 }
@@ -74,7 +73,7 @@ func (m mockedQuery) QueryWithContext(ctx aws.Context, input *dynamodb.QueryInpu
 }
 
 func TestQuery(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp     dynamodb.QueryOutput
 		expected string
 	}{
@@ -116,8 +115,7 @@ func TestQuery(t *testing.T) {
 		}
 
 		if items[0]["foo"] != test.expected {
-			t.Logf("expected %+v, got %s", items[0]["foo"], test.expected)
-			t.Fail()
+			t.Errorf("expected %+v, got %s", items[0]["foo"], test.expected)
 		}
 	}
 }

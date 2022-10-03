@@ -11,12 +11,14 @@ import (
 
 /*
 Expand processes data by creating individual events from objects in arrays. The processor supports these patterns:
+
 	JSON:
 		{"expand":[{"foo":"bar"}],"baz":"qux"} >>> {"foo":"bar","baz":"qux"}
 	data:
 		[{"foo":"bar"}] >>> {"foo":"bar"}
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "expand",
 		"settings": {
@@ -30,21 +32,21 @@ type Expand struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Expand processor. Conditions are optionally applied to the data to enable processing.
-func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Expand) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process expand: %v", err)
 	}
 
-	newCaps := newBatch(&caps)
-	for _, cap := range caps {
-		ok, err := op.Operate(ctx, cap)
+	newCaps := newBatch(&capsules)
+	for _, capsule := range capsules {
+		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
 			return nil, fmt.Errorf("process expand: %v", err)
 		}
 
 		if !ok {
-			newCaps = append(newCaps, cap)
+			newCaps = append(newCaps, capsule)
 			continue
 		}
 
@@ -59,7 +61,7 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 		// expanded:
 		// 	{"foo":"bar","quux":"corge"}
 		// 	{"baz":"qux","quux":"corge"}
-		root := cap.Get("@this")
+		root := capsule.Get("@this")
 		result := root
 
 		// JSON processing
@@ -72,11 +74,11 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 			}
 
 			root = json.Get(rootBytes, "@this")
-			result = cap.Get(p.InputKey)
+			result = capsule.Get(p.InputKey)
 		}
 
 		// retains metadata from the original capsule
-		newCap := cap
+		newCap := capsule
 		for _, res := range result.Array() {
 			var err error
 

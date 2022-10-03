@@ -20,16 +20,15 @@ func TestConfig(t *testing.T) {
 	// simulates loading a JSON configuration file structured as a Config template
 	config := `{"type":"test", "settings":{"foo":"bar", "baz":1}}`
 	var cfg Config
-	json.Unmarshal([]byte(config), &cfg)
+	_ = json.Unmarshal([]byte(config), &cfg)
 
 	// simulates how the interface factories are designed
 	if cfg.Type == "test" {
 		var instance Test
-		Decode(cfg.Settings, &instance)
+		_ = Decode(cfg.Settings, &instance)
 
 		if instance != expected {
-			t.Logf("expected %+v, got %+v", expected, instance)
-			t.Fail()
+			t.Errorf("expected %+v, got %+v", expected, instance)
 		}
 	} else {
 		t.Fail()
@@ -47,7 +46,7 @@ func BenchmarkDecode(b *testing.B) {
 	var instance Test
 
 	for i := 0; i < b.N; i++ {
-		Decode(BenchmarkCfg.Settings, &instance)
+		_ = Decode(BenchmarkCfg.Settings, &instance)
 	}
 }
 
@@ -109,32 +108,31 @@ var capsuleDeleteTests = []struct {
 }
 
 func TestCapsuleDelete(t *testing.T) {
-	cap := NewCapsule()
+	capsule := NewCapsule()
 	for _, test := range capsuleDeleteTests {
-		cap.SetData(test.data).SetMetadata(test.metadata)
-		cap.Delete(test.key)
+		_, _ = capsule.SetData(test.data).SetMetadata(test.metadata)
+		_ = capsule.Delete(test.key)
 
-		if !bytes.Equal(cap.Data(), test.dataExpected) &&
-			!bytes.Equal(cap.Metadata(), test.metadataExpected) {
-			t.Logf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, cap.Data(), cap.Metadata())
-			t.Fail()
+		if !bytes.Equal(capsule.Data(), test.dataExpected) &&
+			!bytes.Equal(capsule.Metadata(), test.metadataExpected) {
+			t.Errorf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, capsule.Data(), capsule.Metadata())
 		}
 	}
 }
 
-func benchmarkTestCapsuleDelete(b *testing.B, key string, cap Capsule) {
+func benchmarkTestCapsuleDelete(b *testing.B, key string, capsule Capsule) {
 	for i := 0; i < b.N; i++ {
-		cap.Delete(key)
+		_ = capsule.Delete(key)
 	}
 }
 
 func BenchmarkTestCapsuleDelete(b *testing.B) {
-	cap := NewCapsule()
+	capsule := NewCapsule()
 	for _, test := range capsuleSetTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.data).SetMetadata(test.metadata)
-				benchmarkTestCapsuleDelete(b, test.key, cap)
+				_, _ = capsule.SetData(test.data).SetMetadata(test.metadata)
+				benchmarkTestCapsuleDelete(b, test.key, capsule)
 			},
 		)
 	}
@@ -190,31 +188,30 @@ var capsuleGetTests = []struct {
 }
 
 func TestCapsuleGet(t *testing.T) {
-	cap := NewCapsule()
+	capsule := NewCapsule()
 	for _, test := range capsuleGetTests {
-		cap.SetData(test.data).SetMetadata(test.metadata)
+		_, _ = capsule.SetData(test.data).SetMetadata(test.metadata)
 
-		result := cap.Get(test.key).String()
+		result := capsule.Get(test.key).String()
 		if result != test.expected {
-			t.Logf("expected %s, got %s", test.expected, result)
-			t.Fail()
+			t.Errorf("expected %s, got %s", test.expected, result)
 		}
 	}
 }
 
-func benchmarkTestCapsuleGet(b *testing.B, key string, cap Capsule) {
+func benchmarkTestCapsuleGet(b *testing.B, key string, capsule Capsule) {
 	for i := 0; i < b.N; i++ {
-		cap.Get(key)
+		capsule.Get(key)
 	}
 }
 
 func BenchmarkTestCapsuleGet(b *testing.B) {
-	cap := NewCapsule()
+	capsule := NewCapsule()
 	for _, test := range capsuleGetTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.data).SetMetadata(test.metadata)
-				benchmarkTestCapsuleGet(b, test.key, cap)
+				_, _ = capsule.SetData(test.data).SetMetadata(test.metadata)
+				benchmarkTestCapsuleGet(b, test.key, capsule)
 			},
 		)
 	}
@@ -269,31 +266,30 @@ var capsuleSetTests = []struct {
 
 func TestCapsuleSet(t *testing.T) {
 	for _, test := range capsuleSetTests {
-		cap := NewCapsule()
-		cap.SetData(test.data).SetMetadata(test.metadata)
+		capsule := NewCapsule()
+		_, _ = capsule.SetData(test.data).SetMetadata(test.metadata)
 
-		cap.Set(test.key, test.value)
-		if !bytes.Equal(cap.Data(), test.dataExpected) &&
-			!bytes.Equal(cap.Metadata(), test.metadataExpected) {
-			t.Logf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, cap.Data(), cap.Metadata())
-			t.Fail()
+		_ = capsule.Set(test.key, test.value)
+		if !bytes.Equal(capsule.Data(), test.dataExpected) &&
+			!bytes.Equal(capsule.Metadata(), test.metadataExpected) {
+			t.Errorf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, capsule.Data(), capsule.Metadata())
 		}
 	}
 }
 
-func benchmarkTestCapsuleSet(b *testing.B, key string, val interface{}, cap Capsule) {
+func benchmarkTestCapsuleSet(b *testing.B, key string, val interface{}, capsule Capsule) {
 	for i := 0; i < b.N; i++ {
-		cap.Set(key, val)
+		_ = capsule.Set(key, val)
 	}
 }
 
 func BenchmarkTestCapsuleSet(b *testing.B) {
-	cap := NewCapsule()
+	capsule := NewCapsule()
 	for _, test := range capsuleSetTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.data).SetMetadata(test.metadata)
-				benchmarkTestCapsuleSet(b, test.key, test.value, cap)
+				_, _ = capsule.SetData(test.data).SetMetadata(test.metadata)
+				benchmarkTestCapsuleSet(b, test.key, test.value, capsule)
 			},
 		)
 	}
@@ -347,32 +343,31 @@ var capsuleSetRawTests = []struct {
 }
 
 func TestCapsuleSetRaw(t *testing.T) {
-	cap := NewCapsule()
+	capsule := NewCapsule()
 	for _, test := range capsuleSetRawTests {
-		cap.SetData(test.data).SetMetadata(test.metadata)
-		cap.Set(test.key, test.value)
+		_, _ = capsule.SetData(test.data).SetMetadata(test.metadata)
+		_ = capsule.Set(test.key, test.value)
 
-		if !bytes.Equal(cap.Data(), test.dataExpected) &&
-			!bytes.Equal(cap.Metadata(), test.metadataExpected) {
-			t.Logf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, cap.Data(), cap.Metadata())
-			t.Fail()
+		if !bytes.Equal(capsule.Data(), test.dataExpected) &&
+			!bytes.Equal(capsule.Metadata(), test.metadataExpected) {
+			t.Errorf("expected %s %s, got %s %s", test.dataExpected, test.metadataExpected, capsule.Data(), capsule.Metadata())
 		}
 	}
 }
 
-func benchmarkTestCapsuleSetRaw(b *testing.B, key string, val interface{}, cap Capsule) {
+func benchmarkTestCapsuleSetRaw(b *testing.B, key string, val interface{}, capsule Capsule) {
 	for i := 0; i < b.N; i++ {
-		cap.SetRaw(key, val)
+		_ = capsule.SetRaw(key, val)
 	}
 }
 
 func BenchmarkTestCapsuleSetRaw(b *testing.B) {
-	cap := NewCapsule()
+	capsule := NewCapsule()
 	for _, test := range capsuleSetRawTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.data).SetMetadata(test.metadata)
-				benchmarkTestCapsuleSetRaw(b, test.key, test.value, cap)
+				_, _ = capsule.SetData(test.data).SetMetadata(test.metadata)
+				benchmarkTestCapsuleSetRaw(b, test.key, test.value, capsule)
 			},
 		)
 	}
@@ -400,29 +395,28 @@ var capsuleSetDataTests = []struct {
 }
 
 func TestCapsuleSetData(t *testing.T) {
-	cap := NewCapsule()
+	capsule := NewCapsule()
 	for _, test := range capsuleSetDataTests {
-		cap.SetData(test.data)
+		capsule.SetData(test.data)
 
-		if !bytes.Equal(cap.Data(), test.expected) {
-			t.Logf("expected %s, got %s", test.expected, cap.Metadata())
-			t.Fail()
+		if !bytes.Equal(capsule.Data(), test.expected) {
+			t.Errorf("expected %s, got %s", test.expected, capsule.Metadata())
 		}
 	}
 }
 
-func benchmarkTestCapsuleSetData(b *testing.B, val []byte, cap Capsule) {
+func benchmarkTestCapsuleSetData(b *testing.B, val []byte, capsule Capsule) {
 	for i := 0; i < b.N; i++ {
-		cap.SetData(val)
+		capsule.SetData(val)
 	}
 }
 
 func BenchmarkTestCapsuleSetData(b *testing.B) {
-	cap := NewCapsule()
+	capsule := NewCapsule()
 	for _, test := range capsuleSetDataTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkTestCapsuleSetData(b, test.data, cap)
+				benchmarkTestCapsuleSetData(b, test.data, capsule)
 			},
 		)
 	}
@@ -455,29 +449,28 @@ var capsuleSetMetadataTests = []struct {
 }
 
 func TestCapsuleSetMetadata(t *testing.T) {
-	cap := NewCapsule()
+	capsule := NewCapsule()
 	for _, test := range capsuleSetMetadataTests {
-		cap.SetMetadata(test.metadata)
+		_, _ = capsule.SetMetadata(test.metadata)
 
-		if !bytes.Equal(cap.Metadata(), test.expected) {
-			t.Logf("expected %s, got %s", test.expected, cap.Metadata())
-			t.Fail()
+		if !bytes.Equal(capsule.Metadata(), test.expected) {
+			t.Errorf("expected %s, got %s", test.expected, capsule.Metadata())
 		}
 	}
 }
 
-func benchmarkTestCapsuleSetMetadata(b *testing.B, val interface{}, cap Capsule) {
+func benchmarkTestCapsuleSetMetadata(b *testing.B, val interface{}, capsule Capsule) {
 	for i := 0; i < b.N; i++ {
-		cap.SetMetadata(val)
+		_, _ = capsule.SetMetadata(val)
 	}
 }
 
 func BenchmarkTestCapsuleSetMetadata(b *testing.B) {
-	cap := NewCapsule()
+	capsule := NewCapsule()
 	for _, test := range capsuleSetMetadataTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkTestCapsuleSetMetadata(b, test.metadata, cap)
+				benchmarkTestCapsuleSetMetadata(b, test.metadata, capsule)
 			},
 		)
 	}

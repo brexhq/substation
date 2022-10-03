@@ -47,7 +47,7 @@ var contentTests = []struct {
 		Content{
 			Type: "application/zip",
 		},
-		[]byte{80, 75, 03, 04},
+		[]byte{80, 75, 0o3, 0o4},
 		true,
 	},
 	// matching Gzip against valid Zip header
@@ -65,45 +65,43 @@ var contentTests = []struct {
 		Content{
 			Type: "application/zip",
 		},
-		[]byte{04, 75, 03, 80},
+		[]byte{0o4, 75, 0o3, 80},
 		false,
 	},
 }
 
 func TestContent(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range contentTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
-		check, err := test.inspector.Inspect(ctx, cap)
+		check, err := test.inspector.Inspect(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if test.expected != check {
-			t.Logf("expected %v, got %v", test.expected, check)
-			t.Fail()
+			t.Errorf("expected %v, got %v", test.expected, check)
 		}
 	}
 }
 
-func benchmarkContentByte(b *testing.B, inspector Content, cap config.Capsule) {
+func benchmarkContentByte(b *testing.B, inspector Content, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(ctx, cap)
+		_, _ = inspector.Inspect(ctx, capsule)
 	}
 }
 
 func BenchmarkContentByte(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range contentTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkContentByte(b, test.inspector, cap)
+				capsule.SetData(test.test)
+				benchmarkContentByte(b, test.inspector, capsule)
 			},
 		)
 	}

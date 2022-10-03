@@ -14,12 +14,14 @@ const errPipelineArrayInput = errors.Error("input is an array")
 
 /*
 Pipeline processes data by applying a series of processors. This processor should be used when data requires complex processing outside of the boundaries of any data structures (see tests for examples). The processor supports these patterns:
+
 	JSON:
 		{"pipeline":"H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"} >>> {"pipeline":"foo"}
 	data:
 		H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA >> foo
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "pipeline",
 		"settings": {
@@ -57,6 +59,7 @@ type Pipeline struct {
 
 /*
 PipelineOptions contains custom options for the Pipeline processor:
+
 	Processors:
 		array of processors applied to the data
 */
@@ -65,18 +68,18 @@ type PipelineOptions struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Pipeline processor. Conditions are optionally applied to the data to enable processing.
-func (p Pipeline) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Pipeline) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process pipeline: %v", err)
 	}
 
-	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
 		return nil, fmt.Errorf("process pipeline: %v", err)
 	}
 
-	return caps, nil
+	return capsules, nil
 }
 
 /*
@@ -92,16 +95,16 @@ If the input is an array, then an error is raised; the
 input should be run through the ForEach processor (which
 can encapsulate the Pipeline processor).
 */
-func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+func (p Pipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	applicators, err := MakeApplicators(p.Options.Processors)
 	if err != nil {
-		return cap, fmt.Errorf("process pipeline: processors %+v: %v", p.Options.Processors, err)
+		return capsule, fmt.Errorf("process pipeline: processors %+v: %v", p.Options.Processors, err)
 	}
 
 	if p.InputKey != "" && p.OutputKey != "" {
-		result := cap.Get(p.InputKey)
+		result := capsule.Get(p.InputKey)
 		if result.IsArray() {
-			return cap, fmt.Errorf("process pipeline: inputkey %s: %v", p.InputKey, errPipelineArrayInput)
+			return capsule, fmt.Errorf("process pipeline: inputkey %s: %v", p.InputKey, errPipelineArrayInput)
 		}
 
 		newCap := config.NewCapsule()
@@ -109,25 +112,25 @@ func (p Pipeline) Apply(ctx context.Context, cap config.Capsule) (config.Capsule
 
 		newCap, err = Apply(ctx, newCap, applicators...)
 		if err != nil {
-			return cap, fmt.Errorf("process pipeline: %v", err)
+			return capsule, fmt.Errorf("process pipeline: %v", err)
 		}
 
-		if err := cap.Set(p.OutputKey, newCap.Data()); err != nil {
-			return cap, fmt.Errorf("process pipeline: %v", err)
+		if err := capsule.Set(p.OutputKey, newCap.Data()); err != nil {
+			return capsule, fmt.Errorf("process pipeline: %v", err)
 		}
 
-		return cap, nil
+		return capsule, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		tmp, err := Apply(ctx, cap, applicators...)
+		tmp, err := Apply(ctx, capsule, applicators...)
 		if err != nil {
-			return cap, fmt.Errorf("process pipeline: %v", err)
+			return capsule, fmt.Errorf("process pipeline: %v", err)
 		}
 
 		return tmp, nil
 	}
 
-	return cap, fmt.Errorf("process pipeline: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process pipeline: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

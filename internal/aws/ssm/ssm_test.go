@@ -20,7 +20,7 @@ func (m mockedGetParameter) GetParameterWithContext(ctx aws.Context, input *ssm.
 }
 
 func TestGetParameter(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp     ssm.GetParameterOutput
 		input    string
 		expected string
@@ -49,8 +49,7 @@ func TestGetParameter(t *testing.T) {
 		}
 
 		if resp != test.expected {
-			t.Logf("expected %+v, got %s", resp, test.expected)
-			t.Fail()
+			t.Errorf("expected %+v, got %s", resp, test.expected)
 		}
 	}
 }

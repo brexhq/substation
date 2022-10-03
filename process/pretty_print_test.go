@@ -76,48 +76,46 @@ func TestPrettyPrintBatch(t *testing.T) {
 	ctx := context.TODO()
 
 	for _, test := range prettyPrintBatchTests {
-		var caps []config.Capsule
-		cap := config.NewCapsule()
+		var capsules []config.Capsule
+		capsule := config.NewCapsule()
 		for _, t := range test.test {
-			cap.SetData(t)
-			caps = append(caps, cap)
+			capsule.SetData(t)
+			capsules = append(capsules, capsule)
 		}
 
-		result, err := test.proc.ApplyBatch(ctx, caps)
+		result, err := test.proc.ApplyBatch(ctx, capsules)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		for i, res := range result {
 			expected := test.expected[i]
 			if !bytes.Equal(expected, res.Data()) {
-				t.Logf("expected %s, got %s", expected, res)
-				t.Fail()
+				t.Errorf("expected %s, got %s", expected, res.Data())
 			}
 		}
 	}
 }
 
-func benchmarkPrettyPrintBatch(b *testing.B, batcher PrettyPrint, caps []config.Capsule) {
+func benchmarkPrettyPrintBatch(b *testing.B, batcher PrettyPrint, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		batcher.ApplyBatch(ctx, caps)
+		_, _ = batcher.ApplyBatch(ctx, capsules)
 	}
 }
 
 func BenchmarkPrettyPrintBatch(b *testing.B) {
 	for _, test := range prettyPrintBatchTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				caps := make([]config.Capsule, 1)
+				capsules := make([]config.Capsule, 1)
 				for _, t := range test.test {
-					cap := config.NewCapsule()
-					cap.SetData(t)
-					caps = append(caps, cap)
+					capsule := config.NewCapsule()
+					capsule.SetData(t)
+					capsules = append(capsules, capsule)
 				}
 
-				benchmarkPrettyPrintBatch(b, test.proc, caps)
+				benchmarkPrettyPrintBatch(b, test.proc, capsules)
 			},
 		)
 	}
@@ -148,38 +146,36 @@ var prettyPrintTests = []struct {
 
 func TestPrettyPrint(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range prettyPrintTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
-		result, err := test.proc.Apply(ctx, cap)
+		result, err := test.proc.Apply(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if !bytes.Equal(result.Data(), test.expected) {
-			t.Logf("expected %s, got %s", test.expected, result.Data())
-			t.Fail()
+			t.Errorf("expected %s, got %s", test.expected, result.Data())
 		}
 	}
 }
 
-func benchmarkPrettyPrint(b *testing.B, proc PrettyPrint, cap config.Capsule) {
+func benchmarkPrettyPrint(b *testing.B, proc PrettyPrint, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		proc.Apply(ctx, cap)
+		_, _ = proc.Apply(ctx, capsule)
 	}
 }
 
 func BenchmarkPrettyPrint(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range prettyPrintTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkPrettyPrint(b, test.proc, cap)
+				capsule.SetData(test.test)
+				benchmarkPrettyPrint(b, test.proc, capsule)
 			},
 		)
 	}

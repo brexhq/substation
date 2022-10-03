@@ -12,12 +12,14 @@ import (
 
 /*
 Replace processes data by replacing characters. The processor supports these patterns:
+
 	JSON:
 		{"replace":"bar"} >>> {"replace":"baz"}
 	data:
 		bar >>> baz
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "replace",
 		"settings": {
@@ -39,6 +41,7 @@ type Replace struct {
 
 /*
 ReplaceOptions contains custom options for the Replace processor:
+
 	Old:
 		character(s) to replace in the data
 	New:
@@ -54,25 +57,25 @@ type ReplaceOptions struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Replace processor. Conditions are optionally applied to the data to enable processing.
-func (p Replace) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Replace) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process replace: %v", err)
 	}
 
-	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
 		return nil, fmt.Errorf("process replace: %v", err)
 	}
 
-	return caps, nil
+	return capsules, nil
 }
 
 // Apply processes encapsulated data with the Replace processor.
-func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+func (p Replace) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Old == "" || p.Options.New == "" {
-		return cap, fmt.Errorf("process replace: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process replace: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// default to replace all
@@ -82,7 +85,7 @@ func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		result := cap.Get(p.InputKey).String()
+		result := capsule.Get(p.InputKey).String()
 		value := strings.Replace(
 			result,
 			p.Options.Old,
@@ -90,25 +93,25 @@ func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 			p.Options.Count,
 		)
 
-		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process replace: %v", err)
+		if err := capsule.Set(p.OutputKey, value); err != nil {
+			return capsule, fmt.Errorf("process replace: %v", err)
 		}
 
-		return cap, nil
+		return capsule, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
 		value := bytes.Replace(
-			cap.Data(),
+			capsule.Data(),
 			[]byte(p.Options.Old),
 			[]byte(p.Options.New),
 			p.Options.Count,
 		)
-		cap.SetData(value)
+		capsule.SetData(value)
 
-		return cap, nil
+		return capsule, nil
 	}
 
-	return cap, fmt.Errorf("process replace: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process replace: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

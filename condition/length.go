@@ -16,6 +16,7 @@ const errLengthInvalidFunction = errors.Error("invalid function")
 Length evaluates data using len functions. This inspector supports evaluating byte and rune (character) length of strings. If a JSON array is input, then the length is evaluated against the number of elements in the array.
 
 The inspector has these settings:
+
 	Function:
 		length evaluation function used during inspection
 		must be one of:
@@ -25,7 +26,7 @@ The inspector has these settings:
 	Value:
 		length value used during inspection
 	Type (optional):
-		length type used during inpsection
+		length type used during inspection
 		must be one of:
 			byte (number of bytes)
 			rune (number of characters)
@@ -37,6 +38,7 @@ The inspector has these settings:
 		defaults to false
 
 The inspector supports these patterns:
+
 	JSON:
 		{"foo":"bar"} == 3
 		{"foo":["bar","baz","qux"]} == 3
@@ -44,6 +46,7 @@ The inspector supports these patterns:
 		bar == 3
 
 When loaded with a factory, the inspector uses this JSON configuration:
+
 	{
 		"type": "length",
 		"settings": {
@@ -61,12 +64,12 @@ type Length struct {
 }
 
 // Inspect evaluates encapsulated data with the Length inspector.
-func (c Length) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
+func (c Length) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
-		check = string(cap.Data())
+		check = string(capsule.Data())
 	} else {
-		result := cap.Get(c.Key)
+		result := capsule.Get(c.Key)
 		if result.IsArray() {
 			return c.match(len(result.Array()))
 		}

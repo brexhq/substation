@@ -21,9 +21,9 @@ const (
 )
 
 var (
-	// By default, AWS Kinesis streams must be below the lower threshold for 95% of the evaluation period (57 minutes) to scale down. This value can be overriden by the environment variable SUBSTATION_AUTOSCALING_DOWNSCALE_DATAPOINTS, but it cannot exceed 60 minutes.
+	// By default, AWS Kinesis streams must be below the lower threshold for 95% of the evaluation period (57 minutes) to scale down. This value can be overridden by the environment variable SUBSTATION_AUTOSCALING_DOWNSCALE_DATAPOINTS, but it cannot exceed 60 minutes.
 	kinesisDownscaleDatapoints = 57
-	// By default, AWS Kinesis streams must be above the upper threshold for 100% of the evaluation period (5 minutes) to scale up. This value can be overriden by the environment variable SUBSTATION_AUTOSCALING_UPSCALE_DATAPOINTS, but it cannot exceed 5 minutes.
+	// By default, AWS Kinesis streams must be above the upper threshold for 100% of the evaluation period (5 minutes) to scale up. This value can be overridden by the environment variable SUBSTATION_AUTOSCALING_UPSCALE_DATAPOINTS, but it cannot exceed 5 minutes.
 	kinesisUpscaleDatapoints = 5
 )
 

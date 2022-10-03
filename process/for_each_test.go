@@ -321,20 +321,18 @@ var foreachTests = []struct {
 
 func TestForEach(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range foreachTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
-		result, err := test.proc.Apply(ctx, cap)
+		result, err := test.proc.Apply(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if !bytes.Equal(result.Data(), test.expected) {
-			t.Logf("expected %s, got %s", test.expected, result.Data())
-			t.Fail()
+			t.Errorf("expected %s, got %s", test.expected, result.Data())
 		}
 	}
 }
@@ -342,17 +340,17 @@ func TestForEach(t *testing.T) {
 func benchmarkForEach(b *testing.B, applicator ForEach, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		applicator.Apply(ctx, test)
+		_, _ = applicator.Apply(ctx, test)
 	}
 }
 
 func BenchmarkForEach(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range foreachTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkForEach(b, test.proc, cap)
+				capsule.SetData(test.test)
+				benchmarkForEach(b, test.proc, capsule)
 			},
 		)
 	}

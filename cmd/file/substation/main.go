@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sync"
 	"time"
@@ -19,11 +18,14 @@ import (
 var sub *cmd.Substation
 
 func loadConfig(f string) error {
-	bytes, err := ioutil.ReadFile(f)
+	bytes, err := os.ReadFile(f)
 	if err != nil {
-		return err
+		return fmt.Errorf("config %q: %v", f, err)
 	}
-	json.Unmarshal(bytes, &sub.Config)
+	err = json.Unmarshal(bytes, &sub.Config)
+	if err != nil {
+		return fmt.Errorf("config %q: %v", f, err)
+	}
 
 	return nil
 }
@@ -44,7 +46,9 @@ func main() {
 	defer cancel()
 
 	sub = cmd.New()
-	loadConfig(*config)
+	if err := loadConfig(*config); err != nil {
+		panic(fmt.Errorf("main: %v", err))
+	}
 
 	if err := file(ctx, *input); err != nil {
 		panic(fmt.Errorf("main: %v", err))
@@ -81,12 +85,15 @@ func file(ctx context.Context, filename string) error {
 			return err
 		}
 
-		cap := config.NewCapsule()
-		cap.SetMetadata(metadata{
+		capsule := config.NewCapsule()
+		_, err = capsule.SetMetadata(metadata{
 			fi.Name(),
 			fi.Size(),
 			fi.ModTime(),
 		})
+		if err != nil {
+			return fmt.Errorf("file filename %s: %v", filename, err)
+		}
 
 		// a scanner token can be up to 100MB
 		scanner := bufio.NewScanner(fileHandle)
@@ -99,16 +106,16 @@ func file(ctx context.Context, filename string) error {
 		for scanner.Scan() {
 			switch scanMethod {
 			case "bytes":
-				cap.SetData(scanner.Bytes())
+				capsule.SetData(scanner.Bytes())
 			case "text":
-				cap.SetData([]byte(scanner.Text()))
+				capsule.SetData([]byte(scanner.Text()))
 			}
 
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
-				sub.Send(cap)
+				sub.Send(capsule)
 			}
 
 			count++

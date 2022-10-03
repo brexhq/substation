@@ -10,10 +10,12 @@ import (
 
 /*
 Delete processes data by deleting JSON keys. The processor supports these patterns:
+
 	JSON:
 	  	{"foo":"bar","baz":"qux"} >>> {"foo":"bar"}
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "delete",
 		"settings": {
@@ -27,31 +29,30 @@ type Delete struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Delete processor. Conditions are optionally applied to the data to enable processing.
-func (p Delete) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Delete) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process delete: %v", err)
 	}
 
-	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
 		return nil, fmt.Errorf("process delete: %v", err)
 	}
 
-	return caps, nil
-
+	return capsules, nil
 }
 
 // Apply processes encapsulated data with the Delete processor.
-func (p Delete) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+func (p Delete) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" {
-		return cap, fmt.Errorf("process delete: inputkey %s: %v", p.InputKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process delete: inputkey %s: %v", p.InputKey, errInvalidDataPattern)
 	}
 
-	if err := cap.Delete(p.InputKey); err != nil {
-		return cap, fmt.Errorf("process delete: %v", err)
+	if err := capsule.Delete(p.InputKey); err != nil {
+		return capsule, fmt.Errorf("process delete: %v", err)
 	}
 
-	return cap, nil
+	return capsule, nil
 }

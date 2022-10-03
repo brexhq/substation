@@ -10,12 +10,14 @@ import (
 
 /*
 Convert processes data by converting values between types (e.g., string to integer, integer to float). The processor supports these patterns:
+
 	JSON:
 		{"convert":"true"} >>> {"convert":true}
 		{"convert":"-123"} >>> {"convert":-123}
 		{"convert":123} >>> {"convert":"123"}
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "convert",
 		"settings": {
@@ -36,6 +38,7 @@ type Convert struct {
 
 /*
 ConvertOptions contains custom options for the Convert processor:
+
 	Type:
 		type that the value is converted to
 		must be one of:
@@ -50,30 +53,30 @@ type ConvertOptions struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Convert processor. Conditions are optionally applied to the data to enable processing.
-func (p Convert) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Convert) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process convert: %v", err)
 	}
 
-	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
 		return nil, fmt.Errorf("process convert: %v", err)
 	}
 
-	return caps, nil
+	return capsules, nil
 }
 
 // Apply processes encapsulated data with the Convert processor.
-func (p Convert) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+func (p Convert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
-		return cap, fmt.Errorf("process convert: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process convert: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey != "" && p.OutputKey != "" {
-		result := cap.Get(p.InputKey)
+		result := capsule.Get(p.InputKey)
 
 		var value interface{}
 		switch p.Options.Type {
@@ -89,12 +92,12 @@ func (p Convert) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 			value = result.String()
 		}
 
-		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process convert: %v", err)
+		if err := capsule.Set(p.OutputKey, value); err != nil {
+			return capsule, fmt.Errorf("process convert: %v", err)
 		}
 
-		return cap, nil
+		return capsule, nil
 	}
 
-	return cap, fmt.Errorf("process convert: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process convert: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

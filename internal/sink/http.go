@@ -16,6 +16,7 @@ var httpClient http.HTTP
 HTTP sinks JSON data to an HTTP(S) endpoint.
 
 The sink has these settings:
+
 	URL:
 		HTTP(S) endpoint that data is sent to
 	Headers (optional):
@@ -34,6 +35,7 @@ The sink has these settings:
 			]
 
 When loaded with a factory, the sink uses this JSON configuration:
+
 	{
 		"type": "http",
 		"settings": {
@@ -59,14 +61,14 @@ func (sink *HTTP) Send(ctx context.Context, ch *config.Channel) error {
 		}
 	}
 
-	for cap := range ch.C {
+	for capsule := range ch.C {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
 			var headers []http.Header
 
-			if json.Valid(cap.Data()) {
+			if json.Valid(capsule.Data()) {
 				headers = append(headers, http.Header{
 					Key:   "Content-Type",
 					Value: "application/json",
@@ -83,7 +85,7 @@ func (sink *HTTP) Send(ctx context.Context, ch *config.Channel) error {
 			}
 
 			if sink.HeadersKey != "" {
-				h := cap.Get(sink.HeadersKey).Array()
+				h := capsule.Get(sink.HeadersKey).Array()
 				for _, header := range h {
 					for k, v := range header.Map() {
 						headers = append(headers, http.Header{
@@ -94,7 +96,7 @@ func (sink *HTTP) Send(ctx context.Context, ch *config.Channel) error {
 				}
 			}
 
-			_, err := httpClient.Post(ctx, sink.URL, string(cap.Data()), headers...)
+			_, err := httpClient.Post(ctx, sink.URL, string(capsule.Data()), headers...)
 			if err != nil {
 				// Post err returns metadata
 				return fmt.Errorf("sink http: %v", err)

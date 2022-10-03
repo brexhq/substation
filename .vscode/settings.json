@@ -1,7 +1,12 @@
 {
   "terminal.integrated.defaultProfile.linux": "bash",
-  "go.formatTool": "gofmt",
+  "go.useLanguageServer": true,
+  "gopls": {
+    "formatting.gofumpt": true,
+  },
+  "go.formatTool": "gofumpt",
   "go.inferGopath": false,
-  "go.lintFlags": ["-checks=all,-ST1000"],
   "go.lintOnSave": "workspace",
+  "go.lintTool": "golangci-lint",
+  "cSpell.enabled": false
 }

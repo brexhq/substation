@@ -215,40 +215,38 @@ var lengthTests = []struct {
 
 func TestLength(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range lengthTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
-		check, err := test.inspector.Inspect(ctx, cap)
+		check, err := test.inspector.Inspect(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if test.expected != check {
-			t.Logf("expected %v, got %v", test.expected, check)
-			t.Logf("settings: %+v", test.inspector)
-			t.Logf("test: %+v", string(test.test))
-			t.Fail()
+			t.Errorf("expected %v, got %v", test.expected, check)
+			t.Errorf("settings: %+v", test.inspector)
+			t.Errorf("test: %+v", string(test.test))
 		}
 	}
 }
 
-func benchmarkLengthByte(b *testing.B, inspector Length, cap config.Capsule) {
+func benchmarkLengthByte(b *testing.B, inspector Length, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(ctx, cap)
+		_, _ = inspector.Inspect(ctx, capsule)
 	}
 }
 
 func BenchmarkLengthByte(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range lengthTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkLengthByte(b, test.inspector, cap)
+				capsule.SetData(test.test)
+				benchmarkLengthByte(b, test.inspector, capsule)
 			},
 		)
 	}

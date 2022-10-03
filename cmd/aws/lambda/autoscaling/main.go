@@ -19,8 +19,10 @@ const (
 	autoscalePercentage = 50.0
 )
 
-var cloudwatchAPI cloudwatch.API
-var kinesisAPI kinesis.API
+var (
+	cloudwatchAPI cloudwatch.API
+	kinesisAPI    kinesis.API
+)
 
 func init() {
 	cloudwatchAPI.Setup()
@@ -55,7 +57,8 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 	if err != nil {
 		return fmt.Errorf("handler: %v", err)
 	}
-	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", shards).Info("retrieved active shard count")
+	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", shards).
+		Info("retrieved active shard count")
 
 	var newShards int64
 	if strings.Contains(alarmName, "upscale") {
@@ -126,10 +129,10 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 	return nil
 }
 
-func downscale(shards float64, pct float64) int64 {
+func downscale(shards, pct float64) int64 {
 	return int64(math.Ceil(shards - (shards * (pct / 100))))
 }
 
-func upscale(shards float64, pct float64) int64 {
+func upscale(shards, pct float64) int64 {
 	return int64(math.Ceil(shards + (shards * (pct / 100))))
 }

@@ -21,7 +21,7 @@ func (m mockedDownload) DownloadWithContext(ctx aws.Context, w io.WriterAt, inpu
 }
 
 func TestDownload(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp  int64
 		input struct {
 			bucket string
@@ -55,8 +55,7 @@ func TestDownload(t *testing.T) {
 		}
 
 		if size != test.expected {
-			t.Logf("expected %d, got %d", size, test.expected)
-			t.Fail()
+			t.Errorf("expected %d, got %d", size, test.expected)
 		}
 	}
 }
@@ -71,7 +70,7 @@ func (m mockedUpload) UploadWithContext(ctx aws.Context, input *s3manager.Upload
 }
 
 func TestUpload(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp  s3manager.UploadOutput
 		input struct {
 			buffer []byte
@@ -110,8 +109,7 @@ func TestUpload(t *testing.T) {
 		}
 
 		if resp.Location != test.expected {
-			t.Logf("expected %s, got %s", resp.Location, test.expected)
-			t.Fail()
+			t.Errorf("expected %s, got %s", resp.Location, test.expected)
 		}
 	}
 }

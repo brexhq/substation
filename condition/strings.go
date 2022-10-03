@@ -16,6 +16,7 @@ const errStringsInvalidFunction = errors.Error("invalid function")
 Strings evaluates data using string functions. This inspector uses the standard library's strings package.
 
 The inspector has these settings:
+
 	Function:
 		string evaluation function to use during inspection
 		must be one of:
@@ -32,12 +33,14 @@ The inspector has these settings:
 		defaults to false
 
 The inspector supports these patterns:
+
 	JSON:
 		{"foo":"bar"} == bar
 	data:
 		bar == bar
 
 When loaded with a factory, the inspector uses this JSON configuration:
+
 	{
 		"type": "strings",
 		"settings": {
@@ -54,12 +57,12 @@ type Strings struct {
 }
 
 // Inspect evaluates encapsulated data with the Strings inspector.
-func (c Strings) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
+func (c Strings) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
-		check = string(cap.Data())
+		check = string(capsule.Data())
 	} else {
-		check = cap.Get(c.Key).String()
+		check = capsule.Get(c.Key).String()
 	}
 
 	var matched bool

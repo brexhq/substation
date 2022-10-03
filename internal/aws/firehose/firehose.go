@@ -63,7 +63,6 @@ func (a *API) PutRecord(ctx aws.Context, data []byte, stream string) (*firehose.
 			DeliveryStreamName: aws.String(stream),
 			Record:             &firehose.Record{Data: data},
 		})
-
 	if err != nil {
 		return nil, fmt.Errorf("putrecord stream %s: %v", stream, err)
 	}
@@ -100,7 +99,7 @@ func (a *API) PutRecordBatch(ctx aws.Context, data [][]byte, stream string) (*fi
 		}
 
 		if len(retryData) > 0 {
-			a.PutRecordBatch(ctx, retryData, stream)
+			_, _ = a.PutRecordBatch(ctx, retryData, stream)
 		}
 	}
 

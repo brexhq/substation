@@ -21,11 +21,11 @@ func Factory(cfg config.Config) (Transformer, error) {
 	switch t := cfg.Type; t {
 	case "batch":
 		var t Batch
-		config.Decode(cfg.Settings, &t)
+		_ = config.Decode(cfg.Settings, &t)
 		return &t, nil
 	case "transfer":
 		var t Transfer
-		config.Decode(cfg.Settings, &t)
+		_ = config.Decode(cfg.Settings, &t)
 		return &t, nil
 	default:
 		return nil, fmt.Errorf("transform settings %v: %v", cfg.Settings, errInvalidFactoryInput)

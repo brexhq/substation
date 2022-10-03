@@ -21,7 +21,7 @@ func (m mockedReceiveMsgs) PutRecordWithContext(ctx aws.Context, in *kinesis.Put
 }
 
 func TestPutRecord(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp     kinesis.PutRecordOutput
 		expected string
 	}{
@@ -47,8 +47,7 @@ func TestPutRecord(t *testing.T) {
 		}
 
 		if *resp.SequenceNumber != test.expected {
-			t.Logf("expected %+v, got %s", resp.SequenceNumber, test.expected)
-			t.Fail()
+			t.Errorf("expected %+v, got %s", resp.SequenceNumber, test.expected)
 		}
 	}
 }
@@ -63,7 +62,7 @@ func (m mockedGetTags) ListTagsForStreamWithContext(ctx aws.Context, in *kinesis
 }
 
 func TestGetTags(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp     kinesis.ListTagsForStreamOutput
 		expected []*kinesis.Tag
 	}{
@@ -123,7 +122,7 @@ func TestGetTags(t *testing.T) {
 
 // tests that the calculated record size matches the size of returned data
 func TestSize(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		data   []byte
 		repeat int
 		pk     string
@@ -155,8 +154,7 @@ func TestSize(t *testing.T) {
 
 		data := rec.Get()
 		if check != len(data) {
-			t.Logf("expected %v, got %v", len(data), check)
-			t.Fail()
+			t.Errorf("expected %v, got %v", len(data), check)
 		}
 	}
 }

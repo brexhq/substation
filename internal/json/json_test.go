@@ -58,8 +58,7 @@ func TestGetJson(t *testing.T) {
 		result := Get(test.test, test.key)
 
 		if result.Value() != test.expected {
-			t.Logf("expected %v, got %v", test.expected, result)
-			t.Fail()
+			t.Errorf("expected %v, got %v", test.expected, result)
 		}
 	}
 }
@@ -72,7 +71,7 @@ func benchmarkGetJSON(b *testing.B, test []byte, key string) {
 
 func BenchmarkGetJSON(b *testing.B) {
 	for _, test := range getTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
 				benchmarkGetJSON(b, test.test, test.key)
 			},
@@ -142,27 +141,25 @@ func TestSetJson(t *testing.T) {
 	for _, test := range setTests {
 		result, err := Set(test.test, test.key, test.value)
 		if err != nil {
-			t.Logf("got error %v", err)
-			t.Fail()
+			t.Errorf("got error %v", err)
 			return
 		}
 
 		if c := bytes.Compare(result, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, result)
-			t.Fail()
+			t.Errorf("expected %s, got %s", test.expected, result)
 		}
 	}
 }
 
 func benchmarkSetJSON(b *testing.B, test []byte, key string, value interface{}) {
 	for i := 0; i < b.N; i++ {
-		Set(test, key, value)
+		_, _ = Set(test, key, value)
 	}
 }
 
 func BenchmarkSetJSON(b *testing.B) {
 	for _, test := range setTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
 				benchmarkSetJSON(b, test.test, test.key, test.value)
 			},
@@ -190,27 +187,25 @@ func TestSetRawJson(t *testing.T) {
 	for _, test := range setRawTests {
 		result, err := SetRaw(test.test, test.key, test.value)
 		if err != nil {
-			t.Logf("got error %v", err)
-			t.Fail()
+			t.Errorf("got error %v", err)
 			return
 		}
 
 		if c := bytes.Compare(result, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, result)
-			t.Fail()
+			t.Errorf("expected %s, got %s", test.expected, result)
 		}
 	}
 }
 
 func benchmarkSetRawJSON(b *testing.B, test []byte, key string, value interface{}) {
 	for i := 0; i < b.N; i++ {
-		Set(test, key, value)
+		_, _ = Set(test, key, value)
 	}
 }
 
 func BenchmarkSetRawJSON(b *testing.B) {
 	for _, test := range setRawTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
 				benchmarkSetRawJSON(b, test.test, test.key, test.value)
 			},
@@ -250,8 +245,7 @@ func TestValidJson(t *testing.T) {
 		result := Valid(test.test)
 
 		if result != test.expected {
-			t.Logf("expected %v, got %v", test.expected, result)
-			t.Fail()
+			t.Errorf("expected %v, got %v", test.expected, result)
 		}
 	}
 }
@@ -264,7 +258,7 @@ func benchmarkValidJSON(b *testing.B, test interface{}) {
 
 func BenchmarkValidJSON(b *testing.B) {
 	for _, test := range validTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
 				benchmarkValidJSON(b, test.test)
 			},

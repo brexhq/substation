@@ -59,38 +59,36 @@ var jsonSchemaTests = []struct {
 
 func TestJSONSchema(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range jsonSchemaTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
-		check, err := test.inspector.Inspect(ctx, cap)
+		check, err := test.inspector.Inspect(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if test.expected != check {
-			t.Logf("expected %v, got %v, %v", test.expected, check, string(test.test))
-			t.Fail()
+			t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
 		}
 	}
 }
 
-func benchmarkJSONSchemaByte(b *testing.B, inspector JSONSchema, cap config.Capsule) {
+func benchmarkJSONSchemaByte(b *testing.B, inspector JSONSchema, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(ctx, cap)
+		_, _ = inspector.Inspect(ctx, capsule)
 	}
 }
 
 func BenchmarkJSONSchemaByte(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range jsonSchemaTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkJSONSchemaByte(b, test.inspector, cap)
+				capsule.SetData(test.test)
+				benchmarkJSONSchemaByte(b, test.inspector, capsule)
 			},
 		)
 	}
@@ -134,38 +132,36 @@ var jsonValidTests = []struct {
 
 func TestJSONValid(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range jsonValidTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
-		check, err := test.inspector.Inspect(ctx, cap)
+		check, err := test.inspector.Inspect(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if test.expected != check {
-			t.Logf("expected %v, got %v, %v", test.expected, check, string(test.test))
-			t.Fail()
+			t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
 		}
 	}
 }
 
-func benchmarkJSONValidByte(b *testing.B, inspector JSONValid, cap config.Capsule) {
+func benchmarkJSONValidByte(b *testing.B, inspector JSONValid, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(ctx, cap)
+		_, _ = inspector.Inspect(ctx, capsule)
 	}
 }
 
 func BenchmarkJSONValidByte(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range jsonValidTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkJSONValidByte(b, test.inspector, cap)
+				capsule.SetData(test.test)
+				benchmarkJSONValidByte(b, test.inspector, capsule)
 			},
 		)
 	}

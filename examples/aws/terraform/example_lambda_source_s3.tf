@@ -26,7 +26,7 @@ module "lambda_example_s3_source" {
   env = {
     "AWS_MAX_ATTEMPTS" : 10
     "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_s3_source"
-    "SUBSTATION_HANDLER" : "S3"
+    "SUBSTATION_HANDLER" : "AWS_S3"
     "SUBSTATION_DEBUG" : 1
     "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
   }

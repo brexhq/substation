@@ -13,9 +13,9 @@ RegExp evaluates data using a regular expression. This inspector uses a regexp c
 
 The inspector has these settings:
 	Expression:
-		the regular expression to use during inspection
+		regular expression to use during inspection
 	Key (optional):
-		the JSON key-value to retrieve for inspection
+		JSON key-value to retrieve for inspection
 	Negate (optional):
 		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
 		defaults to false
@@ -49,7 +49,7 @@ func (c RegExp) Inspect(ctx context.Context, cap config.Capsule) (output bool, e
 
 	var matched bool
 	if c.Key == "" {
-		matched = re.Match(cap.GetData())
+		matched = re.Match(cap.Data())
 	} else {
 		res := cap.Get(c.Key).String()
 		matched = re.MatchString(res)

@@ -1,6 +1,6 @@
 # aws
 
-This example deploys a fully-featured data pipeline to AWS that makes use of every Substation component.
+This example deploys a data pipeline to AWS that makes use of every Substation component.
 
 The data pipeline is visualized below:
 
@@ -89,7 +89,7 @@ sh build/config/compile.sh
 
 ```bash
 cd $SUBSTATION_ROOT && \
-SUBSTATION_CONFIG_DIRECTORY=examples/aws/ APPCONFIG_APPLICATION_NAME=substation APPCONFIG_ENVIRONMENT=prod APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 build/config/aws/appconfig_upload.py
+SUBSTATION_CONFIG_DIRECTORY=examples/aws/ AWS_APPCONFIG_APPLICATION_NAME=substation AWS_APPCONFIG_ENVIRONMENT=prod AWS_APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 build/config/aws/appconfig_upload.py
 ```
 
 ### Step 4: Build the Containers

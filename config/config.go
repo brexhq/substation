@@ -3,13 +3,14 @@ package config
 import (
 	gojson "encoding/json"
 	"strings"
+	"sync"
 
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-// SetInvalidKey is returned when an invalid key is used in a Capsule Set function.
-const SetInvalidKey = errors.Error("SetInvalidKey")
+// errSetInvalidKey is returned when an invalid key is used in a Capsule Set function.
+const errSetInvalidKey = errors.Error("invalid set key")
 
 // Config is a template used by Substation interface factories to produce new instances from JSON configurations. Type refers to the type of instance and Settings contains options used in the instance. Examples of this are found in the condition and process packages.
 type Config struct {
@@ -109,7 +110,7 @@ func (c *Capsule) Set(key string, value interface{}) (err error) {
 
 		// values should not be written directly to the metadata field
 		if key == "" {
-			return SetInvalidKey
+			return errSetInvalidKey
 		}
 
 		c.metadata, err = json.Set(c.metadata, key, value)
@@ -135,7 +136,7 @@ func (c *Capsule) SetRaw(key string, value interface{}) (err error) {
 
 		// values should not be written directly to the metadata field
 		if key == "" {
-			return SetInvalidKey
+			return errSetInvalidKey
 		}
 
 		c.metadata, err = json.SetRaw(c.metadata, key, value)
@@ -154,13 +155,13 @@ func (c *Capsule) SetRaw(key string, value interface{}) (err error) {
 	return nil
 }
 
-// GetData returns the contents of the capsule's data field.
-func (c *Capsule) GetData() []byte {
+// Data returns the contents of the capsule's data field.
+func (c *Capsule) Data() []byte {
 	return c.data
 }
 
-// GetMetadata returns the contents of the capsule's metadata field.
-func (c *Capsule) GetMetadata() []byte {
+// Metadata returns the contents of the capsule's metadata field.
+func (c *Capsule) Metadata() []byte {
 	return c.metadata
 }
 
@@ -179,4 +180,37 @@ func (c *Capsule) SetMetadata(i interface{}) (*Capsule, error) {
 
 	c.metadata = meta
 	return c, nil
+}
+
+/*
+Channel provides methods for safely writing capsule data to and closing channels. Data should be read directly from the channel (e.g., ch.C).
+*/
+type Channel struct {
+	C      chan Capsule
+	mutex  sync.Mutex
+	closed bool
+}
+
+// NewChannel returns an unbuffered channel.
+func NewChannel() *Channel {
+	return &Channel{C: make(chan Capsule)}
+}
+
+// Close closes a channel and relies on a mutex to prevent panicking if the channel is closed by multiple goroutines.
+func (c *Channel) Close() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if !c.closed {
+		close(c.C)
+		c.closed = true
+	}
+}
+
+// Send writes capsule data to a channel and relies on goroutine recovery to prevent panicking if writes are attempted on a closed channel. Read more about recovery here: https://go.dev/blog/defer-panic-and-recover.
+func (c *Channel) Send(cap Capsule) {
+	defer func() {
+		recover()
+	}()
+
+	c.C <- cap
 }

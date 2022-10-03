@@ -35,7 +35,7 @@ type Concat struct {
 /*
 ConcatOptions contains custom options for the Concat processor:
 	Separator:
-		the string that separates the concatenated values
+		string that separates the concatenated values
 */
 type ConcatOptions struct {
 	Separator string `json:"separator"`
@@ -45,12 +45,12 @@ type ConcatOptions struct {
 func (p Concat) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process concat applybatch: %v", err)
+		return nil, fmt.Errorf("process concat: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process concat applybatch: %v", err)
+		return nil, fmt.Errorf("process concat: %v", err)
 	}
 
 	return caps, nil
@@ -60,12 +60,12 @@ func (p Concat) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Concat) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Separator == "" {
-		return cap, fmt.Errorf("process concat apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process concat: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("process concat apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+		return cap, fmt.Errorf("process concat: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
 	// data is processed by retrieving and iterating the
@@ -86,7 +86,7 @@ func (p Concat) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 	}
 
 	if err := cap.Set(p.OutputKey, value); err != nil {
-		return cap, fmt.Errorf("process dynamodb apply: %v", err)
+		return cap, fmt.Errorf("process dynamodb: %v", err)
 	}
 
 	return cap, nil

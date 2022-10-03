@@ -6,9 +6,10 @@ resource "aws_dynamodb_table" "table" {
   hash_key       = var.hash_key
   range_key      = var.range_key
 
-  # hard-code TTL attribute as "ttl", services can opt-in to use at runtime
+  # services can opt in to use TTL functionality at runtime
+  # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html
   ttl {
-    attribute_name = "ttl"
+    attribute_name = "TTL"
     enabled        = true
   }
   point_in_time_recovery {

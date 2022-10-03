@@ -36,12 +36,12 @@ type Copy struct {
 func (p Copy) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process copy applybatch: %v", err)
+		return nil, fmt.Errorf("process copy: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process copy applybatch: %v", err)
+		return nil, fmt.Errorf("process copy: %v", err)
 	}
 
 	return caps, nil
@@ -52,7 +52,7 @@ func (p Copy) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
 		if err := cap.Set(p.OutputKey, cap.Get(p.InputKey)); err != nil {
-			return cap, fmt.Errorf("process copy apply: %v", err)
+			return cap, fmt.Errorf("process copy: %v", err)
 		}
 
 		return cap, nil
@@ -68,12 +68,12 @@ func (p Copy) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 	// to JSON processing
 	if p.InputKey == "" && p.OutputKey != "" {
-		if err := cap.Set(p.OutputKey, cap.GetData()); err != nil {
-			return cap, fmt.Errorf("process copy apply: %v", err)
+		if err := cap.Set(p.OutputKey, cap.Data()); err != nil {
+			return cap, fmt.Errorf("process copy: %v", err)
 		}
 
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process copy apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process copy: inputkey %s outputkey %s: %w", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

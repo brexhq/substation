@@ -11,17 +11,20 @@ import (
 	"github.com/brexhq/substation/internal/log"
 	"github.com/brexhq/substation/internal/sink"
 	"github.com/brexhq/substation/internal/transform"
+	"golang.org/x/sync/errgroup"
 )
 
-type cfg struct {
-	Transform config.Config
-	Sink      config.Config
+// Substation is the application core that manages all data processing and flow control.
+type Substation struct {
+	Channels    Channels
+	Config      Config
+	concurrency int
 }
 
-// Substation is the application core, all data processing and flow happens through Substation.
-type Substation struct {
-	Channels Channels
-	Config   cfg
+// Config is the shared application configuration for all apps.
+type Config struct {
+	Transform config.Config
+	Sink      config.Config
 }
 
 /*
@@ -29,139 +32,146 @@ Channels contains channels used by the app for managing state and sending encaps
 
 - Done: signals that all data processing (ingest, transform, load) is complete; this is always invoked by the Sink goroutine
 
-- Kill: signals that all non-anonymous goroutines should end processing
-
-- Errs: signals that an error occurred from an internal component
-
-- Transform: sends encapsulated data from the handler to the Transform goroutines
+- Transform: sends encapsulated data from the source application to the Transform goroutines
 
 - Sink: sends encapsulated data from the Transform goroutines to the Sink goroutine
 */
 type Channels struct {
 	Done      chan struct{}
-	Kill      chan struct{}
-	Errs      chan error
-	Transform chan config.Capsule
-	Sink      chan config.Capsule
+	Transform *config.Channel
+	Sink      *config.Channel
 }
 
-// CreateChannels initializes channels used by the app. Non-blocking channels can leak if the caller closes before processing completes; this is most likely to happen if the caller uses context to timeout. To avoid goroutine leaks, set larger buffer sizes.
-func (sub *Substation) CreateChannels(size int) {
+/*
+New returns an initialized Substation app. If an error occurs during initialization, then this function will panic.
+
+Concurrency is controlled using the SUBSTATION_CONCURRENCY environment variable and defaults to the number of CPUs on the host. In native Substation applications, this value determines the number of transform goroutines; if set to 1, then multi-core processing is not enabled.
+*/
+func New() *Substation {
+	sub := &Substation{}
+
 	sub.Channels.Done = make(chan struct{})
-	sub.Channels.Kill = make(chan struct{})
-	sub.Channels.Errs = make(chan error, size)
-	sub.Channels.Transform = make(chan config.Capsule, size)
-	sub.Channels.Sink = make(chan config.Capsule, size)
+	sub.Channels.Transform = config.NewChannel()
+	sub.Channels.Sink = config.NewChannel()
+	sub.Config = Config{}
+
+	sub.concurrency = runtime.NumCPU()
+	val, found := os.LookupEnv("SUBSTATION_CONCURRENCY")
+	if found {
+		v, err := strconv.Atoi(val)
+		if err != nil {
+			panic(err)
+		}
+
+		sub.concurrency = v
+	}
+
+	return sub
 }
 
-// DoneSignal closes the Done channel. This signals that all data was sent to a sink. This should only be called by the Sink goroutine.
-func (sub *Substation) DoneSignal() {
-	log.Debug("Substation done signal received, closing done channel")
-	close(sub.Channels.Done)
+// Concurrency returns the concurrency setting of the app.
+func (sub *Substation) Concurrency() int {
+	return sub.concurrency
 }
 
-// KillSignal closes the Kill channel. This signals all non-anonymous goroutines to stop running. This should always be deferred by the cmd invoking the app.
-func (sub *Substation) KillSignal() {
-	log.Debug("Substation kill signal received, closing kill channel")
-	close(sub.Channels.Kill)
-}
-
-// TransformSignal closes the Transform channel. This signals that there is no more incoming data to process. This should only be called by the cmd invoking the app.
-func (sub *Substation) TransformSignal() {
-	log.Debug("Substation transform signal received, closing transform channel")
-	close(sub.Channels.Transform)
-}
-
-// SinkSignal closes the Sink channel. This signals that there is no more data to send. This should only be called by the cmd invoking the app.
-func (sub *Substation) SinkSignal() {
-	log.Debug("Substation sink signal received, closing sink channel")
-	close(sub.Channels.Sink)
-}
-
-// SendTransform puts byte data into the Transform channel.
-func (sub *Substation) SendTransform(cap config.Capsule) {
-	sub.Channels.Transform <- cap
-}
-
-// SendErr puts an error into the Errs channel.
-func (sub *Substation) SendErr(err error) {
-	sub.Channels.Errs <- err
+// Send writes encapsulated data into the Transform channel.
+func (sub *Substation) Send(cap config.Capsule) {
+	sub.Channels.Transform.Send(cap)
 }
 
 /*
 Block blocks the handler from returning until one of these conditions is met:
 
-- the handler request times out (ctx.Done)
-
 - a data processing error occurs
 
-- all data processing is complete
+- the request times out (or is otherwise cancelled)
+
+- all data processing is successful
 
 This is usually the final call made by main() in a cmd invoking the app.
 */
-func (sub *Substation) Block(ctx context.Context) error {
+func (sub *Substation) Block(ctx context.Context, group *errgroup.Group) error {
 	for {
 		select {
+		// ctx must be derived from the group using WithContext and
+		// carries error and cancellation signals for all goroutines
 		case <-ctx.Done():
-			log.WithField("err", ctx.Err()).Debug("Substation received context signal")
-			return ctx.Err()
-		case err := <-sub.Channels.Errs:
-			log.WithField("err", err).Debug("Substation received error signal")
-			return err
+			// all channels are closed to address an edge case where
+			// a producer goroutine hangs when putting an item into a
+			// channel where the consumer goroutine has terminated
+			//
+			// this mitigates unintentional freezing of the source
+			// application and leaking its goroutines
+			sub.Channels.Sink.Close()
+			sub.Channels.Transform.Close()
+
+			if group.Wait() != nil {
+				log.Debug("processing errored")
+				return group.Wait()
+			} else {
+				log.Debug("processing cancelled")
+				return ctx.Err()
+			}
+
+		// signals that all data processing completed successfully
+		// this should only ever be called by Sink
 		case <-sub.Channels.Done:
-			log.Debug("Substation received done signal")
+			log.Debug("processing finished")
 			return nil
 		}
 	}
 }
 
 // Transform is the data transformation method for the app. Data is input on the Transform channel, transformed by a Transform interface (see: internal/transform), and output on the Sink channel. All Transform goroutines complete when the Transform channel is closed and all data is flushed.
-func (sub *Substation) Transform(ctx context.Context, wg *sync.WaitGroup) {
+func (sub *Substation) Transform(ctx context.Context, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
 	t, err := transform.Factory(sub.Config.Transform)
 	if err != nil {
-		sub.SendErr(err)
-		return
+		return err
 	}
 
-	log.WithField("transform", sub.Config.Transform.Type).Debug("Substation starting transform process")
-	if err := t.Transform(ctx, sub.Channels.Transform, sub.Channels.Sink, sub.Channels.Kill); err != nil {
-		sub.SendErr(err)
-		return
+	log.WithField("transform", sub.Config.Transform.Type).Debug("starting transformer")
+	if err := t.Transform(ctx, sub.Channels.Transform, sub.Channels.Sink); err != nil {
+		return err
 	}
+
+	return nil
+}
+
+// WaitTransform closes the transform channel and blocks until data processing is complete.
+func (sub *Substation) WaitTransform(wg *sync.WaitGroup) {
+	sub.Channels.Transform.Close()
+	wg.Wait()
+
+	log.Debug("transformers finished")
 }
 
 // Sink is the data sink method for the app. Data is input on the Sink channel and sent to the configured sink. The Sink goroutine completes when the Sink channel is closed and all data is flushed.
-func (sub *Substation) Sink(ctx context.Context, wg *sync.WaitGroup) {
+func (sub *Substation) Sink(ctx context.Context, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
 	s, err := sink.Factory(sub.Config.Sink)
 	if err != nil {
-		sub.SendErr(err)
-		return
+		return err
 	}
 
-	log.WithField("sink", sub.Config.Sink.Type).Debug("Substation starting sink process")
-	if err := s.Send(ctx, sub.Channels.Sink, sub.Channels.Kill); err != nil {
-		sub.SendErr(err)
-		return
+	log.WithField("sink", sub.Config.Sink.Type).Debug("starting sink")
+	if err := s.Send(ctx, sub.Channels.Sink); err != nil {
+		return err
 	}
 
-	sub.DoneSignal()
+	close(sub.Channels.Done)
+
+	return nil
 }
 
-// GetConcurrency retrieves a concurrency value from the SUBSTATION_CONCURRENCY environment variable. If the environment variable is missing, then the concurrency value is the number of CPUs on the host. In native Substation applications, this value determines the number of transform goroutines; if set to 1, then multi-core processing is not enabled.
-func GetConcurrency() (int, error) {
-	if val, found := os.LookupEnv("SUBSTATION_CONCURRENCY"); found {
-		v, err := strconv.Atoi(val)
-		if err != nil {
-			return 0, err
-		}
-		return v, nil
-	}
+// WaitSink closes the sink channel and blocks until data load is complete.
+func (sub *Substation) WaitSink(wg *sync.WaitGroup) {
+	sub.Channels.Sink.Close()
+	wg.Wait()
 
-	return runtime.NumCPU(), nil
+	log.Debug("sink finished")
 }
 
 /*

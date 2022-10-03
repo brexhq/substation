@@ -9,24 +9,24 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// StringsInvalidFunction is returned when the Strings inspector is configured with an invalid function.
-const StringsInvalidFunction = errors.Error("StringsInvalidFunction")
+// errStringsInvalidFunction is returned when the Strings inspector is configured with an invalid function.
+const errStringsInvalidFunction = errors.Error("invalid function")
 
 /*
 Strings evaluates data using string functions. This inspector uses the standard library's strings package.
 
 The inspector has these settings:
 	Function:
-		the string evaluation function to use during inspection
+		string evaluation function to use during inspection
 		must be one of:
 			equals
 			contains
 			endswith
 			startswith
 	Expression:
-		the substring expression to use during inspection
+		substring expression to use during inspection
 	Key (optional):
-		the JSON key-value to retrieve for inspection
+		JSON key-value to retrieve for inspection
 	Negate (optional):
 		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
 		defaults to false
@@ -57,7 +57,7 @@ type Strings struct {
 func (c Strings) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
-		check = string(cap.GetData())
+		check = string(cap.Data())
 	} else {
 		check = cap.Get(c.Key).String()
 	}
@@ -75,7 +75,7 @@ func (c Strings) Inspect(ctx context.Context, cap config.Capsule) (output bool, 
 	case "startswith":
 		matched = strings.HasPrefix(check, c.Expression)
 	default:
-		return false, fmt.Errorf("condition strings: function %s: %v", c.Function, StringsInvalidFunction)
+		return false, fmt.Errorf("condition strings: function %s: %v", c.Function, errStringsInvalidFunction)
 	}
 
 	if c.Negate {

@@ -91,7 +91,7 @@ func TestPrettyPrintBatch(t *testing.T) {
 
 		for i, res := range result {
 			expected := test.expected[i]
-			if !bytes.Equal(expected, res.GetData()) {
+			if !bytes.Equal(expected, res.Data()) {
 				t.Logf("expected %s, got %s", expected, res)
 				t.Fail()
 			}
@@ -159,8 +159,8 @@ func TestPrettyPrint(t *testing.T) {
 			t.Fail()
 		}
 
-		if !bytes.Equal(result.GetData(), test.expected) {
-			t.Logf("expected %s, got %s", test.expected, result.GetData())
+		if !bytes.Equal(result.Data(), test.expected) {
+			t.Logf("expected %s, got %s", test.expected, result.Data())
 			t.Fail()
 		}
 	}

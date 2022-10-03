@@ -8,12 +8,12 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// SinkInvalidFactoryConfig is returned when an unsupported Sink is referenced in Factory.
-const SinkInvalidFactoryConfig = errors.Error("SinkInvalidFactoryConfig")
+// errInvalidFactoryInput is returned when an unsupported Sink is referenced in Factory.
+const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-// Sink is an interface for sending data to external services. Sinks read channels of capsules and are interruptable via an anonymous struct channel.
+// Sink is an interface for sending data to external services. Sinks read channels of capsules and are interruptable.
 type Sink interface {
-	Send(context.Context, chan config.Capsule, chan struct{}) error
+	Send(context.Context, *config.Channel) error
 }
 
 // Factory returns a configured Sink from a config. This is the recommended method for retrieving ready-to-use Sinks.
@@ -39,6 +39,10 @@ func Factory(cfg config.Config) (Sink, error) {
 		var s S3
 		config.Decode(cfg.Settings, &s)
 		return &s, nil
+	case "sqs":
+		var s SQS
+		config.Decode(cfg.Settings, &s)
+		return &s, nil
 	case "stdout":
 		var s Stdout
 		config.Decode(cfg.Settings, &s)
@@ -47,11 +51,7 @@ func Factory(cfg config.Config) (Sink, error) {
 		var s SumoLogic
 		config.Decode(cfg.Settings, &s)
 		return &s, nil
-	case "sqs":
-		var s SQS
-		config.Decode(cfg.Settings, &s)
-		return &s, nil
 	default:
-		return nil, fmt.Errorf("sink settings %v: %v", cfg.Settings, SinkInvalidFactoryConfig)
+		return nil, fmt.Errorf("sink settings %v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }

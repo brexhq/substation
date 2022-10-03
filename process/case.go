@@ -13,8 +13,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// CaseInvalidCase is returned when the Case processor is configured with an invalid case.
-const CaseInvalidCase = errors.Error("CaseInvalidCase")
+// errCaseInvalid is returned when the Case processor is configured with an invalid case.
+const errCaseInvalid = errors.Error("invalid case")
 
 /*
 Case processes data by changing the case of a string or byte slice. The processor supports these patterns:
@@ -45,7 +45,7 @@ type Case struct {
 /*
 CaseOptions contains custom options for the Case processor:
 	Case:
-		the case to convert the string or byte to
+		case to convert the string or byte to
 		must be one of:
 			upper
 			lower
@@ -59,12 +59,12 @@ type CaseOptions struct {
 func (p Case) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process case applybatch: %v", err)
+		return nil, fmt.Errorf("process case: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process case applybatch: %v", err)
+		return nil, fmt.Errorf("process case: %v", err)
 	}
 
 	return caps, nil
@@ -74,7 +74,7 @@ func (p Case) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Case == "" {
-		return cap, fmt.Errorf("process case apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process case: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -90,11 +90,11 @@ func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		case "snake":
 			value = strcase.ToSnake(result)
 		default:
-			return cap, fmt.Errorf("process case apply: case %s: %v", p.Options.Case, CaseInvalidCase)
+			return cap, fmt.Errorf("process case: case %s: %v", p.Options.Case, errCaseInvalid)
 		}
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process case apply: %v", err)
+			return cap, fmt.Errorf("process case: %v", err)
 		}
 
 		return cap, nil
@@ -105,16 +105,16 @@ func (p Case) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		var value []byte
 		switch p.Options.Case {
 		case "upper":
-			value = bytes.ToUpper(cap.GetData())
+			value = bytes.ToUpper(cap.Data())
 		case "lower":
-			value = bytes.ToLower(cap.GetData())
+			value = bytes.ToLower(cap.Data())
 		default:
-			return cap, fmt.Errorf("process case apply: case %s: %v", p.Options.Case, CaseInvalidCase)
+			return cap, fmt.Errorf("process case: case %s: %v", p.Options.Case, errCaseInvalid)
 		}
 
 		cap.SetData(value)
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process case apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process case: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

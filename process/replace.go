@@ -40,11 +40,11 @@ type Replace struct {
 /*
 ReplaceOptions contains custom options for the Replace processor:
 	Old:
-		the character(s) to replace in the data
+		character(s) to replace in the data
 	New:
-		the character(s) that replace Old
+		character(s) that replace Old
 	Count (optional):
-		the number of replacements to make
+		number of replacements to make
 		defaults to -1, which replaces all matches
 */
 type ReplaceOptions struct {
@@ -57,12 +57,12 @@ type ReplaceOptions struct {
 func (p Replace) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process replace applybatch: %v", err)
+		return nil, fmt.Errorf("process replace: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process replace applybatch: %v", err)
+		return nil, fmt.Errorf("process replace: %v", err)
 	}
 
 	return caps, nil
@@ -72,7 +72,7 @@ func (p Replace) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]confi
 func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Old == "" || p.Options.New == "" {
-		return cap, fmt.Errorf("process replace apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process replace: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// default to replace all
@@ -91,7 +91,7 @@ func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		)
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process replace apply: %v", err)
+			return cap, fmt.Errorf("process replace: %v", err)
 		}
 
 		return cap, nil
@@ -100,7 +100,7 @@ func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
 		value := bytes.Replace(
-			cap.GetData(),
+			cap.Data(),
 			[]byte(p.Options.Old),
 			[]byte(p.Options.New),
 			p.Options.Count,
@@ -110,5 +110,5 @@ func (p Replace) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process replace apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process replace: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }

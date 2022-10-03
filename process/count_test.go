@@ -45,7 +45,7 @@ func TestCount(t *testing.T) {
 			t.Fail()
 		}
 
-		count := result[0].GetData()
+		count := result[0].Data()
 		if !bytes.Equal(count, test.expected) {
 			t.Logf("expected %s, got %s", test.expected, count)
 			t.Fail()

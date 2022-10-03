@@ -9,20 +9,17 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// ProcessorInvalidDataPattern is returned when a processor is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
-const ProcessorInvalidDataPattern = errors.Error("ProcessorIncorrectDataSettings")
+// errInvalidDataPattern is returned when a processor is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
+var errInvalidDataPattern = errors.Error("invalid data access pattern")
 
-// ProcessorInvalidDirection is returned when a processor is configured with an invalid direction setting.
-const ProcessorInvalidDirection = errors.Error("ProcessorInvalidDirection")
+// errInvalidDirection is returned when a processor is configured with an invalid direction setting.
+const errInvalidDirection = errors.Error("invalid direction")
 
-// ProcessorMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
-const ProcessorMissingRequiredOptions = errors.Error("ProcessorMissingRequiredOptions")
+// errMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
+const errMissingRequiredOptions = errors.Error("missing required options")
 
-// ApplyInvalidFactoryConfig is returned when an unsupported Task processor is referenced in Factory.
-const ApplyInvalidFactoryConfig = errors.Error("ApplyInvalidFactoryConfig")
-
-// ApplyBatchInvalidFactoryConfig is returned when an unsupported Batch processor is referenced in BatchFactory.
-const ApplyBatchInvalidFactoryConfig = errors.Error("ApplyBatchInvalidFactoryConfig")
+// errInvalidFactoryInput is returned when an unsupported processor is referenced in any Factory.
+const errInvalidFactoryInput = errors.Error("invalid factory input")
 
 // Applicator is an interface for applying a processor to encapsulated data.
 type Applicator interface {
@@ -53,7 +50,7 @@ func ApplyByte(ctx context.Context, data []byte, apps ...Applicator) ([]byte, er
 		return nil, err
 	}
 
-	return newCap.GetData(), nil
+	return newCap.Data(), nil
 }
 
 // MakeApplicators accepts multiple processor configs and returns populated Applicators. This is a convenience function for generating many Applicators.
@@ -163,7 +160,7 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, ApplyInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }
 
@@ -310,7 +307,7 @@ func BatchApplicatorFactory(cfg config.Config) (BatchApplicator, error) {
 		config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, ApplyBatchInvalidFactoryConfig)
+		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }
 

@@ -44,17 +44,17 @@ type Kinesis struct {
 }
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
-func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+func (sink *Kinesis) Send(ctx context.Context, ch *config.Channel) error {
 	if !kinesisAPI.IsEnabled() {
 		kinesisAPI.Setup()
 	}
 
 	buffer := map[string]*kinesis.Aggregate{}
 
-	for cap := range ch {
+	for cap := range ch.C {
 		select {
-		case <-kill:
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
 			var partitionKey string
 			if sink.Partition != "" {
@@ -82,7 +82,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok := buffer[aggregationKey].Add(cap.GetData(), partitionKey)
+			ok := buffer[aggregationKey].Add(cap.Data(), partitionKey)
 			if !ok {
 				agg := buffer[aggregationKey].Get()
 				aggPK := buffer[aggregationKey].PartitionKey
@@ -101,7 +101,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch chan config.Capsule, kill chan
 				).Debug("put records into Kinesis")
 
 				buffer[aggregationKey].New()
-				buffer[aggregationKey].Add(cap.GetData(), partitionKey)
+				buffer[aggregationKey].Add(cap.Data(), partitionKey)
 			}
 		}
 	}

@@ -18,12 +18,11 @@ var sqsAPI sqs.API
 const sqsMessageSizeLimit = 1024 * 1024 * 256
 
 /*
-SQSDataExceededSizeLimit is returned when data exceeds
-the SQS message size limit. If this error occurs, then
-conditions or processors should be applied to either drop
-or reduce the size of the data.
+errSQSMessageSizeLimit is returned when data exceeds the SQS message
+size limit. If this error occurs, then conditions or processors
+should be applied to either drop or reduce the size of the data.
 */
-const SQSDataExceededSizeLimit = errors.Error("KinesisFirehoseDataExceededSizeLimit")
+const errSQSMessageSizeLimit = errors.Error("data exceeded size limit")
 
 /*
 SQS sinks data to an AWS SQS queue.
@@ -45,7 +44,7 @@ type SQS struct {
 }
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
-func (sink *SQS) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+func (sink *SQS) Send(ctx context.Context, ch *config.Channel) error {
 	if !sqsAPI.IsEnabled() {
 		sqsAPI.Setup()
 	}
@@ -56,16 +55,16 @@ func (sink *SQS) Send(ctx context.Context, ch chan config.Capsule, kill chan str
 	buffer := aggregate.Bytes{}
 	buffer.New(sqsMessageSizeLimit, 500)
 
-	for cap := range ch {
+	for cap := range ch.C {
 		select {
-		case <-kill:
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
-			if len(cap.GetData()) > sqsMessageSizeLimit {
-				return fmt.Errorf("sink sqs: %v", SQSDataExceededSizeLimit)
+			if len(cap.Data()) > sqsMessageSizeLimit {
+				return fmt.Errorf("sink sqs: %v", errSQSMessageSizeLimit)
 			}
 
-			ok, err := buffer.Add(cap.GetData())
+			ok, err := buffer.Add(cap.Data())
 			if err != nil {
 				return fmt.Errorf("sink sqs: %v", err)
 			}
@@ -84,7 +83,7 @@ func (sink *SQS) Send(ctx context.Context, ch chan config.Capsule, kill chan str
 				).Debug("sent messages to SQS")
 
 				buffer.Reset()
-				buffer.Add(cap.GetData())
+				buffer.Add(cap.Data())
 			}
 		}
 	}

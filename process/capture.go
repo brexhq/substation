@@ -41,9 +41,9 @@ type Capture struct {
 /*
 CaptureOptions contains custom options for the Capture processor:
 	Expression:
-		the regular expression used to capture values
+		regular expression used to capture values
 	Function:
-		the type of regular expression applied
+		type of regular expression applied
 		must be one of:
 			find: applies the Find(String)?Submatch function
 			find_all: applies the FindAll(String)?Submatch function (see count)
@@ -62,12 +62,12 @@ type CaptureOptions struct {
 func (p Capture) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process capture applybatch: %v", err)
+		return nil, fmt.Errorf("process capture: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process capture applybatch: %v", err)
+		return nil, fmt.Errorf("process capture: %v", err)
 	}
 
 	return caps, nil
@@ -77,12 +77,12 @@ func (p Capture) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]confi
 func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Expression == "" || p.Options.Function == "" {
-		return cap, fmt.Errorf("process capture apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process capture: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	re, err := regexp.Compile(p.Options.Expression)
 	if err != nil {
-		return cap, fmt.Errorf("process capture apply: %v", err)
+		return cap, fmt.Errorf("process capture: %v", err)
 	}
 
 	if p.Options.Count == 0 {
@@ -97,7 +97,7 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		case "find":
 			match := re.FindStringSubmatch(result)
 			if err := cap.Set(p.OutputKey, p.getStringMatch(match)); err != nil {
-				return cap, fmt.Errorf("process capture apply: %v", err)
+				return cap, fmt.Errorf("process capture: %v", err)
 			}
 
 			return cap, nil
@@ -111,7 +111,7 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 			}
 
 			if err := cap.Set(p.OutputKey, matches); err != nil {
-				return cap, fmt.Errorf("process capture apply: %v", err)
+				return cap, fmt.Errorf("process capture: %v", err)
 			}
 
 			return cap, nil
@@ -122,7 +122,7 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 	if p.InputKey == "" && p.OutputKey == "" {
 		switch p.Options.Function {
 		case "find":
-			match := re.FindSubmatch(cap.GetData())
+			match := re.FindSubmatch(cap.Data())
 			cap.SetData(match[1])
 
 			return cap, nil
@@ -130,14 +130,14 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 			newCap := config.NewCapsule()
 
 			names := re.SubexpNames()
-			matches := re.FindSubmatch(cap.GetData())
+			matches := re.FindSubmatch(cap.Data())
 			for i, m := range matches {
 				if i == 0 {
 					continue
 				}
 
 				if err := newCap.Set(names[i], m); err != nil {
-					return cap, fmt.Errorf("process capture apply: %v", err)
+					return cap, fmt.Errorf("process capture: %v", err)
 				}
 			}
 
@@ -145,7 +145,7 @@ func (p Capture) Apply(ctx context.Context, cap config.Capsule) (config.Capsule,
 		}
 	}
 
-	return cap, fmt.Errorf("process capture apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process capture: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }
 
 func (p Capture) getStringMatch(match []string) string {

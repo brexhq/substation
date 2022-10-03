@@ -14,8 +14,8 @@ import (
 
 var dynamodbAPI dynamodb.API
 
-// DynamoDBSinkInvalidJSON is returned when the DynamoDB sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
-const DynamoDBSinkInvalidJSON = errors.Error("DynamoDBSinkInvalidJSON")
+// errDynamoDBSinkJSON is returned when the DynamoDB sink receives non-JSON or invalid JSON data. If this error occurs, then parse the data into JSON or drop invalid JSON before it reaches the sink.
+const errDynamoDBJSON = errors.Error("input must be JSON")
 
 /*
 DynamoDB sinks JSON data to an AWS DynamoDB table. This sink supports sinking multiple rows from the same event to a table.
@@ -52,19 +52,19 @@ type DynamoDB struct {
 }
 
 // Send sinks a channel of encapsulated data with the DynamoDB sink.
-func (sink *DynamoDB) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+func (sink *DynamoDB) Send(ctx context.Context, ch *config.Channel) error {
 	if !dynamodbAPI.IsEnabled() {
 		dynamodbAPI.Setup()
 	}
 
 	var count int
-	for cap := range ch {
+	for cap := range ch.C {
 		select {
-		case <-kill:
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
-			if !json.Valid(cap.GetData()) {
-				return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, DynamoDBSinkInvalidJSON)
+			if !json.Valid(cap.Data()) {
+				return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, errDynamoDBJSON)
 			}
 
 			items := cap.Get(sink.ItemsKey).Array()

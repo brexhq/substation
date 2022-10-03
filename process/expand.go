@@ -33,14 +33,14 @@ type Expand struct {
 func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process expand applybatch: %v", err)
+		return nil, fmt.Errorf("process expand: %v", err)
 	}
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(ctx, cap)
 		if err != nil {
-			return nil, fmt.Errorf("process expand applybatch: %v", err)
+			return nil, fmt.Errorf("process expand: %v", err)
 		}
 
 		if !ok {
@@ -68,7 +68,7 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 		if p.InputKey != "" {
 			rootBytes, err := json.Delete([]byte(root.String()), p.InputKey)
 			if err != nil {
-				return nil, fmt.Errorf("process expand applybatch: %v", err)
+				return nil, fmt.Errorf("process expand: %v", err)
 			}
 
 			root = json.Get(rootBytes, "@this")
@@ -88,7 +88,7 @@ func (p Expand) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 
 				expand, err = json.Set(expand, key, val)
 				if err != nil {
-					return nil, fmt.Errorf("process expand applybatch: %v", err)
+					return nil, fmt.Errorf("process expand: %v", err)
 				}
 			}
 

@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/awslabs/kinesis-aggregation/go/deaggregator"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/brexhq/substation/cmd"
 	"github.com/brexhq/substation/config"
@@ -21,33 +22,31 @@ import (
 	"github.com/brexhq/substation/internal/log"
 )
 
-var sub cmd.Substation
-var concurrency int
 var handler string
 var scanMethod string
 
-// LambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
-const LambdaMissingHandler = errors.Error("LambdaMissingHandler")
+// errLambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
+const errLambdaMissingHandler = errors.Error("missing SUBSTATION_HANDLER environment variable")
 
-// LambdaUnsupportedHandler is returned when the Lambda is deployed without a supported handler.
-const LambdaUnsupportedHandler = errors.Error("LambdaUnsupportedHandler")
+// errLambdaInvalidHandler is returned when the Lambda is deployed with an unsupported handler.
+const errLambdaInvalidHandler = errors.Error("invalid handler")
 
 func main() {
 	switch h := handler; h {
-	case "GATEWAY":
+	case "AWS_API_GATEWAY":
 		lambda.Start(gatewayHandler)
-	case "KINESIS":
+	case "AWS_KINESIS":
 		lambda.Start(kinesisHandler)
-	case "S3":
+	case "AWS_S3":
 		lambda.Start(s3Handler)
-	case "S3-SNS":
+	case "AWS_S3_SNS":
 		lambda.Start(s3SnsHandler)
-	case "SNS":
+	case "AWS_SNS":
 		lambda.Start(snsHandler)
-	case "SQS":
+	case "AWS_SQS":
 		lambda.Start(sqsHandler)
 	default:
-		panic(fmt.Errorf("main handler %s: %v", h, LambdaUnsupportedHandler))
+		panic(fmt.Errorf("main handler %s: %v", h, errLambdaInvalidHandler))
 	}
 }
 
@@ -55,14 +54,7 @@ func init() {
 	var found bool
 	handler, found = os.LookupEnv("SUBSTATION_HANDLER")
 	if !found {
-		panic(fmt.Errorf("init handler %s: %v", handler, LambdaMissingHandler))
-	}
-
-	// retrieves concurrency value from SUBSTATION_CONCURRENCY environment variable
-	var err error
-	concurrency, err = cmd.GetConcurrency()
-	if err != nil {
-		panic(fmt.Errorf("init concurrency: %v", err))
+		panic(fmt.Errorf("init handler %s: %v", handler, errLambdaMissingHandler))
 	}
 
 	// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable
@@ -76,25 +68,33 @@ type gatewayMetadata struct {
 }
 
 func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	sub := cmd.New()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
-	defer sub.KillSignal()
+	// maintains app state
+	group, ctx := errgroup.WithContext(ctx)
 
-	go func() {
-		var sinkWg sync.WaitGroup
-		var transformWg sync.WaitGroup
+	var sinkWg sync.WaitGroup
+	sinkWg.Add(1)
+	group.Go(func() error {
+		return sub.Sink(ctx, &sinkWg)
+	})
 
-		sinkWg.Add(1)
-		go sub.Sink(ctx, &sinkWg)
-
+	var transformWg sync.WaitGroup
+	for w := 0; w < sub.Concurrency(); w++ {
 		transformWg.Add(1)
-		go sub.Transform(ctx, &transformWg)
+		group.Go(func() error {
+			return sub.Transform(ctx, &transformWg)
+		})
+	}
 
+	// ingest
+	group.Go(func() error {
 		if len(request.Body) != 0 {
 			cap := config.NewCapsule()
 			cap.SetData([]byte(request.Body))
@@ -104,16 +104,16 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 				request.Headers,
 			})
 
-			sub.SendTransform(cap)
+			sub.Send(cap)
 		}
 
-		sub.TransformSignal()
-		transformWg.Wait()
-		sub.SinkSignal()
-		sinkWg.Wait()
-	}()
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
-	if err := sub.Block(ctx); err != nil {
+		return nil
+	})
+
+	if err := sub.Block(ctx, group); err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway handler: %v", err)
 	}
 
@@ -128,56 +128,66 @@ type kinesisMetadata struct {
 }
 
 func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
+	sub := cmd.New()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return fmt.Errorf("kinesis handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
-	defer sub.KillSignal()
+	// maintains app state
+	group, ctx := errgroup.WithContext(ctx)
 
+	var sinkWg sync.WaitGroup
+	sinkWg.Add(1)
+	group.Go(func() error {
+		return sub.Sink(ctx, &sinkWg)
+	})
+
+	var transformWg sync.WaitGroup
+	for w := 0; w < sub.Concurrency(); w++ {
+		transformWg.Add(1)
+		group.Go(func() error {
+			return sub.Transform(ctx, &transformWg)
+		})
+	}
+
+	// ingest
 	eventSourceArn := event.Records[len(event.Records)-1].EventSourceArn
 
-	go func() {
-		var sinkWg sync.WaitGroup
-		var transformWg sync.WaitGroup
-
-		sinkWg.Add(1)
-		go sub.Sink(ctx, &sinkWg)
-
-		for w := 0; w <= concurrency; w++ {
-			transformWg.Add(1)
-			go sub.Transform(ctx, &transformWg)
-		}
-
+	group.Go(func() error {
 		converted := kinesis.ConvertEventsRecords(event.Records)
 		deaggregated, err := deaggregator.DeaggregateRecords(converted)
 		if err != nil {
-			sub.SendErr(fmt.Errorf("kinesis handler: %v", err))
-			return
+			return err
 		}
 
 		for _, record := range deaggregated {
-			cap := config.NewCapsule()
-			cap.SetData(record.Data)
-			cap.SetMetadata(kinesisMetadata{
-				*record.ApproximateArrivalTimestamp,
-				eventSourceArn,
-				*record.PartitionKey,
-				*record.SequenceNumber,
-			})
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				cap := config.NewCapsule()
+				cap.SetData(record.Data)
+				cap.SetMetadata(kinesisMetadata{
+					*record.ApproximateArrivalTimestamp,
+					eventSourceArn,
+					*record.PartitionKey,
+					*record.SequenceNumber,
+				})
 
-			sub.SendTransform(cap)
+				sub.Send(cap)
+			}
 		}
 
-		sub.TransformSignal()
-		transformWg.Wait()
-		sub.SinkSignal()
-		sinkWg.Wait()
-	}()
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
-	if err := sub.Block(ctx); err != nil {
+		return nil
+	})
+
+	if err := sub.Block(ctx, group); err != nil {
 		return fmt.Errorf("kinesis handler: %v", err)
 	}
 
@@ -193,30 +203,36 @@ type s3Metadata struct {
 }
 
 func s3Handler(ctx context.Context, event events.S3Event) error {
+	sub := cmd.New()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return fmt.Errorf("s3 handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
-	defer sub.KillSignal()
+	// maintains app state
+	group, ctx := errgroup.WithContext(ctx)
 
-	go func() {
-		api := s3manager.DownloaderAPI{}
-		api.Setup()
+	var sinkWg sync.WaitGroup
+	sinkWg.Add(1)
+	group.Go(func() error {
+		return sub.Sink(ctx, &sinkWg)
+	})
 
-		var sinkWg sync.WaitGroup
-		var transformWg sync.WaitGroup
+	var transformWg sync.WaitGroup
+	for w := 0; w < sub.Concurrency(); w++ {
+		transformWg.Add(1)
+		group.Go(func() error {
+			return sub.Transform(ctx, &transformWg)
+		})
+	}
 
-		sinkWg.Add(1)
-		go sub.Sink(ctx, &sinkWg)
+	// ingest
+	api := s3manager.DownloaderAPI{}
+	api.Setup()
 
-		for w := 0; w <= concurrency; w++ {
-			transformWg.Add(1)
-			go sub.Transform(ctx, &transformWg)
-		}
-
+	group.Go(func() error {
 		for _, record := range event.Records {
 			log.WithField(
 				"bucket", record.S3.Bucket.Name,
@@ -230,8 +246,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				record.S3.Object.Key,
 			)
 			if err != nil {
-				sub.SendErr(fmt.Errorf("s3 handler: %v", err))
-				return
+				return err
 			}
 
 			cap := config.NewCapsule()
@@ -251,17 +266,22 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 					cap.SetData([]byte(scanner.Text()))
 				}
 
-				sub.SendTransform(cap)
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+					sub.Send(cap)
+				}
 			}
 		}
 
-		sub.TransformSignal()
-		transformWg.Wait()
-		sub.SinkSignal()
-		sinkWg.Wait()
-	}()
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
-	if err := sub.Block(ctx); err != nil {
+		return nil
+	})
+
+	if err := sub.Block(ctx, group); err != nil {
 		return fmt.Errorf("s3 handler: %v", err)
 	}
 
@@ -269,36 +289,41 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 }
 
 func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
+	sub := cmd.New()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
-		return fmt.Errorf("sns-s3 handler: %v", err)
+		return fmt.Errorf("s3Sns handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
-	defer sub.KillSignal()
+	// maintains app state
+	group, ctx := errgroup.WithContext(ctx)
 
-	go func() {
-		api := s3manager.DownloaderAPI{}
-		api.Setup()
+	var sinkWg sync.WaitGroup
+	sinkWg.Add(1)
+	group.Go(func() error {
+		return sub.Sink(ctx, &sinkWg)
+	})
 
-		var sinkWg sync.WaitGroup
-		var transformWg sync.WaitGroup
+	var transformWg sync.WaitGroup
+	for w := 0; w < sub.Concurrency(); w++ {
+		transformWg.Add(1)
+		group.Go(func() error {
+			return sub.Transform(ctx, &transformWg)
+		})
+	}
 
-		sinkWg.Add(1)
-		go sub.Sink(ctx, &sinkWg)
+	// ingest
+	api := s3manager.DownloaderAPI{}
+	api.Setup()
 
-		for w := 0; w <= concurrency; w++ {
-			transformWg.Add(1)
-			go sub.Transform(ctx, &transformWg)
-		}
-
+	group.Go(func() error {
 		for _, record := range event.Records {
 			var s3Event events.S3Event
 			err := json.Unmarshal([]byte(record.SNS.Message), &s3Event)
 			if err != nil {
-				sub.SendErr(fmt.Errorf("sns-s3 handler: %v", err))
-				return
+				return err
 			}
 
 			for _, record := range s3Event.Records {
@@ -314,8 +339,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					record.S3.Object.Key,
 				)
 				if err != nil {
-					sub.SendErr(fmt.Errorf("sns-s3 handler: %v", err))
-					return
+					return err
 				}
 
 				cap := config.NewCapsule()
@@ -335,19 +359,24 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 						cap.SetData([]byte(scanner.Text()))
 					}
 
-					sub.SendTransform(cap)
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					default:
+						sub.Send(cap)
+					}
 				}
 			}
 		}
 
-		sub.TransformSignal()
-		transformWg.Wait()
-		sub.SinkSignal()
-		sinkWg.Wait()
-	}()
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
-	if err := sub.Block(ctx); err != nil {
-		return fmt.Errorf("sns-s3 handler: %v", err)
+		return nil
+	})
+
+	if err := sub.Block(ctx, group); err != nil {
+		return fmt.Errorf("s3 sns handler: %v", err)
 	}
 
 	return nil
@@ -361,47 +390,58 @@ type snsMetadata struct {
 }
 
 func snsHandler(ctx context.Context, event events.SNSEvent) error {
+	sub := cmd.New()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return fmt.Errorf("sns handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
-	defer sub.KillSignal()
+	// maintains app state
+	group, ctx := errgroup.WithContext(ctx)
 
-	go func() {
-		var sinkWg sync.WaitGroup
-		var transformWg sync.WaitGroup
+	var sinkWg sync.WaitGroup
+	sinkWg.Add(1)
+	group.Go(func() error {
+		return sub.Sink(ctx, &sinkWg)
+	})
 
-		sinkWg.Add(1)
-		go sub.Sink(ctx, &sinkWg)
+	var transformWg sync.WaitGroup
+	for w := 0; w < sub.Concurrency(); w++ {
+		transformWg.Add(1)
+		group.Go(func() error {
+			return sub.Transform(ctx, &transformWg)
+		})
+	}
 
-		for w := 0; w <= concurrency; w++ {
-			transformWg.Add(1)
-			go sub.Transform(ctx, &transformWg)
-		}
-
+	// ingest
+	group.Go(func() error {
 		for _, record := range event.Records {
-			cap := config.NewCapsule()
-			cap.SetMetadata(snsMetadata{
-				record.SNS.Timestamp,
-				record.EventSubscriptionArn,
-				record.SNS.MessageID,
-				record.SNS.Subject,
-			})
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				cap := config.NewCapsule()
+				cap.SetData([]byte(record.SNS.Message))
+				cap.SetMetadata(snsMetadata{
+					record.SNS.Timestamp,
+					record.EventSubscriptionArn,
+					record.SNS.MessageID,
+					record.SNS.Subject,
+				})
 
-			cap.SetData([]byte(record.SNS.Message))
-			sub.SendTransform(cap)
+				sub.Send(cap)
+			}
 		}
 
-		sub.TransformSignal()
-		transformWg.Wait()
-		sub.SinkSignal()
-		sinkWg.Wait()
-	}()
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
-	if err := sub.Block(ctx); err != nil {
+		return nil
+	})
+
+	if err := sub.Block(ctx, group); err != nil {
 		return fmt.Errorf("sns handler: %v", err)
 	}
 
@@ -416,47 +456,58 @@ type sqsMetadata struct {
 }
 
 func sqsHandler(ctx context.Context, event events.SQSEvent) error {
+	sub := cmd.New()
+
 	conf, err := appconfig.GetPrefetch(ctx)
 	if err != nil {
 		return fmt.Errorf("sqs handler: %v", err)
 	}
 	json.Unmarshal(conf, &sub.Config)
 
-	sub.CreateChannels(concurrency)
-	defer sub.KillSignal()
+	// maintains app state
+	group, ctx := errgroup.WithContext(ctx)
 
-	go func() {
-		var sinkWg sync.WaitGroup
-		var transformWg sync.WaitGroup
+	var sinkWg sync.WaitGroup
+	sinkWg.Add(1)
+	group.Go(func() error {
+		return sub.Sink(ctx, &sinkWg)
+	})
 
-		sinkWg.Add(1)
-		go sub.Sink(ctx, &sinkWg)
+	var transformWg sync.WaitGroup
+	for w := 0; w < sub.Concurrency(); w++ {
+		transformWg.Add(1)
+		group.Go(func() error {
+			return sub.Transform(ctx, &transformWg)
+		})
+	}
 
-		for w := 0; w <= concurrency; w++ {
-			transformWg.Add(1)
-			go sub.Transform(ctx, &transformWg)
-		}
-
+	// ingest
+	group.Go(func() error {
 		for _, msg := range event.Records {
-			cap := config.NewCapsule()
-			cap.SetData([]byte(msg.Body))
-			cap.SetMetadata(sqsMetadata{
-				msg.EventSourceARN,
-				msg.MessageId,
-				msg.Md5OfBody,
-				msg.Attributes,
-			})
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				cap := config.NewCapsule()
+				cap.SetData([]byte(msg.Body))
+				cap.SetMetadata(sqsMetadata{
+					msg.EventSourceARN,
+					msg.MessageId,
+					msg.Md5OfBody,
+					msg.Attributes,
+				})
 
-			sub.SendTransform(cap)
+				sub.Send(cap)
+			}
 		}
 
-		sub.TransformSignal()
-		transformWg.Wait()
-		sub.SinkSignal()
-		sinkWg.Wait()
-	}()
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
-	if err := sub.Block(ctx); err != nil {
+		return nil
+	})
+
+	if err := sub.Block(ctx, group); err != nil {
 		return fmt.Errorf("sns handler: %v", err)
 	}
 

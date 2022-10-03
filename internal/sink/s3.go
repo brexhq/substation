@@ -48,7 +48,7 @@ type S3 struct {
 }
 
 // Send sinks a channel of encapsulated data with the S3 sink.
-func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan struct{}) error {
+func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 	if !s3managerAPI.IsEnabled() {
 		s3managerAPI.Setup()
 	}
@@ -61,10 +61,10 @@ func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan stru
 	}
 
 	sep := []byte("\n")
-	for cap := range ch {
+	for cap := range ch.C {
 		select {
-		case <-kill:
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
 			if sink.PrefixKey != "" {
 				prefix = cap.Get(sink.PrefixKey).String()
@@ -78,7 +78,7 @@ func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan stru
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok, err := buffer[prefix].Add(cap.GetData())
+			ok, err := buffer[prefix].Add(cap.Data())
 			if err != nil {
 				return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
 			}
@@ -107,7 +107,7 @@ func (sink *S3) Send(ctx context.Context, ch chan config.Capsule, kill chan stru
 				).Debug("uploaded data to S3")
 
 				buffer[prefix].Reset()
-				buffer[prefix].Add(cap.GetData())
+				buffer[prefix].Add(cap.Data())
 			}
 		}
 	}

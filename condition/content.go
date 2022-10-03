@@ -12,7 +12,7 @@ Content evaluates data by its content type. This inspector uses the standard lib
 
 The inspector has these settings:
 	Type:
-		the MIME type used during inspection
+		MIME type used during inspection
 	Negate (optional):
 		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
 		defaults to false
@@ -38,7 +38,7 @@ type Content struct {
 func (c Content) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
 	matched := false
 
-	content := http.DetectContentType(cap.GetData())
+	content := http.DetectContentType(cap.Data())
 	if content == c.Type {
 		matched = true
 	}

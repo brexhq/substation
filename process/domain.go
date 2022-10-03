@@ -12,8 +12,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// DomainNoSubdomain is returned when a domain without a subdomain is processed.
-const DomainNoSubdomain = errors.Error("DomainNoSubdomain")
+// errDomainNoSubdomain is returned when a domain without a subdomain is processed.
+const errDomainNoSubdomain = errors.Error("no subdomain")
 
 /*
 Domain processes data by parsing fully qualified domain names into labels. The processor supports these patterns:
@@ -44,7 +44,7 @@ type Domain struct {
 /*
 DomainOptions contains custom options for the Domain processor:
 	Function:
-		the domain processing function to apply to the data
+		domain processing function applied to the data
 		must be one of:
 			tld
 			domain
@@ -58,12 +58,12 @@ type DomainOptions struct {
 func (p Domain) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process domain applybatch: %v", err)
+		return nil, fmt.Errorf("process domain: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process domain applybatch: %v", err)
+		return nil, fmt.Errorf("process domain: %v", err)
 	}
 
 	return caps, nil
@@ -73,7 +73,7 @@ func (p Domain) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config
 func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return cap, fmt.Errorf("process domain apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process domain: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -82,7 +82,7 @@ func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		value, _ := p.domain(result)
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process domain apply: %v", err)
+			return cap, fmt.Errorf("process domain: %v", err)
 		}
 
 		return cap, nil
@@ -90,13 +90,13 @@ func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		value, _ := p.domain(string(cap.GetData()))
+		value, _ := p.domain(string(cap.Data()))
 		cap.SetData([]byte(value))
 
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process domain apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process domain: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }
 
 func (p Domain) domain(s string) (string, error) {
@@ -107,13 +107,13 @@ func (p Domain) domain(s string) (string, error) {
 	case "domain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
+			return "", fmt.Errorf("process domain %s: %v", s, err)
 		}
 		return domain, nil
 	case "subdomain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
+			return "", fmt.Errorf("process domain: %s: %v", s, err)
 		}
 
 		// subdomain is the input string minus the domain and a leading dot:
@@ -122,7 +122,7 @@ func (p Domain) domain(s string) (string, error) {
 		// subdomain == "foo" ("foo.bar.com" minus ".bar.com")
 		subdomain := strings.Replace(s, "."+domain, "", 1)
 		if subdomain == domain {
-			return "", fmt.Errorf("domain %s: %v", s, DomainNoSubdomain)
+			return "", fmt.Errorf("process domain %s: %v", s, errDomainNoSubdomain)
 		}
 		return subdomain, nil
 	default:

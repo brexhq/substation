@@ -1,4 +1,4 @@
-# process
+# condition
 
 Contains examples of using the condition package in Go applications.
 

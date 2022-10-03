@@ -13,10 +13,10 @@ import (
 
 	"github.com/brexhq/substation/cmd"
 	"github.com/brexhq/substation/config"
+	"golang.org/x/sync/errgroup"
 )
 
-var sub cmd.Substation
-var scanMethod string
+var sub *cmd.Substation
 
 func loadConfig(f string) error {
 	bytes, err := ioutil.ReadFile(f)
@@ -31,7 +31,7 @@ func loadConfig(f string) error {
 type metadata struct {
 	Name             string    `json:"name"`
 	Size             int64     `json:"size"`
-	ModificationTime time.Time `json:"modification_time"`
+	ModificationTime time.Time `json:"modificationTime"`
 }
 
 func main() {
@@ -43,6 +43,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
+	sub = cmd.New()
 	loadConfig(*config)
 
 	if err := file(ctx, *input); err != nil {
@@ -51,41 +52,33 @@ func main() {
 }
 
 func file(ctx context.Context, filename string) error {
-	// retrieves concurrency value from SUBSTATION_CONCURRENCY environment variable
-	concurrency, err := cmd.GetConcurrency()
-	if err != nil {
-		return fmt.Errorf("file concurrency: %v", err)
+	group, ctx := errgroup.WithContext(ctx)
+
+	var sinkWg sync.WaitGroup
+	sinkWg.Add(1)
+	group.Go(func() error {
+		return sub.Sink(ctx, &sinkWg)
+	})
+
+	var transformWg sync.WaitGroup
+	for w := 0; w < sub.Concurrency(); w++ {
+		transformWg.Add(1)
+		group.Go(func() error {
+			return sub.Transform(ctx, &transformWg)
+		})
 	}
 
-	// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable
-	scanMethod = cmd.GetScanMethod()
-
-	sub.CreateChannels(concurrency)
-	defer sub.KillSignal()
-
-	go func() {
-		var sinkWg sync.WaitGroup
-
-		sinkWg.Add(1)
-		go sub.Sink(ctx, &sinkWg)
-
-		var transformWg sync.WaitGroup
-		for w := 1; w <= concurrency; w++ {
-			transformWg.Add(1)
-			go sub.Transform(ctx, &transformWg)
-		}
-
+	// ingest
+	group.Go(func() error {
 		fileHandle, err := os.Open(filename)
 		if err != nil {
-			sub.SendErr(fmt.Errorf("file filename %s: %v", filename, err))
-			return
+			return err
 		}
 		defer fileHandle.Close()
 
 		fi, err := fileHandle.Stat()
 		if err != nil {
-			sub.SendErr(fmt.Errorf("file filename %s: %v", filename, err))
-			return
+			return err
 		}
 
 		cap := config.NewCapsule()
@@ -99,6 +92,9 @@ func file(ctx context.Context, filename string) error {
 		scanner := bufio.NewScanner(fileHandle)
 		scanner.Buffer([]byte{}, 100*1024*1024)
 
+		// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable
+		scanMethod := cmd.GetScanMethod()
+
 		var count int
 		for scanner.Scan() {
 			switch scanMethod {
@@ -108,18 +104,24 @@ func file(ctx context.Context, filename string) error {
 				cap.SetData([]byte(scanner.Text()))
 			}
 
-			sub.SendTransform(cap)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				sub.Send(cap)
+			}
+
 			count++
 		}
 
-		sub.TransformSignal()
-		transformWg.Wait()
-		sub.SinkSignal()
-		sinkWg.Wait()
-	}()
+		sub.WaitTransform(&transformWg)
+		sub.WaitSink(&sinkWg)
 
-	if err := sub.Block(ctx); err != nil {
-		return fmt.Errorf("file: %v", err)
+		return nil
+	})
+
+	if err := sub.Block(ctx, group); err != nil {
+		return err
 	}
 
 	return nil

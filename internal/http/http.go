@@ -13,8 +13,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// HTTPInvalidPayload is returned by Post when it receives an unexpected payload interface.
-const HTTPInvalidPayload = errors.Error("HTTPInvalidPayload")
+// errHTTPInvalidPayload is returned by Post when it receives an unexpected payload interface.
+const errHTTPInvalidPayload = errors.Error("invalid payload interface")
 
 // Header contains a single HTTP header that can be passed to HTTP.Post. Multiple headers can be passed to HTTP.Post as a slice.
 type Header struct {
@@ -68,7 +68,7 @@ func (h *HTTP) Post(ctx context.Context, url string, payload interface{}, header
 	case string:
 		tmp = []byte(p)
 	default:
-		return nil, fmt.Errorf("http post URL %s: %v", url, HTTPInvalidPayload)
+		return nil, fmt.Errorf("http post URL %s: %v", url, errHTTPInvalidPayload)
 	}
 
 	req, err := retryablehttp.NewRequest("POST", url, tmp)

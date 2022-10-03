@@ -6,6 +6,6 @@ Contains examples of using the process package in Go applications.
 
 Reads all lines from JSON file and applies a processor.
 
-## caps
+## encapsulation
 
 Reads all lines from JSON file as encapsulated data and conditionally applies a processor.

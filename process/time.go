@@ -55,10 +55,10 @@ TimeOptions contains custom options for the Time processor:
 			unix: epoch
 			unix_milli: epoch milliseconds
 	InputLocation (optional):
-		the time zone abbreviation for the input
+		time zone abbreviation for the input
 		defaults to UTC
 	OutputLocation (optional):
-		the time zone abbreviation for the output
+		time zone abbreviation for the output
 		defaults to UTC
 */
 type TimeOptions struct {
@@ -72,12 +72,12 @@ type TimeOptions struct {
 func (p Time) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process time applybatch: %v", err)
+		return nil, fmt.Errorf("process time: %v", err)
 	}
 
 	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process time applybatch: %v", err)
+		return nil, fmt.Errorf("process time: %v", err)
 	}
 
 	return caps, nil
@@ -87,7 +87,7 @@ func (p Time) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.C
 func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.InputFormat == "" || p.Options.OutputFormat == "" {
-		return cap, fmt.Errorf("process time apply: options %+v: %v", p.Options, ProcessorMissingRequiredOptions)
+		return cap, fmt.Errorf("process time: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// "now" processing, supports json and data
@@ -106,7 +106,7 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 		if p.OutputKey != "" {
 			if err := cap.Set(p.OutputKey, value); err != nil {
-				return cap, fmt.Errorf("process time apply: %v", err)
+				return cap, fmt.Errorf("process time: %v", err)
 			}
 
 			return cap, nil
@@ -133,11 +133,11 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 		value, err := p.time(result)
 		if err != nil {
-			return cap, fmt.Errorf("process time apply: %v", err)
+			return cap, fmt.Errorf("process time: %v", err)
 		}
 
 		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process time apply: %v", err)
+			return cap, fmt.Errorf("process time: %v", err)
 		}
 
 		return cap, nil
@@ -145,15 +145,15 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		tmp, err := json.Set([]byte{}, "tmp", cap.GetData())
+		tmp, err := json.Set([]byte{}, "tmp", cap.Data())
 		if err != nil {
-			return cap, fmt.Errorf("process time apply: %v", err)
+			return cap, fmt.Errorf("process time: %v", err)
 		}
 
 		res := json.Get(tmp, "tmp")
 		value, err := p.time(res)
 		if err != nil {
-			return cap, fmt.Errorf("process time apply: %v", err)
+			return cap, fmt.Errorf("process time: %v", err)
 		}
 
 		switch v := value.(type) {
@@ -166,7 +166,7 @@ func (p Time) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, er
 		return cap, nil
 	}
 
-	return cap, fmt.Errorf("process time apply: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, ProcessorInvalidDataPattern)
+	return cap, fmt.Errorf("process time: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }
 
 func (p Time) time(result json.Result) (interface{}, error) {
@@ -183,18 +183,18 @@ func (p Time) time(result json.Result) (interface{}, error) {
 		if p.Options.InputLocation != "" {
 			loc, err := time.LoadLocation(p.Options.InputLocation)
 			if err != nil {
-				return nil, fmt.Errorf("time: location %s: %v", p.Options.InputLocation, err)
+				return nil, fmt.Errorf("process time: location %s: %v", p.Options.InputLocation, err)
 			}
 
 			timeDate, err = time.ParseInLocation(p.Options.InputFormat, result.String(), loc)
 			if err != nil {
-				return nil, fmt.Errorf("time parse: format %s location %s: %v", p.Options.InputFormat, p.Options.InputLocation, err)
+				return nil, fmt.Errorf("process time parse: format %s location %s: %v", p.Options.InputFormat, p.Options.InputLocation, err)
 			}
 		} else {
 			var err error
 			timeDate, err = time.Parse(p.Options.InputFormat, result.String())
 			if err != nil {
-				return nil, fmt.Errorf("time parse: format %s: %v", p.Options.InputFormat, err)
+				return nil, fmt.Errorf("process time parse: format %s: %v", p.Options.InputFormat, err)
 			}
 		}
 	}
@@ -203,7 +203,7 @@ func (p Time) time(result json.Result) (interface{}, error) {
 	if p.Options.OutputLocation != "" {
 		loc, err := time.LoadLocation(p.Options.OutputLocation)
 		if err != nil {
-			return nil, fmt.Errorf("time: location %s: %v", p.Options.OutputLocation, err)
+			return nil, fmt.Errorf("process time: location %s: %v", p.Options.OutputLocation, err)
 		}
 
 		timeDate = timeDate.In(loc)

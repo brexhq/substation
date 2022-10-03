@@ -12,8 +12,8 @@ import (
 	"github.com/jshlbrd/go-aggregate"
 )
 
-// AggregateBufferSizeLimit is returned when the aggregate's buffer size limit is reached. If this error occurs, then increase the size of the buffer or use the Drop processor to remove data that exceeds the buffer limit.
-const AggregateBufferSizeLimit = errors.Error("AggregateBufferSizeLimit")
+// errAggregateSizeLimit is returned when the aggregate's buffer size limit is reached. If this error occurs, then increase the size of the buffer or use the Drop processor to remove data that exceeds the buffer limit.
+const errAggregateSizeLimit = errors.Error("data exceeded size limit")
 
 /*
 Aggregate processes data by buffering and aggregating it
@@ -59,16 +59,16 @@ type Aggregate struct {
 /*
 AggregateOptions contains custom options settings for the Aggregate processor:
 	AggregateKey (optional):
-		the JSON key-value that is used to organize aggregated data
+		JSON key-value that is used to organize aggregated data
 		defaults to empty string, only applies to JSON
 	Separator (optional):
-		the string that separates aggregated data
+		string that separates aggregated data
 		defaults to empty string, only applies to data
 	MaxCount (optional):
-		the maximum number of items stored in a buffer when aggregating data
+		maximum number of items stored in a buffer when aggregating data
 		defaults to 1000
 	MaxSize (optional):
-		the maximum size, in bytes, of items stored in a buffer when aggregating data
+		maximum size, in bytes, of items stored in a buffer when aggregating data
 		defaults to 10000 (10KB)
 */
 type AggregateOptions struct {
@@ -97,14 +97,14 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process aggregate applybatch: %v", err)
+		return nil, fmt.Errorf("process aggregate: %v", err)
 	}
 
 	newCaps := newBatch(&caps)
 	for _, cap := range caps {
 		ok, err := op.Operate(ctx, cap)
 		if err != nil {
-			return nil, fmt.Errorf("process aggregate applybatch: %v", err)
+			return nil, fmt.Errorf("process aggregate: %v", err)
 		}
 
 		if !ok {
@@ -114,9 +114,9 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 		// data that exceeds the size of the buffer will never
 		// fit within it
-		length := len(cap.GetData())
+		length := len(cap.Data())
 		if length > p.Options.MaxSize {
-			return nil, fmt.Errorf("process aggregate applybatch: size limit %d reached (%d): %v", p.Options.MaxSize, length, AggregateBufferSizeLimit)
+			return nil, fmt.Errorf("process aggregate: size %d data length %d: %v", p.Options.MaxSize, length, errAggregateSizeLimit)
 		}
 
 		var aggregateKey string
@@ -130,9 +130,9 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 			aggregateKeys = append(aggregateKeys, aggregateKey)
 		}
 
-		ok, err = buffer[aggregateKey].Add(cap.GetData())
+		ok, err = buffer[aggregateKey].Add(cap.Data())
 		if err != nil {
-			return nil, fmt.Errorf("process aggregate applybatch: %v", err)
+			return nil, fmt.Errorf("process aggregate: %v", err)
 		}
 
 		// data was successfully added to the buffer, every item after
@@ -150,7 +150,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 				value, err = json.Set(value, p.OutputKey, element)
 				if err != nil {
-					return nil, fmt.Errorf("process aggregate applybatch: %v", err)
+					return nil, fmt.Errorf("process aggregate: %v", err)
 				}
 			}
 
@@ -166,7 +166,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 		// by this point, addition of the failed data is guaranteed to
 		// succeed after the buffer is reset
 		buffer[aggregateKey].Reset()
-		buffer[aggregateKey].Add(cap.GetData())
+		buffer[aggregateKey].Add(cap.Data())
 	}
 
 	// remaining items must be drained from the buffer, otherwise data is lost
@@ -184,7 +184,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]con
 
 				value, err = json.Set(value, p.OutputKey, element)
 				if err != nil {
-					return nil, fmt.Errorf("process aggregate applybatch: %v", err)
+					return nil, fmt.Errorf("process aggregate: %v", err)
 				}
 			}
 

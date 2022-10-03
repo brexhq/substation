@@ -21,7 +21,7 @@ type Count struct{}
 func (p Count) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
 	newCap := config.NewCapsule()
 	if err := newCap.Set("count", len(caps)); err != nil {
-		return caps, fmt.Errorf("process count apply: : %v", err)
+		return caps, fmt.Errorf("process count: : %v", err)
 	}
 
 	newCaps := make([]config.Capsule, 0, 1)

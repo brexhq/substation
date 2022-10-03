@@ -15,11 +15,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// JSONSetRawInvalid is returned when SetRaw receives an invalid input.
-const JSONSetRawInvalid = errors.Error("JSONSetRawInvalid")
-
-// JSONInvalidData is returned when JSON functions return invalid JSON.
-const JSONInvalidData = errors.Error("JSONInvalidData")
+// errSetRawInvalid is returned when SetRaw receives an invalid input value.
+const errSetRawInvalid = errors.Error("invalid value interface")
 
 // Types maps gjson.Type to strings.
 var Types = map[gjson.Type]string{
@@ -97,7 +94,7 @@ func SetRaw(json []byte, key string, value interface{}) (tmp []byte, err error) 
 	case Result:
 		tmp, err = sjson.SetRawBytes(json, key, []byte(v.String()))
 	default:
-		return nil, fmt.Errorf("setraw key %s: %v", key, JSONSetRawInvalid)
+		return nil, fmt.Errorf("setraw key %s: %v", key, errSetRawInvalid)
 	}
 
 	if err != nil {

@@ -16,7 +16,9 @@ require (
 	github.com/tidwall/gjson v1.14.0
 	github.com/tidwall/sjson v1.2.4
 	github.com/umisama/go-regexpcache v0.0.0-20150417035358-2444a542492f
+	go.uber.org/goleak v1.2.0
 	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 )
 
 require (

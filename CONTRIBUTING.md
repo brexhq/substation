@@ -54,6 +54,12 @@ We rely on contributors to test changes before they are submitted as pull reques
 
 ### Design Patterns
 
+#### Environment Variables
+
+Substation uses environment variables to customize runtime settings of the system (e.g., concurrency is controlled by `SUBSTATION_CONCURRENCY`). 
+
+Custom applications should implement their own runtime settings as required; for example, the [AWS Lambda application](/cmd/aws/lambda/substation/) uses `SUBSTATION_HANDLER` to manage [invocation settings](https://docs.aws.amazon.com/lambda/latest/dg/lambda-invocation.html).
+
 ##### Configurations
 
 Substation uses a single configuration pattern for all components in the system (see `Config` in [config/config.go](/config/config.go)). This pattern is highly reusable and should be nested to create complex configurations supported by Jsonnet. Below is an example that shows how configurations should be designed:
@@ -85,12 +91,6 @@ Substation relies on [factory methods](https://refactoring.guru/design-patterns/
 Factories are the preferred method for allowing users to customize the system. Example factories can be seen in [condition](/condition/condition.go) and [process](/process/process.go).
 
 ### Naming Conventions
-
-#### Environment Variables
-
-Substation uses environment variables to customize runtime settings of the system (e.g., concurrency is controlled by `SUBSTATION_CONCURRENCY`). 
-
-Custom applications should implement their own runtime settings as required; for example, the [AWS Lambda application](/cmd/aws/lambda/substation/) uses `SUBSTATION_HANDLER` to manage [invocation settings](https://docs.aws.amazon.com/lambda/latest/dg/lambda-invocation.html).
 
 #### Errors
 

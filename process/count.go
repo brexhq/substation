@@ -20,12 +20,12 @@ type Count struct{}
 
 // ApplyBatch processes a slice of encapsulated data with the Count processor. Conditions are optionally applied to the data to enable processing.
 func (p Count) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	newCap := config.NewCapsule()
-	if err := newCap.Set("count", len(capsules)); err != nil {
+	newCapsule := config.NewCapsule()
+	if err := newCapsule.Set("count", len(capsules)); err != nil {
 		return capsules, fmt.Errorf("process count: : %v", err)
 	}
 
-	newCaps := make([]config.Capsule, 0, 1)
-	newCaps = append(newCaps, newCap)
-	return newCaps, nil
+	newCapsules := make([]config.Capsule, 0, 1)
+	newCapsules = append(newCapsules, newCapsule)
+	return newCapsules, nil
 }

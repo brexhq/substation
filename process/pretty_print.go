@@ -107,7 +107,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, capsules []config.Capsule) 
 	var count int
 	var stack []byte
 
-	newCaps := newBatch(&capsules)
+	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
@@ -115,7 +115,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, capsules []config.Capsule) 
 		}
 
 		if !ok {
-			newCaps = append(newCaps, capsule)
+			newCapsules = append(newCapsules, capsule)
 			continue
 		}
 
@@ -123,7 +123,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, capsules []config.Capsule) 
 		case "to":
 			result := capsule.Get(ppModifier).String()
 			capsule.SetData([]byte(result))
-			newCaps = append(newCaps, capsule)
+			newCapsules = append(newCapsules, capsule)
 
 		case "from":
 			for _, data := range capsule.Data() {
@@ -144,9 +144,9 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, capsules []config.Capsule) 
 					}
 
 					if json.Valid(buf.Bytes()) {
-						newCap := config.NewCapsule()
-						newCap.SetData(buf.Bytes())
-						newCaps = append(newCaps, newCap)
+						newCapsule := config.NewCapsule()
+						newCapsule.SetData(buf.Bytes())
+						newCapsules = append(newCapsules, newCapsule)
 					}
 
 					stack = []byte{}
@@ -162,7 +162,7 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, capsules []config.Capsule) 
 		return nil, fmt.Errorf("process pretty_print: %d characters remain: %v", count, errPrettyPrintIncompleteJSON)
 	}
 
-	return newCaps, nil
+	return newCapsules, nil
 }
 
 /*

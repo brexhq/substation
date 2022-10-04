@@ -130,7 +130,7 @@ func (p Capture) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 
 			return capsule, nil
 		case "named_group":
-			newCap := config.NewCapsule()
+			newCapsule := config.NewCapsule()
 
 			names := re.SubexpNames()
 			matches := re.FindSubmatch(capsule.Data())
@@ -139,12 +139,12 @@ func (p Capture) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 					continue
 				}
 
-				if err := newCap.Set(names[i], m); err != nil {
+				if err := newCapsule.Set(names[i], m); err != nil {
 					return capsule, fmt.Errorf("process capture: %v", err)
 				}
 			}
 
-			return newCap, nil
+			return newCapsule, nil
 		}
 	}
 

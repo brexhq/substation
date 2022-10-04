@@ -28,7 +28,7 @@ func (p Drop) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]conf
 		return nil, fmt.Errorf("process drop: %v", err)
 	}
 
-	newCaps := newBatch(&capsules)
+	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
@@ -36,10 +36,10 @@ func (p Drop) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]conf
 		}
 
 		if !ok {
-			newCaps = append(newCaps, capsule)
+			newCapsules = append(newCapsules, capsule)
 			continue
 		}
 	}
 
-	return newCaps, nil
+	return newCapsules, nil
 }

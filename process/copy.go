@@ -11,12 +11,12 @@ import (
 /*
 Copy processes data by copying it. The processor supports these patterns:
 
-		JSON:
-		  	{"hello":"world"} >>> {"hello":"world","goodbye":"world"}
-		from JSON:
-	  		{"hello":"world"} >>> world
-		to JSON:
-	  		world >>> {"hello":"world"}
+	JSON:
+		{"hello":"world"} >>> {"hello":"world","goodbye":"world"}
+	from JSON:
+		{"hello":"world"} >>> world
+	to JSON:
+		world >>> {"hello":"world"}
 
 When loaded with a factory, the processor uses this JSON configuration:
 

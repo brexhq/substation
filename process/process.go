@@ -45,12 +45,12 @@ func ApplyByte(ctx context.Context, data []byte, apps ...Applicator) ([]byte, er
 	capsule := config.NewCapsule()
 	capsule.SetData(data)
 
-	newCap, err := Apply(ctx, capsule, apps...)
+	newCapsule, err := Apply(ctx, capsule, apps...)
 	if err != nil {
 		return nil, err
 	}
 
-	return newCap.Data(), nil
+	return newCapsule.Data(), nil
 }
 
 // MakeApplicators accepts multiple processor configs and returns populated Applicators. This is a convenience function for generating many Applicators.
@@ -322,7 +322,7 @@ func newBatch(s *[]config.Capsule) []config.Capsule {
 
 // conditionallyApplyBatch uses conditions to dynamically apply processors to a slice of encapsulated data. This is a convenience function for the ApplyBatch method used in most processors.
 func conditionallyApplyBatch(ctx context.Context, capsules []config.Capsule, op condition.Operator, apps ...Applicator) ([]config.Capsule, error) {
-	newCaps := newBatch(&capsules)
+	newCapsules := newBatch(&capsules)
 
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
@@ -331,7 +331,7 @@ func conditionallyApplyBatch(ctx context.Context, capsules []config.Capsule, op 
 		}
 
 		if !ok {
-			newCaps = append(newCaps, capsule)
+			newCapsules = append(newCapsules, capsule)
 			continue
 		}
 
@@ -340,8 +340,8 @@ func conditionallyApplyBatch(ctx context.Context, capsules []config.Capsule, op 
 			return nil, err
 		}
 
-		newCaps = append(newCaps, capsule)
+		newCapsules = append(newCapsules, capsule)
 	}
 
-	return newCaps, nil
+	return newCapsules, nil
 }

@@ -38,7 +38,7 @@ func (p Expand) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]co
 		return nil, fmt.Errorf("process expand: %v", err)
 	}
 
-	newCaps := newBatch(&capsules)
+	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
@@ -46,7 +46,7 @@ func (p Expand) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]co
 		}
 
 		if !ok {
-			newCaps = append(newCaps, capsule)
+			newCapsules = append(newCapsules, capsule)
 			continue
 		}
 
@@ -78,7 +78,7 @@ func (p Expand) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]co
 		}
 
 		// retains metadata from the original capsule
-		newCap := capsule
+		newCapsule := capsule
 		for _, res := range result.Array() {
 			var err error
 
@@ -94,10 +94,10 @@ func (p Expand) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]co
 				}
 			}
 
-			newCap.SetData(expand)
-			newCaps = append(newCaps, newCap)
+			newCapsule.SetData(expand)
+			newCapsules = append(newCapsules, newCapsule)
 		}
 	}
 
-	return newCaps, nil
+	return newCapsules, nil
 }

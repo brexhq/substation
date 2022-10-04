@@ -56,7 +56,7 @@ func (p Split) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]con
 		return nil, fmt.Errorf("process split: %v", err)
 	}
 
-	newCaps := newBatch(&capsules)
+	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
@@ -64,7 +64,7 @@ func (p Split) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]con
 		}
 
 		if !ok {
-			newCaps = append(newCaps, capsule)
+			newCapsules = append(newCapsules, capsule)
 			continue
 		}
 
@@ -74,17 +74,17 @@ func (p Split) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]con
 			if err != nil {
 				return nil, fmt.Errorf("process split: %v", err)
 			}
-			newCaps = append(newCaps, pcap)
+			newCapsules = append(newCapsules, pcap)
 
 			continue
 		}
 
 		// data processing
 		if p.InputKey == "" && p.OutputKey == "" {
-			newCap := config.NewCapsule()
+			newCapsule := config.NewCapsule()
 			for _, x := range bytes.Split(capsule.Data(), []byte(p.Options.Separator)) {
-				newCap.SetData(x)
-				newCaps = append(newCaps, newCap)
+				newCapsule.SetData(x)
+				newCapsules = append(newCapsules, newCapsule)
 			}
 
 			continue
@@ -93,7 +93,7 @@ func (p Split) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]con
 		return nil, fmt.Errorf("process split: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
-	return newCaps, nil
+	return newCapsules, nil
 }
 
 // Apply processes encapsulated data with the Split processor.

@@ -107,15 +107,15 @@ func (p Pipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 			return capsule, fmt.Errorf("process pipeline: inputkey %s: %v", p.InputKey, errPipelineArrayInput)
 		}
 
-		newCap := config.NewCapsule()
-		newCap.SetData([]byte(result.String()))
+		newCapsule := config.NewCapsule()
+		newCapsule.SetData([]byte(result.String()))
 
-		newCap, err = Apply(ctx, newCap, applicators...)
+		newCapsule, err = Apply(ctx, newCapsule, applicators...)
 		if err != nil {
 			return capsule, fmt.Errorf("process pipeline: %v", err)
 		}
 
-		if err := capsule.Set(p.OutputKey, newCap.Data()); err != nil {
+		if err := capsule.Set(p.OutputKey, newCapsule.Data()); err != nil {
 			return capsule, fmt.Errorf("process pipeline: %v", err)
 		}
 

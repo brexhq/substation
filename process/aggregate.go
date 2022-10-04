@@ -103,7 +103,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([
 		return nil, fmt.Errorf("process aggregate: %v", err)
 	}
 
-	newCaps := newBatch(&capsules)
+	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
@@ -111,7 +111,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([
 		}
 
 		if !ok {
-			newCaps = append(newCaps, capsule)
+			newCapsules = append(newCapsules, capsule)
 			continue
 		}
 
@@ -144,7 +144,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([
 			continue
 		}
 
-		newCap := config.NewCapsule()
+		newCapsule := config.NewCapsule()
 		elements := buffer[aggregateKey].Get()
 		if p.OutputKey != "" {
 			var value []byte
@@ -157,13 +157,13 @@ func (p Aggregate) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([
 				}
 			}
 
-			newCap.SetData(value)
-			newCaps = append(newCaps, newCap)
+			newCapsule.SetData(value)
+			newCapsules = append(newCapsules, newCapsule)
 		} else {
 			value := bytes.Join(elements, []byte(p.Options.Separator))
 
-			newCap.SetData(value)
-			newCaps = append(newCaps, newCap)
+			newCapsule.SetData(value)
+			newCapsules = append(newCapsules, newCapsule)
 		}
 
 		// by this point, addition of the failed data is guaranteed to
@@ -176,7 +176,7 @@ func (p Aggregate) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([
 	}
 
 	// remaining items must be drained from the buffer, otherwise data is lost
-	newCap := config.NewCapsule()
+	newCapsule := config.NewCapsule()
 	for _, key := range aggregateKeys {
 		if buffer[key].Count() == 0 {
 			continue
@@ -194,15 +194,15 @@ func (p Aggregate) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([
 				}
 			}
 
-			newCap.SetData(value)
-			newCaps = append(newCaps, newCap)
+			newCapsule.SetData(value)
+			newCapsules = append(newCapsules, newCapsule)
 		} else {
 			value := bytes.Join(elements, []byte(p.Options.Separator))
 
-			newCap.SetData(value)
-			newCaps = append(newCaps, newCap)
+			newCapsule.SetData(value)
+			newCapsules = append(newCapsules, newCapsule)
 		}
 	}
 
-	return newCaps, nil
+	return newCapsules, nil
 }

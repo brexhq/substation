@@ -17,6 +17,7 @@ var kinesisAPI kinesis.API
 Kinesis sinks data to an AWS Kinesis Data Stream using Kinesis Producer Library (KPL) compliant aggregated records. This sink can automatically redistribute data across shards by retrieving partition keys from JSON data; by default, it uses random strings to avoid hot shards. More information about the KPL and its schema is available here: https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html.
 
 The sink has these settings:
+
 	Stream:
 		Kinesis Data Stream that data is sent to
 	Partition (optional):
@@ -29,6 +30,7 @@ The sink has these settings:
 		defaults to false, data is randomly distributed across shards
 
 When loaded with a factory, the sink uses this JSON configuration:
+
 	{
 		"type": "kinesis",
 		"settings": {
@@ -51,7 +53,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch *config.Channel) error {
 
 	buffer := map[string]*kinesis.Aggregate{}
 
-	for cap := range ch.C {
+	for capsule := range ch.C {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -60,7 +62,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch *config.Channel) error {
 			if sink.Partition != "" {
 				partitionKey = sink.Partition
 			} else if sink.PartitionKey != "" {
-				partitionKey = cap.Get(sink.PartitionKey).String()
+				partitionKey = capsule.Get(sink.PartitionKey).String()
 			}
 
 			if partitionKey == "" {
@@ -82,7 +84,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch *config.Channel) error {
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok := buffer[aggregationKey].Add(cap.Data(), partitionKey)
+			ok := buffer[aggregationKey].Add(capsule.Data(), partitionKey)
 			if !ok {
 				agg := buffer[aggregationKey].Get()
 				aggPK := buffer[aggregationKey].PartitionKey
@@ -101,7 +103,7 @@ func (sink *Kinesis) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("put records into Kinesis")
 
 				buffer[aggregationKey].New()
-				buffer[aggregationKey].Add(cap.Data(), partitionKey)
+				buffer[aggregationKey].Add(capsule.Data(), partitionKey)
 			}
 		}
 	}

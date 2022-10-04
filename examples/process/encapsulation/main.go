@@ -20,13 +20,13 @@ func main() {
 		panic(err)
 	}
 
-	var caps []config.Capsule
-	cap := config.NewCapsule()
+	var capsules []config.Capsule
+	capsule := config.NewCapsule()
 
 	scanner := bufio.NewScanner(open)
 	for scanner.Scan() {
-		cap.SetData(scanner.Bytes())
-		caps = append(caps, cap)
+		capsule.SetData(scanner.Bytes())
+		capsules = append(capsules, capsule)
 	}
 
 	// read config file and create a new batch processor
@@ -46,12 +46,12 @@ func main() {
 	}
 
 	// apply batch processor to encapsulated data
-	caps, err = process.ApplyBatch(context.TODO(), caps, proc)
+	capsules, err = process.ApplyBatch(context.TODO(), capsules, proc)
 	if err != nil {
 		panic(err)
 	}
 
-	for _, cap := range caps {
-		fmt.Printf("%s\n", cap.Data())
+	for _, capsule := range capsules {
+		fmt.Printf("%s\n", capsule.Data())
 	}
 }

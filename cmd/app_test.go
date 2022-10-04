@@ -114,7 +114,10 @@ func TestAppLeaks(t *testing.T) {
 
 	for _, test := range appLeaksTest {
 		sub := New()
-		json.Unmarshal(test.config, &sub.Config)
+		err := json.Unmarshal(test.config, &sub.Config)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		group, ctx := errgroup.WithContext(context.TODO())
 
@@ -134,15 +137,15 @@ func TestAppLeaks(t *testing.T) {
 
 		// ingest
 		group.Go(func() error {
-			cap := config.NewCapsule()
-			cap.SetData([]byte(`{"foo":"bar"}`))
+			capsule := config.NewCapsule()
+			capsule.SetData([]byte(`{"foo":"bar"}`))
 
 			for w := 0; w < 10; w++ {
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
 				default:
-					sub.Send(cap)
+					sub.Send(capsule)
 				}
 			}
 
@@ -154,6 +157,6 @@ func TestAppLeaks(t *testing.T) {
 
 		// block without checking for errors
 		// this test only checks for leaks
-		sub.Block(ctx, group)
+		_ = sub.Block(ctx, group)
 	}
 }

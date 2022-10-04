@@ -22,10 +22,12 @@ Lambda processes data by synchronously invoking an AWS Lambda and returning the 
 The input key's value must be a JSON object that contains settings for the Lambda. It is recommended to use the copy and insert processors to create the JSON object before calling this processor and to use the delete processor to remove the JSON object after calling this processor.
 
 The processor supports these patterns:
+
 	JSON:
 		{"foo":"bar","lambda":{"lookup":"baz"}} >>> {"foo":"bar","lambda":{"baz":"qux"}}
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "lambda",
 		"settings": {
@@ -46,6 +48,7 @@ type Lambda struct {
 
 /*
 LambdaOptions contains custom options settings for the Lambda processor:
+
 	Function:
 		Lambda function to invoke
 	ErrorOnFailure (optional):
@@ -58,30 +61,30 @@ type LambdaOptions struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Lambda processor. Conditions are optionally applied to the data to enable processing.
-func (p Lambda) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Lambda) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process lambda: %v", err)
 	}
 
-	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
 		return nil, fmt.Errorf("process lambda: %v", err)
 	}
 
-	return caps, nil
+	return capsules, nil
 }
 
 // Apply processes encapsulated data with the Lambda processor.
-func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+func (p Lambda) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return cap, fmt.Errorf("process lambda: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process lambda: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("process lambda: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process lambda: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
 	// lazy load API
@@ -89,28 +92,28 @@ func (p Lambda) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		lambdaAPI.Setup()
 	}
 
-	result := cap.Get(p.InputKey)
+	result := capsule.Get(p.InputKey)
 	if !result.IsObject() {
-		return cap, fmt.Errorf("process lambda: inputkey %s: %v", p.InputKey, errLambdaInputNotAnObject)
+		return capsule, fmt.Errorf("process lambda: inputkey %s: %v", p.InputKey, errLambdaInputNotAnObject)
 	}
 
 	resp, err := lambdaAPI.Invoke(ctx, p.Options.Function, []byte(result.Raw))
 	if err != nil {
-		return cap, fmt.Errorf("process lambda: %v", err)
+		return capsule, fmt.Errorf("process lambda: %v", err)
 	}
 
 	if resp.FunctionError != nil && p.Options.ErrorOnFailure {
 		resErr := json.Get(resp.Payload, "errorMessage").String()
-		return cap, fmt.Errorf("process lambda: %v", resErr)
+		return capsule, fmt.Errorf("process lambda: %v", resErr)
 	}
 
 	if resp.FunctionError != nil {
-		return cap, nil
+		return capsule, nil
 	}
 
-	if err := cap.Set(p.OutputKey, resp.Payload); err != nil {
-		return cap, fmt.Errorf("process lambda: %v", err)
+	if err := capsule.Set(p.OutputKey, resp.Payload); err != nil {
+		return capsule, fmt.Errorf("process lambda: %v", err)
 	}
 
-	return cap, nil
+	return capsule, nil
 }

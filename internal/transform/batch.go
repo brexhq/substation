@@ -13,12 +13,14 @@ import (
 Batch transforms data by applying a series of processors to a slice of encapsulated data. Data processing is iterative and each processor is enabled through conditions.
 
 Below is an example that shows how a single JSON object is iteratively modified through this transform:
+
 	{"hello":"world"} // input event
 	{"hello":"world","foo":"bar"} // insert value "bar" into key "foo"
 	{"hello":"world","foo":"bar","baz":"qux"} // insert value "qux" into key "bar"
-	{"hello":"world","foo":"bar.qux"} // concat vaues from "foo" and "baz" into key "foo" with separator "."
+	{"hello":"world","foo":"bar.qux"} // concat values from "foo" and "baz" into key "foo" with separator "."
 
 When loaded with a factory, the transform uses this JSON configuration:
+
 	{
 		"type": "batch",
 		"processors": [
@@ -44,7 +46,7 @@ type Batch struct {
 }
 
 // Transform processes a channel of encapsulated data with the Batch transform.
-func (transform *Batch) Transform(ctx context.Context, in *config.Channel, out *config.Channel) error {
+func (transform *Batch) Transform(ctx context.Context, in, out *config.Channel) error {
 	applicators, err := process.MakeBatchApplicators(transform.Processors)
 	if err != nil {
 		return err
@@ -53,12 +55,12 @@ func (transform *Batch) Transform(ctx context.Context, in *config.Channel, out *
 	var received int
 	// read encapsulated data from the input channel into a batch
 	batch := make([]config.Capsule, 0, 10)
-	for cap := range in.C {
+	for capsule := range in.C {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			batch = append(batch, cap)
+			batch = append(batch, capsule)
 			received++
 
 			// sleep load balances data across transform goroutines, otherwise a single goroutine may receive more capsules than others
@@ -75,22 +77,22 @@ func (transform *Batch) Transform(ctx context.Context, in *config.Channel, out *
 
 	var sent int
 	// write the processed, encapsulated data to the output channel
-	for _, cap := range batch {
+	for _, capsule := range batch {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			out.Send(cap)
+			out.Send(capsule)
 			sent++
 		}
 	}
 
-	metrics.Generate(ctx, metrics.Data{
+	_ = metrics.Generate(ctx, metrics.Data{
 		Name:  "CapsulesReceived",
 		Value: received,
 	})
 
-	metrics.Generate(ctx, metrics.Data{
+	_ = metrics.Generate(ctx, metrics.Data{
 		Name:  "CapsulesSent",
 		Value: sent,
 	})

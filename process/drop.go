@@ -12,6 +12,7 @@ import (
 Drop processes data by "dropping" it -- the data is entirely removed and not emitted.
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		type: "drop"
 	}
@@ -21,24 +22,24 @@ type Drop struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Drop processor. Conditions are optionally applied to the data to enable processing.
-func (p Drop) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Drop) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process drop: %v", err)
 	}
 
-	newCaps := newBatch(&caps)
-	for _, cap := range caps {
-		ok, err := op.Operate(ctx, cap)
+	newCapsules := newBatch(&capsules)
+	for _, capsule := range capsules {
+		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
 			return nil, fmt.Errorf("process drop: %v", err)
 		}
 
 		if !ok {
-			newCaps = append(newCaps, cap)
+			newCapsules = append(newCapsules, capsule)
 			continue
 		}
 	}
 
-	return newCaps, nil
+	return newCapsules, nil
 }

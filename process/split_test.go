@@ -32,38 +32,36 @@ var splitTests = []struct {
 
 func TestSplit(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range splitTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
-		result, err := test.proc.Apply(ctx, cap)
+		result, err := test.proc.Apply(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if !bytes.Equal(result.Data(), test.expected) {
-			t.Logf("expected %s, got %s", test.expected, result.Data())
-			t.Fail()
+			t.Errorf("expected %s, got %s", test.expected, result.Data())
 		}
 	}
 }
 
-func benchmarkSplit(b *testing.B, proc Split, cap config.Capsule) {
+func benchmarkSplit(b *testing.B, proc Split, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		proc.Apply(ctx, cap)
+		_, _ = proc.Apply(ctx, capsule)
 	}
 }
 
 func BenchmarkSplit(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range splitTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkSplit(b, test.proc, cap)
+				capsule.SetData(test.test)
+				benchmarkSplit(b, test.proc, capsule)
 			},
 		)
 	}
@@ -97,48 +95,46 @@ var splitBatchTests = []struct {
 
 func TestSplitBatch(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range splitBatchTests {
-		var caps []config.Capsule
+		var capsules []config.Capsule
 		for _, t := range test.test {
-			cap.SetData(t)
-			caps = append(caps, cap)
+			capsule.SetData(t)
+			capsules = append(capsules, capsule)
 		}
 
-		result, err := test.proc.ApplyBatch(ctx, caps)
+		result, err := test.proc.ApplyBatch(ctx, capsules)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		for i, res := range result {
 			expected := test.expected[i]
 			if !bytes.Equal(expected, res.Data()) {
-				t.Logf("expected %s, got %s", expected, string(res.Data()))
-				t.Fail()
+				t.Errorf("expected %s, got %s", expected, string(res.Data()))
 			}
 		}
 	}
 }
 
-func benchmarkSplitBatch(b *testing.B, proc Split, caps []config.Capsule) {
+func benchmarkSplitBatch(b *testing.B, proc Split, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		proc.ApplyBatch(ctx, caps)
+		_, _ = proc.ApplyBatch(ctx, capsules)
 	}
 }
 
 func BenchmarkSplitBatch(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range splitBatchTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				var caps []config.Capsule
+				var capsules []config.Capsule
 				for _, t := range test.test {
-					cap.SetData(t)
-					caps = append(caps, cap)
+					capsule.SetData(t)
+					capsules = append(capsules, capsule)
 				}
-				benchmarkSplitBatch(b, test.proc, caps)
+				benchmarkSplitBatch(b, test.proc, capsules)
 			},
 		)
 	}

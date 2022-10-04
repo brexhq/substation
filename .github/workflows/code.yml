@@ -21,11 +21,10 @@ jobs:
     - name: tests
       run: go test -timeout 30s -v ./... 
 
-    - name: lint
-      uses: dominikh/staticcheck-action@v1.2.0
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v3
       with:
-        install-go: false
-        checks: "all,-ST1000"
+        version: v1.49
 
   python:
     runs-on: ubuntu-latest

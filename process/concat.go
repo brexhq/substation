@@ -10,10 +10,12 @@ import (
 
 /*
 Concat processes data by concatenating multiple values together with a separator. The processor supports these patterns:
+
 	JSON:
 		{"concat":["foo","bar"]} >>> {"concat":"foo.bar"}
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "concat",
 		"settings": {
@@ -34,6 +36,7 @@ type Concat struct {
 
 /*
 ConcatOptions contains custom options for the Concat processor:
+
 	Separator:
 		string that separates the concatenated values
 */
@@ -42,30 +45,30 @@ type ConcatOptions struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Concat processor. Conditions are optionally applied to the data to enable processing.
-func (p Concat) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Concat) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process concat: %v", err)
 	}
 
-	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
 		return nil, fmt.Errorf("process concat: %v", err)
 	}
 
-	return caps, nil
+	return capsules, nil
 }
 
 // Apply processes encapsulated data with the Concat processor.
-func (p Concat) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+func (p Concat) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Separator == "" {
-		return cap, fmt.Errorf("process concat: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process concat: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return cap, fmt.Errorf("process concat: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process concat: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
 	// data is processed by retrieving and iterating the
@@ -77,7 +80,7 @@ func (p Concat) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 	// concatenated:
 	// 	{"concat:"foo.bar.baz"}
 	var value string
-	result := cap.Get(p.InputKey)
+	result := capsule.Get(p.InputKey)
 	for i, res := range result.Array() {
 		value += res.String()
 		if i != len(result.Array())-1 {
@@ -85,9 +88,9 @@ func (p Concat) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, 
 		}
 	}
 
-	if err := cap.Set(p.OutputKey, value); err != nil {
-		return cap, fmt.Errorf("process dynamodb: %v", err)
+	if err := capsule.Set(p.OutputKey, value); err != nil {
+		return capsule, fmt.Errorf("process dynamodb: %v", err)
 	}
 
-	return cap, nil
+	return capsule, nil
 }

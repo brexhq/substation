@@ -20,7 +20,7 @@ func (m mockedGetSecret) GetSecretValueWithContext(ctx aws.Context, input *secre
 }
 
 func TestGetSecret(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp     secretsmanager.GetSecretValueOutput
 		input    string
 		expected string
@@ -47,8 +47,7 @@ func TestGetSecret(t *testing.T) {
 		}
 
 		if resp != test.expected {
-			t.Logf("expected %+v, got %s", resp, test.expected)
-			t.Fail()
+			t.Errorf("expected %+v, got %s", resp, test.expected)
 		}
 	}
 }

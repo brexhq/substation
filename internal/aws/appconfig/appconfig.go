@@ -3,7 +3,7 @@ package appconfig
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/brexhq/substation/internal/errors"
@@ -34,7 +34,7 @@ func GetPrefetch(ctx context.Context) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("getprefetch read URL %s: %v", local, err)
 	}

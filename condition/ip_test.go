@@ -82,38 +82,36 @@ var ipTests = []struct {
 
 func TestIP(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range ipTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
-		check, err := test.inspector.Inspect(ctx, cap)
+		check, err := test.inspector.Inspect(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if test.expected != check {
-			t.Logf("expected %v, got %v, %v", test.expected, check, string(test.test))
-			t.Fail()
+			t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
 		}
 	}
 }
 
-func benchmarkIPByte(b *testing.B, inspector IP, cap config.Capsule) {
+func benchmarkIPByte(b *testing.B, inspector IP, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(ctx, cap)
+		_, _ = inspector.Inspect(ctx, capsule)
 	}
 }
 
 func BenchmarkIPByte(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range ipTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkIPByte(b, test.inspector, cap)
+				capsule.SetData(test.test)
+				benchmarkIPByte(b, test.inspector, capsule)
 			},
 		)
 	}

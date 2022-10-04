@@ -16,6 +16,7 @@ const errIPInvalidType = errors.Error("invalid type")
 IP evaluates IP addresses by their type and usage. This inspector uses the standard library's net package to identify the type and usage of the address (more information is available here: https://pkg.go.dev/net#IP).
 
 The inspector has these settings:
+
 	Type:
 		IP address type used during inspection
 		must be one of:
@@ -33,6 +34,7 @@ The inspector has these settings:
 		defaults to false
 
 The inspector supports these patterns:
+
 	JSON:
 		{"ip_address":"10.0.0.1"} == private
 
@@ -40,6 +42,7 @@ The inspector supports these patterns:
 		10.0.0.1 == private
 
 When loaded with a factory, the inspector uses this JSON configuration:
+
 	{
 		"type": "ip",
 		"settings": {
@@ -54,12 +57,12 @@ type IP struct {
 }
 
 // Inspect evaluates encapsulated data with the IP inspector.
-func (c IP) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
+func (c IP) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
-		check = string(cap.Data())
+		check = string(capsule.Data())
 	} else {
-		check = cap.Get(c.Key).String()
+		check = capsule.Get(c.Key).String()
 	}
 
 	ip := net.ParseIP(check)

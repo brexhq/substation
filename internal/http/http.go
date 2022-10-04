@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/aws/aws-xray-sdk-go/xray"
@@ -85,7 +84,7 @@ func (h *HTTP) Post(ctx context.Context, url string, payload interface{}, header
 	if err != nil {
 		return nil, fmt.Errorf("http post URL %s: %v", url, err)
 	}
-	io.Copy(ioutil.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 	defer resp.Body.Close()
 
 	return resp, nil

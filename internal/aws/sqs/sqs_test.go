@@ -27,7 +27,7 @@ func (m mockedSendMessage) GetQueueUrlWithContext(ctx aws.Context, in *sqs.GetQu
 }
 
 func TestSendMessage(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp     sqs.SendMessageOutput
 		expected string
 	}{
@@ -52,8 +52,7 @@ func TestSendMessage(t *testing.T) {
 		}
 
 		if *resp.MessageId != test.expected {
-			t.Logf("expected %+v, got %s", test.expected, *resp.MessageId)
-			t.Fail()
+			t.Errorf("expected %+v, got %s", test.expected, *resp.MessageId)
 		}
 	}
 }
@@ -75,7 +74,7 @@ func (m mockedSendMessageBatch) GetQueueUrlWithContext(ctx aws.Context, in *sqs.
 }
 
 func TestSendMessageBatch(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp     sqs.SendMessageBatchOutput
 		expected []string
 	}{
@@ -111,8 +110,7 @@ func TestSendMessageBatch(t *testing.T) {
 
 		for idx, resp := range resp.Successful {
 			if *resp.MessageId != test.expected[idx] {
-				t.Logf("expected %+v, got %s", test.expected[idx], *resp.MessageId)
-				t.Fail()
+				t.Errorf("expected %+v, got %s", test.expected[idx], *resp.MessageId)
 			}
 		}
 	}

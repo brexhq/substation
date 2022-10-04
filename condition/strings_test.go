@@ -139,38 +139,36 @@ var stringsTests = []struct {
 
 func TestStrings(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range stringsTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
-		check, err := test.inspector.Inspect(ctx, cap)
+		check, err := test.inspector.Inspect(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if test.expected != check {
-			t.Logf("expected %v, got %v", test.expected, check)
-			t.Fail()
+			t.Errorf("expected %v, got %v", test.expected, check)
 		}
 	}
 }
 
-func benchmarkStringsByte(b *testing.B, inspector Strings, cap config.Capsule) {
+func benchmarkStringsByte(b *testing.B, inspector Strings, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspector.Inspect(ctx, cap)
+		_, _ = inspector.Inspect(ctx, capsule)
 	}
 }
 
 func BenchmarkStringsByte(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range stringsTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkStringsByte(b, test.inspector, cap)
+				capsule.SetData(test.test)
+				benchmarkStringsByte(b, test.inspector, capsule)
 			},
 		)
 	}

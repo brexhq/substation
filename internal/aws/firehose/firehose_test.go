@@ -20,7 +20,7 @@ func (m mockedPutRecord) PutRecordWithContext(ctx aws.Context, in *firehose.PutR
 }
 
 func TestPutRecord(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp     firehose.PutRecordOutput
 		expected string
 	}{
@@ -45,8 +45,7 @@ func TestPutRecord(t *testing.T) {
 		}
 
 		if *resp.RecordId != test.expected {
-			t.Logf("expected %+v, got %s", test.expected, *resp.RecordId)
-			t.Fail()
+			t.Errorf("expected %+v, got %s", test.expected, *resp.RecordId)
 		}
 	}
 }
@@ -61,7 +60,7 @@ func (m mockedPutRecordBatch) PutRecordBatchWithContext(ctx aws.Context, in *fir
 }
 
 func TestPutRecordBatch(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp     firehose.PutRecordBatchOutput
 		expected []string
 	}{
@@ -99,8 +98,7 @@ func TestPutRecordBatch(t *testing.T) {
 
 		for idx, resp := range resp.RequestResponses {
 			if *resp.RecordId != test.expected[idx] {
-				t.Logf("expected %+v, got %s", test.expected[idx], *resp.RecordId)
-				t.Fail()
+				t.Errorf("expected %+v, got %s", test.expected[idx], *resp.RecordId)
 			}
 		}
 	}

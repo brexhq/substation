@@ -17,12 +17,14 @@ const errDomainNoSubdomain = errors.Error("no subdomain")
 
 /*
 Domain processes data by parsing fully qualified domain names into labels. The processor supports these patterns:
+
 	JSON:
 		{"domain":"example.com"} >>> {"domain":"example.com","tld":"com"}
 	data:
 		example.com >>> com
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "domain",
 		"settings": {
@@ -43,6 +45,7 @@ type Domain struct {
 
 /*
 DomainOptions contains custom options for the Domain processor:
+
 	Function:
 		domain processing function applied to the data
 		must be one of:
@@ -55,48 +58,48 @@ type DomainOptions struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Domain processor. Conditions are optionally applied to the data to enable processing.
-func (p Domain) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Domain) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process domain: %v", err)
 	}
 
-	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
 		return nil, fmt.Errorf("process domain: %v", err)
 	}
 
-	return caps, nil
+	return capsules, nil
 }
 
 // Apply processes encapsulated data with the Domain processor.
-func (p Domain) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+func (p Domain) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
-		return cap, fmt.Errorf("process domain: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process domain: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
 	if p.InputKey != "" && p.OutputKey != "" {
-		result := cap.Get(p.InputKey).String()
+		result := capsule.Get(p.InputKey).String()
 		value, _ := p.domain(result)
 
-		if err := cap.Set(p.OutputKey, value); err != nil {
-			return cap, fmt.Errorf("process domain: %v", err)
+		if err := capsule.Set(p.OutputKey, value); err != nil {
+			return capsule, fmt.Errorf("process domain: %v", err)
 		}
 
-		return cap, nil
+		return capsule, nil
 	}
 
 	// data processing
 	if p.InputKey == "" && p.OutputKey == "" {
-		value, _ := p.domain(string(cap.Data()))
-		cap.SetData([]byte(value))
+		value, _ := p.domain(string(capsule.Data()))
+		capsule.SetData([]byte(value))
 
-		return cap, nil
+		return capsule, nil
 	}
 
-	return cap, fmt.Errorf("process domain: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process domain: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 }
 
 func (p Domain) domain(s string) (string, error) {

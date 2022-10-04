@@ -26,27 +26,25 @@ func TestBase64Decode(t *testing.T) {
 	for _, test := range decodeTests {
 		result, err := Decode(test.test)
 		if err != nil {
-			t.Logf("got error %v", err)
-			t.Fail()
+			t.Errorf("got error %v", err)
 			return
 		}
 
 		if c := bytes.Compare(result, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, result)
-			t.Fail()
+			t.Errorf("expected %s, got %s", test.expected, result)
 		}
 	}
 }
 
 func benchmarkBase64Decode(b *testing.B, test []byte) {
 	for i := 0; i < b.N; i++ {
-		Decode(test)
+		_, _ = Decode(test)
 	}
 }
 
 func BenchmarkBase64Decode(b *testing.B) {
 	for _, test := range encodeTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
 				benchmarkBase64Decode(b, test.test)
 			},
@@ -76,8 +74,7 @@ func TestBase64Encode(t *testing.T) {
 		result := Encode(test.test)
 
 		if c := bytes.Compare(result, test.expected); c != 0 {
-			t.Logf("expected %s, got %s", test.expected, result)
-			t.Fail()
+			t.Errorf("expected %s, got %s", test.expected, result)
 		}
 	}
 }
@@ -90,7 +87,7 @@ func benchmarkBase64Encode(b *testing.B, test []byte) {
 
 func BenchmarkBase64Encode(b *testing.B) {
 	for _, test := range encodeTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
 				benchmarkBase64Encode(b, test.test)
 			},

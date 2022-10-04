@@ -21,7 +21,7 @@ func (m mockedInvoke) InvokeWithContext(ctx aws.Context, input *lambda.InvokeInp
 }
 
 func TestPutItem(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		resp     lambda.InvokeOutput
 		expected []byte
 	}{
@@ -46,8 +46,7 @@ func TestPutItem(t *testing.T) {
 		}
 
 		if c := bytes.Compare(resp.Payload, test.expected); c != 0 {
-			t.Logf("expected %+v, got %s", resp.Payload, test.expected)
-			t.Fail()
+			t.Errorf("expected %+v, got %s", resp.Payload, test.expected)
 		}
 	}
 }

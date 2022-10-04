@@ -51,7 +51,7 @@ var conditionANDTests = []struct {
 				},
 			},
 		},
-		[]byte{80, 75, 03, 04},
+		[]byte{80, 75, 3, 4},
 		false,
 	},
 	{
@@ -93,10 +93,10 @@ var conditionANDTests = []struct {
 
 func TestAND(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range conditionANDTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
 		cfg := Config{
 			Operator:   "and",
@@ -105,39 +105,36 @@ func TestAND(t *testing.T) {
 
 		op, err := OperatorFactory(cfg)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
-		ok, err := op.Operate(ctx, cap)
+		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if ok != test.expected {
-			t.Logf("expected %v, got %v", test.expected, ok)
-			t.Fail()
+			t.Errorf("expected %v, got %v", test.expected, ok)
 		}
 	}
 }
 
-func benchmarkAND(b *testing.B, conf []config.Config, cap config.Capsule) {
+func benchmarkAND(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		inspectors, _ := MakeInspectors(conf)
 		op := AND{inspectors}
-		op.Operate(ctx, cap)
+		_, _ = op.Operate(ctx, capsule)
 	}
 }
 
 func BenchmarkAND(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range conditionANDTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkAND(b, test.conf, cap)
+				capsule.SetData(test.test)
+				benchmarkAND(b, test.conf, capsule)
 			},
 		)
 	}
@@ -224,10 +221,10 @@ var conditionORTests = []struct {
 
 func TestOR(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range conditionORTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
 		cfg := Config{
 			Operator:   "or",
@@ -236,39 +233,36 @@ func TestOR(t *testing.T) {
 
 		op, err := OperatorFactory(cfg)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
-		ok, err := op.Operate(ctx, cap)
+		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if ok != test.expected {
-			t.Logf("expected %v, got %v", test.expected, ok)
-			t.Fail()
+			t.Errorf("expected %v, got %v", test.expected, ok)
 		}
 	}
 }
 
-func benchmarkOR(b *testing.B, conf []config.Config, cap config.Capsule) {
+func benchmarkOR(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		inspectors, _ := MakeInspectors(conf)
 		op := OR{inspectors}
-		op.Operate(ctx, cap)
+		_, _ = op.Operate(ctx, capsule)
 	}
 }
 
 func BenchmarkOR(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range conditionORTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkOR(b, test.conf, cap)
+				capsule.SetData(test.test)
+				benchmarkOR(b, test.conf, capsule)
 			},
 		)
 	}
@@ -327,10 +321,10 @@ var conditionNANDTests = []struct {
 
 func TestNAND(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range conditionNANDTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
 		cfg := Config{
 			Operator:   "nand",
@@ -339,39 +333,36 @@ func TestNAND(t *testing.T) {
 
 		op, err := OperatorFactory(cfg)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
-		ok, err := op.Operate(ctx, cap)
+		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if ok != test.expected {
-			t.Logf("expected %v, got %v", test.expected, ok)
-			t.Fail()
+			t.Errorf("expected %v, got %v", test.expected, ok)
 		}
 	}
 }
 
-func benchmarkNAND(b *testing.B, conf []config.Config, cap config.Capsule) {
+func benchmarkNAND(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		inspectors, _ := MakeInspectors(conf)
 		op := NAND{inspectors}
-		op.Operate(ctx, cap)
+		_, _ = op.Operate(ctx, capsule)
 	}
 }
 
 func BenchmarkNAND(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range conditionNORTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkNAND(b, test.conf, cap)
+				capsule.SetData(test.test)
+				benchmarkNAND(b, test.conf, capsule)
 			},
 		)
 	}
@@ -430,10 +421,10 @@ var conditionNORTests = []struct {
 
 func TestNOR(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range conditionNORTests {
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
 		cfg := Config{
 			Operator:   "nor",
@@ -442,39 +433,36 @@ func TestNOR(t *testing.T) {
 
 		op, err := OperatorFactory(cfg)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
-		ok, err := op.Operate(ctx, cap)
+		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if ok != test.expected {
-			t.Logf("expected %v, got %v", test.expected, ok)
-			t.Fail()
+			t.Errorf("expected %v, got %v", test.expected, ok)
 		}
 	}
 }
 
-func benchmarkNOR(b *testing.B, conf []config.Config, cap config.Capsule) {
+func benchmarkNOR(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		inspectors, _ := MakeInspectors(conf)
 		op := NOR{inspectors}
-		op.Operate(ctx, cap)
+		_, _ = op.Operate(ctx, capsule)
 	}
 }
 
 func BenchmarkNOR(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range conditionNORTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				cap.SetData(test.test)
-				benchmarkNOR(b, test.conf, cap)
+				capsule.SetData(test.test)
+				benchmarkNOR(b, test.conf, capsule)
 			},
 		)
 	}
@@ -484,21 +472,20 @@ func TestFactory(t *testing.T) {
 	for _, test := range conditionANDTests {
 		_, err := InspectorFactory(test.conf[0])
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 	}
 }
 
 func benchmarkFactory(b *testing.B, conf config.Config) {
 	for i := 0; i < b.N; i++ {
-		InspectorFactory(conf)
+		_, _ = InspectorFactory(conf)
 	}
 }
 
 func BenchmarkFactory(b *testing.B) {
 	for _, test := range conditionANDTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
 				benchmarkFactory(b, test.conf[0])
 			},

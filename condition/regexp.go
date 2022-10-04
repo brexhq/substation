@@ -12,6 +12,7 @@ import (
 RegExp evaluates data using a regular expression. This inspector uses a regexp cache provided by internal/regexp.
 
 The inspector has these settings:
+
 	Expression:
 		regular expression to use during inspection
 	Key (optional):
@@ -21,12 +22,14 @@ The inspector has these settings:
 		defaults to false
 
 The inspector supports these patterns:
+
 	JSON:
 		{"foo":"bar"} == ^bar
 	data:
 		bar == ^bar
 
 When loaded with a factory, the inspector uses this JSON configuration:
+
 	{
 		"type": "regexp",
 		"settings": {
@@ -41,7 +44,7 @@ type RegExp struct {
 }
 
 // Inspect evaluates encapsulated data with the RegExp inspector.
-func (c RegExp) Inspect(ctx context.Context, cap config.Capsule) (output bool, err error) {
+func (c RegExp) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	re, err := regexp.Compile(c.Expression)
 	if err != nil {
 		return false, fmt.Errorf("condition regexp: %v", err)
@@ -49,9 +52,9 @@ func (c RegExp) Inspect(ctx context.Context, cap config.Capsule) (output bool, e
 
 	var matched bool
 	if c.Key == "" {
-		matched = re.Match(cap.Data())
+		matched = re.Match(capsule.Data())
 	} else {
-		res := cap.Get(c.Key).String()
+		res := capsule.Get(c.Key).String()
 		matched = re.MatchString(res)
 	}
 

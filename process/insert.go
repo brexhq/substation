@@ -10,10 +10,12 @@ import (
 
 /*
 Insert processes data by inserting a value into a JSON object. The processor supports these patterns:
+
 	JSON:
 		{"foo":"bar"} >>> {"foo":"bar","baz":"qux"}
 
 When loaded with a factory, the processor uses this JSON configuration:
+
 	{
 		"type": "insert",
 		"settings": {
@@ -32,6 +34,7 @@ type Insert struct {
 
 /*
 InsertOptions contains custom options for the Insert processor:
+
 	value:
 		value to insert
 */
@@ -40,30 +43,30 @@ type InsertOptions struct {
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Insert processor. Conditions are optionally applied to the data to enable processing.
-func (p Insert) ApplyBatch(ctx context.Context, caps []config.Capsule) ([]config.Capsule, error) {
+func (p Insert) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process insert: %v", err)
 	}
 
-	caps, err = conditionallyApplyBatch(ctx, caps, op, p)
+	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
 		return nil, fmt.Errorf("process insert: %v", err)
 	}
 
-	return caps, nil
+	return capsules, nil
 }
 
 // Apply processes encapsulated data with the Insert processor.
-func (p Insert) Apply(ctx context.Context, cap config.Capsule) (config.Capsule, error) {
+func (p Insert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.OutputKey == "" {
-		return cap, fmt.Errorf("process insert: outputkey %s: %v", p.OutputKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process insert: outputkey %s: %v", p.OutputKey, errInvalidDataPattern)
 	}
 
-	if err := cap.Set(p.OutputKey, p.Options.Value); err != nil {
-		return cap, fmt.Errorf("process insert: %v", err)
+	if err := capsule.Set(p.OutputKey, p.Options.Value); err != nil {
+		return capsule, fmt.Errorf("process insert: %v", err)
 	}
 
-	return cap, nil
+	return capsule, nil
 }

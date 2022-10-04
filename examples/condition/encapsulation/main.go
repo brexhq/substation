@@ -19,13 +19,13 @@ func main() {
 		panic(err)
 	}
 
-	var caps []config.Capsule
-	cap := config.NewCapsule()
+	var capsules []config.Capsule
+	capsule := config.NewCapsule()
 
 	scanner := bufio.NewScanner(open)
 	for scanner.Scan() {
-		cap.SetData(scanner.Bytes())
-		caps = append(caps, cap)
+		capsule.SetData(scanner.Bytes())
+		capsules = append(capsules, capsule)
 	}
 
 	// read config file and create a new inspector
@@ -45,16 +45,16 @@ func main() {
 	}
 
 	// apply inspector to encapsulated data
-	for _, cap := range caps {
-		ok, err := inspector.Inspect(context.TODO(), cap)
+	for _, capsule := range capsules {
+		ok, err := inspector.Inspect(context.TODO(), capsule)
 		if err != nil {
 			panic(err)
 		}
 
 		if ok {
-			fmt.Printf("passed inspection: %s\n", cap.Data())
+			fmt.Printf("passed inspection: %s\n", capsule.Data())
 		} else {
-			fmt.Printf("failed inspection: %s\n", cap.Data())
+			fmt.Printf("failed inspection: %s\n", capsule.Data())
 		}
 	}
 }

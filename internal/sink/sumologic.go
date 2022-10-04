@@ -24,6 +24,7 @@ const errSumoLogicJSON = errors.Error("input must be JSON")
 SumoLogic sinks JSON data to Sumo Logic using an HTTP collector. More information about Sumo Logic HTTP collectors is available here: https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Data-to-an-HTTP-Source.
 
 The sink has these settings:
+
 	URL:
 		HTTP(S) endpoint that data is sent to
 	Category (optional):
@@ -34,6 +35,7 @@ The sink has these settings:
 		defaults to no source category, which sends data to the source category configured for URL
 
 When loaded with a factory, the sink uses this JSON configuration:
+
 	{
 		"type": "sumologic",
 		"settings": {
@@ -70,17 +72,17 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 		category = sink.Category
 	}
 
-	for cap := range ch.C {
+	for capsule := range ch.C {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if !json.Valid(cap.Data()) {
+			if !json.Valid(capsule.Data()) {
 				return fmt.Errorf("sink sumologic category %s: %v", category, errSumoLogicJSON)
 			}
 
 			if sink.CategoryKey != "" {
-				category = cap.Get(sink.CategoryKey).String()
+				category = capsule.Get(sink.CategoryKey).String()
 			}
 
 			if _, ok := buffer[category]; !ok {
@@ -92,7 +94,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok, err := buffer[category].Add(cap.Data())
+			ok, err := buffer[category].Add(capsule.Data())
 			if err != nil {
 				return fmt.Errorf("sink sumologic category %s: %v", category, err)
 			}
@@ -122,7 +124,10 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("sent events to Sumo Logic")
 
 				buffer[category].Reset()
-				buffer[category].Add(cap.Data())
+				_, err = buffer[category].Add(capsule.Data())
+				if err != nil {
+					return fmt.Errorf("sink sumologic: %v", err)
+				}
 			}
 		}
 	}

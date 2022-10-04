@@ -11,7 +11,7 @@ import (
 // errInvalidFactoryInput is returned when an unsupported Inspector is referenced in InspectorFactory.
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-// errOperatorMissingInspectors is returned when an Operator that requres Inspectors is created with no inspectors.
+// errOperatorMissingInspectors is returned when an Operator that requires Inspectors is created with no inspectors.
 const errOperatorMissingInspectors = errors.Error("missing inspectors")
 
 // Inspector is the interface shared by all inspector methods.
@@ -21,10 +21,10 @@ type Inspector interface {
 
 // InspectByte is a convenience function for applying an Inspector to bytes.
 func InspectByte(ctx context.Context, data []byte, inspect Inspector) (bool, error) {
-	cap := config.NewCapsule()
-	cap.SetData(data)
+	capsule := config.NewCapsule()
+	capsule.SetData(data)
 
-	return inspect.Inspect(ctx, cap)
+	return inspect.Inspect(ctx, capsule)
 }
 
 // MakeInspectors accepts multiple inspector configs and returns populated Inspectors. This is a convenience function for generating many Inspectors.
@@ -46,35 +46,35 @@ func InspectorFactory(cfg config.Config) (Inspector, error) {
 	switch cfg.Type {
 	case "content":
 		var i Content
-		config.Decode(cfg.Settings, &i)
+		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "ip":
 		var i IP
-		config.Decode(cfg.Settings, &i)
+		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "json_schema":
 		var i JSONSchema
-		config.Decode(cfg.Settings, &i)
+		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "json_valid":
 		var i JSONValid
-		config.Decode(cfg.Settings, &i)
+		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "length":
 		var i Length
-		config.Decode(cfg.Settings, &i)
+		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "random":
 		var i Random
-		config.Decode(cfg.Settings, &i)
+		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "regexp":
 		var i RegExp
-		config.Decode(cfg.Settings, &i)
+		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "strings":
 		var i Strings
-		config.Decode(cfg.Settings, &i)
+		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	default:
 		return nil, fmt.Errorf("condition inspectorfactory: settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
@@ -92,14 +92,13 @@ type AND struct {
 }
 
 // Operate returns true if all Inspectors return true, otherwise it returns false.
-func (o AND) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
+func (o AND) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("condition operate: inspectors %+v: %v", o, errOperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(ctx, cap)
-
+		ok, err := i.Inspect(ctx, capsule)
 		if err != nil {
 			return false, err
 		}
@@ -120,13 +119,13 @@ type OR struct {
 }
 
 // Operate returns true if any Inspectors return true, otherwise it returns false.
-func (o OR) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
+func (o OR) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("condition operate: inspectors %+v: %v", o, errOperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(ctx, cap)
+		ok, err := i.Inspect(ctx, capsule)
 		if err != nil {
 			return false, err
 		}
@@ -147,13 +146,13 @@ type NAND struct {
 }
 
 // Operate returns true if all Inspectors return false, otherwise it returns true.
-func (o NAND) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
+func (o NAND) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("condition operate: inspectors %+v: %v", o, errOperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(ctx, cap)
+		ok, err := i.Inspect(ctx, capsule)
 		if err != nil {
 			return false, err
 		}
@@ -174,13 +173,13 @@ type NOR struct {
 }
 
 // Operate returns true if any Inspectors return false, otherwise it returns true.
-func (o NOR) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
+func (o NOR) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("condition operate: inspectors %+v: %v", o, errOperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(ctx, cap)
+		ok, err := i.Inspect(ctx, capsule)
 		if err != nil {
 			return false, err
 		}
@@ -199,7 +198,7 @@ func (o NOR) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
 type Default struct{}
 
 // Operate always returns true. This is the default operator returned by  OperatorFactory.
-func (o Default) Operate(ctx context.Context, cap config.Capsule) (bool, error) {
+func (o Default) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	return true, nil
 }
 

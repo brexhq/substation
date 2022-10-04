@@ -71,7 +71,6 @@ func (a *API) SendMessage(ctx aws.Context, data []byte, queue string) (*sqs.Send
 			MessageBody: aws.String(string(data)),
 			QueueUrl:    url.QueueUrl,
 		})
-
 	if err != nil {
 		return nil, fmt.Errorf("sendmessage queue %s: %v", queue, err)
 	}
@@ -121,7 +120,7 @@ func (a *API) SendMessageBatch(ctx aws.Context, data [][]byte, queue string) (*s
 		}
 
 		if len(retryData) > 0 {
-			a.SendMessageBatch(ctx, retryData, queue)
+			_, _ = a.SendMessageBatch(ctx, retryData, queue)
 		}
 	}
 

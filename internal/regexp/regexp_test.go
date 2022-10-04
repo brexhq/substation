@@ -23,11 +23,9 @@ func TestRegexp(t *testing.T) {
 	for _, test := range regexpTests {
 		_, err := Compile(test.test)
 		if test.expected == nil && err != nil {
-			t.Logf("expected %+v, got %+v", test.expected, err)
-			t.Fail()
+			t.Errorf("expected %+v, got %+v", test.expected, err)
 		} else if test.expected != nil && err == nil {
-			t.Logf("expected %+v, got %+v", test.expected, err)
-			t.Fail()
+			t.Errorf("expected %+v, got %+v", test.expected, err)
 		}
 	}
 }

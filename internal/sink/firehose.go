@@ -31,10 +31,12 @@ This sink uploads data in batches of records and will automatically retry
 any failed put record attempts.
 
 The sink has these settings:
+
 	Stream:
 		Kinesis Firehose Delivery Stream that data is sent to
 
 When loaded with a factory, the sink uses this JSON configuration:
+
 	{
 		"type": "firehose",
 		"settings": {
@@ -58,16 +60,16 @@ func (sink *Firehose) Send(ctx context.Context, ch *config.Channel) error {
 	buffer := aggregate.Bytes{}
 	buffer.New(firehoseRecordSizeLimit*4*.99, 500)
 
-	for cap := range ch.C {
+	for capsule := range ch.C {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if len(cap.Data()) > firehoseRecordSizeLimit {
+			if len(capsule.Data()) > firehoseRecordSizeLimit {
 				return fmt.Errorf("sink firehose: %v", errFirehoseRecordSizeLimit)
 			}
 
-			ok, err := buffer.Add(cap.Data())
+			ok, err := buffer.Add(capsule.Data())
 			if err != nil {
 				return fmt.Errorf("sink firehose: %v", err)
 			}
@@ -86,7 +88,11 @@ func (sink *Firehose) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("put records into Kinesis Firehose")
 
 				buffer.Reset()
-				buffer.Add(cap.Data())
+
+				_, err = buffer.Add(capsule.Data())
+				if err != nil {
+					return fmt.Errorf("sink firehose: %v", err)
+				}
 			}
 		}
 	}

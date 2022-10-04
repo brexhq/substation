@@ -75,8 +75,8 @@ func (sub *Substation) Concurrency() int {
 }
 
 // Send writes encapsulated data into the Transform channel.
-func (sub *Substation) Send(cap config.Capsule) {
-	sub.Channels.Transform.Send(cap)
+func (sub *Substation) Send(capsule config.Capsule) {
+	sub.Channels.Transform.Send(capsule)
 }
 
 /*

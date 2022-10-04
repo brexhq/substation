@@ -30,48 +30,46 @@ var countTests = []struct {
 
 func TestCount(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range countTests {
-		var caps []config.Capsule
+		var capsules []config.Capsule
 		for _, t := range test.test {
-			cap.SetData(t)
-			caps = append(caps, cap)
+			capsule.SetData(t)
+			capsules = append(capsules, capsule)
 		}
 
-		result, err := test.proc.ApplyBatch(ctx, caps)
+		result, err := test.proc.ApplyBatch(ctx, capsules)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		count := result[0].Data()
 		if !bytes.Equal(count, test.expected) {
-			t.Logf("expected %s, got %s", test.expected, count)
-			t.Fail()
+			t.Errorf("expected %s, got %s", test.expected, count)
 		}
 	}
 }
 
-func benchmarkCount(b *testing.B, applicator Count, caps []config.Capsule) {
+func benchmarkCount(b *testing.B, applicator Count, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		applicator.ApplyBatch(ctx, caps)
+		_, _ = applicator.ApplyBatch(ctx, capsules)
 	}
 }
 
 func BenchmarkCount(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range countTests {
-		var caps []config.Capsule
+		var capsules []config.Capsule
 		for _, t := range test.test {
-			cap.SetData(t)
-			caps = append(caps, cap)
+			capsule.SetData(t)
+			capsules = append(capsules, capsule)
 		}
 
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkCount(b, test.proc, caps)
+				benchmarkCount(b, test.proc, capsules)
 			},
 		)
 	}

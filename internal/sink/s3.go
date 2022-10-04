@@ -24,6 +24,7 @@ const layout = "2006-01-02"
 S3 sinks data as gzip compressed objects to an AWS S3 bucket. Object names contain the year, month, and day the data was processed by the sink; they can be optionally prefixed with a custom string.
 
 The sink has these settings:
+
 	Bucket:
 		S3 bucket that data is written to
 	Prefix (optional):
@@ -34,6 +35,7 @@ The sink has these settings:
 		defaults to no prefix
 
 When loaded with a factory, the sink uses this JSON configuration:
+
 	{
 		"type": "s3",
 		"settings": {
@@ -61,13 +63,13 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 	}
 
 	sep := []byte("\n")
-	for cap := range ch.C {
+	for capsule := range ch.C {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
 			if sink.PrefixKey != "" {
-				prefix = cap.Get(sink.PrefixKey).String()
+				prefix = capsule.Get(sink.PrefixKey).String()
 			}
 
 			if _, ok := buffer[prefix]; !ok {
@@ -78,7 +80,7 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok, err := buffer[prefix].Add(cap.Data())
+			ok, err := buffer[prefix].Add(capsule.Data())
 			if err != nil {
 				return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
 			}
@@ -88,10 +90,12 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 				writer := gzip.NewWriter(&buf)
 				items := buffer[prefix].Get()
 				for _, i := range items {
-					writer.Write(i)
-					writer.Write(sep)
+					_, _ = writer.Write(i)
+					_, _ = writer.Write(sep)
 				}
-				writer.Close()
+				if err := writer.Close(); err != nil {
+					return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
+				}
 
 				key := formatKey(prefix) + ".gz"
 				if _, err := s3managerAPI.Upload(ctx, buf.Bytes(), sink.Bucket, key); err != nil {
@@ -107,7 +111,10 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("uploaded data to S3")
 
 				buffer[prefix].Reset()
-				buffer[prefix].Add(cap.Data())
+				_, err = buffer[prefix].Add(capsule.Data())
+				if err != nil {
+					return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
+				}
 			}
 		}
 	}
@@ -123,10 +130,12 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 		writer := gzip.NewWriter(&buf)
 		items := buffer[prefix].Get()
 		for _, b := range items {
-			writer.Write(b)
-			writer.Write(sep)
+			_, _ = writer.Write(b)
+			_, _ = writer.Write(sep)
 		}
-		writer.Close()
+		if err := writer.Close(); err != nil {
+			return fmt.Errorf("sink s3: %v", err)
+		}
 
 		key := formatKey(prefix) + ".gz"
 		if _, err := s3managerAPI.Upload(ctx, buf.Bytes(), sink.Bucket, key); err != nil {
@@ -147,7 +156,8 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 }
 
 // formatPrefix creates an object key prefix based on the current time:
-//  [prefix:optional]/[year]/[month]/[day]/[uuid]
+//
+//	[prefix:optional]/[year]/[month]/[day]/[uuid]
 func formatKey(prefix string) string {
 	now := time.Now().Format(layout)
 	var key string

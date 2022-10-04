@@ -52,24 +52,22 @@ var expandTests = []struct {
 
 func TestExpand(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range expandTests {
 		slice := make([]config.Capsule, 1)
-		cap.SetData(test.test)
-		slice[0] = cap
+		capsule.SetData(test.test)
+		slice[0] = capsule
 
 		result, err := test.proc.ApplyBatch(ctx, slice)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		for i, res := range result {
 			expected := test.expected[i]
 			if !bytes.Equal(expected, res.Data()) {
-				t.Logf("expected %s, got %s", expected, res)
-				t.Fail()
+				t.Errorf("expected %s, got %s", expected, res)
 			}
 		}
 	}
@@ -78,18 +76,18 @@ func TestExpand(t *testing.T) {
 func benchmarkExpand(b *testing.B, slicer Expand, slice []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		slicer.ApplyBatch(ctx, slice)
+		_, _ = slicer.ApplyBatch(ctx, slice)
 	}
 }
 
 func BenchmarkExpand(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range expandTests {
 		slice := make([]config.Capsule, 1)
-		cap.SetData(test.test)
-		slice[0] = cap
+		capsule.SetData(test.test)
+		slice[0] = capsule
 
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
 				benchmarkExpand(b, test.proc, slice)
 			},

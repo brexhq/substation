@@ -61,21 +61,19 @@ var dynamodbTests = []struct {
 
 func TestDynamoDB(t *testing.T) {
 	ctx := context.TODO()
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 
 	for _, test := range dynamodbTests {
 		dynamodbAPI = test.api
-		cap.SetData(test.test)
+		capsule.SetData(test.test)
 
-		result, err := test.proc.Apply(ctx, cap)
+		result, err := test.proc.Apply(ctx, capsule)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
 
 		if !bytes.Equal(result.Data(), test.expected) {
-			t.Logf("expected %s, got %s", test.expected, result.Data())
-			t.Fail()
+			t.Errorf("expected %s, got %s", test.expected, result.Data())
 		}
 	}
 }
@@ -83,18 +81,18 @@ func TestDynamoDB(t *testing.T) {
 func benchmarkDynamoDB(b *testing.B, applicator DynamoDB, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		applicator.Apply(ctx, test)
+		_, _ = applicator.Apply(ctx, test)
 	}
 }
 
 func BenchmarkDynamoDB(b *testing.B) {
-	cap := config.NewCapsule()
+	capsule := config.NewCapsule()
 	for _, test := range dynamodbTests {
-		b.Run(string(test.name),
+		b.Run(test.name,
 			func(b *testing.B) {
 				dynamodbAPI = test.api
-				cap.SetData(test.test)
-				benchmarkDynamoDB(b, test.proc, cap)
+				capsule.SetData(test.test)
+				benchmarkDynamoDB(b, test.proc, capsule)
 			},
 		)
 	}

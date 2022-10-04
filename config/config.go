@@ -19,7 +19,7 @@ type Config struct {
 }
 
 // Decode marshals and unmarshals an input interface into the output interface using the standard library's json package. This should be used when decoding JSON configurations (i.e., Config) in Substation interface factories.
-func Decode(input interface{}, output interface{}) error {
+func Decode(input, output interface{}) error {
 	b, err := gojson.Marshal(input)
 	if err != nil {
 		return err
@@ -39,8 +39,9 @@ Each capsule contains two unexported fields that are accessed by getters and set
 Values in the metadata field are accessed using the pattern "!metadata [key]". JSON values can be freely moved between the data and metadata fields.
 
 Capsules can be created and initialized using this pattern, where b is a []byte and v is an interface{}:
-	cap := NewCapsule()
-	cap.SetData(b).SetMetadata(v)
+
+	capsule := NewCapsule()
+	capsule.SetData(b).SetMetadata(v)
 
 Substation applications follow these rules when handling capsules:
 
@@ -207,10 +208,12 @@ func (c *Channel) Close() {
 }
 
 // Send writes capsule data to a channel and relies on goroutine recovery to prevent panicking if writes are attempted on a closed channel. Read more about recovery here: https://go.dev/blog/defer-panic-and-recover.
-func (c *Channel) Send(cap Capsule) {
+func (c *Channel) Send(capsule Capsule) {
 	defer func() {
+		//nolint: errcheck // we expect this recover to happen and have no error handling
+		// to do.
 		recover()
 	}()
 
-	c.C <- cap
+	c.C <- capsule
 }

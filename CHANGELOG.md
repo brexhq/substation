@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.5.0](https://github.com/brexhq/substation/compare/v0.4.0...v0.5.0) (2022-10-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* Update App Concurrency Model (#30)
+* Add Forward Compatibility for SNS (#21)
+
+### Features
+
+* Add Forward Compatibility for SNS ([#21](https://github.com/brexhq/substation/issues/21)) ([b93dc1e](https://github.com/brexhq/substation/commit/b93dc1e29b05165ed790eee201e41b2482a967c5))
+* Add Initial Support for Application Metrics ([#25](https://github.com/brexhq/substation/issues/25)) ([30f103d](https://github.com/brexhq/substation/commit/30f103d44a5e7075df24a2813aa0c4d50150e276))
+* AppConfig Script Updates ([#28](https://github.com/brexhq/substation/issues/28)) ([5261485](https://github.com/brexhq/substation/commit/52614853b3ebd1df587b90f0a20a8e10003d8112))
+* Customizable Kinesis Data Stream Autoscaling ([#27](https://github.com/brexhq/substation/issues/27)) ([2dd7ea7](https://github.com/brexhq/substation/commit/2dd7ea74269bbaa9591d9fc50ad3ccae4102a0fd))
+* Improvements to JSON Parsing ([#29](https://github.com/brexhq/substation/issues/29)) ([98cac69](https://github.com/brexhq/substation/commit/98cac69fd75a41fc464d3e269b77698f0693c638))
+* Improvements to Reading and Decoding Files ([#24](https://github.com/brexhq/substation/issues/24)) ([e310cb5](https://github.com/brexhq/substation/commit/e310cb5a8e1f32e52cb695764b88d58411a94ebc))
+
+
+### Bug Fixes
+
+* **linter:** fix golangci-lint warnings across substation ([#32](https://github.com/brexhq/substation/issues/32)) ([9b7e077](https://github.com/brexhq/substation/commit/9b7e077750e12147bf456d8ecc95256fb168b0e1))
+* streamname bug ([#23](https://github.com/brexhq/substation/issues/23)) ([da9de62](https://github.com/brexhq/substation/commit/da9de628d79aeaffe2192748b8e5bdb1245aed02))
+
+
+### Code Refactoring
+
+* Update App Concurrency Model ([#30](https://github.com/brexhq/substation/issues/30)) ([d8df4e2](https://github.com/brexhq/substation/commit/d8df4e2d2df63621453ea78b4156f4b8b36ba1bd))
+
 ## [0.4.0](https://github.com/brexhq/substation/compare/v0.3.0...v0.4.0) (2022-08-31)
 
 

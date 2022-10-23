@@ -15,6 +15,10 @@
     type: 'firehose',
     settings: { stream: stream },
   },
+  grpc(server, timeout='', certificate=''): {
+    type: 'grpc',
+    settings: { server: server, timeout: timeout, certificate: certificate },
+  },
   s3(bucket, prefix='', prefix_key=''): {
     type: 's3',
     settings: { bucket: bucket, prefix: prefix, prefix_key: prefix_key },

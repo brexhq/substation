@@ -31,6 +31,10 @@ func Factory(cfg config.Config) (Sink, error) {
 		var s Firehose
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
+	case "grpc":
+		var s Grpc
+		_ = config.Decode(cfg.Settings, &s)
+		return &s, nil
 	case "kinesis":
 		var s Kinesis
 		_ = config.Decode(cfg.Settings, &s)

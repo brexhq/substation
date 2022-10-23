@@ -10,6 +10,9 @@
 # CHANGELOG is handled by Release Please
 CHANGELOG.md
 
+# protobuf should be compiled during build
+*.pb.go
+
 # ignore all JSON by default
 *.json
 # allow Visual Studio Code devcontainer config file

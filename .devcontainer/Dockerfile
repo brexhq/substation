@@ -10,4 +10,10 @@ RUN sudo apt-get update && \
     # install AWS CLI
     sudo apt-get install -y awscli && \
     # install pip and boto3
-    sudo apt-get install -y python3-pip && pip3 install boto3 && pip3 install black
+    sudo apt-get install -y python3-pip && pip3 install boto3 && pip3 install black && \
+    # install protobuf compiler tools
+    # https://grpc.io/docs/languages/go/quickstart/#prerequisites
+    sudo apt-get install -y protobuf-compiler && \
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28 && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2 && \
+    export PATH="$PATH:$(go env GOPATH)/bin"

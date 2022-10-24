@@ -1,7 +1,13 @@
 # Substation
-![Substation](https://user-images.githubusercontent.com/31484751/197635974-37ebbe08-cb3d-4d52-838f-85c5b453da7e.svg)
 
+<p align="center">
+<img alt="substation logo" width="200"
+src="https://github.com/brexhq/substation/blob/main/substation_logo.png" />
+</p>
+
+<p align="center">
 Substation is a toolkit for creating highly configurable, no maintenance, and cost efficient serverless data pipelines.
+</p>
 
 ## What is Substation?
 

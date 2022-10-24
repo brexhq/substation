@@ -1,4 +1,5 @@
 # Substation
+![Substation](https://user-images.githubusercontent.com/31484751/197635974-37ebbe08-cb3d-4d52-838f-85c5b453da7e.svg)
 
 Substation is a toolkit for creating highly configurable, no maintenance, and cost efficient serverless data pipelines.
 

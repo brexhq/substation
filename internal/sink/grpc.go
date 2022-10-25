@@ -6,16 +6,16 @@ import (
 	"os"
 	"time"
 
-	pb "github.com/brexhq/substation"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/file"
+	pb "github.com/brexhq/substation/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 /*
-gRPC sinks data to a server that implements the Substation Sink rpc. This sink can also be used for inter-process communication (IPC) by using a localhost server. By default, the sink creates an insecure connection that is unauthenticated and unencrypted.
+gRPC sinks data to a server that implements the server API for the Sink service. This sink can also be used for inter-process communication (IPC) by using a localhost server. By default, the sink creates an insecure connection that is unauthenticated and unencrypted.
 
 The sink has these settings:
 
@@ -80,8 +80,8 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	client := pb.NewSubstationClient(conn)
-	stream, err := client.Sink(ctx, grpc.WaitForReady(true))
+	client := pb.NewSinkClient(conn)
+	stream, err := client.Send(ctx, grpc.WaitForReady(true))
 	if err != nil {
 		return fmt.Errorf("sink grpc: %v", err)
 	}

@@ -8,5 +8,5 @@
 		"hashicorp.terraform",
 		"zxh404.vscode-proto3"
 	],
-	"remoteUser": "vscode"
+	"postCreateCommand": "bash .devcontainer/install-dev-tools.sh"
 }

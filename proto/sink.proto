@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package substation.proto;
+
+option go_package = "github.com/brexhq/substation/proto";
+
+import "proto/config.proto";
+
+// Sink mirrors the Sink interface defined in internal/sink
+service Sink {
+  rpc Send(stream Capsule) returns (Ack) {}
+}
+
+// Ack is sent by the server to acknowledge successful receipt of all Capsules
+message Ack {}

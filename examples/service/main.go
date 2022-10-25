@@ -9,7 +9,8 @@ import (
 
 	"github.com/brexhq/substation/cmd"
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/grpc"
+	"github.com/brexhq/substation/internal/service"
+
 	"golang.org/x/sync/errgroup"
 )
 
@@ -27,14 +28,16 @@ func main() {
 	// maintains app state
 	group, ctx := errgroup.WithContext(context.TODO())
 
-	// create the gRPC server, the gRPC service, and register the service with the server
-	server := grpc.Server{}
+	// create the gRPC server
+	server := service.Server{}
 	server.New()
+
 	// deferring guarantees that the gRPC server will shutdown
 	defer server.Stop()
 
-	srv := &grpc.Service{}
-	server.Register(srv)
+	// create the server API for the Sink service and register it with the server
+	srv := &service.Sink{}
+	server.RegisterSink(srv)
 
 	// gRPC server runs in a goroutine to prevent blocking main
 	group.Go(func() error {
@@ -86,7 +89,7 @@ func main() {
 	// block until the gRPC server has received all capsules and the stream is closed
 	srv.Block()
 
-	fmt.Println("returning capsules stored in gRPC service ...")
+	fmt.Println("returning capsules sent from gRPC sink ...")
 	for _, cap := range srv.Capsules {
 		fmt.Println(string(cap.Data()))
 	}

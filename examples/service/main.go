@@ -63,7 +63,7 @@ func main() {
 		data := [][]byte{
 			[]byte(`{"foo":"bar"}`),
 			[]byte(`{"baz":"qux"}`),
-			[]byte(`{"qux":"corge"}`),
+			[]byte(`{"quux":"corge"}`),
 		}
 
 		cap := config.NewCapsule()

@@ -10,3 +10,4 @@ git log -p <file>
 # Brex Team
 * [Josh Liburdi](https://twitter.com/jshlbrd)
 * [Julie Agnes Sparks](https://twitter.com/JulieASparks)
+* [Daniel Stinson-Diess](https://twitter.com/shellcromancer)

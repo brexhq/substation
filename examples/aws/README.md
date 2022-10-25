@@ -82,14 +82,14 @@ terraform apply
 
 ```bash
 cd $SUBSTATION_ROOT && \
-sh build/config/compile.sh
+sh build/scripts/config/compile.sh
 ```
 
 ### Step 3: Upload the Configurations
 
 ```bash
 cd $SUBSTATION_ROOT && \
-SUBSTATION_CONFIG_DIRECTORY=examples/aws/ AWS_APPCONFIG_APPLICATION_NAME=substation AWS_APPCONFIG_ENVIRONMENT=prod AWS_APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 build/config/aws/appconfig_upload.py
+SUBSTATION_CONFIG_DIRECTORY=examples/aws/ AWS_APPCONFIG_APPLICATION_NAME=substation AWS_APPCONFIG_ENVIRONMENT=prod AWS_APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 build/scripts/aws/appconfig/appconfig_upload.py
 ```
 
 ### Step 4: Build the Containers

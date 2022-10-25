@@ -150,7 +150,7 @@ Run the command below to compile the [quickstart Jsonnet configuration files](ex
 
 ```bash
 cd $SUBSTATION_ROOT && \
-sh build/config/compile.sh
+sh build/scripts/config/compile.sh
 ```
 
 ### Step 3: Test Substation

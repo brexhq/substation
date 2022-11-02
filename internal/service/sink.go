@@ -14,8 +14,8 @@ type Sink struct {
 	pb.UnimplementedSinkServer
 	// Capsules can be optionally used to store all capsules sent by the client.
 	Capsules []config.Capsule
-	// EOF describes the state of the gRPC stream: false is open and true is closed.
-	EOF bool
+	// isClosed describes the state of the gRPC stream: false is open and true is closed.
+	isClosed bool
 }
 
 // Send implements the Send RPC.
@@ -27,7 +27,7 @@ func (s *Sink) Send(stream pb.Sink_SendServer) error {
 	for {
 		recv, err := stream.Recv()
 		if err == io.EOF {
-			s.EOF = true
+			s.isClosed = true
 
 			return stream.SendAndClose(&pb.Ack{})
 		}
@@ -45,7 +45,7 @@ func (s *Sink) Send(stream pb.Sink_SendServer) error {
 // Block blocks the caller until the gRPC stream is closed. This signals that all data was received by the server.
 func (s *Sink) Block() {
 	for {
-		if !s.EOF {
+		if !s.isClosed {
 			time.Sleep(100 * time.Millisecond)
 		} else {
 			break

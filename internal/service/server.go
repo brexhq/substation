@@ -8,19 +8,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-// New returns a configured gRPC server.
-func New(opt ...grpc.ServerOption) *grpc.Server {
-	return grpc.NewServer(opt...)
-}
-
 // Server wraps a gRPC server and provides methods for managing server state.
 type Server struct {
 	server *grpc.Server
 }
 
 // Setup creates a new gRPC server.
-func (s *Server) New(opt ...grpc.ServerOption) {
-	s.server = New(opt...)
+func (s *Server) Setup(opt ...grpc.ServerOption) {
+	s.server = grpc.NewServer(opt...)
 }
 
 // Start starts the gRPC server. This method blocks the caller until the server is stopped.

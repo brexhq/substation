@@ -18,7 +18,9 @@ require (
 	github.com/umisama/go-regexpcache v0.0.0-20150417035358-2444a542492f
 	go.uber.org/goleak v1.2.0
 	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
-	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	google.golang.org/grpc v1.35.0
+	google.golang.org/protobuf v1.26.0-rc.1
 )
 
 require (
@@ -34,6 +36,4 @@ require (
 	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20210114201628-6edceaf6022f // indirect
-	google.golang.org/grpc v1.35.0 // indirect
-	google.golang.org/protobuf v1.26.0-rc.1 // indirect
 )

@@ -8,7 +8,7 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/file"
-	pb "github.com/brexhq/substation/proto"
+	pb "github.com/brexhq/substation/proto/v1beta"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -80,7 +80,7 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	client := pb.NewSinkClient(conn)
+	client := pb.NewSinkServiceClient(conn)
 	stream, err := client.Send(ctx, grpc.WaitForReady(true))
 	if err != nil {
 		return fmt.Errorf("sink grpc: %v", err)
@@ -91,7 +91,7 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			p := &pb.Capsule{
+			p := &pb.SendRequest{
 				Data: capsule.Data(),
 			}
 

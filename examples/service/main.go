@@ -30,7 +30,7 @@ func main() {
 
 	// create the gRPC server
 	server := service.Server{}
-	server.New()
+	server.Setup()
 
 	// deferring guarantees that the gRPC server will shutdown
 	defer server.Stop()

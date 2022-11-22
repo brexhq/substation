@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	pb "github.com/brexhq/substation/proto"
+	pb "github.com/brexhq/substation/proto/v1beta"
 	"google.golang.org/grpc"
 )
 
@@ -39,5 +39,5 @@ func (s *Server) Stop() {
 
 // RegisterSink registers the server API for the Sink service with the gRPC server.
 func (s *Server) RegisterSink(srv *Sink) {
-	pb.RegisterSinkServer(s.server, srv)
+	pb.RegisterSinkServiceServer(s.server, srv)
 }

@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/config"
-	pb "github.com/brexhq/substation/proto"
+	pb "github.com/brexhq/substation/proto/v1beta"
 )
 
 // Sink implements the server API for the Sink service.
 type Sink struct {
-	pb.UnimplementedSinkServer
+	pb.UnimplementedSinkServiceServer
 	// Capsules can be optionally used to store all capsules sent by the client.
 	Capsules []config.Capsule
 	// isClosed describes the state of the gRPC stream: false is open and true is closed.
@@ -19,7 +19,7 @@ type Sink struct {
 }
 
 // Send implements the Send RPC.
-func (s *Sink) Send(stream pb.Sink_SendServer) error {
+func (s *Sink) Send(stream pb.SinkService_SendServer) error {
 	var count uint32
 	capsule := config.NewCapsule()
 
@@ -29,7 +29,7 @@ func (s *Sink) Send(stream pb.Sink_SendServer) error {
 		if err == io.EOF {
 			s.isClosed = true
 
-			return stream.SendAndClose(&pb.Ack{})
+			return stream.SendAndClose(&pb.SendResponse{})
 		}
 		if err != nil {
 			return fmt.Errorf("grpc sink recv: %v", err)

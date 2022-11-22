@@ -30,7 +30,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
       - name: setup
         uses: actions/setup-python@v2
         with:
@@ -39,3 +38,10 @@ jobs:
       - run: |
           pip3 install black
           find -name *.py | xargs black --check
+
+  proto:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: bufbuild/buf-setup-action@v1
+      - uses: bufbuild/buf-lint-action@v1

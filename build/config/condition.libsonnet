@@ -3,6 +3,15 @@
     type: 'content',
     settings: { type: type, negate: negate },
   },
+  for_each(key, type, inspector, negate=false): {
+    type: 'for_each',
+    settings: {
+      key: key,
+      type: type,
+      negate: negate,
+      options: { inspector: inspector },
+    },
+  },
   ip: {
     loopback(key, negate=false): {
       type: 'ip',

@@ -1,5 +1,5 @@
-local event = import './event.libsonnet';
 local sinklib = import '../../build/config/sink.libsonnet';
+local event = import './event.libsonnet';
 
 {
   sink: sinklib.stdout,
@@ -7,7 +7,7 @@ local sinklib = import '../../build/config/sink.libsonnet';
     type: 'batch',
     settings: {
       processors:
-        event.processors
+        event.processors,
     },
   },
 }

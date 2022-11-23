@@ -2,8 +2,6 @@ package condition
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -123,9 +121,6 @@ func TestForEach(t *testing.T) {
 	for _, tt := range forEachTests {
 		t.Run(tt.name, func(t *testing.T) {
 			capsule.SetData(tt.test)
-
-			out, _ := json.Marshal(tt.inspector)
-			fmt.Println(string(out))
 
 			check, err := tt.inspector.Inspect(ctx, capsule)
 			if err != nil {

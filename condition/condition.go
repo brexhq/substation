@@ -48,6 +48,10 @@ func InspectorFactory(cfg config.Config) (Inspector, error) {
 		var i Content
 		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
+	case "for_each":
+		var i ForEach
+		_ = config.Decode(cfg.Settings, &i)
+		return i, nil
 	case "ip":
 		var i IP
 		_ = config.Decode(cfg.Settings, &i)
@@ -77,7 +81,7 @@ func InspectorFactory(cfg config.Config) (Inspector, error) {
 		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	default:
-		return nil, fmt.Errorf("condition inspectorfactory: settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("condition inspectorfactory: type %q, settings %+v: %v", cfg.Type, cfg.Settings, errInvalidFactoryInput)
 	}
 }
 

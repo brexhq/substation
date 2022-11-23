@@ -9,10 +9,10 @@ local event = import './event.libsonnet';
     type: 'batch',
     settings: {
       processors:
-        event.processors
-        // + foo.processors
-        // + bar.processors
-        // + baz.processors
+        event.processors,
+      // + foo.processors
+      // + bar.processors
+      // + baz.processors
     },
   },
 }

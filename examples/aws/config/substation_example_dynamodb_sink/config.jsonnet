@@ -8,7 +8,7 @@ local dynamodb = import './dynamodb.libsonnet';
     type: 'batch',
     settings: {
       processors:
-        dynamodb.processors
+        dynamodb.processors,
     },
   },
 }

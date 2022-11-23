@@ -65,23 +65,23 @@ type ForEachOptions struct {
 
 // Inspect evaluates encapsulated data with the Content inspector.
 func (c ForEach) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
-	conf, _ := gojson.Marshal(c.Options.Inspector)
+	conf, err := gojson.Marshal(c.Options.Inspector)
+	if err != nil {
+		return false, fmt.Errorf("condition: for_each: %w", err)
+	}
 
 	var condition config.Config
-	_ = gojson.Unmarshal(conf, &condition)
+	if err = gojson.Unmarshal(conf, &condition); err != nil {
+		return false, fmt.Errorf("condition: for_each: %w", err)
+	}
 
 	inspector, err := InspectorFactory(condition)
 	if err != nil {
 		return false, fmt.Errorf("condition: for_each: %w", err)
 	}
 
-	result := capsule.Get(c.Key)
-	if !result.IsArray() {
-		return false, nil
-	}
-
 	var results []bool
-	for _, res := range result.Array() {
+	for _, res := range capsule.Get(c.Key).Array() {
 		tmpCapule := config.NewCapsule()
 		tmpCapule.SetData([]byte(res.String()))
 
@@ -100,7 +100,7 @@ func (c ForEach) Inspect(ctx context.Context, capsule config.Capsule) (output bo
 		}
 	}
 
-	switch s := c.Mode; s {
+	switch c.Mode {
 	case "any":
 		output = matched > 0
 	case "all":

@@ -3,11 +3,11 @@
     type: 'content',
     settings: { type: type, negate: negate },
   },
-  for_each(key, mode, inspector, negate=false): {
+  for_each(key, type, inspector, negate=false): {
     type: 'for_each',
     settings: {
       key: key,
-      mode: mode,
+      type: type,
       negate: negate,
       options: { inspector: inspector },
     },

@@ -19,7 +19,7 @@ var forEachTests = []struct {
 		ForEach{
 			Key:    "input",
 			Negate: false,
-			Mode:   "all",
+			Type:   "all",
 			Options: ForEachOptions{
 				Inspector: config.Config{
 					Type: "strings",
@@ -39,7 +39,7 @@ var forEachTests = []struct {
 		ForEach{
 			Key:    "input",
 			Negate: false,
-			Mode:   "all",
+			Type:   "all",
 			Options: ForEachOptions{
 				Inspector: config.Config{
 					Type: "ip",
@@ -58,7 +58,7 @@ var forEachTests = []struct {
 		ForEach{
 			Key:    "input",
 			Negate: false,
-			Mode:   "any",
+			Type:   "any",
 			Options: ForEachOptions{
 				Inspector: config.Config{
 					Type: "regexp",
@@ -77,7 +77,7 @@ var forEachTests = []struct {
 		ForEach{
 			Key:    "input",
 			Negate: false,
-			Mode:   "none",
+			Type:   "none",
 			Options: ForEachOptions{
 				Inspector: config.Config{
 					Type: "length",
@@ -97,7 +97,7 @@ var forEachTests = []struct {
 		ForEach{
 			Key:    "input",
 			Negate: false,
-			Mode:   "all",
+			Type:   "all",
 			Options: ForEachOptions{
 				Inspector: config.Config{
 					Type: "length",

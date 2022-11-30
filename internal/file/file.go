@@ -1,3 +1,4 @@
+// package file provides functions that can be used to retrieve files from local and remote locations.
 package file
 
 import (
@@ -14,7 +15,7 @@ import (
 
 var (
 	httpClient   http.HTTP
-	s3managerAPI s3manager.DownloaderAPI
+	s3downloader s3manager.DownloaderAPI
 )
 
 // errEmptyFile is returned when Get is called but finds an empty file.
@@ -32,80 +33,76 @@ Get retrieves a file from these locations (in order):
 
 - AWS S3
 
-If a file is found, then it is saved to disk and the path is returned. The caller is responsible for removing files when they are no longer needed.
+If a file is found, then it is saved as a temporary local file and the name is returned. The caller is responsible for removing files when they are no longer needed; files should be removed even if an error occurs.
 */
-func Get(ctx context.Context, path string) (string, error) {
-	file, err := os.CreateTemp("", "tempfile")
+func Get(ctx context.Context, location string) (string, error) {
+	dst, err := os.CreateTemp("", "substation")
 	if err != nil {
-		return "", fmt.Errorf("file %s: %v", path, err)
+		return "", fmt.Errorf("get %s: %v", location, err)
 	}
+	defer dst.Close()
 
-	if _, err := os.Stat(path); err == nil {
-		buf, err := os.ReadFile(path)
+	if _, err := os.Stat(location); err == nil {
+		src, err := os.Open(location)
 		if err != nil {
-			return "", fmt.Errorf("file %s: %v", path, errEmptyFile)
+			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
+		}
+		defer src.Close()
+
+		size, err := io.Copy(dst, src)
+		if err != nil {
+			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 		}
 
-		if len(buf) == 0 {
-			return "", fmt.Errorf("file %s: %v", path, errEmptyFile)
+		if size == 0 {
+			return dst.Name(), fmt.Errorf("get %s: %v", location, errEmptyFile)
 		}
 
-		if _, err := file.Write(buf); err != nil {
-			return "", fmt.Errorf("file %s: %v", path, err)
-		}
-
-		return file.Name(), nil
+		return dst.Name(), nil
 	}
 
-	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") { //nolint:nestif // err checking
+	if strings.HasPrefix(location, "http://") || strings.HasPrefix(location, "https://") {
 		if !httpClient.IsEnabled() {
 			httpClient.Setup()
 		}
 
-		resp, err := httpClient.Get(ctx, path)
+		resp, err := httpClient.Get(ctx, location)
 		if err != nil {
-			return "", fmt.Errorf("file %s: %v", path, err)
+			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 		}
 		defer resp.Body.Close()
 
-		body, err := io.ReadAll(resp.Body)
+		size, err := io.Copy(dst, resp.Body)
 		if err != nil {
-			return "", fmt.Errorf("file %s: %v", path, err)
-		}
-
-		if len(body) == 0 {
-			return "", fmt.Errorf("file %s: %v", path, errEmptyFile)
-		}
-
-		if _, err := file.Write(body); err != nil {
-			return "", fmt.Errorf("file %s: %v", path, err)
-		}
-
-		return file.Name(), nil
-	}
-
-	if strings.HasPrefix(path, "s3://") {
-		if !s3managerAPI.IsEnabled() {
-			s3managerAPI.Setup()
-		}
-
-		// "s3://bucket/key" becomes ["bucket" "key"]
-		paths := strings.SplitN(strings.TrimPrefix(path, "s3://"), "/", 2)
-		buf, size, err := s3managerAPI.Download(ctx, paths[0], paths[1])
-		if err != nil {
-			return "", fmt.Errorf("file %s: %v", path, err)
+			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 		}
 
 		if size == 0 {
-			return "", fmt.Errorf("file %s: %v", path, errEmptyFile)
+			return dst.Name(), fmt.Errorf("get %s: %v", location, errEmptyFile)
 		}
 
-		if _, err := file.Write(buf); err != nil {
-			return "", fmt.Errorf("file %s: %v", path, err)
-		}
-
-		return file.Name(), nil
+		return dst.Name(), nil
 	}
 
-	return "", fmt.Errorf("file %s: %v", path, errNoFile)
+	if strings.HasPrefix(location, "s3://") {
+		if !s3downloader.IsEnabled() {
+			s3downloader.Setup()
+		}
+
+		// "s3://bucket/key" becomes ["bucket" "key"]
+		paths := strings.SplitN(strings.TrimPrefix(location, "s3://"), "/", 2)
+
+		size, err := s3downloader.Download(ctx, paths[0], paths[1], dst)
+		if err != nil {
+			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
+		}
+
+		if size == 0 {
+			return dst.Name(), fmt.Errorf("get %s: %v", location, errEmptyFile)
+		}
+
+		return dst.Name(), nil
+	}
+
+	return dst.Name(), fmt.Errorf("get %s: %v", location, errNoFile)
 }

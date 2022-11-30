@@ -1,3 +1,4 @@
+// package appconfig provides functions for interacting with AWS AppConfig.
 package appconfig
 
 import (
@@ -16,7 +17,7 @@ const errMissingPrefetchEnvVar = errors.Error("missing AWS_APPCONFIG_EXTENSION_P
 var client http.HTTP
 
 // GetPrefetch queries and returns the Lambda's prefetched AppConfig configuration.
-func GetPrefetch(ctx context.Context) ([]byte, error) {
+func GetPrefetch(ctx context.Context, dst io.Writer) error {
 	if !client.IsEnabled() {
 		client.Setup()
 	}
@@ -24,20 +25,19 @@ func GetPrefetch(ctx context.Context) ([]byte, error) {
 	env := "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST"
 	url, found := os.LookupEnv(env)
 	if !found {
-		return nil, fmt.Errorf("getprefetch lookup: %v", errMissingPrefetchEnvVar)
+		return fmt.Errorf("appconfig getprefetch: %v", errMissingPrefetchEnvVar)
 	}
 
 	local := "http://localhost:2772" + url
 	resp, err := client.Get(ctx, local)
 	if err != nil {
-		return nil, fmt.Errorf("getprefetch retrieve URL %s: %v", local, err)
+		return fmt.Errorf("appconfig getprefetch URL %s: %v", local, err)
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("getprefetch read URL %s: %v", local, err)
+	if _, err := io.Copy(dst, resp.Body); err != nil {
+		return fmt.Errorf("appconfig getprefetch: %v", err)
 	}
 
-	return body, nil
+	return nil
 }

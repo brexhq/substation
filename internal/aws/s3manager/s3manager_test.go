@@ -3,6 +3,7 @@ package s3manager
 import (
 	"context"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -49,7 +50,8 @@ func TestDownload(t *testing.T) {
 			mockedDownload{Resp: test.resp},
 		}
 
-		_, size, err := a.Download(ctx, test.input.bucket, test.input.key)
+		var dst io.WriterAt
+		size, err := a.Download(ctx, test.input.bucket, test.input.key, dst)
 		if err != nil {
 			t.Fatalf("%d, unexpected error", err)
 		}
@@ -103,7 +105,8 @@ func TestUpload(t *testing.T) {
 			mockedUpload{Resp: test.resp},
 		}
 
-		resp, err := a.Upload(ctx, test.input.buffer, test.input.bucket, test.input.key)
+		src := strings.NewReader("foo")
+		resp, err := a.Upload(ctx, test.input.bucket, test.input.key, src)
 		if err != nil {
 			t.Fatalf("%d, unexpected error", err)
 		}

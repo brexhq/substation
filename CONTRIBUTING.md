@@ -90,6 +90,16 @@ Substation relies on [factory methods](https://refactoring.guru/design-patterns/
 
 Factories are the preferred method for allowing users to customize the system. Example factories can be seen in [condition](/condition/condition.go) and [process](/process/process.go).
 
+##### Reading and Writing Streaming Data
+
+We prefer use of the io package for reading (e.g., io.Reader) and writing (e.g., io.Writer) streams of data. This reduces memory usage and decreases the likelihood that we will need to refactor methods and functions that handle streaming data.
+
+Substation commonly uses these io compatible containers:
+
+- open files that are created by the call `os.CreateTemp("", "substation")`
+
+- bytes buffers that are created by the call `new(bytes.Buffer)`
+
 ### Naming Conventions
 
 #### Errors

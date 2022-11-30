@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0](https://github.com/brexhq/substation/compare/v0.5.0...v0.6.0) (2022-11-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* Standardizing Use of io ([#38](https://github.com/brexhq/substation/issues/38))
+
+### Features
+
+* add for_each condition ([#37](https://github.com/brexhq/substation/issues/37)) ([6771180](https://github.com/brexhq/substation/commit/6771180dd1d62dfa936f43e6164aba2bf2bcf6d7))
+* Add gRPC Support ([#34](https://github.com/brexhq/substation/issues/34)) ([04b4917](https://github.com/brexhq/substation/commit/04b4917f8dee59bdcec23c7a1af90bd27197beb2))
+
+
+### Code Refactoring
+
+* Standardizing Use of io ([#38](https://github.com/brexhq/substation/issues/38)) ([0368d78](https://github.com/brexhq/substation/commit/0368d782dd575d996f45b25a72cb40356c01b515))
+
 ## [0.5.0](https://github.com/brexhq/substation/compare/v0.4.0...v0.5.0) (2022-10-04)
 
 

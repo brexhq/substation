@@ -2,18 +2,18 @@ package condition
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/media"
 )
 
 /*
-Content evaluates data by its content type. This inspector uses the standard library's net/http package to identify the content type of data (more information is available here: https://pkg.go.dev/net/http#DetectContentType). When used in Substation pipelines, it is most effective when using processors that change the format of data (e.g., process/gzip). The inspector supports MIME types that follow this specification: https://mimesniff.spec.whatwg.org/.
+Content evaluates data by its content (media, MIME) type. When used in Substation pipelines, it is most effective when using processors that change the format of data (e.g., process/gzip). The inspector supports MIME types that follow this specification: https://mimesniff.spec.whatwg.org/.
 
 The inspector has these settings:
 
 	Type:
-		MIME type used during inspection
+		media type used during inspection
 	Negate (optional):
 		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
 		defaults to false
@@ -41,8 +41,8 @@ type Content struct {
 func (c Content) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	matched := false
 
-	content := http.DetectContentType(capsule.Data())
-	if content == c.Type {
+	media := media.Bytes(capsule.Data())
+	if media == c.Type {
 		matched = true
 	}
 

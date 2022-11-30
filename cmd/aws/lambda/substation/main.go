@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"sync"
 	"time"
@@ -18,14 +20,13 @@ import (
 	"github.com/brexhq/substation/internal/aws/appconfig"
 	"github.com/brexhq/substation/internal/aws/kinesis"
 	"github.com/brexhq/substation/internal/aws/s3manager"
+	"github.com/brexhq/substation/internal/bufio"
 	"github.com/brexhq/substation/internal/errors"
+	"github.com/brexhq/substation/internal/file"
 	"github.com/brexhq/substation/internal/log"
 )
 
-var (
-	handler    string
-	scanMethod string
-)
+var handler string
 
 // errLambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
 const errLambdaMissingHandler = errors.Error("missing SUBSTATION_HANDLER environment variable")
@@ -58,9 +59,40 @@ func init() {
 	if !found {
 		panic(fmt.Errorf("init handler %s: %v", handler, errLambdaMissingHandler))
 	}
+}
 
-	// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable
-	scanMethod = cmd.GetScanMethod()
+// getConfig contextually retrieves a Substation configuration.
+func getConfig(ctx context.Context) (io.Reader, error) {
+	buf := new(bytes.Buffer)
+
+	cfg := config.Get()
+	if cfg == "" {
+		// maintains backwards compatibility
+		if err := appconfig.GetPrefetch(ctx, buf); err != nil {
+			return nil, err
+		}
+
+		return buf, nil
+	}
+
+	path, err := file.Get(ctx, cfg)
+	defer os.Remove(path)
+
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer conf.Close()
+
+	if _, err := io.Copy(buf, conf); err != nil {
+		return nil, err
+	}
+
+	return buf, nil
 }
 
 type gatewayMetadata struct {
@@ -72,11 +104,13 @@ type gatewayMetadata struct {
 func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	sub := cmd.New()
 
-	conf, err := appconfig.GetPrefetch(ctx)
+	// retrieve and load configuration
+	cfg, err := getConfig(ctx)
 	if err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway handler: %v", err)
 	}
-	if err := json.Unmarshal(conf, &sub.Config); err != nil {
+
+	if err := sub.SetConfig(cfg); err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway handler: %v", err)
 	}
 
@@ -102,12 +136,11 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 		if len(request.Body) != 0 {
 			capsule := config.NewCapsule()
 			capsule.SetData([]byte(request.Body))
-			_, err := capsule.SetMetadata(gatewayMetadata{
+			if _, err := capsule.SetMetadata(gatewayMetadata{
 				request.Resource,
 				request.Path,
 				request.Headers,
-			})
-			if err != nil {
+			}); err != nil {
 				return fmt.Errorf("gateway handler: %v", err)
 			}
 
@@ -137,12 +170,13 @@ type kinesisMetadata struct {
 func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 	sub := cmd.New()
 
-	conf, err := appconfig.GetPrefetch(ctx)
+	// retrieve and load configuration
+	cfg, err := getConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("kinesis handler: %v", err)
 	}
-	err = json.Unmarshal(conf, &sub.Config)
-	if err != nil {
+
+	if err := sub.SetConfig(cfg); err != nil {
 		return fmt.Errorf("kinesis handler: %v", err)
 	}
 
@@ -170,7 +204,7 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 		converted := kinesis.ConvertEventsRecords(event.Records)
 		deaggregated, err := deaggregator.DeaggregateRecords(converted)
 		if err != nil {
-			return err
+			return fmt.Errorf("kinesis handler: %v", err)
 		}
 
 		for _, record := range deaggregated {
@@ -180,14 +214,13 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 			default:
 				capsule := config.NewCapsule()
 				capsule.SetData(record.Data)
-				_, err = capsule.SetMetadata(kinesisMetadata{
+				if _, err := capsule.SetMetadata(kinesisMetadata{
 					*record.ApproximateArrivalTimestamp,
 					eventSourceArn,
 					*record.PartitionKey,
 					*record.SequenceNumber,
-				})
-				if err != nil {
-					return err
+				}); err != nil {
+					return fmt.Errorf("kinesis handler: %v", err)
 				}
 
 				sub.Send(capsule)
@@ -218,12 +251,13 @@ type s3Metadata struct {
 func s3Handler(ctx context.Context, event events.S3Event) error {
 	sub := cmd.New()
 
-	conf, err := appconfig.GetPrefetch(ctx)
+	// retrieve and load configuration
+	cfg, err := getConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("s3 handler: %v", err)
 	}
-	err = json.Unmarshal(conf, &sub.Config)
-	if err != nil {
+
+	if err := sub.SetConfig(cfg); err != nil {
 		return fmt.Errorf("s3 handler: %v", err)
 	}
 
@@ -256,29 +290,34 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				"key", record.S3.Object.Key,
 			).Debug("received S3 trigger")
 
-			scanner, err := api.DownloadAsScanner(
-				ctx,
-				record.S3.Bucket.Name,
-				record.S3.Object.Key,
-			)
+			dst, err := os.CreateTemp("", "substation")
 			if err != nil {
-				return err
+				return fmt.Errorf("s3 handler: %v", err)
+			}
+			defer os.Remove(dst.Name())
+			defer dst.Close()
+
+			if _, err := api.Download(ctx, record.S3.Bucket.Name, record.S3.Object.Key, dst); err != nil {
+				return fmt.Errorf("s3 handler: %v", err)
 			}
 
 			capsule := config.NewCapsule()
-			_, err = capsule.SetMetadata(s3Metadata{
+			if _, err = capsule.SetMetadata(s3Metadata{
 				record.EventTime,
 				record.S3.Bucket.Arn,
 				record.S3.Bucket.Name,
 				record.S3.Object.Key,
 				record.S3.Object.Size,
-			})
-			if err != nil {
+			}); err != nil {
 				return fmt.Errorf("s3 handler: %v", err)
 			}
 
+			scanner := bufio.NewScanner()
+			defer scanner.Close()
+
+			scanner.ReadFile(dst)
 			for scanner.Scan() {
-				switch scanMethod {
+				switch scanner.Method() {
 				case "bytes":
 					capsule.SetData(scanner.Bytes())
 				case "text":
@@ -310,13 +349,14 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	sub := cmd.New()
 
-	conf, err := appconfig.GetPrefetch(ctx)
+	// retrieve and load configuration
+	cfg, err := getConfig(ctx)
 	if err != nil {
-		return fmt.Errorf("s3Sns handler: %v", err)
+		return fmt.Errorf("s3 sns handler: %v", err)
 	}
-	err = json.Unmarshal(conf, &sub.Config)
-	if err != nil {
-		return fmt.Errorf("s3Sns handler: %v", err)
+
+	if err := sub.SetConfig(cfg); err != nil {
+		return fmt.Errorf("s3 sns handler: %v", err)
 	}
 
 	// maintains app state
@@ -355,29 +395,34 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					"key", record.S3.Object.Key,
 				).Debug("received S3 trigger")
 
-				scanner, err := api.DownloadAsScanner(
-					ctx,
-					record.S3.Bucket.Name,
-					record.S3.Object.Key,
-				)
+				dst, err := os.CreateTemp("", "substation")
 				if err != nil {
-					return err
+					return fmt.Errorf("s3 sns handler: %v", err)
+				}
+				defer os.Remove(dst.Name())
+				defer dst.Close()
+
+				if _, err := api.Download(ctx, record.S3.Bucket.Name, record.S3.Object.Key, dst); err != nil {
+					return fmt.Errorf("s3 sns handler: %v", err)
 				}
 
 				capsule := config.NewCapsule()
-				_, err = capsule.SetMetadata(s3Metadata{
+				if _, err := capsule.SetMetadata(s3Metadata{
 					record.EventTime,
 					record.S3.Bucket.Arn,
 					record.S3.Bucket.Name,
 					record.S3.Object.Key,
 					record.S3.Object.Size,
-				})
-				if err != nil {
-					return fmt.Errorf("s3Sns handler: %v", err)
+				}); err != nil {
+					return fmt.Errorf("s3 sns handler: %v", err)
 				}
 
+				scanner := bufio.NewScanner()
+				defer scanner.Close()
+
+				scanner.ReadFile(dst)
 				for scanner.Scan() {
-					switch scanMethod {
+					switch scanner.Method() {
 					case "bytes":
 						capsule.SetData(scanner.Bytes())
 					case "text":
@@ -417,12 +462,13 @@ type snsMetadata struct {
 func snsHandler(ctx context.Context, event events.SNSEvent) error {
 	sub := cmd.New()
 
-	conf, err := appconfig.GetPrefetch(ctx)
+	// retrieve and load configuration
+	cfg, err := getConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("sns handler: %v", err)
 	}
-	err = json.Unmarshal(conf, &sub.Config)
-	if err != nil {
+
+	if err := sub.SetConfig(cfg); err != nil {
 		return fmt.Errorf("sns handler: %v", err)
 	}
 
@@ -452,13 +498,12 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 			default:
 				capsule := config.NewCapsule()
 				capsule.SetData([]byte(record.SNS.Message))
-				_, err = capsule.SetMetadata(snsMetadata{
+				if _, err := capsule.SetMetadata(snsMetadata{
 					record.SNS.Timestamp,
 					record.EventSubscriptionArn,
 					record.SNS.MessageID,
 					record.SNS.Subject,
-				})
-				if err != nil {
+				}); err != nil {
 					return fmt.Errorf("sns handler: %v", err)
 				}
 
@@ -489,12 +534,13 @@ type sqsMetadata struct {
 func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 	sub := cmd.New()
 
-	conf, err := appconfig.GetPrefetch(ctx)
+	// retrieve and load configuration
+	cfg, err := getConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("sqs handler: %v", err)
 	}
-	err = json.Unmarshal(conf, &sub.Config)
-	if err != nil {
+
+	if err := sub.SetConfig(cfg); err != nil {
 		return fmt.Errorf("sqs handler: %v", err)
 	}
 
@@ -524,13 +570,12 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 			default:
 				capsule := config.NewCapsule()
 				capsule.SetData([]byte(msg.Body))
-				_, err = capsule.SetMetadata(sqsMetadata{
+				if _, err := capsule.SetMetadata(sqsMetadata{
 					msg.EventSourceARN,
 					msg.MessageId,
 					msg.Md5OfBody,
 					msg.Attributes,
-				})
-				if err != nil {
+				}); err != nil {
 					return fmt.Errorf("sqs handler: %v", err)
 				}
 

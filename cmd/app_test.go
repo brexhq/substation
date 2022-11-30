@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"sync"
 	"testing"
 
@@ -114,8 +114,9 @@ func TestAppLeaks(t *testing.T) {
 
 	for _, test := range appLeaksTest {
 		sub := New()
-		err := json.Unmarshal(test.config, &sub.Config)
-		if err != nil {
+
+		r := bytes.NewReader(test.config)
+		if err := sub.SetConfig(r); err != nil {
 			t.Fatal(err)
 		}
 

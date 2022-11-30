@@ -1,24 +1,22 @@
 package sink
 
 import (
-	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jshlbrd/go-aggregate"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/s3manager"
 	"github.com/brexhq/substation/internal/log"
 )
 
-var s3managerAPI s3manager.UploaderAPI
-
-const layout = "2006-01-02"
+var s3uploader s3manager.UploaderAPI
 
 /*
 S3 sinks data as gzip compressed objects to an AWS S3 bucket. Object names contain the year, month, and day the data was processed by the sink; they can be optionally prefixed with a custom string.
@@ -51,18 +49,20 @@ type S3 struct {
 
 // Send sinks a channel of encapsulated data with the S3 sink.
 func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
-	if !s3managerAPI.IsEnabled() {
-		s3managerAPI.Setup()
+	if !s3uploader.IsEnabled() {
+		s3uploader.Setup()
 	}
 
-	buffer := map[string]*aggregate.Bytes{}
+	files := make(map[string]*os.File)
 
 	var prefix string
 	if sink.Prefix != "" {
 		prefix = sink.Prefix
 	}
 
-	sep := []byte("\n")
+	// newline character for Unix-based systems
+	separator := []byte("\n")
+
 	for capsule := range ch.C {
 		select {
 		case <-ctx.Done():
@@ -72,75 +72,53 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 				prefix = capsule.Get(sink.PrefixKey).String()
 			}
 
-			if _, ok := buffer[prefix]; !ok {
-				// aggregate up to 10MB or 100,000 items
-				buffer[prefix] = &aggregate.Bytes{}
-				buffer[prefix].New(1000*1000*10, 100000)
-			}
-
-			// add data to the buffer
-			// if buffer is full, then send the aggregated data
-			ok, err := buffer[prefix].Add(capsule.Data())
-			if err != nil {
-				return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
-			}
-
-			if !ok {
-				var buf bytes.Buffer
-				writer := gzip.NewWriter(&buf)
-				items := buffer[prefix].Get()
-				for _, i := range items {
-					_, _ = writer.Write(i)
-					_, _ = writer.Write(sep)
-				}
-				if err := writer.Close(); err != nil {
-					return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
-				}
-
-				key := formatKey(prefix) + ".gz"
-				if _, err := s3managerAPI.Upload(ctx, buf.Bytes(), sink.Bucket, key); err != nil {
-					return fmt.Errorf("sink s3 bucket %s key %s: %v", sink.Bucket, key, err)
-				}
-
-				log.WithField(
-					"bucket", sink.Bucket,
-				).WithField(
-					"key", key,
-				).WithField(
-					"count", buffer[prefix].Count(),
-				).Debug("uploaded data to S3")
-
-				buffer[prefix].Reset()
-				_, err = buffer[prefix].Add(capsule.Data())
+			if _, ok := files[prefix]; !ok {
+				f, err := os.CreateTemp("", "substation")
 				if err != nil {
 					return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
 				}
+				defer os.Remove(f.Name())
+				defer f.Close()
+
+				files[prefix] = f
 			}
+
+			files[prefix].Write(capsule.Data())
+			files[prefix].Write(separator)
 		}
 	}
 
-	// iterate and send remaining buffers
-	for prefix := range buffer {
-		count := buffer[prefix].Count()
-		if count == 0 {
-			continue
+	/*
+		uploading data to S3 requires the following steps:
+			- reset offset to zero so the file content can be read
+			- connect gzip writer to a pipe writer
+			- copy file content to the gzip writer (copies to the pipe reader)
+			- generate the S3 object key
+			- upload the pipe reader to the bucket using the generated key
+	*/
+	for prefix, file := range files {
+		file.Seek(0, 0)
+
+		reader, w := io.Pipe()
+		gz := gzip.NewWriter(w)
+
+		// goroutine avoids deadlock
+		go func() {
+			defer w.Close()
+			defer gz.Close()
+
+			io.Copy(gz, file)
+		}()
+
+		key := createKey(prefix)
+		if _, err := s3uploader.Upload(ctx, sink.Bucket, key, reader); err != nil {
+			return fmt.Errorf("sink s3 bucket %s key %s: %v", sink.Bucket, key, err)
 		}
 
-		var buf bytes.Buffer
-		writer := gzip.NewWriter(&buf)
-		items := buffer[prefix].Get()
-		for _, b := range items {
-			_, _ = writer.Write(b)
-			_, _ = writer.Write(sep)
-		}
-		if err := writer.Close(); err != nil {
-			return fmt.Errorf("sink s3: %v", err)
-		}
-
-		key := formatKey(prefix) + ".gz"
-		if _, err := s3managerAPI.Upload(ctx, buf.Bytes(), sink.Bucket, key); err != nil {
-			// Upload err returns metadata
-			return fmt.Errorf("sink s3: %v", err)
+		// s3uploader.Upload does not return the size of uploaded data, so we use the size of the uncompressed file when reporting stats for debugging
+		fs, err := file.Stat()
+		if err != nil {
+			return fmt.Errorf("sink s3 bucket %s key %s: %v", sink.Bucket, key, err)
 		}
 
 		log.WithField(
@@ -148,28 +126,29 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 		).WithField(
 			"key", key,
 		).WithField(
-			"count", buffer[prefix].Count(),
+			"size", fs.Size(),
 		).Debug("uploaded data to S3")
 	}
 
 	return nil
 }
 
-// formatPrefix creates an object key prefix based on the current time:
-//
-//	[prefix:optional]/[year]/[month]/[day]/[uuid]
-func formatKey(prefix string) string {
-	now := time.Now().Format(layout)
+/*
+ createKey creates a date-based S3 object key that has this naming convention:
+	[prefix : optional]/[year]/[month]/[day]/[uuid].gz
+*/
+func createKey(prefix string) string {
 	var key string
 
 	if prefix != "" {
 		key = prefix + "/"
 	}
 
-	for _, s := range strings.Split(now, "-") {
-		key += s + "/"
+	now := time.Now().Format("2006-01-02")
+	for _, date := range strings.Split(now, "-") {
+		key += date + "/"
 	}
 
-	key += uuid.NewString()
+	key = fmt.Sprint(key, uuid.NewString(), ".gz")
 	return key
 }

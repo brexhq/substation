@@ -1,43 +1,52 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/brexhq/substation/cmd"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/bufio"
+	"github.com/brexhq/substation/internal/file"
 	"golang.org/x/sync/errgroup"
 )
 
-var sub *cmd.Substation
-
-func loadConfig(f string) error {
-	bytes, err := os.ReadFile(f)
-	if err != nil {
-		return fmt.Errorf("config %q: %v", f, err)
-	}
-	err = json.Unmarshal(bytes, &sub.Config)
-	if err != nil {
-		return fmt.Errorf("config %q: %v", f, err)
-	}
-
-	return nil
+type metadata struct {
+	Name string `json:"name"`
+	Size int64  `json:"size"`
 }
 
-type metadata struct {
-	Name             string    `json:"name"`
-	Size             int64     `json:"size"`
-	ModificationTime time.Time `json:"modificationTime"`
+// getConfig contextually retrieves a Substation configuration.
+func getConfig(ctx context.Context, cfg string) (io.Reader, error) {
+	path, err := file.Get(ctx, cfg)
+	defer os.Remove(path)
+
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer conf.Close()
+
+	buf := new(bytes.Buffer)
+	if _, err := io.Copy(buf, conf); err != nil {
+		return nil, err
+	}
+
+	return buf, nil
 }
 
 func main() {
-	input := flag.String("input", "", "file to parse from local disk")
+	input := flag.String("input", "", "file to parse")
 	config := flag.String("config", "", "Substation configuration file")
 	timeout := flag.Duration("timeout", 10*time.Second, "timeout")
 	flag.Parse()
@@ -45,17 +54,24 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	sub = cmd.New()
-	if err := loadConfig(*config); err != nil {
-		panic(fmt.Errorf("main: %v", err))
-	}
-
-	if err := file(ctx, *input); err != nil {
+	if err := run(ctx, *input, *config); err != nil {
 		panic(fmt.Errorf("main: %v", err))
 	}
 }
 
-func file(ctx context.Context, filename string) error {
+func run(ctx context.Context, input, cfg string) error {
+	sub := cmd.New()
+
+	// load configuration file
+	c, err := getConfig(ctx, cfg)
+	if err != nil {
+		return fmt.Errorf("run: %v", err)
+	}
+
+	if err := sub.SetConfig(c); err != nil {
+		return fmt.Errorf("run: %v", err)
+	}
+
 	group, ctx := errgroup.WithContext(ctx)
 
 	var sinkWg sync.WaitGroup
@@ -74,37 +90,37 @@ func file(ctx context.Context, filename string) error {
 
 	// ingest
 	group.Go(func() error {
-		fileHandle, err := os.Open(filename)
+		fi, err := file.Get(ctx, input)
 		if err != nil {
 			return err
 		}
-		defer fileHandle.Close()
+		defer os.Remove(fi)
 
-		fi, err := fileHandle.Stat()
+		f, err := os.Open(fi)
+		if err != nil {
+			return fmt.Errorf("run: %v", err)
+		}
+		defer f.Close()
+
+		fs, err := f.Stat()
 		if err != nil {
 			return err
 		}
 
 		capsule := config.NewCapsule()
-		_, err = capsule.SetMetadata(metadata{
-			fi.Name(),
-			fi.Size(),
-			fi.ModTime(),
-		})
-		if err != nil {
-			return fmt.Errorf("file filename %s: %v", filename, err)
+		if _, err = capsule.SetMetadata(metadata{
+			input,
+			fs.Size(),
+		}); err != nil {
+			return fmt.Errorf("run: %v", err)
 		}
 
-		// a scanner token can be up to 100MB
-		scanner := bufio.NewScanner(fileHandle)
-		scanner.Buffer([]byte{}, 100*1024*1024)
+		scanner := bufio.NewScanner()
+		defer scanner.Close()
 
-		// retrieves scan method from SUBSTATION_SCAN_METHOD environment variable
-		scanMethod := cmd.GetScanMethod()
-
-		var count int
+		scanner.ReadFile(f)
 		for scanner.Scan() {
-			switch scanMethod {
+			switch scanner.Method() {
 			case "bytes":
 				capsule.SetData(scanner.Bytes())
 			case "text":
@@ -117,8 +133,6 @@ func file(ctx context.Context, filename string) error {
 			default:
 				sub.Send(capsule)
 			}
-
-			count++
 		}
 
 		sub.WaitTransform(&transformWg)
@@ -128,7 +142,7 @@ func file(ctx context.Context, filename string) error {
 	})
 
 	if err := sub.Block(ctx, group); err != nil {
-		return err
+		return fmt.Errorf("run: %v", err)
 	}
 
 	return nil

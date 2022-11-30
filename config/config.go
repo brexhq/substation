@@ -1,7 +1,9 @@
+// package config provides capabilities for managing configurations and handling data in Substation applications.
 package config
 
 import (
 	gojson "encoding/json"
+	"os"
 	"strings"
 	"sync"
 
@@ -27,6 +29,15 @@ func Decode(input, output interface{}) error {
 	return gojson.Unmarshal(b, output)
 }
 
+// Get retrieves a configuration location from the SUBSTATION_CONFIG environment variable.
+func Get() string {
+	if v, found := os.LookupEnv("SUBSTATION_CONFIG"); found {
+		return v
+	}
+
+	return ""
+}
+
 /*
 Capsule stores encapsulated data that is used throughout the package's data handling and processing functions.
 
@@ -37,11 +48,6 @@ Each capsule contains two unexported fields that are accessed by getters and set
 - metadata: stores structured metadata that describes the data
 
 Values in the metadata field are accessed using the pattern "!metadata [key]". JSON values can be freely moved between the data and metadata fields.
-
-Capsules can be created and initialized using this pattern, where b is a []byte and v is an interface{}:
-
-	capsule := NewCapsule()
-	capsule.SetData(b).SetMetadata(v)
 
 Substation applications follow these rules when handling capsules:
 
@@ -183,9 +189,7 @@ func (c *Capsule) SetMetadata(i interface{}) (*Capsule, error) {
 	return c, nil
 }
 
-/*
-Channel provides methods for safely writing capsule data to and closing channels. Data should be read directly from the channel (e.g., ch.C).
-*/
+// Channel provides methods for safely writing capsule data to and closing channels. Data should be read directly from the channel (e.g., ch.C).
 type Channel struct {
 	C      chan Capsule
 	mutex  sync.Mutex

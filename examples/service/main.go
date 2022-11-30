@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
@@ -17,11 +16,13 @@ import (
 func main() {
 	sub := cmd.New()
 
-	bytes, err := os.ReadFile("./config.json")
+	f, err := os.Open("./config.json")
 	if err != nil {
 		panic(err)
 	}
-	if err := json.Unmarshal(bytes, &sub.Config); err != nil {
+	defer f.Close()
+
+	if err := sub.SetConfig(f); err != nil {
 		panic(err)
 	}
 

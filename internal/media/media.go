@@ -21,7 +21,9 @@ func Bytes(b []byte) string {
 
 // File returns the media type of an open file. The caller is responsible for resetting the position of the file.
 func File(f *os.File) (string, error) {
-	f.Seek(0, 0)
+	if _, err := f.Seek(0, 0); err != nil {
+		return "", fmt.Errorf("media file: %v", err)
+	}
 
 	// http.DetectContentType reads the first 512 bytes of data
 	buf := make([]byte, 512)

@@ -84,8 +84,8 @@ func BenchmarkFile(b *testing.B) {
 	defer temp.Close()
 
 	for _, test := range mediaTests {
-		temp.Seek(0, 0)
-		temp.Write(test.test)
+		_, _ = temp.Seek(0, 0)
+		_, _ = temp.Write(test.test)
 
 		b.Run(test.name,
 			func(b *testing.B) {

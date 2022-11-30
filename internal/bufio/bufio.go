@@ -76,13 +76,19 @@ func (s *scanner) ReadFile(file *os.File) error {
 	var reader io.ReadCloser
 	s.openHandles = append(s.openHandles, file)
 
-	file.Seek(0, 0)
-	mediaType, err := media.File(file)
-	if err != nil {
-		return fmt.Errorf("readopenfile: %v", err)
+	if _, err := file.Seek(0, 0); err != nil {
+		return fmt.Errorf("readfile: %v", err)
 	}
 
-	file.Seek(0, 0)
+	mediaType, err := media.File(file)
+	if err != nil {
+		return fmt.Errorf("readfile: %v", err)
+	}
+
+	if _, err := file.Seek(0, 0); err != nil {
+		return fmt.Errorf("readfile: %v", err)
+	}
+
 	switch mediaType {
 	case "application/x-bzip2":
 		reader = io.NopCloser(bzip2.NewReader(file))

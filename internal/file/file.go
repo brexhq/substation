@@ -61,7 +61,7 @@ func Get(ctx context.Context, location string) (string, error) {
 		return dst.Name(), nil
 	}
 
-	if strings.HasPrefix(location, "http://") || strings.HasPrefix(location, "https://") { //nolint:nestif // err checking
+	if strings.HasPrefix(location, "http://") || strings.HasPrefix(location, "https://") {
 		if !httpClient.IsEnabled() {
 			httpClient.Setup()
 		}

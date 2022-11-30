@@ -21,7 +21,7 @@ func ExampleFile() {
 	defer os.Remove(file.Name())
 	defer file.Close()
 
-	file.Write([]byte("\x42\x5a\x68"))
+	_, _ = file.Write([]byte("\x42\x5a\x68"))
 
 	// media.File moves the file offset to zero
 	mediaType, err := media.File(file)

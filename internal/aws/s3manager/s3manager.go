@@ -118,7 +118,9 @@ func (a *UploaderAPI) Upload(ctx aws.Context, bucket, key string, src io.Reader)
 		return nil, fmt.Errorf("s3manager upload bucket %s key %s: %v", bucket, key, err)
 	}
 
-	dst.Seek(0, 0)
+	if _, err := dst.Seek(0, 0); err != nil {
+		return nil, fmt.Errorf("s3manager upload bucket %s key %s: %v", bucket, key, err)
+	}
 	input := &s3manager.UploadInput{
 		Bucket:      aws.String(bucket),
 		Key:         aws.String(key),

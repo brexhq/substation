@@ -16,7 +16,7 @@ func ExampleGet_local() {
 	defer os.Remove(temp.Name())
 	defer temp.Close()
 
-	temp.Write([]byte("foo\nbar\nbaz"))
+	_, _ = temp.Write([]byte("foo\nbar\nbaz"))
 
 	// a local copy of the file is created and must be removed when it's no longer needed, regardless of errors
 	path, err := file.Get(context.TODO(), temp.Name())

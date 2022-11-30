@@ -29,12 +29,15 @@ func ExampleGet_file() {
 func ExampleCapsule_Set() {
 	data := []byte(`{"foo":"bar"}`)
 
-	cap := config.NewCapsule()
-	cap.SetData(data)
+	capsule := config.NewCapsule()
+	capsule.SetData(data)
 
-	cap.Set("baz", "qux")
+	if err := capsule.Set("baz", "qux"); err != nil {
+		// handler error
+		panic(err)
+	}
 
-	d := cap.Data()
+	d := capsule.Data()
 	fmt.Println(string(d))
 	// Output: {"foo":"bar","baz":"qux"}
 }
@@ -42,8 +45,8 @@ func ExampleCapsule_Set() {
 func ExampleCapsule_SetData() {
 	data := []byte(`{"foo":"bar"}`)
 
-	cap := config.NewCapsule()
-	cap.SetData(data)
+	capsule := config.NewCapsule()
+	capsule.SetData(data)
 }
 
 func ExampleCapsule_SetMetadata() {
@@ -53,8 +56,11 @@ func ExampleCapsule_SetMetadata() {
 		baz: "qux",
 	}
 
-	cap := config.NewCapsule()
-	cap.SetMetadata(metadata)
+	capsule := config.NewCapsule()
+	if _, err := capsule.SetMetadata(metadata); err != nil {
+		// handle err
+		panic(err)
+	}
 }
 
 func ExampleCapsule_SetMetadata_chaining() {
@@ -66,6 +72,9 @@ func ExampleCapsule_SetMetadata_chaining() {
 
 	data := []byte(`{"foo":"bar"}`)
 
-	cap := config.NewCapsule()
-	cap.SetData(data).SetMetadata(metadata)
+	capsule := config.NewCapsule()
+	if _, err := capsule.SetData(data).SetMetadata(metadata); err != nil {
+		// handle err
+		panic(err)
+	}
 }

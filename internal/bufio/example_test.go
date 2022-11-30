@@ -17,7 +17,10 @@ func ExampleNewScanner_setup() {
 
 	// sets method to "bytes"
 	// defaults to "text"
-	s.SetMethod("bytes")
+	if err := s.SetMethod("bytes"); err != nil {
+		// handle error
+		panic(err)
+	}
 }
 
 func ExampleNewScanner_readFile() {
@@ -25,14 +28,18 @@ func ExampleNewScanner_readFile() {
 	file, _ := os.CreateTemp("", "substation")
 	defer os.Remove(file.Name())
 
-	file.Write([]byte("foo\nbar\nbaz"))
+	_, _ = file.Write([]byte("foo\nbar\nbaz"))
 
 	// scanner closes all open handles, including the open file
 	s := bufio.NewScanner()
 	defer s.Close()
 
 	// scanner automatically decompresses file and chooses appropriate scan method (default is "text")
-	s.ReadFile(file)
+	if err := s.ReadFile(file); err != nil {
+		// handle error
+		panic(err)
+	}
+
 	for s.Scan() {
 		switch s.Method() {
 		case "bytes":

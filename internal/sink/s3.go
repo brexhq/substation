@@ -77,14 +77,19 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 				if err != nil {
 					return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
 				}
-				defer os.Remove(f.Name())
-				defer f.Close()
+
+				defer os.Remove(f.Name()) //nolint:staticcheck // SA9001: channel is closed on error, defer will run
+				defer f.Close()           //nolint:staticcheck // SA9001: channel is closed on error, defer will run
 
 				files[prefix] = f
 			}
 
-			files[prefix].Write(capsule.Data())
-			files[prefix].Write(separator)
+			if _, err := files[prefix].Write(capsule.Data()); err != nil {
+				return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
+			}
+			if _, err := files[prefix].Write(separator); err != nil {
+				return fmt.Errorf("sink s3 bucket %s prefix %s: %v", sink.Bucket, prefix, err)
+			}
 		}
 	}
 
@@ -97,7 +102,9 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 			- upload the pipe reader to the bucket using the generated key
 	*/
 	for prefix, file := range files {
-		file.Seek(0, 0)
+		if _, err := file.Seek(0, 0); err != nil {
+			return fmt.Errorf("sink s3 bucket %s: %v", sink.Bucket, err)
+		}
 
 		reader, w := io.Pipe()
 		gz := gzip.NewWriter(w)
@@ -107,7 +114,7 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 			defer w.Close()
 			defer gz.Close()
 
-			io.Copy(gz, file)
+			_, _ = io.Copy(gz, file)
 		}()
 
 		key := createKey(prefix)

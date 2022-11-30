@@ -315,7 +315,10 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			scanner := bufio.NewScanner()
 			defer scanner.Close()
 
-			scanner.ReadFile(dst)
+			if err := scanner.ReadFile(dst); err != nil {
+				return fmt.Errorf("s3 handler: %v", err)
+			}
+
 			for scanner.Scan() {
 				switch scanner.Method() {
 				case "bytes":
@@ -420,7 +423,10 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 				scanner := bufio.NewScanner()
 				defer scanner.Close()
 
-				scanner.ReadFile(dst)
+				if err := scanner.ReadFile(dst); err != nil {
+					return fmt.Errorf("s3 sns handler: %v", err)
+				}
+
 				for scanner.Scan() {
 					switch scanner.Method() {
 					case "bytes":

@@ -118,7 +118,10 @@ func run(ctx context.Context, input, cfg string) error {
 		scanner := bufio.NewScanner()
 		defer scanner.Close()
 
-		scanner.ReadFile(f)
+		if err := scanner.ReadFile(f); err != nil {
+			return fmt.Errorf("run: %v", err)
+		}
+
 		for scanner.Scan() {
 			switch scanner.Method() {
 			case "bytes":

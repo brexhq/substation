@@ -131,6 +131,10 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 		var p Insert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
+	case "ip_info":
+		var p IPInfo
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
 	case "lambda":
 		var p Lambda
 		_ = config.Decode(cfg.Settings, &p)
@@ -277,6 +281,10 @@ func BatchApplicatorFactory(cfg config.Config) (BatchApplicator, error) {
 		return p, nil
 	case "insert":
 		var p Insert
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "ip_info":
+		var p IPInfo
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "lambda":

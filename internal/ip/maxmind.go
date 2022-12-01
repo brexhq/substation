@@ -38,7 +38,7 @@ func (m *MaxMind) LoadGeo(ctx context.Context) error {
 
 	location, exists := os.LookupEnv("MAXMIND_CITY_DB")
 	if !exists {
-		return fmt.Errorf("city location not found")
+		return fmt.Errorf("ip db %s: location not found", "MAXMIND_CITY_DB")
 	}
 
 	path, err := file.Get(ctx, location)
@@ -60,7 +60,7 @@ func (m *MaxMind) LoadAS(ctx context.Context) error {
 
 	location, exists := os.LookupEnv("MAXMIND_ASN_DB")
 	if !exists {
-		return fmt.Errorf("asn location not found")
+		return fmt.Errorf("ip db %s: location not found", "MAXMIND_ASN_DB")
 	}
 
 	path, err := file.Get(ctx, location)

@@ -66,12 +66,12 @@ type IPInfoOptions struct {
 func (p IPInfo) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process case: %v", err)
+		return nil, fmt.Errorf("process ip_info: %v", err)
 	}
 
 	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process case: %v", err)
+		return nil, fmt.Errorf("process ip_info: %v", err)
 	}
 
 	return capsules, nil
@@ -81,7 +81,7 @@ func (p IPInfo) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]co
 func (p IPInfo) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return capsule, fmt.Errorf("process geoip: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process ip_info: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
 	result := capsule.Get(p.InputKey).String()
@@ -90,49 +90,49 @@ func (p IPInfo) Apply(ctx context.Context, capsule config.Capsule) (config.Capsu
 	case "ip2location_geo":
 		if !ipinfoIP2location.IsEnabled() {
 			if err := ipinfoIP2location.Load(ctx); err != nil {
-				return capsule, fmt.Errorf("process geoip: %v", err)
+				return capsule, fmt.Errorf("process ip_info: %v", err)
 			}
 		}
 
 		resp, err := ipinfoIP2location.Location(result)
 		if err != nil {
-			return capsule, fmt.Errorf("process geoip: %v", err)
+			return capsule, fmt.Errorf("process ip_info: %v", err)
 		}
 
 		if err := capsule.Set(p.OutputKey, resp); err != nil {
-			return capsule, fmt.Errorf("process whois: %v", err)
+			return capsule, fmt.Errorf("process ip_info: %v", err)
 		}
 
 	case "maxmind_asn":
 		if !ipinfoMaxmind.IsASEnabled() {
 			if err := ipinfoMaxmind.LoadAS(ctx); err != nil {
-				return capsule, fmt.Errorf("process geoip: %v", err)
+				return capsule, fmt.Errorf("process ip_info: %v", err)
 			}
 		}
 
 		resp, err := ipinfoMaxmind.AS(result)
 		if err != nil {
-			return capsule, fmt.Errorf("process geoip: %v", err)
+			return capsule, fmt.Errorf("process ip_info: %v", err)
 		}
 
 		if err := capsule.Set(p.OutputKey, resp); err != nil {
-			return capsule, fmt.Errorf("process whois: %v", err)
+			return capsule, fmt.Errorf("process ip_info: %v", err)
 		}
 
 	case "maxmind_geo":
 		if !ipinfoMaxmind.IsGeoEnabled() {
 			if err := ipinfoMaxmind.LoadGeo(ctx); err != nil {
-				return capsule, fmt.Errorf("process geoip: %v", err)
+				return capsule, fmt.Errorf("process ip_info: %v", err)
 			}
 		}
 
 		resp, err := ipinfoMaxmind.Location(result)
 		if err != nil {
-			return capsule, fmt.Errorf("process geoip: %v", err)
+			return capsule, fmt.Errorf("process ip_info: %v", err)
 		}
 
 		if err := capsule.Set(p.OutputKey, resp); err != nil {
-			return capsule, fmt.Errorf("process whois: %v", err)
+			return capsule, fmt.Errorf("process ip_info: %v", err)
 		}
 	}
 

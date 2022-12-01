@@ -20,7 +20,7 @@ func (i *IP2Location) IsEnabled() bool {
 func (i *IP2Location) Load(ctx context.Context) error {
 	location, exists := os.LookupEnv("IP2LOCATION_DB")
 	if !exists {
-		return fmt.Errorf("database location not found")
+		return fmt.Errorf("ip db %s: location not found", "IP2LOCATION_DB")
 	}
 
 	path, err := file.Get(ctx, location)

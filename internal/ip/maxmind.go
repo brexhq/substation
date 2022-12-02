@@ -10,21 +10,77 @@ import (
 	"github.com/oschwald/geoip2-golang"
 )
 
+// MaxMind provides read access to MaxMind databases.
 type MaxMind struct {
-	as       *geoip2.Reader
+	asn      *geoip2.Reader
 	geo      *geoip2.Reader
 	language string
 }
 
-func (m *MaxMind) IsASEnabled() bool {
-	return m.as != nil
+// IsASNEnabled returns true if the ASN database is open and ready for use.
+func (m *MaxMind) IsASNEnabled() bool {
+	return m.asn != nil
 }
 
-func (m *MaxMind) IsGeoEnabled() bool {
+// IsLocationEnabled returns true if the location database is open and ready for use.
+func (m *MaxMind) IsLocationEnabled() bool {
 	return m.geo != nil
 }
 
-func (m *MaxMind) LoadLanguage() {
+// Setup contextually retrieves and opens MaxMind databases. The location of each database is retrieved from the MAXMIND_ASN_DB and MAXMIND_LOCATION_DB environment variables and can be read from local disk, HTTP(S) URL, or AWS S3 URL. If an environment variable is missing, then there is no attempt to load the database.
+func (m *MaxMind) Setup(ctx context.Context) error {
+	m.SetLanguage()
+
+	asn, ok := os.LookupEnv("MAXMIND_ASN_DB")
+	if ok && !m.IsASNEnabled() {
+		path, err := file.Get(ctx, asn)
+		defer os.Remove(path)
+
+		if err != nil {
+			return err
+		}
+
+		if m.asn, err = geoip2.Open(path); err != nil {
+			return err
+		}
+	}
+
+	location, ok := os.LookupEnv("MAXMIND_LOCATION_DB")
+	if ok && !m.IsLocationEnabled() {
+		path, err := file.Get(ctx, location)
+		defer os.Remove(path)
+
+		if err != nil {
+			return err
+		}
+
+		if m.geo, err = geoip2.Open(path); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Close closes all open databases.
+func (m *MaxMind) Close() error {
+	if m.IsASNEnabled() {
+		if err := m.asn.Close(); err != nil {
+			return fmt.Errorf("ip: %v", err)
+		}
+	}
+
+	if m.IsLocationEnabled() {
+		if err := m.geo.Close(); err != nil {
+			return fmt.Errorf("ip: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// SetLanguage configures the language that is used when reading values from MaxMind databases. The value is retrieved from the MAXMIND_LANGUAGE environment variable. If the environment variable is missing, then the default language is English.
+func (m *MaxMind) SetLanguage() {
 	lang, exists := os.LookupEnv("MAXMIND_LANGUAGE")
 	if !exists {
 		lang = "en"
@@ -32,51 +88,23 @@ func (m *MaxMind) LoadLanguage() {
 	m.language = lang
 }
 
-// LoadGeo contextually retrieves and loads a MaxMind GeoIP2 or GeoLite2 database.
-func (m *MaxMind) LoadGeo(ctx context.Context) error {
-	m.LoadLanguage()
-
-	location, exists := os.LookupEnv("MAXMIND_CITY_DB")
-	if !exists {
-		return fmt.Errorf("ip db %s: location not found", "MAXMIND_CITY_DB")
-	}
-
-	path, err := file.Get(ctx, location)
-	defer os.Remove(path)
-
+// ASN returns autonomous system information for an IP address from a MaxMind database.
+func (m *MaxMind) ASN(ip string) (*asn, error) {
+	pip := net.ParseIP(ip)
+	resp, err := m.asn.ASN(pip)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if m.geo, err = geoip2.Open(path); err != nil {
-		return err
+	asn := &asn{
+		Number:       resp.AutonomousSystemNumber,
+		Organization: resp.AutonomousSystemOrganization,
 	}
 
-	return nil
+	return asn, nil
 }
 
-func (m *MaxMind) LoadAS(ctx context.Context) error {
-	m.LoadLanguage()
-
-	location, exists := os.LookupEnv("MAXMIND_ASN_DB")
-	if !exists {
-		return fmt.Errorf("ip db %s: location not found", "MAXMIND_ASN_DB")
-	}
-
-	path, err := file.Get(ctx, location)
-	defer os.Remove(path)
-
-	if err != nil {
-		return err
-	}
-
-	if m.as, err = geoip2.Open(path); err != nil {
-		return err
-	}
-
-	return nil
-}
-
+// Location returns geolocation information for an IP address from a MaxMind database.
 func (m *MaxMind) Location(ip string) (*location, error) {
 	pip := net.ParseIP(ip)
 	resp, err := m.geo.City(pip)
@@ -89,8 +117,8 @@ func (m *MaxMind) Location(ip string) (*location, error) {
 		Country:        resp.Country.Names[m.language],
 		City:           resp.City.Names[m.language],
 		PostalCode:     resp.Postal.Code,
-		Latitude:       resp.Location.Latitude,
-		Longitude:      resp.Location.Longitude,
+		Latitude:       float32(resp.Location.Latitude),
+		Longitude:      float32(resp.Location.Longitude),
 		AccuracyRadius: resp.Location.AccuracyRadius,
 		Timezone:       resp.Location.TimeZone,
 	}
@@ -100,19 +128,4 @@ func (m *MaxMind) Location(ip string) (*location, error) {
 	}
 
 	return loc, nil
-}
-
-func (m *MaxMind) AS(ip string) (*as, error) {
-	pip := net.ParseIP(ip)
-	resp, err := m.as.ASN(pip)
-	if err != nil {
-		return nil, err
-	}
-
-	as := &as{
-		Number:       resp.AutonomousSystemNumber,
-		Organization: resp.AutonomousSystemOrganization,
-	}
-
-	return as, nil
 }

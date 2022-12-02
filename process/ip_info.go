@@ -15,21 +15,21 @@ var (
 )
 
 /*
-IPInfo processes data by querying it against IP address enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor is designed to support enrichment databases from many service providers and each database is contextually loaded based on environment variables.
+IPInfo processes data by querying IP addresses against enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor supports multiple database providers by contextually retrieving and loading databases using environment variables and can be reused if multiple databases need to be queried.
 
-The processor abstracts information returned by enrichment databases into these categories:
+IP address information is abstracted from each enrichment database into these categories:
 
 - asn (autonomous system information)
 
 - geo (location information)
 
-The database is queried based on the naming convention [provider]_[asn|geo]. For example, maxmind_geo returns geolocation data from any available MaxMind database. The processor supports these database sources:
+Enrichment databases are selected based on the naming convention [provider]_[asn|geo]. For example, maxmind_geo returns geolocation data from any available MaxMind database. These database providers are supported:
 
 - IP2Location
 
 - MaxMind ASN (GeoLite2)
 
-- MaxMind City (GeoIP2 / GeoLite2)
+- MaxMind City (GeoIP2 or GeoLite2)
 
 The processor supports these patterns:
 
@@ -57,12 +57,24 @@ type IPInfo struct {
 	OutputKey string           `json:"output_key"`
 }
 
-// IPInfoOptions contains custom options for the DNS processor.
+/*
+IPInfoOptions contains custom options for the IPInfo processor.
+
+	Function:
+		Selects the enrichment database queried by the processor.
+
+		The database is contextually retrieved using an environment variable and lazy loaded on first invocation. Each environment variable should contain the location of the database, which can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
+
+		Must be one of:
+			ip2location_geo (IP2LOCATION_DB)
+			maxmind_asn (MAXMIND_ASN_DB)
+			maxmind_geo (MAXMIND_LOCATION_DB)
+*/
 type IPInfoOptions struct {
 	Function string `json:"function"`
 }
 
-// ApplyBatch processes a slice of encapsulated data with the DNS processor. Conditions are optionally applied to the data to enable processing.
+// ApplyBatch processes a slice of encapsulated data with the IPInfo processor. Conditions are optionally applied to the data to enable processing.
 func (p IPInfo) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
@@ -89,7 +101,7 @@ func (p IPInfo) Apply(ctx context.Context, capsule config.Capsule) (config.Capsu
 	switch p.Options.Function {
 	case "ip2location_geo":
 		if !ipinfoIP2location.IsEnabled() {
-			if err := ipinfoIP2location.Load(ctx); err != nil {
+			if err := ipinfoIP2location.Setup(ctx); err != nil {
 				return capsule, fmt.Errorf("process ip_info: %v", err)
 			}
 		}
@@ -104,13 +116,13 @@ func (p IPInfo) Apply(ctx context.Context, capsule config.Capsule) (config.Capsu
 		}
 
 	case "maxmind_asn":
-		if !ipinfoMaxmind.IsASEnabled() {
-			if err := ipinfoMaxmind.LoadAS(ctx); err != nil {
+		if !ipinfoMaxmind.IsASNEnabled() {
+			if err := ipinfoMaxmind.Setup(ctx); err != nil {
 				return capsule, fmt.Errorf("process ip_info: %v", err)
 			}
 		}
 
-		resp, err := ipinfoMaxmind.AS(result)
+		resp, err := ipinfoMaxmind.ASN(result)
 		if err != nil {
 			return capsule, fmt.Errorf("process ip_info: %v", err)
 		}
@@ -120,8 +132,8 @@ func (p IPInfo) Apply(ctx context.Context, capsule config.Capsule) (config.Capsu
 		}
 
 	case "maxmind_geo":
-		if !ipinfoMaxmind.IsGeoEnabled() {
-			if err := ipinfoMaxmind.LoadGeo(ctx); err != nil {
+		if !ipinfoMaxmind.IsLocationEnabled() {
+			if err := ipinfoMaxmind.Setup(ctx); err != nil {
 				return capsule, fmt.Errorf("process ip_info: %v", err)
 			}
 		}

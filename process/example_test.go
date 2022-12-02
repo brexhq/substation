@@ -13,17 +13,16 @@ func Example_iPInfo() {
 	capsule := config.NewCapsule()
 	capsule.SetData([]byte(`{"ip":"8.8.8.8"}`))
 
-	/*
-	 the location of the IP enrichment database must be provided by environment variable.
-
-	 this location is referenced by the function in the IPInfo processor and used to retrieve and load the service provider's database. refer to internal/ip for more information on how these are loaded.
-	*/
-	os.Setenv("MAXMIND_ASN_DB", "location://path/to/maxmind.mmdb")
+	// the location of the IP enrichment database must be provided by environment variable and can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL
+	//nolint:tenv // example doesn't use testing package
+	_ = os.Setenv("MAXMIND_ASN_DB", "location://path/to/maxmind.mmdb")
 	defer os.Unsetenv("MAXMIND_ASN_DB")
 
-	os.Setenv("MAXMIND_CITY_DB", "location://path/to/maxmind.mmdb")
-	defer os.Unsetenv("MAXMIND_CITY_DB")
+	//nolint:tenv // example doesn't use testing package
+	_ = os.Setenv("MAXMIND_LOCATION_DB", "location://path/to/maxmind.mmdb")
+	defer os.Unsetenv("MAXMIND_LOCATION_DB")
 
+	// in native Substation applications configuration is handled by compiling Jsonnet and loading JSON into the application
 	cfg := []config.Config{
 		{
 			Type: "ip_info",

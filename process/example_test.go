@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/process"
 )
 
-func Example_iPInfo() {
+func Example_iPEnrichment() {
 	capsule := config.NewCapsule()
 	capsule.SetData([]byte(`{"ip":"8.8.8.8"}`))
 
@@ -19,7 +19,7 @@ func Example_iPInfo() {
 	// in native Substation applications configuration is handled by compiling Jsonnet and loading JSON into the application
 	cfg := []config.Config{
 		{
-			Type: "ip_info",
+			Type: "ip_enrichment",
 			Settings: map[string]interface{}{
 				"input_key":  "ip",
 				"output_key": "as",
@@ -29,7 +29,7 @@ func Example_iPInfo() {
 			},
 		},
 		{
-			Type: "ip_info",
+			Type: "ip_enrichment",
 			Settings: map[string]interface{}{
 				"input_key":  "ip",
 				"output_key": "geo",

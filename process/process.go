@@ -131,8 +131,8 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 		var p Insert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
-	case "ip_info":
-		var p IPInfo
+	case "ip_enrichment":
+		var p IPEnrichment
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "lambda":
@@ -283,8 +283,8 @@ func BatchApplicatorFactory(cfg config.Config) (BatchApplicator, error) {
 		var p Insert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
-	case "ip_info":
-		var p IPInfo
+	case "ip_enrichment":
+		var p IPEnrichment
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "lambda":

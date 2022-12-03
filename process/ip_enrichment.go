@@ -15,7 +15,7 @@ var (
 )
 
 /*
-IPInfo processes data by querying IP addresses against enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor supports multiple database providers by contextually retrieving and loading databases using environment variables and can be reused if multiple databases need to be queried.
+IPEnrichment processes data by querying IP addresses against enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor supports multiple database providers by contextually retrieving and loading databases using environment variables and can be reused if multiple databases need to be queried.
 
 IP address information is abstracted from each enrichment database into these categories:
 
@@ -40,7 +40,7 @@ The processor supports these patterns:
 When loaded with a factory, the processor uses this JSON configuration:
 
 	{
-		"type": "ip_info",
+		"type": "ip_enrichment",
 		"settings": {
 			"options": {
 				"function": "maxmind_geo"
@@ -50,15 +50,15 @@ When loaded with a factory, the processor uses this JSON configuration:
 		}
 	}
 */
-type IPInfo struct {
-	Options   IPInfoOptions    `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+type IPEnrichment struct {
+	Options   IPEnrichmentOptions `json:"options"`
+	Condition condition.Config    `json:"condition"`
+	InputKey  string              `json:"input_key"`
+	OutputKey string              `json:"output_key"`
 }
 
 /*
-IPInfoOptions contains custom options for the IPInfo processor.
+IPEnrichmentOptions contains custom options for the IPEnrichment processor.
 
 	Function:
 		Selects the enrichment database queried by the processor.
@@ -70,30 +70,30 @@ IPInfoOptions contains custom options for the IPInfo processor.
 			maxmind_asn (MAXMIND_ASN_DB)
 			maxmind_geo (MAXMIND_LOCATION_DB)
 */
-type IPInfoOptions struct {
+type IPEnrichmentOptions struct {
 	Function string `json:"function"`
 }
 
-// ApplyBatch processes a slice of encapsulated data with the IPInfo processor. Conditions are optionally applied to the data to enable processing.
-func (p IPInfo) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
+// ApplyBatch processes a slice of encapsulated data with the IPEnrichment processor. Conditions are optionally applied to the data to enable processing.
+func (p IPEnrichment) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process ip_info: %v", err)
+		return nil, fmt.Errorf("process ip_enrichment: %v", err)
 	}
 
 	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
 	if err != nil {
-		return nil, fmt.Errorf("process ip_info: %v", err)
+		return nil, fmt.Errorf("process ip_enrichment: %v", err)
 	}
 
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the IPInfo processor.
-func (p IPInfo) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes encapsulated data with the IPEnrichment processor.
+func (p IPEnrichment) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.InputKey == "" && p.OutputKey == "" {
-		return capsule, fmt.Errorf("process ip_info: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process ip_enrichment: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
 	result := capsule.Get(p.InputKey).String()
@@ -102,49 +102,49 @@ func (p IPInfo) Apply(ctx context.Context, capsule config.Capsule) (config.Capsu
 	case "ip2location_geo":
 		if !ipinfoIP2location.IsEnabled() {
 			if err := ipinfoIP2location.Setup(ctx); err != nil {
-				return capsule, fmt.Errorf("process ip_info: %v", err)
+				return capsule, fmt.Errorf("process ip_enrichment: %v", err)
 			}
 		}
 
 		resp, err := ipinfoIP2location.Location(result)
 		if err != nil {
-			return capsule, fmt.Errorf("process ip_info: %v", err)
+			return capsule, fmt.Errorf("process ip_enrichment: %v", err)
 		}
 
 		if err := capsule.Set(p.OutputKey, resp); err != nil {
-			return capsule, fmt.Errorf("process ip_info: %v", err)
+			return capsule, fmt.Errorf("process ip_enrichment: %v", err)
 		}
 
 	case "maxmind_asn":
 		if !ipinfoMaxmind.IsASNEnabled() {
 			if err := ipinfoMaxmind.Setup(ctx); err != nil {
-				return capsule, fmt.Errorf("process ip_info: %v", err)
+				return capsule, fmt.Errorf("process ip_enrichment: %v", err)
 			}
 		}
 
 		resp, err := ipinfoMaxmind.ASN(result)
 		if err != nil {
-			return capsule, fmt.Errorf("process ip_info: %v", err)
+			return capsule, fmt.Errorf("process ip_enrichment: %v", err)
 		}
 
 		if err := capsule.Set(p.OutputKey, resp); err != nil {
-			return capsule, fmt.Errorf("process ip_info: %v", err)
+			return capsule, fmt.Errorf("process ip_enrichment: %v", err)
 		}
 
 	case "maxmind_geo":
 		if !ipinfoMaxmind.IsLocationEnabled() {
 			if err := ipinfoMaxmind.Setup(ctx); err != nil {
-				return capsule, fmt.Errorf("process ip_info: %v", err)
+				return capsule, fmt.Errorf("process ip_enrichment: %v", err)
 			}
 		}
 
 		resp, err := ipinfoMaxmind.Location(result)
 		if err != nil {
-			return capsule, fmt.Errorf("process ip_info: %v", err)
+			return capsule, fmt.Errorf("process ip_enrichment: %v", err)
 		}
 
 		if err := capsule.Set(p.OutputKey, resp); err != nil {
-			return capsule, fmt.Errorf("process ip_info: %v", err)
+			return capsule, fmt.Errorf("process ip_enrichment: %v", err)
 		}
 	}
 

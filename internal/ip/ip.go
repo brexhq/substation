@@ -1,7 +1,7 @@
 // package ip provides tools for modifying and enriching IP address data.
 package ip
 
-// location is an abstracted data structure used for returning results from gelocation enrichment databases.
+// location is an abstracted data structure used for returning results from geolocation enrichment databases.
 type location struct {
 	Continent      string  `json:"continent,omitempty"`
 	Country        string  `json:"country,omitempty"`

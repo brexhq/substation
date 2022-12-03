@@ -91,18 +91,15 @@ func (p ForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 	// cause errors during iteration
 	conf, _ := gojson.Marshal(p.Options.Processor)
 
-	var inputKey, outputKey string
-	if _, ok := p.Options.Processor.Settings["input_key"]; ok {
-		inputKey = p.Options.Processor.Type + "." + p.Options.Processor.Settings["input_key"].(string)
-	} else {
-		inputKey = p.Options.Processor.Type
+	inputKey := p.Options.Processor.Type
+	if innerKey, ok := p.Options.Processor.Settings["input_key"].(string); ok && innerKey != "" {
+		inputKey = p.Options.Processor.Type + "." + innerKey
 	}
 	conf, _ = json.Set(conf, "settings.input_key", inputKey)
 
-	if _, ok := p.Options.Processor.Settings["output_key"]; ok {
-		outputKey = p.Options.Processor.Type + "." + p.Options.Processor.Settings["output_key"].(string)
-	} else {
-		outputKey = p.Options.Processor.Type
+	outputKey := p.Options.Processor.Type
+	if innerKey, ok := p.Options.Processor.Settings["output_key"].(string); ok && innerKey != "" {
+		outputKey = p.Options.Processor.Type + "." + innerKey
 	}
 	conf, _ = json.Set(conf, "settings.output_key", outputKey)
 

@@ -81,8 +81,8 @@ func (m *MaxMind) Close() error {
 
 // SetLanguage configures the language that is used when reading values from MaxMind databases. The value is retrieved from the MAXMIND_LANGUAGE environment variable. If the environment variable is missing, then the default language is English.
 func (m *MaxMind) SetLanguage() {
-	lang, exists := os.LookupEnv("MAXMIND_LANGUAGE")
-	if !exists {
+	lang, ok := os.LookupEnv("MAXMIND_LANGUAGE")
+	if !ok {
 		lang = "en"
 	}
 	m.language = lang

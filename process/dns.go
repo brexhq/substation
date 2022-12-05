@@ -151,7 +151,7 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 		res := string(capsule.Data())
 
 		switch p.Options.Function {
-		case "forwardlookup":
+		case "forward_lookup":
 			addrs, err := dnsResolver.LookupHost(resolverCtx, res)
 			if err != nil {
 				return capsule, fmt.Errorf("process dns: %v", err)
@@ -161,7 +161,7 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 			capsule.SetData([]byte(addrs[0]))
 
 			return capsule, nil
-		case "reverselookup":
+		case "reverse_lookup":
 			names, err := dnsResolver.LookupAddr(resolverCtx, res)
 			if err != nil {
 				return capsule, fmt.Errorf("process dns: %v", err)

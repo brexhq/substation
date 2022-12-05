@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/brexhq/substation/compare/v0.6.0...v0.6.1) (2022-12-05)
+
+
+### Bug Fixes
+
+* ForEach JSON selection ([#40](https://github.com/brexhq/substation/issues/40)) ([e1a8ae5](https://github.com/brexhq/substation/commit/e1a8ae58f98b0a8d47b578dbbe7e7bc08a089290))
+
 ## [0.6.0](https://github.com/brexhq/substation/compare/v0.5.0...v0.6.0) (2022-11-30)
 
 

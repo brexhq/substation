@@ -53,6 +53,11 @@ type ForEachOptions struct {
 	Processor config.Config
 }
 
+// Close closes resources opened by the ForEach processor.
+func (p ForEach) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the ForEach processor. Conditions are optionally applied to the data to enable processing.
 func (p ForEach) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
@@ -90,6 +95,7 @@ func (p ForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 	// we cannot directly modify p.Options.Processor, otherwise we will
 	// cause errors during iteration
 	conf, _ := gojson.Marshal(p.Options.Processor)
+	fmt.Println(string(conf))
 
 	var inputKey, outputKey string
 	if _, ok := p.Options.Processor.Settings["input_key"]; ok {
@@ -107,7 +113,12 @@ func (p ForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 	conf, _ = json.Set(conf, "settings.output_key", outputKey)
 
 	var processor config.Config
-	_ = gojson.Unmarshal(conf, &processor)
+	if err := gojson.Unmarshal(conf, &processor); err != nil {
+		return capsule, err
+	}
+
+	// fmt.Println(processor)
+	// fmt.Println(outputKey)
 
 	applicator, err := ApplicatorFactory(processor)
 	if err != nil {
@@ -119,16 +130,22 @@ func (p ForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 		return capsule, nil
 	}
 
+	// fmt.Println(result)
+
 	for _, res := range result.Array() {
 		tmpCap := config.NewCapsule()
 		if err := tmpCap.Set(processor.Type, res); err != nil {
 			return capsule, fmt.Errorf("process for_each: %v", err)
 		}
 
+		// fmt.Println(string(tmpCap.Data()))
+
 		tmpCap, err = applicator.Apply(ctx, tmpCap)
 		if err != nil {
 			return capsule, fmt.Errorf("process for_each: %v", err)
 		}
+
+		// fmt.Println(string(tmpCap.Data()))
 
 		value := tmpCap.Get(processor.Type)
 		if err := capsule.Set(p.OutputKey, value); err != nil {

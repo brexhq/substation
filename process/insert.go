@@ -42,6 +42,11 @@ type InsertOptions struct {
 	Value interface{} `json:"value"`
 }
 
+// Close closes resources opened by the Insert processor.
+func (p Insert) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Insert processor. Conditions are optionally applied to the data to enable processing.
 func (p Insert) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

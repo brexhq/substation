@@ -61,6 +61,11 @@ type CaptureOptions struct {
 	Count      int    `json:"count"`
 }
 
+// Close closes resources opened by the Capture processor.
+func (p Capture) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Capture processor. Conditions are optionally applied to the data to enable processing.
 func (p Capture) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

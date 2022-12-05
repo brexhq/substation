@@ -71,6 +71,11 @@ type TimeOptions struct {
 	OutputLocation string `json:"output_location"`
 }
 
+// Close closes resources opened by the Time processor.
+func (p Time) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Time processor. Conditions are optionally applied to the data to enable processing.
 func (p Time) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

@@ -75,6 +75,11 @@ func (p Gzip) to(data []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// Close closes resources opened by the Gzip processor.
+func (p Gzip) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Gzip processor. Conditions are optionally applied to the data to enable processing.
 func (p Gzip) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

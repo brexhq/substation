@@ -34,6 +34,11 @@ type Copy struct {
 	OutputKey string           `json:"output_key"`
 }
 
+// Close closes resources opened by the Copy processor.
+func (p Copy) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Copy processor. Conditions are optionally applied to the data to enable processing.
 func (p Copy) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

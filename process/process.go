@@ -24,6 +24,7 @@ const errInvalidFactoryInput = errors.Error("invalid factory input")
 // Applicator is an interface for applying a processor to encapsulated data.
 type Applicator interface {
 	Apply(context.Context, config.Capsule) (config.Capsule, error)
+	Close(context.Context) error
 }
 
 // Apply accepts one or many Applicators and applies processors in series to encapsulated data.
@@ -68,6 +69,17 @@ func MakeApplicators(cfg []config.Config) ([]Applicator, error) {
 	return apps, nil
 }
 
+// CloseApplicators closes all Applicators and returns an error if any close fails.
+func CloseApplicators(ctx context.Context, apps ...Applicator) error {
+	for _, app := range apps {
+		if err := app.Close(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ApplicatorFactory returns a configured Applicator from a config. This is the recommended method for retrieving ready-to-use Applicators.
 func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 	switch t := cfg.Type; t {
@@ -97,6 +109,10 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 		return p, nil
 	case "delete":
 		var p Delete
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "dns":
+		var p DNS
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "domain":
@@ -131,8 +147,8 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 		var p Insert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
-	case "ip_enrichment":
-		var p IPEnrichment
+	case "ip_database":
+		var p IPDatabase
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "lambda":
@@ -172,6 +188,7 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 // BatchApplicator is an interface for applying a processor to a slice of encapsulated data.
 type BatchApplicator interface {
 	ApplyBatch(context.Context, []config.Capsule) ([]config.Capsule, error)
+	Close(context.Context) error
 }
 
 // ApplyBatch accepts one or many BatchApplicators and applies processors in series to a slice of encapsulated data.
@@ -202,6 +219,17 @@ func MakeBatchApplicators(cfg []config.Config) ([]BatchApplicator, error) {
 	}
 
 	return apps, nil
+}
+
+// CloseBatchApplicators closes all BatchApplicators and returns an error if any close fails.
+func CloseBatchApplicators(ctx context.Context, apps ...BatchApplicator) error {
+	for _, app := range apps {
+		if err := app.Close(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // BatchApplicatorFactory returns a configured BatchApplicator from a config. This is the recommended method for retrieving ready-to-use BatchApplicators.
@@ -241,6 +269,10 @@ func BatchApplicatorFactory(cfg config.Config) (BatchApplicator, error) {
 		return p, nil
 	case "delete":
 		var p Delete
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "dns":
+		var p DNS
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "domain":
@@ -283,8 +315,8 @@ func BatchApplicatorFactory(cfg config.Config) (BatchApplicator, error) {
 		var p Insert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
-	case "ip_enrichment":
-		var p IPEnrichment
+	case "ip_database":
+		var p IPDatabase
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "lambda":

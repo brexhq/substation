@@ -31,6 +31,11 @@ type Expand struct {
 	InputKey  string           `json:"input_key"`
 }
 
+// Close closes resources opened by the Expand processor.
+func (p Expand) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Expand processor. Conditions are optionally applied to the data to enable processing.
 func (p Expand) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

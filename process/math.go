@@ -49,6 +49,11 @@ type MathOptions struct {
 	Operation string `json:"operation"`
 }
 
+// Close closes resources opened by the Math processor.
+func (p Math) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Math processor. Conditions are optionally applied to the data to enable processing.
 func (p Math) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

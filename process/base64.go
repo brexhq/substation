@@ -55,6 +55,11 @@ type Base64Options struct {
 	Direction string `json:"direction"`
 }
 
+// Close closes resources opened by the Base64 processor.
+func (p Base64) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Base64 processor. Conditions are optionally applied to the data to enable processing.
 func (p Base64) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

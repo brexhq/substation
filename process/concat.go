@@ -44,6 +44,11 @@ type ConcatOptions struct {
 	Separator string `json:"separator"`
 }
 
+// Close closes resources opened by the Concat processor.
+func (p Concat) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Concat processor. Conditions are optionally applied to the data to enable processing.
 func (p Concat) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

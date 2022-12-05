@@ -78,6 +78,11 @@ type PrettyPrintOptions struct {
 	Direction string `json:"direction"`
 }
 
+// Close closes resources opened by the PrettyPrint processor.
+func (p PrettyPrint) Close(context.Context) error {
+	return nil
+}
+
 /*
 ApplyBatch processes a slice of encapsulated data
 with the PrettyPrint processor.

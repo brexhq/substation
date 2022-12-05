@@ -56,6 +56,11 @@ type ReplaceOptions struct {
 	Count int    `json:"count"`
 }
 
+// Close closes resources opened by the Replace processor.
+func (p Replace) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Replace processor. Conditions are optionally applied to the data to enable processing.
 func (p Replace) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

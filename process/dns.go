@@ -103,6 +103,7 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 	defer cancel() // important to avoid a resource leak
 
 	// JSON processing
+	//nolint: nestif // ignore nesting
 	if p.InputKey != "" && p.OutputKey != "" {
 		res := capsule.Get(p.InputKey).String()
 

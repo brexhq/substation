@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
@@ -30,6 +31,20 @@ var replaceTests = []struct {
 		nil,
 	},
 	{
+		"json delete",
+		Replace{
+			Options: ReplaceOptions{
+				Old: "z",
+				New: "",
+			},
+			InputKey:  "foo",
+			OutputKey: "foo",
+		},
+		[]byte(`{"foo":"fizz"}`),
+		[]byte(`{"foo":"fi"}`),
+		nil,
+	},
+	{
 		"data",
 		Replace{
 			Options: ReplaceOptions{
@@ -40,6 +55,29 @@ var replaceTests = []struct {
 		[]byte(`bar`),
 		[]byte(`baz`),
 		nil,
+	},
+	{
+		"data delete",
+		Replace{
+			Options: ReplaceOptions{
+				Old: "r",
+				New: "",
+			},
+		},
+		[]byte(`bar`),
+		[]byte(`ba`),
+		nil,
+	},
+	{
+		"data",
+		Replace{
+			Options: ReplaceOptions{
+				New: "z",
+			},
+		},
+		[]byte(`bar`),
+		[]byte(`baz`),
+		errMissingRequiredOptions,
 	},
 }
 
@@ -52,6 +90,9 @@ func TestReplace(t *testing.T) {
 
 		result, err := test.proc.Apply(ctx, capsule)
 		if err != nil {
+			if errors.Is(err, test.err) {
+				continue
+			}
 			t.Error(err)
 		}
 

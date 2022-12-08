@@ -74,8 +74,8 @@ func (p Replace) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]c
 // Apply processes encapsulated data with the Replace processor.
 func (p Replace) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
-	if p.Options.Old == "" || p.Options.New == "" {
-		return capsule, fmt.Errorf("process replace: options %+v: %v", p.Options, errMissingRequiredOptions)
+	if p.Options.Old == "" {
+		return capsule, fmt.Errorf("process replace: options %+v: %w", p.Options, errMissingRequiredOptions)
 	}
 
 	// default to replace all

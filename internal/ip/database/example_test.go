@@ -22,7 +22,7 @@ func Example_iP2Location() {
 
 	// query database
 	addr := "8.8.8.8"
-	record, err := ip2loc.Read(addr)
+	record, err := ip2loc.Get(addr)
 	if err != nil {
 		// handle error
 		panic(err)
@@ -47,7 +47,7 @@ func Example_maxMindCity() {
 
 	// query database
 	addr := "8.8.8.8"
-	record, err := mm.Read(addr)
+	record, err := mm.Get(addr)
 	if err != nil {
 		// handle error
 		panic(err)

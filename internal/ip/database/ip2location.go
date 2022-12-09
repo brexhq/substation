@@ -44,8 +44,8 @@ func (d *IP2Location) Close() error {
 	return nil
 }
 
-// Read queries the database and returns an aggregated database record containing enrichment information.
-func (d *IP2Location) Read(addr string) (*ip.EnrichmentRecord, error) {
+// Get queries the database and returns an aggregated database record containing enrichment information.
+func (d *IP2Location) Get(addr string) (*ip.EnrichmentRecord, error) {
 	resp, err := d.db.Get_all(addr)
 	if err != nil {
 		return nil, err

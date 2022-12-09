@@ -1,6 +1,11 @@
 // package ip provides tools for modifying IP address data.
 package ip
 
+// Getter provides a method for getting an enrichment record from any IP address enrichment source.
+type Getter interface {
+	Get(string) (*EnrichmentRecord, error)
+}
+
 // EnrichmentRecord is an aggregation of information commonly provided by IP address enrichment services.
 type EnrichmentRecord struct {
 	ASN      *ASN      `json:"asn,omitempty"`

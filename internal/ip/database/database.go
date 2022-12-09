@@ -6,22 +6,20 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/ip"
 )
 
-// errInvalidFactoryInput is returned when an unsupported Databaser is referenced in Factory.
+// errInvalidFactoryInput is returned when an unsupported OpenCloser is referenced in Factory.
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-// Databaser provides tools for opening, managing, and reading enrichment information from IP address enrichment databases.
-type Databaser interface {
-	Read(string) (*ip.EnrichmentRecord, error)
+// OpenCloser provides tools for opening and closing IP address enrichment databases.
+type OpenCloser interface {
 	Open(context.Context, string) error
-	IsEnabled() bool
 	Close() error
+	IsEnabled() bool
 }
 
-// Factory returns a Databaser. The returned Databaser must be opened before it can be used.
-func Factory(db string) (Databaser, error) {
+// Factory returns an OpenCloser. The returned OpenCloser must be opened before it can be used.
+func Factory(db string) (OpenCloser, error) {
 	switch db {
 	case "ip2location":
 		return &IP2Location{}, nil

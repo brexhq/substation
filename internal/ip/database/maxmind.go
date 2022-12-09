@@ -60,8 +60,8 @@ func (d *MaxMindASN) Close() error {
 	return nil
 }
 
-// Read queries the database and returns an aggregated database record containing enrichment information.
-func (d *MaxMindASN) Read(addr string) (*ip.EnrichmentRecord, error) {
+// Get queries the database and returns an aggregated database record containing enrichment information.
+func (d *MaxMindASN) Get(addr string) (*ip.EnrichmentRecord, error) {
 	paddr := net.ParseIP(addr)
 	resp, err := d.db.ASN(paddr)
 	if err != nil {
@@ -118,8 +118,8 @@ func (d *MaxMindCity) Close() error {
 	return nil
 }
 
-// Read queries the database and returns an aggregated database record containing enrichment information.
-func (d *MaxMindCity) Read(addr string) (*ip.EnrichmentRecord, error) {
+// Get queries the database and returns an aggregated database record containing enrichment information.
+func (d *MaxMindCity) Get(addr string) (*ip.EnrichmentRecord, error) {
 	paddr := net.ParseIP(addr)
 	resp, err := d.db.City(paddr)
 	if err != nil {

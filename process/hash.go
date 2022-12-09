@@ -57,6 +57,11 @@ type HashOptions struct {
 	Algorithm string `json:"algorithm"`
 }
 
+// Close closes resources opened by the Hash processor.
+func (p Hash) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Hash processor. Conditions are optionally applied to the data to enable processing.
 func (p Hash) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	rand.Seed(time.Now().UnixNano())

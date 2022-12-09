@@ -67,6 +67,11 @@ type PipelineOptions struct {
 	Processors []config.Config
 }
 
+// Close closes resources opened by the Pipeline processor.
+func (p Pipeline) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Pipeline processor. Conditions are optionally applied to the data to enable processing.
 func (p Pipeline) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

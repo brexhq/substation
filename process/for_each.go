@@ -53,6 +53,11 @@ type ForEachOptions struct {
 	Processor config.Config
 }
 
+// Close closes resources opened by the ForEach processor.
+func (p ForEach) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the ForEach processor. Conditions are optionally applied to the data to enable processing.
 func (p ForEach) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
@@ -104,7 +109,9 @@ func (p ForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 	conf, _ = json.Set(conf, "settings.output_key", outputKey)
 
 	var processor config.Config
-	_ = gojson.Unmarshal(conf, &processor)
+	if err := gojson.Unmarshal(conf, &processor); err != nil {
+		return capsule, err
+	}
 
 	applicator, err := ApplicatorFactory(processor)
 	if err != nil {

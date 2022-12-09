@@ -43,6 +43,11 @@ type GroupOptions struct {
 	Keys []string `json:"keys"`
 }
 
+// Close closes resources opened by the Group processor.
+func (p Group) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Group processor. Conditions are optionally applied to the data to enable processing.
 func (p Group) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

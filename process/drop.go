@@ -21,6 +21,11 @@ type Drop struct {
 	Condition condition.Config `json:"condition"`
 }
 
+// Close closes resources opened by the Drop processor.
+func (p Drop) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Drop processor. Conditions are optionally applied to the data to enable processing.
 func (p Drop) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

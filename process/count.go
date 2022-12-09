@@ -18,6 +18,11 @@ When loaded with a factory, the processor uses this JSON configuration:
 */
 type Count struct{}
 
+// Close closes resources opened by the Count processor.
+func (p Count) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Count processor. Conditions are optionally applied to the data to enable processing.
 func (p Count) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	newCapsule := config.NewCapsule()

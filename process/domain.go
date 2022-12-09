@@ -57,6 +57,11 @@ type DomainOptions struct {
 	Function string `json:"function"`
 }
 
+// Close closes resources opened by the Domain processor.
+func (p Domain) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Domain processor. Conditions are optionally applied to the data to enable processing.
 func (p Domain) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

@@ -28,6 +28,11 @@ type Delete struct {
 	InputKey  string           `json:"input_key"`
 }
 
+// Close closes resources opened by the Delete processor.
+func (p Delete) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Delete processor. Conditions are optionally applied to the data to enable processing.
 func (p Delete) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

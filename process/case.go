@@ -58,6 +58,11 @@ type CaseOptions struct {
 	Case string `json:"case"`
 }
 
+// Close closes resources opened by the Case processor.
+func (p Case) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Case processor. Conditions are optionally applied to the data to enable processing.
 func (p Case) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

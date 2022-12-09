@@ -81,6 +81,11 @@ type AggregateOptions struct {
 	MaxSize      int    `json:"max_size"`
 }
 
+// Close closes resources opened by the Aggregate processor.
+func (p Aggregate) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Aggregate processor. Conditions are optionally applied to the data to enable processing.
 func (p Aggregate) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	// aggregateKeys is used to return elements stored in the

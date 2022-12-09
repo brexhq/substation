@@ -52,6 +52,9 @@ func (transform *Batch) Transform(ctx context.Context, in, out *config.Channel) 
 		return err
 	}
 
+	//nolint: errcheck // errors are ignored in case processing fails in a single applicator
+	defer process.CloseBatchApplicators(ctx, applicators...)
+
 	var received int
 	// read encapsulated data from the input channel into a batch
 	batch := make([]config.Capsule, 0, 10)

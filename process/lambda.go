@@ -17,7 +17,7 @@ var lambdaAPI lambda.API
 const errLambdaInputNotAnObject = errors.Error("input is not an object")
 
 /*
-Lambda processes data by synchronously invoking an AWS Lambda and returning the payload. The average latency of synchronously invoking a Lambda function is 10s of milliseconds, but latency can take 100s to 1000s of milliseconds depending on the function which can have significant impact on total event latency. If Substation is running in AWS Lambda with Kinesis, then this latency can be mitigated by increasing the parallelization factor of the Lambda (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
+Lambda processes data by synchronously invoking an AWS Lambda and returning the payload. The average latency of synchronously invoking a Lambda function is 10s of milliseconds, but latency can take 100s to 1000s of milliseconds depending on the function and may have significant impact on end-to-end data processing latency. If Substation is running in AWS Lambda with Kinesis, then this latency can be mitigated by increasing the parallelization factor of the Lambda (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
 
 The input key's value must be a JSON object that contains settings for the Lambda. It is recommended to use the copy and insert processors to create the JSON object before calling this processor and to use the delete processor to remove the JSON object after calling this processor.
 
@@ -58,6 +58,11 @@ LambdaOptions contains custom options settings for the Lambda processor:
 type LambdaOptions struct {
 	Function       string `json:"function"`
 	ErrorOnFailure bool   `json:"error_on_failure"`
+}
+
+// Close closes resources opened by the Lambda processor.
+func (p Lambda) Close(context.Context) error {
+	return nil
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Lambda processor. Conditions are optionally applied to the data to enable processing.

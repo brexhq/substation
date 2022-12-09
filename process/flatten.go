@@ -41,6 +41,11 @@ type FlattenOptions struct {
 	Deep bool `json:"deep"`
 }
 
+// Close closes resources opened by the Flatten processor.
+func (p Flatten) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the Flatten processor. Conditions are optionally applied to the data to enable processing.
 func (p Flatten) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

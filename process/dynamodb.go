@@ -80,6 +80,11 @@ type DynamoDBOptions struct {
 	ScanIndexForward       bool   `json:"scan_index_forward"`
 }
 
+// Close closes resources opened by the DynamoDB processor.
+func (p DynamoDB) Close(context.Context) error {
+	return nil
+}
+
 // ApplyBatch processes a slice of encapsulated data with the DynamoDB processor. Conditions are optionally applied to the data to enable processing.
 func (p DynamoDB) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)

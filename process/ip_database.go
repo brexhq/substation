@@ -11,7 +11,7 @@ import (
 	ipdb "github.com/brexhq/substation/internal/ip/database"
 )
 
-var ipDatabasers = make(map[string]ipdb.Databaser)
+var ipDatabasers = make(map[string]ipdb.OpenCloser)
 
 /*
 IPDatabase processes data by querying IP addresses in enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor supports multiple database providers by contextually retrieving and loading databases using environment variables and can be reused if multiple databases need to be queried.
@@ -123,7 +123,7 @@ func (p IPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.C
 	}
 
 	res := capsule.Get(p.InputKey).String()
-	record, err := ipDatabasers[p.Options.Function].Read(res)
+	record, err := ipDatabasers[p.Options.Function].Get(res)
 	if err != nil {
 		return capsule, fmt.Errorf("process ip_database: %v", err)
 	}

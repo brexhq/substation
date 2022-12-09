@@ -6,13 +6,15 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/internal/errors"
+	"github.com/brexhq/substation/internal/ip"
 )
 
 // errInvalidFactoryInput is returned when an unsupported OpenCloser is referenced in Factory.
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-// OpenCloser provides tools for opening and closing IP address enrichment databases.
+// OpenCloser provides tools for opening, closing, and getting values from IP address enrichment databases.
 type OpenCloser interface {
+	ip.Getter
 	Open(context.Context, string) error
 	Close() error
 	IsEnabled() bool

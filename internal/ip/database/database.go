@@ -28,6 +28,6 @@ func Factory(db string) (OpenCloser, error) {
 	case "maxmind_city":
 		return &MaxMindCity{}, nil
 	default:
-		return nil, fmt.Errorf("ip database %s: %v", db, errInvalidFactoryInput)
+		return nil, fmt.Errorf("database %s: %v", db, errInvalidFactoryInput)
 	}
 }

@@ -53,7 +53,7 @@ func (d *IP2Location) Get(addr string) (*ip.EnrichmentRecord, error) {
 
 	db := &ip.EnrichmentRecord{
 		Location: &ip.Location{
-			Coordinates: ip.Coordinates{
+			Coordinates: &ip.Coordinates{
 				Latitude:  resp.Latitude,
 				Longitude: resp.Longitude,
 			},

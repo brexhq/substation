@@ -63,6 +63,10 @@ func (d *MaxMindASN) Close() error {
 // Get queries the database and returns an aggregated database record containing enrichment information.
 func (d *MaxMindASN) Get(addr string) (*ip.EnrichmentRecord, error) {
 	paddr := net.ParseIP(addr)
+	if paddr == nil {
+		return nil, fmt.Errorf("database: %v", ip.ErrInvalidIPAddress)
+	}
+
 	resp, err := d.db.ASN(paddr)
 	if err != nil {
 		return nil, err
@@ -121,6 +125,10 @@ func (d *MaxMindCity) Close() error {
 // Get queries the database and returns an aggregated database record containing enrichment information.
 func (d *MaxMindCity) Get(addr string) (*ip.EnrichmentRecord, error) {
 	paddr := net.ParseIP(addr)
+	if paddr == nil {
+		return nil, fmt.Errorf("database: %v", ip.ErrInvalidIPAddress)
+	}
+
 	resp, err := d.db.City(paddr)
 	if err != nil {
 		return nil, fmt.Errorf("database: %v", err)
@@ -128,7 +136,7 @@ func (d *MaxMindCity) Get(addr string) (*ip.EnrichmentRecord, error) {
 
 	rec := &ip.EnrichmentRecord{
 		Location: &ip.Location{
-			Coordinates: ip.Coordinates{
+			Coordinates: &ip.Coordinates{
 				Latitude:  float32(resp.Location.Latitude),
 				Longitude: float32(resp.Location.Longitude),
 			},

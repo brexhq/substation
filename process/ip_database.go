@@ -11,7 +11,7 @@ import (
 	ipdb "github.com/brexhq/substation/internal/ip/database"
 )
 
-var ipDatabasers = make(map[string]ipdb.OpenCloser)
+var ipDatabases = make(map[string]ipdb.OpenCloser)
 
 /*
 IPDatabase processes data by querying IP addresses in enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor supports multiple database providers by contextually retrieving and loading databases using environment variables and can be reused if multiple databases need to be queried.
@@ -75,7 +75,7 @@ type IPDatabaseOptions struct {
 
 // Close closes enrichment database resources opened by the IPDatabase processor.
 func (p IPDatabase) Close(ctx context.Context) error {
-	for _, db := range ipDatabasers {
+	for _, db := range ipDatabases {
 		if err := db.Close(); err != nil {
 			return fmt.Errorf("process ip_database: %v", err)
 		}
@@ -108,7 +108,7 @@ func (p IPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.C
 
 	// lazy load IP enrichment database
 	// location of the database is set by environment variable
-	if _, ok := ipDatabasers[p.Options.Function]; !ok {
+	if _, ok := ipDatabases[p.Options.Function]; !ok {
 		location := os.Getenv(strings.ToUpper(p.Options.Function))
 
 		db, err := ipdb.Factory(p.Options.Function)
@@ -116,14 +116,14 @@ func (p IPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.C
 			return capsule, fmt.Errorf("process ip_database: %v", err)
 		}
 
-		ipDatabasers[p.Options.Function] = db
-		if err := ipDatabasers[p.Options.Function].Open(ctx, location); err != nil {
+		ipDatabases[p.Options.Function] = db
+		if err := ipDatabases[p.Options.Function].Open(ctx, location); err != nil {
 			return capsule, fmt.Errorf("process ip_database: %v", err)
 		}
 	}
 
 	res := capsule.Get(p.InputKey).String()
-	record, err := ipDatabasers[p.Options.Function].Get(res)
+	record, err := ipDatabases[p.Options.Function].Get(res)
 	if err != nil {
 		return capsule, fmt.Errorf("process ip_database: %v", err)
 	}

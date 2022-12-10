@@ -56,4 +56,21 @@ local processlib = import './process.libsonnet';
       },
     ],
   },
+  ip_database: {
+    // performs lookup for any valid, public IP address in any IP enrichment database
+    public_address(input, output, database): [{
+      local conditions = [
+        conditionlib.ip.valid(input),
+        conditionlib.ip.loopback(input, negate=true),
+        conditionlib.ip.multicast(input, negate=true),
+        conditionlib.ip.multicast_link_local(input, negate=true),
+        conditionlib.ip.private(input, negate=true),
+        conditionlib.ip.unicast_link_local(input, negate=true),
+        conditionlib.ip.unspecified(input, negate=true),
+      ],
+      processors: [
+        processlib.ip_database(input=input, output=output, _function=database, condition_operator='and', condition_inspectors=conditions),
+      ],
+    }],
+  },
 }

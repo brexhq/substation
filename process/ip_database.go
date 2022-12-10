@@ -108,6 +108,7 @@ func (p IPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.C
 
 	// lazy load IP enrichment database
 	// location of the database is set by environment variable
+	// db must go into the map after opening to avoid race conditions
 	if _, ok := ipDatabases[p.Options.Function]; !ok {
 		location := os.Getenv(strings.ToUpper(p.Options.Function))
 
@@ -116,10 +117,11 @@ func (p IPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.C
 			return capsule, fmt.Errorf("process ip_database: %v", err)
 		}
 
-		ipDatabases[p.Options.Function] = db
-		if err := ipDatabases[p.Options.Function].Open(ctx, location); err != nil {
+		if err := db.Open(ctx, location); err != nil {
 			return capsule, fmt.Errorf("process ip_database: %v", err)
 		}
+
+		ipDatabases[p.Options.Function] = db
 	}
 
 	res := capsule.Get(p.InputKey).String()

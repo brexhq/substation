@@ -23,6 +23,22 @@ var ipTests = []struct {
 		true,
 	},
 	{
+		"valid",
+		IP{
+			Type: "valid",
+		},
+		[]byte("192.168.1.2"),
+		true,
+	},
+	{
+		"invalid",
+		IP{
+			Type: "valid",
+		},
+		[]byte("foo"),
+		false,
+	},
+	{
 		"multicast",
 		IP{
 			Type: "multicast",

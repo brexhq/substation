@@ -18,8 +18,10 @@ IP evaluates IP addresses by their type and usage. This inspector uses the stand
 The inspector has these settings:
 
 	Type:
-		IP address type used during inspection
-		must be one of:
+		IP address type used during inspection.
+
+		Must be one of:
+			valid: valid address of any type
 			loopback: valid loopback address
 			multicast: valid multicast address
 			multicast_link_local: valid link local multicast address
@@ -28,10 +30,11 @@ The inspector has these settings:
 			unicast_link_local: valid link local unicast address
 			unspecified: valid "unspecified" address (e.g., 0.0.0.0, ::)
 	Key (optional):
-		JSON key-value to retrieve for inspection
+		JSON key-value to retrieve for inspection.
 	Negate (optional):
-		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
-		defaults to false
+		If set to true, then the inspection is negated (i.e., true becomes false, false becomes true).
+
+		Defaults to false.
 
 The inspector supports these patterns:
 
@@ -66,9 +69,10 @@ func (c IP) Inspect(ctx context.Context, capsule config.Capsule) (output bool, e
 	}
 
 	ip := net.ParseIP(check)
-
 	var matched bool
 	switch s := c.Type; s {
+	case "valid":
+		matched = ip != nil
 	case "loopback":
 		matched = ip.IsLoopback()
 	case "multicast":

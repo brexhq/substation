@@ -13,6 +13,10 @@
     },
   },
   ip: {
+    valid(key, negate=false): {
+      type: 'ip',
+      settings: { key: key, type: 'valid', negate: negate },
+    },
     loopback(key, negate=false): {
       type: 'ip',
       settings: { key: key, type: 'loopback', negate: negate },

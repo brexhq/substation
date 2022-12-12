@@ -3,8 +3,6 @@ package process
 import (
 	"context"
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
@@ -65,12 +63,16 @@ IPDatabaseOptions contains custom options for the IPDatabase processor.
 		The database is contextually retrieved using an environment variable and lazy loaded on first invocation. Each environment variable should contain the location of the database, which can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
 
 		Must be one of:
-			ip2location (IP2LOCATION)
-			maxmind_asn (MAXMIND_ASN)
-			maxmind_city (MAXMIND_CITY)
+			ip2location
+			maxmind_asn
+			maxmind_city
+	Options:
+		Configuration passed directly to the internal IP database package. Similar to processors, each database has its own config requirements. See internal/ip/database for more information.
+
 */
 type IPDatabaseOptions struct {
-	Function string `json:"function"`
+	Function        string        `json:"function"`
+	DatabaseOptions config.Config `json:"database_options"`
 }
 
 // Close closes enrichment database resources opened by the IPDatabase processor.
@@ -110,14 +112,12 @@ func (p IPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.C
 	// location of the database is set by environment variable
 	// db must go into the map after opening to avoid race conditions
 	if _, ok := ipDatabases[p.Options.Function]; !ok {
-		location := os.Getenv(strings.ToUpper(p.Options.Function))
-
-		db, err := ipdb.Factory(p.Options.Function)
+		db, err := ipdb.Factory(p.Options.DatabaseOptions)
 		if err != nil {
 			return capsule, fmt.Errorf("process ip_database: %v", err)
 		}
 
-		if err := db.Open(ctx, location); err != nil {
+		if err := db.Open(ctx); err != nil {
 			return capsule, fmt.Errorf("process ip_database: %v", err)
 		}
 

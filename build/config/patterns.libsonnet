@@ -1,6 +1,7 @@
 // functions in this file contain pre-configured conditions and processors that represent commonly used patterns across many data pipelines.
 
 local conditionlib = import './condition.libsonnet';
+local ipdatabaselib = import './ip_database.libsonnet';
 local processlib = import './process.libsonnet';
 
 {
@@ -58,7 +59,7 @@ local processlib = import './process.libsonnet';
   },
   ip_database: {
     // performs lookup for any valid, public IP address in any IP enrichment database
-    public_address(input, output, database): [{
+    lookup_public_address(input, output, db_options): [{
       local conditions = [
         conditionlib.ip.valid(input),
         conditionlib.ip.loopback(input, negate=true),
@@ -69,7 +70,7 @@ local processlib = import './process.libsonnet';
         conditionlib.ip.unspecified(input, negate=true),
       ],
       processors: [
-        processlib.ip_database(input=input, output=output, _function=database, condition_operator='and', condition_inspectors=conditions),
+        processlib.ip_database(input=input, output=output, database_options=db_options, condition_operator='and', condition_inspectors=conditions),
       ],
     }],
   },

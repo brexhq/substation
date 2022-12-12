@@ -232,12 +232,12 @@
   },
   ip_database(input,
               output,
-              _function,
+              database_options,
               condition_operator='',
               condition_inspectors=[]): {
     type: 'ip_database',
     settings: {
-      options: { 'function': _function },
+      options: { 'function': database_options.type, database_options: database_options },
       condition: { operator: condition_operator, inspectors: condition_inspectors },
       input_key: input,
       output_key: output,

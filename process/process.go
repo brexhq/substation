@@ -174,7 +174,6 @@ func ApplicatorFactory(cfg config.Config) (Applicator, error) {
 	case "split":
 		var p Split
 		_ = config.Decode(cfg.Settings, &p)
-
 		return p, nil
 	case "time":
 		var p Time

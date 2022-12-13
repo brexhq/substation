@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/ip"
 )
@@ -15,21 +16,28 @@ const errInvalidFactoryInput = errors.Error("invalid factory input")
 // OpenCloser provides tools for opening, closing, and getting values from IP address enrichment databases.
 type OpenCloser interface {
 	ip.Getter
-	Open(context.Context, string) error
+	Open(context.Context) error
 	Close() error
 	IsEnabled() bool
 }
 
 // Factory returns an OpenCloser. The returned OpenCloser must be opened before it can be used.
-func Factory(db string) (OpenCloser, error) {
-	switch db {
+// func Factory(db string) (OpenCloser, error) {
+func Factory(cfg config.Config) (OpenCloser, error) {
+	switch t := cfg.Type; t {
 	case "ip2location":
-		return &IP2Location{}, nil
+		var db IP2Location
+		_ = config.Decode(cfg.Settings, &db)
+		return &db, nil
 	case "maxmind_asn":
-		return &MaxMindASN{}, nil
+		var db MaxMindASN
+		_ = config.Decode(cfg.Settings, &db)
+		return &db, nil
 	case "maxmind_city":
-		return &MaxMindCity{}, nil
+		var db MaxMindCity
+		_ = config.Decode(cfg.Settings, &db)
+		return &db, nil
 	default:
-		return nil, fmt.Errorf("database %s: %v", db, errInvalidFactoryInput)
+		return nil, fmt.Errorf("database %s: %v", t, errInvalidFactoryInput)
 	}
 }

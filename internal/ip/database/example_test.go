@@ -9,12 +9,12 @@ import (
 )
 
 func Example_iP2Location() {
-	// the location of the enrichment database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL
-	location := "location://path/to/ip2location.bin"
-
 	// create IP2Location container, open database, and close database when function returns
-	ip2loc := database.IP2Location{}
-	if err := ip2loc.Open(context.TODO(), location); err != nil {
+	ip2loc := database.IP2Location{
+		Database: "location://path/to/ip2location.bin",
+	}
+
+	if err := ip2loc.Open(context.TODO()); err != nil {
 		// handle error
 		panic(err)
 	}
@@ -34,12 +34,12 @@ func Example_iP2Location() {
 }
 
 func Example_maxMindCity() {
-	// the location of the enrichment database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL
-	location := "location://path/to/maxmind.mmdb"
-
 	// create MaxMind City container, open database, and close database when function returns
-	mm := database.MaxMindCity{}
-	if err := mm.Open(context.TODO(), location); err != nil {
+	mm := database.MaxMindCity{
+		Database: "location://path/to/maxmind.mmdb",
+	}
+
+	if err := mm.Open(context.TODO()); err != nil {
 		// handle error
 		panic(err)
 	}

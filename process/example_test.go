@@ -51,10 +51,6 @@ func Example_iPDatabase() {
 	capsule := config.NewCapsule()
 	capsule.SetData([]byte(`{"ip":"8.8.8.8"}`))
 
-	// the location of the IP enrichment database must be provided by environment variable and can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL
-	// _ = os.Setenv("MAXMIND_ASN", "location://path/to/maxmind.mmdb")
-	// _ = os.Setenv("MAXMIND_CITY", "location://path/to/maxmind.mmdb")
-
 	// in native Substation applications configuration is handled by compiling Jsonnet and loading JSON into the application
 	cfg := []config.Config{
 		{
@@ -64,6 +60,14 @@ func Example_iPDatabase() {
 				"output_key": "as",
 				"options": map[string]interface{}{
 					"function": "maxmind_asn",
+					"database_options": map[string]interface{}{
+						"type": "maxmind_asn",
+						"settings": map[string]interface{}{
+							// the location of the IP enrichment database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL
+							"database": "location://path/to/maxmind.mmdb",
+							"language": "en",
+						},
+					},
 				},
 			},
 		},
@@ -74,6 +78,14 @@ func Example_iPDatabase() {
 				"output_key": "geo",
 				"options": map[string]interface{}{
 					"function": "maxmind_city",
+					"database_options": map[string]interface{}{
+						"type": "maxmind_city",
+						"settings": map[string]interface{}{
+							// the location of the IP enrichment database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL
+							"database": "location://path/to/maxmind.mmdb",
+							"language": "en",
+						},
+					},
 				},
 			},
 		},

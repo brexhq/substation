@@ -11,7 +11,8 @@ import (
 
 // IP2Location provides read access to an IP2Location binary database.
 type IP2Location struct {
-	db *ip2location.DB
+	Database string `json:"database"`
+	db       *ip2location.DB
 }
 
 // IsEnabled returns true if the database is open and ready for use.
@@ -20,8 +21,8 @@ func (d *IP2Location) IsEnabled() bool {
 }
 
 // Open retrieves the database and opens it for querying. The location of the database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
-func (d *IP2Location) Open(ctx context.Context, location string) error {
-	path, err := file.Get(ctx, location)
+func (d *IP2Location) Open(ctx context.Context) error {
+	path, err := file.Get(ctx, d.Database)
 	defer os.Remove(path)
 
 	if err != nil {

@@ -3,8 +3,6 @@ package process
 import (
 	"context"
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
@@ -14,7 +12,7 @@ import (
 var ipDatabases = make(map[string]ipdb.OpenCloser)
 
 /*
-IPDatabase processes data by querying IP addresses in enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor supports multiple database providers by contextually retrieving and loading databases using environment variables and can be reused if multiple databases need to be queried.
+IPDatabase processes data by querying IP addresses in enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor supports multiple database providers and can be reused if multiple databases need to be queried.
 
 IP address information is abstracted from each enrichment database into a single record that contains these categories:
 
@@ -62,15 +60,18 @@ IPDatabaseOptions contains custom options for the IPDatabase processor.
 	Function:
 		Selects the enrichment database queried by the processor.
 
-		The database is contextually retrieved using an environment variable and lazy loaded on first invocation. Each environment variable should contain the location of the database, which can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
+		The database is lazy loaded on first invocation and can be loaded from a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
 
 		Must be one of:
-			ip2location (IP2LOCATION)
-			maxmind_asn (MAXMIND_ASN)
-			maxmind_city (MAXMIND_CITY)
+			ip2location
+			maxmind_asn
+			maxmind_city
+	Options:
+		Configuration passed directly to the internal IP database package. Similar to processors, each database has its own config requirements. See internal/ip/database for more information.
 */
 type IPDatabaseOptions struct {
-	Function string `json:"function"`
+	Function        string        `json:"function"`
+	DatabaseOptions config.Config `json:"database_options"`
 }
 
 // Close closes enrichment database resources opened by the IPDatabase processor.
@@ -107,19 +108,18 @@ func (p IPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.C
 	}
 
 	// lazy load IP enrichment database
-	// location of the database is set by environment variable
+	// db must go into the map after opening to avoid race conditions
 	if _, ok := ipDatabases[p.Options.Function]; !ok {
-		location := os.Getenv(strings.ToUpper(p.Options.Function))
-
-		db, err := ipdb.Factory(p.Options.Function)
+		db, err := ipdb.Factory(p.Options.DatabaseOptions)
 		if err != nil {
 			return capsule, fmt.Errorf("process ip_database: %v", err)
 		}
 
-		ipDatabases[p.Options.Function] = db
-		if err := ipDatabases[p.Options.Function].Open(ctx, location); err != nil {
+		if err := db.Open(ctx); err != nil {
 			return capsule, fmt.Errorf("process ip_database: %v", err)
 		}
+
+		ipDatabases[p.Options.Function] = db
 	}
 
 	res := capsule.Get(p.InputKey).String()

@@ -11,19 +11,11 @@ import (
 	"github.com/oschwald/geoip2-golang"
 )
 
-// GetMaxMindLanguage configures the language that is used when reading values from MaxMind databases. The value is retrieved from the MAXMIND_LANGUAGE environment variable. If the environment variable is missing, then the default language is English.
-func GetMaxMindLanguage() string {
-	lang, ok := os.LookupEnv("MAXMIND_LANGUAGE")
-	if !ok {
-		return "en"
-	}
-	return lang
-}
-
 // MaxMindASN provides read access to MaxMind ASN database.
 type MaxMindASN struct {
+	Database string `json:"database"`
+	Language string `json:"language"`
 	db       *geoip2.Reader
-	language string
 }
 
 // IsEnabled returns true if the database is open and ready for use.
@@ -32,10 +24,13 @@ func (d *MaxMindASN) IsEnabled() bool {
 }
 
 // Open retrieves the database and opens it for querying. The location of the database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL. MaxMind language support is provided by calling GetMaxMindLanguage to retrieve a user-configured language.
-func (d *MaxMindASN) Open(ctx context.Context, location string) error {
-	d.language = GetMaxMindLanguage()
+func (d *MaxMindASN) Open(ctx context.Context) error {
+	// language defaults to English
+	if d.Language == "" {
+		d.Language = "en"
+	}
 
-	path, err := file.Get(ctx, location)
+	path, err := file.Get(ctx, d.Database)
 	defer os.Remove(path)
 
 	if err != nil {
@@ -84,8 +79,9 @@ func (d *MaxMindASN) Get(addr string) (*ip.EnrichmentRecord, error) {
 
 // MaxMindCity provides read access to a MaxMind City database.
 type MaxMindCity struct {
+	Database string `json:"database"`
+	Language string `json:"language"`
 	db       *geoip2.Reader
-	language string
 }
 
 // IsEnabled returns true if the database is open and ready for use.
@@ -94,10 +90,13 @@ func (d *MaxMindCity) IsEnabled() bool {
 }
 
 // Open retrieves the database and opens it for querying. MaxMind language support is provided by calling GetMaxMindLanguage to retrieve a user-configured language.
-func (d *MaxMindCity) Open(ctx context.Context, location string) error {
-	d.language = GetMaxMindLanguage()
+func (d *MaxMindCity) Open(ctx context.Context) error {
+	// language defaults to English
+	if d.Language == "" {
+		d.Language = "en"
+	}
 
-	path, err := file.Get(ctx, location)
+	path, err := file.Get(ctx, d.Database)
 	defer os.Remove(path)
 
 	if err != nil {
@@ -140,9 +139,9 @@ func (d *MaxMindCity) Get(addr string) (*ip.EnrichmentRecord, error) {
 				Latitude:  float32(resp.Location.Latitude),
 				Longitude: float32(resp.Location.Longitude),
 			},
-			Continent:  resp.Continent.Names[d.language],
-			Country:    resp.Country.Names[d.language],
-			City:       resp.City.Names[d.language],
+			Continent:  resp.Continent.Names[d.Language],
+			Country:    resp.Country.Names[d.Language],
+			City:       resp.City.Names[d.Language],
 			PostalCode: resp.Postal.Code,
 			Accuracy:   float32(resp.Location.AccuracyRadius),
 			TimeZone:   resp.Location.TimeZone,

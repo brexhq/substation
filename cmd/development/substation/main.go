@@ -10,16 +10,25 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/brexhq/substation/cmd"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/bufio"
 	"github.com/brexhq/substation/internal/file"
-	"golang.org/x/sync/errgroup"
+	"github.com/brexhq/substation/internal/json"
 )
 
 type metadata struct {
 	Name string `json:"name"`
 	Size int64  `json:"size"`
+}
+
+type options struct {
+	Input  string
+	Config string
+
+	ForceSinkStdout bool
 }
 
 // getConfig contextually retrieves a Substation configuration.
@@ -46,30 +55,54 @@ func getConfig(ctx context.Context, cfg string) (io.Reader, error) {
 }
 
 func main() {
-	input := flag.String("input", "", "file to parse")
-	config := flag.String("config", "", "Substation configuration file")
+	var opts options
+
 	timeout := flag.Duration("timeout", 10*time.Second, "timeout")
+	flag.StringVar(&opts.Input, "input", "", "file to parse")
+	flag.StringVar(&opts.Config, "config", "", "Substation configuration file")
+	flag.BoolVar(&opts.ForceSinkStdout, "force-stdout", false, "force sink output to stdout")
 	flag.Parse()
 
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	if err := run(ctx, *input, *config); err != nil {
+	if err := run(ctx, opts); err != nil {
 		panic(fmt.Errorf("main: %v", err))
 	}
 }
 
-func run(ctx context.Context, input, cfg string) error {
+func run(ctx context.Context, opts options) error {
 	sub := cmd.New()
 
 	// load configuration file
-	c, err := getConfig(ctx, cfg)
+	c, err := getConfig(ctx, opts.Config)
 	if err != nil {
 		return fmt.Errorf("run: %v", err)
 	}
 
 	if err := sub.SetConfig(c); err != nil {
 		return fmt.Errorf("run: %v", err)
+	}
+
+	if opts.ForceSinkStdout {
+		c, err = sub.GetConfig()
+		if err != nil {
+			return fmt.Errorf("run: %v", err)
+		}
+
+		oldConfig, err := io.ReadAll(c)
+		if err != nil {
+			return fmt.Errorf("run: %v", err)
+		}
+
+		newConfig, err := json.Set(oldConfig, "sink.type", "stdout")
+		if err != nil {
+			return fmt.Errorf("run: %v", err)
+		}
+
+		if err := sub.SetConfig(bytes.NewReader(newConfig)); err != nil {
+			return fmt.Errorf("run: %v", err)
+		}
 	}
 
 	group, ctx := errgroup.WithContext(ctx)
@@ -90,7 +123,7 @@ func run(ctx context.Context, input, cfg string) error {
 
 	// ingest
 	group.Go(func() error {
-		fi, err := file.Get(ctx, input)
+		fi, err := file.Get(ctx, opts.Input)
 		if err != nil {
 			return err
 		}
@@ -109,7 +142,7 @@ func run(ctx context.Context, input, cfg string) error {
 
 		capsule := config.NewCapsule()
 		if _, err = capsule.SetMetadata(metadata{
-			input,
+			opts.Input,
 			fs.Size(),
 		}); err != nil {
 			return fmt.Errorf("run: %v", err)

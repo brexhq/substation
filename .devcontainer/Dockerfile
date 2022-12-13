@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/vscode/devcontainers/go:1.17
+FROM mcr.microsoft.com/vscode/devcontainers/go:1.19
 RUN sudo apt-get update && \
     # install Terraform
     cd /tmp/ && \

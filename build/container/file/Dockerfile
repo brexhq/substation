@@ -1,4 +1,4 @@
-FROM golang as build
+FROM golang:1.19 as build
 ENV GO111MODULE=on
 
 # install deps

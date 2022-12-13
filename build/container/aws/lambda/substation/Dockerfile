@@ -1,6 +1,6 @@
 ARG AWS_ARCHITECTURE=x86_64
 
-FROM golang as build
+FROM golang:1.19 as build
 ENV GO111MODULE=on
 
 # build AppConfig Lambda extension

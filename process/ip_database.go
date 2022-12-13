@@ -12,7 +12,7 @@ import (
 var ipDatabases = make(map[string]ipdb.OpenCloser)
 
 /*
-IPDatabase processes data by querying IP addresses in enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor supports multiple database providers by contextually retrieving and loading databases using environment variables and can be reused if multiple databases need to be queried.
+IPDatabase processes data by querying IP addresses in enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor supports multiple database providers and can be reused if multiple databases need to be queried.
 
 IP address information is abstracted from each enrichment database into a single record that contains these categories:
 
@@ -60,7 +60,7 @@ IPDatabaseOptions contains custom options for the IPDatabase processor.
 	Function:
 		Selects the enrichment database queried by the processor.
 
-		The database is contextually retrieved using an environment variable and lazy loaded on first invocation. Each environment variable should contain the location of the database, which can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
+		The database is lazy loaded on first invocation and can be loaded from a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
 
 		Must be one of:
 			ip2location
@@ -68,7 +68,6 @@ IPDatabaseOptions contains custom options for the IPDatabase processor.
 			maxmind_city
 	Options:
 		Configuration passed directly to the internal IP database package. Similar to processors, each database has its own config requirements. See internal/ip/database for more information.
-
 */
 type IPDatabaseOptions struct {
 	Function        string        `json:"function"`
@@ -109,7 +108,6 @@ func (p IPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.C
 	}
 
 	// lazy load IP enrichment database
-	// location of the database is set by environment variable
 	// db must go into the map after opening to avoid race conditions
 	if _, ok := ipDatabases[p.Options.Function]; !ok {
 		db, err := ipdb.Factory(p.Options.DatabaseOptions)

@@ -11,9 +11,12 @@ import (
 // Bytes returns the media type of a byte slice.
 func Bytes(b []byte) string {
 	switch {
-	// bzip2 is undetected by http.DetectContentType
+	// http.DetectContentType cannot detect bzip2
 	case bytes.HasPrefix(b, []byte("\x42\x5a\x68")):
 		return "application/x-bzip2"
+	// http.DetectContentType occasionally (rarely) generates false positive matches for application/vnd.ms-fontobject when the bytes are application/x-gzip
+	case bytes.HasPrefix(b, []byte("\x1f\x8b\x08")):
+		return "application/x-gzip"
 	default:
 		return http.DetectContentType(b)
 	}

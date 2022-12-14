@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0](https://github.com/brexhq/substation/compare/v0.6.1...v0.7.0) (2022-12-13)
+
+
+### Features
+
+* DNS and IP Database Processing ([#39](https://github.com/brexhq/substation/issues/39)) ([0e43886](https://github.com/brexhq/substation/commit/0e4388681143a7bd916529116520b0f66a20aa9f))
+* process.Replace allow replacing with nothing ([#42](https://github.com/brexhq/substation/issues/42)) ([7aeeb44](https://github.com/brexhq/substation/commit/7aeeb4426794484dee724ab6a4249b399b00184d))
+
+
+### Bug Fixes
+
+* ms-fontobject false positive ([#46](https://github.com/brexhq/substation/issues/46)) ([56016f2](https://github.com/brexhq/substation/commit/56016f29f58a56f4556a3f3463837b4a6696effd))
+* process.IPDatabase Errors, condition.IP Type ([#44](https://github.com/brexhq/substation/issues/44)) ([a2cf347](https://github.com/brexhq/substation/commit/a2cf347d1b018b384476a7cafe44a1309463871e))
+
 ## [0.6.1](https://github.com/brexhq/substation/compare/v0.6.0...v0.6.1) (2022-12-05)
 
 

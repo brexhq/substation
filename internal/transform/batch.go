@@ -53,6 +53,10 @@ func (transform *Batch) Transform(ctx context.Context, wg *sync.WaitGroup, in, o
 		return err
 	}
 
+	// closing applicators in an anonymous goroutine blocked by the WaitGroup from the calling
+	// application ensures that all applicators across the entire app close after all data
+	// transformation is finished. as of now this is the only way to prevent premature closure
+	// of applicators.
 	//nolint: errcheck // errors are ignored in case processing fails in a single applicator
 	go func() {
 		wg.Wait()

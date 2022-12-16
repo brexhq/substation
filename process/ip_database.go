@@ -9,8 +9,6 @@ import (
 	ipdb "github.com/brexhq/substation/internal/ip/database"
 )
 
-var ipDatabases = make(map[string]ipdb.OpenCloser)
-
 /*
 IPDatabase processes data by querying IP addresses in enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor supports multiple database providers and can be reused if multiple databases need to be queried.
 
@@ -76,12 +74,6 @@ type IPDatabaseOptions struct {
 
 // Close closes enrichment database resources opened by the IPDatabase processor.
 func (p IPDatabase) Close(ctx context.Context) error {
-	for _, db := range ipDatabases {
-		if err := db.Close(); err != nil {
-			return fmt.Errorf("process ip_database: %v", err)
-		}
-	}
-
 	return nil
 }
 
@@ -107,23 +99,20 @@ func (p IPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.C
 		return capsule, fmt.Errorf("process ip_database: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
-	// lazy load IP enrichment database
-	// db must go into the map after opening to avoid race conditions
-	if _, ok := ipDatabases[p.Options.Function]; !ok {
-		db, err := ipdb.Factory(p.Options.DatabaseOptions)
-		if err != nil {
-			return capsule, fmt.Errorf("process ip_database: %v", err)
-		}
+	db, err := ipdb.GlobalFactory(p.Options.DatabaseOptions)
+	if err != nil {
+		return capsule, fmt.Errorf("process ip_database: %v", err)
+	}
 
+	// lazy load IP enrichment database
+	if !db.IsEnabled() {
 		if err := db.Open(ctx); err != nil {
 			return capsule, fmt.Errorf("process ip_database: %v", err)
 		}
-
-		ipDatabases[p.Options.Function] = db
 	}
 
 	res := capsule.Get(p.InputKey).String()
-	record, err := ipDatabases[p.Options.Function].Get(res)
+	record, err := db.Get(res)
 	if err != nil {
 		return capsule, fmt.Errorf("process ip_database: %v", err)
 	}

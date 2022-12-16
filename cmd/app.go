@@ -149,7 +149,7 @@ func (sub *substation) Transform(ctx context.Context, wg *sync.WaitGroup) error 
 	}
 
 	log.WithField("transform", sub.config.Transform.Type).Debug("starting transformer")
-	if err := t.Transform(ctx, sub.channels.transform, sub.channels.sink); err != nil {
+	if err := t.Transform(ctx, wg, sub.channels.transform, sub.channels.sink); err != nil {
 		return err
 	}
 

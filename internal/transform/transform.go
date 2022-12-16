@@ -3,6 +3,7 @@ package transform
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
@@ -13,7 +14,7 @@ const errInvalidFactoryInput = errors.Error("invalid factory input")
 
 // Transformer is an interface for transforming data as it moves from a source to a sink. Transformers read capsules from and write capsules to channels, may optionally modify bytes, and are interruptable.
 type Transformer interface {
-	Transform(context.Context, *config.Channel, *config.Channel) error
+	Transform(context.Context, *sync.WaitGroup, *config.Channel, *config.Channel) error
 }
 
 // Factory returns a configured Transformer from a config. This is the recommended method for retrieving ready-to-use Transformers.

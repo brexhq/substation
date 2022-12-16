@@ -2,6 +2,7 @@ package transform
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/brexhq/substation/config"
@@ -46,14 +47,17 @@ type Batch struct {
 }
 
 // Transform processes a channel of encapsulated data with the Batch transform.
-func (transform *Batch) Transform(ctx context.Context, in, out *config.Channel) error {
+func (transform *Batch) Transform(ctx context.Context, wg *sync.WaitGroup, in, out *config.Channel) error {
 	applicators, err := process.MakeBatchApplicators(transform.Processors)
 	if err != nil {
 		return err
 	}
 
 	//nolint: errcheck // errors are ignored in case processing fails in a single applicator
-	defer process.CloseBatchApplicators(ctx, applicators...)
+	go func() {
+		wg.Wait()
+		process.CloseBatchApplicators(ctx, applicators...)
+	}()
 
 	var received int
 	// read encapsulated data from the input channel into a batch

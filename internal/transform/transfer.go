@@ -2,6 +2,7 @@ package transform
 
 import (
 	"context"
+	"sync"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/metrics"
@@ -19,7 +20,7 @@ When loaded with a factory, the transform uses this JSON configuration:
 type Transfer struct{}
 
 // Transform processes a channel of encapsulated data with the Transfer transform.
-func (transform *Transfer) Transform(ctx context.Context, in, out *config.Channel) error {
+func (transform *Transfer) Transform(ctx context.Context, wg *sync.WaitGroup, in, out *config.Channel) error {
 	var count int
 
 	// read and write encapsulated data from input and to output channels

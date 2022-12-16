@@ -74,6 +74,17 @@ type IPDatabaseOptions struct {
 
 // Close closes enrichment database resources opened by the IPDatabase processor.
 func (p IPDatabase) Close(ctx context.Context) error {
+	db, err := ipdb.GlobalFactory(p.Options.DatabaseOptions)
+	if err != nil {
+		return fmt.Errorf("close ip_database: %v", err)
+	}
+
+	if db.IsEnabled() {
+		if err := db.Close(); err != nil {
+			return fmt.Errorf("close ip_database: %v", err)
+		}
+	}
+
 	return nil
 }
 

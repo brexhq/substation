@@ -6,4 +6,4 @@ local process = import '../../../build/config/process.libsonnet';
 local mm_city = ipdb.maxmind_city('location://path/to/maxmind.mmdb');
 
 // applies the IPDatabase processor using a MaxMind City database
-process.ip_database(input='addr', output='geo', options=mm_city)
+process.ip_database(input='addr', output='geo', database_options=mm_city)

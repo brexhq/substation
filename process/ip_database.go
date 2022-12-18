@@ -38,9 +38,12 @@ When loaded with a factory, the processor uses this JSON configuration:
 		"type": "ip_database",
 		"settings": {
 			"options": {
-				"type": "maxmind_geo",
-				"settings": {
-					"database": "location://path/to/maxmind.mmdb"
+				"function": "maxmind_geo",
+				"database_options": {
+					"type": "maxmind_geo",
+					"settings": {
+						"database": "location://path/to/maxmind.mmdb"
+					}
 				}
 			},
 			"input_key": "ip",
@@ -49,17 +52,23 @@ When loaded with a factory, the processor uses this JSON configuration:
 	}
 */
 type IPDatabase struct {
+	Options   IPDatabaseOptions `json:"options"`
+	Condition condition.Config  `json:"condition"`
+	InputKey  string            `json:"input_key"`
+	OutputKey string            `json:"output_key"`
+	// IgnoreClose overrides attempts to close the processor.
+	IgnoreClose bool `json:"ignore_close"`
+}
+
+// IPDatabaseOptions contains custom options for the IPDatabase processor.
+type IPDatabaseOptions struct {
+	Function string `json:"function"`
 	/*
-		Options is a configuration passed directly to the internal IP database package. Similar to processors, each database has its own config requirements. See internal/ip/database for more information.
+		DatabaseOptions is a configuration passed directly to the internal IP database package. Similar to processors, each database has its own config requirements. See internal/ip/database for more information.
 
 		Each database is lazy loaded on first invocation and can be loaded from a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
 	*/
-	Options   config.Config    `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
-	// IgnoreClose overrides attempts to close the processor.
-	IgnoreClose bool `json:"ignore_close"`
+	DatabaseOptions config.Config `json:"database_options"`
 }
 
 // Close closes enrichment database resources opened by the IPDatabase processor.
@@ -68,7 +77,7 @@ func (p IPDatabase) Close(ctx context.Context) error {
 		return nil
 	}
 
-	db, err := ipdb.Factory(p.Options)
+	db, err := ipdb.Factory(p.Options.DatabaseOptions)
 	if err != nil {
 		return fmt.Errorf("close ip_database: %v", err)
 	}
@@ -104,7 +113,7 @@ func (p IPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.C
 		return capsule, fmt.Errorf("process ip_database: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
-	db, err := ipdb.Factory(p.Options)
+	db, err := ipdb.Factory(p.Options.DatabaseOptions)
 	if err != nil {
 		return capsule, fmt.Errorf("process ip_database: %v", err)
 	}

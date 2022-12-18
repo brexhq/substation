@@ -59,14 +59,11 @@ func Example_iPDatabase() {
 				"input_key":  "ip",
 				"output_key": "as",
 				"options": map[string]interface{}{
-					"function": "maxmind_asn",
-					"database_options": map[string]interface{}{
-						"type": "maxmind_asn",
-						"settings": map[string]interface{}{
-							// the location of the IP enrichment database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL
-							"database": "location://path/to/maxmind.mmdb",
-							"language": "en",
-						},
+					"type": "maxmind_asn",
+					"settings": map[string]interface{}{
+						// the location of the IP enrichment database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL
+						"database": "location://path/to/maxmind.mmdb",
+						"language": "en",
 					},
 				},
 			},
@@ -77,14 +74,11 @@ func Example_iPDatabase() {
 				"input_key":  "ip",
 				"output_key": "geo",
 				"options": map[string]interface{}{
-					"function": "maxmind_city",
-					"database_options": map[string]interface{}{
-						"type": "maxmind_city",
-						"settings": map[string]interface{}{
-							// the location of the IP enrichment database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL
-							"database": "location://path/to/maxmind.mmdb",
-							"language": "en",
-						},
+					"type": "maxmind_city",
+					"settings": map[string]interface{}{
+						// the location of the IP enrichment database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL
+						"database": "location://path/to/maxmind.mmdb",
+						"language": "en",
 					},
 				},
 			},

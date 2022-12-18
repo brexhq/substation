@@ -13,7 +13,7 @@ import (
 // errInvalidFactoryInput is returned when an unsupported OpenCloser is referenced in Factory.
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-// databases are stored globally and can be accessed across the application by using the GlobalFactory function.
+// databases are global variables that can be accessed across the application by using the Factory function.
 var (
 	ip2loc      IP2Location
 	maxMindASN  MaxMindASN
@@ -28,28 +28,8 @@ type OpenCloser interface {
 	IsEnabled() bool
 }
 
-// Factory returns an OpenCloser. The OpenCloser must be opened before it can be used.
+// Factory returns a pointer to an OpenCloser that is stored as a package level global variable. The OpenCloser must be opened before it can be used.
 func Factory(cfg config.Config) (OpenCloser, error) {
-	switch t := cfg.Type; t {
-	case "ip2location":
-		var db IP2Location
-		_ = config.Decode(cfg.Settings, &db)
-		return &db, nil
-	case "maxmind_asn":
-		var db MaxMindASN
-		_ = config.Decode(cfg.Settings, &db)
-		return &db, nil
-	case "maxmind_city":
-		var db MaxMindCity
-		_ = config.Decode(cfg.Settings, &db)
-		return &db, nil
-	default:
-		return nil, fmt.Errorf("database %s: %v", t, errInvalidFactoryInput)
-	}
-}
-
-// GlobalFactory returns a pointer to an OpenCloser that is stored as a package level global variable. The OpenCloser must be opened before it can be used.
-func GlobalFactory(cfg config.Config) (OpenCloser, error) {
 	switch t := cfg.Type; t {
 	case "ip2location":
 		_ = config.Decode(cfg.Settings, &ip2loc)

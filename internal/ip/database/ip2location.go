@@ -10,8 +10,9 @@ import (
 	"github.com/ip2location/ip2location-go/v9"
 )
 
-// IP2Location provides read access to an IP2Location binary database.
+// IP2Location provides read access to an IP2Location binary database. The database is safe for concurrent access.
 type IP2Location struct {
+	// Database contains the location of the IP2Location database. This can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
 	Database string `json:"database"`
 	mu       sync.RWMutex
 	db       *ip2location.DB
@@ -22,7 +23,7 @@ func (d *IP2Location) IsEnabled() bool {
 	return d.db != nil
 }
 
-// Open retrieves the database and opens it for querying. The location of the database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
+// Open retrieves the database and opens it for querying.
 func (d *IP2Location) Open(ctx context.Context) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()

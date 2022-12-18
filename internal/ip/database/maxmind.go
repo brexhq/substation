@@ -12,9 +12,15 @@ import (
 	"github.com/oschwald/geoip2-golang"
 )
 
-// MaxMindASN provides read access to MaxMind ASN database.
+// MaxMindASN provides read access to a MaxMind ASN database. The database is safe for concurrent access.
 type MaxMindASN struct {
+	// Database contains the location of the MaxMind City database. This can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
 	Database string `json:"database"`
+	/*
+		Language determines the language that localized name data is returned as. More information is available here: https://support.maxmind.com/hc/en-us/articles/4414877149467-IP-Geolocation-Data.
+
+		This is optional and defaults to "en" (English).
+	*/
 	Language string `json:"language"`
 	mu       sync.RWMutex
 	reader   *geoip2.Reader
@@ -25,7 +31,7 @@ func (d *MaxMindASN) IsEnabled() bool {
 	return d.reader != nil
 }
 
-// Open retrieves the database and opens it for querying. The location of the database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL. MaxMind language support is provided by calling GetMaxMindLanguage to retrieve a user-configured language.
+// Open retrieves the database and opens it for querying.
 func (d *MaxMindASN) Open(ctx context.Context) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -35,7 +41,6 @@ func (d *MaxMindASN) Open(ctx context.Context) error {
 		return nil
 	}
 
-	// language defaults to English
 	if d.Language == "" {
 		d.Language = "en"
 	}
@@ -99,9 +104,15 @@ func (d *MaxMindASN) Get(addr string) (*ip.EnrichmentRecord, error) {
 	return rec, nil
 }
 
-// MaxMindCity provides read access to a MaxMind City database.
+// MaxMindCity provides read access to a MaxMind City database. The database is safe for concurrent access.
 type MaxMindCity struct {
+	// Database contains the location of the MaxMind City database. This can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
 	Database string `json:"database"`
+	/*
+		Language determines the language that localized name data is returned as. More information is available here: https://support.maxmind.com/hc/en-us/articles/4414877149467-IP-Geolocation-Data.
+
+		This is optional and defaults to "en" (English).
+	*/
 	Language string `json:"language"`
 	mu       sync.RWMutex
 	reader   *geoip2.Reader
@@ -112,7 +123,7 @@ func (d *MaxMindCity) IsEnabled() bool {
 	return d.reader != nil
 }
 
-// Open retrieves the database and opens it for querying. MaxMind language support is provided by calling GetMaxMindLanguage to retrieve a user-configured language.
+// Open retrieves the database and opens it for querying.
 func (d *MaxMindCity) Open(ctx context.Context) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -122,7 +133,6 @@ func (d *MaxMindCity) Open(ctx context.Context) error {
 		return nil
 	}
 
-	// language defaults to English
 	if d.Language == "" {
 		d.Language = "en"
 	}

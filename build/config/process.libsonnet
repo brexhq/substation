@@ -233,14 +233,16 @@
   ip_database(input,
               output,
               database_options,
+              ignore_close=false,
               condition_operator='',
               condition_inspectors=[]): {
     type: 'ip_database',
     settings: {
-      options: { 'function': database_options.type, database_options: database_options },
+      options: { database_options: database_options },
       condition: { operator: condition_operator, inspectors: condition_inspectors },
       input_key: input,
       output_key: output,
+      ignore_close: ignore_close,
     },
   },
   lambda(input,

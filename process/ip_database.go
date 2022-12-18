@@ -50,30 +50,26 @@ type IPDatabase struct {
 	Condition condition.Config  `json:"condition"`
 	InputKey  string            `json:"input_key"`
 	OutputKey string            `json:"output_key"`
+	// IgnoreClose overrides attempts to close the processor.
+	IgnoreClose bool `json:"ignore_close"`
 }
 
-/*
-IPDatabaseOptions contains custom options for the IPDatabase processor.
-
-	Function:
-		Selects the enrichment database queried by the processor.
-
-		The database is lazy loaded on first invocation and can be loaded from a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
-
-		Must be one of:
-			ip2location
-			maxmind_asn
-			maxmind_city
-	Options:
-		Configuration passed directly to the internal IP database package. Similar to processors, each database has its own config requirements. See internal/ip/database for more information.
-*/
+// IPDatabaseOptions contains custom options for the IPDatabase processor.
 type IPDatabaseOptions struct {
-	Function        string        `json:"function"`
+	/*
+		DatabaseOptions is a configuration passed directly to the internal IP database package. Similar to processors, each database has its own config requirements. See internal/ip/database for more information.
+
+		Each database is lazy loaded on first invocation and can be loaded from a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
+	*/
 	DatabaseOptions config.Config `json:"database_options"`
 }
 
 // Close closes enrichment database resources opened by the IPDatabase processor.
 func (p IPDatabase) Close(ctx context.Context) error {
+	if p.IgnoreClose {
+		return nil
+	}
+
 	db, err := ipdb.GlobalFactory(p.Options.DatabaseOptions)
 	if err != nil {
 		return fmt.Errorf("close ip_database: %v", err)

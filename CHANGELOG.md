@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1](https://github.com/brexhq/substation/compare/v0.7.0...v0.7.1) (2022-12-19)
+
+
+### Bug Fixes
+
+* DNS errors ([#50](https://github.com/brexhq/substation/issues/50)) ([2c9e524](https://github.com/brexhq/substation/commit/2c9e5248aa6e4e7c4c739264cd9e4a822337f076))
+* IPDatabase Concurrency ([#49](https://github.com/brexhq/substation/issues/49)) ([f799a6f](https://github.com/brexhq/substation/commit/f799a6f152b2877d7136e1901e06f2fbba137121))
+
 ## [0.7.0](https://github.com/brexhq/substation/compare/v0.6.1...v0.7.0) (2022-12-13)
 
 

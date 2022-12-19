@@ -10,16 +10,18 @@ import (
 
 var flattenTests = []struct {
 	name     string
-	proc     Flatten
+	proc     flatten
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"json",
-		Flatten{
-			InputKey:  "flatten",
-			OutputKey: "flatten",
+		flatten{
+			process: process{
+				Key:    "flatten",
+				SetKey: "flatten",
+			},
 		},
 		[]byte(`{"flatten":["foo",["bar"]]}`),
 		[]byte(`{"flatten":["foo","bar"]}`),
@@ -27,12 +29,14 @@ var flattenTests = []struct {
 	},
 	{
 		"json deep flatten",
-		Flatten{
-			Options: FlattenOptions{
+		flatten{
+			process: process{
+				Key:    "flatten",
+				SetKey: "flatten",
+			},
+			Options: flattenOptions{
 				Deep: true,
 			},
-			InputKey:  "flatten",
-			OutputKey: "flatten",
 		},
 		[]byte(`{"flatten":[["foo"],[[["bar",[["baz"]]]]]]}`),
 		[]byte(`{"flatten":["foo","bar","baz"]}`),
@@ -58,7 +62,7 @@ func TestFlatten(t *testing.T) {
 	}
 }
 
-func benchmarkFlatten(b *testing.B, applicator Flatten, test config.Capsule) {
+func benchmarkFlatten(b *testing.B, applicator flatten, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

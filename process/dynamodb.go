@@ -6,23 +6,22 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aws/dynamodb"
+	idynamodb "github.com/brexhq/substation/internal/aws/dynamodb"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
-var dynamodbAPI dynamodb.API
+var dynamodbAPI idynamodb.API
 
-// errDynamoDBInputNotAnObject is returned when the input is not a JSON object. Refer to the DynamoDB processor documentation for input requirements.
-const errDynamoDBInputNotAnObject = errors.Error("input is not an object")
+// errdynamodbInputNotAnObject is returned when the input is not a JSON object. Refer to the dynamodb processor documentation for input requirements.
+const errdynamodbInputNotAnObject = errors.Error("input is not an object")
 
-// errDynamoDBInputMissingPK is returned when the JSON key "PK" is missing in the input. Refer to the DynamoDB processor documentation for input requirements.
-const errDynamoDBInputMissingPK = errors.Error("input missing PK")
+// errdynamodbInputMissingPK is returned when the JSON key "PK" is missing in the input. Refer to the dynamodb processor documentation for input requirements.
+const errdynamodbInputMissingPK = errors.Error("input missing PK")
 
 /*
-DynamoDB processes data by querying a DynamoDB table and returning all matched items as an array of JSON objects. The input must be a JSON object containing a partition key ("PK") and optionally containing a sort key ("SK"). This processor uses the DynamoDB Query operation, refer to the DynamoDB documentation for the Query operation's request syntax and key condition expression patterns:
+dynamodb processes data by querying a dynamodb table and returning all matched items as an array of JSON objects. The input must be a JSON object containing a partition key ("PK") and optionally containing a sort key ("SK"). This processor uses the dynamodb Query operation, refer to the dynamodb documentation for the Query operation's request syntax and key condition expression patterns:
 
 - https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#API_Query_RequestSyntax
 
@@ -50,18 +49,16 @@ When loaded with a factory, the processor uses this JSON configuration:
 		}
 	}
 */
-type DynamoDB struct {
-	Options   DynamoDBOptions  `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+type dynamodb struct {
+	process
+	Options dynamodbOptions `json:"options"`
 }
 
 /*
-DynamoDBOptions contains custom options settings for the DynamoDB processor (https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#API_Query_RequestSyntax):
+dynamodbOptions contains custom options settings for the dynamodb processor (https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#API_Query_RequestSyntax):
 
 	Table:
-		DynamoDB table to query
+		dynamodb table to query
 	KeyConditionExpression:
 		key condition expression (see documentation)
 	Limit (optional):
@@ -73,26 +70,20 @@ DynamoDBOptions contains custom options settings for the DynamoDB processor (htt
 			true (default): traversal is performed in ascending order
 			false: traversal is performed in descending order
 */
-type DynamoDBOptions struct {
+type dynamodbOptions struct {
 	Table                  string `json:"table"`
 	KeyConditionExpression string `json:"key_condition_expression"`
 	Limit                  int64  `json:"limit"`
 	ScanIndexForward       bool   `json:"scan_index_forward"`
 }
 
-// Close closes resources opened by the DynamoDB processor.
-func (p DynamoDB) Close(context.Context) error {
+// Close closes resources opened by the dynamodb processor.
+func (p dynamodb) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the DynamoDB processor. Conditions are optionally applied to the data to enable processing.
-func (p DynamoDB) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process dynamodb: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
+func (p dynamodb) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 	if err != nil {
 		return nil, fmt.Errorf("process dynamodb: %v", err)
 	}
@@ -100,16 +91,16 @@ func (p DynamoDB) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the DynamoDB processor.
-func (p DynamoDB) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes encapsulated data with the dynamodb processor.
+func (p dynamodb) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
 		return capsule, fmt.Errorf("process dynamodb: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" && p.OutputKey == "" {
-		return capsule, fmt.Errorf("process dynamodb: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	if p.Key == "" && p.SetKey == "" {
+		return capsule, fmt.Errorf("process dynamodb: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	// lazy load API
@@ -117,15 +108,15 @@ func (p DynamoDB) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 		dynamodbAPI.Setup()
 	}
 
-	result := capsule.Get(p.InputKey)
+	result := capsule.Get(p.Key)
 	if !result.IsObject() {
-		return capsule, fmt.Errorf("process dynamodb: inputkey %s: %v", p.InputKey, errDynamoDBInputNotAnObject)
+		return capsule, fmt.Errorf("process dynamodb: inputkey %s: %v", p.Key, errdynamodbInputNotAnObject)
 	}
 
 	// PK is a required field
 	pk := json.Get([]byte(result.Raw), "PK").String()
 	if pk == "" {
-		return capsule, fmt.Errorf("process dynamodb: inputkey %s: %v", p.InputKey, errDynamoDBInputMissingPK)
+		return capsule, fmt.Errorf("process dynamodb: inputkey %s: %v", p.Key, errdynamodbInputMissingPK)
 	}
 
 	// SK is an optional field
@@ -141,14 +132,14 @@ func (p DynamoDB) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 		return capsule, nil
 	}
 
-	if err := capsule.Set(p.OutputKey, value); err != nil {
+	if err := capsule.Set(p.SetKey, value); err != nil {
 		return capsule, fmt.Errorf("process dynamodb: %v", err)
 	}
 
 	return capsule, nil
 }
 
-func (p DynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {
+func (p dynamodb) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {
 	resp, err := dynamodbAPI.Query(
 		ctx,
 		p.Options.Table,

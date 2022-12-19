@@ -7,7 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	sddb "github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/brexhq/substation/config"
 	ddb "github.com/brexhq/substation/internal/aws/dynamodb"
@@ -15,16 +15,16 @@ import (
 
 type mockedQuery struct {
 	dynamodbiface.DynamoDBAPI
-	Resp dynamodb.QueryOutput
+	Resp sddb.QueryOutput
 }
 
-func (m mockedQuery) QueryWithContext(ctx aws.Context, input *dynamodb.QueryInput, opts ...request.Option) (*dynamodb.QueryOutput, error) {
+func (m mockedQuery) QueryWithContext(ctx aws.Context, input *sddb.QueryInput, opts ...request.Option) (*sddb.QueryOutput, error) {
 	return &m.Resp, nil
 }
 
 var dynamodbTests = []struct {
 	name     string
-	proc     DynamoDB
+	proc     dynamodb
 	test     []byte
 	expected []byte
 	err      error
@@ -32,21 +32,23 @@ var dynamodbTests = []struct {
 }{
 	{
 		"JSON",
-		DynamoDB{
-			Options: DynamoDBOptions{
+		dynamodb{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: dynamodbOptions{
 				Table:                  "fooer",
 				KeyConditionExpression: "barre",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":{"PK":"bar"}}`),
 		[]byte(`{"foo":[{"baz":"qux"}]}`),
 		nil,
 		ddb.API{
 			Client: mockedQuery{
-				Resp: dynamodb.QueryOutput{
-					Items: []map[string]*dynamodb.AttributeValue{
+				Resp: sddb.QueryOutput{
+					Items: []map[string]*sddb.AttributeValue{
 						{
 							"baz": {
 								S: aws.String("qux"),
@@ -78,7 +80,7 @@ func TestDynamoDB(t *testing.T) {
 	}
 }
 
-func benchmarkDynamoDB(b *testing.B, applicator DynamoDB, test config.Capsule) {
+func benchmarkDynamoDB(b *testing.B, applicator dynamodb, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

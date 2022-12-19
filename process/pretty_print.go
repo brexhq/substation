@@ -20,16 +20,16 @@ const (
 )
 
 /*
-errPrettyPrintIncompleteJSON is returned when the processor is given input
+errprettyPrintIncompleteJSON is returned when the processor is given input
 that does not contain an equal number of open curly brackets ( { ) and close
 curly brackets ( } ), indicating that the input was an incomplete JSON object.
 The most common causes of this error are invalid input JSON
 (e.g., `{{"foo":"bar"}`) or using the processor with multi-core processing enabled.
 */
-const errPrettyPrintIncompleteJSON = errors.Error("incomplete JSON object")
+const errprettyPrintIncompleteJSON = errors.Error("incomplete JSON object")
 
 /*
-PrettyPrint processes data by applying or reversing prettyprint formatting to JSON.
+prettyPrint processes data by applying or reversing prettyprint formatting to JSON.
 This processor has significant limitations when used to reverse prettyprint, including:
   - cannot support multi-core processing
   - invalid input will cause unpredictable results
@@ -60,13 +60,13 @@ When loaded with a factory, the processor uses this JSON configuration:
 		}
 	}
 */
-type PrettyPrint struct {
-	Options   PrettyPrintOptions `json:"options"`
-	Condition condition.Config   `json:"condition"`
+type prettyPrint struct {
+	process
+	Options prettyPrintOptions `json:"options"`
 }
 
 /*
-PrettyPrintOptions contains custom options settings for the PrettyPrint processor:
+prettyPrintOptions contains custom options settings for the prettyPrint processor:
 
 	Direction:
 		direction of the pretty transformation
@@ -74,21 +74,21 @@ PrettyPrintOptions contains custom options settings for the PrettyPrint processo
 			to: applies prettyprint formatting
 			from: reverses prettyprint formatting
 */
-type PrettyPrintOptions struct {
+type prettyPrintOptions struct {
 	Direction string `json:"direction"`
 }
 
-// Close closes resources opened by the PrettyPrint processor.
-func (p PrettyPrint) Close(context.Context) error {
+// Close closes resources opened by the prettyPrint processor.
+func (p prettyPrint) Close(context.Context) error {
 	return nil
 }
 
 /*
 ApplyBatch processes a slice of encapsulated data
-with the PrettyPrint processor.
+with the prettyPrint processor.
 
 Applying prettyprint formatting is handled by the
-gjson PrettyPrint modifier and is applied to the root
+gjson prettyPrint modifier and is applied to the root
 JSON object.
 
 Reversing prettyprint formatting is handled by
@@ -98,7 +98,7 @@ and close curly brackets ( { } ) are observed,
 then the stack of bytes has JSON compaction
 applied and the result is emitted as a new object.
 */
-func (p PrettyPrint) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
+func (p prettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
 		return nil, fmt.Errorf("process pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
@@ -164,25 +164,25 @@ func (p PrettyPrint) ApplyBatch(ctx context.Context, capsules []config.Capsule) 
 	}
 
 	if count != 0 {
-		return nil, fmt.Errorf("process pretty_print: %d characters remain: %v", count, errPrettyPrintIncompleteJSON)
+		return nil, fmt.Errorf("process pretty_print: %d characters remain: %v", count, errprettyPrintIncompleteJSON)
 	}
 
 	return newCapsules, nil
 }
 
 /*
-Apply processes encapsulated data with the PrettyPrint
+Apply processes encapsulated data with the prettyPrint
 processor.
 
 Applying prettyprint formatting is handled by the
-gjson PrettyPrint modifier and is applied to the root
+gjson prettyPrint modifier and is applied to the root
 JSON object.
 
 This _does not_ support reversing prettyprint formatting;
 this support is unnecessary for multi-line JSON objects
 that are stored in a single byte array.
 */
-func (p PrettyPrint) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p prettyPrint) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
 		return capsule, fmt.Errorf("process pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)

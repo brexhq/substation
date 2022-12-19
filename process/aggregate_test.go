@@ -10,15 +10,15 @@ import (
 
 var aggregateTests = []struct {
 	name     string
-	proc     Aggregate
+	proc     aggregate
 	test     [][]byte
 	expected [][]byte
 	err      error
 }{
 	{
 		"single aggregate",
-		Aggregate{
-			Options: AggregateOptions{
+		aggregate{
+			Options: aggregateOptions{
 				Separator: `\n`,
 			},
 		},
@@ -35,8 +35,8 @@ var aggregateTests = []struct {
 	// identical to the single buffer test, but improves performance due to lowered count and size limits
 	{
 		"single aggregate with better performance",
-		Aggregate{
-			Options: AggregateOptions{
+		aggregate{
+			Options: aggregateOptions{
 				Separator: `\n`,
 				MaxCount:  3,
 				MaxSize:   50,
@@ -54,8 +54,8 @@ var aggregateTests = []struct {
 	},
 	{
 		"multiple aggregates",
-		Aggregate{
-			Options: AggregateOptions{
+		aggregate{
+			Options: aggregateOptions{
 				Separator: `\n`,
 				MaxCount:  2,
 			},
@@ -73,8 +73,10 @@ var aggregateTests = []struct {
 	},
 	{
 		"single JSON array aggregate",
-		Aggregate{
-			OutputKey: "aggregate.-1",
+		aggregate{
+			process: process{
+				SetKey: "aggregate.-1",
+			},
 		},
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
@@ -89,11 +91,13 @@ var aggregateTests = []struct {
 	},
 	{
 		"multiple JSON array aggregates",
-		Aggregate{
-			Options: AggregateOptions{
+		aggregate{
+			process: process{
+				SetKey: "aggregate.-1",
+			},
+			Options: aggregateOptions{
 				MaxCount: 2,
 			},
-			OutputKey: "aggregate.-1",
 		},
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
@@ -108,8 +112,10 @@ var aggregateTests = []struct {
 	},
 	{
 		"single JSON array aggregate",
-		Aggregate{
-			OutputKey: "aggregate.-1",
+		aggregate{
+			process: process{
+				SetKey: "aggregate.-1",
+			},
 		},
 		[][]byte{
 			[]byte(`foo`),
@@ -126,11 +132,13 @@ var aggregateTests = []struct {
 	},
 	{
 		"multiple JSON array aggregates",
-		Aggregate{
-			Options: AggregateOptions{
+		aggregate{
+			process: process{
+				SetKey: "aggregate.-1",
+			},
+			Options: aggregateOptions{
 				MaxCount: 2,
 			},
-			OutputKey: "aggregate.-1",
 		},
 		[][]byte{
 			[]byte(`foo`),
@@ -149,11 +157,13 @@ var aggregateTests = []struct {
 	},
 	{
 		"JSON key aggregates",
-		Aggregate{
-			Options: AggregateOptions{
-				AggregateKey: "foo",
+		aggregate{
+			process: process{
+				SetKey: "aggregate.-1",
 			},
-			OutputKey: "aggregate.-1",
+			Options: aggregateOptions{
+				Key: "foo",
+			},
 		},
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
@@ -182,7 +192,7 @@ func TestAggregate(t *testing.T) {
 			capsules = append(capsules, capsule)
 		}
 
-		result, err := test.proc.ApplyBatch(ctx, capsules)
+		result, err := test.proc.Batch(ctx, capsules...)
 		if err != nil {
 			t.Error(err)
 		}
@@ -196,10 +206,10 @@ func TestAggregate(t *testing.T) {
 	}
 }
 
-func benchmarkAggregate(b *testing.B, batcher Aggregate, capsules []config.Capsule) {
+func benchmarkAggregate(b *testing.B, batcher aggregate, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = batcher.ApplyBatch(ctx, capsules)
+		_, _ = batcher.Batch(ctx, capsules...)
 	}
 }
 

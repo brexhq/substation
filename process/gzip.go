@@ -2,7 +2,7 @@ package process
 
 import (
 	"bytes"
-	"compress/gzip"
+	gogzip "compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -11,45 +11,18 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-/*
-Gzip processes data by compressing or decompressing gzip. The processor supports these patterns:
-
-	data:
-		[31 139 8 0 0 0 0 0 0 255 74 203 207 7 4 0 0 255 255 33 101 115 140 3 0 0 0] >>> foo
-		foo >>> [31 139 8 0 0 0 0 0 0 255 74 203 207 7 4 0 0 255 255 33 101 115 140 3 0 0 0]
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "gzip",
-		"settings": {
-			"options": {
-				"direction": "from"
-			}
-		}
-	}
-*/
-type Gzip struct {
-	Options   GzipOptions      `json:"options"`
+type gzip struct {
+	Options   gzipOptions      `json:"options"`
 	Condition condition.Config `json:"condition"`
 }
 
-/*
-GzipOptions contains custom options settings for the Gzip processor:
-
-	Direction:
-		direction of the compression
-		must be one of:
-			to: compress data to gzip
-			from: decompress data from gzip
-*/
-type GzipOptions struct {
+type gzipOptions struct {
 	Direction string `json:"direction"`
 }
 
-func (p Gzip) from(data []byte) ([]byte, error) {
+func (p gzip) from(data []byte) ([]byte, error) {
 	r := bytes.NewReader(data)
-	gz, err := gzip.NewReader(r)
+	gz, err := gogzip.NewReader(r)
 	if err != nil {
 		return nil, fmt.Errorf("process gzip: %v", err)
 	}
@@ -62,9 +35,9 @@ func (p Gzip) from(data []byte) ([]byte, error) {
 	return output, nil
 }
 
-func (p Gzip) to(data []byte) ([]byte, error) {
+func (p gzip) to(data []byte) ([]byte, error) {
 	var buf bytes.Buffer
-	gz := gzip.NewWriter(&buf)
+	gz := gogzip.NewWriter(&buf)
 	if _, err := gz.Write(data); err != nil {
 		return nil, fmt.Errorf("process gzip: %v", err)
 	}
@@ -75,19 +48,13 @@ func (p Gzip) to(data []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Close closes resources opened by the Gzip processor.
-func (p Gzip) Close(context.Context) error {
+// Close closes resources opened by the gzip processor.
+func (p gzip) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Gzip processor. Conditions are optionally applied to the data to enable processing.
-func (p Gzip) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process gzip: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
+func (p gzip) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 	if err != nil {
 		return nil, fmt.Errorf("process gzip: %v", err)
 	}
@@ -95,8 +62,8 @@ func (p Gzip) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]conf
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the Gzip processor.
-func (p Gzip) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes encapsulated data with the gzip processor.
+func (p gzip) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
 		return capsule, fmt.Errorf("process gzip: options %+v: %v", p.Options, errMissingRequiredOptions)

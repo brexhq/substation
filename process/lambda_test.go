@@ -7,7 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/service/lambda"
+	golambda "github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/lambda/lambdaiface"
 	"github.com/brexhq/substation/config"
 	lamb "github.com/brexhq/substation/internal/aws/lambda"
@@ -15,16 +15,16 @@ import (
 
 type mockedInvoke struct {
 	lambdaiface.LambdaAPI
-	Resp lambda.InvokeOutput
+	Resp golambda.InvokeOutput
 }
 
-func (m mockedInvoke) InvokeWithContext(ctx aws.Context, input *lambda.InvokeInput, opts ...request.Option) (*lambda.InvokeOutput, error) {
+func (m mockedInvoke) InvokeWithContext(ctx aws.Context, input *golambda.InvokeInput, opts ...request.Option) (*golambda.InvokeOutput, error) {
 	return &m.Resp, nil
 }
 
 var lambdaTests = []struct {
 	name     string
-	proc     Lambda
+	proc     lambda
 	test     []byte
 	expected []byte
 	err      error
@@ -32,19 +32,21 @@ var lambdaTests = []struct {
 }{
 	{
 		"JSON",
-		Lambda{
-			Options: LambdaOptions{
-				Function: "fooer",
+		lambda{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
+			Options: lambdaOptions{
+				FunctionName: "fooer",
+			},
 		},
 		[]byte(`{"foo":{"bar":"baz"}}`),
 		[]byte(`{"foo":{"baz":"qux"}}`),
 		nil,
 		lamb.API{
 			Client: mockedInvoke{
-				Resp: lambda.InvokeOutput{
+				Resp: golambda.InvokeOutput{
 					Payload: []byte(`{"baz":"qux"}`),
 				},
 			},
@@ -71,7 +73,7 @@ func TestLambda(t *testing.T) {
 	}
 }
 
-func benchmarkLambda(b *testing.B, applicator Lambda, test config.Capsule) {
+func benchmarkLambda(b *testing.B, applicator lambda, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

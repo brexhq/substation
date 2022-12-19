@@ -11,20 +11,22 @@ import (
 
 var replaceTests = []struct {
 	name     string
-	proc     Replace
+	proc     replace
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"json",
-		Replace{
-			Options: ReplaceOptions{
+		replace{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: replaceOptions{
 				Old: "r",
 				New: "z",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"baz"}`),
@@ -32,13 +34,15 @@ var replaceTests = []struct {
 	},
 	{
 		"json delete",
-		Replace{
-			Options: ReplaceOptions{
+		replace{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: replaceOptions{
 				Old: "z",
 				New: "",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"fizz"}`),
 		[]byte(`{"foo":"fi"}`),
@@ -46,8 +50,8 @@ var replaceTests = []struct {
 	},
 	{
 		"data",
-		Replace{
-			Options: ReplaceOptions{
+		replace{
+			Options: replaceOptions{
 				Old: "r",
 				New: "z",
 			},
@@ -58,8 +62,8 @@ var replaceTests = []struct {
 	},
 	{
 		"data delete",
-		Replace{
-			Options: ReplaceOptions{
+		replace{
+			Options: replaceOptions{
 				Old: "r",
 				New: "",
 			},
@@ -70,8 +74,8 @@ var replaceTests = []struct {
 	},
 	{
 		"data",
-		Replace{
-			Options: ReplaceOptions{
+		replace{
+			Options: replaceOptions{
 				New: "z",
 			},
 		},
@@ -102,7 +106,7 @@ func TestReplace(t *testing.T) {
 	}
 }
 
-func benchmarkReplace(b *testing.B, applicator Replace, test config.Capsule) {
+func benchmarkReplace(b *testing.B, applicator replace, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

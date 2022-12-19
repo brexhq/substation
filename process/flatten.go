@@ -4,56 +4,25 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
-/*
-Flatten processes data by flattening JSON arrays. The processor supports these patterns:
-
-	JSON:
-		{"flatten":["foo",["bar"]]} >>> {"flatten":["foo","bar"]}
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "flatten",
-		"settings": {
-			"input_key": "flatten",
-			"output_key": "flatten"
-		}
-	}
-*/
-type Flatten struct {
-	Options   FlattenOptions   `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+type flatten struct {
+	process
+	Options flattenOptions `json:"options"`
 }
 
-/*
-FlattenOptions contains custom options settings for the Flatten processor:
-
-	Deep (optional):
-		deeply flattens nested arrays
-*/
-type FlattenOptions struct {
+type flattenOptions struct {
 	Deep bool `json:"deep"`
 }
 
-// Close closes resources opened by the Flatten processor.
-func (p Flatten) Close(context.Context) error {
+// Close closes resources opened by the flatten processor.
+func (p flatten) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Flatten processor. Conditions are optionally applied to the data to enable processing.
-func (p Flatten) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process flatten: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
+func (p flatten) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 	if err != nil {
 		return nil, fmt.Errorf("process flatten: %v", err)
 	}
@@ -61,21 +30,21 @@ func (p Flatten) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]c
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the Flatten processor.
-func (p Flatten) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes encapsulated data with the flatten processor.
+func (p flatten) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" && p.OutputKey == "" {
-		return capsule, fmt.Errorf("process flatten: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	if p.Key == "" && p.SetKey == "" {
+		return capsule, fmt.Errorf("process flatten: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	var value interface{}
 	if p.Options.Deep {
-		value = capsule.Get(p.InputKey + `|@flatten:{"deep":true}`)
+		value = capsule.Get(p.Key + `|@flatten:{"deep":true}`)
 	} else {
-		value = capsule.Get(p.InputKey + `|@flatten`)
+		value = capsule.Get(p.Key + `|@flatten`)
 	}
 
-	if err := capsule.Set(p.OutputKey, value); err != nil {
+	if err := capsule.Set(p.SetKey, value); err != nil {
 		return capsule, fmt.Errorf("process flatten: %v", err)
 	}
 

@@ -10,20 +10,22 @@ import (
 
 var captureTests = []struct {
 	name     string
-	proc     Capture
+	proc     capture
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON find",
-		Capture{
-			Options: CaptureOptions{
-				Expression: "^([^@]*)@.*$",
-				Function:   "find",
+		capture{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
+			Options: captureOptions{
+				Expression: "^([^@]*)@.*$",
+				Type:       "find",
+			},
 		},
 		[]byte(`{"foo":"bar@qux.corge"}`),
 		[]byte(`{"foo":"bar"}`),
@@ -31,14 +33,16 @@ var captureTests = []struct {
 	},
 	{
 		"JSON find_all",
-		Capture{
-			Options: CaptureOptions{
+		capture{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: captureOptions{
 				Expression: "(.{1})",
-				Function:   "find_all",
+				Type:       "find_all",
 				Count:      3,
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":["b","a","r"]}`),
@@ -46,10 +50,10 @@ var captureTests = []struct {
 	},
 	{
 		"data",
-		Capture{
-			Options: CaptureOptions{
+		capture{
+			Options: captureOptions{
 				Expression: "^([^@]*)@.*$",
-				Function:   "find",
+				Type:       "find",
 			},
 		},
 		[]byte(`bar@qux.corge`),
@@ -58,9 +62,9 @@ var captureTests = []struct {
 	},
 	{
 		"named_group",
-		Capture{
-			Options: CaptureOptions{
-				Function:   "named_group",
+		capture{
+			Options: captureOptions{
+				Type:       "named_group",
 				Expression: "(?P<foo>[a-zA-Z]+) (?P<qux>[a-zA-Z]+)",
 			},
 		},
@@ -88,7 +92,7 @@ func TestCapture(t *testing.T) {
 	}
 }
 
-func benchmarkCapture(b *testing.B, applicator Capture, test config.Capsule) {
+func benchmarkCapture(b *testing.B, applicator capture, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

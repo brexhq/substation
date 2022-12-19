@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
 /*
-Replace processes data by replacing characters. The processor supports these patterns:
+replace processes data by replacing characters. The processor supports these patterns:
 
 	JSON:
 		{"replace":"bar"} >>> {"replace":"baz"}
@@ -32,15 +31,13 @@ When loaded with a factory, the processor uses this JSON configuration:
 		}
 	}
 */
-type Replace struct {
-	Options   ReplaceOptions   `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+type replace struct {
+	process
+	Options replaceOptions `json:"options"`
 }
 
 /*
-ReplaceOptions contains custom options for the Replace processor:
+replaceOptions contains custom options for the replace processor:
 
 	Old:
 		character(s) to replace in the data
@@ -50,25 +47,20 @@ ReplaceOptions contains custom options for the Replace processor:
 		number of replacements to make
 		defaults to -1, which replaces all matches
 */
-type ReplaceOptions struct {
+type replaceOptions struct {
 	Old   string `json:"old"`
 	New   string `json:"new"`
 	Count int    `json:"count"`
 }
 
-// Close closes resources opened by the Replace processor.
-func (p Replace) Close(context.Context) error {
+// Close closes resources opened by the replace processor.
+func (p replace) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Replace processor. Conditions are optionally applied to the data to enable processing.
-func (p Replace) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process replace: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
+// ApplyBatch processes a slice of encapsulated data with the replace processor. Conditions are optionally applied to the data to enable processing.
+func (p replace) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 	if err != nil {
 		return nil, fmt.Errorf("process replace: %v", err)
 	}
@@ -76,8 +68,8 @@ func (p Replace) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]c
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the Replace processor.
-func (p Replace) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes encapsulated data with the replace processor.
+func (p replace) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Old == "" {
 		return capsule, fmt.Errorf("process replace: options %+v: %w", p.Options, errMissingRequiredOptions)
@@ -89,8 +81,8 @@ func (p Replace) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 	}
 
 	// JSON processing
-	if p.InputKey != "" && p.OutputKey != "" {
-		result := capsule.Get(p.InputKey).String()
+	if p.Key != "" && p.SetKey != "" {
+		result := capsule.Get(p.Key).String()
 		value := strings.Replace(
 			result,
 			p.Options.Old,
@@ -98,7 +90,7 @@ func (p Replace) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 			p.Options.Count,
 		)
 
-		if err := capsule.Set(p.OutputKey, value); err != nil {
+		if err := capsule.Set(p.SetKey, value); err != nil {
 			return capsule, fmt.Errorf("process replace: %v", err)
 		}
 
@@ -106,7 +98,7 @@ func (p Replace) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 	}
 
 	// data processing
-	if p.InputKey == "" && p.OutputKey == "" {
+	if p.Key == "" && p.SetKey == "" {
 		value := bytes.Replace(
 			capsule.Data(),
 			[]byte(p.Options.Old),
@@ -118,5 +110,5 @@ func (p Replace) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process replace: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process replace: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }

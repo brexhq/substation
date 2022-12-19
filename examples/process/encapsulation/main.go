@@ -40,13 +40,13 @@ func main() {
 		panic(err)
 	}
 
-	proc, err := process.BatchApplicatorFactory(sub)
+	batchers, err := process.MakeBatchers(sub)
 	if err != nil {
 		panic(err)
 	}
 
 	// apply batch processor to encapsulated data
-	capsules, err = process.ApplyBatch(context.TODO(), capsules, proc)
+	capsules, err = process.Batch(context.TODO(), capsules, batchers...)
 	if err != nil {
 		panic(err)
 	}

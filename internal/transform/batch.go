@@ -47,13 +47,13 @@ type Batch struct {
 
 // Transform processes a channel of encapsulated data with the Batch transform.
 func (transform *Batch) Transform(ctx context.Context, in, out *config.Channel) error {
-	applicators, err := process.MakeBatchApplicators(transform.Processors)
+	batchers, err := process.MakeBatchers(transform.Processors...)
 	if err != nil {
 		return err
 	}
 
 	//nolint: errcheck // errors are ignored in case processing fails in a single applicator
-	defer process.CloseBatchApplicators(ctx, applicators...)
+	defer process.CloseBatchers(ctx, batchers...)
 
 	var received int
 	// read encapsulated data from the input channel into a batch
@@ -73,7 +73,7 @@ func (transform *Batch) Transform(ctx context.Context, in, out *config.Channel) 
 	}
 
 	// iteratively process the batch of encapsulated data
-	batch, err = process.ApplyBatch(ctx, batch, applicators...)
+	batch, err = process.Batch(ctx, batch, batchers...)
 	if err != nil {
 		return err
 	}

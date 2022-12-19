@@ -10,15 +10,15 @@ import (
 
 var base64Tests = []struct {
 	name     string
-	proc     Base64
+	proc     base64
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"data decode",
-		Base64{
-			Options: Base64Options{
+		base64{
+			Options: base64Options{
 				Direction: "from",
 			},
 		},
@@ -28,8 +28,8 @@ var base64Tests = []struct {
 	},
 	{
 		"data encode",
-		Base64{
-			Options: Base64Options{
+		base64{
+			Options: base64Options{
 				Direction: "to",
 			},
 		},
@@ -39,12 +39,14 @@ var base64Tests = []struct {
 	},
 	{
 		"JSON decode",
-		Base64{
-			Options: Base64Options{
+		base64{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: base64Options{
 				Direction: "from",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"YmFy"}`),
 		[]byte(`{"foo":"bar"}`),
@@ -70,7 +72,7 @@ func TestBase64(t *testing.T) {
 	}
 }
 
-func benchmarkBase64(b *testing.B, applicator Base64, test config.Capsule) {
+func benchmarkbase64(b *testing.B, applicator base64, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)
@@ -83,7 +85,7 @@ func BenchmarkBase64(b *testing.B) {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkBase64(b, test.proc, capsule)
+				benchmarkbase64(b, test.proc, capsule)
 			},
 		)
 	}

@@ -10,16 +10,18 @@ import (
 
 var copyTests = []struct {
 	name     string
-	proc     Copy
+	proc     copy
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON",
-		Copy{
-			InputKey:  "foo",
-			OutputKey: "baz",
+		copy{
+			process: process{
+				Key:    "foo",
+				SetKey: "baz",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"bar","baz":"bar"}`),
@@ -27,9 +29,11 @@ var copyTests = []struct {
 	},
 	{
 		"JSON unescape",
-		Copy{
-			InputKey:  "foo",
-			OutputKey: "foo",
+		copy{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
 		},
 		[]byte(`{"foo":"{\"bar\":\"baz\"}"`),
 		[]byte(`{"foo":{"bar":"baz"}`),
@@ -37,8 +41,10 @@ var copyTests = []struct {
 	},
 	{
 		"from JSON",
-		Copy{
-			InputKey: "foo",
+		copy{
+			process: process{
+				Key: "foo",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`bar`),
@@ -46,8 +52,10 @@ var copyTests = []struct {
 	},
 	{
 		"from JSON nested",
-		Copy{
-			InputKey: "foo",
+		copy{
+			process: process{
+				Key: "foo",
+			},
 		},
 		[]byte(`{"foo":{"bar":"baz"}}`),
 		[]byte(`{"bar":"baz"}`),
@@ -55,17 +63,21 @@ var copyTests = []struct {
 	},
 	{
 		"to JSON utf8",
-		Copy{
-			OutputKey: "bar",
+		copy{
+			process: process{
+				SetKey: "bar",
+			},
 		},
 		[]byte(`baz`),
 		[]byte(`{"bar":"baz"}`),
 		nil,
 	},
 	{
-		"to JSON zlib",
-		Copy{
-			OutputKey: "bar",
+		"to JSON base64",
+		copy{
+			process: process{
+				SetKey: "bar",
+			},
 		},
 		[]byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},
 		[]byte(`{"bar":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
@@ -91,7 +103,7 @@ func TestCopy(t *testing.T) {
 	}
 }
 
-func benchmarkCopy(b *testing.B, applicator Copy, test config.Capsule) {
+func benchmarkCopy(b *testing.B, applicator copy, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

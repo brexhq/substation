@@ -8,21 +8,23 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var caseTests = []struct {
+var letterCaseTests = []struct {
 	name     string
-	proc     Case
+	proc     letterCase
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON lower",
-		Case{
-			Options: CaseOptions{
-				Case: "lower",
+		letterCase{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
+			Options: letterCaseOptions{
+				Type: "lowercase",
+			},
 		},
 		[]byte(`{"foo":"BAR"}`),
 		[]byte(`{"foo":"bar"}`),
@@ -30,12 +32,14 @@ var caseTests = []struct {
 	},
 	{
 		"JSON upper",
-		Case{
-			Options: CaseOptions{
-				Case: "upper",
+		letterCase{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
+			Options: letterCaseOptions{
+				Type: "uppercase",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":"BAR"}`),
@@ -43,11 +47,13 @@ var caseTests = []struct {
 	},
 	{
 		"JSON snake",
-		Case{
-			InputKey:  "foo",
-			OutputKey: "foo",
-			Options: CaseOptions{
-				Case: "snake",
+		letterCase{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: letterCaseOptions{
+				Type: "snake",
 			},
 		},
 		[]byte(`{"foo":"AbC"})`),
@@ -60,7 +66,7 @@ func TestCase(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range caseTests {
+	for _, test := range letterCaseTests {
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -74,7 +80,7 @@ func TestCase(t *testing.T) {
 	}
 }
 
-func benchmarkCase(b *testing.B, applicator Case, test config.Capsule) {
+func benchmarkCase(b *testing.B, applicator letterCase, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)
@@ -83,7 +89,7 @@ func benchmarkCase(b *testing.B, applicator Case, test config.Capsule) {
 
 func BenchmarkCase(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range caseTests {
+	for _, test := range letterCaseTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)

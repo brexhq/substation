@@ -8,17 +8,21 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var PipelineTests = []struct {
+var pipelineTests = []struct {
 	name     string
-	proc     Pipeline
+	proc     pipeline
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"json",
-		Pipeline{
-			Options: PipelineOptions{
+		pipeline{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: pipelineOptions{
 				Processors: []config.Config{
 					{
 						Type: "base64",
@@ -38,8 +42,6 @@ var PipelineTests = []struct {
 					},
 				},
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"H4sIAKi91GIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="}`),
 		[]byte(`{"foo":"bar"}`),
@@ -47,8 +49,8 @@ var PipelineTests = []struct {
 	},
 	{
 		"data",
-		Pipeline{
-			Options: PipelineOptions{
+		pipeline{
+			Options: pipelineOptions{
 				Processors: []config.Config{
 					{
 						Type: "base64",
@@ -79,7 +81,7 @@ func TestPipeline(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range PipelineTests {
+	for _, test := range pipelineTests {
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -93,7 +95,7 @@ func TestPipeline(t *testing.T) {
 	}
 }
 
-func benchmarkPipeline(b *testing.B, applicator Pipeline, test config.Capsule) {
+func benchmarkPipeline(b *testing.B, applicator pipeline, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)
@@ -102,7 +104,7 @@ func benchmarkPipeline(b *testing.B, applicator Pipeline, test config.Capsule) {
 
 func BenchmarkPipeline(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range PipelineTests {
+	for _, test := range pipelineTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)

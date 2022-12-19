@@ -33,19 +33,19 @@ func main() {
 		panic(err)
 	}
 
-	var sub config.Config
-	if err := json.Unmarshal(cfg, &sub); err != nil {
+	var conf config.Config
+	if err := json.Unmarshal(cfg, &conf); err != nil {
 		panic(err)
 	}
 
-	proc, err := process.ApplicatorFactory(sub)
+	applicators, err := process.MakeApplicators(conf)
 	if err != nil {
 		panic(err)
 	}
 
 	// apply processor to data
 	for _, data := range data {
-		data, err = process.ApplyByte(context.TODO(), data, proc)
+		data, err = process.ApplyBytes(context.TODO(), data, applicators...)
 		if err != nil {
 			panic(err)
 		}

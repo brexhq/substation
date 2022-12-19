@@ -7,24 +7,15 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-/*
-Count processes data by counting it.
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "count"
-	}
-*/
-type Count struct{}
+type count struct{}
 
 // Close closes resources opened by the Count processor.
-func (p Count) Close(context.Context) error {
+func (p count) Close(context.Context) error {
 	return nil
 }
 
 // ApplyBatch processes a slice of encapsulated data with the Count processor. Conditions are optionally applied to the data to enable processing.
-func (p Count) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
+func (p count) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	newCapsule := config.NewCapsule()
 	if err := newCapsule.Set("count", len(capsules)); err != nil {
 		return capsules, fmt.Errorf("process count: : %v", err)

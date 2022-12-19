@@ -18,7 +18,7 @@ import (
 
 func main() {
 	proc := process.Insert{
-		OutputKey: "baz",
+		SetKey: "baz",
 		Options: process.InsertOptions{
 			Value: "qux",
 		},

@@ -8,26 +8,16 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-/*
-Drop processes data by "dropping" it -- the data is entirely removed and not emitted.
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		type: "drop"
-	}
-*/
-type Drop struct {
-	Condition condition.Config `json:"condition"`
+type drop struct {
+	process
 }
 
 // Close closes resources opened by the Drop processor.
-func (p Drop) Close(context.Context) error {
+func (p drop) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Drop processor. Conditions are optionally applied to the data to enable processing.
-func (p Drop) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
+func (p drop) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process drop: %v", err)

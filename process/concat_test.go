@@ -10,19 +10,21 @@ import (
 
 var concatTests = []struct {
 	name     string
-	proc     Concat
+	proc     concat
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON",
-		Concat{
-			Options: ConcatOptions{
+		concat{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: concatOptions{
 				Separator: ".",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":["bar","baz"]}`),
 		[]byte(`{"foo":"bar.baz"}`),
@@ -48,7 +50,7 @@ func TestConcat(t *testing.T) {
 	}
 }
 
-func benchmarkConcat(b *testing.B, applicator Concat, test config.Capsule) {
+func benchmarkConcat(b *testing.B, applicator concat, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

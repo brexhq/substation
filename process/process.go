@@ -21,17 +21,261 @@ const errMissingRequiredOptions = errors.Error("missing required options")
 // errInvalidFactoryInput is returned when an unsupported processor is referenced in any Factory.
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-// Applicator is an interface for applying a processor to encapsulated data.
-type Applicator interface {
+type process struct {
+	// Condition optionally enables processing depending on the outcome of data inspection.
+	Condition condition.Config `json:"condition"`
+	// Key retrieves a value from an object for processing.
+	//
+	// This is optional for processors that support processing non-object data.
+	Key string `json:"key"`
+	// SetKey inserts a processed value into an object.
+	//
+	// This is optional for processors that support processing non-object data.
+	SetKey string `json:"set_key"`
+	// IgnoreClose overrides attempts to close a processor.
+	IgnoreClose bool `json:"ignore_close"`
+	// IgnoreErrors overrides returning errors from a processor.
+	IgnoreErrors bool `json:"ignore_errors"`
+}
+
+type applicator interface {
 	Apply(context.Context, config.Capsule) (config.Capsule, error)
 	Close(context.Context) error
 }
 
-// Apply accepts one or many Applicators and applies processors in series to encapsulated data.
-func Apply(ctx context.Context, capsule config.Capsule, apps ...Applicator) (config.Capsule, error) {
+// applicatorFactory returns a configured Applicator from a config. This is the recommended method for retrieving ready-to-use Applicators.
+func applicatorFactory(cfg config.Config) (applicator, error) {
+	switch cfg.Type {
+	case "base64":
+		var p base64
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "capture":
+		var p capture
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "letter_case":
+		var p letterCase
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "concat":
+		var p concat
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "convert":
+		var p convert
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "copy":
+		var p copy
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "delete":
+		var p delete
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "dns":
+		var p dns
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "domain":
+		var p domain
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "dynamodb":
+		var p dynamodb
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "flatten":
+		var p flatten
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "for_each":
+		var p forEach
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "group":
+		var p group
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "gzip":
+		var p gzip
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "hash":
+		var p hash
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "insert":
+		var p insert
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "ip_database":
+		var p ipDatabase
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "lambda":
+		var p lambda
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "math":
+		var p math
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "pipeline":
+		var p pipeline
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "pretty_print":
+		var p prettyPrint
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "replace":
+		var p replace
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "split":
+		var p split
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "time":
+		var p time
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	default:
+		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
+	}
+}
+
+type batcher interface {
+	Batch(context.Context, ...config.Capsule) ([]config.Capsule, error)
+	Close(context.Context) error
+}
+
+func batcherFactory(cfg config.Config) (batcher, error) {
+	switch cfg.Type {
+	case "aggregate":
+		var p aggregate
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "base64":
+		var p base64
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "capture":
+		var p capture
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "letter_case":
+		var p letterCase
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "concat":
+		var p concat
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "convert":
+		var p convert
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "copy":
+		var p copy
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "count":
+		var p count
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "delete":
+		var p delete
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "dns":
+		var p dns
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "domain":
+		var p domain
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "drop":
+		var p drop
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "dynamodb":
+		var p dynamodb
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "expand":
+		var p expand
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "flatten":
+		var p flatten
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "for_each":
+		var p forEach
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "group":
+		var p group
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "gzip":
+		var p gzip
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "hash":
+		var p hash
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "insert":
+		var p insert
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "ip_database":
+		var p ipDatabase
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "lambda":
+		var p lambda
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "math":
+		var p math
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "pipeline":
+		var p pipeline
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "pretty_print":
+		var p prettyPrint
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "replace":
+		var p replace
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "split":
+		var p split
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "time":
+		var p time
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	default:
+		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
+	}
+}
+
+// Apply applies processors in series to encapsulated data.
+func Apply(ctx context.Context, capsule config.Capsule, applicators ...applicator) (config.Capsule, error) {
 	var err error
 
-	for _, app := range apps {
+	for _, app := range applicators {
 		capsule, err = app.Apply(ctx, capsule)
 		if err != nil {
 			return capsule, err
@@ -41,12 +285,12 @@ func Apply(ctx context.Context, capsule config.Capsule, apps ...Applicator) (con
 	return capsule, nil
 }
 
-// ApplyByte is a convenience function for applying one or many Applicators to bytes.
-func ApplyByte(ctx context.Context, data []byte, apps ...Applicator) ([]byte, error) {
+// ApplyBytes is a convenience function for applying processors in series to bytes.
+func ApplyBytes(ctx context.Context, data []byte, applicators ...applicator) ([]byte, error) {
 	capsule := config.NewCapsule()
 	capsule.SetData(data)
 
-	newCapsule, err := Apply(ctx, capsule, apps...)
+	newCapsule, err := Apply(ctx, capsule, applicators...)
 	if err != nil {
 		return nil, err
 	}
@@ -54,25 +298,25 @@ func ApplyByte(ctx context.Context, data []byte, apps ...Applicator) ([]byte, er
 	return newCapsule.Data(), nil
 }
 
-// MakeApplicators accepts multiple processor configs and returns populated Applicators. This is a convenience function for generating many Applicators.
-func MakeApplicators(cfg []config.Config) ([]Applicator, error) {
-	var apps []Applicator
+// MakeApplicators accepts one or more processor configurations and returns configured applicators.
+func MakeApplicators(cfg ...config.Config) ([]applicator, error) {
+	var apps []applicator
 
 	for _, c := range cfg {
-		app, err := ApplicatorFactory(c)
+		a, err := applicatorFactory(c)
 		if err != nil {
 			return nil, err
 		}
-		apps = append(apps, app)
+		apps = append(apps, a)
 	}
 
 	return apps, nil
 }
 
-// CloseApplicators closes all Applicators and returns an error if any close fails.
-func CloseApplicators(ctx context.Context, apps ...Applicator) error {
-	for _, app := range apps {
-		if err := app.Close(ctx); err != nil {
+// CloseApplicators closes all applicators and returns an error if any close fails.
+func CloseApplicators(ctx context.Context, applicators ...applicator) error {
+	for _, a := range applicators {
+		if err := a.Close(ctx); err != nil {
 			return err
 		}
 	}
@@ -80,122 +324,12 @@ func CloseApplicators(ctx context.Context, apps ...Applicator) error {
 	return nil
 }
 
-// ApplicatorFactory returns a configured Applicator from a config. This is the recommended method for retrieving ready-to-use Applicators.
-func ApplicatorFactory(cfg config.Config) (Applicator, error) {
-	switch t := cfg.Type; t {
-	case "base64":
-		var p Base64
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "capture":
-		var p Capture
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "case":
-		var p Case
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "concat":
-		var p Concat
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "convert":
-		var p Convert
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "copy":
-		var p Copy
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "delete":
-		var p Delete
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "dns":
-		var p DNS
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "domain":
-		var p Domain
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "dynamodb":
-		var p DynamoDB
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "flatten":
-		var p Flatten
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "for_each":
-		var p ForEach
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "group":
-		var p Group
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "gzip":
-		var p Gzip
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "hash":
-		var p Hash
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "insert":
-		var p Insert
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "ip_database":
-		var p IPDatabase
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "lambda":
-		var p Lambda
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "math":
-		var p Math
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "pipeline":
-		var p Pipeline
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "pretty_print":
-		var p PrettyPrint
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "replace":
-		var p Replace
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "split":
-		var p Split
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "time":
-		var p Time
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	default:
-		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
-	}
-}
-
-// BatchApplicator is an interface for applying a processor to a slice of encapsulated data.
-type BatchApplicator interface {
-	ApplyBatch(context.Context, []config.Capsule) ([]config.Capsule, error)
-	Close(context.Context) error
-}
-
-// ApplyBatch accepts one or many BatchApplicators and applies processors in series to a slice of encapsulated data.
-func ApplyBatch(ctx context.Context, batch []config.Capsule, apps ...BatchApplicator) ([]config.Capsule, error) {
+// Batch accepts one or more batchers and applies processors in series to encapsulated data.
+func Batch(ctx context.Context, batch []config.Capsule, batchers ...batcher) ([]config.Capsule, error) {
 	var err error
 
-	for _, app := range apps {
-		batch, err = app.ApplyBatch(ctx, batch)
+	for _, batcher := range batchers {
+		batch, err = batcher.Batch(ctx, batch...)
 		if err != nil {
 			return nil, err
 		}
@@ -204,151 +338,54 @@ func ApplyBatch(ctx context.Context, batch []config.Capsule, apps ...BatchApplic
 	return batch, nil
 }
 
-// MakeBatchApplicators accepts multiple processor configs and returns populated BatchApplicators. This is a convenience function for generating many BatchApplicators.
-func MakeBatchApplicators(cfg []config.Config) ([]BatchApplicator, error) {
-	var apps []BatchApplicator
+// BatchBytes is a convenience function for applying processors in series to bytes.
+func BatchBytes(ctx context.Context, data [][]byte, batchers ...batcher) ([][]byte, error) {
+	var capsules []config.Capsule
+	capsule := config.NewCapsule()
+
+	for _, d := range data {
+		capsule.SetData(d)
+		capsules = append(capsules, capsule)
+	}
+
+	batch, err := Batch(ctx, capsules, batchers...)
+	if err != nil {
+		return nil, err
+	}
+
+	var arr [][]byte
+	for _, b := range batch {
+		arr = append(arr, b.Data())
+	}
+
+	return arr, nil
+}
+
+// MakeBatchers accepts one or more processor configurations and returns populated batchers.
+func MakeBatchers(cfg ...config.Config) ([]batcher, error) {
+	var bats []batcher
 
 	for _, c := range cfg {
-		app, err := BatchApplicatorFactory(c)
+		b, err := batcherFactory(c)
 		if err != nil {
 			return nil, err
 		}
 
-		apps = append(apps, app)
+		bats = append(bats, b)
 	}
 
-	return apps, nil
+	return bats, nil
 }
 
-// CloseBatchApplicators closes all BatchApplicators and returns an error if any close fails.
-func CloseBatchApplicators(ctx context.Context, apps ...BatchApplicator) error {
-	for _, app := range apps {
-		if err := app.Close(ctx); err != nil {
+// CloseBatchers closes all batchers and returns an error if any close fails.
+func CloseBatchers(ctx context.Context, batchers ...batcher) error {
+	for _, b := range batchers {
+		if err := b.Close(ctx); err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-// BatchApplicatorFactory returns a configured BatchApplicator from a config. This is the recommended method for retrieving ready-to-use BatchApplicators.
-func BatchApplicatorFactory(cfg config.Config) (BatchApplicator, error) {
-	switch t := cfg.Type; t {
-	case "aggregate":
-		var p Aggregate
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "base64":
-		var p Base64
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "capture":
-		var p Capture
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "case":
-		var p Case
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "concat":
-		var p Concat
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "convert":
-		var p Convert
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "copy":
-		var p Copy
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "count":
-		var p Count
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "delete":
-		var p Delete
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "dns":
-		var p DNS
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "domain":
-		var p Domain
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "drop":
-		var p Drop
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "dynamodb":
-		var p DynamoDB
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "expand":
-		var p Expand
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "flatten":
-		var p Flatten
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "for_each":
-		var p ForEach
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "group":
-		var p Group
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "gzip":
-		var p Gzip
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "hash":
-		var p Hash
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "insert":
-		var p Insert
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "ip_database":
-		var p IPDatabase
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "lambda":
-		var p Lambda
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "math":
-		var p Math
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "pipeline":
-		var p Pipeline
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "pretty_print":
-		var p PrettyPrint
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "replace":
-		var p Replace
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "split":
-		var p Split
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "time":
-		var p Time
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	default:
-		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
-	}
 }
 
 // newBatch returns a Capsule slice with a minimum capacity of 10. This is used to speed up batch processing.
@@ -359,22 +396,39 @@ func newBatch(s *[]config.Capsule) []config.Capsule {
 	return make([]config.Capsule, 0, 10)
 }
 
-// conditionallyApplyBatch uses conditions to dynamically apply processors to a slice of encapsulated data. This is a convenience function for the ApplyBatch method used in most processors.
-func conditionallyApplyBatch(ctx context.Context, capsules []config.Capsule, op condition.Operator, apps ...Applicator) ([]config.Capsule, error) {
-	newCapsules := newBatch(&capsules)
+func conditionalApply(ctx context.Context, capsules []config.Capsule, cond condition.Config, app applicator) ([]config.Capsule, error) {
+	op, err := condition.OperatorFactory(cond)
+	if err != nil {
+		return nil, err
+	}
 
-	for _, capsule := range capsules {
-		ok, err := op.Operate(ctx, capsule)
+	newCapsules := newBatch(&capsules)
+	for _, c := range capsules {
+		ok, err := op.Operate(ctx, c)
 		if err != nil {
 			return nil, err
 		}
 
 		if !ok {
-			newCapsules = append(newCapsules, capsule)
+			newCapsules = append(newCapsules, c)
 			continue
 		}
 
-		capsule, err := Apply(ctx, capsule, apps...)
+		newCapsule, err := app.Apply(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+
+		newCapsules = append(newCapsules, newCapsule)
+	}
+
+	return newCapsules, nil
+}
+
+func batch(ctx context.Context, capsules []config.Capsule, apps ...applicator) ([]config.Capsule, error) {
+	newCapsules := newBatch(&capsules)
+	for _, c := range capsules {
+		capsule, err := Apply(ctx, c, apps...)
 		if err != nil {
 			return nil, err
 		}

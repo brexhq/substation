@@ -10,19 +10,21 @@ import (
 
 var domainTests = []struct {
 	name     string
-	proc     Domain
+	proc     domain
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON tld",
-		Domain{
-			Options: DomainOptions{
-				Function: "tld",
+		domain{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
+			Options: domainOptions{
+				Type: "tld",
+			},
 		},
 		[]byte(`{"foo":"bar.com"}`),
 		[]byte(`{"foo":"com"}`),
@@ -30,12 +32,14 @@ var domainTests = []struct {
 	},
 	{
 		"JSON domain",
-		Domain{
-			Options: DomainOptions{
-				Function: "domain",
+		domain{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
+			Options: domainOptions{
+				Type: "domain",
+			},
 		},
 		[]byte(`{"foo":"www.example.com"}`),
 		[]byte(`{"foo":"example.com"}`),
@@ -43,12 +47,14 @@ var domainTests = []struct {
 	},
 	{
 		"JSON subdomain",
-		Domain{
-			Options: DomainOptions{
-				Function: "subdomain",
+		domain{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
+			Options: domainOptions{
+				Type: "subdomain",
+			},
 		},
 		[]byte(`{"foo":"www.bar.com"}`),
 		[]byte(`{"foo":"www"}`),
@@ -57,12 +63,14 @@ var domainTests = []struct {
 	// empty subdomain, returns empty
 	{
 		"JSON subdomain",
-		Domain{
-			Options: DomainOptions{
-				Function: "subdomain",
+		domain{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
+			Options: domainOptions{
+				Type: "subdomain",
+			},
 		},
 		[]byte(`{"foo":"example.com"}`),
 		[]byte(`{"foo":""}`),
@@ -70,9 +78,9 @@ var domainTests = []struct {
 	},
 	{
 		"data",
-		Domain{
-			Options: DomainOptions{
-				Function: "subdomain",
+		domain{
+			Options: domainOptions{
+				Type: "subdomain",
 			},
 		},
 		[]byte(`www.bar.com`),
@@ -99,7 +107,7 @@ func TestDomain(t *testing.T) {
 	}
 }
 
-func benchmarkDomain(b *testing.B, applicator Domain, test config.Capsule) {
+func benchmarkDomain(b *testing.B, applicator domain, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

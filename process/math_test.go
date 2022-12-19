@@ -10,19 +10,21 @@ import (
 
 var mathTests = []struct {
 	name     string
-	proc     Math
+	proc     math
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"add",
-		Math{
-			Options: MathOptions{
+		math{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: mathOptions{
 				Operation: "add",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":[1,3]}`),
 		[]byte(`{"foo":4}`),
@@ -30,12 +32,14 @@ var mathTests = []struct {
 	},
 	{
 		"subtract",
-		Math{
-			Options: MathOptions{
+		math{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: mathOptions{
 				Operation: "subtract",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":[5,2]}`),
 		[]byte(`{"foo":3}`),
@@ -43,12 +47,14 @@ var mathTests = []struct {
 	},
 	{
 		"multiply",
-		Math{
-			Options: MathOptions{
+		math{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: mathOptions{
 				Operation: "multiply",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":[10,2]}`),
 		[]byte(`{"foo":20}`),
@@ -56,12 +62,14 @@ var mathTests = []struct {
 	},
 	{
 		"divide",
-		Math{
-			Options: MathOptions{
+		math{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: mathOptions{
 				Operation: "divide",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":[10,2]}`),
 		[]byte(`{"foo":5}`),
@@ -87,7 +95,7 @@ func TestMath(t *testing.T) {
 	}
 }
 
-func benchmarkMath(b *testing.B, applicator Math, test config.Capsule) {
+func benchmarkMath(b *testing.B, applicator math, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

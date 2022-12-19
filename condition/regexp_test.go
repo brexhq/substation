@@ -7,42 +7,54 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var regexpTests = []struct {
+var regExpTests = []struct {
 	name      string
-	inspector RegExp
+	inspector regExp
 	test      []byte
 	expected  bool
 }{
 	{
 		"pass",
-		RegExp{
-			Expression: "^Test",
+		regExp{
+			Options: regExpOptions{
+				Expression: "^Test",
+			},
 		},
 		[]byte("Test"),
 		true,
 	},
 	{
 		"fail",
-		RegExp{
-			Expression: "^Test",
+		regExp{
+			Options: regExpOptions{
+				Expression: "^Test",
+			},
 		},
 		[]byte("-Test"),
 		false,
 	},
 	{
 		"!fail",
-		RegExp{
-			Negate:     true,
-			Expression: "XYZ",
+		regExp{
+			condition: condition{
+				Negate: true,
+			},
+			Options: regExpOptions{
+				Expression: "^Test",
+			},
 		},
 		[]byte("ABC"),
 		true,
 	},
 	{
 		"!pass",
-		RegExp{
-			Negate:     true,
-			Expression: "ABC",
+		regExp{
+			condition: condition{
+				Negate: true,
+			},
+			Options: regExpOptions{
+				Expression: "ABC",
+			},
 		},
 		[]byte("ABC"),
 		false,
@@ -53,7 +65,7 @@ func TestRegExp(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range regexpTests {
+	for _, test := range regExpTests {
 		capsule.SetData(test.test)
 
 		check, err := test.inspector.Inspect(ctx, capsule)
@@ -67,7 +79,7 @@ func TestRegExp(t *testing.T) {
 	}
 }
 
-func benchmarkRegExpByte(b *testing.B, inspector RegExp, capsule config.Capsule) {
+func benchmarkRegExpByte(b *testing.B, inspector regExp, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)
@@ -76,7 +88,7 @@ func benchmarkRegExpByte(b *testing.B, inspector RegExp, capsule config.Capsule)
 
 func BenchmarkRegExpByte(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range regexpTests {
+	for _, test := range regExpTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)

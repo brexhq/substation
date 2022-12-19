@@ -9,87 +9,109 @@ import (
 
 var ipTests = []struct {
 	name      string
-	inspector IP
+	inspector ip
 	test      []byte
 	expected  bool
 }{
 	{
 		"json",
-		IP{
-			Type: "private",
-			Key:  "ip_address",
+		ip{
+			condition: condition{
+				Key: "ip_address",
+			},
+			Options: ipOptions{
+				Type: "private",
+			},
 		},
 		[]byte(`{"ip_address":"192.168.1.2"}`),
 		true,
 	},
 	{
 		"valid",
-		IP{
-			Type: "valid",
+		ip{
+			Options: ipOptions{
+				Type: "valid",
+			},
 		},
 		[]byte("192.168.1.2"),
 		true,
 	},
 	{
 		"invalid",
-		IP{
-			Type: "valid",
+		ip{
+			Options: ipOptions{
+				Type: "valid",
+			},
 		},
 		[]byte("foo"),
 		false,
 	},
 	{
 		"multicast",
-		IP{
-			Type: "multicast",
+		ip{
+			Options: ipOptions{
+				Type: "multicast",
+			},
 		},
 		[]byte("224.0.0.12"),
 		true,
 	},
 	{
 		"multicast_link_local",
-		IP{
-			Type: "multicast_link_local",
+		ip{
+			Options: ipOptions{
+				Type: "multicast_link_local",
+			},
 		},
 		[]byte("224.0.0.12"),
 		true,
 	},
 	{
 		"unicast_global",
-		IP{
-			Type: "unicast_global",
+		ip{
+			Options: ipOptions{
+				Type: "unicast_global",
+			},
 		},
 		[]byte("8.8.8.8"),
 		true,
 	},
 	{
 		"private",
-		IP{
-			Type: "private",
+		ip{
+			Options: ipOptions{
+				Type: "private",
+			},
 		},
 		[]byte("8.8.8.8"),
 		false,
 	},
 	{
 		"unicast_link_local",
-		IP{
-			Type: "unicast_link_local",
+		ip{
+			Options: ipOptions{
+				Type: "unicast_link_local",
+			},
 		},
 		[]byte("169.254.255.255"),
 		true,
 	},
 	{
 		"loopback",
-		IP{
-			Type: "loopback",
+		ip{
+			Options: ipOptions{
+				Type: "loopback",
+			},
 		},
 		[]byte("127.0.0.1"),
 		true,
 	},
 	{
 		"unspecified",
-		IP{
-			Type: "unspecified",
+		ip{
+			Options: ipOptions{
+				Type: "unspecified",
+			},
 		},
 		[]byte("0.0.0.0"),
 		true,
@@ -114,7 +136,7 @@ func TestIP(t *testing.T) {
 	}
 }
 
-func benchmarkIPByte(b *testing.B, inspector IP, capsule config.Capsule) {
+func benchmarkIPByte(b *testing.B, inspector ip, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

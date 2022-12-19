@@ -9,48 +9,54 @@ import (
 
 var jsonSchemaTests = []struct {
 	name      string
-	inspector JSONSchema
+	inspector jsonSchema
 	test      []byte
 	expected  bool
 }{
 	{
 		"string",
-		JSONSchema{
-			Schema: []struct {
-				Key  string `json:"key"`
-				Type string `json:"type"`
-			}{
-				{Key: "hello", Type: "String"},
+		jsonSchema{
+			Options: jsonSchemaOptions{
+				Schema: []struct {
+					Key  string `json:"key"`
+					Type string `json:"type"`
+				}{
+					{Key: "hello", Type: "String"},
+				},
 			},
-			Negate: false,
 		},
 		[]byte(`{"foo":"bar"}`),
 		true,
 	},
 	{
 		"!string",
-		JSONSchema{
-			Schema: []struct {
-				Key  string `json:"key"`
-				Type string `json:"type"`
-			}{
-				{Key: "foo", Type: "String"},
+		jsonSchema{
+			Options: jsonSchemaOptions{
+				Schema: []struct {
+					Key  string `json:"key"`
+					Type string `json:"type"`
+				}{
+					{Key: "foo", Type: "String"},
+				},
 			},
-			Negate: false,
 		},
 		[]byte(`{"foo":123}`),
 		false,
 	},
 	{
 		"string array",
-		JSONSchema{
-			Schema: []struct {
-				Key  string `json:"key"`
-				Type string `json:"type"`
-			}{
-				{Key: "foo", Type: "String/Array"},
+		jsonSchema{
+			condition: condition{
+				Negate: true,
 			},
-			Negate: true,
+			Options: jsonSchemaOptions{
+				Schema: []struct {
+					Key  string `json:"key"`
+					Type string `json:"type"`
+				}{
+					{Key: "foo", Type: "String/Array"},
+				},
+			},
 		},
 		[]byte(`{"foo":["bar","baz"]}`),
 		true,
@@ -75,7 +81,7 @@ func TestJSONSchema(t *testing.T) {
 	}
 }
 
-func benchmarkJSONSchemaByte(b *testing.B, inspector JSONSchema, capsule config.Capsule) {
+func benchmarkJSONSchemaByte(b *testing.B, inspector jsonSchema, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)
@@ -96,34 +102,38 @@ func BenchmarkJSONSchemaByte(b *testing.B) {
 
 var jsonValidTests = []struct {
 	name      string
-	inspector JSONValid
+	inspector jsonValid
 	test      []byte
 	expected  bool
 }{
 	{
 		"valid",
-		JSONValid{},
+		jsonValid{},
 		[]byte(`{"hello":"world"}`),
 		true,
 	},
 	{
 		"invalid",
-		JSONValid{},
+		jsonValid{},
 		[]byte(`{hello:"world"}`),
 		false,
 	},
 	{
 		"!invalid",
-		JSONValid{
-			Negate: true,
+		jsonValid{
+			condition: condition{
+				Negate: true,
+			},
 		},
 		[]byte(`{"hello":"world"}`),
 		false,
 	},
 	{
 		"!valid",
-		JSONValid{
-			Negate: true,
+		jsonValid{
+			condition: condition{
+				Negate: true,
+			},
 		},
 		[]byte(`{hello:"world"}`),
 		true,
@@ -148,7 +158,7 @@ func TestJSONValid(t *testing.T) {
 	}
 }
 
-func benchmarkJSONValidByte(b *testing.B, inspector JSONValid, capsule config.Capsule) {
+func benchmarkJSONValidByte(b *testing.B, inspector jsonValid, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

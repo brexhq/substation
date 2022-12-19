@@ -9,128 +9,164 @@ import (
 
 var stringsTests = []struct {
 	name      string
-	inspector Strings
+	inspector strings
 	test      []byte
 	expected  bool
 }{
 	{
 		"pass",
-		Strings{
-			Function:   "startswith",
-			Expression: "Test",
-			Key:        "foo",
+		strings{
+			condition: condition{
+				Key: "foo",
+			},
+			Options: stringsOptions{
+				Type:       "starts_with",
+				Expression: "Test",
+			},
 		},
 		[]byte(`{"foo":"Test"}`),
 		true,
 	},
 	{
 		"pass",
-		Strings{
-			Function:   "startswith",
-			Expression: "Test",
+		strings{
+			Options: stringsOptions{
+				Type:       "starts_with",
+				Expression: "Test",
+			},
 		},
 		[]byte("Test"),
 		true,
 	},
 	{
 		"fail",
-		Strings{
-			Function:   "startswith",
-			Expression: "Test",
+		strings{
+			Options: stringsOptions{
+				Type:       "starts_with",
+				Expression: "Test",
+			},
 		},
 		[]byte("-Test"),
 		false,
 	},
 	{
 		"pass",
-		Strings{
-			Function:   "equals",
-			Expression: "Test",
+		strings{
+			Options: stringsOptions{
+				Type:       "equals",
+				Expression: "Test",
+			},
 		},
 		[]byte("Test"),
 		true,
 	},
 	{
 		"fail",
-		Strings{
-			Function:   "equals",
-			Expression: "Test",
+		strings{
+			Options: stringsOptions{
+				Type:       "equals",
+				Expression: "Test",
+			},
 		},
 		[]byte("-Test"),
 		false,
 	},
 	{
 		"pass",
-		Strings{
-			Function:   "contains",
-			Expression: "es",
+		strings{
+			Options: stringsOptions{
+				Type:       "contains",
+				Expression: "es",
+			},
 		},
 		[]byte("Test"),
 		true,
 	},
 	{
 		"fail",
-		Strings{
-			Function:   "contains",
-			Expression: "ABC",
+		strings{
+			Options: stringsOptions{
+				Type:       "contains",
+				Expression: "ABC",
+			},
 		},
 		[]byte("Test"),
 		false,
 	},
 	{
 		"!fail",
-		Strings{
-			Function:   "startswith",
-			Negate:     true,
-			Expression: "XYZ",
+		strings{
+			condition: condition{
+				Negate: true,
+			},
+			Options: stringsOptions{
+				Type:       "starts_with",
+				Expression: "XYZ",
+			},
 		},
 		[]byte("ABC"),
 		true,
 	},
 	{
 		"!pass",
-		Strings{
-			Function:   "startswith",
-			Negate:     true,
-			Expression: "ABC",
+		strings{
+			condition: condition{
+				Negate: true,
+			},
+			Options: stringsOptions{
+				Type:       "starts_with",
+				Expression: "ABC",
+			},
 		},
 		[]byte("ABC"),
 		false,
 	},
 	{
 		"!pass",
-		Strings{
-			Function:   "equals",
-			Negate:     true,
-			Expression: "",
+		strings{
+			condition: condition{
+				Negate: true,
+			},
+			Options: stringsOptions{
+				Type:       "equals",
+				Expression: "",
+			},
 		},
 		[]byte(""),
 		false,
 	},
 	{
 		"!pass",
-		Strings{
-			Function:   "contains",
-			Negate:     true,
-			Expression: "A",
+		strings{
+			condition: condition{
+				Negate: true,
+			},
+			Options: stringsOptions{
+				Type:       "contains",
+				Expression: "A",
+			},
 		},
 		[]byte("ABC"),
 		false,
 	},
 	{
 		"pass",
-		Strings{
-			Function:   "equals",
-			Expression: "\"\"",
+		strings{
+			Options: stringsOptions{
+				Type:       "equals",
+				Expression: "\"\"",
+			},
 		},
 		[]byte("\"\""),
 		true,
 	},
 	{
 		"pass",
-		Strings{
-			Function:   "equals",
-			Expression: "",
+		strings{
+			Options: stringsOptions{
+				Type:       "equals",
+				Expression: "",
+			},
 		},
 		[]byte(``),
 		true,
@@ -155,7 +191,7 @@ func TestStrings(t *testing.T) {
 	}
 }
 
-func benchmarkStringsByte(b *testing.B, inspector Strings, capsule config.Capsule) {
+func benchmarkStringsByte(b *testing.B, inspector strings, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

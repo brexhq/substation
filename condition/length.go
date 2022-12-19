@@ -9,62 +9,40 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errLengthInvalidFunction is returned when the Length inspector is configured with an invalid function.
-const errLengthInvalidFunction = errors.Error("invalid function")
+// errLengthInvalidType is returned when the length inspector is configured with an invalid Type.
+const errLengthInvalidType = errors.Error("invalid Type")
 
-/*
-Length evaluates data using len functions. This inspector supports evaluating byte and rune (character) length of strings. If a JSON array is input, then the length is evaluated against the number of elements in the array.
-
-The inspector has these settings:
-
-	Function:
-		length evaluation function used during inspection
-		must be one of:
-			equals
-			greaterthan
-			lessthan
-	Value:
-		length value used during inspection
-	Type (optional):
-		length type used during inspection
-		must be one of:
-			byte (number of bytes)
-			rune (number of characters)
-		defaults to byte
-	Key (optional):
-		JSON key-value to retrieve for inspection
-	Negate (optional):
-		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
-		defaults to false
-
-The inspector supports these patterns:
-
-	JSON:
-		{"foo":"bar"} == 3
-		{"foo":["bar","baz","qux"]} == 3
-	data:
-		bar == 3
-
-When loaded with a factory, the inspector uses this JSON configuration:
-
-	{
-		"type": "length",
-		"settings": {
-			"function": "equals",
-			"value": 3
-		}
-	}
-*/
-type Length struct {
-	Function string `json:"function"`
-	Value    int    `json:"value"`
-	Type     string `json:"type"`
-	Key      string `json:"key"`
-	Negate   bool   `json:"negate"`
+// length evaluates data using len Types.
+//
+// This inspector supports the data and object handling patterns. If the input is an array, then the number of elements in the array is inspected.
+type length struct {
+	condition
+	Options lengthOptions `json:"options"`
 }
 
-// Inspect evaluates encapsulated data with the Length inspector.
-func (c Length) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+type lengthOptions struct {
+	// Type determines the length evaluation Type used during inspection.
+	//
+	// Must be one of:
+	//	- equals
+	//	- greater_than
+	//	- less_than
+	Type string `json:"type"`
+	// Value is the length that is used for comparison during inspection.
+	Value int `json:"value"`
+	// Measurement controls how the length is measured. The inspector automatically
+	// assigns measurement for objects when the key is an array.
+	//
+	// Must be one of:
+	//	- byte: number of bytes
+	// 	- rune: number of characters
+	//
+	// This is optional and defaults to byte.
+	Measurement string `json:"measurement"`
+}
+
+// Inspect evaluates encapsulated data with the length inspector.
+func (c length) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
 		check = string(capsule.Data())
@@ -78,7 +56,7 @@ func (c Length) Inspect(ctx context.Context, capsule config.Capsule) (output boo
 	}
 
 	var length int
-	switch c.Type {
+	switch c.Options.Measurement {
 	case "byte":
 		length = len(check)
 	case "rune":
@@ -90,23 +68,23 @@ func (c Length) Inspect(ctx context.Context, capsule config.Capsule) (output boo
 	return c.match(length)
 }
 
-func (c Length) match(length int) (bool, error) {
+func (c length) match(length int) (bool, error) {
 	var matched bool
-	switch c.Function {
+	switch c.Options.Type {
 	case "equals":
-		if length == c.Value {
+		if length == c.Options.Value {
 			matched = true
 		}
-	case "greaterthan":
-		if length > c.Value {
+	case "greater_than":
+		if length > c.Options.Value {
 			matched = true
 		}
-	case "lessthan":
-		if length < c.Value {
+	case "less_than":
+		if length < c.Options.Value {
 			matched = true
 		}
 	default:
-		return false, fmt.Errorf("condition length: function %s: %v", c.Function, errLengthInvalidFunction)
+		return false, fmt.Errorf("condition length: Type %s: %v", c.Options.Type, errLengthInvalidType)
 	}
 
 	if c.Negate {

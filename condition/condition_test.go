@@ -7,8 +7,8 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-// all inspectors must return true for AND to return true
-var conditionANDTests = []struct {
+// all inspectors must return true for and to return true
+var andTests = []struct {
 	name     string
 	conf     []config.Config
 	test     []byte
@@ -20,8 +20,10 @@ var conditionANDTests = []struct {
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "equals",
-					"expression": "foo",
+					"options": map[string]interface{}{
+						"type":       "equals",
+						"expression": "foo",
+					},
 				},
 			},
 		},
@@ -34,7 +36,9 @@ var conditionANDTests = []struct {
 			{
 				Type: "regexp",
 				Settings: map[string]interface{}{
-					"expression": "^foo$",
+					"options": map[string]interface{}{
+						"expression": "^foo$",
+					},
 				},
 			},
 		},
@@ -47,7 +51,9 @@ var conditionANDTests = []struct {
 			{
 				Type: "content",
 				Settings: map[string]interface{}{
-					"type": "application/x-gzip",
+					"options": map[string]interface{}{
+						"type": "application/x-gzip",
+					},
 				},
 			},
 		},
@@ -60,8 +66,10 @@ var conditionANDTests = []struct {
 			{
 				Type: "length",
 				Settings: map[string]interface{}{
-					"value":    3,
-					"function": "equals",
+					"options": map[string]interface{}{
+						"value": 3,
+						"type":  "equals",
+					},
 				},
 			},
 		},
@@ -74,15 +82,19 @@ var conditionANDTests = []struct {
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "equals",
-					"expression": "foo",
+					"options": map[string]interface{}{
+						"type":       "equals",
+						"expression": "foo",
+					},
 				},
 			},
 			{
 				Type: "length",
 				Settings: map[string]interface{}{
-					"value":    3,
-					"function": "equals",
+					"options": map[string]interface{}{
+						"value": 3,
+						"type":  "equals",
+					},
 				},
 			},
 		},
@@ -91,11 +103,11 @@ var conditionANDTests = []struct {
 	},
 }
 
-func TestAND(t *testing.T) {
+func TestAnd(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range conditionANDTests {
+	for _, test := range andTests {
 		capsule.SetData(test.test)
 
 		cfg := Config{
@@ -119,29 +131,29 @@ func TestAND(t *testing.T) {
 	}
 }
 
-func benchmarkAND(b *testing.B, conf []config.Config, capsule config.Capsule) {
+func benchmarkAnd(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		inspectors, _ := MakeInspectors(conf)
-		op := AND{inspectors}
+		op := and{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
 }
 
-func BenchmarkAND(b *testing.B) {
+func BenchmarkAnd(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range conditionANDTests {
+	for _, test := range andTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkAND(b, test.conf, capsule)
+				benchmarkAnd(b, test.conf, capsule)
 			},
 		)
 	}
 }
 
-// any inspector must return true for OR to return true
-var conditionORTests = []struct {
+// any inspector must return true for or to return true
+var orTests = []struct {
 	name     string
 	conf     []config.Config
 	test     []byte
@@ -153,15 +165,19 @@ var conditionORTests = []struct {
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "equals",
-					"expression": "foo",
+					"options": map[string]interface{}{
+						"type":       "equals",
+						"expression": "foo",
+					},
 				},
 			},
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "equals",
-					"expression": "baz",
+					"options": map[string]interface{}{
+						"type":       "equals",
+						"expression": "baz",
+					},
 				},
 			},
 		},
@@ -174,22 +190,28 @@ var conditionORTests = []struct {
 			{
 				Type: "length",
 				Settings: map[string]interface{}{
-					"value":    3,
-					"function": "equals",
+					"options": map[string]interface{}{
+						"value": 3,
+						"type":  "equals",
+					},
 				},
 			},
 			{
 				Type: "length",
 				Settings: map[string]interface{}{
-					"value":    4,
-					"function": "equals",
+					"options": map[string]interface{}{
+						"value": 4,
+						"type":  "equals",
+					},
 				},
 			},
 			{
 				Type: "length",
 				Settings: map[string]interface{}{
-					"value":    5,
-					"function": "equals",
+					"options": map[string]interface{}{
+						"value": 5,
+						"type":  "equals",
+					},
 				},
 			},
 		},
@@ -202,15 +224,19 @@ var conditionORTests = []struct {
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "equals",
-					"expression": "foo",
+					"options": map[string]interface{}{
+						"type":       "equals",
+						"expression": "foo",
+					},
 				},
 			},
 			{
 				Type: "length",
 				Settings: map[string]interface{}{
-					"value":    4,
-					"function": "equals",
+					"options": map[string]interface{}{
+						"value": 4,
+						"type":  "equals",
+					},
 				},
 			},
 		},
@@ -219,11 +245,11 @@ var conditionORTests = []struct {
 	},
 }
 
-func TestOR(t *testing.T) {
+func TestOr(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range conditionORTests {
+	for _, test := range orTests {
 		capsule.SetData(test.test)
 
 		cfg := Config{
@@ -247,29 +273,29 @@ func TestOR(t *testing.T) {
 	}
 }
 
-func benchmarkOR(b *testing.B, conf []config.Config, capsule config.Capsule) {
+func benchmarkOr(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		inspectors, _ := MakeInspectors(conf)
-		op := OR{inspectors}
+		op := or{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
 }
 
-func BenchmarkOR(b *testing.B) {
+func BenchmarkOr(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range conditionORTests {
+	for _, test := range orTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkOR(b, test.conf, capsule)
+				benchmarkOr(b, test.conf, capsule)
 			},
 		)
 	}
 }
 
-// all inspectors must return true for NAND to return false
-var conditionNANDTests = []struct {
+// all inspectors must return true for nand to return false
+var nandTests = []struct {
 	name     string
 	conf     []config.Config
 	test     []byte
@@ -281,15 +307,19 @@ var conditionNANDTests = []struct {
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "equals",
-					"expression": "baz",
+					"options": map[string]interface{}{
+						"type":       "equals",
+						"expression": "baz",
+					},
 				},
 			},
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "equals",
-					"expression": "qux",
+					"options": map[string]interface{}{
+						"type":       "equals",
+						"expression": "qux",
+					},
 				},
 			},
 		},
@@ -302,15 +332,19 @@ var conditionNANDTests = []struct {
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "equals",
-					"expression": "foo",
+					"options": map[string]interface{}{
+						"type":       "equals",
+						"expression": "foo",
+					},
 				},
 			},
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "startswith",
-					"expression": "f",
+					"options": map[string]interface{}{
+						"type":       "starts_with",
+						"expression": "f",
+					},
 				},
 			},
 		},
@@ -319,11 +353,11 @@ var conditionNANDTests = []struct {
 	},
 }
 
-func TestNAND(t *testing.T) {
+func TestNand(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range conditionNANDTests {
+	for _, test := range nandTests {
 		capsule.SetData(test.test)
 
 		cfg := Config{
@@ -347,29 +381,29 @@ func TestNAND(t *testing.T) {
 	}
 }
 
-func benchmarkNAND(b *testing.B, conf []config.Config, capsule config.Capsule) {
+func benchmarkNand(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		inspectors, _ := MakeInspectors(conf)
-		op := NAND{inspectors}
+		op := nand{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
 }
 
-func BenchmarkNAND(b *testing.B) {
+func BenchmarkNand(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range conditionNORTests {
+	for _, test := range norTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkNAND(b, test.conf, capsule)
+				benchmarkNand(b, test.conf, capsule)
 			},
 		)
 	}
 }
 
-// any inspector must return true for NOR to return false
-var conditionNORTests = []struct {
+// any inspector must return true for nor to return false
+var norTests = []struct {
 	name     string
 	conf     []config.Config
 	test     []byte
@@ -381,15 +415,19 @@ var conditionNORTests = []struct {
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "equals",
-					"expression": "baz",
+					"options": map[string]interface{}{
+						"type":       "equals",
+						"expression": "baz",
+					},
 				},
 			},
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "startswith",
-					"expression": "b",
+					"options": map[string]interface{}{
+						"type":       "starts_with",
+						"expression": "b",
+					},
 				},
 			},
 		},
@@ -402,15 +440,19 @@ var conditionNORTests = []struct {
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "equals",
-					"expression": "foo",
+					"options": map[string]interface{}{
+						"type":       "equals",
+						"expression": "foo",
+					},
 				},
 			},
 			{
 				Type: "strings",
 				Settings: map[string]interface{}{
-					"function":   "startswith",
-					"expression": "b",
+					"options": map[string]interface{}{
+						"type":       "starts_with",
+						"expression": "b",
+					},
 				},
 			},
 		},
@@ -419,11 +461,11 @@ var conditionNORTests = []struct {
 	},
 }
 
-func TestNOR(t *testing.T) {
+func TestNor(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range conditionNORTests {
+	for _, test := range norTests {
 		capsule.SetData(test.test)
 
 		cfg := Config{
@@ -447,29 +489,29 @@ func TestNOR(t *testing.T) {
 	}
 }
 
-func benchmarkNOR(b *testing.B, conf []config.Config, capsule config.Capsule) {
+func benchmarkNor(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		inspectors, _ := MakeInspectors(conf)
-		op := NOR{inspectors}
+		op := nor{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
 }
 
-func BenchmarkNOR(b *testing.B) {
+func BenchmarkNor(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range conditionNORTests {
+	for _, test := range norTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkNOR(b, test.conf, capsule)
+				benchmarkNor(b, test.conf, capsule)
 			},
 		)
 	}
 }
 
 func TestFactory(t *testing.T) {
-	for _, test := range conditionANDTests {
+	for _, test := range andTests {
 		_, err := InspectorFactory(test.conf[0])
 		if err != nil {
 			t.Error(err)
@@ -484,7 +526,7 @@ func benchmarkFactory(b *testing.B, conf config.Config) {
 }
 
 func BenchmarkFactory(b *testing.B) {
-	for _, test := range conditionANDTests {
+	for _, test := range andTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				benchmarkFactory(b, test.conf[0])

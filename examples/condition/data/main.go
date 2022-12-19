@@ -32,19 +32,19 @@ func main() {
 		panic(err)
 	}
 
-	var sub config.Config
-	if err := json.Unmarshal(cfg, &sub); err != nil {
+	var conf config.Config
+	if err := json.Unmarshal(cfg, &conf); err != nil {
 		panic(err)
 	}
 
-	inspector, err := condition.InspectorFactory(sub)
+	inspector, err := condition.InspectorFactory(conf)
 	if err != nil {
 		panic(err)
 	}
 
 	// apply inspector to encapsulated data
 	for _, data := range data {
-		ok, err := condition.InspectByte(context.TODO(), data, inspector)
+		ok, err := condition.InspectBytes(context.TODO(), data, inspector)
 		if err != nil {
 			panic(err)
 		}

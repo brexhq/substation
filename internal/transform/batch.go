@@ -2,6 +2,7 @@ package transform
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/brexhq/substation/config"
@@ -46,14 +47,20 @@ type Batch struct {
 }
 
 // Transform processes a channel of encapsulated data with the Batch transform.
-func (transform *Batch) Transform(ctx context.Context, in, out *config.Channel) error {
+func (transform *Batch) Transform(ctx context.Context, wg *sync.WaitGroup, in, out *config.Channel) error {
 	applicators, err := process.MakeBatchApplicators(transform.Processors)
 	if err != nil {
 		return err
 	}
 
-	//nolint: errcheck // errors are ignored in case processing fails in a single applicator
-	defer process.CloseBatchApplicators(ctx, applicators...)
+	/*
+		closing applicators in an anonymous goroutine blocked by the WaitGroup from the calling application ensures that all applicators across the entire app close after all data transformation is finished. as of now this is the only way to prevent premature closing of applicators and avoid panics that can occur if applicators running inside one transform attempt to access resources closed by applicators running inside of a different transform.
+	*/
+	go func() {
+		wg.Wait()
+		//nolint: errcheck // errors are ignored in case closing fails in a single applicator
+		process.CloseBatchApplicators(ctx, applicators...)
+	}()
 
 	var received int
 	// read encapsulated data from the input channel into a batch

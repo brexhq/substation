@@ -9,8 +9,6 @@ import (
 	ipdb "github.com/brexhq/substation/internal/ip/database"
 )
 
-var ipDatabases = make(map[string]ipdb.OpenCloser)
-
 /*
 IPDatabase processes data by querying IP addresses in enrichment databases, including geographic location (geo) and autonomous system (asn) databases. The processor supports multiple database providers and can be reused if multiple databases need to be queried.
 
@@ -40,7 +38,13 @@ When loaded with a factory, the processor uses this JSON configuration:
 		"type": "ip_database",
 		"settings": {
 			"options": {
-				"function": "maxmind_geo"
+				"function": "maxmind_geo",
+				"database_options": {
+					"type": "maxmind_geo",
+					"settings": {
+						"database": "location://path/to/maxmind.mmdb"
+					}
+				}
 			},
 			"input_key": "ip",
 			"output_key": "geo"
@@ -52,33 +56,35 @@ type IPDatabase struct {
 	Condition condition.Config  `json:"condition"`
 	InputKey  string            `json:"input_key"`
 	OutputKey string            `json:"output_key"`
+	// IgnoreClose overrides attempts to close the processor.
+	IgnoreClose bool `json:"ignore_close"`
 }
 
-/*
-IPDatabaseOptions contains custom options for the IPDatabase processor.
-
-	Function:
-		Selects the enrichment database queried by the processor.
-
-		The database is lazy loaded on first invocation and can be loaded from a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
-
-		Must be one of:
-			ip2location
-			maxmind_asn
-			maxmind_city
-	Options:
-		Configuration passed directly to the internal IP database package. Similar to processors, each database has its own config requirements. See internal/ip/database for more information.
-*/
+// IPDatabaseOptions contains custom options for the IPDatabase processor.
 type IPDatabaseOptions struct {
-	Function        string        `json:"function"`
+	Function string `json:"function"`
+	/*
+		DatabaseOptions is a configuration passed directly to the internal IP database package. Similar to processors, each database has its own config requirements. See internal/ip/database for more information.
+
+		Each database is lazy loaded on first invocation and can be loaded from a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
+	*/
 	DatabaseOptions config.Config `json:"database_options"`
 }
 
 // Close closes enrichment database resources opened by the IPDatabase processor.
 func (p IPDatabase) Close(ctx context.Context) error {
-	for _, db := range ipDatabases {
+	if p.IgnoreClose {
+		return nil
+	}
+
+	db, err := ipdb.Factory(p.Options.DatabaseOptions)
+	if err != nil {
+		return fmt.Errorf("close ip_database: %v", err)
+	}
+
+	if db.IsEnabled() {
 		if err := db.Close(); err != nil {
-			return fmt.Errorf("process ip_database: %v", err)
+			return fmt.Errorf("close ip_database: %v", err)
 		}
 	}
 
@@ -107,23 +113,20 @@ func (p IPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.C
 		return capsule, fmt.Errorf("process ip_database: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
 	}
 
-	// lazy load IP enrichment database
-	// db must go into the map after opening to avoid race conditions
-	if _, ok := ipDatabases[p.Options.Function]; !ok {
-		db, err := ipdb.Factory(p.Options.DatabaseOptions)
-		if err != nil {
-			return capsule, fmt.Errorf("process ip_database: %v", err)
-		}
+	db, err := ipdb.Factory(p.Options.DatabaseOptions)
+	if err != nil {
+		return capsule, fmt.Errorf("process ip_database: %v", err)
+	}
 
+	// lazy load the database
+	if !db.IsEnabled() {
 		if err := db.Open(ctx); err != nil {
 			return capsule, fmt.Errorf("process ip_database: %v", err)
 		}
-
-		ipDatabases[p.Options.Function] = db
 	}
 
 	res := capsule.Get(p.InputKey).String()
-	record, err := ipDatabases[p.Options.Function].Get(res)
+	record, err := db.Get(res)
 	if err != nil {
 		return capsule, fmt.Errorf("process ip_database: %v", err)
 	}

@@ -52,6 +52,6 @@ func main() {
 	}
 
 	for _, capsule := range capsules {
-		fmt.Printf("%s\n", capsule.Data())
+		fmt.Println(string(capsule.Data()))
 	}
 }

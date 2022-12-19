@@ -5,6 +5,30 @@ local ipdatabaselib = import './ip_database.libsonnet';
 local processlib = import './process.libsonnet';
 
 {
+  dns: {
+    // writes results from the Team Cymru Malware Hash Registry to '!metadata team_cymru_mhr'
+    // this pattern will cause significant data latency in a data pipeline and should be used in combination with a caching deployment pattern
+    // https://www.team-cymru.com/mhr
+    query_team_cymru_mhr(input): [{
+      processors: [
+        // creates the MHR query domain by concatenating the input with the MHR service domain
+        processlib.copy(input=input, output='!metadata query_team_cymru_mhr.-1'),
+        processlib.insert(output='!metadata query_team_cymru_mhr.-1', value='hash.cymru.com'),
+        processlib.concat(input='!metadata query_team_cymru_mhr', output='!metadata query_team_cymru_mhr', separator='.'),
+        // performs MHR query and parses returned value `["epoch" "hits"]` into JSON `{"team_cymru":{"epoch":"", "hits":""}}` 
+        processlib.dns(input='!metadata query_team_cymru_mhr', output='!metadata response_team_cymru_mhr', _function='query_txt'),
+        processlib.split(input='!metadata response_team_cymru_mhr.0', output='!metadata response_team_cymru_mhr', separator=' '),
+        processlib.copy(input='!metadata response_team_cymru_mhr.0', output='!metadata team_cymru_mhr.epoch'),
+        processlib.copy(input='!metadata response_team_cymru_mhr.1', output='!metadata team_cymru_mhr.hits'),
+        // converts JSON values from strings into integers
+        processlib.convert(input='!metadata team_cymru_mhr.epoch', output='!metadata team_cymru_mhr.epoch', type='int'),
+        processlib.convert(input='!metadata team_cymru_mhr.hits', output='!metadata team_cymru_mhr.hits', type='int'),
+        // delete remaining keys
+        processlib.delete(input='!metadata query_team_cymru_mhr'),
+        processlib.delete(input='!metadata response_team_cymru_mhr'),
+      ],
+    }],
+  },
   drop: {
     // drops randomly selected data. this can be useful for integration tests.
     random_data: [{

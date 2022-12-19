@@ -59,10 +59,16 @@ DNSOptions contains custom options for the DNS processor.
 		Amount of time to wait (in milliseconds) for a response.
 
 		Defaults to 1000 milliseconds (1 second).
+
+	ErrorOnFailure (optional):
+		If set to true, then errors from the DNS request will cause the processor to fail.
+
+		Defaults to false.
 */
 type DNSOptions struct {
-	Function string `json:"function"`
-	Timeout  int    `json:"timeout"`
+	Function       string `json:"function"`
+	Timeout        int    `json:"timeout"`
+	ErrorOnFailure bool   `json:"error_on_failure"`
 }
 
 // Close closes resources opened by the DNS processor.
@@ -86,6 +92,7 @@ func (p DNS) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]confi
 }
 
 // Apply processes encapsulated data with the DNS processor.
+//nolint: gocognit
 func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Function == "" {
@@ -110,7 +117,7 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 		switch p.Options.Function {
 		case "forward_lookup":
 			addrs, err := dnsResolver.LookupHost(resolverCtx, res)
-			if err != nil {
+			if err != nil && p.Options.ErrorOnFailure {
 				return capsule, fmt.Errorf("process dns: %v", err)
 			}
 
@@ -121,7 +128,7 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 			return capsule, nil
 		case "reverse_lookup":
 			names, err := dnsResolver.LookupAddr(resolverCtx, res)
-			if err != nil {
+			if err != nil && p.Options.ErrorOnFailure {
 				return capsule, fmt.Errorf("process dns: %v", err)
 			}
 
@@ -132,7 +139,7 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 			return capsule, nil
 		case "query_txt":
 			records, err := dnsResolver.LookupTXT(resolverCtx, res)
-			if err != nil {
+			if err != nil && p.Options.ErrorOnFailure {
 				return capsule, fmt.Errorf("process dns: %v", err)
 			}
 
@@ -153,7 +160,7 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 		switch p.Options.Function {
 		case "forward_lookup":
 			addrs, err := dnsResolver.LookupHost(resolverCtx, res)
-			if err != nil {
+			if err != nil && p.Options.ErrorOnFailure {
 				return capsule, fmt.Errorf("process dns: %v", err)
 			}
 
@@ -163,7 +170,7 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 			return capsule, nil
 		case "reverse_lookup":
 			names, err := dnsResolver.LookupAddr(resolverCtx, res)
-			if err != nil {
+			if err != nil && p.Options.ErrorOnFailure {
 				return capsule, fmt.Errorf("process dns: %v", err)
 			}
 
@@ -172,7 +179,7 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 			return capsule, nil
 		case "query_txt":
 			records, err := dnsResolver.LookupTXT(resolverCtx, res)
-			if err != nil {
+			if err != nil && p.Options.ErrorOnFailure {
 				return capsule, fmt.Errorf("process dns: %v", err)
 			}
 

@@ -104,11 +104,12 @@
       output,
       _function,
       timeout=1000,
+      error_on_failure=false,
       condition_operator='',
       condition_inspectors=[]): {
     type: 'dns',
     settings: {
-      options: { 'function': _function, timeout: timeout },
+      options: { 'function': _function, timeout: timeout, error_on_failure: error_on_failure },
       condition: { operator: condition_operator, inspectors: condition_inspectors },
       input_key: input,
       output_key: output,

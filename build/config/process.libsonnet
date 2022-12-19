@@ -1,339 +1,209 @@
 {
-  aggregate(output,
-            aggregate_key='',
+  process(options,
+          condition={},
+          key='',
+          set_key='',
+          ignore_close=false,
+          ignore_errors=false): {
+    settings: {
+      condition: condition,
+      key: key,
+      set_key: set_key,
+      ignore_close: ignore_close,
+      ignore_errors: ignore_errors,
+      options: options.opts,
+    },
+    type: options.type,
+  },
+  aggregate(key='',
             separator='',
             max_count=1000,
-            max_size=10000,
-            condition_operator='',
-            condition_inspectors=[]): {
+            max_size=10000): {
     type: 'aggregate',
-    settings: {
-      options: { aggregate_key: aggregate_key, separator: separator, max_count: max_count, max_size: max_size },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      output_key: output,
+    options: {
+      key: key,
+      separator: separator,
+      max_count: max_count,
+      max_size: max_size,
     },
   },
-  base64(input,
-         output,
-         direction,
-         condition_operator='',
-         condition_inspectors=[]): {
+  base64(direction): {
     type: 'base64',
-    settings: {
-      options: { direction: direction },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
+    options: {
+      direction: direction,
     },
   },
-  capture(input,
-          output,
-          expression,
-          _function='find',
-          count=-1,
-          condition_operator='',
-          condition_inspectors=[]): {
+  capture(expression,
+          type='find',
+          count=-1): {
     type: 'capture',
-    settings: {
-      options: { expression: expression, 'function': _function, count: count },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
+    options: {
+      expression: expression,
+      type: type,
+      count: count,
     },
   },
-  case(input,
-       output,
-       case,
-       condition_operator='',
-       condition_inspectors=[]): {
-    type: 'case',
-    settings: {
-      options: { case: case },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
-    },
-  },
-  concat(input,
-         output,
-         separator,
-         condition_operator='',
-         condition_inspectors=[]): {
+  concat(separator): {
     type: 'concat',
-    settings: {
-      options: { separator: separator },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
+    options: {
+      separator: separator,
     },
   },
-  convert(input,
-          output,
-          type,
-          condition_operator='',
-          condition_inspectors=[]): {
+  convert(type): {
     type: 'convert',
     settings: {
-      options: { type: type },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
+      options: {
+        type: type,
+      },
     },
   },
-  copy(input='',
-       output='',
-       condition_operator='',
-       condition_inspectors=[]): {
+  copy: {
     type: 'copy',
-    settings: {
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
-    },
   },
-  delete(input,
-         condition_operator='',
-         condition_inspectors=[]): {
+  delete: {
     type: 'delete',
-    settings: {
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-    },
   },
-  dns(input,
-      output,
-      _function,
-      timeout=1000,
-      condition_operator='',
-      condition_inspectors=[]): {
+  dns(type,
+      timeout=1000): {
     type: 'dns',
     settings: {
-      options: { 'function': _function, timeout: timeout },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
+      options: {
+        type: type,
+        timeout: timeout,
+      },
     },
   },
-  domain(input,
-         output,
-         _function,
-         condition_operator='',
-         condition_inspectors=[]): {
+  domain(type): {
     type: 'domain',
     settings: {
-      options: { 'function': _function },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
+      options: {
+        type: type,
+      },
     },
   },
-  drop(condition_operator='', condition_inspectors=[]): {
+  drop: {
     type: 'drop',
-    settings: {
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-    },
   },
-  dynamodb(input,
-           output,
-           table,
+  dynamodb(table,
            key_condition_expression,
            limit=1,
-           scan_index_forward=false,
-           condition_operator='',
-           condition_inspectors=[]): {
+           scan_index_forward=false): {
     type: 'dynamodb',
     settings: {
-      options: { table: table, key_condition_expression: key_condition_expression, limit: limit, scan_index_forward: scan_index_forward },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
+      options: {
+        table: table,
+        key_condition_expression: key_condition_expression,
+        limit: limit,
+        scan_index_forward: scan_index_forward,
+      },
     },
   },
-  expand(input,
-         condition_operator='',
-         condition_inspectors=[]): {
+  expand: {
     type: 'expand',
-    settings: {
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-    },
   },
-  flatten(input,
-          output,
-          deep=true,
-          condition_operator='',
-          condition_inspectors=[]): {
+  flatten(deep=true): {
     type: 'flatten',
     settings: {
       options: { deep: deep },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
     },
   },
-  for_each(input,
-           output,
-           processor,
-           condition_operator='',
-           condition_inspectors=[]): {
+  for_each(processor): {
     type: 'for_each',
     settings: {
-      options: { processor: processor },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
+      options: {
+        processor: processor,
+      },
     },
   },
-  group(input,
-        output,
-        keys=[],
-        condition_operator='',
-        condition_inspectors=[]): {
+  group(keys=[]): {
     type: 'group',
     settings: {
       options: { keys: keys },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
     },
   },
-  gzip(direction,
-       condition_operator='',
-       condition_inspectors=[]): {
+  gzip(direction): {
     type: 'gzip',
     settings: {
       options: { direction: direction },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
     },
   },
-  hash(input,
-       output,
-       algorithm='sha256',
-       condition_operator='',
-       condition_inspectors=[]): {
+  hash(algorithm='sha256'): {
     type: 'hash',
     settings: {
       options: { algorithm: algorithm },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
     },
   },
-  insert(output,
-         value,
-         condition_operator='',
-         condition_inspectors=[]): {
+  insert(value): {
     type: 'insert',
     settings: {
       options: { value: value },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      output_key: output,
     },
   },
-  ip_database(input,
-              output,
-              database_options,
-              condition_operator='',
-              condition_inspectors=[]): {
+  ip_database(database_options): {
     type: 'ip_database',
     settings: {
       options: { 'function': database_options.type, database_options: database_options },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
     },
   },
-  lambda(input,
-         output,
-         _function,
-         error_on_failure=false,
-         condition_operator='',
-         condition_inspectors=[]): {
+  lambda(function_name,
+         error_on_failure=false): {
     type: 'lambda',
     settings: {
-      options: { 'function': _function, error_on_failure: error_on_failure },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
+      options: { 'function': type, error_on_failure: error_on_failure },
     },
   },
-  math(input,
-       output,
-       operation,
-       condition_operator='',
-       condition_inspectors=[]): {
+  letter_case(type): {
+    type: 'letter_case',
+    options: {
+      type: type,
+    },
+  },
+  math(operation): {
     type: 'math',
     settings: {
       options: { operation: operation },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
     },
   },
-  pipeline(input,
-           output,
-           processors,
-           condition_operator='',
-           condition_inspectors=[]): {
+  pipeline(processors): {
     type: 'pipeline',
     settings: {
       options: { processors: processors },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
     },
   },
-  pretty_print(direction,
-               condition_operator='',
-               condition_inspectors=[]): {
+  pretty_print(direction): {
     type: 'pretty_print',
     settings: {
       options: { direction: direction },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
     },
   },
-  replace(input,
-          output,
-          old,
+  replace(old,
           new,
-          count=-1,
-          condition_operator='',
-          condition_inspectors=[]): {
+          count=-1): {
     type: 'replace',
     settings: {
       options: { old: old, new: new, count: count },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
     },
   },
-  split(input,
-        output,
-        separator,
-        condition_operator='',
-        condition_inspectors=[]): {
+  split(separator): {
     type: 'split',
     settings: {
-      options: { separator: separator },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
+      options: {
+        separator: separator,
+      },
     },
   },
-  time(input,
-       output,
-       input_format,
+  time(input_format,
        input_location='',
        output_format='2006-01-02T15:04:05.000000Z',
-       output_location='',
-       condition_operator='',
-       condition_inspectors=[]): {
+       output_location=''): {
     type: 'time',
     settings: {
-      options: { input_format: input_format, input_location: input_location, output_format: output_format, output_location: output_location },
-      condition: { operator: condition_operator, inspectors: condition_inspectors },
-      input_key: input,
-      output_key: output,
+      options: {
+        input_format: input_format,
+        input_location: input_location,
+        output_format: output_format,
+        output_location: output_location,
+      },
     },
   },
 }

@@ -19,7 +19,7 @@ type _content struct {
 }
 
 func (c _content) String() string {
-	return inspectorToString(c)
+	return toString(c)
 }
 
 type _contentOptions struct {

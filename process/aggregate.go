@@ -59,6 +59,11 @@ type _aggregateOptions struct {
 	MaxSize int `json:"max_size"`
 }
 
+// String returns the processor settings as an object.
+func (p _aggregate) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _aggregate) Close(context.Context) error {
 	return nil

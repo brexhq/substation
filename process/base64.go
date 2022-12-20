@@ -34,6 +34,11 @@ type _base64Options struct {
 	Direction string `json:"direction"`
 }
 
+// String returns the processor settings as an object.
+func (p _base64) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _base64) Close(context.Context) error {
 	return nil

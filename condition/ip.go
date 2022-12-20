@@ -44,7 +44,7 @@ type _ipOptions struct {
 }
 
 func (c _ip) String() string {
-	return inspectorToString(c)
+	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the ip inspector.

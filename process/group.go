@@ -24,6 +24,11 @@ type _groupOptions struct {
 	Keys []string `json:"keys"`
 }
 
+// String returns the processor settings as an object.
+func (p _group) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _group) Close(context.Context) error {
 	return nil

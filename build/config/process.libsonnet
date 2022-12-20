@@ -20,7 +20,7 @@
             max_count=1000,
             max_size=10000): {
     type: 'aggregate',
-    options: {
+    opts: {
       key: key,
       separator: separator,
       max_count: max_count,
@@ -29,7 +29,7 @@
   },
   base64(direction): {
     type: 'base64',
-    options: {
+    opts: {
       direction: direction,
     },
   },
@@ -37,7 +37,7 @@
           type='find',
           count=-1): {
     type: 'capture',
-    options: {
+    opts: {
       expression: expression,
       type: type,
       count: count,
@@ -45,14 +45,14 @@
   },
   case(type): {
     type: 'case',
-    options: {
+    opts: {
       type: type,
     },
   },
   convert(type): {
     type: 'convert',
     settings: {
-      options: {
+      opts: {
         type: type,
       },
     },
@@ -67,7 +67,7 @@
       timeout=1000): {
     type: 'dns',
     settings: {
-      options: {
+      opts: {
         type: type,
         timeout: timeout,
       },
@@ -76,7 +76,7 @@
   domain(type): {
     type: 'domain',
     settings: {
-      options: {
+      opts: {
         type: type,
       },
     },
@@ -90,7 +90,7 @@
            scan_index_forward=false): {
     type: 'dynamodb',
     settings: {
-      options: {
+      opts: {
         table: table,
         key_condition_expression: key_condition_expression,
         limit: limit,
@@ -104,13 +104,13 @@
   flatten(deep=true): {
     type: 'flatten',
     settings: {
-      options: { deep: deep },
+      opts: { deep: deep },
     },
   },
   for_each(processor): {
     type: 'for_each',
     settings: {
-      options: {
+      opts: {
         processor: processor,
       },
     },
@@ -118,25 +118,25 @@
   group(keys=[]): {
     type: 'group',
     settings: {
-      options: { keys: keys },
+      opts: { keys: keys },
     },
   },
   gzip(direction): {
     type: 'gzip',
     settings: {
-      options: { direction: direction },
+      opts: { direction: direction },
     },
   },
   hash(algorithm='sha256'): {
     type: 'hash',
     settings: {
-      options: { algorithm: algorithm },
+      opts: { algorithm: algorithm },
     },
   },
   insert(value): {
     type: 'insert',
     settings: {
-      options: { value: value },
+      opts: { value: value },
     },
   },
   ip_database(options): {
@@ -147,32 +147,32 @@
   },
   join(separator): {
     type: 'join',
-    options: {
+    opts: {
       separator: separator,
     },
   },
   lambda(function_name): {
     type: 'lambda',
     settings: {
-      options: { 'function_name': function_name },
+      opts: { 'function_name': function_name },
     },
   },
   math(operation): {
     type: 'math',
     settings: {
-      options: { operation: operation },
+      opts: { operation: operation },
     },
   },
   pipeline(processors): {
     type: 'pipeline',
     settings: {
-      options: { processors: processors },
+      opts: { processors: processors },
     },
   },
   pretty_print(direction): {
     type: 'pretty_print',
     settings: {
-      options: { direction: direction },
+      opts: { direction: direction },
     },
   },
   replace(old,
@@ -180,13 +180,13 @@
           count=-1): {
     type: 'replace',
     settings: {
-      options: { old: old, new: new, count: count },
+      opts: { old: old, new: new, count: count },
     },
   },
   split(separator): {
     type: 'split',
     settings: {
-      options: {
+      opts: {
         separator: separator,
       },
     },
@@ -197,7 +197,7 @@
        output_location=''): {
     type: 'time',
     settings: {
-      options: {
+      opts: {
         input_format: input_format,
         input_location: input_location,
         output_format: output_format,

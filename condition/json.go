@@ -31,7 +31,7 @@ type _jsonSchemaOptions struct {
 }
 
 func (c _jsonSchema) String() string {
-	return inspectorToString(c)
+	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the jsonSchema inspector.
@@ -80,7 +80,7 @@ type _jsonValid struct {
 }
 
 func (c _jsonValid) String() string {
-	return inspectorToString(c)
+	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the jsonValid inspector.

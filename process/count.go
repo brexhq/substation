@@ -17,6 +17,11 @@ func (p _count) Close(context.Context) error {
 	return nil
 }
 
+// String returns the processor settings as an object.
+func (p _count) String() string {
+	return toString(p)
+}
+
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p _count) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {

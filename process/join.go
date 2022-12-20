@@ -20,6 +20,11 @@ type _joinOptions struct {
 	Separator string `json:"separator"`
 }
 
+// String returns the processor settings as an object.
+func (p _join) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _join) Close(context.Context) error {
 	return nil

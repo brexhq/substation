@@ -26,6 +26,11 @@ type _ipDatabase struct {
 	Options config.Config `json:"options"`
 }
 
+// String returns the processor settings as an object.
+func (p _ipDatabase) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _ipDatabase) Close(ctx context.Context) error {
 	if p.IgnoreClose {

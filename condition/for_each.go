@@ -36,7 +36,7 @@ type _forEachOptions struct {
 }
 
 func (c _forEach) String() string {
-	return inspectorToString(c)
+	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the Content inspector.

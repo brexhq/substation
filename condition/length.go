@@ -47,7 +47,7 @@ type _lengthOptions struct {
 }
 
 func (c _length) String() string {
-	return inspectorToString(c)
+	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the length inspector.

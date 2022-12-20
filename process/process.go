@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
@@ -38,13 +39,26 @@ type process struct {
 	IgnoreErrors bool `json:"ignore_errors"`
 }
 
+func toString(i interface{}) string {
+	switch v := i.(type) {
+	case applicator:
+		b, _ := json.Marshal(v)
+		return string(b)
+	case batcher:
+		b, _ := json.Marshal(v)
+		return string(b)
+	default:
+		return ""
+	}
+}
+
 type applicator interface {
 	Apply(context.Context, config.Capsule) (config.Capsule, error)
 	Close(context.Context) error
 }
 
-// applicatorFactory returns a configured Applicator from a config. This is the recommended method for retrieving ready-to-use Applicators.
-func applicatorFactory(cfg config.Config) (applicator, error) {
+// ApplicatorFactory returns a configured Applicator from a config. This is the recommended method for retrieving ready-to-use Applicators.
+func ApplicatorFactory(cfg config.Config) (applicator, error) {
 	switch cfg.Type {
 	case "aws_dynamodb":
 		var p _awsDynamodb
@@ -152,7 +166,7 @@ type batcher interface {
 	Close(context.Context) error
 }
 
-func batcherFactory(cfg config.Config) (batcher, error) {
+func BatcherFactory(cfg config.Config) (batcher, error) {
 	switch cfg.Type {
 	case "aggregate":
 		var p _aggregate
@@ -303,7 +317,7 @@ func MakeApplicators(cfg ...config.Config) ([]applicator, error) {
 	var apps []applicator
 
 	for _, c := range cfg {
-		a, err := applicatorFactory(c)
+		a, err := ApplicatorFactory(c)
 		if err != nil {
 			return nil, err
 		}
@@ -366,7 +380,7 @@ func MakeBatchers(cfg ...config.Config) ([]batcher, error) {
 	var bats []batcher
 
 	for _, c := range cfg {
-		b, err := batcherFactory(c)
+		b, err := BatcherFactory(c)
 		if err != nil {
 			return nil, err
 		}

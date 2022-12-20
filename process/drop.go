@@ -15,6 +15,11 @@ type _drop struct {
 	process
 }
 
+// String returns the processor settings as an object.
+func (p _drop) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _drop) Close(context.Context) error {
 	return nil

@@ -27,6 +27,11 @@ type _gzipOptions struct {
 	Direction string `json:"direction"`
 }
 
+// String returns the processor settings as an object.
+func (p _gzip) String() string {
+	return toString(p)
+}
+
 func (p _gzip) from(data []byte) ([]byte, error) {
 	r := bytes.NewReader(data)
 	gz, err := gzip.NewReader(r)

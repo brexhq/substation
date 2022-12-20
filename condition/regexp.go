@@ -22,7 +22,7 @@ type _regExpOptions struct {
 }
 
 func (c _regExp) String() string {
-	return inspectorToString(c)
+	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the regExp inspector.

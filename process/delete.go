@@ -14,6 +14,11 @@ type _delete struct {
 	process
 }
 
+// String returns the processor settings as an object.
+func (p _delete) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _delete) Close(context.Context) error {
 	return nil

@@ -20,6 +20,11 @@ type _insertOptions struct {
 	Value interface{} `json:"value"`
 }
 
+// String returns the processor settings as an object.
+func (p _insert) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _insert) Close(context.Context) error {
 	return nil

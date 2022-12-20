@@ -37,6 +37,11 @@ type _caseOptions struct {
 	Type string `json:"type"`
 }
 
+// String returns the processor settings as an object.
+func (p _case) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _case) Close(context.Context) error {
 	return nil

@@ -57,6 +57,11 @@ type _prettyPrintOptions struct {
 	Direction string `json:"direction"`
 }
 
+// String returns the processor settings as an object.
+func (p _prettyPrint) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _prettyPrint) Close(context.Context) error {
 	return nil

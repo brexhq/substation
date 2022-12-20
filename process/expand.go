@@ -16,6 +16,11 @@ type _expand struct {
 	process
 }
 
+// String returns the processor settings as an object.
+func (p _expand) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _expand) Close(context.Context) error {
 	return nil

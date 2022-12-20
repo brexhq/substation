@@ -14,6 +14,11 @@ type _copy struct {
 	process
 }
 
+// String returns the processor settings as an object.
+func (p _copy) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _copy) Close(context.Context) error {
 	return nil

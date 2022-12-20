@@ -23,6 +23,11 @@ type _splitOptions struct {
 	Separator string `json:"separator"`
 }
 
+// String returns the processor settings as an object.
+func (p _split) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _split) Close(context.Context) error {
 	return nil

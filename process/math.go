@@ -30,6 +30,11 @@ type _mathOptions struct {
 	Operation string `json:"operation"`
 }
 
+// String returns the processor settings as an object.
+func (p _math) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _math) Close(context.Context) error {
 	return nil

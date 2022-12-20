@@ -18,7 +18,7 @@ func init() {
 type _random struct{}
 
 func (c _random) String() string {
-	return inspectorToString(c)
+	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the random inspector.

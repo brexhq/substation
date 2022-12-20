@@ -35,6 +35,11 @@ type _awsLambdaOptions struct {
 	FunctionName string `json:"function_name"`
 }
 
+// String returns the processor settings as an object.
+func (p _awsLambda) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _awsLambda) Close(context.Context) error {
 	return nil

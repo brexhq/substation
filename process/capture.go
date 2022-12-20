@@ -37,6 +37,11 @@ type _captureOptions struct {
 	Count int `json:"count"`
 }
 
+// String returns the processor settings as an object.
+func (p _capture) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _capture) Close(context.Context) error {
 	return nil

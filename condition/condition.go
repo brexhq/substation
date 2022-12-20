@@ -33,9 +33,17 @@ type inspector interface {
 	Inspect(context.Context, config.Capsule) (bool, error)
 }
 
-func inspectorToString(i inspector) string {
-	b, _ := json.Marshal(i)
-	return string(b)
+func toString(i interface{}) string {
+	switch v := i.(type) {
+	case inspector:
+		b, _ := json.Marshal(v)
+		return string(b)
+	case operator:
+		b, _ := json.Marshal(v)
+		return string(b)
+	default:
+		return ""
+	}
 }
 
 // InspectByte is a convenience function for applying an inspector to bytes.

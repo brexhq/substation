@@ -38,7 +38,7 @@ type _stringsOptions struct {
 }
 
 func (c _strings) String() string {
-	return inspectorToString(c)
+	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the strings inspector.

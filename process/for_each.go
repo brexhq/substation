@@ -25,6 +25,11 @@ type _forEachOptions struct {
 	Processor config.Config
 }
 
+// String returns the processor settings as an object.
+func (p _forEach) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _forEach) Close(context.Context) error {
 	return nil
@@ -71,7 +76,7 @@ func (p _forEach) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 		return capsule, err
 	}
 
-	applicator, err := applicatorFactory(processor)
+	applicator, err := ApplicatorFactory(processor)
 	if err != nil {
 		return capsule, fmt.Errorf("process for_each: %v", err)
 	}

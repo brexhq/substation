@@ -52,6 +52,11 @@ type _timeOptions struct {
 	SetLocation string `json:"set_location"`
 }
 
+// String returns the processor settings as an object.
+func (p _time) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _time) Close(context.Context) error {
 	return nil

@@ -28,6 +28,11 @@ type _replaceOptions struct {
 	Count int `json:"count"`
 }
 
+// String returns the processor settings as an object.
+func (p _replace) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _replace) Close(context.Context) error {
 	return nil

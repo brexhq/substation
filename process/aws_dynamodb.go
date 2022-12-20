@@ -60,6 +60,11 @@ type _awsDynamodbOptions struct {
 	ScanIndexForward bool `json:"scan_index_forward"`
 }
 
+// String returns the processor settings as an object.
+func (p _awsDynamodb) String() string {
+	return toString(p)
+}
+
 // Close closes resources opened by the processor.
 func (p _awsDynamodb) Close(context.Context) error {
 	return nil

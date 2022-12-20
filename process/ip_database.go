@@ -8,30 +8,47 @@ import (
 	ipdb "github.com/brexhq/substation/internal/ip/database"
 )
 
-var ipDatabases = make(map[string]ipdb.OpenCloser)
-
-type ipDatabase struct {
+// ipDatabase processes data by querying IP addresses in enrichment databases, including
+// geographic location (geo) and autonomous system (asn) databases. The processor supports
+// multiple database providers and can be reused if multiple databases need to be queried.
+// IP address information is abstracted from each enrichment database into a single record
+// that contains these categories:
+//
+// - asn (autonomous system information)
+//
+// - geo (location information)
+//
+// See internal/ip/database for information on supported database providers.
+//
+// This processor supports the object handling pattern.
+type _ipDatabase struct {
 	process
-	Options ipDatabaseOptions `json:"options"`
+	Options config.Config `json:"options"`
 }
 
-type ipDatabaseOptions struct {
-	Function        string        `json:"function"`
-	DatabaseOptions config.Config `json:"database_options"`
-}
+// Close closes resources opened by the processor.
+func (p _ipDatabase) Close(ctx context.Context) error {
+	if p.IgnoreClose {
+		return nil
+	}
 
-// Close closes enrichment database resources opened by the ipDatabase processor.
-func (p ipDatabase) Close(ctx context.Context) error {
-	for _, db := range ipDatabases {
+	db, err := ipdb.Factory(p.Options)
+	if err != nil {
+		return fmt.Errorf("close ip_database: %v", err)
+	}
+
+	if db.IsEnabled() {
 		if err := db.Close(); err != nil {
-			return fmt.Errorf("process ip_database: %v", err)
+			return fmt.Errorf("close ip_database: %v", err)
 		}
 	}
 
 	return nil
 }
 
-func (p ipDatabase) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _ipDatabase) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 
 	if err != nil {
@@ -41,30 +58,27 @@ func (p ipDatabase) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the ipDatabase processor.
-func (p ipDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _ipDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
 		return capsule, fmt.Errorf("process ip_database: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
-	// lazy load IP enrichment database
-	// db must go into the map after opening to avoid race conditions
-	if _, ok := ipDatabases[p.Options.Function]; !ok {
-		db, err := ipdb.Factory(p.Options.DatabaseOptions)
-		if err != nil {
-			return capsule, fmt.Errorf("process ip_database: %v", err)
-		}
+	db, err := ipdb.Factory(p.Options)
+	if err != nil {
+		return capsule, fmt.Errorf("process ip_database: %v", err)
+	}
 
+	// lazy load the database
+	if !db.IsEnabled() {
 		if err := db.Open(ctx); err != nil {
 			return capsule, fmt.Errorf("process ip_database: %v", err)
 		}
-
-		ipDatabases[p.Options.Function] = db
 	}
 
 	res := capsule.Get(p.Key).String()
-	record, err := ipDatabases[p.Options.Function].Get(res)
+	record, err := db.Get(res)
 	if err != nil {
 		return capsule, fmt.Errorf("process ip_database: %v", err)
 	}

@@ -8,21 +8,30 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
-type group struct {
+// group processes data by grouping object arrays into an array of tuples or array of objects.
+//
+// This processor supports the object handling pattern.
+type _group struct {
 	process
-	Options groupOptions `json:"options"`
+	Options _groupOptions `json:"options"`
 }
 
-type groupOptions struct {
+type _groupOptions struct {
+	// Keys determines where processed values are set in newly created objects.
+	//
+	// This is optional and defaults to creating an array of tuples instead
+	// of an array of objects.
 	Keys []string `json:"keys"`
 }
 
-// Close closes resources opened by the group processor.
-func (p group) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _group) Close(context.Context) error {
 	return nil
 }
 
-func (p group) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _group) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 	if err != nil {
 		return nil, fmt.Errorf("process group: %v", err)
@@ -31,8 +40,8 @@ func (p group) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the group processor.
-func (p group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON arrays, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
 		return capsule, fmt.Errorf("process group: options %+v: %v", p.Options, errMissingRequiredOptions)

@@ -10,69 +10,69 @@ import (
 
 var mathTests = []struct {
 	name     string
-	proc     math
+	proc     _math
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"add",
-		math{
+		_math{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "math",
+				SetKey: "math",
 			},
-			Options: mathOptions{
+			Options: _mathOptions{
 				Operation: "add",
 			},
 		},
-		[]byte(`{"foo":[1,3]}`),
-		[]byte(`{"foo":4}`),
+		[]byte(`{"math":[1,3]}`),
+		[]byte(`{"math":4}`),
 		nil,
 	},
 	{
 		"subtract",
-		math{
+		_math{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "math",
+				SetKey: "math",
 			},
-			Options: mathOptions{
+			Options: _mathOptions{
 				Operation: "subtract",
 			},
 		},
-		[]byte(`{"foo":[5,2]}`),
-		[]byte(`{"foo":3}`),
+		[]byte(`{"math":[5,2]}`),
+		[]byte(`{"math":3}`),
 		nil,
 	},
 	{
 		"multiply",
-		math{
+		_math{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "math",
+				SetKey: "math",
 			},
-			Options: mathOptions{
+			Options: _mathOptions{
 				Operation: "multiply",
 			},
 		},
-		[]byte(`{"foo":[10,2]}`),
-		[]byte(`{"foo":20}`),
+		[]byte(`{"math":[10,2]}`),
+		[]byte(`{"math":20}`),
 		nil,
 	},
 	{
 		"divide",
-		math{
+		_math{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "math",
+				SetKey: "math",
 			},
-			Options: mathOptions{
+			Options: _mathOptions{
 				Operation: "divide",
 			},
 		},
-		[]byte(`{"foo":[10,2]}`),
-		[]byte(`{"foo":5}`),
+		[]byte(`{"math":[10,2]}`),
+		[]byte(`{"math":5}`),
 		nil,
 	},
 }
@@ -95,7 +95,7 @@ func TestMath(t *testing.T) {
 	}
 }
 
-func benchmarkMath(b *testing.B, applicator math, test config.Capsule) {
+func benchmarkMath(b *testing.B, applicator _math, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

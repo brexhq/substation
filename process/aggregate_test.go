@@ -10,15 +10,15 @@ import (
 
 var aggregateTests = []struct {
 	name     string
-	proc     aggregate
+	proc     _aggregate
 	test     [][]byte
 	expected [][]byte
 	err      error
 }{
 	{
 		"single aggregate",
-		aggregate{
-			Options: aggregateOptions{
+		_aggregate{
+			Options: _aggregateOptions{
 				Separator: `\n`,
 			},
 		},
@@ -35,8 +35,8 @@ var aggregateTests = []struct {
 	// identical to the single buffer test, but improves performance due to lowered count and size limits
 	{
 		"single aggregate with better performance",
-		aggregate{
-			Options: aggregateOptions{
+		_aggregate{
+			Options: _aggregateOptions{
 				Separator: `\n`,
 				MaxCount:  3,
 				MaxSize:   50,
@@ -54,8 +54,8 @@ var aggregateTests = []struct {
 	},
 	{
 		"multiple aggregates",
-		aggregate{
-			Options: aggregateOptions{
+		_aggregate{
+			Options: _aggregateOptions{
 				Separator: `\n`,
 				MaxCount:  2,
 			},
@@ -73,7 +73,7 @@ var aggregateTests = []struct {
 	},
 	{
 		"single JSON array aggregate",
-		aggregate{
+		_aggregate{
 			process: process{
 				SetKey: "aggregate.-1",
 			},
@@ -91,11 +91,11 @@ var aggregateTests = []struct {
 	},
 	{
 		"multiple JSON array aggregates",
-		aggregate{
+		_aggregate{
 			process: process{
 				SetKey: "aggregate.-1",
 			},
-			Options: aggregateOptions{
+			Options: _aggregateOptions{
 				MaxCount: 2,
 			},
 		},
@@ -112,7 +112,7 @@ var aggregateTests = []struct {
 	},
 	{
 		"single JSON array aggregate",
-		aggregate{
+		_aggregate{
 			process: process{
 				SetKey: "aggregate.-1",
 			},
@@ -132,11 +132,11 @@ var aggregateTests = []struct {
 	},
 	{
 		"multiple JSON array aggregates",
-		aggregate{
+		_aggregate{
 			process: process{
 				SetKey: "aggregate.-1",
 			},
-			Options: aggregateOptions{
+			Options: _aggregateOptions{
 				MaxCount: 2,
 			},
 		},
@@ -157,11 +157,11 @@ var aggregateTests = []struct {
 	},
 	{
 		"JSON key aggregates",
-		aggregate{
+		_aggregate{
 			process: process{
 				SetKey: "aggregate.-1",
 			},
-			Options: aggregateOptions{
+			Options: _aggregateOptions{
 				Key: "foo",
 			},
 		},
@@ -206,7 +206,7 @@ func TestAggregate(t *testing.T) {
 	}
 }
 
-func benchmarkAggregate(b *testing.B, batcher aggregate, capsules []config.Capsule) {
+func benchmarkAggregate(b *testing.B, batcher _aggregate, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = batcher.Batch(ctx, capsules...)

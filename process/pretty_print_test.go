@@ -10,15 +10,15 @@ import (
 
 var prettyPrintBatchTests = []struct {
 	name     string
-	proc     prettyPrint
+	proc     _prettyPrint
 	test     [][]byte
 	expected [][]byte
 	err      error
 }{
 	{
 		"from",
-		prettyPrint{
-			Options: prettyPrintOptions{
+		_prettyPrint{
+			Options: _prettyPrintOptions{
 				Direction: "from",
 			},
 		},
@@ -34,8 +34,8 @@ var prettyPrintBatchTests = []struct {
 	},
 	{
 		"from",
-		prettyPrint{
-			Options: prettyPrintOptions{
+		_prettyPrint{
+			Options: _prettyPrintOptions{
 				Direction: "from",
 			},
 		},
@@ -54,8 +54,8 @@ var prettyPrintBatchTests = []struct {
 	},
 	{
 		"to",
-		prettyPrint{
-			Options: prettyPrintOptions{
+		_prettyPrint{
+			Options: _prettyPrintOptions{
 				Direction: "to",
 			},
 		},
@@ -97,7 +97,7 @@ func TestPrettyPrintBatch(t *testing.T) {
 	}
 }
 
-func benchmarkPrettyPrintBatch(b *testing.B, batcher prettyPrint, capsules []config.Capsule) {
+func benchmarkPrettyPrintBatch(b *testing.B, batcher _prettyPrint, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = batcher.Batch(ctx, capsules...)
@@ -123,15 +123,15 @@ func BenchmarkPrettyPrintBatch(b *testing.B) {
 
 var prettyPrintTests = []struct {
 	name     string
-	proc     prettyPrint
+	proc     _prettyPrint
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"to",
-		prettyPrint{
-			Options: prettyPrintOptions{
+		_prettyPrint{
+			Options: _prettyPrintOptions{
 				Direction: "to",
 			},
 		},
@@ -162,7 +162,7 @@ func TestPrettyPrint(t *testing.T) {
 	}
 }
 
-func benchmarkPrettyPrint(b *testing.B, proc prettyPrint, capsule config.Capsule) {
+func benchmarkPrettyPrint(b *testing.B, proc _prettyPrint, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = proc.Apply(ctx, capsule)

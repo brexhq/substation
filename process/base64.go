@@ -10,37 +10,43 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errBase64DecodedBinary is returned when the Base64 processor is configured to decode output to JSON, but the output contains binary data and cannot be written as valid JSON.
+// errBase64DecodedBinary is returned when the Base64 processor is configured
+// to decode output to JSON, but the output contains binary data and cannot be
+// written as valid JSON.
 const errBase64DecodedBinary = errors.Error("cannot write binary as JSON")
 
 // base64 processes data by converting it to and from base64.
 //
 // This processor supports the data and object handling patterns.
-type base64 struct {
+type _base64 struct {
 	process
-	Options base64Options `json:"options"`
+	Options _base64Options `json:"options"`
 }
 
-type base64Options struct {
+type _base64Options struct {
 	// Direction determines whether data is encoded or decoded.
 	//
 	// Must be one of:
-	//	- to: encode to base64
-	// 	- from: decode from base64
+	//
+	// - to: encode to base64
+	//
+	// - from: decode from base64
 	Direction string `json:"direction"`
 }
 
-// Close closes resources opened by the Base64 processor.
-func (p base64) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _base64) Close(context.Context) error {
 	return nil
 }
 
-func (p base64) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _base64) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return conditionalApply(ctx, capsules, p.Condition, p)
 }
 
-// Apply processes encapsulated data with the Base64 processor.
-func (p base64) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _base64) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
 		return capsule, fmt.Errorf("process base64: options %+v: %v", p.Options, errMissingRequiredOptions)

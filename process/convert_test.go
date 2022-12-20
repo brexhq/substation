@@ -10,19 +10,19 @@ import (
 
 var convertTests = []struct {
 	name     string
-	proc     convert
+	proc     _convert
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"bool true",
-		convert{
+		_convert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: convertOptions{
+			Options: _convertOptions{
 				Type: "bool",
 			},
 		},
@@ -32,12 +32,12 @@ var convertTests = []struct {
 	},
 	{
 		"bool false",
-		convert{
+		_convert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: convertOptions{
+			Options: _convertOptions{
 				Type: "bool",
 			},
 		},
@@ -47,12 +47,12 @@ var convertTests = []struct {
 	},
 	{
 		"int",
-		convert{
+		_convert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: convertOptions{
+			Options: _convertOptions{
 				Type: "int",
 			},
 		},
@@ -62,12 +62,12 @@ var convertTests = []struct {
 	},
 	{
 		"float",
-		convert{
+		_convert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: convertOptions{
+			Options: _convertOptions{
 				Type: "float",
 			},
 		},
@@ -77,12 +77,12 @@ var convertTests = []struct {
 	},
 	{
 		"uint",
-		convert{
+		_convert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: convertOptions{
+			Options: _convertOptions{
 				Type: "uint",
 			},
 		},
@@ -92,12 +92,12 @@ var convertTests = []struct {
 	},
 	{
 		"string",
-		convert{
+		_convert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: convertOptions{
+			Options: _convertOptions{
 				Type: "string",
 			},
 		},
@@ -107,12 +107,12 @@ var convertTests = []struct {
 	},
 	{
 		"int",
-		convert{
+		_convert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: convertOptions{
+			Options: _convertOptions{
 				Type: "int",
 			},
 		},
@@ -140,7 +140,7 @@ func TestConvert(t *testing.T) {
 	}
 }
 
-func benchmarkConvert(b *testing.B, applicator convert, test config.Capsule) {
+func benchmarkConvert(b *testing.B, applicator _convert, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

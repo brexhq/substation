@@ -10,15 +10,15 @@ import (
 
 var gzipTests = []struct {
 	name     string
-	proc     gzip
+	proc     _gzip
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"from",
-		gzip{
-			Options: gzipOptions{
+		_gzip{
+			Options: _gzipOptions{
 				Direction: "from",
 			},
 		},
@@ -28,8 +28,8 @@ var gzipTests = []struct {
 	},
 	{
 		"to",
-		gzip{
-			Options: gzipOptions{
+		_gzip{
+			Options: _gzipOptions{
 				Direction: "to",
 			},
 		},
@@ -57,7 +57,7 @@ func TestGzip(t *testing.T) {
 	}
 }
 
-func benchmarkGzip(b *testing.B, applicator gzip, test config.Capsule) {
+func benchmarkGzip(b *testing.B, applicator _gzip, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

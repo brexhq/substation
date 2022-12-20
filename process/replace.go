@@ -9,73 +9,49 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-/*
-replace processes data by replacing characters. The processor supports these patterns:
-
-	JSON:
-		{"replace":"bar"} >>> {"replace":"baz"}
-	data:
-		bar >>> baz
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "replace",
-		"settings": {
-			"options": {
-				"old": "r",
-				"new": "z"
-			},
-			"input_key": "replace",
-			"output_key": "replace"
-		}
-	}
-*/
-type replace struct {
+// replace processes data by replacing characters in strings.
+//
+// This processor supports the data and object handling patterns.
+type _replace struct {
 	process
-	Options replaceOptions `json:"options"`
+	Options _replaceOptions `json:"options"`
 }
 
-/*
-replaceOptions contains custom options for the replace processor:
-
-	Old:
-		character(s) to replace in the data
-	New:
-		character(s) that replace Old
-	Count (optional):
-		number of replacements to make
-		defaults to -1, which replaces all matches
-*/
-type replaceOptions struct {
-	Old   string `json:"old"`
-	New   string `json:"new"`
-	Count int    `json:"count"`
+type _replaceOptions struct {
+	// Old contains characters to replace in the data.
+	Old string `json:"old"`
+	// New contains characters that replace characters in Old.
+	New string `json:"new"`
+	// Counter determines the number of replacements to make.
+	//
+	// This is optional and defaults to -1 (replaces all matches).
+	Count int `json:"count"`
 }
 
-// Close closes resources opened by the replace processor.
-func (p replace) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _replace) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the replace processor. Conditions are optionally applied to the data to enable processing.
-func (p replace) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _replace) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 	if err != nil {
-		return nil, fmt.Errorf("process replace: %v", err)
+		return nil, fmt.Errorf("process _replace: %v", err)
 	}
 
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the replace processor.
-func (p replace) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _replace) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Old == "" {
-		return capsule, fmt.Errorf("process replace: options %+v: %w", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process _replace: options %+v: %w", p.Options, errMissingRequiredOptions)
 	}
 
-	// default to replace all
+	// default to _replace all
 	if p.Options.Count == 0 {
 		p.Options.Count = -1
 	}
@@ -91,7 +67,7 @@ func (p replace) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 		)
 
 		if err := capsule.Set(p.SetKey, value); err != nil {
-			return capsule, fmt.Errorf("process replace: %v", err)
+			return capsule, fmt.Errorf("process _replace: %v", err)
 		}
 
 		return capsule, nil
@@ -110,5 +86,5 @@ func (p replace) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process replace: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process _replace: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }

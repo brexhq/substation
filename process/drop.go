@@ -8,16 +8,21 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-type drop struct {
+// drop processes data by removing and not emitting it.
+//
+// This processor supports the data and object handling patterns.
+type _drop struct {
 	process
 }
 
-// Close closes resources opened by the Drop processor.
-func (p drop) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _drop) Close(context.Context) error {
 	return nil
 }
 
-func (p drop) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _drop) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process drop: %v", err)

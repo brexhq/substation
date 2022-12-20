@@ -9,21 +9,30 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
-type forEach struct {
+// forEach processes data by iterating and applying a processor to each element
+// in an object array. If multiple processors need to be applied to each element,
+// then the pipeline processor should be used to create a nested data processing
+// workflow.
+//
+// This processor supports the object handling pattern.
+type _forEach struct {
 	process
-	Options forEachOptions `json:"options"`
+	Options _forEachOptions `json:"options"`
 }
 
-type forEachOptions struct {
+type _forEachOptions struct {
+	// Processor applied to each element in the object array.
 	Processor config.Config
 }
 
-// Close closes resources opened by the forEach processor.
-func (p forEach) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _forEach) Close(context.Context) error {
 	return nil
 }
 
-func (p forEach) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _forEach) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 	if err != nil {
 		return nil, fmt.Errorf("process for_each: %v", err)
@@ -32,18 +41,8 @@ func (p forEach) Batch(ctx context.Context, capsules ...config.Capsule) ([]confi
 	return capsules, nil
 }
 
-/*
-Apply processes encapsulated data with the forEach processor.
-
-JSON values are treated as arrays and the configured
-processor is applied to each element in the array. If multiple
-processors need to be applied to each element, then the
-Pipeline processor should be used to create a nested data
-processing workflow. For example:
-
-	forEach -> Pipeline -> [Copy, Delete, Copy]
-*/
-func (p forEach) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _forEach) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
 		return capsule, fmt.Errorf("process for_each: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)

@@ -10,14 +10,14 @@ import (
 
 var countTests = []struct {
 	name     string
-	proc     count
+	proc     _count
 	test     [][]byte
 	expected []byte
 	err      error
 }{
 	{
 		"count",
-		count{},
+		_count{},
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
 			[]byte(`{"foo":"baz"}`),
@@ -51,7 +51,7 @@ func TestCount(t *testing.T) {
 	}
 }
 
-func benchmarkCount(b *testing.B, applicator count, capsules []config.Capsule) {
+func benchmarkCount(b *testing.B, applicator _count, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Batch(ctx, capsules...)

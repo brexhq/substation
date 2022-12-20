@@ -10,14 +10,14 @@ import (
 
 var expandTests = []struct {
 	name     string
-	proc     expand
+	proc     _expand
 	test     []byte
 	expected [][]byte
 	err      error
 }{
 	{
 		"JSON",
-		expand{
+		_expand{
 			process: process{
 				Key: "expand",
 			},
@@ -30,7 +30,7 @@ var expandTests = []struct {
 	},
 	{
 		"JSON extra key",
-		expand{
+		_expand{
 			process: process{
 				Key: "expand",
 			},
@@ -44,7 +44,7 @@ var expandTests = []struct {
 	},
 	{
 		"data",
-		expand{},
+		_expand{},
 		[]byte(`[{"foo":"bar"},{"quux":"corge"}]`),
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
@@ -77,7 +77,7 @@ func TestExpand(t *testing.T) {
 	}
 }
 
-func benchmarkExpand(b *testing.B, slicer expand, slice []config.Capsule) {
+func benchmarkExpand(b *testing.B, slicer _expand, slice []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = slicer.Batch(ctx, slice...)

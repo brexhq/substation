@@ -10,14 +10,14 @@ import (
 
 var copyTests = []struct {
 	name     string
-	proc     copy
+	proc     _copy
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON",
-		copy{
+		_copy{
 			process: process{
 				Key:    "foo",
 				SetKey: "baz",
@@ -29,7 +29,7 @@ var copyTests = []struct {
 	},
 	{
 		"JSON unescape",
-		copy{
+		_copy{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
@@ -41,7 +41,7 @@ var copyTests = []struct {
 	},
 	{
 		"from JSON",
-		copy{
+		_copy{
 			process: process{
 				Key: "foo",
 			},
@@ -52,7 +52,7 @@ var copyTests = []struct {
 	},
 	{
 		"from JSON nested",
-		copy{
+		_copy{
 			process: process{
 				Key: "foo",
 			},
@@ -63,7 +63,7 @@ var copyTests = []struct {
 	},
 	{
 		"to JSON utf8",
-		copy{
+		_copy{
 			process: process{
 				SetKey: "bar",
 			},
@@ -74,7 +74,7 @@ var copyTests = []struct {
 	},
 	{
 		"to JSON base64",
-		copy{
+		_copy{
 			process: process{
 				SetKey: "bar",
 			},
@@ -103,7 +103,7 @@ func TestCopy(t *testing.T) {
 	}
 }
 
-func benchmarkCopy(b *testing.B, applicator copy, test config.Capsule) {
+func benchmarkCopy(b *testing.B, applicator _copy, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

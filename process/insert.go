@@ -7,21 +7,27 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-type insert struct {
+// insert processes data by inserting a value into an object.
+//
+// This processor supports the object handling pattern.
+type _insert struct {
 	process
-	Options insertOptions `json:"options"`
+	Options _insertOptions `json:"options"`
 }
 
-type insertOptions struct {
+type _insertOptions struct {
+	// Value inserted into the object.
 	Value interface{} `json:"value"`
 }
 
-// Close closes resources opened by the insert processor.
-func (p insert) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _insert) Close(context.Context) error {
 	return nil
 }
 
-func (p insert) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _insert) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 	if err != nil {
 		return nil, fmt.Errorf("process insert: %v", err)
@@ -30,8 +36,8 @@ func (p insert) Batch(ctx context.Context, capsules ...config.Capsule) ([]config
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the insert processor.
-func (p insert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _insert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.SetKey == "" {
 		return capsule, fmt.Errorf("process insert: outputkey %s: %v", p.SetKey, errInvalidDataPattern)

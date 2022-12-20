@@ -8,21 +8,21 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var concatTests = []struct {
+var joinTests = []struct {
 	name     string
-	proc     concat
+	proc     _join
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON",
-		concat{
+		_join{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: concatOptions{
+			Options: _joinOptions{
 				Separator: ".",
 			},
 		},
@@ -32,11 +32,11 @@ var concatTests = []struct {
 	},
 }
 
-func TestConcat(t *testing.T) {
+func Testjoin(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range concatTests {
+	for _, test := range joinTests {
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -50,20 +50,20 @@ func TestConcat(t *testing.T) {
 	}
 }
 
-func benchmarkConcat(b *testing.B, applicator concat, test config.Capsule) {
+func benchmarkjoin(b *testing.B, applicator _join, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)
 	}
 }
 
-func BenchmarkConcat(b *testing.B) {
+func Benchmarkjoin(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range concatTests {
+	for _, test := range joinTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkConcat(b, test.proc, capsule)
+				benchmarkjoin(b, test.proc, capsule)
 			},
 		)
 	}

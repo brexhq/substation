@@ -9,44 +9,31 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-expand processes data by creating individual events from objects in arrays. The processor supports these patterns:
-
-	JSON:
-		{"expand":[{"foo":"bar"}],"baz":"qux"} >>> {"foo":"bar","baz":"qux"}
-	data:
-		[{"foo":"bar"}] >>> {"foo":"bar"}
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "expand",
-		"settings": {
-			"input_key": "expand"
-		}
-	}
-*/
-type expand struct {
+// expand processes data by creating new objects from objects in arrays.
+//
+// This processor supports the data and object handling patterns.
+type _expand struct {
 	process
 }
 
-// Close closes resources opened by the expand processor.
-func (p expand) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _expand) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the expand processor. Conditions are optionally applied to the data to enable processing.
-func (p expand) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _expand) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process expand: %v", err)
+		return nil, fmt.Errorf("process _expand: %v", err)
 	}
 
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
-			return nil, fmt.Errorf("process expand: %v", err)
+			return nil, fmt.Errorf("process _expand: %v", err)
 		}
 
 		if !ok {
@@ -61,7 +48,7 @@ func (p expand) Batch(ctx context.Context, capsules ...config.Capsule) ([]config
 		// input is processed as an array.
 		//
 		// root:
-		// 	{"expand":[{"foo":"bar"},{"baz":"qux"}],"quux":"corge"}
+		// 	{"_expand":[{"foo":"bar"},{"baz":"qux"}],"quux":"corge"}
 		// expanded:
 		// 	{"foo":"bar","quux":"corge"}
 		// 	{"baz":"qux","quux":"corge"}
@@ -74,7 +61,7 @@ func (p expand) Batch(ctx context.Context, capsules ...config.Capsule) ([]config
 		if p.Key != "" {
 			rootBytes, err := json.Delete([]byte(root.String()), p.Key)
 			if err != nil {
-				return nil, fmt.Errorf("process expand: %v", err)
+				return nil, fmt.Errorf("process _expand: %v", err)
 			}
 
 			root = json.Get(rootBytes, "@this")
@@ -86,19 +73,19 @@ func (p expand) Batch(ctx context.Context, capsules ...config.Capsule) ([]config
 		for _, res := range result.Array() {
 			var err error
 
-			expand := []byte(res.String())
+			_expand := []byte(res.String())
 			for key, val := range root.Map() {
 				if key == p.Key {
 					continue
 				}
 
-				expand, err = json.Set(expand, key, val)
+				_expand, err = json.Set(_expand, key, val)
 				if err != nil {
-					return nil, fmt.Errorf("process expand: %v", err)
+					return nil, fmt.Errorf("process _expand: %v", err)
 				}
 			}
 
-			newCapsule.SetData(expand)
+			newCapsule.SetData(_expand)
 			newCapsules = append(newCapsules, newCapsule)
 		}
 	}

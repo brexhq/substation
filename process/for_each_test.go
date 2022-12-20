@@ -8,21 +8,21 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var foreachTests = []struct {
+var forEachTests = []struct {
 	name     string
-	proc     forEach
+	proc     _forEach
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"base64",
-		forEach{
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "base64",
 					Settings: map[string]interface{}{
@@ -39,12 +39,12 @@ var foreachTests = []struct {
 	},
 	{
 		"capture",
-		forEach{
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "capture",
 					Settings: map[string]interface{}{
@@ -61,15 +61,15 @@ var foreachTests = []struct {
 		nil,
 	},
 	{
-		"letter_case",
-		forEach{
+		"case",
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
-					Type: "letter_case",
+					Type: "case",
 					Settings: map[string]interface{}{
 						"options": map[string]interface{}{
 							"type": "lowercase",
@@ -83,35 +83,13 @@ var foreachTests = []struct {
 		nil,
 	},
 	{
-		"concat",
-		forEach{
-			process: process{
-				Key:    "input",
-				SetKey: "output.-1",
-			},
-			Options: forEachOptions{
-				Processor: config.Config{
-					Type: "concat",
-					Settings: map[string]interface{}{
-						"options": map[string]interface{}{
-							"separator": ".",
-						},
-					},
-				},
-			},
-		},
-		[]byte(`{"input":[["foo","bar"],["baz","qux"]]}`),
-		[]byte(`{"input":[["foo","bar"],["baz","qux"]],"output":["foo.bar","baz.qux"]}`),
-		nil,
-	},
-	{
 		"convert",
-		forEach{
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "convert",
 					Settings: map[string]interface{}{
@@ -128,12 +106,12 @@ var foreachTests = []struct {
 	},
 	{
 		"domain",
-		forEach{
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "domain",
 					Settings: map[string]interface{}{
@@ -150,12 +128,12 @@ var foreachTests = []struct {
 	},
 	{
 		"flatten",
-		forEach{
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "flatten",
 					Settings: map[string]interface{}{
@@ -174,12 +152,12 @@ var foreachTests = []struct {
 	},
 	{
 		"group",
-		forEach{
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "group",
 					Settings: map[string]interface{}{
@@ -195,12 +173,12 @@ var foreachTests = []struct {
 	},
 	{
 		"hash",
-		forEach{
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "hash",
 					Settings: map[string]interface{}{
@@ -217,12 +195,12 @@ var foreachTests = []struct {
 	},
 	{
 		"insert",
-		forEach{
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "insert",
 					Settings: map[string]interface{}{
@@ -239,13 +217,35 @@ var foreachTests = []struct {
 		nil,
 	},
 	{
-		"math",
-		forEach{
+		"join",
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
+				Processor: config.Config{
+					Type: "join",
+					Settings: map[string]interface{}{
+						"options": map[string]interface{}{
+							"separator": ".",
+						},
+					},
+				},
+			},
+		},
+		[]byte(`{"input":[["foo","bar"],["baz","qux"]]}`),
+		[]byte(`{"input":[["foo","bar"],["baz","qux"]],"output":["foo.bar","baz.qux"]}`),
+		nil,
+	},
+	{
+		"math",
+		_forEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "math",
 					Settings: map[string]interface{}{
@@ -262,12 +262,12 @@ var foreachTests = []struct {
 	},
 	{
 		"pipeline",
-		forEach{
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "pipeline",
 					Settings: map[string]interface{}{
@@ -301,12 +301,12 @@ var foreachTests = []struct {
 	},
 	{
 		"replace",
-		forEach{
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "replace",
 					Settings: map[string]interface{}{
@@ -324,18 +324,18 @@ var foreachTests = []struct {
 	},
 	{
 		"time",
-		forEach{
+		_forEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Processor: config.Config{
 					Type: "time",
 					Settings: map[string]interface{}{
 						"options": map[string]interface{}{
-							"input_format":  "2006-01-02T15:04:05Z",
-							"output_format": "2006-01-02T15:04:05.000000Z",
+							"format":     "2006-01-02T15:04:05Z",
+							"set_format": "2006-01-02T15:04:05.000000Z",
 						},
 					},
 				},
@@ -351,7 +351,7 @@ func TestForEach(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range foreachTests {
+	for _, test := range forEachTests {
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -365,7 +365,7 @@ func TestForEach(t *testing.T) {
 	}
 }
 
-func benchmarkForEach(b *testing.B, applicator forEach, test config.Capsule) {
+func benchmarkForEach(b *testing.B, applicator _forEach, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)
@@ -374,7 +374,7 @@ func benchmarkForEach(b *testing.B, applicator forEach, test config.Capsule) {
 
 func BenchmarkForEach(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range foreachTests {
+	for _, test := range forEachTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)

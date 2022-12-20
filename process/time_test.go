@@ -8,21 +8,21 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var outputFmt = "2006-01-02T15:04:05.000000Z"
+var setFmt = "2006-01-02T15:04:05.000000Z"
 
 var timeTests = []struct {
 	name     string
-	proc     time
+	proc     _time
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"data string",
-		time{
-			Options: timeOptions{
-				InputFormat:  "2006-01-02T15:04:05Z",
-				OutputFormat: outputFmt,
+		_time{
+			Options: _timeOptions{
+				Format:    "2006-01-02T15:04:05Z",
+				SetFormat: setFmt,
 			},
 		},
 		[]byte(`2021-03-06T00:02:57Z`),
@@ -31,10 +31,10 @@ var timeTests = []struct {
 	},
 	{
 		"data unix",
-		time{
-			Options: timeOptions{
-				InputFormat:  "unix",
-				OutputFormat: outputFmt,
+		_time{
+			Options: _timeOptions{
+				Format:    "unix",
+				SetFormat: setFmt,
 			},
 		},
 		[]byte(`1639877490.061`),
@@ -43,10 +43,10 @@ var timeTests = []struct {
 	},
 	{
 		"data unix to unix_milli",
-		time{
-			Options: timeOptions{
-				InputFormat:  "unix",
-				OutputFormat: "unix_milli",
+		_time{
+			Options: _timeOptions{
+				Format:    "unix",
+				SetFormat: "unix_milli",
 			},
 		},
 		[]byte(`1639877490.061`),
@@ -55,153 +55,153 @@ var timeTests = []struct {
 	},
 	{
 		"JSON",
-		time{
+		_time{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "time",
+				SetKey: "time",
 			},
-			Options: timeOptions{
-				InputFormat:  "2006-01-02T15:04:05Z",
-				OutputFormat: outputFmt,
+			Options: _timeOptions{
+				Format:    "2006-01-02T15:04:05Z",
+				SetFormat: setFmt,
 			},
 		},
-		[]byte(`{"foo":"2021-03-06T00:02:57Z"}`),
-		[]byte(`{"foo":"2021-03-06T00:02:57.000000Z"}`),
+		[]byte(`{"time":"2021-03-06T00:02:57Z"}`),
+		[]byte(`{"time":"2021-03-06T00:02:57.000000Z"}`),
 		nil,
 	},
 	{
 		"JSON from unix",
-		time{
+		_time{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "time",
+				SetKey: "time",
 			},
-			Options: timeOptions{
-				InputFormat:  "unix",
-				OutputFormat: outputFmt,
+			Options: _timeOptions{
+				Format:    "unix",
+				SetFormat: setFmt,
 			},
 		},
-		[]byte(`{"foo":1639877490}`),
-		[]byte(`{"foo":"2021-12-19T01:31:30.000000Z"}`),
+		[]byte(`{"time":1639877490}`),
+		[]byte(`{"time":"2021-12-19T01:31:30.000000Z"}`),
 		nil,
 	},
 	{
 		"JSON to unix",
-		time{
+		_time{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "time",
+				SetKey: "time",
 			},
-			Options: timeOptions{
-				InputFormat:  outputFmt,
-				OutputFormat: "unix",
+			Options: _timeOptions{
+				Format:    setFmt,
+				SetFormat: "unix",
 			},
 		},
-		[]byte(`{"foo":"2021-12-19T01:31:30.000000Z"}`),
-		[]byte(`{"foo":1639877490}`),
+		[]byte(`{"time":"2021-12-19T01:31:30.000000Z"}`),
+		[]byte(`{"time":1639877490}`),
 		nil,
 	},
 	{
 		"JSON from unix_milli",
-		time{
+		_time{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "time",
+				SetKey: "time",
 			},
-			Options: timeOptions{
-				InputFormat:  "unix_milli",
-				OutputFormat: outputFmt,
+			Options: _timeOptions{
+				Format:    "unix_milli",
+				SetFormat: setFmt,
 			},
 		},
-		[]byte(`{"foo":1654459632263}`),
-		[]byte(`{"foo":"2022-06-05T20:07:12.263000Z"}`),
+		[]byte(`{"time":1654459632263}`),
+		[]byte(`{"time":"2022-06-05T20:07:12.263000Z"}`),
 		nil,
 	},
 	{
 		"JSON to unix_milli",
-		time{
+		_time{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "time",
+				SetKey: "time",
 			},
-			Options: timeOptions{
-				InputFormat:  outputFmt,
-				OutputFormat: "unix_milli",
+			Options: _timeOptions{
+				Format:    setFmt,
+				SetFormat: "unix_milli",
 			},
 		},
-		[]byte(`{"foo":"2022-06-05T20:07:12.263000Z"}`),
-		[]byte(`{"foo":1654459632263}`),
+		[]byte(`{"time":"2022-06-05T20:07:12.263000Z"}`),
+		[]byte(`{"time":1654459632263}`),
 		nil,
 	},
 	{
 		"JSON unix to unix_milli",
-		time{
+		_time{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "time",
+				SetKey: "time",
 			},
-			Options: timeOptions{
-				InputFormat:  "unix",
-				OutputFormat: "unix_milli",
+			Options: _timeOptions{
+				Format:    "unix",
+				SetFormat: "unix_milli",
 			},
 		},
-		[]byte(`{"foo":1639877490}`),
-		[]byte(`{"foo":1639877490000}`),
+		[]byte(`{"time":1639877490}`),
+		[]byte(`{"time":1639877490000}`),
 		nil,
 	},
 	{
 		"JSON offset conversion",
-		time{
+		_time{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "time",
+				SetKey: "time",
 			},
-			Options: timeOptions{
-				InputFormat:  "2006-Jan-02 Monday 03:04:05 -0700",
-				OutputFormat: "2006-Jan-02 Monday 03:04:05 -0700",
+			Options: _timeOptions{
+				Format:    "2006-Jan-02 Monday 03:04:05 -0700",
+				SetFormat: "2006-Jan-02 Monday 03:04:05 -0700",
 			},
 		},
-		[]byte(`{"foo":"2020-Jan-29 Wednesday 12:19:25 -0500"}`),
-		[]byte(`{"foo":"2020-Jan-29 Wednesday 05:19:25 +0000"}`),
+		[]byte(`{"time":"2020-Jan-29 Wednesday 12:19:25 -0500"}`),
+		[]byte(`{"time":"2020-Jan-29 Wednesday 05:19:25 +0000"}`),
 		nil,
 	},
 	{
 		"JSON offset to local conversion",
-		time{
+		_time{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "time",
+				SetKey: "time",
 			},
-			Options: timeOptions{
-				InputFormat:    "2006-Jan-02 Monday 03:04:05 -0700",
-				OutputFormat:   "2006-Jan-02 Monday 03:04:05 PM",
-				OutputLocation: "America/New_York",
+			Options: _timeOptions{
+				Format:      "2006-Jan-02 Monday 03:04:05 -0700",
+				SetFormat:   "2006-Jan-02 Monday 03:04:05 PM",
+				SetLocation: "America/New_York",
 			},
 		},
 		// 12:19:25 AM in Pacific Standard time
-		[]byte(`{"foo":"2020-Jan-29 Wednesday 00:19:25 -0800"}`),
+		[]byte(`{"time":"2020-Jan-29 Wednesday 00:19:25 -0800"}`),
 		// 03:19:25 AM in Eastern Standard time
-		[]byte(`{"foo":"2020-Jan-29 Wednesday 03:19:25 AM"}`),
+		[]byte(`{"time":"2020-Jan-29 Wednesday 03:19:25 AM"}`),
 		nil,
 	},
 	{
 		"JSON local to local conversion",
-		time{
+		_time{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "time",
+				SetKey: "time",
 			},
-			Options: timeOptions{
-				InputFormat:    "2006-Jan-02 Monday 03:04:05",
-				OutputFormat:   "2006-Jan-02 Monday 03:04:05",
-				InputLocation:  "America/Los_Angeles",
-				OutputLocation: "America/New_York",
+			Options: _timeOptions{
+				Format:      "2006-Jan-02 Monday 03:04:05",
+				Location:    "America/Los_Angeles",
+				SetFormat:   "2006-Jan-02 Monday 03:04:05",
+				SetLocation: "America/New_York",
 			},
 		},
 		// 12:19:25 AM in Pacific Standard time
-		[]byte(`{"foo":"2020-Jan-29 Wednesday 00:19:25"}`),
+		[]byte(`{"time":"2020-Jan-29 Wednesday 00:19:25"}`),
 		// 03:19:25 AM in Eastern Standard time
-		[]byte(`{"foo":"2020-Jan-29 Wednesday 03:19:25"}`),
+		[]byte(`{"time":"2020-Jan-29 Wednesday 03:19:25"}`),
 		nil,
 	},
 }
@@ -224,7 +224,7 @@ func TestTime(t *testing.T) {
 	}
 }
 
-func benchmarkTime(b *testing.B, applicator time, test config.Capsule) {
+func benchmarkTime(b *testing.B, applicator _time, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

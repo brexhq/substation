@@ -7,26 +7,26 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-type delete struct {
+// delete processes data by deleting keys from an object.
+//
+// This processor supports the object handling pattern.
+type _delete struct {
 	process
 }
 
-// Close closes resources opened by the Delete processor.
-func (p delete) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _delete) Close(context.Context) error {
 	return nil
 }
 
-func (p delete) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
-	if err != nil {
-		return nil, fmt.Errorf("process capture: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _delete) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return conditionalApply(ctx, capsules, p.Condition, p)
 }
 
-// Apply processes encapsulated data with the Delete processor.
-func (p delete) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _delete) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" {
 		return capsule, fmt.Errorf("process delete: inputkey %s: %v", p.Key, errInvalidDataPattern)

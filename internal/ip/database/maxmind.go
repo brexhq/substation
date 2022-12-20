@@ -5,27 +5,42 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sync"
 
 	"github.com/brexhq/substation/internal/file"
 	"github.com/brexhq/substation/internal/ip"
 	"github.com/oschwald/geoip2-golang"
 )
 
-// MaxMindASN provides read access to MaxMind ASN database.
+// MaxMindASN provides read access to a MaxMind ASN database. The database is safe for concurrent access.
 type MaxMindASN struct {
+	// Database contains the location of the MaxMind City database. This can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
 	Database string `json:"database"`
+	/*
+		Language determines the language that localized name data is returned as. More information is available here: https://support.maxmind.com/hc/en-us/articles/4414877149467-IP-Geolocation-Data.
+
+		This is optional and defaults to "en" (English).
+	*/
 	Language string `json:"language"`
-	db       *geoip2.Reader
+	mu       sync.RWMutex
+	reader   *geoip2.Reader
 }
 
 // IsEnabled returns true if the database is open and ready for use.
 func (d *MaxMindASN) IsEnabled() bool {
-	return d.db != nil
+	return d.reader != nil
 }
 
-// Open retrieves the database and opens it for querying. The location of the database can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL. MaxMind language support is provided by calling GetMaxMindLanguage to retrieve a user-configured language.
+// Open retrieves the database and opens it for querying.
 func (d *MaxMindASN) Open(ctx context.Context) error {
-	// language defaults to English
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	// avoids unnecessary opening
+	if d.reader != nil {
+		return nil
+	}
+
 	if d.Language == "" {
 		d.Language = "en"
 	}
@@ -37,7 +52,7 @@ func (d *MaxMindASN) Open(ctx context.Context) error {
 		return fmt.Errorf("database: %v", err)
 	}
 
-	if d.db, err = geoip2.Open(path); err != nil {
+	if d.reader, err = geoip2.Open(path); err != nil {
 		return fmt.Errorf("database: %v", err)
 	}
 
@@ -46,23 +61,35 @@ func (d *MaxMindASN) Open(ctx context.Context) error {
 
 // Close closes the open database.
 func (d *MaxMindASN) Close() error {
-	if d.IsEnabled() {
-		if err := d.db.Close(); err != nil {
-			return fmt.Errorf("database: %v", err)
-		}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	// avoids unnecessary closing
+	if d.reader == nil {
+		return nil
 	}
 
+	if err := d.reader.Close(); err != nil {
+		return fmt.Errorf("database: %v", err)
+	}
+
+	// reader is made nil so that IsEnabled correctly
+	// returns the non-enabled state
+	d.reader = nil
 	return nil
 }
 
 // Get queries the database and returns an aggregated database record containing enrichment information.
 func (d *MaxMindASN) Get(addr string) (*ip.EnrichmentRecord, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
 	paddr := net.ParseIP(addr)
 	if paddr == nil {
 		return nil, fmt.Errorf("database: %v", ip.ErrInvalidIPAddress)
 	}
 
-	resp, err := d.db.ASN(paddr)
+	resp, err := d.reader.ASN(paddr)
 	if err != nil {
 		return nil, err
 	}
@@ -77,21 +104,35 @@ func (d *MaxMindASN) Get(addr string) (*ip.EnrichmentRecord, error) {
 	return rec, nil
 }
 
-// MaxMindCity provides read access to a MaxMind City database.
+// MaxMindCity provides read access to a MaxMind City database. The database is safe for concurrent access.
 type MaxMindCity struct {
+	// Database contains the location of the MaxMind City database. This can be either a path on local disk, an HTTP(S) URL, or an AWS S3 URL.
 	Database string `json:"database"`
+	/*
+		Language determines the language that localized name data is returned as. More information is available here: https://support.maxmind.com/hc/en-us/articles/4414877149467-IP-Geolocation-Data.
+
+		This is optional and defaults to "en" (English).
+	*/
 	Language string `json:"language"`
-	db       *geoip2.Reader
+	mu       sync.RWMutex
+	reader   *geoip2.Reader
 }
 
 // IsEnabled returns true if the database is open and ready for use.
 func (d *MaxMindCity) IsEnabled() bool {
-	return d.db != nil
+	return d.reader != nil
 }
 
-// Open retrieves the database and opens it for querying. MaxMind language support is provided by calling GetMaxMindLanguage to retrieve a user-configured language.
+// Open retrieves the database and opens it for querying.
 func (d *MaxMindCity) Open(ctx context.Context) error {
-	// language defaults to English
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	// avoids unnecessary opening
+	if d.reader != nil {
+		return nil
+	}
+
 	if d.Language == "" {
 		d.Language = "en"
 	}
@@ -103,7 +144,7 @@ func (d *MaxMindCity) Open(ctx context.Context) error {
 		return fmt.Errorf("database: %v", err)
 	}
 
-	if d.db, err = geoip2.Open(path); err != nil {
+	if d.reader, err = geoip2.Open(path); err != nil {
 		return fmt.Errorf("database: %v", err)
 	}
 
@@ -112,23 +153,35 @@ func (d *MaxMindCity) Open(ctx context.Context) error {
 
 // Close closes the open database.
 func (d *MaxMindCity) Close() error {
-	if d.IsEnabled() {
-		if err := d.db.Close(); err != nil {
-			return fmt.Errorf("database: %v", err)
-		}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	// avoids unnecessary closing
+	if d.reader == nil {
+		return nil
 	}
 
+	if err := d.reader.Close(); err != nil {
+		return fmt.Errorf("database: %v", err)
+	}
+
+	// reader is made nil so that IsEnabled correctly
+	// returns the non-enabled state
+	d.reader = nil
 	return nil
 }
 
 // Get queries the database and returns an aggregated database record containing enrichment information.
 func (d *MaxMindCity) Get(addr string) (*ip.EnrichmentRecord, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
 	paddr := net.ParseIP(addr)
 	if paddr == nil {
 		return nil, fmt.Errorf("database: %v", ip.ErrInvalidIPAddress)
 	}
 
-	resp, err := d.db.City(paddr)
+	resp, err := d.reader.City(paddr)
 	if err != nil {
 		return nil, fmt.Errorf("database: %v", err)
 	}

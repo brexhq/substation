@@ -7,26 +7,26 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-type copy struct {
+// copy processes data by copying it into, from, and inside objects.
+//
+// This processor supports the data and object handling patterns.
+type _copy struct {
 	process
 }
 
-// Close closes resources opened by the Copy processor.
-func (p copy) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _copy) Close(context.Context) error {
 	return nil
 }
 
-func (p copy) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
-	if err != nil {
-		return nil, fmt.Errorf("process capture: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _copy) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return conditionalApply(ctx, capsules, p.Condition, p)
 }
 
-// Apply processes encapsulated data with the Copy processor.
-func (p copy) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _copy) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// JSON processing
 	if p.Key != "" && p.SetKey != "" {
 		if err := capsule.Set(p.SetKey, capsule.Get(p.Key)); err != nil {

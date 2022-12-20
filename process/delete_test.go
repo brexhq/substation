@@ -10,14 +10,14 @@ import (
 
 var deleteTests = []struct {
 	name     string
-	proc     delete
+	proc     _delete
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"string",
-		delete{
+		_delete{
 			process: process{
 				Key: "baz",
 			},
@@ -28,7 +28,7 @@ var deleteTests = []struct {
 	},
 	{
 		"JSON",
-		delete{
+		_delete{
 			process: process{
 				Key: "baz",
 			},
@@ -57,7 +57,7 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func benchmarkDelete(b *testing.B, applicator delete, test config.Capsule) {
+func benchmarkDelete(b *testing.B, applicator _delete, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

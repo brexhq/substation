@@ -7,12 +7,15 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-type convert struct {
+// convert processes data by changing its type (e.g., bool, int, string).
+//
+// This processor supports the object handling pattern.
+type _convert struct {
 	process
-	Options convertOptions `json:"options"`
+	Options _convertOptions `json:"options"`
 }
 
-type convertOptions struct {
+type _convertOptions struct {
 	// Type is the target conversion type.
 	//
 	// Must be one of:
@@ -24,22 +27,19 @@ type convertOptions struct {
 	Type string `json:"type"`
 }
 
-// Close closes resources opened by the Convert processor.
-func (p convert) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _convert) Close(context.Context) error {
 	return nil
 }
 
-func (p convert) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
-	if err != nil {
-		return nil, fmt.Errorf("process capture: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _convert) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return conditionalApply(ctx, capsules, p.Condition, p)
 }
 
-// Apply processes encapsulated data with the Convert processor.
-func (p convert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _convert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
 		return capsule, fmt.Errorf("process convert: options %+v: %v", p.Options, errMissingRequiredOptions)

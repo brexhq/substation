@@ -10,36 +10,36 @@ import (
 
 var groupTests = []struct {
 	name     string
-	proc     group
+	proc     _group
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"tuples",
-		group{
+		_group{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "group",
+				SetKey: "group",
 			},
 		},
-		[]byte(`{"foo":[["bar","baz"],[123,456]]}`),
-		[]byte(`{"foo":[["bar",123],["baz",456]]}`),
+		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
+		[]byte(`{"group":[["foo",123],["bar",456]]}`),
 		nil,
 	},
 	{
 		"objects",
-		group{
+		_group{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "group",
+				SetKey: "group",
 			},
-			Options: groupOptions{
+			Options: _groupOptions{
 				Keys: []string{"qux.quux", "corge"},
 			},
 		},
-		[]byte(`{"foo":[["bar","baz"],[123,456]]}`),
-		[]byte(`{"foo":[{"qux":{"quux":"bar"},"corge":123},{"qux":{"quux":"baz"},"corge":456}]}`),
+		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
+		[]byte(`{"group":[{"qux":{"quux":"foo"},"corge":123},{"qux":{"quux":"bar"},"corge":456}]}`),
 		nil,
 	},
 }
@@ -62,7 +62,7 @@ func TestGroup(t *testing.T) {
 	}
 }
 
-func benchmarkGroup(b *testing.B, applicator group, test config.Capsule) {
+func benchmarkGroup(b *testing.B, applicator _group, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

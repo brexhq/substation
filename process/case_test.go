@@ -8,21 +8,21 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var letterCaseTests = []struct {
+var caseTests = []struct {
 	name     string
-	proc     letterCase
+	proc     _case
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON lower",
-		letterCase{
+		_case{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: letterCaseOptions{
+			Options: _caseOptions{
 				Type: "lowercase",
 			},
 		},
@@ -32,12 +32,12 @@ var letterCaseTests = []struct {
 	},
 	{
 		"JSON upper",
-		letterCase{
+		_case{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: letterCaseOptions{
+			Options: _caseOptions{
 				Type: "uppercase",
 			},
 		},
@@ -47,12 +47,12 @@ var letterCaseTests = []struct {
 	},
 	{
 		"JSON snake",
-		letterCase{
+		_case{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: letterCaseOptions{
+			Options: _caseOptions{
 				Type: "snake",
 			},
 		},
@@ -66,7 +66,7 @@ func TestCase(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range letterCaseTests {
+	for _, test := range caseTests {
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -80,7 +80,7 @@ func TestCase(t *testing.T) {
 	}
 }
 
-func benchmarkCase(b *testing.B, applicator letterCase, test config.Capsule) {
+func benchmarkCase(b *testing.B, applicator _case, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)
@@ -89,7 +89,7 @@ func benchmarkCase(b *testing.B, applicator letterCase, test config.Capsule) {
 
 func BenchmarkCase(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range letterCaseTests {
+	for _, test := range caseTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)

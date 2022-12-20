@@ -10,19 +10,19 @@ import (
 
 var pipelineTests = []struct {
 	name     string
-	proc     pipeline
+	proc     _pipeline
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"json",
-		pipeline{
+		_pipeline{
 			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+				Key:    "pipeline",
+				SetKey: "pipeline",
 			},
-			Options: pipelineOptions{
+			Options: _pipelineOptions{
 				Processors: []config.Config{
 					{
 						Type: "base64",
@@ -43,14 +43,14 @@ var pipelineTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"foo":"H4sIAKi91GIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="}`),
-		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"pipeline":"H4sIAKi91GIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="}`),
+		[]byte(`{"pipeline":"bar"}`),
 		nil,
 	},
 	{
 		"data",
-		pipeline{
-			Options: pipelineOptions{
+		_pipeline{
+			Options: _pipelineOptions{
 				Processors: []config.Config{
 					{
 						Type: "base64",
@@ -95,7 +95,7 @@ func TestPipeline(t *testing.T) {
 	}
 }
 
-func benchmarkPipeline(b *testing.B, applicator pipeline, test config.Capsule) {
+func benchmarkPipeline(b *testing.B, applicator _pipeline, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

@@ -11,65 +11,45 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errdomainNoSubdomain is returned when a domain without a subdomain is processed.
-const errdomainNoSubdomain = errors.Error("no subdomain")
+// errDomainNoSubdomain is returned when a domain without a subdomain is
+// processed.
+const errDomainNoSubdomain = errors.Error("no subdomain")
 
-/*
-domain processes data by parsing fully qualified domain names into labels. The processor supports these patterns:
-
-	JSON:
-		{"domain":"example.com"} >>> {"domain":"example.com","tld":"com"}
-	data:
-		example.com >>> com
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "domain",
-		"settings": {
-			"options": {
-				"function": "tld"
-			},
-			"input_key": "domain",
-			"output_key": "tld"
-		}
-	}
-*/
-type domain struct {
+// domain processes data by parsing fully qualified domain names (FQDNs) into
+// labels.
+//
+// This processor supports the data and object handling patterns.
+type _domain struct {
 	process
-	Options domainOptions `json:"options"`
+	Options _domainOptions `json:"options"`
 }
 
-/*
-domainOptions contains custom options for the domain processor:
-
-	Type:
-		domain processing function applied to the data
-		must be one of:
-			tld
-			domain
-			subdomain
-*/
-type domainOptions struct {
+type _domainOptions struct {
+	// Type is the domain function applied to the data.
+	//
+	// Must be one of:
+	//
+	// - tld: top-level domain
+	//
+	// - domain
+	//
+	// - subdomain
 	Type string `json:"type"`
 }
 
-// Close closes resources opened by the domain processor.
-func (p domain) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _domain) Close(context.Context) error {
 	return nil
 }
 
-func (p domain) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
-	if err != nil {
-		return nil, fmt.Errorf("process domain: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _domain) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return conditionalApply(ctx, capsules, p.Condition, p)
 }
 
-// Apply processes encapsulated data with the domain processor.
-func (p domain) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _domain) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
 		return capsule, fmt.Errorf("process domain: options %+v: %v", p.Options, errMissingRequiredOptions)
@@ -98,7 +78,7 @@ func (p domain) Apply(ctx context.Context, capsule config.Capsule) (config.Capsu
 	return capsule, fmt.Errorf("process domain: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }
 
-func (p domain) domain(s string) (string, error) {
+func (p _domain) domain(s string) (string, error) {
 	switch p.Options.Type {
 	case "tld":
 		tld, _ := publicsuffix.PublicSuffix(s)
@@ -121,7 +101,7 @@ func (p domain) domain(s string) (string, error) {
 		// subdomain == "foo" ("foo.bar.com" minus ".bar.com")
 		subdomain := strings.Replace(s, "."+domain, "", 1)
 		if subdomain == domain {
-			return "", fmt.Errorf("process domain %s: %v", s, errdomainNoSubdomain)
+			return "", fmt.Errorf("process domain %s: %v", s, errDomainNoSubdomain)
 		}
 		return subdomain, nil
 	default:

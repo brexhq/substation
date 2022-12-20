@@ -46,100 +46,100 @@ type applicator interface {
 // applicatorFactory returns a configured Applicator from a config. This is the recommended method for retrieving ready-to-use Applicators.
 func applicatorFactory(cfg config.Config) (applicator, error) {
 	switch cfg.Type {
+	case "aws_dynamodb":
+		var p _awsDynamodb
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "aws_lambda":
+		var p _awsLambda
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
 	case "base64":
-		var p base64
+		var p _base64
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "capture":
-		var p capture
+		var p _capture
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
-	case "letter_case":
-		var p letterCase
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "concat":
-		var p concat
+	case "case":
+		var p _case
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "convert":
-		var p convert
+		var p _convert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "copy":
-		var p copy
+		var p _copy
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "delete":
-		var p delete
+		var p _delete
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "dns":
-		var p dns
+		var p _dns
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "domain":
-		var p domain
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "dynamodb":
-		var p dynamodb
+		var p _domain
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "flatten":
-		var p flatten
+		var p _flatten
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "for_each":
-		var p forEach
+		var p _forEach
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "group":
-		var p group
+		var p _group
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "gzip":
-		var p gzip
+		var p _gzip
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "hash":
-		var p hash
+		var p _hash
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "insert":
-		var p insert
+		var p _insert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "ip_database":
-		var p ipDatabase
+		var p _ipDatabase
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
-	case "lambda":
-		var p lambda
+	case "join":
+		var p _join
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "math":
-		var p math
+		var p _math
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "pipeline":
-		var p pipeline
+		var p _pipeline
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "pretty_print":
-		var p prettyPrint
+		var p _prettyPrint
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "replace":
-		var p replace
+		var p _replace
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "split":
-		var p split
+		var p _split
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "time":
-		var p time
+		var p _time
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
@@ -155,115 +155,115 @@ type batcher interface {
 func batcherFactory(cfg config.Config) (batcher, error) {
 	switch cfg.Type {
 	case "aggregate":
-		var p aggregate
+		var p _aggregate
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "aws_dynamodb":
+		var p _awsDynamodb
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "aws_lambda":
+		var p _awsLambda
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "base64":
-		var p base64
+		var p _base64
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "capture":
-		var p capture
+		var p _capture
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
-	case "letter_case":
-		var p letterCase
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "concat":
-		var p concat
+	case "case":
+		var p _case
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "convert":
-		var p convert
+		var p _convert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "copy":
-		var p copy
+		var p _copy
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "count":
-		var p count
+		var p _count
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "delete":
-		var p delete
+		var p _delete
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "dns":
-		var p dns
+		var p _dns
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "domain":
-		var p domain
+		var p _domain
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "drop":
-		var p drop
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "dynamodb":
-		var p dynamodb
+		var p _drop
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "expand":
-		var p expand
+		var p _expand
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "flatten":
-		var p flatten
+		var p _flatten
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "for_each":
-		var p forEach
+		var p _forEach
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "group":
-		var p group
+		var p _group
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "gzip":
-		var p gzip
+		var p _gzip
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "hash":
-		var p hash
+		var p _hash
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "insert":
-		var p insert
+		var p _insert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "ip_database":
-		var p ipDatabase
+		var p _ipDatabase
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
-	case "lambda":
-		var p lambda
+	case "join":
+		var p _join
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "math":
-		var p math
+		var p _math
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "pipeline":
-		var p pipeline
+		var p _pipeline
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "pretty_print":
-		var p prettyPrint
+		var p _prettyPrint
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "replace":
-		var p replace
+		var p _replace
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "split":
-		var p split
+		var p _split
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "time":
-		var p time
+		var p _time
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:

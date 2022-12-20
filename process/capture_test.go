@@ -10,19 +10,19 @@ import (
 
 var captureTests = []struct {
 	name     string
-	proc     capture
+	proc     _capture
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON find",
-		capture{
+		_capture{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: captureOptions{
+			Options: _captureOptions{
 				Expression: "^([^@]*)@.*$",
 				Type:       "find",
 			},
@@ -33,12 +33,12 @@ var captureTests = []struct {
 	},
 	{
 		"JSON find_all",
-		capture{
+		_capture{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: captureOptions{
+			Options: _captureOptions{
 				Expression: "(.{1})",
 				Type:       "find_all",
 				Count:      3,
@@ -50,8 +50,8 @@ var captureTests = []struct {
 	},
 	{
 		"data",
-		capture{
-			Options: captureOptions{
+		_capture{
+			Options: _captureOptions{
 				Expression: "^([^@]*)@.*$",
 				Type:       "find",
 			},
@@ -62,8 +62,8 @@ var captureTests = []struct {
 	},
 	{
 		"named_group",
-		capture{
-			Options: captureOptions{
+		_capture{
+			Options: _captureOptions{
 				Type:       "named_group",
 				Expression: "(?P<foo>[a-zA-Z]+) (?P<qux>[a-zA-Z]+)",
 			},
@@ -92,7 +92,7 @@ func TestCapture(t *testing.T) {
 	}
 }
 
-func benchmarkCapture(b *testing.B, applicator capture, test config.Capsule) {
+func benchmarkCapture(b *testing.B, applicator _capture, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

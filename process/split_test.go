@@ -10,19 +10,19 @@ import (
 
 var splitTests = []struct {
 	name     string
-	proc     split
+	proc     _split
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON",
-		split{
+		_split{
 			process: process{
 				Key:    "split",
 				SetKey: "split",
 			},
-			Options: splitOptions{
+			Options: _splitOptions{
 				Separator: ".",
 			},
 		},
@@ -50,7 +50,7 @@ func TestSplit(t *testing.T) {
 	}
 }
 
-func benchmarkSplit(b *testing.B, proc split, capsule config.Capsule) {
+func benchmarkSplit(b *testing.B, proc _split, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = proc.Apply(ctx, capsule)
@@ -71,15 +71,15 @@ func BenchmarkSplit(b *testing.B) {
 
 var splitBatchTests = []struct {
 	name     string
-	proc     split
+	proc     _split
 	test     [][]byte
 	expected [][]byte
 	err      error
 }{
 	{
 		"data",
-		split{
-			Options: splitOptions{
+		_split{
+			Options: _splitOptions{
 				Separator: `\n`,
 			},
 		},
@@ -119,7 +119,7 @@ func TestSplitBatch(t *testing.T) {
 	}
 }
 
-func benchmarksplitBatch(b *testing.B, proc split, capsules []config.Capsule) {
+func benchmarksplitBatch(b *testing.B, proc _split, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = proc.Batch(ctx, capsules...)

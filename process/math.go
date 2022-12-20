@@ -7,41 +7,37 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-/*
-math processes data by applying mathematic operations. The processor supports these patterns:
-
-	JSON:
-		{"math":[1,3]} >>> {"math":4}
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "math",
-		"settings": {
-			"options": {
-				"operation": "add"
-			},
-			"input_key": "math",
-			"output_key": "math"
-		}
-	}
-*/
-type math struct {
+// math processes data by applying mathematic operations.
+//
+// This processor supports the object handling pattern.
+type _math struct {
 	process
-	Options mathOptions `json:"options"`
+	Options _mathOptions `json:"options"`
 }
 
-type mathOptions struct {
+type _mathOptions struct {
+	// Operation determines the operator applied to the data.
+	//
+	// Must be one of:
+	//
+	// - add
+	//
+	// - subtract
+	//
+	// - multiply
+	//
+	// - divide
 	Operation string `json:"operation"`
 }
 
-// Close closes resources opened by the math processor.
-func (p math) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _math) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the math processor. Conditions are optionally applied to the data to enable processing.
-func (p math) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _math) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 	if err != nil {
 		return nil, fmt.Errorf("process math: %v", err)
@@ -50,8 +46,8 @@ func (p math) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.C
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the math processor.
-func (p math) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _math) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Operation == "" {
 		return capsule, fmt.Errorf("process math: options %+v: %v", p.Options, errMissingRequiredOptions)

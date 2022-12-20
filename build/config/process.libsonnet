@@ -43,10 +43,10 @@
       count: count,
     },
   },
-  concat(separator): {
-    type: 'concat',
+  case(type): {
+    type: 'case',
     options: {
-      separator: separator,
+      type: type,
     },
   },
   convert(type): {
@@ -139,23 +139,22 @@
       options: { value: value },
     },
   },
-  ip_database(database_options): {
+  ip_database(options): {
     type: 'ip_database',
     settings: {
-      options: { 'function': database_options.type, database_options: database_options },
+      options: options,
     },
   },
-  lambda(function_name,
-         error_on_failure=false): {
+  join(separator): {
+    type: 'join',
+    options: {
+      separator: separator,
+    },
+  },
+  lambda(function_name): {
     type: 'lambda',
     settings: {
-      options: { 'function': type, error_on_failure: error_on_failure },
-    },
-  },
-  letter_case(type): {
-    type: 'letter_case',
-    options: {
-      type: type,
+      options: { 'function_name': function_name },
     },
   },
   math(operation): {

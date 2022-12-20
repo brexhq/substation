@@ -2,71 +2,80 @@ package process
 
 import (
 	"bytes"
-	gogzip "compress/gzip"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
-type gzip struct {
-	Options   gzipOptions      `json:"options"`
-	Condition condition.Config `json:"condition"`
+// gzip processes data by compressing or decompressing gzip.
+//
+// This processor supports the data handling pattern.
+type _gzip struct {
+	process
+	Options _gzipOptions `json:"options"`
 }
 
-type gzipOptions struct {
+type _gzipOptions struct {
+	// Direction determines whether data is compressed or decompressed.
+	//
+	// Must be one of:
+	//	- to: compress to gzip
+	// 	- from: decompress from gzip
 	Direction string `json:"direction"`
 }
 
-func (p gzip) from(data []byte) ([]byte, error) {
+func (p _gzip) from(data []byte) ([]byte, error) {
 	r := bytes.NewReader(data)
-	gz, err := gogzip.NewReader(r)
+	gz, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, fmt.Errorf("process gzip: %v", err)
+		return nil, fmt.Errorf("process _gzip: %v", err)
 	}
 
 	output, err := io.ReadAll(gz)
 	if err != nil {
-		return nil, fmt.Errorf("process gzip: %v", err)
+		return nil, fmt.Errorf("process _gzip: %v", err)
 	}
 
 	return output, nil
 }
 
-func (p gzip) to(data []byte) ([]byte, error) {
+func (p _gzip) to(data []byte) ([]byte, error) {
 	var buf bytes.Buffer
-	gz := gogzip.NewWriter(&buf)
+	gz := gzip.NewWriter(&buf)
 	if _, err := gz.Write(data); err != nil {
-		return nil, fmt.Errorf("process gzip: %v", err)
+		return nil, fmt.Errorf("process _gzip: %v", err)
 	}
 	if err := gz.Close(); err != nil {
-		return nil, fmt.Errorf("process gzip: %v", err)
+		return nil, fmt.Errorf("process _gzip: %v", err)
 	}
 
 	return buf.Bytes(), nil
 }
 
-// Close closes resources opened by the gzip processor.
-func (p gzip) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _gzip) Close(context.Context) error {
 	return nil
 }
 
-func (p gzip) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _gzip) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 	if err != nil {
-		return nil, fmt.Errorf("process gzip: %v", err)
+		return nil, fmt.Errorf("process _gzip: %v", err)
 	}
 
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the gzip processor.
-func (p gzip) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _gzip) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return capsule, fmt.Errorf("process gzip: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process _gzip: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	var value []byte
@@ -74,19 +83,19 @@ func (p gzip) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 	case "from":
 		from, err := p.from(capsule.Data())
 		if err != nil {
-			return capsule, fmt.Errorf("process gzip: %v", err)
+			return capsule, fmt.Errorf("process _gzip: %v", err)
 		}
 
 		value = from
 	case "to":
 		to, err := p.to(capsule.Data())
 		if err != nil {
-			return capsule, fmt.Errorf("process gzip: %v", err)
+			return capsule, fmt.Errorf("process _gzip: %v", err)
 		}
 
 		value = to
 	default:
-		return capsule, fmt.Errorf("process gzip: direction %s: %v", p.Options.Direction, errInvalidDirection)
+		return capsule, fmt.Errorf("process _gzip: direction %s: %v", p.Options.Direction, errInvalidDirection)
 	}
 
 	capsule.SetData(value)

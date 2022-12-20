@@ -10,19 +10,19 @@ import (
 
 var domainTests = []struct {
 	name     string
-	proc     domain
+	proc     _domain
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON tld",
-		domain{
+		_domain{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: domainOptions{
+			Options: _domainOptions{
 				Type: "tld",
 			},
 		},
@@ -31,13 +31,13 @@ var domainTests = []struct {
 		nil,
 	},
 	{
-		"JSON domain",
-		domain{
+		"JSON _domain",
+		_domain{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: domainOptions{
+			Options: _domainOptions{
 				Type: "domain",
 			},
 		},
@@ -47,12 +47,12 @@ var domainTests = []struct {
 	},
 	{
 		"JSON subdomain",
-		domain{
+		_domain{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: domainOptions{
+			Options: _domainOptions{
 				Type: "subdomain",
 			},
 		},
@@ -63,12 +63,12 @@ var domainTests = []struct {
 	// empty subdomain, returns empty
 	{
 		"JSON subdomain",
-		domain{
+		_domain{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: domainOptions{
+			Options: _domainOptions{
 				Type: "subdomain",
 			},
 		},
@@ -78,8 +78,8 @@ var domainTests = []struct {
 	},
 	{
 		"data",
-		domain{
-			Options: domainOptions{
+		_domain{
+			Options: _domainOptions{
 				Type: "subdomain",
 			},
 		},
@@ -107,7 +107,7 @@ func TestDomain(t *testing.T) {
 	}
 }
 
-func benchmarkDomain(b *testing.B, applicator domain, test config.Capsule) {
+func benchmarkDomain(b *testing.B, applicator _domain, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)

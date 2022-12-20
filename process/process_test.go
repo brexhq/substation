@@ -117,8 +117,8 @@ var processTests = []struct {
 					"key":     "foo",
 					"set_key": "foo",
 					"options": map[string]interface{}{
-						"input_format":  "unix",
-						"output_format": "2006-01-02T15:04:05.000000Z",
+						"format":     "unix",
+						"set_format": "2006-01-02T15:04:05.000000Z",
 					},
 				},
 			},

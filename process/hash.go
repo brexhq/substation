@@ -10,24 +10,36 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errhashInvalidAlgorithm is returned when the hash processor is configured with an invalid algorithm.
-const errhashInvalidAlgorithm = errors.Error("invalid algorithm")
+// errHashInvalidAlgorithm is returned when the hash processor is configured with an invalid algorithm.
+const errHashInvalidAlgorithm = errors.Error("invalid algorithm")
 
-type hash struct {
+// hash processes data by calculating hashes (https://en.wikipedia.org/wiki/Cryptographic_hash_function).
+//
+// This processor supports the data and object handling patterns.
+type _hash struct {
 	process
-	Options hashOptions `json:"options"`
+	Options _hashOptions `json:"options"`
 }
 
-type hashOptions struct {
+type _hashOptions struct {
+	// Algorithm is the hashing algorithm applied to the data.
+	//
+	// Must be one of:
+	//
+	// - md5
+	//
+	// - sha256
 	Algorithm string `json:"algorithm"`
 }
 
-// Close closes resources opened by the hash processor.
-func (p hash) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _hash) Close(context.Context) error {
 	return nil
 }
 
-func (p hash) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _hash) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
 	if err != nil {
 		return nil, fmt.Errorf("process hash: %v", err)
@@ -36,8 +48,8 @@ func (p hash) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.C
 	return capsules, nil
 }
 
-// Apply processes encapsulated data with the hash processor.
-func (p hash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _hash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Algorithm == "" {
 		return capsule, fmt.Errorf("process hash: options %+v: %v", p.Options, errMissingRequiredOptions)
@@ -56,7 +68,7 @@ func (p hash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 			sum := sha256.Sum256([]byte(result))
 			value = fmt.Sprintf("%x", sum)
 		default:
-			return capsule, fmt.Errorf("process hash: algorithm %s: %v", p.Options.Algorithm, errhashInvalidAlgorithm)
+			return capsule, fmt.Errorf("process hash: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
 		}
 
 		if err := capsule.Set(p.SetKey, value); err != nil {
@@ -77,7 +89,7 @@ func (p hash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 			sum := sha256.Sum256(capsule.Data())
 			value = fmt.Sprintf("%x", sum)
 		default:
-			return capsule, fmt.Errorf("process hash: algorithm %s: %v", p.Options.Algorithm, errhashInvalidAlgorithm)
+			return capsule, fmt.Errorf("process hash: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
 		}
 
 		capsule.SetData([]byte(value))

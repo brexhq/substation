@@ -12,40 +12,44 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errCaseInvalid is returned when the Case processor is configured with an invalid case.
+// errCaseInvalid is returned when the Case processor is configured with
+// an invalid case.
 const errCaseInvalid = errors.Error("invalid case")
 
-type letterCase struct {
+// case processes data by modifying letter case (https://en.wikipedia.org/wiki/Letter_case).
+//
+// This processor supports the data and object handling patterns.
+type _case struct {
 	process
-	Options letterCaseOptions `json:"options"`
+	Options _caseOptions `json:"options"`
 }
 
-type letterCaseOptions struct {
+type _caseOptions struct {
 	// Type is the case formatting that is applied.
 	//
 	// Must be one of:
-	//	- uppercase
-	//	- lowercase
-	//	- snake
+	//
+	// - uppercase
+	//
+	// - lowercase
+	//
+	// - snake
 	Type string `json:"type"`
 }
 
-// Close closes resources opened by the Case processor.
-func (p letterCase) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _case) Close(context.Context) error {
 	return nil
 }
 
-func (p letterCase) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
-	if err != nil {
-		return nil, fmt.Errorf("process capture: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _case) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return conditionalApply(ctx, capsules, p.Condition, p)
 }
 
-// Apply processes encapsulated data with the Case processor.
-func (p letterCase) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p _case) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
 		return capsule, fmt.Errorf("process case: options %+v: %v", p.Options, errMissingRequiredOptions)

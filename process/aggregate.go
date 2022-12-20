@@ -9,13 +9,17 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
-	goagg "github.com/jshlbrd/go-aggregate"
+	"github.com/jshlbrd/go-aggregate"
 )
 
-// errAggregateSizeLimit is returned when the aggregate's buffer size limit is reached. If this error occurs, then increase the size of the buffer or use the Drop processor to remove data that exceeds the buffer limit.
+// errAggregateSizeLimit is returned when the aggregate's buffer size
+// limit is reached. If this error occurs, then increase the size of
+// the buffer or use the Drop processor to remove data that exceeds
+// the buffer limit.
 const errAggregateSizeLimit = errors.Error("data exceeded size limit")
 
-// aggregate processes data by buffering and aggregating it into a single item.
+// aggregate processes data by buffering and aggregating it into a
+// single item.
 //
 // Multiple data aggregation patterns are supported, including:
 //
@@ -26,43 +30,49 @@ const errAggregateSizeLimit = errors.Error("data exceeded size limit")
 //- aggregate nested objects into object arrays based on unique keys
 //
 // This processor supports the data and object handling patterns.
-type aggregate struct {
+type _aggregate struct {
 	process
-	Options aggregateOptions `json:"options"`
+	Options _aggregateOptions `json:"options"`
 }
 
-type aggregateOptions struct {
-	// Key retrieves a value from an object that is used to organize aggregated objects.
+type _aggregateOptions struct {
+	// Key retrieves a value from an object that is used to organize
+	// aggregated objects.
 	//
-	// This is only used when handling objects and defaults to an empty string.
+	// This is only used when handling objects and defaults to an
+	// empty string.
 	Key string `json:"aggregate_key"`
-	// Separator is a string that separates aggregated data.
+	// Separator is the string that joins aggregated data.
 	//
-	// This is only used when handling data and defaults to an empty string.
+	// This is only used when handling data and defaults to an empty
+	// string.
 	Separator string `json:"separator"`
-	// MaxCount determines the maximum number of items stored in the buffer before emitting aggregated data.
+	// MaxCount determines the maximum number of items stored in the
+	// buffer before emitting aggregated data.
 	//
 	// This is optional and defaults to 1000 items.
 	MaxCount int `json:"max_count"`
-	// MaxSize determines the maximum size (in bytes) of items stored in the buffer before emitting aggregated data.
+	// MaxSize determines the maximum size (in bytes) of items stored
+	// in the buffer before emitting aggregated data.
 	//
 	// This is optional and defaults to 10000 (10KB).
 	MaxSize int `json:"max_size"`
 }
 
-// Close closes resources opened by the Aggregate processor.
-func (p aggregate) Close(context.Context) error {
+// Close closes resources opened by the processor.
+func (p _aggregate) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Aggregate processor. Conditions are optionally applied to the data to enable processing.
-func (p aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p _aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	// aggregateKeys is used to return elements stored in the
 	// buffer in order if the aggregate doesn't meet the
 	// configured threshold. any aggregate that meets the
 	// threshold is delivered immediately, out of order.
 	var aggregateKeys []string
-	buffer := map[string]*goagg.Bytes{}
+	buffer := map[string]*aggregate.Bytes{}
 
 	if p.Options.MaxCount == 0 {
 		p.Options.MaxCount = 1000
@@ -102,7 +112,7 @@ func (p aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]con
 		}
 
 		if _, ok := buffer[aggregateKey]; !ok {
-			buffer[aggregateKey] = &goagg.Bytes{}
+			buffer[aggregateKey] = &aggregate.Bytes{}
 			buffer[aggregateKey].New(p.Options.MaxSize, p.Options.MaxCount)
 			aggregateKeys = append(aggregateKeys, aggregateKey)
 		}
@@ -140,8 +150,8 @@ func (p aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]con
 			newCapsules = append(newCapsules, newCapsule)
 		}
 
-		// by this point, addition of the failed data is guaranteed to
-		// succeed after the buffer is reset
+		// by this point, addition of the failed data is guaranteed
+		// to succeed after the buffer is reset
 		buffer[aggregateKey].Reset()
 		_, err = buffer[aggregateKey].Add(capsule.Data())
 		if err != nil {
@@ -149,7 +159,8 @@ func (p aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]con
 		}
 	}
 
-	// remaining items must be drained from the buffer, otherwise data is lost
+	// remaining items must be drained from the buffer, otherwise
+	// data is lost
 	newCapsule := config.NewCapsule()
 	for _, key := range aggregateKeys {
 		if buffer[key].Count() == 0 {

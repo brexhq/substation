@@ -11,18 +11,22 @@ import (
 // regExp evaluates data using a regular expression.
 //
 // This inspector supports the data and object handling patterns.
-type regExp struct {
+type _regExp struct {
 	condition
-	Options regExpOptions `json:"options"`
+	Options _regExpOptions `json:"options"`
 }
 
-type regExpOptions struct {
+type _regExpOptions struct {
 	// Expression is the regular expression used during inspection.
 	Expression string `json:"expression"`
 }
 
+func (c _regExp) String() string {
+	return inspectorToString(c)
+}
+
 // Inspect evaluates encapsulated data with the regExp inspector.
-func (c regExp) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+func (c _regExp) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	re, err := regexp.Compile(c.Options.Expression)
 	if err != nil {
 		return false, fmt.Errorf("condition regexp: %v", err)

@@ -9,17 +9,17 @@ import (
 
 var stringsTests = []struct {
 	name      string
-	inspector strings
+	inspector _strings
 	test      []byte
 	expected  bool
 }{
 	{
 		"pass",
-		strings{
+		_strings{
 			condition: condition{
 				Key: "foo",
 			},
-			Options: stringsOptions{
+			Options: _stringsOptions{
 				Type:       "starts_with",
 				Expression: "Test",
 			},
@@ -29,8 +29,8 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		strings{
-			Options: stringsOptions{
+		_strings{
+			Options: _stringsOptions{
 				Type:       "starts_with",
 				Expression: "Test",
 			},
@@ -40,8 +40,8 @@ var stringsTests = []struct {
 	},
 	{
 		"fail",
-		strings{
-			Options: stringsOptions{
+		_strings{
+			Options: _stringsOptions{
 				Type:       "starts_with",
 				Expression: "Test",
 			},
@@ -51,8 +51,8 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		strings{
-			Options: stringsOptions{
+		_strings{
+			Options: _stringsOptions{
 				Type:       "equals",
 				Expression: "Test",
 			},
@@ -62,8 +62,8 @@ var stringsTests = []struct {
 	},
 	{
 		"fail",
-		strings{
-			Options: stringsOptions{
+		_strings{
+			Options: _stringsOptions{
 				Type:       "equals",
 				Expression: "Test",
 			},
@@ -73,8 +73,8 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		strings{
-			Options: stringsOptions{
+		_strings{
+			Options: _stringsOptions{
 				Type:       "contains",
 				Expression: "es",
 			},
@@ -84,8 +84,8 @@ var stringsTests = []struct {
 	},
 	{
 		"fail",
-		strings{
-			Options: stringsOptions{
+		_strings{
+			Options: _stringsOptions{
 				Type:       "contains",
 				Expression: "ABC",
 			},
@@ -95,11 +95,11 @@ var stringsTests = []struct {
 	},
 	{
 		"!fail",
-		strings{
+		_strings{
 			condition: condition{
 				Negate: true,
 			},
-			Options: stringsOptions{
+			Options: _stringsOptions{
 				Type:       "starts_with",
 				Expression: "XYZ",
 			},
@@ -109,11 +109,11 @@ var stringsTests = []struct {
 	},
 	{
 		"!pass",
-		strings{
+		_strings{
 			condition: condition{
 				Negate: true,
 			},
-			Options: stringsOptions{
+			Options: _stringsOptions{
 				Type:       "starts_with",
 				Expression: "ABC",
 			},
@@ -123,11 +123,11 @@ var stringsTests = []struct {
 	},
 	{
 		"!pass",
-		strings{
+		_strings{
 			condition: condition{
 				Negate: true,
 			},
-			Options: stringsOptions{
+			Options: _stringsOptions{
 				Type:       "equals",
 				Expression: "",
 			},
@@ -137,11 +137,11 @@ var stringsTests = []struct {
 	},
 	{
 		"!pass",
-		strings{
+		_strings{
 			condition: condition{
 				Negate: true,
 			},
-			Options: stringsOptions{
+			Options: _stringsOptions{
 				Type:       "contains",
 				Expression: "A",
 			},
@@ -151,8 +151,8 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		strings{
-			Options: stringsOptions{
+		_strings{
+			Options: _stringsOptions{
 				Type:       "equals",
 				Expression: "\"\"",
 			},
@@ -162,8 +162,8 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		strings{
-			Options: stringsOptions{
+		_strings{
+			Options: _stringsOptions{
 				Type:       "equals",
 				Expression: "",
 			},
@@ -191,7 +191,7 @@ func TestStrings(t *testing.T) {
 	}
 }
 
-func benchmarkStringsByte(b *testing.B, inspector strings, capsule config.Capsule) {
+func benchmarkStringsByte(b *testing.B, inspector _strings, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

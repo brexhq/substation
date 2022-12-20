@@ -15,18 +15,21 @@ const errLengthInvalidType = errors.Error("invalid Type")
 // length evaluates data using len Types.
 //
 // This inspector supports the data and object handling patterns. If the input is an array, then the number of elements in the array is inspected.
-type length struct {
+type _length struct {
 	condition
-	Options lengthOptions `json:"options"`
+	Options _lengthOptions `json:"options"`
 }
 
-type lengthOptions struct {
+type _lengthOptions struct {
 	// Type determines the length evaluation Type used during inspection.
 	//
 	// Must be one of:
-	//	- equals
-	//	- greater_than
-	//	- less_than
+	//
+	// - equals
+	//
+	// - greater_than
+	//
+	// - less_than
 	Type string `json:"type"`
 	// Value is the length that is used for comparison during inspection.
 	Value int `json:"value"`
@@ -34,15 +37,21 @@ type lengthOptions struct {
 	// assigns measurement for objects when the key is an array.
 	//
 	// Must be one of:
-	//	- byte: number of bytes
-	// 	- rune: number of characters
+	//
+	// - byte: number of bytes
+	//
+	// - rune: number of characters
 	//
 	// This is optional and defaults to byte.
 	Measurement string `json:"measurement"`
 }
 
+func (c _length) String() string {
+	return inspectorToString(c)
+}
+
 // Inspect evaluates encapsulated data with the length inspector.
-func (c length) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+func (c _length) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
 		check = string(capsule.Data())
@@ -68,7 +77,7 @@ func (c length) Inspect(ctx context.Context, capsule config.Capsule) (output boo
 	return c.match(length)
 }
 
-func (c length) match(length int) (bool, error) {
+func (c _length) match(length int) (bool, error) {
 	var matched bool
 	switch c.Options.Type {
 	case "equals":

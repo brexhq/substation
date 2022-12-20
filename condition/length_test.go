@@ -9,17 +9,17 @@ import (
 
 var lengthTests = []struct {
 	name      string
-	inspector length
+	inspector _length
 	test      []byte
 	expected  bool
 }{
 	{
 		"pass",
-		length{
+		_length{
 			condition: condition{
 				Key: "foo",
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 3,
 				Type:  "equals",
 			},
@@ -29,8 +29,8 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		length{
-			Options: lengthOptions{
+		_length{
+			Options: _lengthOptions{
 				Value: 3,
 				Type:  "equals",
 			},
@@ -40,11 +40,11 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		length{
+		_length{
 			condition: condition{
 				Key: "foo",
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 4,
 				Type:  "equals",
 			},
@@ -54,8 +54,8 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		length{
-			Options: lengthOptions{
+		_length{
+			Options: _lengthOptions{
 				Value: 4,
 				Type:  "equals",
 			},
@@ -65,11 +65,11 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		length{
+		_length{
 			condition: condition{
 				Key: "foo",
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 4,
 				Type:  "less_than",
 			},
@@ -79,8 +79,8 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		length{
-			Options: lengthOptions{
+		_length{
+			Options: _lengthOptions{
 				Value: 4,
 				Type:  "less_than",
 			},
@@ -90,11 +90,11 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		length{
+		_length{
 			condition: condition{
 				Key: "foo",
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 3,
 				Type:  "less_than",
 			},
@@ -104,8 +104,8 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		length{
-			Options: lengthOptions{
+		_length{
+			Options: _lengthOptions{
 				Value: 3,
 				Type:  "less_than",
 			},
@@ -115,11 +115,11 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		length{
+		_length{
 			condition: condition{
 				Key: "foo",
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 2,
 				Type:  "greater_than",
 			},
@@ -129,8 +129,8 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		length{
-			Options: lengthOptions{
+		_length{
+			Options: _lengthOptions{
 				Value: 2,
 				Type:  "greater_than",
 			},
@@ -140,11 +140,11 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		length{
+		_length{
 			condition: condition{
 				Key: "foo",
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 3,
 				Type:  "greater_than",
 			},
@@ -154,8 +154,8 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		length{
-			Options: lengthOptions{
+		_length{
+			Options: _lengthOptions{
 				Value: 3,
 				Type:  "greater_than",
 			},
@@ -165,12 +165,12 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		length{
+		_length{
 			condition: condition{
 				Key:    "foo",
 				Negate: true,
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 3,
 				Type:  "equals",
 			},
@@ -180,11 +180,11 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		length{
+		_length{
 			condition: condition{
 				Negate: true,
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 3,
 				Type:  "equals",
 			},
@@ -194,12 +194,12 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		length{
+		_length{
 			condition: condition{
 				Key:    "foo",
 				Negate: true,
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 4,
 				Type:  "less_than",
 			},
@@ -209,11 +209,11 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		length{
+		_length{
 			condition: condition{
 				Negate: true,
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 4,
 				Type:  "less_than",
 			},
@@ -223,12 +223,12 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		length{
+		_length{
 			condition: condition{
 				Key:    "foo",
 				Negate: true,
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 2,
 				Type:  "greater_than",
 			},
@@ -238,11 +238,11 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		length{
+		_length{
 			condition: condition{
 				Negate: true,
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Value: 2,
 				Type:  "greater_than",
 			},
@@ -252,8 +252,8 @@ var lengthTests = []struct {
 	},
 	{
 		"rune pass",
-		length{
-			Options: lengthOptions{
+		_length{
+			Options: _lengthOptions{
 				Measurement: "rune",
 				Value:       3,
 				Type:        "equals",
@@ -265,11 +265,11 @@ var lengthTests = []struct {
 	},
 	{
 		"array pass",
-		length{
+		_length{
 			condition: condition{
 				Key: "foo",
 			},
-			Options: lengthOptions{
+			Options: _lengthOptions{
 				Measurement: "rune",
 				Value:       3,
 				Type:        "equals",
@@ -300,7 +300,7 @@ func TestLength(t *testing.T) {
 	}
 }
 
-func benchmarkLengthByte(b *testing.B, inspector length, capsule config.Capsule) {
+func benchmarkLengthByte(b *testing.B, inspector _length, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

@@ -134,7 +134,7 @@ func TestAnd(t *testing.T) {
 func benchmarkAnd(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := MakeInspectors(conf)
+		inspectors, _ := MakeInspectors(conf...)
 		op := and{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
@@ -276,7 +276,7 @@ func TestOr(t *testing.T) {
 func benchmarkOr(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := MakeInspectors(conf)
+		inspectors, _ := MakeInspectors(conf...)
 		op := or{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
@@ -384,7 +384,7 @@ func TestNand(t *testing.T) {
 func benchmarkNand(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := MakeInspectors(conf)
+		inspectors, _ := MakeInspectors(conf...)
 		op := nand{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
@@ -492,7 +492,7 @@ func TestNor(t *testing.T) {
 func benchmarkNor(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := MakeInspectors(conf)
+		inspectors, _ := MakeInspectors(conf...)
 		op := nor{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}

@@ -2,7 +2,7 @@ package condition
 
 import (
 	"context"
-	gojson "encoding/json"
+	"encoding/json"
 	"fmt"
 
 	"github.com/brexhq/substation/config"
@@ -15,32 +15,39 @@ const errForEachInvalidType = errors.Error("invalid type")
 // forEach evaluates conditions by iterating and applying an inspector to each element in a JSON array.
 //
 // This inspector supports the object handling pattern.
-type forEach struct {
+type _forEach struct {
 	condition
-	Options forEachOptions `json:"options"`
+	Options _forEachOptions `json:"options"`
 }
 
-type forEachOptions struct {
+type _forEachOptions struct {
 	// Type determines the method of combining results from the inspector.
 	//
 	// Must be one of:
-	//	- none: none of the elements match the condition
-	//	- any: at least one of the elements match the condition
-	//	- all: all of the elements match the condition
+	//
+	// - none: none of the elements match the condition
+	//
+	// - any: at least one of the elements match the condition
+	//
+	// - all: all of the elements match the condition
 	Type string `json:"type"`
 	// Inspector is the condition applied to each element.
 	Inspector config.Config `json:"inspector"`
 }
 
+func (c _forEach) String() string {
+	return inspectorToString(c)
+}
+
 // Inspect evaluates encapsulated data with the Content inspector.
-func (c forEach) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
-	conf, err := gojson.Marshal(c.Options.Inspector)
+func (c _forEach) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+	conf, err := json.Marshal(c.Options.Inspector)
 	if err != nil {
 		return false, fmt.Errorf("condition: for_each: %w", err)
 	}
 
 	var condition config.Config
-	if err = gojson.Unmarshal(conf, &condition); err != nil {
+	if err = json.Unmarshal(conf, &condition); err != nil {
 		return false, fmt.Errorf("condition: for_each: %w", err)
 	}
 

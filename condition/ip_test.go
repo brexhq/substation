@@ -9,17 +9,17 @@ import (
 
 var ipTests = []struct {
 	name      string
-	inspector ip
+	inspector _ip
 	test      []byte
 	expected  bool
 }{
 	{
 		"json",
-		ip{
+		_ip{
 			condition: condition{
 				Key: "ip_address",
 			},
-			Options: ipOptions{
+			Options: _ipOptions{
 				Type: "private",
 			},
 		},
@@ -28,8 +28,8 @@ var ipTests = []struct {
 	},
 	{
 		"valid",
-		ip{
-			Options: ipOptions{
+		_ip{
+			Options: _ipOptions{
 				Type: "valid",
 			},
 		},
@@ -38,8 +38,8 @@ var ipTests = []struct {
 	},
 	{
 		"invalid",
-		ip{
-			Options: ipOptions{
+		_ip{
+			Options: _ipOptions{
 				Type: "valid",
 			},
 		},
@@ -48,8 +48,8 @@ var ipTests = []struct {
 	},
 	{
 		"multicast",
-		ip{
-			Options: ipOptions{
+		_ip{
+			Options: _ipOptions{
 				Type: "multicast",
 			},
 		},
@@ -58,8 +58,8 @@ var ipTests = []struct {
 	},
 	{
 		"multicast_link_local",
-		ip{
-			Options: ipOptions{
+		_ip{
+			Options: _ipOptions{
 				Type: "multicast_link_local",
 			},
 		},
@@ -68,8 +68,8 @@ var ipTests = []struct {
 	},
 	{
 		"unicast_global",
-		ip{
-			Options: ipOptions{
+		_ip{
+			Options: _ipOptions{
 				Type: "unicast_global",
 			},
 		},
@@ -78,8 +78,8 @@ var ipTests = []struct {
 	},
 	{
 		"private",
-		ip{
-			Options: ipOptions{
+		_ip{
+			Options: _ipOptions{
 				Type: "private",
 			},
 		},
@@ -88,8 +88,8 @@ var ipTests = []struct {
 	},
 	{
 		"unicast_link_local",
-		ip{
-			Options: ipOptions{
+		_ip{
+			Options: _ipOptions{
 				Type: "unicast_link_local",
 			},
 		},
@@ -98,8 +98,8 @@ var ipTests = []struct {
 	},
 	{
 		"loopback",
-		ip{
-			Options: ipOptions{
+		_ip{
+			Options: _ipOptions{
 				Type: "loopback",
 			},
 		},
@@ -108,8 +108,8 @@ var ipTests = []struct {
 	},
 	{
 		"unspecified",
-		ip{
-			Options: ipOptions{
+		_ip{
+			Options: _ipOptions{
 				Type: "unspecified",
 			},
 		},
@@ -136,7 +136,7 @@ func TestIP(t *testing.T) {
 	}
 }
 
-func benchmarkIPByte(b *testing.B, inspector ip, capsule config.Capsule) {
+func benchmarkIPByte(b *testing.B, inspector _ip, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

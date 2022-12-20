@@ -10,12 +10,12 @@ import (
 // jsonSchema evaluates objects against a minimal schema parser.
 //
 // This inspector supports the object handling pattern.
-type jsonSchema struct {
+type _jsonSchema struct {
 	condition
-	Options jsonSchemaOptions `json:"options"`
+	Options _jsonSchemaOptions `json:"options"`
 }
 
-type jsonSchemaOptions struct {
+type _jsonSchemaOptions struct {
 	Schema []struct {
 		// Key is the JSON key to retrieve for inspection.
 		Key string `json:"key"`
@@ -30,8 +30,12 @@ type jsonSchemaOptions struct {
 	} `json:"schema"`
 }
 
+func (c _jsonSchema) String() string {
+	return inspectorToString(c)
+}
+
 // Inspect evaluates encapsulated data with the jsonSchema inspector.
-func (c jsonSchema) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+func (c _jsonSchema) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	matched := true
 
 	for _, schema := range c.Options.Schema {
@@ -71,12 +75,16 @@ func (c jsonSchema) Inspect(ctx context.Context, capsule config.Capsule) (output
 // jsonValid evaluates objects for validity.
 //
 // This inspector supports the object handling pattern.
-type jsonValid struct {
+type _jsonValid struct {
 	condition
 }
 
+func (c _jsonValid) String() string {
+	return inspectorToString(c)
+}
+
 // Inspect evaluates encapsulated data with the jsonValid inspector.
-func (c jsonValid) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+func (c _jsonValid) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	matched := json.Valid(capsule.Data())
 
 	if c.Negate {

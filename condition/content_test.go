@@ -9,15 +9,15 @@ import (
 
 var contentTests = []struct {
 	name      string
-	inspector content
+	inspector _content
 	test      []byte
 	expected  bool
 }{
 	// matching Gzip against valid Gzip header
 	{
 		"gzip",
-		content{
-			Options: contentOptions{
+		_content{
+			Options: _contentOptions{
 				Type: "application/x-gzip",
 			},
 		},
@@ -27,8 +27,8 @@ var contentTests = []struct {
 	// matching Gzip against invalid Gzip header (bytes swapped)
 	{
 		"!gzip",
-		content{
-			Options: contentOptions{
+		_content{
+			Options: _contentOptions{
 				Type: "application/x-gzip",
 			},
 		},
@@ -38,11 +38,11 @@ var contentTests = []struct {
 	// matching Gzip against invalid Gzip header (bytes swapped) with negation
 	{
 		"gzip",
-		content{
+		_content{
 			condition: condition{
 				Negate: true,
 			},
-			Options: contentOptions{
+			Options: _contentOptions{
 				Type: "application/x-gzip",
 			},
 		},
@@ -52,8 +52,8 @@ var contentTests = []struct {
 	// matching Zip against valid Zip header
 	{
 		"zip",
-		content{
-			Options: contentOptions{
+		_content{
+			Options: _contentOptions{
 				Type: "application/zip",
 			},
 		},
@@ -63,8 +63,8 @@ var contentTests = []struct {
 	// matching Gzip against valid Zip header
 	{
 		"!zip",
-		content{
-			Options: contentOptions{
+		_content{
+			Options: _contentOptions{
 				Type: "application/zip",
 			},
 		},
@@ -74,8 +74,8 @@ var contentTests = []struct {
 	// matching Zip against invalid Zip header (bytes swapped)
 	{
 		"!zip",
-		content{
-			Options: contentOptions{
+		_content{
+			Options: _contentOptions{
 				Type: "application/zip",
 			},
 		},
@@ -102,7 +102,7 @@ func TestContent(t *testing.T) {
 	}
 }
 
-func benchmarkContent(b *testing.B, inspector content, capsule config.Capsule) {
+func benchmarkContent(b *testing.B, inspector _content, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

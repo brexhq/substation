@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	inspector := condition.Strings{
+	inspector := condition.strings{
 		Key:        "foo",
 		Function:   "equals",
 		Expression: "bar",

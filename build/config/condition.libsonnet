@@ -1,97 +1,66 @@
 {
-  content(type, negate=false): {
-    type: 'content',
-    settings: { type: type, negate: negate },
+  operator(operator='', inspectors=[]): {
+    operator: operator,
+    inspectors: inspectors,
   },
-  for_each(key, type, inspector, negate=false): {
-    type: 'for_each',
+  inspector(options, key='', negate=false): {
     settings: {
       key: key,
-      type: type,
       negate: negate,
-      options: { inspector: inspector },
+      options: options.opts,
+    },
+    type: options.type,
+  },
+  content(type): {
+    type: 'content',
+    opts: {
+      type: type,
     },
   },
-  ip: {
-    valid(key, negate=false): {
-      type: 'ip',
-      settings: { key: key, type: 'valid', negate: negate },
-    },
-    loopback(key, negate=false): {
-      type: 'ip',
-      settings: { key: key, type: 'loopback', negate: negate },
-    },
-    multicast(key, negate=false): {
-      type: 'ip',
-      settings: { key: key, type: 'multicast', negate: negate },
-    },
-    multicast_link_local(key, negate=false): {
-      type: 'ip',
-      settings: { key: key, type: 'multicast_link_local', negate: negate },
-    },
-    private(key, negate=false): {
-      type: 'ip',
-      settings: { key: key, type: 'private', negate: negate },
-    },
-    unicast_global(key, negate=false): {
-      type: 'ip',
-      settings: { key: key, type: 'unicast_global', negate: negate },
-    },
-    unicast_link_local(key, negate=false): {
-      type: 'ip',
-      settings: { key: key, type: 'unicast_link_local', negate: negate },
-    },
-    unspecified(key, negate=false): {
-      type: 'ip',
-      settings: { key: key, type: 'unspecified', negate: negate },
+  for_each(type, inspector): {
+    type: 'for_each',
+    opts: {
+      type: type,
+      inspector: inspector,
     },
   },
-  json: {
-    valid: {
-      type: 'json_valid',
+  ip(type): {
+    type: 'ip',
+    opts: {
+      type: type,
     },
   },
-  length: {
-    equals(key, value, type='byte', negate=false): {
-      type: 'length',
-      settings: { key: key, value: value, type: type, 'function': 'equals', negate: negate },
+  json_schema(schema): {
+    type: 'json_schema',
+    opts: {
+      schema: schema,
     },
-    greaterthan(key, value, type='byte', negate=false): {
-      type: 'length',
-      settings: { key: key, value: value, type: type, 'function': 'greaterthan', negate: negate },
-    },
-    lessthan(key, value, type='byte', negate=false): {
-      type: 'length',
-      settings: { key: key, value: value, type: type, 'function': 'lessthan', negate: negate },
+  },
+  json_valid: {
+    type: 'json_valid',
+  },
+  length(type, value, measurement='bytes'): {
+    type: 'length',
+    opts: {
+      type: type,
+      value: value,
+      measurement: measurement,
     },
   },
   random: {
     type: 'random',
   },
-  regexp(key, expression, negate=false): {
+  regexp(expression): {
     type: 'regexp',
-    settings: { key: key, expression: expression, negate: negate },
+    opts: {
+      expression: expression,
+    },
   },
-  strings: {
-    empty(key, negate=true): {
-      type: 'strings',
-      settings: { key: key, 'function': 'equals', expression: '', negate: negate },
-    },
-    equals(key, expression, negate=false): {
-      type: 'strings',
-      settings: { key: key, 'function': 'equals', expression: expression, negate: negate },
-    },
-    contains(key, expression, negate=false): {
-      type: 'strings',
-      settings: { key: key, 'function': 'contains', expression: expression, negate: negate },
-    },
-    endswith(key, expression, negate=false): {
-      type: 'strings',
-      settings: { key: key, 'function': 'endswith', expression: expression, negate: negate },
-    },
-    startswith(key, expression, negate=false): {
-      type: 'strings',
-      settings: { key: key, 'function': 'startswith', expression: expression, negate: negate },
+  strings(type, expression): {
+    type: 'strings',
+    opts: {
+      type: type,
+      expression: expression,
     },
   },
 }

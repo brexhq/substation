@@ -13,18 +13,22 @@ import (
 // (e.g., process/gzip).
 //
 // This inspector supports the data handling pattern.
-type content struct {
+type _content struct {
 	condition
-	Options contentOptions `json:"options"`
+	Options _contentOptions `json:"options"`
 }
 
-type contentOptions struct {
+func (c _content) String() string {
+	return inspectorToString(c)
+}
+
+type _contentOptions struct {
 	// Type is the media type used for comparison during inspection. Media types follow this specification: https://mimesniff.spec.whatwg.org/.
 	Type string `json:"type"`
 }
 
-// Inspect evaluates encapsulated data with the Content inspector.
-func (c content) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+// Inspect evaluates encapsulated data with the content inspector.
+func (c _content) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	matched := false
 
 	media := media.Bytes(capsule.Data())

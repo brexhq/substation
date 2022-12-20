@@ -3,7 +3,7 @@ package condition
 import (
 	"context"
 	"fmt"
-	gostrings "strings"
+	"strings"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
@@ -15,26 +15,34 @@ const errStringsInvalidType = errors.Error("invalid Type")
 // strings evaluates data using Types from the standard library's strings package.
 //
 // This inspector supports the data and object handling patterns.
-type strings struct {
+type _strings struct {
 	condition
-	Options stringsOptions `json:"options"`
+	Options _stringsOptions `json:"options"`
 }
 
-type stringsOptions struct {
+type _stringsOptions struct {
 	// Type is the string evaluation Type used during inspection.
 	//
 	// Must be one of:
-	//	- equals
-	//	- contains
-	//	- starts_with
-	//	- ends_with
+	//
+	// - equals
+	//
+	// - contains
+	//
+	// - starts_with
+	//
+	// - ends_with
 	Type string `json:"type"`
 	// Expression is a substring used during inspection.
 	Expression string `json:"expression"`
 }
 
+func (c _strings) String() string {
+	return inspectorToString(c)
+}
+
 // Inspect evaluates encapsulated data with the strings inspector.
-func (c strings) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+func (c _strings) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
 		check = string(capsule.Data())
@@ -49,11 +57,11 @@ func (c strings) Inspect(ctx context.Context, capsule config.Capsule) (output bo
 			matched = true
 		}
 	case "contains":
-		matched = gostrings.Contains(check, c.Options.Expression)
+		matched = strings.Contains(check, c.Options.Expression)
 	case "starts_with":
-		matched = gostrings.HasPrefix(check, c.Options.Expression)
+		matched = strings.HasPrefix(check, c.Options.Expression)
 	case "ends_with":
-		matched = gostrings.HasSuffix(check, c.Options.Expression)
+		matched = strings.HasSuffix(check, c.Options.Expression)
 	default:
 		return false, fmt.Errorf("condition strings: Type %s: %v", c.Options.Type, errStringsInvalidType)
 	}

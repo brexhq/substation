@@ -9,19 +9,19 @@ import (
 
 var forEachTests = []struct {
 	name      string
-	inspector forEach
+	inspector _forEach
 	test      []byte
 	expected  bool
 	err       error
 }{
 	{
 		"strings starts_with all",
-		forEach{
+		_forEach{
 			condition: condition{
 				Key:    "input",
 				Negate: false,
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Type: "all",
 				Inspector: config.Config{
 					Type: "strings",
@@ -40,12 +40,12 @@ var forEachTests = []struct {
 	},
 	{
 		"ip private all",
-		forEach{
+		_forEach{
 			condition: condition{
 				Key:    "input",
 				Negate: false,
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Type: "all",
 				Inspector: config.Config{
 					Type: "ip",
@@ -63,12 +63,12 @@ var forEachTests = []struct {
 	},
 	{
 		"regexp any",
-		forEach{
+		_forEach{
 			condition: condition{
 				Key:    "input",
 				Negate: false,
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Type: "any",
 				Inspector: config.Config{
 					Type: "regexp",
@@ -86,12 +86,12 @@ var forEachTests = []struct {
 	},
 	{
 		"length none",
-		forEach{
+		_forEach{
 			condition: condition{
 				Key:    "input",
 				Negate: false,
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Type: "none",
 				Inspector: config.Config{
 					Type: "length",
@@ -110,12 +110,12 @@ var forEachTests = []struct {
 	},
 	{
 		"length all",
-		forEach{
+		_forEach{
 			condition: condition{
 				Key:    "input",
 				Negate: false,
 			},
-			Options: forEachOptions{
+			Options: _forEachOptions{
 				Type: "all",
 				Inspector: config.Config{
 					Type: "length",
@@ -154,7 +154,7 @@ func TestForEach(t *testing.T) {
 	}
 }
 
-func benchmarkForEachByte(b *testing.B, inspector forEach, capsule config.Capsule) {
+func benchmarkForEachByte(b *testing.B, inspector _forEach, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

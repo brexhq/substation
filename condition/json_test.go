@@ -9,14 +9,14 @@ import (
 
 var jsonSchemaTests = []struct {
 	name      string
-	inspector jsonSchema
+	inspector _jsonSchema
 	test      []byte
 	expected  bool
 }{
 	{
 		"string",
-		jsonSchema{
-			Options: jsonSchemaOptions{
+		_jsonSchema{
+			Options: _jsonSchemaOptions{
 				Schema: []struct {
 					Key  string `json:"key"`
 					Type string `json:"type"`
@@ -30,8 +30,8 @@ var jsonSchemaTests = []struct {
 	},
 	{
 		"!string",
-		jsonSchema{
-			Options: jsonSchemaOptions{
+		_jsonSchema{
+			Options: _jsonSchemaOptions{
 				Schema: []struct {
 					Key  string `json:"key"`
 					Type string `json:"type"`
@@ -45,11 +45,11 @@ var jsonSchemaTests = []struct {
 	},
 	{
 		"string array",
-		jsonSchema{
+		_jsonSchema{
 			condition: condition{
 				Negate: true,
 			},
-			Options: jsonSchemaOptions{
+			Options: _jsonSchemaOptions{
 				Schema: []struct {
 					Key  string `json:"key"`
 					Type string `json:"type"`
@@ -81,7 +81,7 @@ func TestJSONSchema(t *testing.T) {
 	}
 }
 
-func benchmarkJSONSchemaByte(b *testing.B, inspector jsonSchema, capsule config.Capsule) {
+func benchmarkJSONSchemaByte(b *testing.B, inspector _jsonSchema, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)
@@ -102,25 +102,25 @@ func BenchmarkJSONSchemaByte(b *testing.B) {
 
 var jsonValidTests = []struct {
 	name      string
-	inspector jsonValid
+	inspector _jsonValid
 	test      []byte
 	expected  bool
 }{
 	{
 		"valid",
-		jsonValid{},
+		_jsonValid{},
 		[]byte(`{"hello":"world"}`),
 		true,
 	},
 	{
 		"invalid",
-		jsonValid{},
+		_jsonValid{},
 		[]byte(`{hello:"world"}`),
 		false,
 	},
 	{
 		"!invalid",
-		jsonValid{
+		_jsonValid{
 			condition: condition{
 				Negate: true,
 			},
@@ -130,7 +130,7 @@ var jsonValidTests = []struct {
 	},
 	{
 		"!valid",
-		jsonValid{
+		_jsonValid{
 			condition: condition{
 				Negate: true,
 			},
@@ -158,7 +158,7 @@ func TestJSONValid(t *testing.T) {
 	}
 }
 
-func benchmarkJSONValidByte(b *testing.B, inspector jsonValid, capsule config.Capsule) {
+func benchmarkJSONValidByte(b *testing.B, inspector _jsonValid, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

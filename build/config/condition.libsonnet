@@ -1,5 +1,5 @@
 {
-  operator(operator='', inspectors=[]): {
+  operator(operator, inspectors): {
     operator: operator,
     inspectors: inspectors,
   },

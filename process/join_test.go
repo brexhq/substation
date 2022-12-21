@@ -32,7 +32,7 @@ var joinTests = []struct {
 	},
 }
 
-func Testjoin(t *testing.T) {
+func TestJoin(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
@@ -50,20 +50,20 @@ func Testjoin(t *testing.T) {
 	}
 }
 
-func benchmarkjoin(b *testing.B, applicator _join, test config.Capsule) {
+func benchmarkJoin(b *testing.B, applicator _join, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applicator.Apply(ctx, test)
 	}
 }
 
-func Benchmarkjoin(b *testing.B) {
+func BenchmarkJoin(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range joinTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkjoin(b, test.proc, capsule)
+				benchmarkJoin(b, test.proc, capsule)
 			},
 		)
 	}

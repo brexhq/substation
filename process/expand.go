@@ -31,14 +31,14 @@ func (p _expand) Close(context.Context) error {
 func (p _expand) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process _expand: %v", err)
+		return nil, fmt.Errorf("process expand: %v", err)
 	}
 
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
-			return nil, fmt.Errorf("process _expand: %v", err)
+			return nil, fmt.Errorf("process expand: %v", err)
 		}
 
 		if !ok {
@@ -66,7 +66,7 @@ func (p _expand) Batch(ctx context.Context, capsules ...config.Capsule) ([]confi
 		if p.Key != "" {
 			rootBytes, err := json.Delete([]byte(root.String()), p.Key)
 			if err != nil {
-				return nil, fmt.Errorf("process _expand: %v", err)
+				return nil, fmt.Errorf("process expand: %v", err)
 			}
 
 			root = json.Get(rootBytes, "@this")
@@ -86,7 +86,7 @@ func (p _expand) Batch(ctx context.Context, capsules ...config.Capsule) ([]confi
 
 				_expand, err = json.Set(_expand, key, val)
 				if err != nil {
-					return nil, fmt.Errorf("process _expand: %v", err)
+					return nil, fmt.Errorf("process expand: %v", err)
 				}
 			}
 

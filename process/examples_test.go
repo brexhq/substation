@@ -312,5 +312,4 @@ func Example_iPDatabase() {
 	}
 
 	fmt.Println(string(capsule.Data()))
-	// Output: foo
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
-	gotime "time"
+	"time"
 
 	"github.com/brexhq/substation/config"
 )
@@ -15,7 +15,9 @@ var dnsResolver net.Resolver
 // System (DNS). By default, this processor can take up to 1 second per DNS
 // query and may have significant impact on end-to-end data processing latency.
 // If Substation is running in AWS Lambda with Kinesis, then this latency can be
-//  mitigated by increasing the parallelization factor of the Lambda
+//
+//	mitigated by increasing the parallelization factor of the Lambda
+//
 // (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
 type _dns struct {
 	process
@@ -48,23 +50,24 @@ func (p _dns) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p _dns) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return conditionalApply(ctx, capsules, p.Condition, p)
+	return conditionalApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-// nolint:gocognit
+//
+//nolint:gocognit
 func (p _dns) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
 		return capsule, fmt.Errorf("process dns: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
-	var timeout gotime.Duration
+	var timeout time.Duration
 	if p.Options.Timeout != 0 {
-		// nolint:durationcheck
-		timeout = gotime.Duration(p.Options.Timeout) * gotime.Millisecond
+		//nolint:durationcheck
+		timeout = time.Duration(p.Options.Timeout) * time.Millisecond
 	} else {
-		timeout = 1000 * gotime.Millisecond
+		timeout = 1000 * time.Millisecond
 	}
 
 	resolverCtx, cancel := context.WithTimeout(ctx, timeout)

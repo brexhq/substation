@@ -35,12 +35,7 @@ func (p _flatten) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p _flatten) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	capsules, err := conditionalApply(ctx, capsules, p.Condition, p)
-	if err != nil {
-		return nil, fmt.Errorf("process _flatten: %v", err)
-	}
-
-	return capsules, nil
+	return conditionalApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.

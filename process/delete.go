@@ -27,7 +27,7 @@ func (p _delete) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p _delete) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return conditionalApply(ctx, capsules, p.Condition, p)
+	return conditionalApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.

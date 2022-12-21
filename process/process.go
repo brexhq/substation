@@ -161,6 +161,59 @@ func ApplicatorFactory(cfg config.Config) (applicator, error) {
 	}
 }
 
+// MakeApplicators accepts one or more processor configurations and returns configured applicators.
+func MakeApplicators(cfg ...config.Config) ([]applicator, error) {
+	var apps []applicator
+
+	for _, c := range cfg {
+		a, err := ApplicatorFactory(c)
+		if err != nil {
+			return nil, err
+		}
+		apps = append(apps, a)
+	}
+
+	return apps, nil
+}
+
+// CloseApplicators closes all applicators and returns an error if any close fails.
+func CloseApplicators(ctx context.Context, applicators ...applicator) error {
+	for _, a := range applicators {
+		if err := a.Close(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Apply applies processors in series to encapsulated data.
+func Apply(ctx context.Context, capsule config.Capsule, applicators ...applicator) (config.Capsule, error) {
+	var err error
+
+	for _, app := range applicators {
+		capsule, err = app.Apply(ctx, capsule)
+		if err != nil {
+			return capsule, err
+		}
+	}
+
+	return capsule, nil
+}
+
+// ApplyBytes is a convenience function for applying processors in series to bytes.
+func ApplyBytes(ctx context.Context, data []byte, applicators ...applicator) ([]byte, error) {
+	capsule := config.NewCapsule()
+	capsule.SetData(data)
+
+	newCapsule, err := Apply(ctx, capsule, applicators...)
+	if err != nil {
+		return nil, err
+	}
+
+	return newCapsule.Data(), nil
+}
+
 type batcher interface {
 	Batch(context.Context, ...config.Capsule) ([]config.Capsule, error)
 	Close(context.Context) error
@@ -285,52 +338,26 @@ func BatcherFactory(cfg config.Config) (batcher, error) {
 	}
 }
 
-// Apply applies processors in series to encapsulated data.
-func Apply(ctx context.Context, capsule config.Capsule, applicators ...applicator) (config.Capsule, error) {
-	var err error
-
-	for _, app := range applicators {
-		capsule, err = app.Apply(ctx, capsule)
-		if err != nil {
-			return capsule, err
-		}
-	}
-
-	return capsule, nil
-}
-
-// ApplyBytes is a convenience function for applying processors in series to bytes.
-func ApplyBytes(ctx context.Context, data []byte, applicators ...applicator) ([]byte, error) {
-	capsule := config.NewCapsule()
-	capsule.SetData(data)
-
-	newCapsule, err := Apply(ctx, capsule, applicators...)
-	if err != nil {
-		return nil, err
-	}
-
-	return newCapsule.Data(), nil
-}
-
-// MakeApplicators accepts one or more processor configurations and returns configured applicators.
-func MakeApplicators(cfg ...config.Config) ([]applicator, error) {
-	var apps []applicator
+// MakeBatchers accepts one or more processor configurations and returns populated batchers.
+func MakeBatchers(cfg ...config.Config) ([]batcher, error) {
+	var bats []batcher
 
 	for _, c := range cfg {
-		a, err := ApplicatorFactory(c)
+		b, err := BatcherFactory(c)
 		if err != nil {
 			return nil, err
 		}
-		apps = append(apps, a)
+
+		bats = append(bats, b)
 	}
 
-	return apps, nil
+	return bats, nil
 }
 
-// CloseApplicators closes all applicators and returns an error if any close fails.
-func CloseApplicators(ctx context.Context, applicators ...applicator) error {
-	for _, a := range applicators {
-		if err := a.Close(ctx); err != nil {
+// CloseBatchers closes all batchers and returns an error if any close fails.
+func CloseBatchers(ctx context.Context, batchers ...batcher) error {
+	for _, b := range batchers {
+		if err := b.Close(ctx); err != nil {
 			return err
 		}
 	}
@@ -375,33 +402,6 @@ func BatchBytes(ctx context.Context, data [][]byte, batchers ...batcher) ([][]by
 	return arr, nil
 }
 
-// MakeBatchers accepts one or more processor configurations and returns populated batchers.
-func MakeBatchers(cfg ...config.Config) ([]batcher, error) {
-	var bats []batcher
-
-	for _, c := range cfg {
-		b, err := BatcherFactory(c)
-		if err != nil {
-			return nil, err
-		}
-
-		bats = append(bats, b)
-	}
-
-	return bats, nil
-}
-
-// CloseBatchers closes all batchers and returns an error if any close fails.
-func CloseBatchers(ctx context.Context, batchers ...batcher) error {
-	for _, b := range batchers {
-		if err := b.Close(ctx); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // newBatch returns a Capsule slice with a minimum capacity of 10. This is used to speed up batch processing.
 func newBatch(s *[]config.Capsule) []config.Capsule {
 	if len(*s) > 10 {
@@ -410,8 +410,8 @@ func newBatch(s *[]config.Capsule) []config.Capsule {
 	return make([]config.Capsule, 0, 10)
 }
 
-func conditionalApply(ctx context.Context, capsules []config.Capsule, cond condition.Config, app applicator) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(cond)
+func conditionalApply(ctx context.Context, capsules []config.Capsule, app applicator, c condition.Config) ([]config.Capsule, error) {
+	op, err := condition.OperatorFactory(c)
 	if err != nil {
 		return nil, err
 	}
@@ -434,20 +434,6 @@ func conditionalApply(ctx context.Context, capsules []config.Capsule, cond condi
 		}
 
 		newCapsules = append(newCapsules, newCapsule)
-	}
-
-	return newCapsules, nil
-}
-
-func batch(ctx context.Context, capsules []config.Capsule, apps ...applicator) ([]config.Capsule, error) {
-	newCapsules := newBatch(&capsules)
-	for _, c := range capsules {
-		capsule, err := Apply(ctx, c, apps...)
-		if err != nil {
-			return nil, err
-		}
-
-		newCapsules = append(newCapsules, capsule)
 	}
 
 	return newCapsules, nil

@@ -1,7 +1,7 @@
 {
-  dynamodb(table, items_key): {
+  dynamodb(table, key): {
     type: 'dynamodb',
-    settings: { table: table, items_key: items_key },
+    settings: { table: table, key: key },
   },
   http(url, headers=[], headers_key=''): {
     type: 'http',

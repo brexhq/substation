@@ -1,17 +1,17 @@
 {
   process(options,
-          condition={},
           key='',
           set_key='',
+          condition={},
           ignore_close=false,
           ignore_errors=false): {
     settings: {
-      condition: condition,
+      options: options.opts,
       key: key,
       set_key: set_key,
+      condition: condition,
       ignore_close: ignore_close,
       ignore_errors: ignore_errors,
-      options: options.opts,
     },
     type: options.type,
   },

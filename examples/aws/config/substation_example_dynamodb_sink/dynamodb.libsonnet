@@ -1,26 +1,36 @@
-local conditionlib = import '../../../../build/config/condition.libsonnet';
-local processlib = import '../../../../build/config/process.libsonnet';
+local consts = import 'consts.libsonnet';
+
+local condition = import '../../../../build/config/condition.libsonnet';
+local process = import '../../../../build/config/process.libsonnet';
+
+local inspectorPatterns = import '../../../../build/config/inspector_patterns.libsonnet';
+local operatorPatterns = import '../../../../build/config/operator_patterns.libsonnet';
+
+local no_condition = {};
 
 local processors = [
   {
-    // each row written to DynamoDB should be contained in an array stored in a single JSON key (e.g., __tmp.ddb); if the data is not an array, then Substation treats the key as an array of one item
-    // the nested JSON key maps to the attribute name in DynamoDB:
-    //  __tmp.ddb.PK maps to PK
-    //  __tmp.ddb.SK maps to SK
+    // each record written to DynamoDB should be put into in an array.
+    // if the data is not an array, then the DynamoDB sink treats the value
+    // as an array of one item.
     processors: [
-      // copy the PK (required by the table)
-      processlib.copy('event.hash', '__tmp.ddb.PK'),
+      // copy the partition key (PK)
+      process.process(
+        process.copy, key='event.hash', set_key=consts.ddb_payload + '.PK'),
       // insert the extra attributes
-      processlib.copy('event.created', '__tmp.ddb.event_created'),
+      process.process(
+        process.copy, key='event.created', set_key=consts.ddb_payload + '.event_created'),
     ],
   },
-  // if __tmp.ddb is empty, then drop the event to prevent the DynamoDB sink from processing unnecessary data
+  // if !metadata ddb is empty, then drop the event to prevent the DynamoDB sink from processing unnecessary data
   {
-    local conditions = [
-      conditionlib.strings.empty('__tmp.ddb', negate=false),
-    ],
+    local gt_zero = condition.inspector(
+      options=inspectorPatterns.length.gt_zero, key=consts.ddb_payload,
+    ),
+    local op = operatorPatterns.and([gt_zero]),
+
     processors: [
-      processlib.drop(condition_operator='and', condition_inspectors=conditions),
+      process.process(options=process.drop, condition=op),
     ],
   },
 ];

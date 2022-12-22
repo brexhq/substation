@@ -69,9 +69,9 @@ local process = import 'process.libsonnet';
           // copies data to metadata for hashing
           process.process(options=process.copy, set_key=key),
           // applies plaintext hashing
-          process.process(options=hash, condition=operatorPatterns.and([is_plaintext]), key='@this', set_key=set_key),
+          process.process(options=hash, key='@this', set_key=set_key, condition=operatorPatterns.and([is_plaintext])),
           // applies non-plaintext (binary) hashing
-          process.process(options=pipeline, condition=operatorPatterns.nand([is_plaintext]), key=key, set_key=set_key),
+          process.process(options=pipeline, key=key, set_key=set_key, condition=operatorPatterns.nand([is_plaintext])),
           // delete remaining data
           process.process(options=process.delete, key=key),
         ],
@@ -86,7 +86,7 @@ local process = import 'process.libsonnet';
         local op = operatorPatterns.nand(inspectorPatterns.ip.private(key)),
 
         processors: [
-          process.process(options=ipdb_opts, condition=op, key=key, set_key=set_key),
+          process.process(options=ipdb_opts, key=key, set_key=set_key, condition=op),
         ],
       },
     ],

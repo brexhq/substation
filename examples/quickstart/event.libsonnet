@@ -11,12 +11,6 @@ local processPatterns = import '../../build/config/process_patterns.libsonnet';
 local foo_gt_zero = condition.inspector(inspectorPatterns.length.gt_zero, key='foo');
 local foo_op = operatorPatterns.and([foo_gt_zero]);
 
-// always evaluates to true; this is also the default condition for all processors
-local no_condition = {};
-
-//
-local public_addr = operatorPatterns.nand(inspectorPatterns.ip.private('addr'));
-
 // keys can be referenced outside of processor definitions
 local event_created = 'event.created';
 local event_hash = 'event.hash';
@@ -28,24 +22,14 @@ local processors =
     // if "foo" is not empty, then copy the value to "fu"
     {
       processors: [
-        process.process(
-          process.copy,
-          condition=foo_op,
-          key='foo',
-          set_key='fu',
-        ),
+        process.process(process.copy, key='foo', set_key='fu', condition=foo_op),
       ],
     },
     // generates current time and automatically formats it
     // https://www.elastic.co/guide/en/ecs/current/ecs-event.html#field-event-created
     {
       processors: [
-        process.process(
-          process.time(format='now'),
-          condition=no_condition,
-          key='@this',
-          set_key=event_created,
-        ),
+        process.process(process.time(format='now'), key='@this', set_key=event_created),
       ],
     },
   ];

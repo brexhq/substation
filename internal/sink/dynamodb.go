@@ -49,8 +49,8 @@ When loaded with a factory, the sink uses this JSON configuration:
 	}
 */
 type DynamoDB struct {
-	Table    string `json:"table"`
-	ItemsKey string `json:"items_key"`
+	Table string `json:"table"`
+	Key   string `json:"key"`
 }
 
 // Send sinks a channel of encapsulated data with the DynamoDB sink.
@@ -69,7 +69,7 @@ func (sink *DynamoDB) Send(ctx context.Context, ch *config.Channel) error {
 				return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, errDynamoDBJSON)
 			}
 
-			items := capsule.Get(sink.ItemsKey).Array()
+			items := capsule.Get(sink.Key).Array()
 			for _, item := range items {
 				cache := make(map[string]interface{})
 				for k, v := range item.Map() {

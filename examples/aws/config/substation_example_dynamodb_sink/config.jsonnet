@@ -1,9 +1,10 @@
-local sinklib = import '../../../../build/config/sink.libsonnet';
+local sink = import '../../../../build/config/sink.libsonnet';
 
-local dynamodb = import './dynamodb.libsonnet';
+local consts = import 'consts.libsonnet';
+local dynamodb = import 'dynamodb.libsonnet';
 
 {
-  sink: sinklib.dynamodb(table='substation_example', items_key='__tmp.ddb'),
+  sink: sink.dynamodb(table='substation_example', key=consts.ddb_payload),
   transform: {
     type: 'batch',
     settings: {

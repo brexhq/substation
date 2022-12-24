@@ -29,9 +29,9 @@ type _caseOptions struct {
 	//
 	// Must be one of:
 	//
-	// - uppercase
+	// - upper
 	//
-	// - lowercase
+	// - lower
 	//
 	// - snake
 	Type string `json:"type"`
@@ -66,9 +66,9 @@ func (p _case) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 
 		var value string
 		switch p.Options.Type {
-		case "uppercase":
+		case "upper":
 			value = strings.ToUpper(result)
-		case "lowercase":
+		case "lower":
 			value = strings.ToLower(result)
 		case "snake":
 			value = strcase.ToSnake(result)

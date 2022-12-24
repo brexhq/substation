@@ -41,14 +41,14 @@ When loaded with a factory, the sink uses this JSON configuration:
 		}
 	}
 */
-type S3 struct {
+type _awsS3 struct {
 	Bucket    string `json:"bucket"`
 	Prefix    string `json:"prefix"`
 	PrefixKey string `json:"prefix_key"`
 }
 
 // Send sinks a channel of encapsulated data with the S3 sink.
-func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
+func (sink *_awsS3) Send(ctx context.Context, ch *config.Channel) error {
 	if !s3uploader.IsEnabled() {
 		s3uploader.Setup()
 	}
@@ -141,8 +141,8 @@ func (sink *S3) Send(ctx context.Context, ch *config.Channel) error {
 }
 
 /*
- createKey creates a date-based S3 object key that has this naming convention:
-	[prefix : optional]/[year]/[month]/[day]/[uuid].gz
+	 createKey creates a date-based S3 object key that has this naming convention:
+		[prefix : optional]/[year]/[month]/[day]/[uuid].gz
 */
 func createKey(prefix string) string {
 	var key string

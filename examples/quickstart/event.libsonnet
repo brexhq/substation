@@ -29,7 +29,7 @@ local processors =
     // https://www.elastic.co/guide/en/ecs/current/ecs-event.html#field-event-created
     {
       processors: [
-        process.process(process.time(format='now'), key='@this', set_key=event_created),
+        process.process(process.time(format='now'), set_key=event_created),
       ],
     },
   ];

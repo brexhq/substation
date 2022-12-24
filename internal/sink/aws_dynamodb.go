@@ -48,13 +48,13 @@ When loaded with a factory, the sink uses this JSON configuration:
 		}
 	}
 */
-type DynamoDB struct {
+type _awsDynamodb struct {
 	Table string `json:"table"`
 	Key   string `json:"key"`
 }
 
 // Send sinks a channel of encapsulated data with the DynamoDB sink.
-func (sink *DynamoDB) Send(ctx context.Context, ch *config.Channel) error {
+func (sink *_awsDynamodb) Send(ctx context.Context, ch *config.Channel) error {
 	if !dynamodbAPI.IsEnabled() {
 		dynamodbAPI.Setup()
 	}

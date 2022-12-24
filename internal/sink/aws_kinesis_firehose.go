@@ -44,12 +44,12 @@ When loaded with a factory, the sink uses this JSON configuration:
 		}
 	}
 */
-type Firehose struct {
+type _awsKinesisFirehose struct {
 	Stream string `json:"stream"`
 }
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
-func (sink *Firehose) Send(ctx context.Context, ch *config.Channel) error {
+func (sink *_awsKinesisFirehose) Send(ctx context.Context, ch *config.Channel) error {
 	if !firehoseAPI.IsEnabled() {
 		firehoseAPI.Setup()
 	}

@@ -64,7 +64,6 @@ func (p _dns) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 
 	var timeout time.Duration
 	if p.Options.Timeout != 0 {
-		//nolint:durationcheck
 		timeout = time.Duration(p.Options.Timeout) * time.Millisecond
 	} else {
 		timeout = 1000 * time.Millisecond

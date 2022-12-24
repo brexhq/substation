@@ -41,12 +41,12 @@ When loaded with a factory, the sink uses this JSON configuration:
 		}
 	}
 */
-type SQS struct {
+type _awsSQS struct {
 	Queue string `json:"queue"`
 }
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
-func (sink *SQS) Send(ctx context.Context, ch *config.Channel) error {
+func (sink *_awsSQS) Send(ctx context.Context, ch *config.Channel) error {
 	if !sqsAPI.IsEnabled() {
 		sqsAPI.Setup()
 	}

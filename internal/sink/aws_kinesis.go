@@ -38,7 +38,7 @@ When loaded with a factory, the sink uses this JSON configuration:
 		}
 	}
 */
-type Kinesis struct {
+type _awsKinesis struct {
 	Stream              string `json:"stream"`
 	Partition           string `json:"partition"`
 	PartitionKey        string `json:"partition_key"`
@@ -46,7 +46,7 @@ type Kinesis struct {
 }
 
 // Send sinks a channel of encapsulated data with the Kinesis sink.
-func (sink *Kinesis) Send(ctx context.Context, ch *config.Channel) error {
+func (sink *_awsKinesis) Send(ctx context.Context, ch *config.Channel) error {
 	if !kinesisAPI.IsEnabled() {
 		kinesisAPI.Setup()
 	}

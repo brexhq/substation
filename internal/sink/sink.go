@@ -19,32 +19,32 @@ type Sink interface {
 // Factory returns a configured Sink from a config. This is the recommended method for retrieving ready-to-use Sinks.
 func Factory(cfg config.Config) (Sink, error) {
 	switch t := cfg.Type; t {
-	case "dynamodb":
-		var s DynamoDB
+	case "aws_dynamodb":
+		var s _awsDynamodb
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
-	case "http":
-		var s HTTP
+	case "aws_kinesis":
+		var s _awsKinesis
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
-	case "firehose":
-		var s Firehose
+	case "aws_kinesis_firehose":
+		var s _awsKinesisFirehose
+		_ = config.Decode(cfg.Settings, &s)
+		return &s, nil
+	case "aws_s3":
+		var s _awsS3
+		_ = config.Decode(cfg.Settings, &s)
+		return &s, nil
+	case "aws_sqs":
+		var s _awsSQS
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
 	case "grpc":
 		var s Grpc
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
-	case "kinesis":
-		var s Kinesis
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
-	case "s3":
-		var s S3
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
-	case "sqs":
-		var s SQS
+	case "http":
+		var s HTTP
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
 	case "stdout":

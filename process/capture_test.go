@@ -92,10 +92,10 @@ func TestCapture(t *testing.T) {
 	}
 }
 
-func benchmarkCapture(b *testing.B, applicator _capture, test config.Capsule) {
+func benchmarkCapture(b *testing.B, applier _capture, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

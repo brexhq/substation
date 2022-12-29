@@ -62,10 +62,10 @@ func TestGroup(t *testing.T) {
 	}
 }
 
-func benchmarkGroup(b *testing.B, applicator _group, test config.Capsule) {
+func benchmarkGroup(b *testing.B, applier _group, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

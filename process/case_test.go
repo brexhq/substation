@@ -23,7 +23,7 @@ var caseTests = []struct {
 				SetKey: "foo",
 			},
 			Options: _caseOptions{
-				Type: "lowercase",
+				Type: "lower",
 			},
 		},
 		[]byte(`{"foo":"BAR"}`),
@@ -38,7 +38,7 @@ var caseTests = []struct {
 				SetKey: "foo",
 			},
 			Options: _caseOptions{
-				Type: "uppercase",
+				Type: "upper",
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -80,10 +80,10 @@ func TestCase(t *testing.T) {
 	}
 }
 
-func benchmarkCase(b *testing.B, applicator _case, test config.Capsule) {
+func benchmarkCase(b *testing.B, applier _case, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

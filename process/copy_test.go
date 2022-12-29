@@ -103,10 +103,10 @@ func TestCopy(t *testing.T) {
 	}
 }
 
-func benchmarkCopy(b *testing.B, applicator _copy, test config.Capsule) {
+func benchmarkCopy(b *testing.B, applier _copy, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

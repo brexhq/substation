@@ -62,10 +62,10 @@ func TestFlatten(t *testing.T) {
 	}
 }
 
-func benchmarkFlatten(b *testing.B, applicator _flatten, test config.Capsule) {
+func benchmarkFlatten(b *testing.B, applier _flatten, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

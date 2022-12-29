@@ -38,7 +38,7 @@ func (p _forEach) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p _forEach) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return conditionalApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
@@ -71,7 +71,7 @@ func (p _forEach) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 		return capsule, err
 	}
 
-	applicator, err := ApplicatorFactory(processor)
+	applier, err := ApplierFactory(processor)
 	if err != nil {
 		return capsule, fmt.Errorf("process for_each: %v", err)
 	}
@@ -87,7 +87,7 @@ func (p _forEach) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 			return capsule, fmt.Errorf("process for_each: %v", err)
 		}
 
-		tmpCap, err = applicator.Apply(ctx, tmpCap)
+		tmpCap, err = applier.Apply(ctx, tmpCap)
 		if err != nil {
 			return capsule, fmt.Errorf("process for_each: %v", err)
 		}

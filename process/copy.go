@@ -24,10 +24,25 @@ func (p _copy) Close(context.Context) error {
 	return nil
 }
 
+func (p _copy) Stream(ctx context.Context, in, out *config.Channel) error {
+	defer out.Close()
+
+	for capsule := range in.C {
+		capsule, err := p.Apply(ctx, capsule)
+		if err != nil {
+			return err
+		}
+
+		out.Send(capsule)
+	}
+
+	return nil
+}
+
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p _copy) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return conditionalApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.

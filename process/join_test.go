@@ -50,10 +50,10 @@ func TestJoin(t *testing.T) {
 	}
 }
 
-func benchmarkJoin(b *testing.B, applicator _join, test config.Capsule) {
+func benchmarkJoin(b *testing.B, applier _join, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

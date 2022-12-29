@@ -37,12 +37,12 @@ func (p _pipeline) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p _pipeline) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return conditionalApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
 //
-// Applicators only accept encapsulated data, so when processing
+// Appliers only accept encapsulated data, so when processing
 // objects the data is converted to its string representation to
 // bytes and put into a new capsule. The conversion to string is
 // safe for strings and objects, but not arrays
@@ -52,7 +52,7 @@ func (p _pipeline) Batch(ctx context.Context, capsules ...config.Capsule) ([]con
 // should be run through the forEach processor (which can
 // encapsulate the pipeline processor).
 func (p _pipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	applicators, err := MakeApplicators(p.Options.Processors...)
+	appliers, err := MakeAppliers(p.Options.Processors...)
 	if err != nil {
 		return capsule, fmt.Errorf("process pipeline: processors %+v: %v", p.Options.Processors, err)
 	}
@@ -66,7 +66,7 @@ func (p _pipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Ca
 		newCapsule := config.NewCapsule()
 		newCapsule.SetData([]byte(result.String()))
 
-		newCapsule, err = Apply(ctx, newCapsule, applicators...)
+		newCapsule, err = Apply(ctx, newCapsule, appliers...)
 		if err != nil {
 			return capsule, fmt.Errorf("process pipeline: %v", err)
 		}
@@ -80,7 +80,7 @@ func (p _pipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Ca
 
 	// data processing
 	if p.Key == "" && p.SetKey == "" {
-		tmp, err := Apply(ctx, capsule, applicators...)
+		tmp, err := Apply(ctx, capsule, appliers...)
 		if err != nil {
 			return capsule, fmt.Errorf("process pipeline: %v", err)
 		}

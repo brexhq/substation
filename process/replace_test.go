@@ -106,10 +106,10 @@ func TestReplace(t *testing.T) {
 	}
 }
 
-func benchmarkReplace(b *testing.B, applicator _replace, test config.Capsule) {
+func benchmarkReplace(b *testing.B, applier _replace, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

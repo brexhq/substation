@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/process"
 )
 
-func ExampleApplicatorFactory() {
+func ExampleApplierFactory() {
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -18,18 +18,18 @@ func ExampleApplicatorFactory() {
 		},
 	}
 
-	// applicator is retrieved from the factory
-	applicator, err := process.ApplicatorFactory(cfg)
+	// applier is retrieved from the factory
+	applier, err := process.ApplierFactory(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
 	}
 
-	fmt.Println(applicator)
+	fmt.Println(applier)
 	// Output: {"condition":{"operator":"","inspectors":null},"key":"foo","set_key":"bar","ignore_close":false,"ignore_errors":false}
 }
 
-func ExampleMakeApplicators() {
+func ExampleMakeAppliers() {
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -39,14 +39,14 @@ func ExampleMakeApplicators() {
 		},
 	}
 
-	// one or more applicators are created
-	applicators, err := process.MakeApplicators(cfg)
+	// one or more appliers are created
+	appliers, err := process.MakeAppliers(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
 	}
 
-	for _, app := range applicators {
+	for _, app := range appliers {
 		fmt.Println(app)
 	}
 	// Output: {"condition":{"operator":"","inspectors":null},"key":"foo","set_key":"bar","ignore_close":false,"ignore_errors":false}
@@ -62,16 +62,16 @@ func ExampleApplyBytes() {
 		},
 	}
 
-	// applicator is retrieved from the factory
-	applicator, err := process.ApplicatorFactory(cfg)
+	// applier is retrieved from the factory
+	applier, err := process.ApplierFactory(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
 	}
 
-	// applicator is applied to bytes
+	// applier is applied to bytes
 	b := []byte(`{"foo":"fizz"}`)
-	b, err = process.ApplyBytes(context.TODO(), b, applicator)
+	b, err = process.ApplyBytes(context.TODO(), b, applier)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -91,7 +91,7 @@ func ExampleBatcherFactory() {
 		},
 	}
 
-	// one or more applicators are created
+	// one or more appliers are created
 	batcher, err := process.BatcherFactory(cfg)
 	if err != nil {
 		// handle err
@@ -142,7 +142,7 @@ func ExampleBatchBytes() {
 		panic(err)
 	}
 
-	// applicator is applied to slice of bytes
+	// applier is applied to slice of bytes
 	b := [][]byte{[]byte(`{"foo":"fizz"}`)}
 	b, err = process.BatchBytes(context.TODO(), b, batcher)
 	if err != nil {
@@ -156,7 +156,7 @@ func ExampleBatchBytes() {
 	// Output: {"foo":"fizz","bar":"fizz"}
 }
 
-func Example_applicator() {
+func Example_applier() {
 	// copies the value of key "foo" into key "baz"
 	cfg := config.Config{
 		Type: "copy",
@@ -166,18 +166,18 @@ func Example_applicator() {
 		},
 	}
 
-	// applicator is retrieved from the factory
-	applicator, err := process.ApplicatorFactory(cfg)
+	// applier is retrieved from the factory
+	applier, err := process.ApplierFactory(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
 	}
 
-	// applicator is applied to capsule
+	// applier is applied to capsule
 	capsule := config.NewCapsule()
 	capsule.SetData([]byte(`{"foo":"fizz"}`))
 
-	capsule, err = applicator.Apply(context.TODO(), capsule)
+	capsule, err = applier.Apply(context.TODO(), capsule)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -249,16 +249,16 @@ func Example_dNS() {
 		},
 	}
 
-	applicators, err := process.MakeApplicators(cfg...)
+	appliers, err := process.MakeAppliers(cfg...)
 	if err != nil {
 		// handle err
 		panic(err)
 	}
 
-	//nolint: errcheck // errors are ignored in case processing fails in a single applicator
-	defer process.CloseApplicators(context.TODO(), applicators...)
+	//nolint: errcheck // errors are ignored in case processing fails in a single applier
+	defer process.CloseAppliers(context.TODO(), appliers...)
 
-	for _, app := range applicators {
+	for _, app := range appliers {
 		capsule, err = app.Apply(context.TODO(), capsule)
 		if err != nil {
 			// handle err
@@ -294,16 +294,16 @@ func Example_iPDatabase() {
 		},
 	}
 
-	applicators, err := process.MakeApplicators(cfg...)
+	appliers, err := process.MakeAppliers(cfg...)
 	if err != nil {
 		// handle err
 		panic(err)
 	}
 
-	//nolint: errcheck // errors are ignored in case processing fails in a single applicator
-	defer process.CloseApplicators(context.TODO(), applicators...)
+	//nolint: errcheck // errors are ignored in case processing fails in a single applier
+	defer process.CloseAppliers(context.TODO(), appliers...)
 
-	for _, app := range applicators {
+	for _, app := range appliers {
 		capsule, err = app.Apply(context.TODO(), capsule)
 		if err != nil {
 			// handle err

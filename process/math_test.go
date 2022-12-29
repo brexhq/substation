@@ -95,10 +95,10 @@ func TestMath(t *testing.T) {
 	}
 }
 
-func benchmarkMath(b *testing.B, applicator _math, test config.Capsule) {
+func benchmarkMath(b *testing.B, applier _math, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

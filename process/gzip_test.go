@@ -57,10 +57,10 @@ func TestGzip(t *testing.T) {
 	}
 }
 
-func benchmarkGzip(b *testing.B, applicator _gzip, test config.Capsule) {
+func benchmarkGzip(b *testing.B, applier _gzip, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

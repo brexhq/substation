@@ -48,10 +48,10 @@ func TestDrop(t *testing.T) {
 	}
 }
 
-func benchmarkDrop(b *testing.B, applicator _drop, capsules []config.Capsule) {
+func benchmarkDrop(b *testing.B, applier _drop, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Batch(ctx, capsules...)
+		_, _ = applier.Batch(ctx, capsules...)
 	}
 }
 

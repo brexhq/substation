@@ -80,10 +80,10 @@ func TestDynamoDB(t *testing.T) {
 	}
 }
 
-func benchmarkDynamoDB(b *testing.B, applicator _awsDynamodb, test config.Capsule) {
+func benchmarkDynamoDB(b *testing.B, applier _awsDynamodb, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

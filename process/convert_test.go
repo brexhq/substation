@@ -140,10 +140,10 @@ func TestConvert(t *testing.T) {
 	}
 }
 
-func benchmarkConvert(b *testing.B, applicator _convert, test config.Capsule) {
+func benchmarkConvert(b *testing.B, applier _convert, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

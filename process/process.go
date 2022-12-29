@@ -41,7 +41,7 @@ type process struct {
 
 func toString(i interface{}) string {
 	switch v := i.(type) {
-	case applicator:
+	case applier:
 		b, _ := json.Marshal(v)
 		return string(b)
 	case batcher:
@@ -52,13 +52,13 @@ func toString(i interface{}) string {
 	}
 }
 
-type applicator interface {
+type applier interface {
 	Apply(context.Context, config.Capsule) (config.Capsule, error)
 	Close(context.Context) error
 }
 
-// ApplicatorFactory returns a configured Applicator from a config. This is the recommended method for retrieving ready-to-use Applicators.
-func ApplicatorFactory(cfg config.Config) (applicator, error) {
+// ApplierFactory returns a configured Applier from a config. This is the recommended method for retrieving ready-to-use Appliers.
+func ApplierFactory(cfg config.Config) (applier, error) {
 	switch cfg.Type {
 	case "aws_dynamodb":
 		var p _awsDynamodb
@@ -161,12 +161,12 @@ func ApplicatorFactory(cfg config.Config) (applicator, error) {
 	}
 }
 
-// MakeApplicators accepts one or more processor configurations and returns configured applicators.
-func MakeApplicators(cfg ...config.Config) ([]applicator, error) {
-	var apps []applicator
+// MakeAppliers accepts one or more processor configurations and returns configured appliers.
+func MakeAppliers(cfg ...config.Config) ([]applier, error) {
+	var apps []applier
 
 	for _, c := range cfg {
-		a, err := ApplicatorFactory(c)
+		a, err := ApplierFactory(c)
 		if err != nil {
 			return nil, err
 		}
@@ -176,9 +176,9 @@ func MakeApplicators(cfg ...config.Config) ([]applicator, error) {
 	return apps, nil
 }
 
-// CloseApplicators closes all applicators and returns an error if any close fails.
-func CloseApplicators(ctx context.Context, applicators ...applicator) error {
-	for _, a := range applicators {
+// CloseAppliers closes all appliers and returns an error if any close fails.
+func CloseAppliers(ctx context.Context, appliers ...applier) error {
+	for _, a := range appliers {
 		if err := a.Close(ctx); err != nil {
 			return err
 		}
@@ -188,10 +188,10 @@ func CloseApplicators(ctx context.Context, applicators ...applicator) error {
 }
 
 // Apply applies processors in series to encapsulated data.
-func Apply(ctx context.Context, capsule config.Capsule, applicators ...applicator) (config.Capsule, error) {
+func Apply(ctx context.Context, capsule config.Capsule, appliers ...applier) (config.Capsule, error) {
 	var err error
 
-	for _, app := range applicators {
+	for _, app := range appliers {
 		capsule, err = app.Apply(ctx, capsule)
 		if err != nil {
 			return capsule, err
@@ -202,11 +202,11 @@ func Apply(ctx context.Context, capsule config.Capsule, applicators ...applicato
 }
 
 // ApplyBytes is a convenience function for applying processors in series to bytes.
-func ApplyBytes(ctx context.Context, data []byte, applicators ...applicator) ([]byte, error) {
+func ApplyBytes(ctx context.Context, data []byte, appliers ...applier) ([]byte, error) {
 	capsule := config.NewCapsule()
 	capsule.SetData(data)
 
-	newCapsule, err := Apply(ctx, capsule, applicators...)
+	newCapsule, err := Apply(ctx, capsule, appliers...)
 	if err != nil {
 		return nil, err
 	}
@@ -410,7 +410,7 @@ func newBatch(s *[]config.Capsule) []config.Capsule {
 	return make([]config.Capsule, 0, 10)
 }
 
-func conditionalApply(ctx context.Context, capsules []config.Capsule, app applicator, c condition.Config) ([]config.Capsule, error) {
+func batchApply(ctx context.Context, capsules []config.Capsule, app applier, c condition.Config) ([]config.Capsule, error) {
 	op, err := condition.OperatorFactory(c)
 	if err != nil {
 		return nil, err

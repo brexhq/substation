@@ -72,7 +72,7 @@ var forEachTests = []struct {
 					Type: "case",
 					Settings: map[string]interface{}{
 						"options": map[string]interface{}{
-							"type": "lowercase",
+							"type": "lower",
 						},
 					},
 				},
@@ -365,10 +365,10 @@ func TestForEach(t *testing.T) {
 	}
 }
 
-func benchmarkForEach(b *testing.B, applicator _forEach, test config.Capsule) {
+func benchmarkForEach(b *testing.B, applier _forEach, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

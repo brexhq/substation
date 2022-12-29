@@ -57,10 +57,10 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func benchmarkDelete(b *testing.B, applicator _delete, test config.Capsule) {
+func benchmarkDelete(b *testing.B, applier _delete, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

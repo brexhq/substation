@@ -107,10 +107,10 @@ func TestDomain(t *testing.T) {
 	}
 }
 
-func benchmarkDomain(b *testing.B, applicator _domain, test config.Capsule) {
+func benchmarkDomain(b *testing.B, applier _domain, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

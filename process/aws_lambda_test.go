@@ -73,10 +73,10 @@ func TestLambda(t *testing.T) {
 	}
 }
 
-func benchmarkLambda(b *testing.B, applicator _awsLambda, test config.Capsule) {
+func benchmarkLambda(b *testing.B, applier _awsLambda, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

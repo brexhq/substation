@@ -135,10 +135,10 @@ func TestInsert(t *testing.T) {
 	}
 }
 
-func benchmarkInsert(b *testing.B, applicator _insert, test config.Capsule) {
+func benchmarkInsert(b *testing.B, applier _insert, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

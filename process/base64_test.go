@@ -72,10 +72,10 @@ func TestBase64(t *testing.T) {
 	}
 }
 
-func benchmarkbase64(b *testing.B, applicator _base64, test config.Capsule) {
+func benchmarkbase64(b *testing.B, applier _base64, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

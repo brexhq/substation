@@ -224,10 +224,10 @@ func TestTime(t *testing.T) {
 	}
 }
 
-func benchmarkTime(b *testing.B, applicator _time, test config.Capsule) {
+func benchmarkTime(b *testing.B, applier _time, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

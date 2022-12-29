@@ -1,5 +1,6 @@
 {
-  process(options,
+  // apply mirrors the applier interface
+  apply(options,
           key='',
           set_key='',
           condition={},
@@ -26,6 +27,22 @@
       max_count: max_count,
       max_size: max_size,
     },
+  },
+  aws_dynamodb(table,
+           key_condition_expression,
+           limit=1,
+           scan_index_forward=false): {
+    type: 'aws_dynamodb',
+    opts: {
+      table: table,
+      key_condition_expression: key_condition_expression,
+      limit: limit,
+      scan_index_forward: scan_index_forward,
+    },
+  },
+  aws_lambda(function_name): {
+    type: 'aws_lambda',
+    opts: { function_name: function_name },
   },
   base64(direction): {
     type: 'base64',
@@ -81,18 +98,6 @@
     type: 'drop',
     opts: {},
   },
-  dynamodb(table,
-           key_condition_expression,
-           limit=1,
-           scan_index_forward=false): {
-    type: 'dynamodb',
-    opts: {
-      table: table,
-      key_condition_expression: key_condition_expression,
-      limit: limit,
-      scan_index_forward: scan_index_forward,
-    },
-  },
   expand: {
     type: 'expand',
     opts: {},
@@ -132,10 +137,6 @@
     opts: {
       separator: separator,
     },
-  },
-  lambda(function_name): {
-    type: 'lambda',
-    opts: { function_name: function_name },
   },
   math(operation): {
     type: 'math',

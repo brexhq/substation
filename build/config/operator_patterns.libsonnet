@@ -1,8 +1,8 @@
-local condition = import 'condition.libsonnet';
+local operator = import 'operator.libsonnet';
 
 {
-  and(inspectors): condition.operator(operator='and', inspectors=inspectors),
-  or(inspectors): condition.operator(operator='or', inspectors=inspectors),
-  nand(inspectors): condition.operator(operator='nand', inspectors=inspectors),
-  nor(inspectors): condition.operator(operator='nor', inspectors=inspectors),
+  and(inspectors): operator.operate(operator='and', inspectors=inspectors),
+  or(inspectors): operator.operate(operator='or', inspectors=inspectors),
+  nand(inspectors): operator.operate(operator='nand', inspectors=inspectors),
+  nor(inspectors): operator.operate(operator='nor', inspectors=inspectors),
 }

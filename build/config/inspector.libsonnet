@@ -1,9 +1,6 @@
 {
-  operator(operator, inspectors): {
-    operator: operator,
-    inspectors: inspectors,
-  },
-  inspector(options, key='', negate=false): {
+  // inspect mirrors the inspector interface
+  inspect(options, key='', negate=false): {
     settings: {
       key: key,
       negate: negate,

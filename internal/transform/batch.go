@@ -54,11 +54,11 @@ func (transform *Batch) Transform(ctx context.Context, wg *sync.WaitGroup, in, o
 	}
 
 	/*
-		closing applicators in an anonymous goroutine blocked by the WaitGroup from the calling application ensures that all applicators across the entire app close after all data transformation is finished. as of now this is the only way to prevent premature closing of applicators and avoid panics that can occur if applicators running inside one transform attempt to access resources closed by applicators running inside of a different transform.
+		closing processors in an anonymous goroutine blocked by the WaitGroup from the calling application ensures that all processors across the entire app close after all data transformation is finished. as of now this is the only way to prevent premature closing of processors and avoid panics that can occur if processors running inside one transform attempt to access resources closed by processors running inside of a different transform.
 	*/
 	go func() {
 		wg.Wait()
-		//nolint: errcheck // errors are ignored in case closing fails in a single applicator
+		//nolint: errcheck // errors are ignored in case closing fails in a single processor
 		process.CloseBatchers(ctx, batchers...)
 	}()
 

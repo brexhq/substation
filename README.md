@@ -13,7 +13,7 @@ Substation is a data pipeline and transformation toolkit written in Go.
 * Documentation: https://substation.readme.io/docs
 * Recipes: https://substation.readme.io/recipes
 * Announcements: https://github.com/brexhq/substation/discussions/categories/announcements
-* Announcement Blogpost: https://medium.com/brexeng/announcing-substation-188d049d979b
+* Announcement Post: https://medium.com/brexeng/announcing-substation-188d049d979b
 
 ## What is Substation?
 

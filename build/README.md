@@ -1,6 +1,6 @@
 # build
 
-This directory contains build configurations and scripts for managing Substation.
+Contains build configurations and scripts for managing Substation.
 
 ## config
 

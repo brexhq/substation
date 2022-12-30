@@ -48,7 +48,7 @@ func (p _replace) Batch(ctx context.Context, capsules ...config.Capsule) ([]conf
 func (p _replace) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Old == "" {
-		return capsule, fmt.Errorf("process _replace: options %+v: %w", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: replace: options %+v: %w", p.Options, errMissingRequiredOptions)
 	}
 
 	// default to _replace all
@@ -67,7 +67,7 @@ func (p _replace) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 		)
 
 		if err := capsule.Set(p.SetKey, value); err != nil {
-			return capsule, fmt.Errorf("process _replace: %v", err)
+			return capsule, fmt.Errorf("process: replace: %v", err)
 		}
 
 		return capsule, nil
@@ -86,5 +86,5 @@ func (p _replace) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process _replace: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: replace: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }

@@ -57,8 +57,8 @@ type applier interface {
 	Close(context.Context) error
 }
 
-// ApplierFactory returns a configured Applier from a config. This is the recommended method for retrieving ready-to-use Appliers.
-func ApplierFactory(cfg config.Config) (applier, error) {
+// MakeApplier returns a configured applier from a processor configuration.
+func MakeApplier(cfg config.Config) (applier, error) {
 	switch cfg.Type {
 	case "aws_dynamodb":
 		var p _awsDynamodb
@@ -70,6 +70,10 @@ func ApplierFactory(cfg config.Config) (applier, error) {
 		return p, nil
 	case "base64":
 		var p _base64
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "cache":
+		var p _cache
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "capture":
@@ -157,7 +161,7 @@ func ApplierFactory(cfg config.Config) (applier, error) {
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("process: settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }
 
@@ -166,7 +170,7 @@ func MakeAppliers(cfg ...config.Config) ([]applier, error) {
 	var apps []applier
 
 	for _, c := range cfg {
-		a, err := ApplierFactory(c)
+		a, err := MakeApplier(c)
 		if err != nil {
 			return nil, err
 		}
@@ -219,7 +223,10 @@ type batcher interface {
 	Close(context.Context) error
 }
 
-func BatcherFactory(cfg config.Config) (batcher, error) {
+// MakeBatcher returns a configured batcher from a processor configuration.
+//
+//nolint:cyclop // ignored for all factory methods
+func MakeBatcher(cfg config.Config) (batcher, error) {
 	switch cfg.Type {
 	case "aggregate":
 		var p _aggregate
@@ -235,6 +242,10 @@ func BatcherFactory(cfg config.Config) (batcher, error) {
 		return p, nil
 	case "base64":
 		var p _base64
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "cache":
+		var p _cache
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "capture":
@@ -334,16 +345,16 @@ func BatcherFactory(cfg config.Config) (batcher, error) {
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("process: settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }
 
-// MakeBatchers accepts one or more processor configurations and returns populated batchers.
+// MakeBatchers accepts one or more processor configurations and returns configured batchers.
 func MakeBatchers(cfg ...config.Config) ([]batcher, error) {
 	var bats []batcher
 
 	for _, c := range cfg {
-		b, err := BatcherFactory(c)
+		b, err := MakeBatcher(c)
 		if err != nil {
 			return nil, err
 		}
@@ -411,7 +422,7 @@ func newBatch(s *[]config.Capsule) []config.Capsule {
 }
 
 func batchApply(ctx context.Context, capsules []config.Capsule, app applier, c condition.Config) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(c)
+	op, err := condition.MakeOperator(c)
 	if err != nil {
 		return nil, err
 	}

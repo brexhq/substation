@@ -57,12 +57,12 @@ func (p _capture) Batch(ctx context.Context, capsules ...config.Capsule) ([]conf
 func (p _capture) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Expression == "" || p.Options.Type == "" {
-		return capsule, fmt.Errorf("process capture: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: capture: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	re, err := regexp.Compile(p.Options.Expression)
 	if err != nil {
-		return capsule, fmt.Errorf("process capture: %v", err)
+		return capsule, fmt.Errorf("process: capture: %v", err)
 	}
 
 	if p.Options.Count == 0 {
@@ -77,7 +77,7 @@ func (p _capture) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 		case "find":
 			match := re.FindStringSubmatch(result)
 			if err := capsule.Set(p.SetKey, p.getStringMatch(match)); err != nil {
-				return capsule, fmt.Errorf("process capture: %v", err)
+				return capsule, fmt.Errorf("process: capture: %v", err)
 			}
 
 			return capsule, nil
@@ -91,7 +91,7 @@ func (p _capture) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 			}
 
 			if err := capsule.Set(p.SetKey, matches); err != nil {
-				return capsule, fmt.Errorf("process capture: %v", err)
+				return capsule, fmt.Errorf("process: capture: %v", err)
 			}
 
 			return capsule, nil
@@ -117,7 +117,7 @@ func (p _capture) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 				}
 
 				if err := newCapsule.Set(names[i], m); err != nil {
-					return capsule, fmt.Errorf("process capture: %v", err)
+					return capsule, fmt.Errorf("process: capture: %v", err)
 				}
 			}
 
@@ -125,7 +125,7 @@ func (p _capture) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 		}
 	}
 
-	return capsule, fmt.Errorf("process capture: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: capture: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }
 
 func (p _capture) getStringMatch(match []string) string {

@@ -34,11 +34,11 @@ func (p _delete) Batch(ctx context.Context, capsules ...config.Capsule) ([]confi
 func (p _delete) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" {
-		return capsule, fmt.Errorf("process delete: inputkey %s: %v", p.Key, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process: delete: key %s: %v", p.Key, errInvalidDataPattern)
 	}
 
 	if err := capsule.Delete(p.Key); err != nil {
-		return capsule, fmt.Errorf("process delete: %v", err)
+		return capsule, fmt.Errorf("process: delete: %v", err)
 	}
 
 	return capsule, nil

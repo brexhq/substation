@@ -35,7 +35,7 @@ func (p _copy) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 	// JSON processing
 	if p.Key != "" && p.SetKey != "" {
 		if err := capsule.Set(p.SetKey, capsule.Get(p.Key)); err != nil {
-			return capsule, fmt.Errorf("process copy: %v", err)
+			return capsule, fmt.Errorf("process: copy: %v", err)
 		}
 
 		return capsule, nil
@@ -52,11 +52,11 @@ func (p _copy) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 	// to JSON processing
 	if p.Key == "" && p.SetKey != "" {
 		if err := capsule.Set(p.SetKey, capsule.Data()); err != nil {
-			return capsule, fmt.Errorf("process copy: %v", err)
+			return capsule, fmt.Errorf("process: copy: %v", err)
 		}
 
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process copy: inputkey %s outputkey %s: %w", p.Key, p.SetKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: copy: key %s set_key %s: %w", p.Key, p.SetKey, errInvalidDataPattern)
 }

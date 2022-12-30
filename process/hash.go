@@ -67,7 +67,7 @@ func (p _hash) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.
 func (p _hash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Algorithm == "" {
-		return capsule, fmt.Errorf("process hash: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: hash: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -83,11 +83,11 @@ func (p _hash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 			sum := sha256.Sum256([]byte(result))
 			value = fmt.Sprintf("%x", sum)
 		default:
-			return capsule, fmt.Errorf("process hash: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
+			return capsule, fmt.Errorf("process: hash: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
 		}
 
 		if err := capsule.Set(p.SetKey, value); err != nil {
-			return capsule, fmt.Errorf("process hash: %v", err)
+			return capsule, fmt.Errorf("process: hash: %v", err)
 		}
 
 		return capsule, nil
@@ -104,12 +104,12 @@ func (p _hash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 			sum := sha256.Sum256(capsule.Data())
 			value = fmt.Sprintf("%x", sum)
 		default:
-			return capsule, fmt.Errorf("process hash: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
+			return capsule, fmt.Errorf("process: hash: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
 		}
 
 		capsule.SetData([]byte(value))
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process hash: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: hash: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }

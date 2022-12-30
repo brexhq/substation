@@ -76,7 +76,7 @@ func (c _ip) Inspect(ctx context.Context, capsule config.Capsule) (output bool, 
 	case "unspecified":
 		matched = ip.IsUnspecified()
 	default:
-		return false, fmt.Errorf("condition ip: type %s: %v", c.Options.Type, errIPInvalidType)
+		return false, fmt.Errorf("condition: ip: type %s: %v", c.Options.Type, errIPInvalidType)
 	}
 
 	if c.Negate {

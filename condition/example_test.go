@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-func ExampleInspectorFactory() {
+func ExampleMakeInspector() {
 	// data must be gzip
 	cfg := config.Config{
 		Type: "content",
@@ -20,7 +20,7 @@ func ExampleInspectorFactory() {
 	}
 
 	// inspector is retrieved from the factory
-	inspector, err := condition.InspectorFactory(cfg)
+	inspector, err := condition.MakeInspector(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -64,7 +64,7 @@ func ExampleInspectBytes() {
 	}
 
 	// inspector is retrieved from the factory
-	inspector, err := condition.InspectorFactory(cfg)
+	inspector, err := condition.MakeInspector(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -82,7 +82,7 @@ func ExampleInspectBytes() {
 	// Output: true
 }
 
-func ExampleOperatorFactory() {
+func ExampleMakeOperator() {
 	// data must have a length greater than zero and contain
 	// the substring "iz"
 	cfg := []config.Config{
@@ -114,7 +114,7 @@ func ExampleOperatorFactory() {
 	}
 
 	// operators are retrieved from the factory.
-	operator, err := condition.OperatorFactory(opCfg)
+	operator, err := condition.MakeOperator(opCfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -155,7 +155,7 @@ func ExampleOperateBytes() {
 	}
 
 	// operator is retrieved from the factory
-	operator, err := condition.OperatorFactory(opCfg)
+	operator, err := condition.MakeOperator(opCfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -185,7 +185,7 @@ func Example_inspect() {
 	}
 
 	// inspector is retrieved from the factory
-	inspector, err := condition.InspectorFactory(cfg)
+	inspector, err := condition.MakeInspector(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -237,7 +237,7 @@ func Example_operate() {
 	}
 
 	// operator is retrieved from the factory
-	operator, err := condition.OperatorFactory(opCfg)
+	operator, err := condition.MakeOperator(opCfg)
 	if err != nil {
 		// handle err
 		panic(err)

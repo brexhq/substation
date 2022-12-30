@@ -29,7 +29,7 @@ func (c _regExp) String() string {
 func (c _regExp) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	re, err := regexp.Compile(c.Options.Expression)
 	if err != nil {
-		return false, fmt.Errorf("condition regexp: %v", err)
+		return false, fmt.Errorf("condition: regexp: %v", err)
 	}
 
 	var matched bool

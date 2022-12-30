@@ -4,7 +4,7 @@
     settings: {
       key: key,
       negate: negate,
-      options: options.opts,
+      options: if std.objectHas(options, 'opts') then options.opts else null,
     },
     type: options.type,
   },

@@ -28,11 +28,6 @@ type condition struct {
 	Negate bool `json:"negate"`
 }
 
-// inspector is the interface shared by all inspector methods.
-type inspector interface {
-	Inspect(context.Context, config.Capsule) (bool, error)
-}
-
 func toString(i interface{}) string {
 	switch v := i.(type) {
 	case inspector:
@@ -46,32 +41,12 @@ func toString(i interface{}) string {
 	}
 }
 
-// InspectByte is a convenience function for applying an inspector to bytes.
-func InspectBytes(ctx context.Context, data []byte, inspect inspector) (bool, error) {
-	capsule := config.NewCapsule()
-	capsule.SetData(data)
-
-	return inspect.Inspect(ctx, capsule)
+type inspector interface {
+	Inspect(context.Context, config.Capsule) (bool, error)
 }
 
-// MakeInspectors accepts multiple inspector configs and returns populated
-// inspectors. This is a convenience function for generating many inspectors.
-func MakeInspectors(cfg ...config.Config) ([]inspector, error) {
-	var inspectors []inspector
-	for _, c := range cfg {
-		inspector, err := InspectorFactory(c)
-		if err != nil {
-			return nil, err
-		}
-		inspectors = append(inspectors, inspector)
-	}
-
-	return inspectors, nil
-}
-
-// inspectorFactory returns a configured inspector from a config. This is
-// the recommended method for retrieving ready-to-use inspectors.
-func InspectorFactory(cfg config.Config) (inspector, error) {
+// MakeInspector returns a configured inspector from an inspector configuration.
+func MakeInspector(cfg config.Config) (inspector, error) {
 	switch cfg.Type {
 	case "content":
 		var i _content
@@ -114,15 +89,49 @@ func InspectorFactory(cfg config.Config) (inspector, error) {
 	}
 }
 
-// operator is the interface shared by all operator methods. Operators apply
-// a series of inspectors to and verify the state (aka "condition") of data.
+// MakeInspectors accepts one or more inspector configurations and returns configured inspectors.
+func MakeInspectors(cfg ...config.Config) ([]inspector, error) {
+	var inspectors []inspector
+	for _, c := range cfg {
+		inspector, err := MakeInspector(c)
+		if err != nil {
+			return nil, err
+		}
+		inspectors = append(inspectors, inspector)
+	}
+
+	return inspectors, nil
+}
+
+// InspectByte is a convenience function for applying an inspector to bytes.
+func InspectBytes(ctx context.Context, data []byte, inspect inspector) (bool, error) {
+	capsule := config.NewCapsule()
+	capsule.SetData(data)
+
+	return inspect.Inspect(ctx, capsule)
+}
+
 type operator interface {
 	Operate(context.Context, config.Capsule) (bool, error)
 }
 
-func operatorToString(o operator) string {
-	b, _ := json.Marshal(o)
-	return string(b)
+// MakeOperator returns a configured operator from an operator configuration.
+func MakeOperator(cfg Config) (operator, error) {
+	inspectors, err := MakeInspectors(cfg.Inspectors...)
+	if err != nil {
+		return nil, err
+	}
+
+	switch cfg.Operator {
+	case "all":
+		return _all{inspectors}, nil
+	case "any":
+		return _any{inspectors}, nil
+	case "none":
+		return _none{inspectors}, nil
+	default:
+		return _empty{}, nil
+	}
 }
 
 // OperateBytes is a convenience function for applying an operator to bytes.
@@ -133,23 +142,21 @@ func OperateBytes(ctx context.Context, data []byte, op operator) (bool, error) {
 	return op.Operate(ctx, capsule)
 }
 
-// and implements the Operator interface and applies the boolean AND logic
-// to configured inspectors.
-type and struct {
-	inspectors []inspector
+type _all struct {
+	Inspectors []inspector `json:"inspectors"`
 }
 
-func (o *and) String() string {
-	return operatorToString(o)
+func (o _all) String() string {
+	return toString(o)
 }
 
 // Operate returns true if all inspectors return true, otherwise it returns false.
-func (o and) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
-	if len(o.inspectors) == 0 {
+func (o _all) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
+	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("condition operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
 	}
 
-	for _, i := range o.inspectors {
+	for _, i := range o.Inspectors {
 		ok, err := i.Inspect(ctx, capsule)
 		if err != nil {
 			return false, err
@@ -165,19 +172,21 @@ func (o and) Operate(ctx context.Context, capsule config.Capsule) (bool, error) 
 	return true, nil
 }
 
-// or implements the Operator interface and applies the boolean or logic to
-// configured inspectors.
-type or struct {
-	inspectors []inspector
+type _any struct {
+	Inspectors []inspector `json:"inspectors"`
+}
+
+func (o _any) String() string {
+	return toString(o)
 }
 
 // Operate returns true if any inspectors return true, otherwise it returns false.
-func (o or) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
-	if len(o.inspectors) == 0 {
+func (o _any) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
+	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("condition operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
 	}
 
-	for _, i := range o.inspectors {
+	for _, i := range o.Inspectors {
 		ok, err := i.Inspect(ctx, capsule)
 		if err != nil {
 			return false, err
@@ -193,47 +202,22 @@ func (o or) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	return false, nil
 }
 
-// nand implements the Operator interface and applies the boolean nand logic
-// to configured inspectors.
-type nand struct {
-	inspectors []inspector
+// none implements the operator interface.
+type _none struct {
+	Inspectors []inspector `json:"inspectors"`
+}
+
+func (o _none) String() string {
+	return toString(o)
 }
 
 // Operate returns true if all inspectors return false, otherwise it returns true.
-func (o nand) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
-	if len(o.inspectors) == 0 {
+func (o _none) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
+	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("condition operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
 	}
 
-	for _, i := range o.inspectors {
-		ok, err := i.Inspect(ctx, capsule)
-		if err != nil {
-			return false, err
-		}
-
-		// return true if any check fails
-		if !ok {
-			return true, nil
-		}
-	}
-
-	// return false if all checks pass
-	return false, nil
-}
-
-// nor implements the Operator interface and applies the boolean nor logic
-// to configured inspectors.
-type nor struct {
-	inspectors []inspector
-}
-
-// Operate returns true if any inspectors return false, otherwise it returns true.
-func (o nor) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
-	if len(o.inspectors) == 0 {
-		return false, fmt.Errorf("condition operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
-	}
-
-	for _, i := range o.inspectors {
+	for _, i := range o.Inspectors {
 		ok, err := i.Inspect(ctx, capsule)
 		if err != nil {
 			return false, err
@@ -249,37 +233,18 @@ func (o nor) Operate(ctx context.Context, capsule config.Capsule) (bool, error) 
 	return true, nil
 }
 
-// empty implements the Operator interface.
-type empty struct{}
+type _empty struct{}
 
-// empty always returns true. This is the default operator returned by  OperatorFactory.
-func (o empty) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
+func (o _empty) String() string {
+	return toString(o)
+}
+
+// Operate always returns true.
+func (o _empty) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	return true, nil
 }
 
-// OperatorFactory returns a configured Operator from a config. This is
-// the recommended method for retrieving ready-to-use Operators.
-func OperatorFactory(cfg Config) (operator, error) {
-	inspectors, err := MakeInspectors(cfg.Inspectors...)
-	if err != nil {
-		return nil, err
-	}
-
-	switch cfg.Operator {
-	case "and":
-		return and{inspectors}, nil
-	case "nand":
-		return nand{inspectors}, nil
-	case "or":
-		return or{inspectors}, nil
-	case "nor":
-		return nor{inspectors}, nil
-	default:
-		return empty{}, nil
-	}
-}
-
-// Config is used with OperatorFactory to produce new operators.
+// Config is used with MakeOperator to produce new operators.
 type Config struct {
 	Operator   string          `json:"operator"`
 	Inspectors []config.Config `json:"inspectors"`

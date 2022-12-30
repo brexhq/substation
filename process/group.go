@@ -44,7 +44,7 @@ func (p _group) Batch(ctx context.Context, capsules ...config.Capsule) ([]config
 func (p _group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON arrays, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process group: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: group: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	if len(p.Options.Keys) == 0 {
@@ -69,7 +69,7 @@ func (p _group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsu
 
 		// [["foo",123],["bar",456]]
 		if err := capsule.Set(p.SetKey, value); err != nil {
-			return capsule, fmt.Errorf("process group: %v", err)
+			return capsule, fmt.Errorf("process: group: %v", err)
 		}
 
 		return capsule, nil
@@ -90,7 +90,7 @@ func (p _group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsu
 		for j, r := range res.Array() {
 			cache[j], err = json.Set(cache[j], p.Options.Keys[i], r)
 			if err != nil {
-				return capsule, fmt.Errorf("process group: %v", err)
+				return capsule, fmt.Errorf("process: group: %v", err)
 			}
 		}
 	}
@@ -101,14 +101,14 @@ func (p _group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsu
 	for i := 0; i < len(cache); i++ {
 		value, err = json.Set(value, fmt.Sprintf("%d", i), cache[i])
 		if err != nil {
-			return capsule, fmt.Errorf("process group: %v", err)
+			return capsule, fmt.Errorf("process: group: %v", err)
 		}
 	}
 
 	// JSON arrays must be set using SetRaw to preserve structure
 	// [{"name":"foo","size":123},{"name":"bar","size":456}]
 	if err := capsule.SetRaw(p.SetKey, value); err != nil {
-		return capsule, fmt.Errorf("process group: %v", err)
+		return capsule, fmt.Errorf("process: group: %v", err)
 	}
 
 	return capsule, nil

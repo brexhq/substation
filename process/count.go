@@ -27,7 +27,7 @@ func (p _count) String() string {
 func (p _count) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	newCapsule := config.NewCapsule()
 	if err := newCapsule.Set("count", len(capsules)); err != nil {
-		return capsules, fmt.Errorf("process count: : %v", err)
+		return capsules, fmt.Errorf("process: count: : %v", err)
 	}
 
 	newCapsules := make([]config.Capsule, 0, 1)

@@ -54,13 +54,13 @@ func (p _pipeline) Batch(ctx context.Context, capsules ...config.Capsule) ([]con
 func (p _pipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	appliers, err := MakeAppliers(p.Options.Processors...)
 	if err != nil {
-		return capsule, fmt.Errorf("process pipeline: processors %+v: %v", p.Options.Processors, err)
+		return capsule, fmt.Errorf("process: pipeline: processors %+v: %v", p.Options.Processors, err)
 	}
 
 	if p.Key != "" && p.SetKey != "" {
 		result := capsule.Get(p.Key)
 		if result.IsArray() {
-			return capsule, fmt.Errorf("process pipeline: inputkey %s: %v", p.Key, errPipelineArrayInput)
+			return capsule, fmt.Errorf("process: pipeline: key %s: %v", p.Key, errPipelineArrayInput)
 		}
 
 		newCapsule := config.NewCapsule()
@@ -68,11 +68,11 @@ func (p _pipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Ca
 
 		newCapsule, err = Apply(ctx, newCapsule, appliers...)
 		if err != nil {
-			return capsule, fmt.Errorf("process pipeline: %v", err)
+			return capsule, fmt.Errorf("process: pipeline: %v", err)
 		}
 
 		if err := capsule.Set(p.SetKey, newCapsule.Data()); err != nil {
-			return capsule, fmt.Errorf("process pipeline: %v", err)
+			return capsule, fmt.Errorf("process: pipeline: %v", err)
 		}
 
 		return capsule, nil
@@ -82,11 +82,11 @@ func (p _pipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Ca
 	if p.Key == "" && p.SetKey == "" {
 		tmp, err := Apply(ctx, capsule, appliers...)
 		if err != nil {
-			return capsule, fmt.Errorf("process pipeline: %v", err)
+			return capsule, fmt.Errorf("process: pipeline: %v", err)
 		}
 
 		return tmp, nil
 	}
 
-	return capsule, fmt.Errorf("process pipeline: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: pipeline: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }

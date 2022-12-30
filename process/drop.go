@@ -28,16 +28,16 @@ func (p _drop) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p _drop) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
+	op, err := condition.MakeOperator(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process drop: %v", err)
+		return nil, fmt.Errorf("process: drop: %v", err)
 	}
 
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
-			return nil, fmt.Errorf("process drop: %v", err)
+			return nil, fmt.Errorf("process: drop: %v", err)
 		}
 
 		if !ok {

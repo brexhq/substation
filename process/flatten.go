@@ -42,7 +42,7 @@ func (p _flatten) Batch(ctx context.Context, capsules ...config.Capsule) ([]conf
 func (p _flatten) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process flatten: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process: flatten: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	var value interface{}
@@ -53,7 +53,7 @@ func (p _flatten) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 	}
 
 	if err := capsule.Set(p.SetKey, value); err != nil {
-		return capsule, fmt.Errorf("process flatten: %v", err)
+		return capsule, fmt.Errorf("process: flatten: %v", err)
 	}
 
 	return capsule, nil

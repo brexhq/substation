@@ -7,7 +7,7 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-// join processes data by concatenating values in an object array.
+// join processes data by joinenating values in an object array.
 //
 // This processor supports the object handling pattern.
 type _join struct {
@@ -40,12 +40,12 @@ func (p _join) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.
 func (p _join) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Separator == "" {
-		return capsule, fmt.Errorf("process concat: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: join: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process concat: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process: join: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	// data is processed by retrieving and iterating the
@@ -53,9 +53,9 @@ func (p _join) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 	// each one with the separator string
 	//
 	// root:
-	// 	{"concat":["foo","bar","baz"]}
-	// concatenated:
-	// 	{"concat:"foo.bar.baz"}
+	// 	{"join":["foo","bar","baz"]}
+	// joinenated:
+	// 	{"join:"foo.bar.baz"}
 	var value string
 	result := capsule.Get(p.Key)
 	for i, res := range result.Array() {
@@ -66,7 +66,7 @@ func (p _join) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 	}
 
 	if err := capsule.Set(p.SetKey, value); err != nil {
-		return capsule, fmt.Errorf("process dynamodb: %v", err)
+		return capsule, fmt.Errorf("process: join: %v", err)
 	}
 
 	return capsule, nil

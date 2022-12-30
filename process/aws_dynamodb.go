@@ -80,12 +80,12 @@ func (p _awsDynamodb) Batch(ctx context.Context, capsules ...config.Capsule) ([]
 func (p _awsDynamodb) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
-		return capsule, fmt.Errorf("process dynamodb: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: dynamodb: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process dynamodb: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process: dynamodb: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	// lazy load API
@@ -95,13 +95,13 @@ func (p _awsDynamodb) Apply(ctx context.Context, capsule config.Capsule) (config
 
 	result := capsule.Get(p.Key)
 	if !result.IsObject() {
-		return capsule, fmt.Errorf("process dynamodb: inputkey %s: %v", p.Key, errAWSDynamodbInputNotAnObject)
+		return capsule, fmt.Errorf("process: dynamodb: key %s: %v", p.Key, errAWSDynamodbInputNotAnObject)
 	}
 
 	// PK is a required field
 	pk := json.Get([]byte(result.Raw), "PK").String()
 	if pk == "" {
-		return capsule, fmt.Errorf("process dynamodb: inputkey %s: %v", p.Key, errAWSDynamodbInputMissingPK)
+		return capsule, fmt.Errorf("process: dynamodb: key %s: %v", p.Key, errAWSDynamodbInputMissingPK)
 	}
 
 	// SK is an optional field
@@ -109,7 +109,7 @@ func (p _awsDynamodb) Apply(ctx context.Context, capsule config.Capsule) (config
 
 	value, err := p.dynamodb(ctx, pk, sk)
 	if err != nil {
-		return capsule, fmt.Errorf("process dynamodb: %v", err)
+		return capsule, fmt.Errorf("process: dynamodb: %v", err)
 	}
 
 	// no match
@@ -118,7 +118,7 @@ func (p _awsDynamodb) Apply(ctx context.Context, capsule config.Capsule) (config
 	}
 
 	if err := capsule.Set(p.SetKey, value); err != nil {
-		return capsule, fmt.Errorf("process dynamodb: %v", err)
+		return capsule, fmt.Errorf("process: dynamodb: %v", err)
 	}
 
 	return capsule, nil
@@ -134,7 +134,7 @@ func (p _awsDynamodb) dynamodb(ctx context.Context, pk, sk string) ([]map[string
 		p.Options.ScanIndexForward,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("process dynamodb: %v", err)
+		return nil, fmt.Errorf("process: dynamodb: %v", err)
 	}
 
 	var items []map[string]interface{}
@@ -142,7 +142,7 @@ func (p _awsDynamodb) dynamodb(ctx context.Context, pk, sk string) ([]map[string
 		var item map[string]interface{}
 		err = dynamodbattribute.UnmarshalMap(i, &item)
 		if err != nil {
-			return nil, fmt.Errorf("process dynamodb: %v", err)
+			return nil, fmt.Errorf("process: dynamodb: %v", err)
 		}
 
 		items = append(items, item)

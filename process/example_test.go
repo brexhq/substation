@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/process"
 )
 
-func ExampleApplierFactory() {
+func ExampleMakeApplier() {
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -19,7 +19,7 @@ func ExampleApplierFactory() {
 	}
 
 	// applier is retrieved from the factory
-	applier, err := process.ApplierFactory(cfg)
+	applier, err := process.MakeApplier(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -63,7 +63,7 @@ func ExampleApplyBytes() {
 	}
 
 	// applier is retrieved from the factory
-	applier, err := process.ApplierFactory(cfg)
+	applier, err := process.MakeApplier(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -81,7 +81,7 @@ func ExampleApplyBytes() {
 	// Output: {"foo":"fizz","bar":"fizz"}
 }
 
-func ExampleBatcherFactory() {
+func ExampleMakeBatcher() {
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -92,7 +92,7 @@ func ExampleBatcherFactory() {
 	}
 
 	// one or more appliers are created
-	batcher, err := process.BatcherFactory(cfg)
+	batcher, err := process.MakeBatcher(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -136,7 +136,7 @@ func ExampleBatchBytes() {
 	}
 
 	// batcher is retrieved from the factory
-	batcher, err := process.BatcherFactory(cfg)
+	batcher, err := process.MakeBatcher(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -167,7 +167,7 @@ func Example_applier() {
 	}
 
 	// applier is retrieved from the factory
-	applier, err := process.ApplierFactory(cfg)
+	applier, err := process.MakeApplier(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -199,7 +199,7 @@ func Example_batcher() {
 	}
 
 	// batcher is retrieved from the factory
-	batcher, err := process.BatcherFactory(cfg)
+	batcher, err := process.MakeBatcher(cfg)
 	if err != nil {
 		// handle err
 		panic(err)

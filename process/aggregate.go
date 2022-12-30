@@ -23,11 +23,11 @@ const errAggregateSizeLimit = errors.Error("data exceeded size limit")
 //
 // Multiple data aggregation patterns are supported, including:
 //
-//- aggregate data using a separator value
+// - aggregate data using a separator value
 //
-//- aggregate data into an object array
+// - aggregate data into an object array
 //
-//- aggregate nested objects into object arrays based on unique keys
+// - aggregate nested objects into object arrays based on unique keys
 //
 // This processor supports the data and object handling patterns.
 type _aggregate struct {
@@ -87,16 +87,16 @@ func (p _aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 		p.Options.MaxSize = 10000
 	}
 
-	op, err := condition.OperatorFactory(p.Condition)
+	op, err := condition.MakeOperator(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process aggregate: %v", err)
+		return nil, fmt.Errorf("process: aggregate: %v", err)
 	}
 
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
-			return nil, fmt.Errorf("process aggregate: %v", err)
+			return nil, fmt.Errorf("process: aggregate: %v", err)
 		}
 
 		if !ok {
@@ -108,7 +108,7 @@ func (p _aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 		// fit within it
 		length := len(capsule.Data())
 		if length > p.Options.MaxSize {
-			return nil, fmt.Errorf("process aggregate: size %d data length %d: %v", p.Options.MaxSize, length, errAggregateSizeLimit)
+			return nil, fmt.Errorf("process: aggregate: size %d data length %d: %v", p.Options.MaxSize, length, errAggregateSizeLimit)
 		}
 
 		var aggregateKey string
@@ -124,7 +124,7 @@ func (p _aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 
 		ok, err = buffer[aggregateKey].Add(capsule.Data())
 		if err != nil {
-			return nil, fmt.Errorf("process aggregate: %v", err)
+			return nil, fmt.Errorf("process: aggregate: %v", err)
 		}
 
 		// data was successfully added to the buffer, every item after
@@ -142,7 +142,7 @@ func (p _aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 
 				value, err = json.Set(value, p.SetKey, element)
 				if err != nil {
-					return nil, fmt.Errorf("process aggregate: %v", err)
+					return nil, fmt.Errorf("process: aggregate: %v", err)
 				}
 			}
 
@@ -160,7 +160,7 @@ func (p _aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 		buffer[aggregateKey].Reset()
 		_, err = buffer[aggregateKey].Add(capsule.Data())
 		if err != nil {
-			return nil, fmt.Errorf("process aggregate: %v", err)
+			return nil, fmt.Errorf("process: aggregate: %v", err)
 		}
 	}
 
@@ -180,7 +180,7 @@ func (p _aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 
 				value, err = json.Set(value, p.SetKey, element)
 				if err != nil {
-					return nil, fmt.Errorf("process aggregate: %v", err)
+					return nil, fmt.Errorf("process: aggregate: %v", err)
 				}
 			}
 

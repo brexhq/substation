@@ -82,12 +82,12 @@ func (p _prettyPrint) Close(context.Context) error {
 func (p _prettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return nil, fmt.Errorf("process pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return nil, fmt.Errorf("process: pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
-	op, err := condition.OperatorFactory(p.Condition)
+	op, err := condition.MakeOperator(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process pretty_print: %v", err)
+		return nil, fmt.Errorf("process: pretty_print: %v", err)
 	}
 
 	var count int
@@ -97,7 +97,7 @@ func (p _prettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) ([]
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
-			return nil, fmt.Errorf("process pretty_print: %v", err)
+			return nil, fmt.Errorf("process: pretty_print: %v", err)
 		}
 
 		if !ok {
@@ -126,7 +126,7 @@ func (p _prettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) ([]
 				if count == 0 {
 					var buf bytes.Buffer
 					if err := gojson.Compact(&buf, stack); err != nil {
-						return nil, fmt.Errorf("process pretty_print: gojson compact: %v", err)
+						return nil, fmt.Errorf("process: pretty_print: gojson compact: %v", err)
 					}
 
 					if json.Valid(buf.Bytes()) {
@@ -140,12 +140,12 @@ func (p _prettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) ([]
 			}
 
 		default:
-			return nil, fmt.Errorf("process pretty_print: direction %s: %v", p.Options.Direction, errInvalidDirection)
+			return nil, fmt.Errorf("process: pretty_print: direction %s: %v", p.Options.Direction, errInvalidDirection)
 		}
 	}
 
 	if count != 0 {
-		return nil, fmt.Errorf("process pretty_print: %d characters remain: %v", count, errPrettyPrintIncompleteJSON)
+		return nil, fmt.Errorf("process: pretty_print: %d characters remain: %v", count, errPrettyPrintIncompleteJSON)
 	}
 
 	return newCapsules, nil
@@ -163,7 +163,7 @@ func (p _prettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) ([]
 func (p _prettyPrint) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return capsule, fmt.Errorf("process pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	switch p.Options.Direction {
@@ -171,6 +171,6 @@ func (p _prettyPrint) Apply(ctx context.Context, capsule config.Capsule) (config
 		capsule.SetData([]byte(capsule.Get(ppModifier).String()))
 		return capsule, nil
 	default:
-		return capsule, fmt.Errorf("process pretty_print: direction %s: %v", p.Options.Direction, errInvalidDirection)
+		return capsule, fmt.Errorf("process: pretty_print: direction %s: %v", p.Options.Direction, errInvalidDirection)
 	}
 }

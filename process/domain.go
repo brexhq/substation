@@ -57,7 +57,7 @@ func (p _domain) Batch(ctx context.Context, capsules ...config.Capsule) ([]confi
 func (p _domain) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
-		return capsule, fmt.Errorf("process domain: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: domain: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -66,7 +66,7 @@ func (p _domain) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 		value, _ := p.domain(result)
 
 		if err := capsule.Set(p.SetKey, value); err != nil {
-			return capsule, fmt.Errorf("process domain: %v", err)
+			return capsule, fmt.Errorf("process: domain: %v", err)
 		}
 
 		return capsule, nil
@@ -80,7 +80,7 @@ func (p _domain) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process domain: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: domain: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }
 
 func (p _domain) domain(s string) (string, error) {
@@ -91,13 +91,13 @@ func (p _domain) domain(s string) (string, error) {
 	case "domain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("process domain %s: %v", s, err)
+			return "", fmt.Errorf("process: domain %s: %v", s, err)
 		}
 		return domain, nil
 	case "subdomain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("process domain: %s: %v", s, err)
+			return "", fmt.Errorf("process: domain: %s: %v", s, err)
 		}
 
 		// subdomain is the input string minus the domain and a leading dot:
@@ -106,7 +106,7 @@ func (p _domain) domain(s string) (string, error) {
 		// subdomain == "foo" ("foo.bar.com" minus ".bar.com")
 		subdomain := strings.Replace(s, "."+domain, "", 1)
 		if subdomain == domain {
-			return "", fmt.Errorf("process domain %s: %v", s, errDomainNoSubdomain)
+			return "", fmt.Errorf("process: domain %s: %v", s, errDomainNoSubdomain)
 		}
 		return subdomain, nil
 	default:

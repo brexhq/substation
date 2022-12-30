@@ -63,7 +63,7 @@ func (c _strings) Inspect(ctx context.Context, capsule config.Capsule) (output b
 	case "ends_with":
 		matched = strings.HasSuffix(check, c.Options.Expression)
 	default:
-		return false, fmt.Errorf("condition strings: Type %s: %v", c.Options.Type, errStringsInvalidType)
+		return false, fmt.Errorf("condition: strings: type %s: %v", c.Options.Type, errStringsInvalidType)
 	}
 
 	if c.Negate {

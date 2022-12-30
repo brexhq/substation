@@ -1,13 +1,22 @@
 {
+  helpers: {
+    // dynamically flattens processor configurations
+    flatten_processors(processors): std.flattenArrays([
+      if std.objectHas(p, 'processors') then p.processors
+      else if std.objectHas(p, 'processor') then [p.processor]
+      else [p]
+      for p in processors
+    ]),
+  },
   // apply mirrors the applier interface
   apply(options,
-          key='',
-          set_key='',
-          condition={},
-          ignore_close=false,
-          ignore_errors=false): {
+        key='',
+        set_key='',
+        condition={},
+        ignore_close=false,
+        ignore_errors=false): {
     settings: {
-      options: options.opts,
+      options: if std.objectHas(options, 'opts') then options.opts else null,
       key: key,
       set_key: set_key,
       condition: condition,
@@ -29,9 +38,9 @@
     },
   },
   aws_dynamodb(table,
-           key_condition_expression,
-           limit=1,
-           scan_index_forward=false): {
+               key_condition_expression,
+               limit=1,
+               scan_index_forward=false): {
     type: 'aws_dynamodb',
     opts: {
       table: table,
@@ -42,7 +51,9 @@
   },
   aws_lambda(function_name): {
     type: 'aws_lambda',
-    opts: { function_name: function_name },
+    opts: {
+      function_name: function_name,
+    },
   },
   base64(direction): {
     type: 'base64',
@@ -74,11 +85,9 @@
   },
   copy: {
     type: 'copy',
-    opts: {},
   },
   delete: {
     type: 'delete',
-    opts: {},
   },
   dns(type,
       timeout=1000): {
@@ -96,11 +105,9 @@
   },
   drop: {
     type: 'drop',
-    opts: {},
   },
   expand: {
     type: 'expand',
-    opts: {},
   },
   flatten(deep=true): {
     type: 'flatten',
@@ -130,7 +137,7 @@
   },
   ip_database(options): {
     type: 'ip_database',
-    options: options,
+    opts: options,
   },
   join(separator): {
     type: 'join',

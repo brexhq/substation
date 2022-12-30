@@ -36,16 +36,16 @@ func (p _split) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p _split) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
+	op, err := condition.MakeOperator(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process split: %v", err)
+		return nil, fmt.Errorf("process: split: %v", err)
 	}
 
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
-			return nil, fmt.Errorf("process split: %v", err)
+			return nil, fmt.Errorf("process: split: %v", err)
 		}
 
 		if !ok {
@@ -57,7 +57,7 @@ func (p _split) Batch(ctx context.Context, capsules ...config.Capsule) ([]config
 		if p.Key != "" && p.SetKey != "" {
 			pcap, err := p.Apply(ctx, capsule)
 			if err != nil {
-				return nil, fmt.Errorf("process split: %v", err)
+				return nil, fmt.Errorf("process: split: %v", err)
 			}
 			newCapsules = append(newCapsules, pcap)
 
@@ -75,7 +75,7 @@ func (p _split) Batch(ctx context.Context, capsules ...config.Capsule) ([]config
 			continue
 		}
 
-		return nil, fmt.Errorf("process split: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return nil, fmt.Errorf("process: split: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	return newCapsules, nil
@@ -85,19 +85,19 @@ func (p _split) Batch(ctx context.Context, capsules ...config.Capsule) ([]config
 func (p _split) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Separator == "" {
-		return capsule, fmt.Errorf("process split: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: split: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" || p.SetKey == "" {
-		return capsule, fmt.Errorf("process split: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process: split: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	result := capsule.Get(p.Key).String()
 	value := strings.Split(result, p.Options.Separator)
 
 	if err := capsule.Set(p.SetKey, value); err != nil {
-		return capsule, fmt.Errorf("process split: %v", err)
+		return capsule, fmt.Errorf("process: split: %v", err)
 	}
 
 	return capsule, nil

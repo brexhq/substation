@@ -55,12 +55,12 @@ func (p _awsLambda) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 func (p _awsLambda) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.FunctionName == "" {
-		return capsule, fmt.Errorf("process lambda: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: lambda: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process lambda: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process: lambda: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	// lazy load API
@@ -70,17 +70,17 @@ func (p _awsLambda) Apply(ctx context.Context, capsule config.Capsule) (config.C
 
 	result := capsule.Get(p.Key)
 	if !result.IsObject() {
-		return capsule, fmt.Errorf("process lambda: inputkey %s: %v", p.Key, errAWSLambdaInputNotAnObject)
+		return capsule, fmt.Errorf("process: lambda: key %s: %v", p.Key, errAWSLambdaInputNotAnObject)
 	}
 
 	resp, err := lambdaAPI.Invoke(ctx, p.Options.FunctionName, []byte(result.Raw))
 	if err != nil {
-		return capsule, fmt.Errorf("process lambda: %v", err)
+		return capsule, fmt.Errorf("process: lambda: %v", err)
 	}
 
 	if resp.FunctionError != nil && !p.IgnoreErrors {
 		resErr := json.Get(resp.Payload, "errorMessage").String()
-		return capsule, fmt.Errorf("process lambda: %v", resErr)
+		return capsule, fmt.Errorf("process: lambda: %v", resErr)
 	}
 
 	if resp.FunctionError != nil {
@@ -88,7 +88,7 @@ func (p _awsLambda) Apply(ctx context.Context, capsule config.Capsule) (config.C
 	}
 
 	if err := capsule.Set(p.SetKey, resp.Payload); err != nil {
-		return capsule, fmt.Errorf("process lambda: %v", err)
+		return capsule, fmt.Errorf("process: lambda: %v", err)
 	}
 
 	return capsule, nil

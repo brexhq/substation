@@ -40,11 +40,11 @@ func (p _insert) Batch(ctx context.Context, capsules ...config.Capsule) ([]confi
 func (p _insert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.SetKey == "" {
-		return capsule, fmt.Errorf("process insert: outputkey %s: %v", p.SetKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process: insert: set_key %s: %v", p.SetKey, errInvalidDataPattern)
 	}
 
 	if err := capsule.Set(p.SetKey, p.Options.Value); err != nil {
-		return capsule, fmt.Errorf("process insert: %v", err)
+		return capsule, fmt.Errorf("process: insert: %v", err)
 	}
 
 	return capsule, nil

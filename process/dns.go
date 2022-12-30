@@ -59,7 +59,7 @@ func (p _dns) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.C
 func (p _dns) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
-		return capsule, fmt.Errorf("process dns: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: dns: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	var timeout time.Duration
@@ -81,33 +81,33 @@ func (p _dns) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 		case "forward_lookup":
 			addrs, err := dnsResolver.LookupHost(resolverCtx, res)
 			if err != nil && p.IgnoreErrors {
-				return capsule, fmt.Errorf("process dns: %v", err)
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			if err := capsule.Set(p.SetKey, addrs); err != nil {
-				return capsule, fmt.Errorf("process dns: %v", err)
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			return capsule, nil
 		case "reverse_lookup":
 			names, err := dnsResolver.LookupAddr(resolverCtx, res)
 			if err != nil && p.IgnoreErrors {
-				return capsule, fmt.Errorf("process dns: %v", err)
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			if err := capsule.Set(p.SetKey, names); err != nil {
-				return capsule, fmt.Errorf("process dns: %v", err)
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			return capsule, nil
 		case "query_txt":
 			records, err := dnsResolver.LookupTXT(resolverCtx, res)
 			if err != nil && p.IgnoreErrors {
-				return capsule, fmt.Errorf("process dns: %v", err)
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			if err := capsule.Set(p.SetKey, records); err != nil {
-				return capsule, fmt.Errorf("process dns: %v", err)
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			return capsule, nil
@@ -124,7 +124,7 @@ func (p _dns) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 		case "forward_lookup":
 			addrs, err := dnsResolver.LookupHost(resolverCtx, res)
 			if err != nil && p.IgnoreErrors {
-				return capsule, fmt.Errorf("process dns: %v", err)
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			// can only return one value, which is the first address
@@ -134,7 +134,7 @@ func (p _dns) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 		case "reverse_lookup":
 			names, err := dnsResolver.LookupAddr(resolverCtx, res)
 			if err != nil && p.IgnoreErrors {
-				return capsule, fmt.Errorf("process dns: %v", err)
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			// can only return one value, which is the first name
@@ -143,7 +143,7 @@ func (p _dns) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 		case "query_txt":
 			records, err := dnsResolver.LookupTXT(resolverCtx, res)
 			if err != nil && p.IgnoreErrors {
-				return capsule, fmt.Errorf("process dns: %v", err)
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			// can only return one value, which is the first record
@@ -154,5 +154,5 @@ func (p _dns) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 		}
 	}
 
-	return capsule, fmt.Errorf("process dns: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: dns: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }

@@ -93,7 +93,7 @@ func (c _length) match(length int) (bool, error) {
 			matched = true
 		}
 	default:
-		return false, fmt.Errorf("condition length: Type %s: %v", c.Options.Type, errLengthInvalidType)
+		return false, fmt.Errorf("condition: length: type %s: %v", c.Options.Type, errLengthInvalidType)
 	}
 
 	if c.Negate {

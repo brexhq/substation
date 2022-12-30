@@ -45,7 +45,7 @@ func (p _forEach) Batch(ctx context.Context, capsules ...config.Capsule) ([]conf
 func (p _forEach) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process for_each: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process: for_each: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	// configured processor is converted to a JSON object so that the
@@ -71,9 +71,9 @@ func (p _forEach) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 		return capsule, err
 	}
 
-	applier, err := ApplierFactory(processor)
+	applier, err := MakeApplier(processor)
 	if err != nil {
-		return capsule, fmt.Errorf("process for_each: %v", err)
+		return capsule, fmt.Errorf("process: for_each: %v", err)
 	}
 
 	result := capsule.Get(p.Key)
@@ -84,17 +84,17 @@ func (p _forEach) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 	for _, res := range result.Array() {
 		tmpCap := config.NewCapsule()
 		if err := tmpCap.Set(processor.Type, res); err != nil {
-			return capsule, fmt.Errorf("process for_each: %v", err)
+			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}
 
 		tmpCap, err = applier.Apply(ctx, tmpCap)
 		if err != nil {
-			return capsule, fmt.Errorf("process for_each: %v", err)
+			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}
 
 		value := tmpCap.Get(processor.Type)
 		if err := capsule.Set(p.SetKey, value); err != nil {
-			return capsule, fmt.Errorf("process for_each: %v", err)
+			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}
 	}
 

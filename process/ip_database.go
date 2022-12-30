@@ -61,29 +61,29 @@ func (p _ipDatabase) Batch(ctx context.Context, capsules ...config.Capsule) ([]c
 func (p _ipDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process ip_database: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process: ip_database: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	db, err := ipdb.Factory(p.Options)
 	if err != nil {
-		return capsule, fmt.Errorf("process ip_database: %v", err)
+		return capsule, fmt.Errorf("process: ip_database: %v", err)
 	}
 
 	// lazy load the database
 	if !db.IsEnabled() {
 		if err := db.Open(ctx); err != nil {
-			return capsule, fmt.Errorf("process ip_database: %v", err)
+			return capsule, fmt.Errorf("process: ip_database: %v", err)
 		}
 	}
 
 	res := capsule.Get(p.Key).String()
 	record, err := db.Get(res)
 	if err != nil {
-		return capsule, fmt.Errorf("process ip_database: %v", err)
+		return capsule, fmt.Errorf("process: ip_database: %v", err)
 	}
 
 	if err := capsule.Set(p.SetKey, record); err != nil {
-		return capsule, fmt.Errorf("process ip_database: %v", err)
+		return capsule, fmt.Errorf("process: ip_database: %v", err)
 	}
 
 	return capsule, nil

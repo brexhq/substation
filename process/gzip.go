@@ -36,12 +36,12 @@ func (p _gzip) from(data []byte) ([]byte, error) {
 	r := bytes.NewReader(data)
 	gz, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, fmt.Errorf("process _gzip: %v", err)
+		return nil, fmt.Errorf("process: gzip: %v", err)
 	}
 
 	output, err := io.ReadAll(gz)
 	if err != nil {
-		return nil, fmt.Errorf("process _gzip: %v", err)
+		return nil, fmt.Errorf("process: gzip: %v", err)
 	}
 
 	return output, nil
@@ -51,10 +51,10 @@ func (p _gzip) to(data []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	if _, err := gz.Write(data); err != nil {
-		return nil, fmt.Errorf("process _gzip: %v", err)
+		return nil, fmt.Errorf("process: gzip: %v", err)
 	}
 	if err := gz.Close(); err != nil {
-		return nil, fmt.Errorf("process _gzip: %v", err)
+		return nil, fmt.Errorf("process: gzip: %v", err)
 	}
 
 	return buf.Bytes(), nil
@@ -75,7 +75,7 @@ func (p _gzip) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.
 func (p _gzip) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
-		return capsule, fmt.Errorf("process _gzip: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: gzip: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	var value []byte
@@ -83,19 +83,19 @@ func (p _gzip) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 	case "from":
 		from, err := p.from(capsule.Data())
 		if err != nil {
-			return capsule, fmt.Errorf("process _gzip: %v", err)
+			return capsule, fmt.Errorf("process: gzip: %v", err)
 		}
 
 		value = from
 	case "to":
 		to, err := p.to(capsule.Data())
 		if err != nil {
-			return capsule, fmt.Errorf("process _gzip: %v", err)
+			return capsule, fmt.Errorf("process: gzip: %v", err)
 		}
 
 		value = to
 	default:
-		return capsule, fmt.Errorf("process _gzip: direction %s: %v", p.Options.Direction, errInvalidDirection)
+		return capsule, fmt.Errorf("process: gzip: direction %s: %v", p.Options.Direction, errInvalidDirection)
 	}
 
 	capsule.SetData(value)

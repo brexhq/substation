@@ -72,7 +72,7 @@ func (p _time) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.
 func (p _time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Format == "" || p.Options.SetFormat == "" {
-		return capsule, fmt.Errorf("process _time: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: time: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// "now" processing, supports json and data
@@ -91,7 +91,7 @@ func (p _time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 
 		if p.SetKey != "" {
 			if err := capsule.Set(p.SetKey, value); err != nil {
-				return capsule, fmt.Errorf("process _time: %v", err)
+				return capsule, fmt.Errorf("process: time: %v", err)
 			}
 
 			return capsule, nil
@@ -118,11 +118,11 @@ func (p _time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 
 		value, err := p._time(result)
 		if err != nil {
-			return capsule, fmt.Errorf("process _time: %v", err)
+			return capsule, fmt.Errorf("process: time: %v", err)
 		}
 
 		if err := capsule.Set(p.SetKey, value); err != nil {
-			return capsule, fmt.Errorf("process _time: %v", err)
+			return capsule, fmt.Errorf("process: time: %v", err)
 		}
 
 		return capsule, nil
@@ -132,13 +132,13 @@ func (p _time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 	if p.Key == "" && p.SetKey == "" {
 		tmp, err := json.Set([]byte{}, "tmp", capsule.Data())
 		if err != nil {
-			return capsule, fmt.Errorf("process _time: %v", err)
+			return capsule, fmt.Errorf("process: time: %v", err)
 		}
 
 		res := json.Get(tmp, "tmp")
 		value, err := p._time(res)
 		if err != nil {
-			return capsule, fmt.Errorf("process _time: %v", err)
+			return capsule, fmt.Errorf("process: time: %v", err)
 		}
 
 		switch v := value.(type) {
@@ -151,7 +151,7 @@ func (p _time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process _time: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: time: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }
 
 func (p _time) _time(result json.Result) (interface{}, error) {
@@ -168,18 +168,18 @@ func (p _time) _time(result json.Result) (interface{}, error) {
 		if p.Options.Location != "" {
 			loc, err := time.LoadLocation(p.Options.Location)
 			if err != nil {
-				return nil, fmt.Errorf("process _time: location %s: %v", p.Options.Location, err)
+				return nil, fmt.Errorf("process: time: location %s: %v", p.Options.Location, err)
 			}
 
 			timeDate, err = time.ParseInLocation(p.Options.Format, result.String(), loc)
 			if err != nil {
-				return nil, fmt.Errorf("process _time parse: format %s location %s: %v", p.Options.Format, p.Options.Location, err)
+				return nil, fmt.Errorf("process: time parse: format %s location %s: %v", p.Options.Format, p.Options.Location, err)
 			}
 		} else {
 			var err error
 			timeDate, err = time.Parse(p.Options.Format, result.String())
 			if err != nil {
-				return nil, fmt.Errorf("process _time parse: format %s: %v", p.Options.Format, err)
+				return nil, fmt.Errorf("process: time parse: format %s: %v", p.Options.Format, err)
 			}
 		}
 	}
@@ -188,7 +188,7 @@ func (p _time) _time(result json.Result) (interface{}, error) {
 	if p.Options.SetLocation != "" {
 		loc, err := time.LoadLocation(p.Options.SetLocation)
 		if err != nil {
-			return nil, fmt.Errorf("process _time: location %s: %v", p.Options.SetLocation, err)
+			return nil, fmt.Errorf("process: time: location %s: %v", p.Options.SetLocation, err)
 		}
 
 		timeDate = timeDate.In(loc)

@@ -50,12 +50,12 @@ func (p _math) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.
 func (p _math) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Operation == "" {
-		return capsule, fmt.Errorf("process math: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: math: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process math: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return capsule, fmt.Errorf("process: math: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	var value int64
@@ -79,7 +79,7 @@ func (p _math) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 	}
 
 	if err := capsule.Set(p.SetKey, value); err != nil {
-		return capsule, fmt.Errorf("process math: %v", err)
+		return capsule, fmt.Errorf("process: math: %v", err)
 	}
 
 	return capsule, nil

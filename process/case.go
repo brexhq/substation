@@ -57,7 +57,7 @@ func (p _case) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.
 func (p _case) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
-		return capsule, fmt.Errorf("process case: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: case: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
@@ -73,11 +73,11 @@ func (p _case) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 		case "snake":
 			value = strcase.ToSnake(result)
 		default:
-			return capsule, fmt.Errorf("process case: case %s: %v", p.Options.Type, errCaseInvalid)
+			return capsule, fmt.Errorf("process: case: case %s: %v", p.Options.Type, errCaseInvalid)
 		}
 
 		if err := capsule.Set(p.SetKey, value); err != nil {
-			return capsule, fmt.Errorf("process case: %v", err)
+			return capsule, fmt.Errorf("process: case: %v", err)
 		}
 
 		return capsule, nil
@@ -92,12 +92,12 @@ func (p _case) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 		case "lower":
 			value = bytes.ToLower(capsule.Data())
 		default:
-			return capsule, fmt.Errorf("process case: case %s: %v", p.Options.Type, errCaseInvalid)
+			return capsule, fmt.Errorf("process: case: case %s: %v", p.Options.Type, errCaseInvalid)
 		}
 
 		capsule.SetData(value)
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process case: inputkey %s outputkey %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: case: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }

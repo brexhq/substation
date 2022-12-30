@@ -2,7 +2,6 @@ package condition
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/brexhq/substation/config"
@@ -41,17 +40,7 @@ func (c _forEach) String() string {
 
 // Inspect evaluates encapsulated data with the Content inspector.
 func (c _forEach) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
-	conf, err := json.Marshal(c.Options.Inspector)
-	if err != nil {
-		return false, fmt.Errorf("condition: for_each: %w", err)
-	}
-
-	var condition config.Config
-	if err = json.Unmarshal(conf, &condition); err != nil {
-		return false, fmt.Errorf("condition: for_each: %w", err)
-	}
-
-	inspector, err := InspectorFactory(condition)
+	inspector, err := MakeInspector(c.Options.Inspector)
 	if err != nil {
 		return false, fmt.Errorf("condition: for_each: %w", err)
 	}

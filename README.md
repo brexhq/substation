@@ -226,7 +226,7 @@ local network = import 'network.libsonnet';
 }
 ```
 
-... running on any of these ...
+... running in any pipeline like these ...
 
 ![alt text](substation_architecture.png)
 

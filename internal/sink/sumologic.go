@@ -20,37 +20,28 @@ var sumoLogicClient http.HTTP
 // errSumoLogicJSON is returned when the Sumo Logic sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
 const errSumoLogicJSON = errors.Error("input must be JSON")
 
-/*
-SumoLogic sinks JSON data to Sumo Logic using an HTTP collector. More information about Sumo Logic HTTP collectors is available here: https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Data-to-an-HTTP-Source.
-
-The sink has these settings:
-
-	URL:
-		HTTP(S) endpoint that data is sent to
-	Category (optional):
-		configured Sumo Logic source category
-		defaults to no source category, which sends data to the source category configured for URL
-	CategoryKey (optional):
-		JSON key-value that is used as the Sumo Logic source category, overrides Category
-		defaults to no source category, which sends data to the source category configured for URL
-
-When loaded with a factory, the sink uses this JSON configuration:
-
-	{
-		"type": "sumologic",
-		"settings": {
-			"url": "foo.com/bar"
-		}
-	}
-*/
-type SumoLogic struct {
-	URL         string `json:"url"`
-	Category    string `json:"category"`
+// sumologic sinks objects to Sumo Logic using an HTTP collector.
+//
+// More information about Sumo Logic HTTP collectors is available here:
+// https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Data-to-an-HTTP-Source.
+type _sumologic struct {
+	// URL is the Sumo Logic HTTPS endpoint that objects are sent to.
+	URL string `json:"url"`
+	// Category is the Sumo Logic source category that overrides the
+	// configuration for the HTTPS endpoint.
+	//
+	// This is optional and has no default.
+	Category string `json:"category"`
+	// CategoryKey retrieves a value from an object that is used as
+	// the Sumo Logic source category that overrides the configuration
+	// for the HTTPS endpoint. If used, then this overrides Category.
+	//
+	// This is optional and has no default.
 	CategoryKey string `json:"category_key"`
 }
 
-// Send sinks a channel of encapsulated data with the SumoLogic sink.
-func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
+// Send sinks a channel of encapsulated data with the sink.
+func (sink *_sumologic) Send(ctx context.Context, ch *config.Channel) error {
 	if !sumoLogicClient.IsEnabled() {
 		sumoLogicClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {

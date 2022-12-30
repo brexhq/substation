@@ -24,28 +24,13 @@ should be applied to either drop or reduce the size of the data.
 */
 const errSQSMessageSizeLimit = errors.Error("data exceeded size limit")
 
-/*
-SQS sinks data to an AWS SQS queue.
-
-The sink has these settings:
-
-	Queue:
-		SQS queue name that data is sent to
-
-When loaded with a factory, the sink uses this JSON configuration:
-
-	{
-		"type": "sqs",
-		"settings": {
-			"queue": "foo"
-		}
-	}
-*/
+// awsSQS sinks data to an AWS SQS queue.
 type _awsSQS struct {
+	// Queue is the AWS SQS queue name that data is sent to.
 	Queue string `json:"queue"`
 }
 
-// Send sinks a channel of encapsulated data with the Kinesis sink.
+// Send sinks a channel of encapsulated data with the sink.
 func (sink *_awsSQS) Send(ctx context.Context, ch *config.Channel) error {
 	if !sqsAPI.IsEnabled() {
 		sqsAPI.Setup()

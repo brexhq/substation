@@ -12,8 +12,10 @@ import (
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
 // referenced across all metrics generators
-var metricsDestination string
-var metricsApplication string
+var (
+	metricsDestination string
+	metricsApplication string
+)
 
 // used when generating metrics from AWS Lambda functions
 var metricsAWSLambdaFunctionName string
@@ -52,18 +54,17 @@ func (d *Data) AddAttributes(attr map[string]string) {
 	}
 }
 
-// Generator is an interface for creating a metric and sending it to an external service.
-type Generator interface {
+type generator interface {
 	Generate(context.Context, Data) error
 }
 
-// Generate is a convenience function that encapsulates the Factory and creates a metric. If the SUBSTATION_METRICS environment variable is not set, then no metrics are created.
+// Generate is a convenience function that encapsulates the factory function and creates a metric. If the SUBSTATION_METRICS environment variable is not set, then no metrics are created.
 func Generate(ctx context.Context, data Data) error {
 	if metricsDestination == "" {
 		return nil
 	}
 
-	gen, err := Factory(metricsDestination)
+	gen, err := Make(metricsDestination)
 	if err != nil {
 		return err
 	}
@@ -75,8 +76,8 @@ func Generate(ctx context.Context, data Data) error {
 	return nil
 }
 
-// Factory returns a configured metrics Generator. This is the recommended method for retrieving ready-to-use Generators.
-func Factory(destination string) (Generator, error) {
+// Make returns a configured generator.
+func Make(destination string) (generator, error) {
 	switch destination {
 	case "AWS_CLOUDWATCH_EMBEDDED_METRICS":
 		var m AWSCloudWatchEmbeddedMetrics

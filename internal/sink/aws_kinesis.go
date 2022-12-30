@@ -13,39 +13,33 @@ import (
 
 var kinesisAPI kinesis.API
 
-/*
-Kinesis sinks data to an AWS Kinesis Data Stream using Kinesis Producer Library (KPL) compliant aggregated records. This sink can automatically redistribute data across shards by retrieving partition keys from JSON data; by default, it uses random strings to avoid hot shards. More information about the KPL and its schema is available here: https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html.
-
-The sink has these settings:
-
-	Stream:
-		Kinesis Data Stream that data is sent to
-	Partition (optional):
-		string that is used as the partition key for the aggregated record
-	PartitionKey (optional):
-		JSON key-value that is used as the partition key for the aggregated record
-	ShardRedistribution (optional):
-		determines if data should be redistributed across shards based on the partition key
-		if enabled with an empty partition key, then data aggregation is disabled
-		defaults to false, data is randomly distributed across shards
-
-When loaded with a factory, the sink uses this JSON configuration:
-
-	{
-		"type": "kinesis",
-		"settings": {
-			"stream": "foo"
-		}
-	}
-*/
+// awsKinesis sinks data to an AWS Kinesis Data Stream using Kinesis Producer Library (KPL) compliant aggregated records.
+//
+// More information about the KPL and its schema is available here: https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html.
 type _awsKinesis struct {
-	Stream              string `json:"stream"`
-	Partition           string `json:"partition"`
-	PartitionKey        string `json:"partition_key"`
-	ShardRedistribution bool   `json:"shard_redistribution"`
+	// Stream is the Kinesis Data Stream that records are sent to.
+	Stream string `json:"stream"`
+	// Partition is a string that is used as the partition key for each
+	// aggregated record.
+	//
+	// This is optional and defaults to a randomly generated string.
+	Partition string `json:"partition"`
+	// PartitionKey retrieves a value from an object that sorts records and
+	// is used as the partition key for each aggregated record. If used, then
+	// this overrides Partition.
+	//
+	// This is optional and has no default.
+	PartitionKey string `json:"partition_key"`
+	// ShardRedistribution determines if records should be redistributed
+	// across shards based on the partition key.
+	//
+	// This is optional and defaults to false (data is randomly distributed
+	// across shards). If enabled with an empty partition key, then data
+	// aggregation is disabled.
+	ShardRedistribution bool `json:"shard_redistribution"`
 }
 
-// Send sinks a channel of encapsulated data with the Kinesis sink.
+// Send sinks a channel of encapsulated data with the sink.
 func (sink *_awsKinesis) Send(ctx context.Context, ch *config.Channel) error {
 	if !kinesisAPI.IsEnabled() {
 		kinesisAPI.Setup()

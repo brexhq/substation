@@ -12,20 +12,19 @@ import (
 // errInvalidFactoryInput is returned when an unsupported Transform is referenced in Factory.
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-// Transformer is an interface for transforming data as it moves from a source to a sink. Transformers read capsules from and write capsules to channels, may optionally modify bytes, and are interruptable.
-type Transformer interface {
+type transformer interface {
 	Transform(context.Context, *sync.WaitGroup, *config.Channel, *config.Channel) error
 }
 
-// Factory returns a configured Transformer from a config. This is the recommended method for retrieving ready-to-use Transformers.
-func Factory(cfg config.Config) (Transformer, error) {
+// Make returns a configured transform from a transform configuration.
+func Make(cfg config.Config) (transformer, error) {
 	switch t := cfg.Type; t {
 	case "batch":
-		var t Batch
+		var t _batch
 		_ = config.Decode(cfg.Settings, &t)
 		return &t, nil
 	case "transfer":
-		var t Transfer
+		var t _transfer
 		_ = config.Decode(cfg.Settings, &t)
 		return &t, nil
 	default:

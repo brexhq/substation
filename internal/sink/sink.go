@@ -11,13 +11,12 @@ import (
 // errInvalidFactoryInput is returned when an unsupported Sink is referenced in Factory.
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-// Sink is an interface for sending data to external services. Sinks read channels of capsules and are interruptable.
-type Sink interface {
+type sink interface {
 	Send(context.Context, *config.Channel) error
 }
 
-// Factory returns a configured Sink from a config. This is the recommended method for retrieving ready-to-use Sinks.
-func Factory(cfg config.Config) (Sink, error) {
+// Make returns a configured sink from a sink configuration.
+func Make(cfg config.Config) (sink, error) {
 	switch t := cfg.Type; t {
 	case "aws_dynamodb":
 		var s _awsDynamodb
@@ -40,19 +39,19 @@ func Factory(cfg config.Config) (Sink, error) {
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
 	case "grpc":
-		var s Grpc
+		var s _grpc
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
 	case "http":
-		var s HTTP
+		var s _http
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
 	case "stdout":
-		var s Stdout
+		var s _stdout
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
 	case "sumologic":
-		var s SumoLogic
+		var s _sumologic
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
 	default:

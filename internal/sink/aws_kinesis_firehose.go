@@ -25,30 +25,15 @@ drop or reduce the size of the data.
 */
 const errFirehoseRecordSizeLimit = errors.Error("data exceeded size limit")
 
-/*
-Firehose sinks data to an AWS Kinesis Firehose Delivery Stream.
-This sink uploads data in batches of records and will automatically retry
-any failed put record attempts.
-
-The sink has these settings:
-
-	Stream:
-		Kinesis Firehose Delivery Stream that data is sent to
-
-When loaded with a factory, the sink uses this JSON configuration:
-
-	{
-		"type": "firehose",
-		"settings": {
-			"stream": "foo"
-		}
-	}
-*/
+// awsKinesisFirehose sinks data to an AWS Kinesis Firehose Delivery Stream.
+// This sink uploads data in batches of records and will automatically retry
+// any failed put record attempts.
 type _awsKinesisFirehose struct {
+	// Stream is the Kinesis Firehose Delivery Stream that data is sent to.
 	Stream string `json:"stream"`
 }
 
-// Send sinks a channel of encapsulated data with the Kinesis sink.
+// Send sinks a channel of encapsulated data with the sink.
 func (sink *_awsKinesisFirehose) Send(ctx context.Context, ch *config.Channel) error {
 	if !firehoseAPI.IsEnabled() {
 		firehoseAPI.Setup()

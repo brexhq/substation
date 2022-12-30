@@ -18,36 +18,26 @@ import (
 
 var s3uploader s3manager.UploaderAPI
 
-/*
-S3 sinks data as gzip compressed objects to an AWS S3 bucket. Object names contain the year, month, and day the data was processed by the sink; they can be optionally prefixed with a custom string.
-
-The sink has these settings:
-
-	Bucket:
-		S3 bucket that data is written to
-	Prefix (optional):
-		prefix prepended to the S3 object name
-		defaults to no prefix
-	PrefixKey (optional):
-		JSON key-value that is used as the prefix prepended to the S3 object name, overrides Prefix
-		defaults to no prefix
-
-When loaded with a factory, the sink uses this JSON configuration:
-
-	{
-		"type": "s3",
-		"settings": {
-			"bucket": "foo-bucket"
-		}
-	}
-*/
+// awsS3 sinks data as gzip compressed objects to an AWS S3 bucket.
+//
+// Object names contain the year, month, and day the data was processed
+// by the sink and can be optionally prefixed with a custom string.
 type _awsS3 struct {
-	Bucket    string `json:"bucket"`
-	Prefix    string `json:"prefix"`
+	// Bucket is the AWS S3 bucket that data is written to.
+	Bucket string `json:"bucket"`
+	// Prefix is a prefix prepended to the object path.
+	//
+	// This is optional and has no default.
+	Prefix string `json:"prefix"`
+	// PrefixKey retrieves a value from an object that is used as
+	// the prefix prepended to the S3 object path. If used, then
+	// this overrides Prefix.
+	//
+	// This is optional and has no default.
 	PrefixKey string `json:"prefix_key"`
 }
 
-// Send sinks a channel of encapsulated data with the S3 sink.
+// Send sinks a channel of encapsulated data with the sink.
 func (sink *_awsS3) Send(ctx context.Context, ch *config.Channel) error {
 	if !s3uploader.IsEnabled() {
 		s3uploader.Setup()
@@ -140,10 +130,7 @@ func (sink *_awsS3) Send(ctx context.Context, ch *config.Channel) error {
 	return nil
 }
 
-/*
-	 createKey creates a date-based S3 object key that has this naming convention:
-		[prefix : optional]/[year]/[month]/[day]/[uuid].gz
-*/
+// createKey creates a date-based S3 object key that has this naming convention: [prefix : optional]/[year]/[month]/[day]/[uuid].gz
 func createKey(prefix string) string {
 	var key string
 

@@ -12,48 +12,27 @@ import (
 
 var httpClient http.HTTP
 
-/*
-HTTP sinks JSON data to an HTTP(S) endpoint.
-
-The sink has these settings:
-
-	URL:
-		HTTP(S) endpoint that data is sent to
-	Headers (optional):
-		contains configured maps that represent HTTP headers to be sent in the HTTP request
-		defaults to no headers
-	HeadersKey (optional):
-		JSON key-value that contains maps that represent HTTP headers to be sent in the HTTP request
-		This key can be a single map or an array of maps:
-			[
-				{
-					"FOO": "bar",
-				},
-				{
-					"BAZ": "qux",
-				}
-			]
-
-When loaded with a factory, the sink uses this JSON configuration:
-
-	{
-		"type": "http",
-		"settings": {
-			"url": "foo.com/bar"
-		}
-	}
-*/
-type HTTP struct {
-	URL     string `json:"url"`
+// http sinks data to an HTTP(S) URL.
+type _http struct {
+	// URL is the HTTP(S) endpoint that data is sent to.
+	URL string `json:"url"`
+	// Headers are an array of objects that contain HTTP headers sent in the request.
+	//
+	// This is optional and has no default.
 	Headers []struct {
 		Key   string `json:"key"`
 		Value string `json:"value"`
 	} `json:"headers"`
+	// HeadersKey retrieves a value from an object that contains one or
+	// more objects containing HTTP headers sent in the request. If Headers
+	// is used, then both are merged together.
+	//
+	// This is optional and has no default.
 	HeadersKey string `json:"headers_key"`
 }
 
-// Send sinks a channel of encapsulated data with the HTTP sink.
-func (sink *HTTP) Send(ctx context.Context, ch *config.Channel) error {
+// Send sinks a channel of encapsulated data with the sink.
+func (sink *_http) Send(ctx context.Context, ch *config.Channel) error {
 	if !httpClient.IsEnabled() {
 		httpClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {

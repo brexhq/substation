@@ -16,3 +16,4 @@ jobs:
           package-name: release-please-action
           # beta changes are v0.x
           bump-minor-pre-major: true
+          bump-patch-for-minor-pre-major: true

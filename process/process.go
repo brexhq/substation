@@ -220,8 +220,6 @@ type batcher interface {
 }
 
 // MakeBatcher returns a configured batcher from a processor configuration.
-//
-//nolint:cyclop // ignored for all factory methods
 func MakeBatcher(cfg config.Config) (batcher, error) {
 	switch cfg.Type {
 	case "aggregate":

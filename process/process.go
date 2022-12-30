@@ -72,10 +72,6 @@ func MakeApplier(cfg config.Config) (applier, error) {
 		var p _base64
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
-	case "cache":
-		var p _cache
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
 	case "capture":
 		var p _capture
 		_ = config.Decode(cfg.Settings, &p)
@@ -242,10 +238,6 @@ func MakeBatcher(cfg config.Config) (batcher, error) {
 		return p, nil
 	case "base64":
 		var p _base64
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
-	case "cache":
-		var p _cache
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "capture":

@@ -118,15 +118,11 @@ func (p _aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 
 		if _, ok := buffer[aggregateKey]; !ok {
 			buffer[aggregateKey] = &aggregate.Bytes{}
-			buffer[aggregateKey].New(p.Options.MaxSize, p.Options.MaxCount)
+			buffer[aggregateKey].New(p.Options.MaxCount, p.Options.MaxSize)
 			aggregateKeys = append(aggregateKeys, aggregateKey)
 		}
 
-		ok, err = buffer[aggregateKey].Add(capsule.Data())
-		if err != nil {
-			return nil, fmt.Errorf("process: aggregate: %v", err)
-		}
-
+		ok = buffer[aggregateKey].Add(capsule.Data())
 		// data was successfully added to the buffer, every item after
 		// this is a failure
 		if ok {
@@ -158,10 +154,7 @@ func (p _aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 		// by this point, addition of the failed data is guaranteed
 		// to succeed after the buffer is reset
 		buffer[aggregateKey].Reset()
-		_, err = buffer[aggregateKey].Add(capsule.Data())
-		if err != nil {
-			return nil, fmt.Errorf("process: aggregate: %v", err)
-		}
+		_ = buffer[aggregateKey].Add(capsule.Data())
 	}
 
 	// remaining items must be drained from the buffer, otherwise

@@ -78,7 +78,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 			return ctx.Err()
 		default:
 			if !json.Valid(capsule.Data()) {
-				return fmt.Errorf("sink sumologic category %s: %v", category, errSumoLogicJSON)
+				return fmt.Errorf("sink: sumologic category %s: %v", category, errSumoLogicJSON)
 			}
 
 			if sink.CategoryKey != "" {
@@ -89,16 +89,12 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 				// aggregate up to 0.9MB or 10,000 items
 				// https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source#Data_payload_considerations
 				buffer[category] = &aggregate.Bytes{}
-				buffer[category].New(1000*1000*.9, 10000)
+				buffer[category].New(10000, 1000*1000*.9)
 			}
 
 			// add data to the buffer
 			// if buffer is full, then send the aggregated data
-			ok, err := buffer[category].Add(capsule.Data())
-			if err != nil {
-				return fmt.Errorf("sink sumologic category %s: %v", category, err)
-			}
-
+			ok := buffer[category].Add(capsule.Data())
 			if !ok {
 				h := headers
 				h = append(h, http.Header{
@@ -114,7 +110,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 
 				if _, err := sumoLogicClient.Post(ctx, sink.URL, buf.Bytes(), h...); err != nil {
 					// Post err returns metadata
-					return fmt.Errorf("sink sumologic: %v", err)
+					return fmt.Errorf("sink: sumologic: %v", err)
 				}
 
 				log.WithField(
@@ -124,10 +120,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("sent events to Sumo Logic")
 
 				buffer[category].Reset()
-				_, err = buffer[category].Add(capsule.Data())
-				if err != nil {
-					return fmt.Errorf("sink sumologic: %v", err)
-				}
+				_ = buffer[category].Add(capsule.Data())
 			}
 		}
 	}
@@ -153,7 +146,7 @@ func (sink *SumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 
 		if _, err := sumoLogicClient.Post(ctx, sink.URL, buf.Bytes(), h...); err != nil {
 			// Post err returns metadata
-			return fmt.Errorf("sink sumologic: %v", err)
+			return fmt.Errorf("sink: sumologic: %v", err)
 		}
 
 		log.WithField(

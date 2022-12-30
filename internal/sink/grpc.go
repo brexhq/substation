@@ -51,13 +51,13 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 	if sink.Certificate != "" {
 		cert, err := file.Get(ctx, sink.Certificate)
 		if err != nil {
-			return fmt.Errorf("sink grpc: %v", err)
+			return fmt.Errorf("sink: grpc: %v", err)
 		}
 		defer os.Remove(cert)
 
 		c, err := credentials.NewClientTLSFromFile(cert, "")
 		if err != nil {
-			return fmt.Errorf("sink grpc: %v", err)
+			return fmt.Errorf("sink: grpc: %v", err)
 		}
 
 		creds = grpc.WithTransportCredentials(c)
@@ -68,7 +68,7 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 
 	conn, err := grpc.DialContext(ctx, sink.Server, opts...)
 	if err != nil {
-		return fmt.Errorf("sink grpc: %v", err)
+		return fmt.Errorf("sink: grpc: %v", err)
 	}
 	defer conn.Close()
 
@@ -83,7 +83,7 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 	client := pb.NewSinkServiceClient(conn)
 	stream, err := client.Send(ctx, grpc.WaitForReady(true))
 	if err != nil {
-		return fmt.Errorf("sink grpc: %v", err)
+		return fmt.Errorf("sink: grpc: %v", err)
 	}
 
 	for capsule := range ch.C {
@@ -96,7 +96,7 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 			}
 
 			if err := stream.Send(p); err != nil {
-				return fmt.Errorf("sink grpc: %v", err)
+				return fmt.Errorf("sink: grpc: %v", err)
 			}
 		}
 	}
@@ -104,7 +104,7 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 	// server must acknowledge the receipt of all capsules
 	// if this doesn't happen, then the app will deadlock
 	if _, err := stream.CloseAndRecv(); err != nil {
-		return fmt.Errorf("sink grpc: %v", err)
+		return fmt.Errorf("sink: grpc: %v", err)
 	}
 
 	return nil

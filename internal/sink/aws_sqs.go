@@ -55,7 +55,7 @@ func (sink *_awsSQS) Send(ctx context.Context, ch *config.Channel) error {
 	// at 256 KB. this buffer will not exceed 256 KB or
 	// 500 messages.
 	buffer := aggregate.Bytes{}
-	buffer.New(sqsMessageSizeLimit, 500)
+	buffer.New(500, sqsMessageSizeLimit)
 
 	for capsule := range ch.C {
 		select {
@@ -63,19 +63,15 @@ func (sink *_awsSQS) Send(ctx context.Context, ch *config.Channel) error {
 			return ctx.Err()
 		default:
 			if len(capsule.Data()) > sqsMessageSizeLimit {
-				return fmt.Errorf("sink sqs: %v", errSQSMessageSizeLimit)
+				return fmt.Errorf("sink: aws_sqs: %v", errSQSMessageSizeLimit)
 			}
 
-			ok, err := buffer.Add(capsule.Data())
-			if err != nil {
-				return fmt.Errorf("sink sqs: %v", err)
-			}
-
+			ok := buffer.Add(capsule.Data())
 			if !ok {
 				items := buffer.Get()
 				_, err := sqsAPI.SendMessageBatch(ctx, items, sink.Queue)
 				if err != nil {
-					return fmt.Errorf("sink sqs: %v", err)
+					return fmt.Errorf("sink: aws_sqs: %v", err)
 				}
 
 				log.WithField(
@@ -85,10 +81,7 @@ func (sink *_awsSQS) Send(ctx context.Context, ch *config.Channel) error {
 				).Debug("sent messages to SQS")
 
 				buffer.Reset()
-				_, err = buffer.Add(capsule.Data())
-				if err != nil {
-					return fmt.Errorf("sink sqs: %v", err)
-				}
+				_ = buffer.Add(capsule.Data())
 			}
 		}
 	}
@@ -98,7 +91,7 @@ func (sink *_awsSQS) Send(ctx context.Context, ch *config.Channel) error {
 		items := buffer.Get()
 		_, err := sqsAPI.SendMessageBatch(ctx, items, sink.Queue)
 		if err != nil {
-			return fmt.Errorf("sink sqs: %v", err)
+			return fmt.Errorf("sink: aws_sqs: %v", err)
 		}
 
 		log.WithField(

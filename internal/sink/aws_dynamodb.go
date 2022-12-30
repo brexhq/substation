@@ -66,7 +66,7 @@ func (sink *_awsDynamodb) Send(ctx context.Context, ch *config.Channel) error {
 			return ctx.Err()
 		default:
 			if !json.Valid(capsule.Data()) {
-				return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, errDynamoDBJSON)
+				return fmt.Errorf("sink: aws_dynamodb: table %s: %v", sink.Table, errDynamoDBJSON)
 			}
 
 			items := capsule.Get(sink.Key).Array()
@@ -78,13 +78,13 @@ func (sink *_awsDynamodb) Send(ctx context.Context, ch *config.Channel) error {
 
 				values, err := dynamodbattribute.MarshalMap(cache)
 				if err != nil {
-					return fmt.Errorf("sink dynamodb table %s: %v", sink.Table, err)
+					return fmt.Errorf("sink: aws_dynamodb: table %s: %v", sink.Table, err)
 				}
 
 				_, err = dynamodbAPI.PutItem(ctx, sink.Table, values)
 				if err != nil {
 					// PutItem err returns metadata
-					return fmt.Errorf("sink dynamodb: %v", err)
+					return fmt.Errorf("sink: aws_dynamodb: %v", err)
 				}
 
 				count++

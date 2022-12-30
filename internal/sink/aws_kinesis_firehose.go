@@ -58,7 +58,7 @@ func (sink *_awsKinesisFirehose) Send(ctx context.Context, ch *config.Channel) e
 	// 500 records per batch. this buffer will not exceed
 	// 3.9 MiB or 500 records.
 	buffer := aggregate.Bytes{}
-	buffer.New(firehoseRecordSizeLimit*4*.99, 500)
+	buffer.New(500, firehoseRecordSizeLimit*4*.99)
 
 	for capsule := range ch.C {
 		select {
@@ -66,19 +66,15 @@ func (sink *_awsKinesisFirehose) Send(ctx context.Context, ch *config.Channel) e
 			return ctx.Err()
 		default:
 			if len(capsule.Data()) > firehoseRecordSizeLimit {
-				return fmt.Errorf("sink firehose: %v", errFirehoseRecordSizeLimit)
+				return fmt.Errorf("sink: aws_kinesis_firehose: %v", errFirehoseRecordSizeLimit)
 			}
 
-			ok, err := buffer.Add(capsule.Data())
-			if err != nil {
-				return fmt.Errorf("sink firehose: %v", err)
-			}
-
+			ok := buffer.Add(capsule.Data())
 			if !ok {
 				items := buffer.Get()
 				_, err := firehoseAPI.PutRecordBatch(ctx, items, sink.Stream)
 				if err != nil {
-					return fmt.Errorf("sink firehose: %v", err)
+					return fmt.Errorf("sink: aws_kinesis_firehose: %v", err)
 				}
 
 				log.WithField(
@@ -89,10 +85,7 @@ func (sink *_awsKinesisFirehose) Send(ctx context.Context, ch *config.Channel) e
 
 				buffer.Reset()
 
-				_, err = buffer.Add(capsule.Data())
-				if err != nil {
-					return fmt.Errorf("sink firehose: %v", err)
-				}
+				_ = buffer.Add(capsule.Data())
 			}
 		}
 	}
@@ -102,7 +95,7 @@ func (sink *_awsKinesisFirehose) Send(ctx context.Context, ch *config.Channel) e
 		items := buffer.Get()
 		_, err := firehoseAPI.PutRecordBatch(ctx, items, sink.Stream)
 		if err != nil {
-			return fmt.Errorf("sink firehose: %v", err)
+			return fmt.Errorf("sink: aws_kinesis_firehose: %v", err)
 		}
 
 		log.WithField(

@@ -99,7 +99,7 @@ func (sink *HTTP) Send(ctx context.Context, ch *config.Channel) error {
 			_, err := httpClient.Post(ctx, sink.URL, string(capsule.Data()), headers...)
 			if err != nil {
 				// Post err returns metadata
-				return fmt.Errorf("sink http: %v", err)
+				return fmt.Errorf("sink: http: %v", err)
 			}
 		}
 	}

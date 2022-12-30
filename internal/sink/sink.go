@@ -56,6 +56,6 @@ func Factory(cfg config.Config) (Sink, error) {
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
 	default:
-		return nil, fmt.Errorf("sink settings %v: %v", cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("sink: settings %v: %v", cfg.Settings, errInvalidFactoryInput)
 	}
 }

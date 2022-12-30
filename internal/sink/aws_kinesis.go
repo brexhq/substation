@@ -91,7 +91,7 @@ func (sink *_awsKinesis) Send(ctx context.Context, ch *config.Channel) error {
 				_, err := kinesisAPI.PutRecord(ctx, agg, sink.Stream, aggPK)
 				if err != nil {
 					// PutRecord err returns metadata
-					return fmt.Errorf("sink kinesis: %v", err)
+					return fmt.Errorf("sink: aws_kinesis: %v", err)
 				}
 
 				log.WithField(
@@ -121,7 +121,7 @@ func (sink *_awsKinesis) Send(ctx context.Context, ch *config.Channel) error {
 		_, err := kinesisAPI.PutRecord(ctx, agg, sink.Stream, aggPK)
 		if err != nil {
 			// PutRecord err returns metadata
-			return fmt.Errorf("sink kinesis: %v", err)
+			return fmt.Errorf("sink: aws_kinesis: %v", err)
 		}
 
 		log.WithField(

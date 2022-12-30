@@ -92,7 +92,7 @@ Substation can transform logs like this ...
       "resp_ip_bytes": 197
     },
     "hash": "7ed38f773271e700e2d55984a2ba7902be9ec8c2922e52fc7558aeade425c3de",
-    "created": "2022-12-30T17:01:53.604179Z",
+    "created": "2022-12-30T17:20:41.027457Z",
     "id": "CMdzit1AMNsmfAIiQc",
     "kind": "event",
     "category": [
@@ -121,7 +121,7 @@ Substation can transform logs like this ...
     "protocol": "udp",
     "bytes": 203,
     "packets": 4,
-    "direction": "outbound"
+    "direction": "internal"
   }
 }
 {
@@ -147,7 +147,7 @@ Substation can transform logs like this ...
       "resp_ip_bytes": 511
     },
     "hash": "af70ea0b38e1fb529e230d3eca6badd54cd6a080d7fcb909cac4ee0191bb788f",
-    "created": "2022-12-30T17:01:53.604221Z",
+    "created": "2022-12-30T17:20:41.027505Z",
     "id": "C5bLoe2Mvxqhawzqqd",
     "kind": "event",
     "category": [
@@ -171,9 +171,26 @@ Substation can transform logs like this ...
     "port": 80,
     "packets": 4,
     "bytes": 295,
+    "domain": "h31-3-245-133.host.redstation.co.uk",
     "top_level_domain": "co.uk",
     "subdomain": "h31-3-245-133.host",
-    "registered_domain": "redstation.co.uk"
+    "registered_domain": "redstation.co.uk",
+    "as": {
+      "number": 20860,
+      "organization": {
+        "name": "Iomart Cloud Services Limited"
+      }
+    },
+    "geo": {
+      "continent_name": "Europe",
+      "country_name": "United Kingdom",
+      "city_name": "Manchester",
+      "location": {
+        "latitude": 53.5039,
+        "longitude": -2.1959
+      },
+      "accuracy": 1000
+    }
   },
   "network": {
     "protocol": "tcp",

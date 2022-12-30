@@ -92,7 +92,7 @@ Substation can transform logs like this ...
       "resp_ip_bytes": 197
     },
     "hash": "7ed38f773271e700e2d55984a2ba7902be9ec8c2922e52fc7558aeade425c3de",
-    "created": "2022-12-30T16:53:08.661362Z",
+    "created": "2022-12-30T17:01:53.604179Z",
     "id": "CMdzit1AMNsmfAIiQc",
     "kind": "event",
     "category": [
@@ -121,7 +121,7 @@ Substation can transform logs like this ...
     "protocol": "udp",
     "bytes": 203,
     "packets": 4,
-    "direction": "internal"
+    "direction": "outbound"
   }
 }
 {
@@ -147,7 +147,7 @@ Substation can transform logs like this ...
       "resp_ip_bytes": 511
     },
     "hash": "af70ea0b38e1fb529e230d3eca6badd54cd6a080d7fcb909cac4ee0191bb788f",
-    "created": "2022-12-30T16:53:08.661405Z",
+    "created": "2022-12-30T17:01:53.604221Z",
     "id": "C5bLoe2Mvxqhawzqqd",
     "kind": "event",
     "category": [
@@ -179,12 +179,37 @@ Substation can transform logs like this ...
     "protocol": "tcp",
     "bytes": 372,
     "packets": 10,
-    "direction": "internal"
+    "direction": "outbound"
   }
 }
 ```
 
 ... using this ...
+
+```jsonnet
+local sink = import 'sink.libsonnet';
+
+local event = import 'event.libsonnet';
+local client = import 'client.libsonnet';
+local server = import 'server.libsonnet';
+local network = import 'network.libsonnet';
+
+{
+  sink: sink.stdout,
+  transform: {
+    type: 'batch',
+    settings: {
+      processors:
+        event.processors
+        + client.processors
+        + server.processors
+        + network.processors
+    },
+  },
+}
+```
+
+... running on any of these ...
 
 ![alt text](substation_architecture.png)
 

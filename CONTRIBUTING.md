@@ -20,7 +20,6 @@ Thank you so much for your interest in contributing to Substation! This document
   + [Naming Conventions](#naming-conventions)
   + [Go](#go-style-guide)
   + [Python](#python-style-guide)
-  + [Jsonnet](#jsonnet-style-guide)
 
 ## Code of Conduct
 

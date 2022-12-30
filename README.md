@@ -18,9 +18,9 @@ Substation is a data pipeline and transformation toolkit written in Go.
 ## What is Substation?
 
 Substation provides three unique data handling capabilities: 
-* deploys modular, cloud native data pipelines that support 100s of unique designs
-* offers event-driven ingest, transform, load (ITL) applications that evaluate, process, and deliver data in real-time
-* provides Go packages for creating custom data processing applications
+* modular, cloud native data pipelines that support 100s of unique designs
+* event-driven ingest, transform, load (ITL) applications that evaluate, process, and deliver data in real-time
+* Go packages for creating custom data processing applications
 
 Substation can transform logs like this ...
 ```json

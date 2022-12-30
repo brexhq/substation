@@ -37,7 +37,7 @@ func (p _ipDatabase) Close(ctx context.Context) error {
 		return nil
 	}
 
-	db, err := ipdb.Factory(p.Options)
+	db, err := ipdb.Get(p.Options)
 	if err != nil {
 		return fmt.Errorf("close ip_database: %v", err)
 	}
@@ -64,7 +64,7 @@ func (p _ipDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.
 		return capsule, fmt.Errorf("process: ip_database: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
-	db, err := ipdb.Factory(p.Options)
+	db, err := ipdb.Get(p.Options)
 	if err != nil {
 		return capsule, fmt.Errorf("process: ip_database: %v", err)
 	}

@@ -28,8 +28,8 @@ type OpenCloser interface {
 	IsEnabled() bool
 }
 
-// Factory returns a pointer to an OpenCloser that is stored as a package level global variable. The OpenCloser must be opened before it can be used.
-func Factory(cfg config.Config) (OpenCloser, error) {
+// Get returns a pointer to an OpenCloser that is stored as a package level global variable. The OpenCloser must be opened before it can be used.
+func Get(cfg config.Config) (OpenCloser, error) {
 	switch t := cfg.Type; t {
 	case "ip2location":
 		_ = config.Decode(cfg.Settings, &ip2loc)

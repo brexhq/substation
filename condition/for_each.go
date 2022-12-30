@@ -73,7 +73,7 @@ func (c _forEach) Inspect(ctx context.Context, capsule config.Capsule) (output b
 	case "none":
 		output = matched == 0
 	default:
-		return false, fmt.Errorf("condition for_each: type %q: %v", c.Options.Type, errForEachInvalidType)
+		return false, fmt.Errorf("condition: for_each: type %q: %v", c.Options.Type, errForEachInvalidType)
 	}
 
 	if c.Negate {

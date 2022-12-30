@@ -85,7 +85,7 @@ func MakeInspector(cfg config.Config) (inspector, error) {
 		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	default:
-		return nil, fmt.Errorf("condition inspectorfactory: type %q, settings %+v: %v", cfg.Type, cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("condition: make_inspector: type %q settings %+v: %v", cfg.Type, cfg.Settings, errInvalidFactoryInput)
 	}
 }
 
@@ -153,7 +153,7 @@ func (o _all) String() string {
 // Operate returns true if all inspectors return true, otherwise it returns false.
 func (o _all) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, fmt.Errorf("condition operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
+		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -183,7 +183,7 @@ func (o _any) String() string {
 // Operate returns true if any inspectors return true, otherwise it returns false.
 func (o _any) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, fmt.Errorf("condition operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
+		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -214,7 +214,7 @@ func (o _none) String() string {
 // Operate returns true if all inspectors return false, otherwise it returns true.
 func (o _none) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, fmt.Errorf("condition operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
+		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
 	}
 
 	for _, i := range o.Inspectors {

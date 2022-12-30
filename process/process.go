@@ -161,7 +161,7 @@ func MakeApplier(cfg config.Config) (applier, error) {
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process: settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("process: make_applier: type %q settings %+v: %v", cfg.Type, cfg.Settings, errInvalidFactoryInput)
 	}
 }
 
@@ -345,7 +345,7 @@ func MakeBatcher(cfg config.Config) (batcher, error) {
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process: settings %+v: %v", cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("process: make_batcher: type %q settings %+v: %v", cfg.Type, cfg.Settings, errInvalidFactoryInput)
 	}
 }
 

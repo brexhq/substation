@@ -61,6 +61,7 @@ local process = import 'process.libsonnet';
     },
   },
   copy: {
+    // copies one or more keys into an array.
     into_array(keys, set_key): {
       processors: [
         process.apply(process.copy, key=key, set_key=set_key + '.-1')
@@ -75,7 +76,7 @@ local process = import 'process.libsonnet';
     data(set_key='!metadata hash', algorithm='sha256'): {
       local hash_opts = process.hash(algorithm=algorithm),
 
-      // data is temporarily stored during hashing
+      // where data is temporarily stored during hashing
       local key = '!metadata data',
 
       local is_plaintext = inspector.inspect(inspector.content(type='text/plain; charset=utf-8'), key=key),
@@ -85,17 +86,17 @@ local process = import 'process.libsonnet';
       processors: [
         // copies data to metadata for hashing
         process.apply(options=process.copy, set_key=key),
-        // if data is an object, then hash the object's content
+        // if data is an object, then hash its contents
         process.apply(options=hash_opts,
                       key='@this',
                       set_key=set_key,
                       condition=operatorPatterns.all([is_plaintext, is_json])),
-        // if data is not an object but is plaintext, then hash the data as-is
+        // if data is not an object but is plaintext, then hash it without decoding
         process.apply(options=hash_opts,
                       key=key,
                       set_key=set_key,
                       condition=operatorPatterns.all([is_plaintext, is_not_json])),
-        // if data is not plaintext, then decode and hash the data
+        // if data is not plaintext, then decode and hash it
         process.apply(
           options=process.pipeline([
             process.apply(options=process.base64(direction='from')),

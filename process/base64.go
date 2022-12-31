@@ -6,14 +6,14 @@ import (
 	"unicode/utf8"
 
 	"github.com/brexhq/substation/config"
-	ibase64 "github.com/brexhq/substation/internal/base64"
+	"github.com/brexhq/substation/internal/base64"
 	"github.com/brexhq/substation/internal/errors"
 )
 
 // errBase64DecodedBinary is returned when the Base64 processor is configured
-// to decode output to JSON, but the output contains binary data and cannot be
-// written as valid JSON.
-const errBase64DecodedBinary = errors.Error("cannot write binary as JSON")
+// to decode output into an object, but the output contains binary data and
+// cannot be written into a valid object.
+const errBase64DecodedBinary = errors.Error("cannot write binary as object")
 
 // base64 processes data by converting it to and from base64.
 //
@@ -65,7 +65,7 @@ func (p _base64) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 		var value []byte
 		switch p.Options.Direction {
 		case "from":
-			decode, err := ibase64.Decode(tmp)
+			decode, err := base64.Decode(tmp)
 			if err != nil {
 				return capsule, fmt.Errorf("process: base64: %v", err)
 			}
@@ -76,7 +76,7 @@ func (p _base64) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 
 			value = decode
 		case "to":
-			value = ibase64.Encode(tmp)
+			value = base64.Encode(tmp)
 		default:
 			return capsule, fmt.Errorf("process: base64: direction %s: %v", p.Options.Direction, errInvalidDirection)
 		}
@@ -93,14 +93,14 @@ func (p _base64) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 		var value []byte
 		switch p.Options.Direction {
 		case "from":
-			decode, err := ibase64.Decode(capsule.Data())
+			decode, err := base64.Decode(capsule.Data())
 			if err != nil {
 				return capsule, fmt.Errorf("process: base64: %v", err)
 			}
 
 			value = decode
 		case "to":
-			value = ibase64.Encode(capsule.Data())
+			value = base64.Encode(capsule.Data())
 		default:
 			return capsule, fmt.Errorf("process: base64: direction %s: %v", p.Options.Direction, errInvalidDirection)
 		}

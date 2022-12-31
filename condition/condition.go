@@ -13,9 +13,9 @@ import (
 // referenced in any factory.
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-// errOperatorMissinginspectors is returned when an operator that requires
+// errOperatorMissingInspectors is returned when an operator that requires
 // inspectors is created with no inspectors.
-const errOperatorMissinginspectors = errors.Error("missing inspectors")
+const errOperatorMissingInspectors = errors.Error("missing inspectors")
 
 type condition struct {
 	// Key retrieves a value from an object for inspection.
@@ -153,7 +153,7 @@ func (o _all) String() string {
 // Operate returns true if all inspectors return true, otherwise it returns false.
 func (o _all) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
+		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -183,7 +183,7 @@ func (o _any) String() string {
 // Operate returns true if any inspectors return true, otherwise it returns false.
 func (o _any) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
+		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
@@ -214,7 +214,7 @@ func (o _none) String() string {
 // Operate returns true if all inspectors return false, otherwise it returns true.
 func (o _none) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
 	if len(o.Inspectors) == 0 {
-		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissinginspectors)
+		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {

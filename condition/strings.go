@@ -9,8 +9,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errStringsInvalidType is returned when the strings inspector is configured with an invalid Type.
-const errStringsInvalidType = errors.Error("invalid Type")
+// errStringsInvalidType is returned when the strings inspector is configured with an invalid type.
+const errStringsInvalidType = errors.Error("invalid type")
 
 // strings evaluates data using Types from the standard library's strings package.
 //

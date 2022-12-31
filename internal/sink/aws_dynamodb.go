@@ -14,12 +14,16 @@ import (
 
 var dynamodbAPI dynamodb.API
 
-// errDynamoDBSinkJSON is returned when the DynamoDB sink receives non-JSON or invalid JSON data. If this error occurs, then parse the data into JSON or drop invalid JSON before it reaches the sink.
-const errDynamoDBJSON = errors.Error("input must be JSON")
-
-// awsDynamodb sinks JSON data to an AWS DynamoDB table. This sink supports writing multiple items from the same event to a table.
+// errDynamoDBNonObject is returned when the DynamoDB sink receives non-object data.
 //
-// This sink supports the object handling pattern.
+// If this error occurs, then parse the data into an object (or drop invalid objects)
+// before it reaches the sink.
+const errDynamoDBNonObject = errors.Error("input must be object")
+
+// awsDynamodb sinks data to an AWS DynamoDB table.
+//
+// Writing multiple items from the same object to a table is possible when the
+// input is an array of item payloads.
 type _awsDynamodb struct {
 	// Table is the DynamoDB table that items are written to.
 	Table string `json:"table"`
@@ -42,7 +46,7 @@ func (sink *_awsDynamodb) Send(ctx context.Context, ch *config.Channel) error {
 			return ctx.Err()
 		default:
 			if !json.Valid(capsule.Data()) {
-				return fmt.Errorf("sink: aws_dynamodb: table %s: %v", sink.Table, errDynamoDBJSON)
+				return fmt.Errorf("sink: aws_dynamodb: table %s: %v", sink.Table, errDynamoDBNonObject)
 			}
 
 			items := capsule.Get(sink.Key).Array()

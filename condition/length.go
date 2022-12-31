@@ -9,8 +9,8 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errLengthInvalidType is returned when the length inspector is configured with an invalid Type.
-const errLengthInvalidType = errors.Error("invalid Type")
+// errLengthInvalidType is returned when the length inspector is configured with an invalid type.
+const errLengthInvalidType = errors.Error("invalid type")
 
 // length evaluates data using len Types.
 //

@@ -58,23 +58,23 @@ func (p _math) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 		return capsule, fmt.Errorf("process: math: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
-	var value int64
+	var value float64
 	result := capsule.Get(p.Key)
 	for i, res := range result.Array() {
 		if i == 0 {
-			value = res.Int()
+			value = res.Float()
 			continue
 		}
 
 		switch p.Options.Operation {
 		case "add":
-			value += res.Int()
+			value += res.Float()
 		case "subtract":
-			value -= res.Int()
+			value -= res.Float()
 		case "multiply":
-			value *= res.Int()
+			value *= res.Float()
 		case "divide":
-			value /= res.Int()
+			value /= res.Float()
 		}
 	}
 

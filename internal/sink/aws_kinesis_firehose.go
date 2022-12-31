@@ -26,8 +26,9 @@ drop or reduce the size of the data.
 const errFirehoseRecordSizeLimit = errors.Error("data exceeded size limit")
 
 // awsKinesisFirehose sinks data to an AWS Kinesis Firehose Delivery Stream.
-// This sink uploads data in batches of records and will automatically retry
-// any failed put record attempts.
+//
+// Data is sent in batches of records and will automatically retry
+// any failed PutRecord attempts.
 type _awsKinesisFirehose struct {
 	// Stream is the Kinesis Firehose Delivery Stream that data is sent to.
 	Stream string `json:"stream"`

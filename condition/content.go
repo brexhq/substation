@@ -18,13 +18,13 @@ type _content struct {
 	Options _contentOptions `json:"options"`
 }
 
-func (c _content) String() string {
-	return toString(c)
-}
-
 type _contentOptions struct {
 	// Type is the media type used for comparison during inspection. Media types follow this specification: https://mimesniff.spec.whatwg.org/.
 	Type string `json:"type"`
+}
+
+func (c _content) String() string {
+	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the content inspector.

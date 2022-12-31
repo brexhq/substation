@@ -7,7 +7,7 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-// stdout sinks data to stdout.
+// stdout sinks data to standard output.
 type _stdout struct{}
 
 // Send sinks a channel of encapsulated data with the sink.

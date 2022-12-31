@@ -17,10 +17,13 @@ import (
 
 var sumoLogicClient http.HTTP
 
-// errSumoLogicJSON is returned when the Sumo Logic sink receives invalid JSON. If this error occurs, then parse the data into valid JSON or drop invalid JSON before it reaches the sink.
-const errSumoLogicJSON = errors.Error("input must be JSON")
+// errSumoLogicNonObject is returned when the Sumo Logic sink receives non-object data.
+//
+// If this error occurs, then parse the data into an object (or drop invalid objects)
+// before it reaches the sink.
+const errSumoLogicNonObject = errors.Error("input must be object")
 
-// sumologic sinks objects to Sumo Logic using an HTTP collector.
+// sumologic sinks data to Sumo Logic using an HTTP collector.
 //
 // More information about Sumo Logic HTTP collectors is available here:
 // https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Data-to-an-HTTP-Source.
@@ -69,7 +72,7 @@ func (sink *_sumologic) Send(ctx context.Context, ch *config.Channel) error {
 			return ctx.Err()
 		default:
 			if !json.Valid(capsule.Data()) {
-				return fmt.Errorf("sink: sumologic category %s: %v", category, errSumoLogicJSON)
+				return fmt.Errorf("sink: sumologic category %s: %v", category, errSumoLogicNonObject)
 			}
 
 			if sink.CategoryKey != "" {

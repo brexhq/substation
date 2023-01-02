@@ -1,10 +1,11 @@
-local sink = import '../../../../build/config/sink.libsonnet';
+local lib = import '../../../../build/config/interfaces.libsonnet';
 
 local consts = import 'consts.libsonnet';
 local dynamodb = import 'dynamodb.libsonnet';
 
 {
-  sink: sink.aws_dynamodb(table='substation_example', key=consts.ddb_payload),
+  sink: lib.sink.aws_dynamodb(table='substation_example', key=consts.ddb_payload),
+  // use the batch transform to modify before it's written to DynamoDB.
   transform: {
     type: 'batch',
     settings: {

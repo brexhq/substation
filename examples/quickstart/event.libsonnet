@@ -5,11 +5,11 @@ local sub = import '../../build/config/substation.libsonnet';
 // local proc = sub.interfaces.processor;
 
 // inspectors and operators are combined to create unique matching
-// patt. interfaces and patterns can be combined if needed.
+// patterns. interfaces and patterns can be combined as needed.
 //
 // evalutes to true if the length of the value in "foo" is greater
-// than zero. this operator is automated in the process.if_not_empty
-// pattern.
+// than zero. this operator is automated in 
+// sub.patterns.process.if_not_empty pattern.
 local foo_op = sub.interfaces.operator.all(
   sub.patterns.inspector.length.gt_zero(key='foo'),
 );
@@ -27,7 +27,7 @@ local processors = [
   // sub.patterns.processor.time.now().
   //
   // https://www.elastic.co/guide/en/ecs/current/ecs-event.html#field-event-created
-  sub.interfaces.processor.time(format='now', settings={set_key:event_created}),
+  sub.interfaces.processor.time(options={format:'now'}, settings={set_key:event_created}),
   // processors with local variables are objects in the array.
   //
   // if "foo" is not empty, then copy the value to "fu".

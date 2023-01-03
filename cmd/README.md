@@ -15,4 +15,4 @@ Contains Substation apps deployed as AWS Lambda functions. More information is a
 
 ## file/substation
 
-Reads and processes data stored in a local file. The app is recommended for local testing and development.
+Reads and processes data from local disk, HTTP(S) URL, or AWS S3 URL. The app is recommended for local testing and development.

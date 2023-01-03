@@ -1,6 +1,8 @@
-local helpers = import '../../build/config/helpers.libsonnet';
-local lib = import '../../build/config/interfaces.libsonnet';
-local patterns = import '../../build/config/patterns.libsonnet';
+local sub = import '../../build/config/substation.libsonnet';
+// nested defintions can be accessed after importing sub ...
+// local help = sub.helpers;
+// local insp = sub.interfaces.inspector;
+// local proc = sub.interfaces.processor;
 
 // inspectors and operators are combined to create unique matching
 // patt. interfaces and patterns can be combined if needed.
@@ -8,8 +10,8 @@ local patterns = import '../../build/config/patterns.libsonnet';
 // evalutes to true if the length of the value in "foo" is greater
 // than zero. this operator is automated in the process.if_not_empty
 // pattern.
-local foo_op = lib.operator.all(
-  patterns.inspect.length.gt_zero(key='foo'),
+local foo_op = sub.interfaces.operator.all(
+  sub.patterns.inspector.length.gt_zero(key='foo'),
 );
 
 // keys can be referenced outside of processor definitions
@@ -20,22 +22,22 @@ local processors = [
   // process patterns are put directly into the array.
   //
   // https://www.elastic.co/guide/en/ecs/current/ecs-event.html#field-event-hash
-  patterns.process.hash.data(set_key=event_hash),
-  // processors are put directly into the array. this is identical to the
-  // process.time.now pattern.
+  sub.patterns.processor.hash.data(set_key=event_hash),
+  // processors are put directly into the array. this is identical to 
+  // sub.patterns.processor.time.now().
   //
   // https://www.elastic.co/guide/en/ecs/current/ecs-event.html#field-event-created
-  lib.process.apply(lib.process.time(format='now'), set_key=event_created),
+  sub.interfaces.processor.time(format='now', settings={set_key:event_created}),
   // processors with local variables are objects in the array.
   //
   // if "foo" is not empty, then copy the value to "fu".
   {
-    local opts = lib.process.copy,
-    processor: lib.process.apply(options=opts, key='foo', set_key='fu', condition=foo_op),
+    local s = {key:'foo', set_key:'fu', condition:foo_op},
+    processor: sub.interfaces.processor.copy(settings=s)
   },
 ];
 
-// nested processors are dynamically merged into a single array
+// processors are dynamically merged into a single array
 {
-  processors: helpers.flatten_processors(processors),
+  processors: sub.helpers.flatten_processors(processors),
 }

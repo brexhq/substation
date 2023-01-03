@@ -1,6 +1,4 @@
-local helpers = import '../../../../build/config/helpers.libsonnet';
-local lib = import '../../../../build/config/interfaces.libsonnet';
-local patterns = import '../../../../build/config/patterns.libsonnet';
+local sub = import '../../../../build/config/substation.libsonnet';
 
 local consts = import 'consts.libsonnet';
 
@@ -9,21 +7,19 @@ local consts = import 'consts.libsonnet';
 // as an array of one item.
 local processors = [
   // copy the partition key (PK)
-  lib.process.apply(
-    lib.process.copy,
-    key='event.hash',
-    set_key=helpers.key.append(consts.ddb_payload, 'PK'),
+  sub.interfaces.processor.copy(
+    settings={key:'event.hash', set_key:sub.helpers.key.append(consts.ddb_payload, 'PK')}
   ),
   // insert the extra attributes
-  lib.process.apply(
-    lib.process.copy,
-    key='event.created',
-    set_key=helpers.key.append(consts.ddb_payload, 'event_created'),
+  sub.interfaces.processor.copy(
+    settings={key:'event.created', set_key:sub.helpers.key.append(consts.ddb_payload, 'event_created')}
   ),
   // if !metadata ddb is empty, then drop the event to prevent the DynamoDB sink from processing unnecessary data
-  patterns.process.if_not_empty(options=lib.process.drop, key=consts.ddb_payload, negate=true),
+  sub.patterns.processor.if_not_empty(
+    processor=sub.interfaces.processor.drop(), key=consts.ddb_payload, negate=true
+  ),
 ];
 
 {
-  processors: helpers.flatten_processors(processors),
+  processors: sub.helpers.flatten_processors(processors),
 }

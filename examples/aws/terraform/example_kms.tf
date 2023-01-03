@@ -4,15 +4,15 @@
 ################################################
 
 module "iam_kms_read" {
-  source = "/workspaces/substation/build/terraform/aws/iam"
+  source = "../../../build/terraform/aws/iam"
   resources = [
     module.kms_substation.arn,
-    aws_kms_key.xray_key.arn,
+    # aws_kms_key.xray_key.arn,
   ]
 }
 
 module "iam_kms_read_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "substation_kms_read"
   policy = module.iam_kms_read.kms_read_policy
   roles = [
@@ -35,15 +35,15 @@ module "iam_kms_read_attachment" {
 ################################################
 
 module "iam_kms_write" {
-  source = "/workspaces/substation/build/terraform/aws/iam"
+  source = "../../../build/terraform/aws/iam"
   resources = [
     module.kms_substation.arn,
-    aws_kms_key.xray_key.arn,
+    # aws_kms_key.xray_key.arn,
   ]
 }
 
 module "iam_kms_write_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "substation_kms_write"
   policy = module.iam_kms_write.kms_write_policy
   roles = [

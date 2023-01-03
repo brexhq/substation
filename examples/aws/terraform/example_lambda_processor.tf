@@ -4,7 +4,7 @@
 ################################################
 
 module "lambda_processor" {
-  source        = "/workspaces/substation/build/terraform/aws/lambda"
+  source        = "../../../build/terraform/aws/lambda"
   function_name = "substation_processor"
   description   = "Substation Lambda that is triggered from the raw Kinesis stream and writes data to the processed Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id
@@ -39,12 +39,12 @@ resource "aws_lambda_event_source_mapping" "lambda_esm_processor" {
 
 # allows processor Lambda to read from DynamoDB tables for enrichment
 module "iam_lambda_processor_dynamodb_read" {
-  source    = "/workspaces/substation/build/terraform/aws/iam"
+  source    = "../../../build/terraform/aws/iam"
   resources = ["*"]
 }
 
 module "iam_lambda_processor_dynamodb_read_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "${module.lambda_processor.name}_dynamodb_read"
   policy = module.iam_lambda_processor_dynamodb_read.dynamodb_read_policy
   roles = [
@@ -54,12 +54,12 @@ module "iam_lambda_processor_dynamodb_read_attachment" {
 
 # allows processor Lambda to execute Lambda for enrichment
 module "iam_lambda_processor_lambda_execute" {
-  source    = "/workspaces/substation/build/terraform/aws/iam"
+  source    = "../../../build/terraform/aws/iam"
   resources = ["*"]
 }
 
 module "iam_lambda_processor_lambda_execute_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "${module.lambda_processor.name}_lambda_execute"
   policy = module.iam_lambda_processor_lambda_execute.lambda_execute_policy
   roles = [

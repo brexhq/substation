@@ -3,7 +3,7 @@
 ################################################
 
 module "kinesis_raw" {
-  source            = "/workspaces/substation/build/terraform/aws/kinesis"
+  source            = "../../../build/terraform/aws/kinesis"
   kms_key_id        = module.kms_substation.arn
   stream_name       = "substation_raw"
   autoscaling_topic = aws_sns_topic.autoscaling_topic.arn
@@ -18,14 +18,14 @@ module "kinesis_raw" {
 ################################################
 
 module "iam_kinesis_raw_read" {
-  source = "/workspaces/substation/build/terraform/aws/iam"
+  source = "../../../build/terraform/aws/iam"
   resources = [
     module.kinesis_raw.arn,
   ]
 }
 
 module "iam_kinesis_raw_read_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "substation_kinesis_raw_read"
   policy = module.iam_kinesis_raw_read.kinesis_read_policy
   roles = [
@@ -40,14 +40,14 @@ module "iam_kinesis_raw_read_attachment" {
 ################################################
 
 module "iam_kinesis_raw_write" {
-  source = "/workspaces/substation/build/terraform/aws/iam"
+  source = "../../../build/terraform/aws/iam"
   resources = [
     module.kinesis_raw.arn,
   ]
 }
 
 module "iam_kinesis_raw_write_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "substation_kinesis_raw_write"
   policy = module.iam_kinesis_raw_write.kinesis_write_policy
   roles = [
@@ -64,7 +64,7 @@ module "iam_kinesis_raw_write_attachment" {
 ################################################
 
 module "kinesis_processed" {
-  source            = "/workspaces/substation/build/terraform/aws/kinesis"
+  source            = "../../../build/terraform/aws/kinesis"
   kms_key_id        = module.kms_substation.arn
   stream_name       = "substation_processed"
   autoscaling_topic = aws_sns_topic.autoscaling_topic.arn
@@ -79,14 +79,14 @@ module "kinesis_processed" {
 ################################################
 
 module "iam_kinesis_processed_read" {
-  source = "/workspaces/substation/build/terraform/aws/iam"
+  source = "../../../build/terraform/aws/iam"
   resources = [
     module.kinesis_processed.arn,
   ]
 }
 
 module "iam_kinesis_processed_read_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "substation_kinesis_processed_read"
   policy = module.iam_kinesis_processed_read.kinesis_read_policy
   roles = [
@@ -100,14 +100,14 @@ module "iam_kinesis_processed_read_attachment" {
 ################################################
 
 module "iam_kinesis_processed_write" {
-  source = "/workspaces/substation/build/terraform/aws/iam"
+  source = "../../../build/terraform/aws/iam"
   resources = [
     module.kinesis_processed.arn,
   ]
 }
 
 module "iam_kinesis_processed_write_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "substation_kinesis_processed_write"
   policy = module.iam_kinesis_processed_write.kinesis_write_policy
   roles = [

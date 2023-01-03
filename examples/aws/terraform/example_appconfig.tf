@@ -4,12 +4,12 @@
 ################################################
 
 module "iam_appconfig_read" {
-  source    = "/workspaces/substation/build/terraform/aws/iam"
+  source    = "../../../build/terraform/aws/iam"
   resources = ["${aws_appconfig_application.substation.arn}/*"]
 }
 
 module "iam_appconfig_read_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "substation_appconfig_read"
   policy = module.iam_appconfig_read.appconfig_read_policy
   roles = [

@@ -2,7 +2,7 @@
 resource "random_uuid" "bucket" {}
 
 module "s3_substation" {
-  source  = "/workspaces/substation/build/terraform/aws/s3"
+  source  = "../../../build/terraform/aws/s3"
   kms_arn = module.kms_substation.arn
   bucket  = "${random_uuid.bucket.result}-substation"
 }
@@ -12,14 +12,14 @@ module "s3_substation" {
 ################################################
 
 module "iam_s3_read" {
-  source = "/workspaces/substation/build/terraform/aws/iam"
+  source = "../../../build/terraform/aws/iam"
   resources = [
     "${module.s3_substation.arn}/*",
   ]
 }
 
 module "iam_s3_read_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "iam_s3_read"
   policy = module.iam_s3_read.s3_read_policy
   roles = [
@@ -33,14 +33,14 @@ module "iam_s3_read_attachment" {
 
 
 module "iam_s3_write" {
-  source = "/workspaces/substation/build/terraform/aws/iam"
+  source = "../../../build/terraform/aws/iam"
   resources = [
     "${module.s3_substation.arn}/*",
   ]
 }
 
 module "iam_s3_write_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "iam_s3_write"
   policy = module.iam_s3_write.s3_write_policy
   roles = [

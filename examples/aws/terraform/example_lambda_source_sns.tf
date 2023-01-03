@@ -4,7 +4,7 @@
 ################################################
 
 module "sns_source" {
-  source     = "/workspaces/substation/build/terraform/aws/sns"
+  source     = "../../../build/terraform/aws/sns"
   kms_key_id = module.kms_substation.key_id
   name       = "substation_sns_example"
 }
@@ -15,7 +15,7 @@ module "sns_source" {
 ################################################
 
 module "lambda_sns_source" {
-  source        = "/workspaces/substation/build/terraform/aws/lambda"
+  source        = "../../../build/terraform/aws/lambda"
   function_name = "substation_sns_source"
   description   = "Substation Lambda that is triggered from SNS and writes data to the raw Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id

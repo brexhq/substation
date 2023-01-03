@@ -4,7 +4,7 @@
 ################################################
 
 module "gateway_lambda_source" {
-  source       = "/workspaces/substation/build/terraform/aws/api_gateway/lambda"
+  source       = "../../../build/terraform/aws/api_gateway/lambda"
   name         = "substation_lambda_example"
   function_arn = module.lambda_gateway_source.arn
 }
@@ -15,7 +15,7 @@ module "gateway_lambda_source" {
 ################################################
 
 module "lambda_gateway_source" {
-  source        = "/workspaces/substation/build/terraform/aws/lambda"
+  source        = "../../../build/terraform/aws/lambda"
   function_name = "substation_gateway_source"
   description   = "Substation Lambda that is triggered from an API Gateway and writes data to the raw Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id

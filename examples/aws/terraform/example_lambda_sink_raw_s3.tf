@@ -4,7 +4,7 @@
 ################################################
 
 module "lambda_raw_s3_sink" {
-  source        = "/workspaces/substation/build/terraform/aws/lambda"
+  source        = "../../../build/terraform/aws/lambda"
   function_name = "substation_raw_s3_sink"
   description   = "Substation Lambda that is triggered from the raw Kinesis stream and writes data to S3"
   appconfig_id  = aws_appconfig_application.substation.id

@@ -13,7 +13,7 @@ import (
 var httpClient http.HTTP
 
 // http sinks data to an HTTP(S) URL.
-type _http struct {
+type sinkHTTP struct {
 	// URL is the HTTP(S) endpoint that data is sent to.
 	URL string `json:"url"`
 	// Headers are an array of objects that contain HTTP headers sent in the request.
@@ -32,7 +32,7 @@ type _http struct {
 }
 
 // Send sinks a channel of encapsulated data with the sink.
-func (sink *_http) Send(ctx context.Context, ch *config.Channel) error {
+func (s *sinkHTTP) Send(ctx context.Context, ch *config.Channel) error {
 	if !httpClient.IsEnabled() {
 		httpClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -54,8 +54,8 @@ func (sink *_http) Send(ctx context.Context, ch *config.Channel) error {
 				})
 			}
 
-			if len(sink.Headers) > 0 {
-				for _, header := range sink.Headers {
+			if len(s.Headers) > 0 {
+				for _, header := range s.Headers {
 					headers = append(headers, http.Header{
 						Key:   header.Key,
 						Value: header.Value,
@@ -63,8 +63,8 @@ func (sink *_http) Send(ctx context.Context, ch *config.Channel) error {
 				}
 			}
 
-			if sink.HeadersKey != "" {
-				h := capsule.Get(sink.HeadersKey).Array()
+			if s.HeadersKey != "" {
+				h := capsule.Get(s.HeadersKey).Array()
 				for _, header := range h {
 					for k, v := range header.Map() {
 						headers = append(headers, http.Header{
@@ -75,7 +75,7 @@ func (sink *_http) Send(ctx context.Context, ch *config.Channel) error {
 				}
 			}
 
-			_, err := httpClient.Post(ctx, sink.URL, string(capsule.Data()), headers...)
+			_, err := httpClient.Post(ctx, s.URL, string(capsule.Data()), headers...)
 			if err != nil {
 				// Post err returns metadata
 				return fmt.Errorf("sink: http: %v", err)

@@ -27,7 +27,7 @@ const errSumoLogicNonObject = errors.Error("input must be object")
 //
 // More information about Sumo Logic HTTP collectors is available here:
 // https://help.sumologic.com/03Send-Data/Sources/02Sources-for-Hosted-Collectors/HTTP-Source/Upload-Data-to-an-HTTP-Source.
-type _sumologic struct {
+type sinkSumoLogic struct {
 	// URL is the Sumo Logic HTTPS endpoint that objects are sent to.
 	URL string `json:"url"`
 	// Category is the Sumo Logic source category that overrides the
@@ -44,7 +44,7 @@ type _sumologic struct {
 }
 
 // Send sinks a channel of encapsulated data with the sink.
-func (sink *_sumologic) Send(ctx context.Context, ch *config.Channel) error {
+func (s *sinkSumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 	if !sumoLogicClient.IsEnabled() {
 		sumoLogicClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -62,8 +62,8 @@ func (sink *_sumologic) Send(ctx context.Context, ch *config.Channel) error {
 	}
 
 	var category string
-	if sink.Category != "" {
-		category = sink.Category
+	if s.Category != "" {
+		category = s.Category
 	}
 
 	for capsule := range ch.C {
@@ -75,8 +75,8 @@ func (sink *_sumologic) Send(ctx context.Context, ch *config.Channel) error {
 				return fmt.Errorf("sink: sumologic category %s: %v", category, errSumoLogicNonObject)
 			}
 
-			if sink.CategoryKey != "" {
-				category = capsule.Get(sink.CategoryKey).String()
+			if s.CategoryKey != "" {
+				category = capsule.Get(s.CategoryKey).String()
 			}
 
 			if _, ok := buffer[category]; !ok {
@@ -102,7 +102,7 @@ func (sink *_sumologic) Send(ctx context.Context, ch *config.Channel) error {
 					buf.WriteString(fmt.Sprintf("%s\n", i))
 				}
 
-				if _, err := sumoLogicClient.Post(ctx, sink.URL, buf.Bytes(), h...); err != nil {
+				if _, err := sumoLogicClient.Post(ctx, s.URL, buf.Bytes(), h...); err != nil {
 					// Post err returns metadata
 					return fmt.Errorf("sink: sumologic: %v", err)
 				}
@@ -138,7 +138,7 @@ func (sink *_sumologic) Send(ctx context.Context, ch *config.Channel) error {
 			buf.WriteString(fmt.Sprintf("%s\n", b))
 		}
 
-		if _, err := sumoLogicClient.Post(ctx, sink.URL, buf.Bytes(), h...); err != nil {
+		if _, err := sumoLogicClient.Post(ctx, s.URL, buf.Bytes(), h...); err != nil {
 			// Post err returns metadata
 			return fmt.Errorf("sink: sumologic: %v", err)
 		}

@@ -9,10 +9,10 @@ import (
 )
 
 // transfer transforms data without modification.
-type _transfer struct{}
+type tformTransfer struct{}
 
 // Transform processes a channel of encapsulated data with the transform.
-func (transform *_transfer) Transform(ctx context.Context, wg *sync.WaitGroup, in, out *config.Channel) error {
+func (t *tformTransfer) Transform(ctx context.Context, wg *sync.WaitGroup, in, out *config.Channel) error {
 	var count int
 
 	// read and write encapsulated data from input and to output channels

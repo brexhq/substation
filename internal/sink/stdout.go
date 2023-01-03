@@ -8,10 +8,10 @@ import (
 )
 
 // stdout sinks data to standard output.
-type _stdout struct{}
+type sinkStdout struct{}
 
 // Send sinks a channel of encapsulated data with the sink.
-func (sink *_stdout) Send(ctx context.Context, ch *config.Channel) error {
+func (s *sinkStdout) Send(ctx context.Context, ch *config.Channel) error {
 	var count int
 	for capsule := range ch.C {
 		select {

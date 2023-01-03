@@ -24,7 +24,7 @@ const errDynamoDBNonObject = errors.Error("input must be object")
 //
 // Writing multiple items from the same object to a table is possible when the
 // input is an array of item payloads.
-type _awsDynamodb struct {
+type sinkAWSDynamoDB struct {
 	// Table is the DynamoDB table that items are written to.
 	Table string `json:"table"`
 	// Key contains the DynamoDB items map that is written to the table.
@@ -34,7 +34,7 @@ type _awsDynamodb struct {
 }
 
 // Send sinks a channel of encapsulated data with the sink.
-func (sink *_awsDynamodb) Send(ctx context.Context, ch *config.Channel) error {
+func (s *sinkAWSDynamoDB) Send(ctx context.Context, ch *config.Channel) error {
 	if !dynamodbAPI.IsEnabled() {
 		dynamodbAPI.Setup()
 	}
@@ -46,10 +46,10 @@ func (sink *_awsDynamodb) Send(ctx context.Context, ch *config.Channel) error {
 			return ctx.Err()
 		default:
 			if !json.Valid(capsule.Data()) {
-				return fmt.Errorf("sink: aws_dynamodb: table %s: %v", sink.Table, errDynamoDBNonObject)
+				return fmt.Errorf("sink: aws_dynamodb: table %s: %v", s.Table, errDynamoDBNonObject)
 			}
 
-			items := capsule.Get(sink.Key).Array()
+			items := capsule.Get(s.Key).Array()
 			for _, item := range items {
 				cache := make(map[string]interface{})
 				for k, v := range item.Map() {
@@ -58,10 +58,10 @@ func (sink *_awsDynamodb) Send(ctx context.Context, ch *config.Channel) error {
 
 				values, err := dynamodbattribute.MarshalMap(cache)
 				if err != nil {
-					return fmt.Errorf("sink: aws_dynamodb: table %s: %v", sink.Table, err)
+					return fmt.Errorf("sink: aws_dynamodb: table %s: %v", s.Table, err)
 				}
 
-				_, err = dynamodbAPI.PutItem(ctx, sink.Table, values)
+				_, err = dynamodbAPI.PutItem(ctx, s.Table, values)
 				if err != nil {
 					// PutItem err returns metadata
 					return fmt.Errorf("sink: aws_dynamodb: %v", err)
@@ -73,7 +73,7 @@ func (sink *_awsDynamodb) Send(ctx context.Context, ch *config.Channel) error {
 	}
 
 	log.WithField(
-		"table", sink.Table,
+		"table", s.Table,
 	).WithField(
 		"count", count,
 	).Debug("put items into DynamoDB")

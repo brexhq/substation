@@ -16,7 +16,7 @@ var kinesisAPI kinesis.API
 // awsKinesis sinks data to an AWS Kinesis Data Stream using Kinesis Producer Library (KPL) compliant aggregated records.
 //
 // More information about the KPL and its schema is available here: https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html.
-type _awsKinesis struct {
+type sinkAWSKinesis struct {
 	// Stream is the Kinesis Data Stream that records are sent to.
 	Stream string `json:"stream"`
 	// Partition is a string that is used as the partition key for each
@@ -40,7 +40,7 @@ type _awsKinesis struct {
 }
 
 // Send sinks a channel of encapsulated data with the sink.
-func (sink *_awsKinesis) Send(ctx context.Context, ch *config.Channel) error {
+func (s *sinkAWSKinesis) Send(ctx context.Context, ch *config.Channel) error {
 	if !kinesisAPI.IsEnabled() {
 		kinesisAPI.Setup()
 	}
@@ -53,10 +53,10 @@ func (sink *_awsKinesis) Send(ctx context.Context, ch *config.Channel) error {
 			return ctx.Err()
 		default:
 			var partitionKey string
-			if sink.Partition != "" {
-				partitionKey = sink.Partition
-			} else if sink.PartitionKey != "" {
-				partitionKey = capsule.Get(sink.PartitionKey).String()
+			if s.Partition != "" {
+				partitionKey = s.Partition
+			} else if s.PartitionKey != "" {
+				partitionKey = capsule.Get(s.PartitionKey).String()
 			}
 
 			if partitionKey == "" {
@@ -66,7 +66,7 @@ func (sink *_awsKinesis) Send(ctx context.Context, ch *config.Channel) error {
 			// enables redistribution of data across shards by aggregating partition keys into the same payload
 			// this has the intentional side effect where data aggregation is disabled if no partition key is assigned
 			var aggregationKey string
-			if sink.ShardRedistribution {
+			if s.ShardRedistribution {
 				aggregationKey = partitionKey
 			}
 
@@ -82,14 +82,14 @@ func (sink *_awsKinesis) Send(ctx context.Context, ch *config.Channel) error {
 			if !ok {
 				agg := buffer[aggregationKey].Get()
 				aggPK := buffer[aggregationKey].PartitionKey
-				_, err := kinesisAPI.PutRecord(ctx, agg, sink.Stream, aggPK)
+				_, err := kinesisAPI.PutRecord(ctx, agg, s.Stream, aggPK)
 				if err != nil {
 					// PutRecord err returns metadata
 					return fmt.Errorf("sink: aws_kinesis: %v", err)
 				}
 
 				log.WithField(
-					"stream", sink.Stream,
+					"stream", s.Stream,
 				).WithField(
 					"partition_key", aggPK,
 				).WithField(
@@ -112,14 +112,14 @@ func (sink *_awsKinesis) Send(ctx context.Context, ch *config.Channel) error {
 
 		agg := buffer[aggregationKey].Get()
 		aggPK := buffer[aggregationKey].PartitionKey
-		_, err := kinesisAPI.PutRecord(ctx, agg, sink.Stream, aggPK)
+		_, err := kinesisAPI.PutRecord(ctx, agg, s.Stream, aggPK)
 		if err != nil {
 			// PutRecord err returns metadata
 			return fmt.Errorf("sink: aws_kinesis: %v", err)
 		}
 
 		log.WithField(
-			"stream", sink.Stream,
+			"stream", s.Stream,
 		).WithField(
 			"partition_key", aggPK,
 		).WithField(

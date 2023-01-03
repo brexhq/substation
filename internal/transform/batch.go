@@ -14,19 +14,19 @@ import (
 // encapsulated data.
 //
 // Data processing is iterative and each processor is enabled through conditions.
-type _batch struct {
+type tformBatch struct {
 	Processors []config.Config `json:"processors"`
 }
 
 // Transform processes a channel of encapsulated data with the transform.
-func (transform *_batch) Transform(ctx context.Context, wg *sync.WaitGroup, in, out *config.Channel) error {
-	batchers, err := process.MakeBatchers(transform.Processors...)
+func (t *tformBatch) Transform(ctx context.Context, wg *sync.WaitGroup, in, out *config.Channel) error {
+	batchers, err := process.NewBatchers(t.Processors...)
 	if err != nil {
 		return err
 	}
 
 	/*
-		closing processors in an anonymous goroutine blocked by the WaitGroup from the calling application ensures that all processors across the entire app close after all data transformation is finished. as of now this is the only way to prevent premature closing of processors and avoid panics that can occur if processors running inside one transform attempt to access resources closed by processors running inside of a different transform.
+		closing processors in an anonymous goroutine blocked by the WaitGroup from the calling application ensures that all processors across the entire app close after all data transformation is finished. as of now this is the only way to prevent premature closing of processors and avoid panics that can occur if processors running inside one transform attempt to access resources closed by processors running inside of a different t.
 	*/
 	go func() {
 		wg.Wait()

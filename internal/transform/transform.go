@@ -12,19 +12,19 @@ import (
 // errInvalidFactoryInput is returned when an unsupported Transform is referenced in Factory.
 const errInvalidFactoryInput = errors.Error("invalid factory input")
 
-type transformer interface {
+type Transformer interface {
 	Transform(context.Context, *sync.WaitGroup, *config.Channel, *config.Channel) error
 }
 
-// Make returns a configured transform from a transform configuration.
-func Make(cfg config.Config) (transformer, error) {
+// New returns a configured Transformer from a transform configuration.
+func New(cfg config.Config) (Transformer, error) {
 	switch t := cfg.Type; t {
 	case "batch":
-		var t _batch
+		var t tformBatch
 		_ = config.Decode(cfg.Settings, &t)
 		return &t, nil
 	case "transfer":
-		var t _transfer
+		var t tformTransfer
 		_ = config.Decode(cfg.Settings, &t)
 		return &t, nil
 	default:

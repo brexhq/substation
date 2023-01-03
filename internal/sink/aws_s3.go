@@ -22,7 +22,7 @@ var s3uploader s3manager.UploaderAPI
 //
 // Object names contain the year, month, and day the data was processed
 // by the sink and can be optionally prefixed with a custom string.
-type _awsS3 struct {
+type sinkAWSS3 struct {
 	// Bucket is the AWS S3 bucket that data is written to.
 	Bucket string `json:"bucket"`
 	// Prefix is a prefix prepended to the object path.
@@ -38,7 +38,7 @@ type _awsS3 struct {
 }
 
 // Send sinks a channel of encapsulated data with the sink.
-func (sink *_awsS3) Send(ctx context.Context, ch *config.Channel) error {
+func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 	if !s3uploader.IsEnabled() {
 		s3uploader.Setup()
 	}
@@ -46,8 +46,8 @@ func (sink *_awsS3) Send(ctx context.Context, ch *config.Channel) error {
 	files := make(map[string]*os.File)
 
 	var prefix string
-	if sink.Prefix != "" {
-		prefix = sink.Prefix
+	if s.Prefix != "" {
+		prefix = s.Prefix
 	}
 
 	// newline character for Unix-based systems
@@ -58,14 +58,14 @@ func (sink *_awsS3) Send(ctx context.Context, ch *config.Channel) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if sink.PrefixKey != "" {
-				prefix = capsule.Get(sink.PrefixKey).String()
+			if s.PrefixKey != "" {
+				prefix = capsule.Get(s.PrefixKey).String()
 			}
 
 			if _, ok := files[prefix]; !ok {
 				f, err := os.CreateTemp("", "substation")
 				if err != nil {
-					return fmt.Errorf("sink: aws_s3: bucket %s prefix %s: %v", sink.Bucket, prefix, err)
+					return fmt.Errorf("sink: aws_s3: bucket %s prefix %s: %v", s.Bucket, prefix, err)
 				}
 
 				defer os.Remove(f.Name()) //nolint:staticcheck // SA9001: channel is closed on error, defer will run
@@ -75,10 +75,10 @@ func (sink *_awsS3) Send(ctx context.Context, ch *config.Channel) error {
 			}
 
 			if _, err := files[prefix].Write(capsule.Data()); err != nil {
-				return fmt.Errorf("sink: aws_s3: bucket %s prefix %s: %v", sink.Bucket, prefix, err)
+				return fmt.Errorf("sink: aws_s3: bucket %s prefix %s: %v", s.Bucket, prefix, err)
 			}
 			if _, err := files[prefix].Write(separator); err != nil {
-				return fmt.Errorf("sink: aws_s3: bucket %s prefix %s: %v", sink.Bucket, prefix, err)
+				return fmt.Errorf("sink: aws_s3: bucket %s prefix %s: %v", s.Bucket, prefix, err)
 			}
 		}
 	}
@@ -93,7 +93,7 @@ func (sink *_awsS3) Send(ctx context.Context, ch *config.Channel) error {
 	*/
 	for prefix, file := range files {
 		if _, err := file.Seek(0, 0); err != nil {
-			return fmt.Errorf("sink: aws_s3: bucket %s: %v", sink.Bucket, err)
+			return fmt.Errorf("sink: aws_s3: bucket %s: %v", s.Bucket, err)
 		}
 
 		reader, w := io.Pipe()
@@ -108,18 +108,18 @@ func (sink *_awsS3) Send(ctx context.Context, ch *config.Channel) error {
 		}()
 
 		key := createKey(prefix)
-		if _, err := s3uploader.Upload(ctx, sink.Bucket, key, reader); err != nil {
-			return fmt.Errorf("sink: aws_s3: bucket %s key %s: %v", sink.Bucket, key, err)
+		if _, err := s3uploader.Upload(ctx, s.Bucket, key, reader); err != nil {
+			return fmt.Errorf("sink: aws_s3: bucket %s key %s: %v", s.Bucket, key, err)
 		}
 
 		// s3uploader.Upload does not return the size of uploaded data, so we use the size of the uncompressed file when reporting stats for debugging
 		fs, err := file.Stat()
 		if err != nil {
-			return fmt.Errorf("sink: aws_s3: bucket %s key %s: %v", sink.Bucket, key, err)
+			return fmt.Errorf("sink: aws_s3: bucket %s key %s: %v", s.Bucket, key, err)
 		}
 
 		log.WithField(
-			"bucket", sink.Bucket,
+			"bucket", s.Bucket,
 		).WithField(
 			"key", key,
 		).WithField(

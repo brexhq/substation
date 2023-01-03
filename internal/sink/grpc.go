@@ -14,12 +14,12 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// grpc sinks data to a server that implements the server API for the Sink service.
+// sinkGRPC sinks data to a server that implements the server API for the Sink service.
 //
 // This sink can be used for inter-process communication (IPC) by using a localhost
 // server. By default, the sink creates an insecure connection that is unauthenticated
 // and unencrypted.
-type _grpc struct {
+type sinkGRPC struct {
 	// Server is the address and port number for the server that data is sent to.
 	Server string `json:"server"`
 	// Timeout is the amount of time (in seconds) to wait before cancelling the request.
@@ -36,13 +36,13 @@ type _grpc struct {
 }
 
 // Send sinks a channel of encapsulated data with the sink.
-func (sink *_grpc) Send(ctx context.Context, ch *config.Channel) error {
+func (s *sinkGRPC) Send(ctx context.Context, ch *config.Channel) error {
 	// https://grpc.io/docs/guides/auth/#base-case---no-encryption-or-authentication
 	creds := grpc.WithTransportCredentials(insecure.NewCredentials())
 
 	// https://grpc.io/docs/guides/auth/#with-server-authentication-ssltls
-	if sink.Certificate != "" {
-		cert, err := file.Get(ctx, sink.Certificate)
+	if s.Certificate != "" {
+		cert, err := file.Get(ctx, s.Certificate)
 		if err != nil {
 			return fmt.Errorf("sink: grpc: %v", err)
 		}
@@ -59,15 +59,15 @@ func (sink *_grpc) Send(ctx context.Context, ch *config.Channel) error {
 	var opts []grpc.DialOption
 	opts = append(opts, creds)
 
-	conn, err := grpc.DialContext(ctx, sink.Server, opts...)
+	conn, err := grpc.DialContext(ctx, s.Server, opts...)
 	if err != nil {
 		return fmt.Errorf("sink: grpc: %v", err)
 	}
 	defer conn.Close()
 
 	timeout := 10 * time.Second
-	if sink.Timeout != 0 {
-		timeout = time.Duration(sink.Timeout) * time.Second
+	if s.Timeout != 0 {
+		timeout = time.Duration(s.Timeout) * time.Second
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)

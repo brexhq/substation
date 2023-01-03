@@ -15,34 +15,34 @@ import (
 // workflow.
 //
 // This processor supports the object handling pattern.
-type _forEach struct {
+type procForEach struct {
 	process
-	Options _forEachOptions `json:"options"`
+	Options procForEachOptions `json:"options"`
 }
 
-type _forEachOptions struct {
+type procForEachOptions struct {
 	// Processor applied to each element in the object array.
 	Processor config.Config
 }
 
 // String returns the processor settings as an object.
-func (p _forEach) String() string {
+func (p procForEach) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _forEach) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procForEach) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _forEach) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procForEach) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _forEach) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
 		return capsule, fmt.Errorf("process: for_each: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
@@ -71,7 +71,7 @@ func (p _forEach) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 		return capsule, err
 	}
 
-	applier, err := MakeApplier(processor)
+	applier, err := NewApplier(processor)
 	if err != nil {
 		return capsule, fmt.Errorf("process: for_each: %v", err)
 	}

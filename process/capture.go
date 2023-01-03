@@ -11,12 +11,12 @@ import (
 // capture processes data by capturing values using regular expressions.
 //
 // This processor supports the data and object handling patterns.
-type _capture struct {
+type procCapture struct {
 	process
-	Options _captureOptions `json:"options"`
+	Options procCaptureOptions `json:"options"`
 }
 
-type _captureOptions struct {
+type procCaptureOptions struct {
 	// Expression is the regular expression used to capture values.
 	Expression string `json:"expression"`
 	// Type determines which regular expression function is applied using
@@ -28,7 +28,7 @@ type _captureOptions struct {
 	//
 	// - find_all: applies the FindAll(String)?Submatch function (see count)
 	//
-	// - named_group: applies the Find(String)?Submatch function and stores
+	// - namedprocGroup: applies the Find(String)?Submatch function and stores
 	// values as objects using subexpressions
 	Type string `json:"type"`
 	// Count manages the number of repeated capture groups.
@@ -38,23 +38,23 @@ type _captureOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _capture) String() string {
+func (p procCapture) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _capture) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procCapture) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _capture) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procCapture) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _capture) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procCapture) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Expression == "" || p.Options.Type == "" {
 		return capsule, fmt.Errorf("process: capture: options %+v: %v", p.Options, errMissingRequiredOptions)
@@ -106,7 +106,7 @@ func (p _capture) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 			capsule.SetData(match[1])
 
 			return capsule, nil
-		case "named_group":
+		case "namedprocGroup":
 			newCapsule := config.NewCapsule()
 
 			names := re.SubexpNames()
@@ -128,7 +128,7 @@ func (p _capture) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 	return capsule, fmt.Errorf("process: capture: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }
 
-func (p _capture) getStringMatch(match []string) string {
+func (p procCapture) getStringMatch(match []string) string {
 	if len(match) > 1 {
 		return match[len(match)-1]
 	}

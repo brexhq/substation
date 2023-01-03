@@ -10,19 +10,19 @@ import (
 
 var hashTests = []struct {
 	name     string
-	proc     _hash
+	proc     procHash
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON md5",
-		_hash{
+		procHash{
 			process: process{
 				Key:    "hash",
 				SetKey: "hash",
 			},
-			Options: _hashOptions{
+			Options: procHashOptions{
 				Algorithm: "md5",
 			},
 		},
@@ -32,12 +32,12 @@ var hashTests = []struct {
 	},
 	{
 		"JSON sha256",
-		_hash{
+		procHash{
 			process: process{
 				Key:    "hash",
 				SetKey: "hash",
 			},
-			Options: _hashOptions{
+			Options: procHashOptions{
 				Algorithm: "sha256",
 			},
 		},
@@ -47,12 +47,12 @@ var hashTests = []struct {
 	},
 	{
 		"JSON @this sha256",
-		_hash{
+		procHash{
 			process: process{
 				Key:    "@this",
 				SetKey: "hash",
 			},
-			Options: _hashOptions{
+			Options: procHashOptions{
 				Algorithm: "sha256",
 			},
 		},
@@ -62,8 +62,8 @@ var hashTests = []struct {
 	},
 	{
 		"data md5",
-		_hash{
-			Options: _hashOptions{
+		procHash{
+			Options: procHashOptions{
 				Algorithm: "md5",
 			},
 		},
@@ -73,8 +73,8 @@ var hashTests = []struct {
 	},
 	{
 		"data sha256",
-		_hash{
-			Options: _hashOptions{
+		procHash{
+			Options: procHashOptions{
 				Algorithm: "sha256",
 			},
 		},
@@ -89,6 +89,9 @@ func TestHash(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range hashTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -102,7 +105,7 @@ func TestHash(t *testing.T) {
 	}
 }
 
-func benchmarkHash(b *testing.B, applier _hash, test config.Capsule) {
+func benchmarkHash(b *testing.B, applier procHash, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

@@ -10,14 +10,14 @@ import (
 
 var copyTests = []struct {
 	name     string
-	proc     _copy
+	proc     procCopy
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON",
-		_copy{
+		procCopy{
 			process: process{
 				Key:    "foo",
 				SetKey: "baz",
@@ -29,7 +29,7 @@ var copyTests = []struct {
 	},
 	{
 		"JSON unescape",
-		_copy{
+		procCopy{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
@@ -41,7 +41,7 @@ var copyTests = []struct {
 	},
 	{
 		"JSON unescape",
-		_copy{
+		procCopy{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
@@ -53,7 +53,7 @@ var copyTests = []struct {
 	},
 	{
 		"from JSON",
-		_copy{
+		procCopy{
 			process: process{
 				Key: "foo",
 			},
@@ -64,7 +64,7 @@ var copyTests = []struct {
 	},
 	{
 		"from JSON nested",
-		_copy{
+		procCopy{
 			process: process{
 				Key: "foo",
 			},
@@ -75,7 +75,7 @@ var copyTests = []struct {
 	},
 	{
 		"to JSON utf8",
-		_copy{
+		procCopy{
 			process: process{
 				SetKey: "bar",
 			},
@@ -86,7 +86,7 @@ var copyTests = []struct {
 	},
 	{
 		"to JSON base64",
-		_copy{
+		procCopy{
 			process: process{
 				SetKey: "bar",
 			},
@@ -102,6 +102,9 @@ func TestCopy(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range copyTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -115,7 +118,7 @@ func TestCopy(t *testing.T) {
 	}
 }
 
-func benchmarkCopy(b *testing.B, applier _copy, test config.Capsule) {
+func benchmarkCopy(b *testing.B, applier procCopy, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

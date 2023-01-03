@@ -33,12 +33,12 @@ const errAWSDynamodbInputMissingPK = errors.Error("input missing PK")
 // - https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html#Query.KeyConditionExpressions
 //
 // This processor supports the object handling pattern.
-type _awsDynamodb struct {
+type procAWSDynamoDB struct {
 	process
-	Options _awsDynamodbOptions `json:"options"`
+	Options procAWSDynamoDBOptions `json:"options"`
 }
 
-type _awsDynamodbOptions struct {
+type procAWSDynamoDBOptions struct {
 	// Table is the DynamoDB table that is queried.
 	Table string `json:"table"`
 	// KeyConditionExpression is the DynamoDB key condition
@@ -61,23 +61,23 @@ type _awsDynamodbOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _awsDynamodb) String() string {
+func (p procAWSDynamoDB) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _awsDynamodb) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procAWSDynamoDB) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _awsDynamodb) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procAWSDynamoDB) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _awsDynamodb) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procAWSDynamoDB) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
 		return capsule, fmt.Errorf("process: dynamodb: options %+v: %v", p.Options, errMissingRequiredOptions)
@@ -124,7 +124,7 @@ func (p _awsDynamodb) Apply(ctx context.Context, capsule config.Capsule) (config
 	return capsule, nil
 }
 
-func (p _awsDynamodb) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {
+func (p procAWSDynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {
 	resp, err := dynamodbAPI.Query(
 		ctx,
 		p.Options.Table,

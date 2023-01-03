@@ -10,19 +10,19 @@ import (
 
 var splitTests = []struct {
 	name     string
-	proc     _split
+	proc     procSplit
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON",
-		_split{
+		procSplit{
 			process: process{
 				Key:    "split",
 				SetKey: "split",
 			},
-			Options: _splitOptions{
+			Options: procSplitOptions{
 				Separator: ".",
 			},
 		},
@@ -37,6 +37,9 @@ func TestSplit(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range splitTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -50,7 +53,7 @@ func TestSplit(t *testing.T) {
 	}
 }
 
-func benchmarkSplit(b *testing.B, proc _split, capsule config.Capsule) {
+func benchmarkSplit(b *testing.B, proc procSplit, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = proc.Apply(ctx, capsule)
@@ -71,15 +74,15 @@ func BenchmarkSplit(b *testing.B) {
 
 var splitBatchTests = []struct {
 	name     string
-	proc     _split
+	proc     procSplit
 	test     [][]byte
 	expected [][]byte
 	err      error
 }{
 	{
 		"data",
-		_split{
-			Options: _splitOptions{
+		procSplit{
+			Options: procSplitOptions{
 				Separator: `\n`,
 			},
 		},
@@ -119,7 +122,7 @@ func TestSplitBatch(t *testing.T) {
 	}
 }
 
-func benchmarksplitBatch(b *testing.B, proc _split, capsules []config.Capsule) {
+func benchmarksplitBatch(b *testing.B, proc procSplit, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = proc.Batch(ctx, capsules...)

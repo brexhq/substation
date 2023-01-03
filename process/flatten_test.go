@@ -10,14 +10,14 @@ import (
 
 var flattenTests = []struct {
 	name     string
-	proc     _flatten
+	proc     procFlatten
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"json",
-		_flatten{
+		procFlatten{
 			process: process{
 				Key:    "flatten",
 				SetKey: "flatten",
@@ -28,13 +28,13 @@ var flattenTests = []struct {
 		nil,
 	},
 	{
-		"json deep _flatten",
-		_flatten{
+		"json deep procFlatten",
+		procFlatten{
 			process: process{
 				Key:    "flatten",
 				SetKey: "flatten",
 			},
-			Options: _flattenOptions{
+			Options: procFlattenOptions{
 				Deep: true,
 			},
 		},
@@ -49,6 +49,9 @@ func TestFlatten(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range flattenTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -62,7 +65,7 @@ func TestFlatten(t *testing.T) {
 	}
 }
 
-func benchmarkFlatten(b *testing.B, applier _flatten, test config.Capsule) {
+func benchmarkFlatten(b *testing.B, applier procFlatten, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

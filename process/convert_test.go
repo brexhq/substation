@@ -10,19 +10,19 @@ import (
 
 var convertTests = []struct {
 	name     string
-	proc     _convert
+	proc     procConvert
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"bool true",
-		_convert{
+		procConvert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _convertOptions{
+			Options: procConvertOptions{
 				Type: "bool",
 			},
 		},
@@ -32,12 +32,12 @@ var convertTests = []struct {
 	},
 	{
 		"bool false",
-		_convert{
+		procConvert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _convertOptions{
+			Options: procConvertOptions{
 				Type: "bool",
 			},
 		},
@@ -47,12 +47,12 @@ var convertTests = []struct {
 	},
 	{
 		"int",
-		_convert{
+		procConvert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _convertOptions{
+			Options: procConvertOptions{
 				Type: "int",
 			},
 		},
@@ -62,12 +62,12 @@ var convertTests = []struct {
 	},
 	{
 		"float",
-		_convert{
+		procConvert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _convertOptions{
+			Options: procConvertOptions{
 				Type: "float",
 			},
 		},
@@ -77,12 +77,12 @@ var convertTests = []struct {
 	},
 	{
 		"uint",
-		_convert{
+		procConvert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _convertOptions{
+			Options: procConvertOptions{
 				Type: "uint",
 			},
 		},
@@ -92,12 +92,12 @@ var convertTests = []struct {
 	},
 	{
 		"string",
-		_convert{
+		procConvert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _convertOptions{
+			Options: procConvertOptions{
 				Type: "string",
 			},
 		},
@@ -107,12 +107,12 @@ var convertTests = []struct {
 	},
 	{
 		"int",
-		_convert{
+		procConvert{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _convertOptions{
+			Options: procConvertOptions{
 				Type: "int",
 			},
 		},
@@ -127,6 +127,9 @@ func TestConvert(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range convertTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -140,7 +143,7 @@ func TestConvert(t *testing.T) {
 	}
 }
 
-func benchmarkConvert(b *testing.B, applier _convert, test config.Capsule) {
+func benchmarkConvert(b *testing.B, applier procConvert, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

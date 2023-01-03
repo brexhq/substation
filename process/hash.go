@@ -13,15 +13,15 @@ import (
 // errHashInvalidAlgorithm is returned when the hash processor is configured with an invalid algorithm.
 const errHashInvalidAlgorithm = errors.Error("invalid algorithm")
 
-// hash processes data by calculating hashes (https://en.wikipedia.org/wiki/Cryptographic_hash_function).
+// hash processes data by calculating hashes (https://en.wikipedia.org/wiki/CryptographicprocHash_function).
 //
 // This processor supports the data and object handling patterns.
-type _hash struct {
+type procHash struct {
 	process
-	Options _hashOptions `json:"options"`
+	Options procHashOptions `json:"options"`
 }
 
-type _hashOptions struct {
+type procHashOptions struct {
 	// Algorithm is the hashing algorithm applied to the data.
 	//
 	// Must be one of:
@@ -33,38 +33,23 @@ type _hashOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _hash) String() string {
+func (p procHash) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _hash) Close(context.Context) error {
-	return nil
-}
-
-func (p _hash) Stream(ctx context.Context, in, out *config.Channel) error {
-	defer out.Close()
-
-	for capsule := range in.C {
-		capsule, err := p.Apply(ctx, capsule)
-		if err != nil {
-			return err
-		}
-
-		out.Send(capsule)
-	}
-
+// Closes resources opened by the processor.
+func (p procHash) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _hash) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procHash) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _hash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procHash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Algorithm == "" {
 		return capsule, fmt.Errorf("process: hash: options %+v: %v", p.Options, errMissingRequiredOptions)

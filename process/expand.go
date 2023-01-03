@@ -12,24 +12,24 @@ import (
 // expand processes data by creating new objects from objects in arrays.
 //
 // This processor supports the data and object handling patterns.
-type _expand struct {
+type procExpand struct {
 	process
 }
 
 // String returns the processor settings as an object.
-func (p _expand) String() string {
+func (p procExpand) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _expand) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procExpand) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _expand) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.MakeOperator(p.Condition)
+func (p procExpand) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	op, err := condition.NewOperator(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process: expand: %v", err)
 	}
@@ -53,7 +53,7 @@ func (p _expand) Batch(ctx context.Context, capsules ...config.Capsule) ([]confi
 		// input is processed as an array.
 		//
 		// root:
-		// 	{"_expand":[{"foo":"bar"},{"baz":"qux"}],"quux":"corge"}
+		// 	{"procExpand":[{"foo":"bar"},{"baz":"qux"}],"quux":"corge"}
 		// expanded:
 		// 	{"foo":"bar","quux":"corge"}
 		// 	{"baz":"qux","quux":"corge"}
@@ -78,19 +78,19 @@ func (p _expand) Batch(ctx context.Context, capsules ...config.Capsule) ([]confi
 		for _, res := range result.Array() {
 			var err error
 
-			_expand := []byte(res.String())
+			procExpand := []byte(res.String())
 			for key, val := range root.Map() {
 				if key == p.Key {
 					continue
 				}
 
-				_expand, err = json.Set(_expand, key, val)
+				procExpand, err = json.Set(procExpand, key, val)
 				if err != nil {
 					return nil, fmt.Errorf("process: expand: %v", err)
 				}
 			}
 
-			newCapsule.SetData(_expand)
+			newCapsule.SetData(procExpand)
 			newCapsules = append(newCapsules, newCapsule)
 		}
 	}

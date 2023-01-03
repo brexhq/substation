@@ -10,12 +10,12 @@ import (
 // convert processes data by changing its type (e.g., bool, int, string).
 //
 // This processor supports the object handling pattern.
-type _convert struct {
+type procConvert struct {
 	process
-	Options _convertOptions `json:"options"`
+	Options procConvertOptions `json:"options"`
 }
 
-type _convertOptions struct {
+type procConvertOptions struct {
 	// Type is the target conversion type.
 	//
 	// Must be one of:
@@ -28,23 +28,23 @@ type _convertOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _convert) String() string {
+func (p procConvert) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _convert) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procConvert) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _convert) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procConvert) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _convert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procConvert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
 		return capsule, fmt.Errorf("process: convert: options %+v: %v", p.Options, errMissingRequiredOptions)

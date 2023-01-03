@@ -11,12 +11,12 @@ import (
 // group processes data by grouping object arrays into an array of tuples or array of objects.
 //
 // This processor supports the object handling pattern.
-type _group struct {
+type procGroup struct {
 	process
-	Options _groupOptions `json:"options"`
+	Options procGroupOptions `json:"options"`
 }
 
-type _groupOptions struct {
+type procGroupOptions struct {
 	// Keys determines where processed values are set in newly created objects.
 	//
 	// This is optional and defaults to creating an array of tuples instead
@@ -25,23 +25,23 @@ type _groupOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _group) String() string {
+func (p procGroup) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _group) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procGroup) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _group) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procGroup) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procGroup) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON arrays, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
 		return capsule, fmt.Errorf("process: group: options %+v: %v", p.Options, errMissingRequiredOptions)

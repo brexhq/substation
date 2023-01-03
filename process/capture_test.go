@@ -10,19 +10,19 @@ import (
 
 var captureTests = []struct {
 	name     string
-	proc     _capture
+	proc     procCapture
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON find",
-		_capture{
+		procCapture{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _captureOptions{
+			Options: procCaptureOptions{
 				Expression: "^([^@]*)@.*$",
 				Type:       "find",
 			},
@@ -33,12 +33,12 @@ var captureTests = []struct {
 	},
 	{
 		"JSON find_all",
-		_capture{
+		procCapture{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _captureOptions{
+			Options: procCaptureOptions{
 				Expression: "(.{1})",
 				Type:       "find_all",
 				Count:      3,
@@ -50,8 +50,8 @@ var captureTests = []struct {
 	},
 	{
 		"data",
-		_capture{
-			Options: _captureOptions{
+		procCapture{
+			Options: procCaptureOptions{
 				Expression: "^([^@]*)@.*$",
 				Type:       "find",
 			},
@@ -61,10 +61,10 @@ var captureTests = []struct {
 		nil,
 	},
 	{
-		"named_group",
-		_capture{
-			Options: _captureOptions{
-				Type:       "named_group",
+		"namedprocGroup",
+		procCapture{
+			Options: procCaptureOptions{
+				Type:       "namedprocGroup",
 				Expression: "(?P<foo>[a-zA-Z]+) (?P<qux>[a-zA-Z]+)",
 			},
 		},
@@ -79,6 +79,9 @@ func TestCapture(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range captureTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -92,7 +95,7 @@ func TestCapture(t *testing.T) {
 	}
 }
 
-func benchmarkCapture(b *testing.B, applier _capture, test config.Capsule) {
+func benchmarkCapture(b *testing.B, applier procCapture, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

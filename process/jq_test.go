@@ -8,45 +8,39 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var deleteTests = []struct {
+var jsonTests = []struct {
 	name     string
-	proc     procDelete
+	proc     _jq
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
-		"string",
-		procDelete{
-			process: process{
-				Key: "baz",
+		"recursively removed null and empty values",
+		_jq{
+			process: process{},
+			Options: _jqOptions{
+				Query: `walk( if type == "object" then 
+				with_entries( select( 
+					(.value != "") and 
+					(.value != {}) and
+					(.value != null)
+				) ) 
+			else 
+				. end)`,
 			},
 		},
-		[]byte(`{"foo":"bar","baz":"qux"}`),
-		[]byte(`{"foo":"bar"}`),
-		nil,
-	},
-	{
-		"JSON",
-		procDelete{
-			process: process{
-				Key: "baz",
-			},
-		},
-		[]byte(`{"foo":"bar","baz":{"qux":"quux"}}`),
-		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":{"bar":{"baz":""}},"qux":null,"quux":"corge"}`),
+		[]byte(`{"quux":"corge"}`),
 		nil,
 	},
 }
 
-func TestDelete(t *testing.T) {
+func TestJq(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range deleteTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
-
+	for _, test := range jsonTests {
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -60,20 +54,20 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func benchmarkDelete(b *testing.B, applier procDelete, test config.Capsule) {
+func benchmarkJq(b *testing.B, applier _jq, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)
 	}
 }
 
-func BenchmarkDelete(b *testing.B) {
+func BenchmarkJq(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range deleteTests {
+	for _, test := range jsonTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkDelete(b, test.proc, capsule)
+				benchmarkJq(b, test.proc, capsule)
 			},
 		)
 	}

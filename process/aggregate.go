@@ -30,12 +30,12 @@ const errAggregateSizeLimit = errors.Error("data exceeded size limit")
 // - aggregate nested objects into object arrays based on unique keys
 //
 // This processor supports the data and object handling patterns.
-type _aggregate struct {
+type procAggregate struct {
 	process
-	Options _aggregateOptions `json:"options"`
+	Options procAggregateOptions `json:"options"`
 }
 
-type _aggregateOptions struct {
+type procAggregateOptions struct {
 	// Key retrieves a value from an object that is used to organize
 	// aggregated objects.
 	//
@@ -51,7 +51,7 @@ type _aggregateOptions struct {
 	// buffer before emitting aggregated data.
 	//
 	// This is optional and defaults to 1000 items.
-	MaxCount int `json:"max_count"`
+	MaxCount int `json:"maxprocCount"`
 	// MaxSize determines the maximum size (in bytes) of items stored
 	// in the buffer before emitting aggregated data.
 	//
@@ -60,18 +60,18 @@ type _aggregateOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _aggregate) String() string {
+func (p procAggregate) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _aggregate) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procAggregate) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procAggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	// aggregateKeys is used to return elements stored in the
 	// buffer in order if the aggregate doesn't meet the
 	// configured threshold. any aggregate that meets the
@@ -87,7 +87,7 @@ func (p _aggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 		p.Options.MaxSize = 10000
 	}
 
-	op, err := condition.MakeOperator(p.Condition)
+	op, err := condition.NewOperator(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process: aggregate: %v", err)
 	}

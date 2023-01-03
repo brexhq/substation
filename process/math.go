@@ -10,12 +10,12 @@ import (
 // math processes data by applying mathematic operations.
 //
 // This processor supports the object handling pattern.
-type _math struct {
+type procMath struct {
 	process
-	Options _mathOptions `json:"options"`
+	Options procMathOptions `json:"options"`
 }
 
-type _mathOptions struct {
+type procMathOptions struct {
 	// Operation determines the operator applied to the data.
 	//
 	// Must be one of:
@@ -31,23 +31,23 @@ type _mathOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _math) String() string {
+func (p procMath) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _math) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procMath) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _math) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procMath) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _math) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procMath) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Operation == "" {
 		return capsule, fmt.Errorf("process: math: options %+v: %v", p.Options, errMissingRequiredOptions)

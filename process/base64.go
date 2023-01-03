@@ -18,12 +18,12 @@ const errBase64DecodedBinary = errors.Error("cannot write binary as object")
 // base64 processes data by converting it to and from base64.
 //
 // This processor supports the data and object handling patterns.
-type _base64 struct {
+type procBase64 struct {
 	process
-	Options _base64Options `json:"options"`
+	Options procBase64Options `json:"options"`
 }
 
-type _base64Options struct {
+type procBase64Options struct {
 	// Direction determines whether data is encoded or decoded.
 	//
 	// Must be one of:
@@ -35,23 +35,23 @@ type _base64Options struct {
 }
 
 // String returns the processor settings as an object.
-func (p _base64) String() string {
+func (p procBase64) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _base64) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procBase64) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _base64) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procBase64) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _base64) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procBase64) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
 		return capsule, fmt.Errorf("process: base64: options %+v: %v", p.Options, errMissingRequiredOptions)

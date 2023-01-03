@@ -10,15 +10,15 @@ import (
 
 var prettyPrintBatchTests = []struct {
 	name     string
-	proc     _prettyPrint
+	proc     procPrettyPrint
 	test     [][]byte
 	expected [][]byte
 	err      error
 }{
 	{
 		"from",
-		_prettyPrint{
-			Options: _prettyPrintOptions{
+		procPrettyPrint{
+			Options: procPrettyPrintOptions{
 				Direction: "from",
 			},
 		},
@@ -34,8 +34,8 @@ var prettyPrintBatchTests = []struct {
 	},
 	{
 		"from",
-		_prettyPrint{
-			Options: _prettyPrintOptions{
+		procPrettyPrint{
+			Options: procPrettyPrintOptions{
 				Direction: "from",
 			},
 		},
@@ -54,8 +54,8 @@ var prettyPrintBatchTests = []struct {
 	},
 	{
 		"to",
-		_prettyPrint{
-			Options: _prettyPrintOptions{
+		procPrettyPrint{
+			Options: procPrettyPrintOptions{
 				Direction: "to",
 			},
 		},
@@ -76,6 +76,9 @@ func TestPrettyPrintBatch(t *testing.T) {
 	ctx := context.TODO()
 
 	for _, test := range prettyPrintBatchTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		var capsules []config.Capsule
 		capsule := config.NewCapsule()
 		for _, t := range test.test {
@@ -97,7 +100,7 @@ func TestPrettyPrintBatch(t *testing.T) {
 	}
 }
 
-func benchmarkPrettyPrintBatch(b *testing.B, batcher _prettyPrint, capsules []config.Capsule) {
+func benchmarkPrettyPrintBatch(b *testing.B, batcher procPrettyPrint, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = batcher.Batch(ctx, capsules...)
@@ -123,15 +126,15 @@ func BenchmarkPrettyPrintBatch(b *testing.B) {
 
 var prettyPrintTests = []struct {
 	name     string
-	proc     _prettyPrint
+	proc     procPrettyPrint
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"to",
-		_prettyPrint{
-			Options: _prettyPrintOptions{
+		procPrettyPrint{
+			Options: procPrettyPrintOptions{
 				Direction: "to",
 			},
 		},
@@ -162,7 +165,7 @@ func TestPrettyPrint(t *testing.T) {
 	}
 }
 
-func benchmarkPrettyPrint(b *testing.B, proc _prettyPrint, capsule config.Capsule) {
+func benchmarkPrettyPrint(b *testing.B, proc procPrettyPrint, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = proc.Apply(ctx, capsule)

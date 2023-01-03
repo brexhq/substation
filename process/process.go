@@ -41,10 +41,10 @@ type process struct {
 
 func toString(i interface{}) string {
 	switch v := i.(type) {
-	case applier:
+	case Applier:
 		b, _ := json.Marshal(v)
 		return string(b)
-	case batcher:
+	case Batcher:
 		b, _ := json.Marshal(v)
 		return string(b)
 	default:
@@ -52,108 +52,108 @@ func toString(i interface{}) string {
 	}
 }
 
-type applier interface {
+type Applier interface {
 	Apply(context.Context, config.Capsule) (config.Capsule, error)
 	Close(context.Context) error
 }
 
-// MakeApplier returns a configured applier from a processor configuration.
-func MakeApplier(cfg config.Config) (applier, error) {
+// NewApplier returns a configured Applier from a processor configuration.
+func NewApplier(cfg config.Config) (Applier, error) {
 	switch cfg.Type {
 	case "aws_dynamodb":
-		var p _awsDynamodb
+		var p procAWSDynamoDB
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "aws_lambda":
-		var p _awsLambda
+		var p procAWSLambda
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "base64":
-		var p _base64
+		var p procBase64
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "capture":
-		var p _capture
+		var p procCapture
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "case":
-		var p _case
+		var p procCase
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "convert":
-		var p _convert
+		var p procConvert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "copy":
-		var p _copy
+		var p procCopy
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "delete":
-		var p _delete
+		var p procDelete
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "dns":
-		var p _dns
+		var p procDNS
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "domain":
-		var p _domain
+		var p procDomain
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "flatten":
-		var p _flatten
+		var p procFlatten
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "for_each":
-		var p _forEach
+		var p procForEach
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "group":
-		var p _group
+		var p procGroup
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "gzip":
-		var p _gzip
+		var p procGzip
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "hash":
-		var p _hash
+		var p procHash
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "insert":
-		var p _insert
+		var p procInsert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "ip_database":
-		var p _ipDatabase
+		var p procIPDatabase
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "join":
-		var p _join
+		var p procJoin
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "math":
-		var p _math
+		var p procMath
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "pipeline":
-		var p _pipeline
+		var p procPipeline
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "pretty_print":
-		var p _prettyPrint
+		var p procPrettyPrint
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "replace":
-		var p _replace
+		var p procReplace
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "split":
-		var p _split
+		var p procSplit
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "time":
-		var p _time
+		var p procTime
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
@@ -161,12 +161,12 @@ func MakeApplier(cfg config.Config) (applier, error) {
 	}
 }
 
-// MakeAppliers accepts one or more processor configurations and returns configured appliers.
-func MakeAppliers(cfg ...config.Config) ([]applier, error) {
-	var apps []applier
+// NewAppliers accepts one or more processor configurations and returns configured appliers.
+func NewAppliers(cfg ...config.Config) ([]Applier, error) {
+	var apps []Applier
 
 	for _, c := range cfg {
-		a, err := MakeApplier(c)
+		a, err := NewApplier(c)
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +177,7 @@ func MakeAppliers(cfg ...config.Config) ([]applier, error) {
 }
 
 // CloseAppliers closes all appliers and returns an error if any close fails.
-func CloseAppliers(ctx context.Context, appliers ...applier) error {
+func CloseAppliers(ctx context.Context, appliers ...Applier) error {
 	for _, a := range appliers {
 		if err := a.Close(ctx); err != nil {
 			return err
@@ -188,7 +188,7 @@ func CloseAppliers(ctx context.Context, appliers ...applier) error {
 }
 
 // Apply applies processors in series to encapsulated data.
-func Apply(ctx context.Context, capsule config.Capsule, appliers ...applier) (config.Capsule, error) {
+func Apply(ctx context.Context, capsule config.Capsule, appliers ...Applier) (config.Capsule, error) {
 	var err error
 
 	for _, app := range appliers {
@@ -202,7 +202,7 @@ func Apply(ctx context.Context, capsule config.Capsule, appliers ...applier) (co
 }
 
 // ApplyBytes is a convenience function for applying processors in series to bytes.
-func ApplyBytes(ctx context.Context, data []byte, appliers ...applier) ([]byte, error) {
+func ApplyBytes(ctx context.Context, data []byte, appliers ...Applier) ([]byte, error) {
 	capsule := config.NewCapsule()
 	capsule.SetData(data)
 
@@ -214,124 +214,124 @@ func ApplyBytes(ctx context.Context, data []byte, appliers ...applier) ([]byte, 
 	return newCapsule.Data(), nil
 }
 
-type batcher interface {
+type Batcher interface {
 	Batch(context.Context, ...config.Capsule) ([]config.Capsule, error)
 	Close(context.Context) error
 }
 
-// MakeBatcher returns a configured batcher from a processor configuration.
-func MakeBatcher(cfg config.Config) (batcher, error) {
+// NewBatcher returns a configured Batcher from a processor configuration.
+func NewBatcher(cfg config.Config) (Batcher, error) {
 	switch cfg.Type {
 	case "aggregate":
-		var p _aggregate
+		var p procAggregate
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "aws_dynamodb":
-		var p _awsDynamodb
+		var p procAWSDynamoDB
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "aws_lambda":
-		var p _awsLambda
+		var p procAWSLambda
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "base64":
-		var p _base64
+		var p procBase64
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "capture":
-		var p _capture
+		var p procCapture
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "case":
-		var p _case
+		var p procCase
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "convert":
-		var p _convert
+		var p procConvert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "copy":
-		var p _copy
+		var p procCopy
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "count":
-		var p _count
+		var p procCount
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "delete":
-		var p _delete
+		var p procDelete
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "dns":
-		var p _dns
+		var p procDNS
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "domain":
-		var p _domain
+		var p procDomain
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "drop":
-		var p _drop
+		var p procDrop
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "expand":
-		var p _expand
+		var p procExpand
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "flatten":
-		var p _flatten
+		var p procFlatten
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "for_each":
-		var p _forEach
+		var p procForEach
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "group":
-		var p _group
+		var p procGroup
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "gzip":
-		var p _gzip
+		var p procGzip
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "hash":
-		var p _hash
+		var p procHash
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "insert":
-		var p _insert
+		var p procInsert
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "ip_database":
-		var p _ipDatabase
+		var p procIPDatabase
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "join":
-		var p _join
+		var p procJoin
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "math":
-		var p _math
+		var p procMath
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "pipeline":
-		var p _pipeline
+		var p procPipeline
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "pretty_print":
-		var p _prettyPrint
+		var p procPrettyPrint
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "replace":
-		var p _replace
+		var p procReplace
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "split":
-		var p _split
+		var p procSplit
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "time":
-		var p _time
+		var p procTime
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
@@ -339,12 +339,12 @@ func MakeBatcher(cfg config.Config) (batcher, error) {
 	}
 }
 
-// MakeBatchers accepts one or more processor configurations and returns configured batchers.
-func MakeBatchers(cfg ...config.Config) ([]batcher, error) {
-	var bats []batcher
+// NewBatchers accepts one or more processor configurations and returns configured batchers.
+func NewBatchers(cfg ...config.Config) ([]Batcher, error) {
+	var bats []Batcher
 
 	for _, c := range cfg {
-		b, err := MakeBatcher(c)
+		b, err := NewBatcher(c)
 		if err != nil {
 			return nil, err
 		}
@@ -356,7 +356,7 @@ func MakeBatchers(cfg ...config.Config) ([]batcher, error) {
 }
 
 // CloseBatchers closes all batchers and returns an error if any close fails.
-func CloseBatchers(ctx context.Context, batchers ...batcher) error {
+func CloseBatchers(ctx context.Context, batchers ...Batcher) error {
 	for _, b := range batchers {
 		if err := b.Close(ctx); err != nil {
 			return err
@@ -367,11 +367,11 @@ func CloseBatchers(ctx context.Context, batchers ...batcher) error {
 }
 
 // Batch accepts one or more batchers and applies processors in series to encapsulated data.
-func Batch(ctx context.Context, batch []config.Capsule, batchers ...batcher) ([]config.Capsule, error) {
+func Batch(ctx context.Context, batch []config.Capsule, batchers ...Batcher) ([]config.Capsule, error) {
 	var err error
 
-	for _, batcher := range batchers {
-		batch, err = batcher.Batch(ctx, batch...)
+	for _, Batcher := range batchers {
+		batch, err = Batcher.Batch(ctx, batch...)
 		if err != nil {
 			return nil, err
 		}
@@ -381,7 +381,7 @@ func Batch(ctx context.Context, batch []config.Capsule, batchers ...batcher) ([]
 }
 
 // BatchBytes is a convenience function for applying processors in series to bytes.
-func BatchBytes(ctx context.Context, data [][]byte, batchers ...batcher) ([][]byte, error) {
+func BatchBytes(ctx context.Context, data [][]byte, batchers ...Batcher) ([][]byte, error) {
 	var capsules []config.Capsule
 	capsule := config.NewCapsule()
 
@@ -411,8 +411,8 @@ func newBatch(s *[]config.Capsule) []config.Capsule {
 	return make([]config.Capsule, 0, 10)
 }
 
-func batchApply(ctx context.Context, capsules []config.Capsule, app applier, c condition.Config) ([]config.Capsule, error) {
-	op, err := condition.MakeOperator(c)
+func batchApply(ctx context.Context, capsules []config.Capsule, app Applier, c condition.Config) ([]config.Capsule, error) {
+	op, err := condition.NewOperator(c)
 	if err != nil {
 		return nil, err
 	}

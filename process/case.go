@@ -16,15 +16,15 @@ import (
 // an invalid case.
 const errCaseInvalid = errors.Error("invalid case")
 
-// case processes data by modifying letter case (https://en.wikipedia.org/wiki/Letter_case).
+// case processes data by modifying letter case (https://en.wikipedia.org/wiki/LetterprocCase).
 //
 // This processor supports the data and object handling patterns.
-type _case struct {
+type procCase struct {
 	process
-	Options _caseOptions `json:"options"`
+	Options procCaseOptions `json:"options"`
 }
 
-type _caseOptions struct {
+type procCaseOptions struct {
 	// Type is the case formatting that is applied.
 	//
 	// Must be one of:
@@ -38,23 +38,23 @@ type _caseOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _case) String() string {
+func (p procCase) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _case) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procCase) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _case) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procCase) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _case) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procCase) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
 		return capsule, fmt.Errorf("process: case: options %+v: %v", p.Options, errMissingRequiredOptions)

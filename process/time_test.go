@@ -12,15 +12,15 @@ var setFmt = "2006-01-02T15:04:05.000000Z"
 
 var timeTests = []struct {
 	name     string
-	proc     _time
+	proc     procTime
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"data string",
-		_time{
-			Options: _timeOptions{
+		procTime{
+			Options: procTimeOptions{
 				Format:    "2006-01-02T15:04:05Z",
 				SetFormat: setFmt,
 			},
@@ -31,8 +31,8 @@ var timeTests = []struct {
 	},
 	{
 		"data unix",
-		_time{
-			Options: _timeOptions{
+		procTime{
+			Options: procTimeOptions{
 				Format:    "unix",
 				SetFormat: setFmt,
 			},
@@ -43,8 +43,8 @@ var timeTests = []struct {
 	},
 	{
 		"data unix to unix_milli",
-		_time{
-			Options: _timeOptions{
+		procTime{
+			Options: procTimeOptions{
 				Format:    "unix",
 				SetFormat: "unix_milli",
 			},
@@ -55,12 +55,12 @@ var timeTests = []struct {
 	},
 	{
 		"JSON",
-		_time{
+		procTime{
 			process: process{
 				Key:    "time",
 				SetKey: "time",
 			},
-			Options: _timeOptions{
+			Options: procTimeOptions{
 				Format:    "2006-01-02T15:04:05Z",
 				SetFormat: setFmt,
 			},
@@ -71,12 +71,12 @@ var timeTests = []struct {
 	},
 	{
 		"JSON from unix",
-		_time{
+		procTime{
 			process: process{
 				Key:    "time",
 				SetKey: "time",
 			},
-			Options: _timeOptions{
+			Options: procTimeOptions{
 				Format:    "unix",
 				SetFormat: setFmt,
 			},
@@ -87,12 +87,12 @@ var timeTests = []struct {
 	},
 	{
 		"JSON to unix",
-		_time{
+		procTime{
 			process: process{
 				Key:    "time",
 				SetKey: "time",
 			},
-			Options: _timeOptions{
+			Options: procTimeOptions{
 				Format:    setFmt,
 				SetFormat: "unix",
 			},
@@ -103,12 +103,12 @@ var timeTests = []struct {
 	},
 	{
 		"JSON from unix_milli",
-		_time{
+		procTime{
 			process: process{
 				Key:    "time",
 				SetKey: "time",
 			},
-			Options: _timeOptions{
+			Options: procTimeOptions{
 				Format:    "unix_milli",
 				SetFormat: setFmt,
 			},
@@ -119,12 +119,12 @@ var timeTests = []struct {
 	},
 	{
 		"JSON to unix_milli",
-		_time{
+		procTime{
 			process: process{
 				Key:    "time",
 				SetKey: "time",
 			},
-			Options: _timeOptions{
+			Options: procTimeOptions{
 				Format:    setFmt,
 				SetFormat: "unix_milli",
 			},
@@ -135,12 +135,12 @@ var timeTests = []struct {
 	},
 	{
 		"JSON unix to unix_milli",
-		_time{
+		procTime{
 			process: process{
 				Key:    "time",
 				SetKey: "time",
 			},
-			Options: _timeOptions{
+			Options: procTimeOptions{
 				Format:    "unix",
 				SetFormat: "unix_milli",
 			},
@@ -151,12 +151,12 @@ var timeTests = []struct {
 	},
 	{
 		"JSON offset conversion",
-		_time{
+		procTime{
 			process: process{
 				Key:    "time",
 				SetKey: "time",
 			},
-			Options: _timeOptions{
+			Options: procTimeOptions{
 				Format:    "2006-Jan-02 Monday 03:04:05 -0700",
 				SetFormat: "2006-Jan-02 Monday 03:04:05 -0700",
 			},
@@ -167,12 +167,12 @@ var timeTests = []struct {
 	},
 	{
 		"JSON offset to local conversion",
-		_time{
+		procTime{
 			process: process{
 				Key:    "time",
 				SetKey: "time",
 			},
-			Options: _timeOptions{
+			Options: procTimeOptions{
 				Format:      "2006-Jan-02 Monday 03:04:05 -0700",
 				SetFormat:   "2006-Jan-02 Monday 03:04:05 PM",
 				SetLocation: "America/New_York",
@@ -186,12 +186,12 @@ var timeTests = []struct {
 	},
 	{
 		"JSON local to local conversion",
-		_time{
+		procTime{
 			process: process{
 				Key:    "time",
 				SetKey: "time",
 			},
-			Options: _timeOptions{
+			Options: procTimeOptions{
 				Format:      "2006-Jan-02 Monday 03:04:05",
 				Location:    "America/Los_Angeles",
 				SetFormat:   "2006-Jan-02 Monday 03:04:05",
@@ -211,6 +211,9 @@ func TestTime(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range timeTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -224,7 +227,7 @@ func TestTime(t *testing.T) {
 	}
 }
 
-func benchmarkTime(b *testing.B, applier _time, test config.Capsule) {
+func benchmarkTime(b *testing.B, applier procTime, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

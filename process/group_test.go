@@ -10,14 +10,14 @@ import (
 
 var groupTests = []struct {
 	name     string
-	proc     _group
+	proc     procGroup
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"tuples",
-		_group{
+		procGroup{
 			process: process{
 				Key:    "group",
 				SetKey: "group",
@@ -29,12 +29,12 @@ var groupTests = []struct {
 	},
 	{
 		"objects",
-		_group{
+		procGroup{
 			process: process{
 				Key:    "group",
 				SetKey: "group",
 			},
-			Options: _groupOptions{
+			Options: procGroupOptions{
 				Keys: []string{"qux.quux", "corge"},
 			},
 		},
@@ -49,6 +49,9 @@ func TestGroup(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range groupTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -62,7 +65,7 @@ func TestGroup(t *testing.T) {
 	}
 }
 
-func benchmarkGroup(b *testing.B, applier _group, test config.Capsule) {
+func benchmarkGroup(b *testing.B, applier procGroup, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/process"
 )
 
-func ExampleMakeApplier() {
+func ExampleNewApplier() {
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -19,7 +19,7 @@ func ExampleMakeApplier() {
 	}
 
 	// applier is retrieved from the factory
-	applier, err := process.MakeApplier(cfg)
+	applier, err := process.NewApplier(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -29,7 +29,7 @@ func ExampleMakeApplier() {
 	// Output: {"condition":{"operator":"","inspectors":null},"key":"foo","set_key":"bar","ignore_close":false,"ignore_errors":false}
 }
 
-func ExampleMakeAppliers() {
+func ExampleNewAppliers() {
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -40,7 +40,7 @@ func ExampleMakeAppliers() {
 	}
 
 	// one or more appliers are created
-	appliers, err := process.MakeAppliers(cfg)
+	appliers, err := process.NewAppliers(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -63,7 +63,7 @@ func ExampleApplyBytes() {
 	}
 
 	// applier is retrieved from the factory
-	applier, err := process.MakeApplier(cfg)
+	applier, err := process.NewApplier(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -81,7 +81,7 @@ func ExampleApplyBytes() {
 	// Output: {"foo":"fizz","bar":"fizz"}
 }
 
-func ExampleMakeBatcher() {
+func ExampleNewBatcher() {
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -92,7 +92,7 @@ func ExampleMakeBatcher() {
 	}
 
 	// one or more appliers are created
-	batcher, err := process.MakeBatcher(cfg)
+	batcher, err := process.NewBatcher(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -102,7 +102,7 @@ func ExampleMakeBatcher() {
 	// Output: {"condition":{"operator":"","inspectors":null},"key":"foo","set_key":"bar","ignore_close":false,"ignore_errors":false}
 }
 
-func ExampleMakeBatchers() {
+func ExampleNewBatchers() {
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -113,7 +113,7 @@ func ExampleMakeBatchers() {
 	}
 
 	// one or more batchers are created
-	batchers, err := process.MakeBatchers(cfg)
+	batchers, err := process.NewBatchers(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -136,7 +136,7 @@ func ExampleBatchBytes() {
 	}
 
 	// batcher is retrieved from the factory
-	batcher, err := process.MakeBatcher(cfg)
+	batcher, err := process.NewBatcher(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -167,7 +167,7 @@ func Example_applier() {
 	}
 
 	// applier is retrieved from the factory
-	applier, err := process.MakeApplier(cfg)
+	applier, err := process.NewApplier(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -199,7 +199,7 @@ func Example_batcher() {
 	}
 
 	// batcher is retrieved from the factory
-	batcher, err := process.MakeBatcher(cfg)
+	batcher, err := process.NewBatcher(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -249,7 +249,7 @@ func Example_dNS() {
 		},
 	}
 
-	appliers, err := process.MakeAppliers(cfg...)
+	appliers, err := process.NewAppliers(cfg...)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -294,7 +294,7 @@ func Example_iPDatabase() {
 		},
 	}
 
-	appliers, err := process.MakeAppliers(cfg...)
+	appliers, err := process.NewAppliers(cfg...)
 	if err != nil {
 		// handle err
 		panic(err)

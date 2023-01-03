@@ -10,19 +10,19 @@ import (
 
 var mathTests = []struct {
 	name     string
-	proc     _math
+	proc     procMath
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"add",
-		_math{
+		procMath{
 			process: process{
 				Key:    "math",
 				SetKey: "math",
 			},
-			Options: _mathOptions{
+			Options: procMathOptions{
 				Operation: "add",
 			},
 		},
@@ -32,12 +32,12 @@ var mathTests = []struct {
 	},
 	{
 		"subtract",
-		_math{
+		procMath{
 			process: process{
 				Key:    "math",
 				SetKey: "math",
 			},
-			Options: _mathOptions{
+			Options: procMathOptions{
 				Operation: "subtract",
 			},
 		},
@@ -47,12 +47,12 @@ var mathTests = []struct {
 	},
 	{
 		"multiply",
-		_math{
+		procMath{
 			process: process{
 				Key:    "math",
 				SetKey: "math",
 			},
-			Options: _mathOptions{
+			Options: procMathOptions{
 				Operation: "multiply",
 			},
 		},
@@ -62,12 +62,12 @@ var mathTests = []struct {
 	},
 	{
 		"divide",
-		_math{
+		procMath{
 			process: process{
 				Key:    "math",
 				SetKey: "math",
 			},
-			Options: _mathOptions{
+			Options: procMathOptions{
 				Operation: "divide",
 			},
 		},
@@ -82,6 +82,9 @@ func TestMath(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range mathTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -95,7 +98,7 @@ func TestMath(t *testing.T) {
 	}
 }
 
-func benchmarkMath(b *testing.B, applier _math, test config.Capsule) {
+func benchmarkMath(b *testing.B, applier procMath, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

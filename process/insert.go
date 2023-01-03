@@ -10,34 +10,34 @@ import (
 // insert processes data by inserting a value into an object.
 //
 // This processor supports the object handling pattern.
-type _insert struct {
+type procInsert struct {
 	process
-	Options _insertOptions `json:"options"`
+	Options procInsertOptions `json:"options"`
 }
 
-type _insertOptions struct {
+type procInsertOptions struct {
 	// Value inserted into the object.
 	Value interface{} `json:"value"`
 }
 
 // String returns the processor settings as an object.
-func (p _insert) String() string {
+func (p procInsert) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _insert) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procInsert) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _insert) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procInsert) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _insert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procInsert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.SetKey == "" {
 		return capsule, fmt.Errorf("process: insert: set_key %s: %v", p.SetKey, errInvalidDataPattern)

@@ -24,7 +24,7 @@ func (m mockedInvoke) InvokeWithContext(ctx aws.Context, input *lambda.InvokeInp
 
 var lambdaTests = []struct {
 	name     string
-	proc     _awsLambda
+	proc     procAWSLambda
 	test     []byte
 	expected []byte
 	err      error
@@ -32,12 +32,12 @@ var lambdaTests = []struct {
 }{
 	{
 		"JSON",
-		_awsLambda{
+		procAWSLambda{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _awsLambdaOptions{
+			Options: procAWSLambdaOptions{
 				FunctionName: "fooer",
 			},
 		},
@@ -59,6 +59,9 @@ func TestLambda(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range lambdaTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		lambdaAPI = test.api
 		capsule.SetData(test.test)
 
@@ -73,7 +76,7 @@ func TestLambda(t *testing.T) {
 	}
 }
 
-func benchmarkLambda(b *testing.B, applier _awsLambda, test config.Capsule) {
+func benchmarkLambda(b *testing.B, applier procAWSLambda, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

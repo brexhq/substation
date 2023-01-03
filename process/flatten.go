@@ -10,12 +10,12 @@ import (
 // flatten processes data by flattening object arrays.
 //
 // This processor supports the object handling pattern.
-type _flatten struct {
+type procFlatten struct {
 	process
-	Options _flattenOptions `json:"options"`
+	Options procFlattenOptions `json:"options"`
 }
 
-type _flattenOptions struct {
+type procFlattenOptions struct {
 	// Deep determines if arrays should be deeply flattened.
 	//
 	// This is optional and defaults to false.
@@ -23,23 +23,23 @@ type _flattenOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _flatten) String() string {
+func (p procFlatten) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _flatten) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procFlatten) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _flatten) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procFlatten) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _flatten) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procFlatten) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
 		return capsule, fmt.Errorf("process: flatten: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)

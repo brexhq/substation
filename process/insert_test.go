@@ -10,18 +10,18 @@ import (
 
 var insertTests = []struct {
 	name     string
-	proc     _insert
+	proc     procInsert
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"byte",
-		_insert{
+		procInsert{
 			process: process{
 				SetKey: "insert",
 			},
-			Options: _insertOptions{
+			Options: procInsertOptions{
 				Value: []byte{102, 111, 111},
 			},
 		},
@@ -31,11 +31,11 @@ var insertTests = []struct {
 	},
 	{
 		"string",
-		_insert{
+		procInsert{
 			process: process{
 				SetKey: "insert",
 			},
-			Options: _insertOptions{
+			Options: procInsertOptions{
 				Value: "foo",
 			},
 		},
@@ -45,11 +45,11 @@ var insertTests = []struct {
 	},
 	{
 		"int",
-		_insert{
+		procInsert{
 			process: process{
 				SetKey: "insert",
 			},
-			Options: _insertOptions{
+			Options: procInsertOptions{
 				Value: 10,
 			},
 		},
@@ -59,11 +59,11 @@ var insertTests = []struct {
 	},
 	{
 		"string array",
-		_insert{
+		procInsert{
 			process: process{
 				SetKey: "insert",
 			},
-			Options: _insertOptions{
+			Options: procInsertOptions{
 				Value: []string{"bar", "baz"},
 			},
 		},
@@ -73,11 +73,11 @@ var insertTests = []struct {
 	},
 	{
 		"map",
-		_insert{
+		procInsert{
 			process: process{
 				SetKey: "insert",
 			},
-			Options: _insertOptions{
+			Options: procInsertOptions{
 				Value: map[string]string{
 					"bar": "baz",
 				},
@@ -89,11 +89,11 @@ var insertTests = []struct {
 	},
 	{
 		"JSON",
-		_insert{
+		procInsert{
 			process: process{
 				SetKey: "insert",
 			},
-			Options: _insertOptions{
+			Options: procInsertOptions{
 				Value: `{"bar":"baz"}`,
 			},
 		},
@@ -103,11 +103,11 @@ var insertTests = []struct {
 	},
 	{
 		"zlib",
-		_insert{
+		procInsert{
 			process: process{
 				SetKey: "insert",
 			},
-			Options: _insertOptions{
+			Options: procInsertOptions{
 				Value: []byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},
 			},
 		},
@@ -122,6 +122,9 @@ func TestInsert(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range insertTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -135,7 +138,7 @@ func TestInsert(t *testing.T) {
 	}
 }
 
-func benchmarkInsert(b *testing.B, applier _insert, test config.Capsule) {
+func benchmarkInsert(b *testing.B, applier procInsert, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

@@ -21,18 +21,18 @@ import (
 // See internal/ip/database for information on supported database providers.
 //
 // This processor supports the object handling pattern.
-type _ipDatabase struct {
+type procIPDatabase struct {
 	process
 	Options config.Config `json:"options"`
 }
 
 // String returns the processor settings as an object.
-func (p _ipDatabase) String() string {
+func (p procIPDatabase) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _ipDatabase) Close(ctx context.Context) error {
+// Closes resources opened by the processor.
+func (p procIPDatabase) Close(ctx context.Context) error {
 	if p.IgnoreClose {
 		return nil
 	}
@@ -53,12 +53,12 @@ func (p _ipDatabase) Close(ctx context.Context) error {
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _ipDatabase) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procIPDatabase) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _ipDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procIPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
 	if p.Key == "" && p.SetKey == "" {
 		return capsule, fmt.Errorf("process: ip_database: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)

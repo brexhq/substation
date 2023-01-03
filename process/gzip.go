@@ -13,12 +13,12 @@ import (
 // gzip processes data by compressing or decompressing gzip.
 //
 // This processor supports the data handling pattern.
-type _gzip struct {
+type procGzip struct {
 	process
-	Options _gzipOptions `json:"options"`
+	Options procGzipOptions `json:"options"`
 }
 
-type _gzipOptions struct {
+type procGzipOptions struct {
 	// Direction determines whether data is compressed or decompressed.
 	//
 	// Must be one of:
@@ -28,11 +28,11 @@ type _gzipOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _gzip) String() string {
+func (p procGzip) String() string {
 	return toString(p)
 }
 
-func (p _gzip) from(data []byte) ([]byte, error) {
+func (p procGzip) from(data []byte) ([]byte, error) {
 	r := bytes.NewReader(data)
 	gz, err := gzip.NewReader(r)
 	if err != nil {
@@ -47,7 +47,7 @@ func (p _gzip) from(data []byte) ([]byte, error) {
 	return output, nil
 }
 
-func (p _gzip) to(data []byte) ([]byte, error) {
+func (p procGzip) to(data []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	if _, err := gz.Write(data); err != nil {
@@ -60,19 +60,19 @@ func (p _gzip) to(data []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Close closes resources opened by the processor.
-func (p _gzip) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procGzip) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _gzip) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procGzip) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _gzip) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procGzip) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
 		return capsule, fmt.Errorf("process: gzip: options %+v: %v", p.Options, errMissingRequiredOptions)

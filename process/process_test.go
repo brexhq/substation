@@ -134,7 +134,7 @@ func TestApply(t *testing.T) {
 	for _, test := range processTests {
 		capsule.SetData(test.test)
 
-		appliers, err := MakeAppliers(test.conf...)
+		appliers, err := NewAppliers(test.conf...)
 		if err != nil {
 			t.Error(err)
 		}
@@ -159,7 +159,7 @@ func TestBatch(t *testing.T) {
 		batch := make([]config.Capsule, 1)
 		batch[0] = capsule
 
-		appliers, err := MakeBatchers(test.conf...)
+		appliers, err := NewBatchers(test.conf...)
 		if err != nil {
 			t.Error(err)
 		}

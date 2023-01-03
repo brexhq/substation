@@ -13,30 +13,30 @@ import (
 // split processes data by splitting it into multiple elements in an object array, objects, or strings.
 //
 // This processor supports the data and object handling patterns.
-type _split struct {
+type procSplit struct {
 	process
-	Options _splitOptions `json:"options"`
+	Options procSplitOptions `json:"options"`
 }
 
-type _splitOptions struct {
+type procSplitOptions struct {
 	// Separator is the string that splits data.
 	Separator string `json:"separator"`
 }
 
 // String returns the processor settings as an object.
-func (p _split) String() string {
+func (p procSplit) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _split) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procSplit) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _split) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.MakeOperator(p.Condition)
+func (p procSplit) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	op, err := condition.NewOperator(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process: split: %v", err)
 	}
@@ -82,7 +82,7 @@ func (p _split) Batch(ctx context.Context, capsules ...config.Capsule) ([]config
 }
 
 // Apply processes a capsule with the processor.
-func (p _split) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procSplit) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Separator == "" {
 		return capsule, fmt.Errorf("process: split: options %+v: %v", p.Options, errMissingRequiredOptions)

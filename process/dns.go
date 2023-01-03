@@ -19,12 +19,12 @@ var dnsResolver net.Resolver
 //	mitigated by increasing the parallelization factor of the Lambda
 //
 // (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
-type _dns struct {
+type procDNS struct {
 	process
-	Options _dnsOptions `json:"options"`
+	Options procDNSOptions `json:"options"`
 }
 
-type _dnsOptions struct {
+type procDNSOptions struct {
 	// Type is the query type made to DNS.
 	//
 	// Must be one of:
@@ -42,21 +42,21 @@ type _dnsOptions struct {
 	Timeout int `json:"timeout"`
 }
 
-// Close closes resources opened by the processor.
-func (p _dns) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procDNS) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _dns) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procDNS) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
 //
 //nolint:gocognit
-func (p _dns) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procDNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
 		return capsule, fmt.Errorf("process: dns: options %+v: %v", p.Options, errMissingRequiredOptions)

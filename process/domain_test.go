@@ -10,19 +10,19 @@ import (
 
 var domainTests = []struct {
 	name     string
-	proc     _domain
+	proc     procDomain
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON tld",
-		_domain{
+		procDomain{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _domainOptions{
+			Options: procDomainOptions{
 				Type: "tld",
 			},
 		},
@@ -31,13 +31,13 @@ var domainTests = []struct {
 		nil,
 	},
 	{
-		"JSON _domain",
-		_domain{
+		"JSON procDomain",
+		procDomain{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _domainOptions{
+			Options: procDomainOptions{
 				Type: "domain",
 			},
 		},
@@ -47,12 +47,12 @@ var domainTests = []struct {
 	},
 	{
 		"JSON subdomain",
-		_domain{
+		procDomain{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _domainOptions{
+			Options: procDomainOptions{
 				Type: "subdomain",
 			},
 		},
@@ -63,12 +63,12 @@ var domainTests = []struct {
 	// empty subdomain, returns empty
 	{
 		"JSON subdomain",
-		_domain{
+		procDomain{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _domainOptions{
+			Options: procDomainOptions{
 				Type: "subdomain",
 			},
 		},
@@ -78,8 +78,8 @@ var domainTests = []struct {
 	},
 	{
 		"data",
-		_domain{
-			Options: _domainOptions{
+		procDomain{
+			Options: procDomainOptions{
 				Type: "subdomain",
 			},
 		},
@@ -94,6 +94,9 @@ func TestDomain(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range domainTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -107,7 +110,7 @@ func TestDomain(t *testing.T) {
 	}
 }
 
-func benchmarkDomain(b *testing.B, applier _domain, test config.Capsule) {
+func benchmarkDomain(b *testing.B, applier procDomain, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

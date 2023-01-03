@@ -19,12 +19,12 @@ const errDomainNoSubdomain = errors.Error("no subdomain")
 // labels.
 //
 // This processor supports the data and object handling patterns.
-type _domain struct {
+type procDomain struct {
 	process
-	Options _domainOptions `json:"options"`
+	Options procDomainOptions `json:"options"`
 }
 
-type _domainOptions struct {
+type procDomainOptions struct {
 	// Type is the domain function applied to the data.
 	//
 	// Must be one of:
@@ -38,23 +38,23 @@ type _domainOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _domain) String() string {
+func (p procDomain) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _domain) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procDomain) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _domain) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procDomain) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _domain) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procDomain) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
 		return capsule, fmt.Errorf("process: domain: options %+v: %v", p.Options, errMissingRequiredOptions)
@@ -83,7 +83,7 @@ func (p _domain) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 	return capsule, fmt.Errorf("process: domain: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }
 
-func (p _domain) domain(s string) (string, error) {
+func (p procDomain) domain(s string) (string, error) {
 	switch p.Options.Type {
 	case "tld":
 		tld, _ := publicsuffix.PublicSuffix(s)

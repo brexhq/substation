@@ -24,7 +24,7 @@ func (m mockedQuery) QueryWithContext(ctx aws.Context, input *dynamodb.QueryInpu
 
 var dynamodbTests = []struct {
 	name     string
-	proc     _awsDynamodb
+	proc     procAWSDynamoDB
 	test     []byte
 	expected []byte
 	err      error
@@ -32,12 +32,12 @@ var dynamodbTests = []struct {
 }{
 	{
 		"JSON",
-		_awsDynamodb{
+		procAWSDynamoDB{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _awsDynamodbOptions{
+			Options: procAWSDynamoDBOptions{
 				Table:                  "fooer",
 				KeyConditionExpression: "barre",
 			},
@@ -66,6 +66,9 @@ func TestDynamoDB(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range dynamodbTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		dynamodbAPI = test.api
 		capsule.SetData(test.test)
 
@@ -80,7 +83,7 @@ func TestDynamoDB(t *testing.T) {
 	}
 }
 
-func benchmarkDynamoDB(b *testing.B, applier _awsDynamodb, test config.Capsule) {
+func benchmarkDynamoDB(b *testing.B, applier procAWSDynamoDB, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

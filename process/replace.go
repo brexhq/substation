@@ -12,12 +12,12 @@ import (
 // replace processes data by replacing characters in strings.
 //
 // This processor supports the data and object handling patterns.
-type _replace struct {
+type procReplace struct {
 	process
-	Options _replaceOptions `json:"options"`
+	Options procReplaceOptions `json:"options"`
 }
 
-type _replaceOptions struct {
+type procReplaceOptions struct {
 	// Old contains characters to replace in the data.
 	Old string `json:"old"`
 	// New contains characters that replace characters in Old.
@@ -29,29 +29,29 @@ type _replaceOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _replace) String() string {
+func (p procReplace) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _replace) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procReplace) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _replace) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procReplace) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _replace) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procReplace) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Old == "" {
 		return capsule, fmt.Errorf("process: replace: options %+v: %w", p.Options, errMissingRequiredOptions)
 	}
 
-	// default to _replace all
+	// default to procReplace all
 	if p.Options.Count == 0 {
 		p.Options.Count = -1
 	}

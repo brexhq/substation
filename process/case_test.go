@@ -10,19 +10,19 @@ import (
 
 var caseTests = []struct {
 	name     string
-	proc     _case
+	proc     procCase
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON lower",
-		_case{
+		procCase{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _caseOptions{
+			Options: procCaseOptions{
 				Type: "lower",
 			},
 		},
@@ -32,12 +32,12 @@ var caseTests = []struct {
 	},
 	{
 		"JSON upper",
-		_case{
+		procCase{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _caseOptions{
+			Options: procCaseOptions{
 				Type: "upper",
 			},
 		},
@@ -47,12 +47,12 @@ var caseTests = []struct {
 	},
 	{
 		"JSON snake",
-		_case{
+		procCase{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _caseOptions{
+			Options: procCaseOptions{
 				Type: "snake",
 			},
 		},
@@ -67,6 +67,9 @@ func TestCase(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range caseTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -80,7 +83,7 @@ func TestCase(t *testing.T) {
 	}
 }
 
-func benchmarkCase(b *testing.B, applier _case, test config.Capsule) {
+func benchmarkCase(b *testing.B, applier procCase, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

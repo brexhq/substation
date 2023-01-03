@@ -14,17 +14,17 @@ import (
 // time processes data by converting time values between formats.
 //
 // This processor supports the data and object handling patterns.
-type _time struct {
+type procTime struct {
 	process
-	Options _timeOptions `json:"options"`
+	Options procTimeOptions `json:"options"`
 }
 
-type _timeOptions struct {
+type procTimeOptions struct {
 	// Format is the time format of the data.
 	//
 	// Must be one of:
 	//
-	// - pattern-based layouts (https://gobyexample.com/_time-formatting-parsing)
+	// - pattern-based layouts (https://gobyexample.com/procTime-formatting-parsing)
 	//
 	// - unix: epoch (supports fractions of a second)
 	//
@@ -40,7 +40,7 @@ type _timeOptions struct {
 	//
 	// Must be one of:
 	//
-	// - pattern-based layouts (https://gobyexample.com/_time-formatting-parsing)
+	// - pattern-based layouts (https://gobyexample.com/procTime-formatting-parsing)
 	//
 	// - unix: epoch (supports fractions of a second)
 	//
@@ -53,23 +53,23 @@ type _timeOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _time) String() string {
+func (p procTime) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _time) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procTime) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _time) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procTime) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procTime) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Format == "" || p.Options.SetFormat == "" {
 		return capsule, fmt.Errorf("process: time: options %+v: %v", p.Options, errMissingRequiredOptions)
@@ -111,12 +111,12 @@ func (p _time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 	if p.Key != "" && p.SetKey != "" {
 		result := capsule.Get(p.Key)
 
-		// return input, otherwise _time defaults to 1970
+		// return input, otherwise procTime defaults to 1970
 		if result.Type.String() == "Null" {
 			return capsule, nil
 		}
 
-		value, err := p._time(result)
+		value, err := p.procTime(result)
 		if err != nil {
 			return capsule, fmt.Errorf("process: time: %v", err)
 		}
@@ -136,7 +136,7 @@ func (p _time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 		}
 
 		res := json.Get(tmp, "tmp")
-		value, err := p._time(res)
+		value, err := p.procTime(res)
 		if err != nil {
 			return capsule, fmt.Errorf("process: time: %v", err)
 		}
@@ -154,7 +154,7 @@ func (p _time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 	return capsule, fmt.Errorf("process: time: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }
 
-func (p _time) _time(result json.Result) (interface{}, error) {
+func (p procTime) procTime(result json.Result) (interface{}, error) {
 	var timeDate time.Time
 	switch p.Options.Format {
 	case "unix":

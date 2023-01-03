@@ -40,12 +40,12 @@ const errPrettyPrintIncompleteJSON = errors.Error("incomplete JSON object")
 // so that it outputs a single-line object instead.
 //
 // This processor supports the data handling pattern.
-type _prettyPrint struct {
+type procPrettyPrint struct {
 	process
-	Options _prettyPrintOptions `json:"options"`
+	Options procPrettyPrintOptions `json:"options"`
 }
 
-type _prettyPrintOptions struct {
+type procPrettyPrintOptions struct {
 	// Direction determines whether prettyprint formatting is
 	// applied or reversed.
 	//
@@ -58,12 +58,12 @@ type _prettyPrintOptions struct {
 }
 
 // String returns the processor settings as an object.
-func (p _prettyPrint) String() string {
+func (p procPrettyPrint) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _prettyPrint) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procPrettyPrint) Close(context.Context) error {
 	return nil
 }
 
@@ -79,13 +79,13 @@ func (p _prettyPrint) Close(context.Context) error {
 // and close curly brackets ( { } ) are observed,
 // then the stack of bytes has JSON compaction
 // applied and the result is emitted as a new object.
-func (p _prettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procPrettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
 		return nil, fmt.Errorf("process: pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
-	op, err := condition.MakeOperator(p.Condition)
+	op, err := condition.NewOperator(p.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("process: pretty_print: %v", err)
 	}
@@ -160,7 +160,7 @@ func (p _prettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) ([]
 // This _does not_ support reversing prettyprint formatting;
 // this support is unnecessary for multi-line objects that
 // are stored in a single byte array.
-func (p _prettyPrint) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procPrettyPrint) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Direction == "" {
 		return capsule, fmt.Errorf("process: pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)

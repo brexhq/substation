@@ -10,19 +10,19 @@ import (
 
 var forEachTests = []struct {
 	name     string
-	proc     _forEach
+	proc     procForEach
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"base64",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "base64",
 					Settings: map[string]interface{}{
@@ -39,12 +39,12 @@ var forEachTests = []struct {
 	},
 	{
 		"capture",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "capture",
 					Settings: map[string]interface{}{
@@ -62,12 +62,12 @@ var forEachTests = []struct {
 	},
 	{
 		"case",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "case",
 					Settings: map[string]interface{}{
@@ -84,12 +84,12 @@ var forEachTests = []struct {
 	},
 	{
 		"convert",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "convert",
 					Settings: map[string]interface{}{
@@ -106,12 +106,12 @@ var forEachTests = []struct {
 	},
 	{
 		"domain",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "domain",
 					Settings: map[string]interface{}{
@@ -128,12 +128,12 @@ var forEachTests = []struct {
 	},
 	{
 		"flatten",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "flatten",
 					Settings: map[string]interface{}{
@@ -152,12 +152,12 @@ var forEachTests = []struct {
 	},
 	{
 		"group",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "group",
 					Settings: map[string]interface{}{
@@ -173,12 +173,12 @@ var forEachTests = []struct {
 	},
 	{
 		"hash",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "hash",
 					Settings: map[string]interface{}{
@@ -195,12 +195,12 @@ var forEachTests = []struct {
 	},
 	{
 		"insert",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "insert",
 					Settings: map[string]interface{}{
@@ -218,12 +218,12 @@ var forEachTests = []struct {
 	},
 	{
 		"join",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "join",
 					Settings: map[string]interface{}{
@@ -240,12 +240,12 @@ var forEachTests = []struct {
 	},
 	{
 		"math",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "math",
 					Settings: map[string]interface{}{
@@ -262,12 +262,12 @@ var forEachTests = []struct {
 	},
 	{
 		"pipeline",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "pipeline",
 					Settings: map[string]interface{}{
@@ -301,12 +301,12 @@ var forEachTests = []struct {
 	},
 	{
 		"replace",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "replace",
 					Settings: map[string]interface{}{
@@ -324,12 +324,12 @@ var forEachTests = []struct {
 	},
 	{
 		"time",
-		_forEach{
+		procForEach{
 			process: process{
 				Key:    "input",
 				SetKey: "output.-1",
 			},
-			Options: _forEachOptions{
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "time",
 					Settings: map[string]interface{}{
@@ -352,6 +352,9 @@ func TestForEach(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range forEachTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -365,7 +368,7 @@ func TestForEach(t *testing.T) {
 	}
 }
 
-func benchmarkForEach(b *testing.B, applier _forEach, test config.Capsule) {
+func benchmarkForEach(b *testing.B, applier procForEach, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

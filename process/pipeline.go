@@ -14,29 +14,29 @@ const errPipelineArrayInput = errors.Error("input is an array")
 // pipeline processes data by applying a series of processors.
 //
 // This processor supports the data and object handling patterns.
-type _pipeline struct {
+type procPipeline struct {
 	process
-	Options _pipelineOptions `json:"options"`
+	Options procPipelineOptions `json:"options"`
 }
 
-type _pipelineOptions struct {
+type procPipelineOptions struct {
 	// Processors applied in series to the data.
 	Processors []config.Config
 }
 
 // String returns the processor settings as an object.
-func (p _pipeline) String() string {
+func (p procPipeline) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _pipeline) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procPipeline) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _pipeline) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procPipeline) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
@@ -51,8 +51,8 @@ func (p _pipeline) Batch(ctx context.Context, capsules ...config.Capsule) ([]con
 // If the input is an array, then an error is raised; the input
 // should be run through the forEach processor (which can
 // encapsulate the pipeline processor).
-func (p _pipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	appliers, err := MakeAppliers(p.Options.Processors...)
+func (p procPipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+	appliers, err := NewAppliers(p.Options.Processors...)
 	if err != nil {
 		return capsule, fmt.Errorf("process: pipeline: processors %+v: %v", p.Options.Processors, err)
 	}

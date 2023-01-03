@@ -10,19 +10,19 @@ import (
 
 var joinTests = []struct {
 	name     string
-	proc     _join
+	proc     procJoin
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON",
-		_join{
+		procJoin{
 			process: process{
 				Key:    "foo",
 				SetKey: "foo",
 			},
-			Options: _joinOptions{
+			Options: procJoinOptions{
 				Separator: ".",
 			},
 		},
@@ -37,6 +37,9 @@ func TestJoin(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range joinTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -50,7 +53,7 @@ func TestJoin(t *testing.T) {
 	}
 }
 
-func benchmarkJoin(b *testing.B, applier _join, test config.Capsule) {
+func benchmarkJoin(b *testing.B, applier procJoin, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

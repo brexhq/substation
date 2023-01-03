@@ -25,34 +25,34 @@ const errAWSLambdaInputNotAnObject = errors.Error("input is not an object")
 // (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
 //
 // This processor supports the object handling pattern.
-type _awsLambda struct {
+type procAWSLambda struct {
 	process
-	Options _awsLambdaOptions `json:"options"`
+	Options procAWSLambdaOptions `json:"options"`
 }
 
-type _awsLambdaOptions struct {
+type procAWSLambdaOptions struct {
 	// FunctionName is the AWS Lambda function to synchronously invoke.
 	FunctionName string `json:"function_name"`
 }
 
 // String returns the processor settings as an object.
-func (p _awsLambda) String() string {
+func (p procAWSLambda) String() string {
 	return toString(p)
 }
 
-// Close closes resources opened by the processor.
-func (p _awsLambda) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procAWSLambda) Close(context.Context) error {
 	return nil
 }
 
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
-func (p _awsLambda) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+func (p procAWSLambda) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	return batchApply(ctx, capsules, p, p.Condition)
 }
 
 // Apply processes a capsule with the processor.
-func (p _awsLambda) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+func (p procAWSLambda) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.FunctionName == "" {
 		return capsule, fmt.Errorf("process: lambda: options %+v: %v", p.Options, errMissingRequiredOptions)

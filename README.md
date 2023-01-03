@@ -204,7 +204,7 @@ Substation can transform logs like this ...
 ... using this ...
 
 ```jsonnet
-local sink = import 'sink.libsonnet';
+local sub = import 'substation.libsonnet';
 
 local event = import 'event.libsonnet';
 local client = import 'client.libsonnet';
@@ -212,7 +212,7 @@ local server = import 'server.libsonnet';
 local network = import 'network.libsonnet';
 
 {
-  sink: sink.stdout,
+  sink: sub.interfaces.sink.stdout,
   transform: {
     type: 'batch',
     settings: {

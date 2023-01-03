@@ -115,7 +115,7 @@ func TestAll(t *testing.T) {
 			Inspectors: test.conf,
 		}
 
-		op, err := MakeOperator(cfg)
+		op, err := NewOperator(cfg)
 		if err != nil {
 			t.Error(err)
 		}
@@ -134,8 +134,8 @@ func TestAll(t *testing.T) {
 func benchmarkAll(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := MakeInspectors(conf...)
-		op := _all{inspectors}
+		inspectors, _ := NewInspectors(conf...)
+		op := opAll{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
 }
@@ -257,7 +257,7 @@ func TestAny(t *testing.T) {
 			Inspectors: test.conf,
 		}
 
-		op, err := MakeOperator(cfg)
+		op, err := NewOperator(cfg)
 		if err != nil {
 			t.Error(err)
 		}
@@ -276,8 +276,8 @@ func TestAny(t *testing.T) {
 func benchmarkAny(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := MakeInspectors(conf...)
-		op := _any{inspectors}
+		inspectors, _ := NewInspectors(conf...)
+		op := opAny{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
 }
@@ -391,7 +391,7 @@ func TestNone(t *testing.T) {
 			Inspectors: test.conf,
 		}
 
-		op, err := MakeOperator(cfg)
+		op, err := NewOperator(cfg)
 		if err != nil {
 			t.Error(err)
 		}
@@ -410,8 +410,8 @@ func TestNone(t *testing.T) {
 func benchmarkNone(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := MakeInspectors(conf...)
-		op := _none{inspectors}
+		inspectors, _ := NewInspectors(conf...)
+		op := opNone{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
 }
@@ -430,7 +430,7 @@ func BenchmarkNone(b *testing.B) {
 
 func TestFactory(t *testing.T) {
 	for _, test := range allTests {
-		_, err := MakeInspector(test.conf[0])
+		_, err := NewInspector(test.conf[0])
 		if err != nil {
 			t.Error(err)
 		}
@@ -439,7 +439,7 @@ func TestFactory(t *testing.T) {
 
 func benchmarkFactory(b *testing.B, conf config.Config) {
 	for i := 0; i < b.N; i++ {
-		_, _ = MakeInspector(conf)
+		_, _ = NewInspector(conf)
 	}
 }
 

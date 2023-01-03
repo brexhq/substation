@@ -15,12 +15,12 @@ const errStringsInvalidType = errors.Error("invalid type")
 // strings evaluates data using Types from the standard library's strings package.
 //
 // This inspector supports the data and object handling patterns.
-type _strings struct {
+type inspStrings struct {
 	condition
-	Options _stringsOptions `json:"options"`
+	Options inspStringsOptions `json:"options"`
 }
 
-type _stringsOptions struct {
+type inspStringsOptions struct {
 	// Type is the string evaluation Type used during inspection.
 	//
 	// Must be one of:
@@ -37,12 +37,12 @@ type _stringsOptions struct {
 	Expression string `json:"expression"`
 }
 
-func (c _strings) String() string {
+func (c inspStrings) String() string {
 	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the strings inspector.
-func (c _strings) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+func (c inspStrings) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
 		check = string(capsule.Data())

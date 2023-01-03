@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-func ExampleMakeInspector() {
+func ExampleNewInspector() {
 	// data must be gzip
 	cfg := config.Config{
 		Type: "content",
@@ -20,7 +20,7 @@ func ExampleMakeInspector() {
 	}
 
 	// inspector is retrieved from the factory
-	inspector, err := condition.MakeInspector(cfg)
+	inspector, err := condition.NewInspector(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -29,7 +29,7 @@ func ExampleMakeInspector() {
 	fmt.Println(inspector)
 }
 
-func ExampleMakeInspectors() {
+func ExampleNewInspectors() {
 	// data must be gzip
 	cfg := config.Config{
 		Type: "content",
@@ -41,7 +41,7 @@ func ExampleMakeInspectors() {
 	}
 
 	// one or more inspectors are created
-	inspectors, err := condition.MakeInspectors(cfg)
+	inspectors, err := condition.NewInspectors(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -64,7 +64,7 @@ func ExampleInspectBytes() {
 	}
 
 	// inspector is retrieved from the factory
-	inspector, err := condition.MakeInspector(cfg)
+	inspector, err := condition.NewInspector(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -82,7 +82,7 @@ func ExampleInspectBytes() {
 	// Output: true
 }
 
-func ExampleMakeOperator() {
+func ExampleNewOperator() {
 	// data must have a length greater than zero and contain
 	// the substring "iz"
 	cfg := []config.Config{
@@ -114,7 +114,7 @@ func ExampleMakeOperator() {
 	}
 
 	// operators are retrieved from the factory.
-	operator, err := condition.MakeOperator(opCfg)
+	operator, err := condition.NewOperator(opCfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -155,7 +155,7 @@ func ExampleOperateBytes() {
 	}
 
 	// operator is retrieved from the factory
-	operator, err := condition.MakeOperator(opCfg)
+	operator, err := condition.NewOperator(opCfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -185,7 +185,7 @@ func Example_inspect() {
 	}
 
 	// inspector is retrieved from the factory
-	inspector, err := condition.MakeInspector(cfg)
+	inspector, err := condition.NewInspector(cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -237,7 +237,7 @@ func Example_operate() {
 	}
 
 	// operator is retrieved from the factory
-	operator, err := condition.MakeOperator(opCfg)
+	operator, err := condition.NewOperator(opCfg)
 	if err != nil {
 		// handle err
 		panic(err)

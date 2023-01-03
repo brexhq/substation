@@ -9,15 +9,15 @@ import (
 
 var contentTests = []struct {
 	name      string
-	inspector _content
+	inspector inspContent
 	test      []byte
 	expected  bool
 }{
 	// matching Gzip against valid Gzip header
 	{
 		"gzip",
-		_content{
-			Options: _contentOptions{
+		inspContent{
+			Options: inspContentOptions{
 				Type: "application/x-gzip",
 			},
 		},
@@ -27,8 +27,8 @@ var contentTests = []struct {
 	// matching Gzip against invalid Gzip header (bytes swapped)
 	{
 		"!gzip",
-		_content{
-			Options: _contentOptions{
+		inspContent{
+			Options: inspContentOptions{
 				Type: "application/x-gzip",
 			},
 		},
@@ -38,11 +38,11 @@ var contentTests = []struct {
 	// matching Gzip against invalid Gzip header (bytes swapped) with negation
 	{
 		"gzip",
-		_content{
+		inspContent{
 			condition: condition{
 				Negate: true,
 			},
-			Options: _contentOptions{
+			Options: inspContentOptions{
 				Type: "application/x-gzip",
 			},
 		},
@@ -52,8 +52,8 @@ var contentTests = []struct {
 	// matching Zip against valid Zip header
 	{
 		"zip",
-		_content{
-			Options: _contentOptions{
+		inspContent{
+			Options: inspContentOptions{
 				Type: "application/zip",
 			},
 		},
@@ -63,8 +63,8 @@ var contentTests = []struct {
 	// matching Gzip against valid Zip header
 	{
 		"!zip",
-		_content{
-			Options: _contentOptions{
+		inspContent{
+			Options: inspContentOptions{
 				Type: "application/zip",
 			},
 		},
@@ -74,8 +74,8 @@ var contentTests = []struct {
 	// matching Zip against invalid Zip header (bytes swapped)
 	{
 		"!zip",
-		_content{
-			Options: _contentOptions{
+		inspContent{
+			Options: inspContentOptions{
 				Type: "application/zip",
 			},
 		},
@@ -89,6 +89,8 @@ func TestContent(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range contentTests {
+		var _ Inspector = test.inspector
+
 		capsule.SetData(test.test)
 
 		check, err := test.inspector.Inspect(ctx, capsule)
@@ -102,7 +104,7 @@ func TestContent(t *testing.T) {
 	}
 }
 
-func benchmarkContent(b *testing.B, inspector _content, capsule config.Capsule) {
+func benchmarkContent(b *testing.B, inspector inspContent, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

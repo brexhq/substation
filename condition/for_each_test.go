@@ -9,19 +9,19 @@ import (
 
 var forEachTests = []struct {
 	name      string
-	inspector _forEach
+	inspector inspForEach
 	test      []byte
 	expected  bool
 	err       error
 }{
 	{
 		"strings starts_with all",
-		_forEach{
+		inspForEach{
 			condition: condition{
 				Key:    "input",
 				Negate: false,
 			},
-			Options: _forEachOptions{
+			Options: inspForEachOptions{
 				Type: "all",
 				Inspector: config.Config{
 					Type: "strings",
@@ -40,12 +40,12 @@ var forEachTests = []struct {
 	},
 	{
 		"ip private all",
-		_forEach{
+		inspForEach{
 			condition: condition{
 				Key:    "input",
 				Negate: false,
 			},
-			Options: _forEachOptions{
+			Options: inspForEachOptions{
 				Type: "all",
 				Inspector: config.Config{
 					Type: "ip",
@@ -63,12 +63,12 @@ var forEachTests = []struct {
 	},
 	{
 		"regexp any",
-		_forEach{
+		inspForEach{
 			condition: condition{
 				Key:    "input",
 				Negate: false,
 			},
-			Options: _forEachOptions{
+			Options: inspForEachOptions{
 				Type: "any",
 				Inspector: config.Config{
 					Type: "regexp",
@@ -86,12 +86,12 @@ var forEachTests = []struct {
 	},
 	{
 		"length none",
-		_forEach{
+		inspForEach{
 			condition: condition{
 				Key:    "input",
 				Negate: false,
 			},
-			Options: _forEachOptions{
+			Options: inspForEachOptions{
 				Type: "none",
 				Inspector: config.Config{
 					Type: "length",
@@ -110,12 +110,12 @@ var forEachTests = []struct {
 	},
 	{
 		"length all",
-		_forEach{
+		inspForEach{
 			condition: condition{
 				Key:    "input",
 				Negate: false,
 			},
-			Options: _forEachOptions{
+			Options: inspForEachOptions{
 				Type: "all",
 				Inspector: config.Config{
 					Type: "length",
@@ -139,6 +139,8 @@ func TestForEach(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, tt := range forEachTests {
+		var _ Inspector = tt.inspector
+
 		t.Run(tt.name, func(t *testing.T) {
 			capsule.SetData(tt.test)
 
@@ -154,7 +156,7 @@ func TestForEach(t *testing.T) {
 	}
 }
 
-func benchmarkForEachByte(b *testing.B, inspector _forEach, capsule config.Capsule) {
+func benchmarkForEachByte(b *testing.B, inspector inspForEach, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

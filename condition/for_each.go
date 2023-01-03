@@ -14,12 +14,12 @@ const errForEachInvalidType = errors.Error("invalid type")
 // forEach evaluates conditions by iterating and applying an inspector to each element in a JSON array.
 //
 // This inspector supports the object handling pattern.
-type _forEach struct {
+type inspForEach struct {
 	condition
-	Options _forEachOptions `json:"options"`
+	Options inspForEachOptions `json:"options"`
 }
 
-type _forEachOptions struct {
+type inspForEachOptions struct {
 	// Type determines the method of combining results from the inspector.
 	//
 	// Must be one of:
@@ -34,13 +34,13 @@ type _forEachOptions struct {
 	Inspector config.Config `json:"inspector"`
 }
 
-func (c _forEach) String() string {
+func (c inspForEach) String() string {
 	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the Content inspector.
-func (c _forEach) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
-	inspector, err := MakeInspector(c.Options.Inspector)
+func (c inspForEach) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+	inspector, err := NewInspector(c.Options.Inspector)
 	if err != nil {
 		return false, fmt.Errorf("condition: for_each: %w", err)
 	}

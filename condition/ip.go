@@ -15,12 +15,12 @@ const errIPInvalidType = errors.Error("invalid type")
 // ip evaluates IP addresses by their type and usage using the standard library's net package (more information is available here: https://pkg.go.dev/net#ip).
 //
 // This inspector supports the data and object handling patterns.
-type _ip struct {
+type inspIP struct {
 	condition
-	Options _ipOptions `json:"options"`
+	Options inspIPOptions `json:"options"`
 }
 
-type _ipOptions struct {
+type inspIPOptions struct {
 	// Type is the IP address type used for comparison during inspection.
 	//
 	// Must be one of:
@@ -43,12 +43,12 @@ type _ipOptions struct {
 	Type string `json:"type"`
 }
 
-func (c _ip) String() string {
+func (c inspIP) String() string {
 	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the ip inspector.
-func (c _ip) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+func (c inspIP) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
 		check = string(capsule.Data())

@@ -9,14 +9,14 @@ import (
 
 var regExpTests = []struct {
 	name      string
-	inspector _regExp
+	inspector inspRegExp
 	test      []byte
 	expected  bool
 }{
 	{
 		"pass",
-		_regExp{
-			Options: _regExpOptions{
+		inspRegExp{
+			Options: inspRegExpOptions{
 				Expression: "^Test",
 			},
 		},
@@ -25,8 +25,8 @@ var regExpTests = []struct {
 	},
 	{
 		"fail",
-		_regExp{
-			Options: _regExpOptions{
+		inspRegExp{
+			Options: inspRegExpOptions{
 				Expression: "^Test",
 			},
 		},
@@ -35,11 +35,11 @@ var regExpTests = []struct {
 	},
 	{
 		"!fail",
-		_regExp{
+		inspRegExp{
 			condition: condition{
 				Negate: true,
 			},
-			Options: _regExpOptions{
+			Options: inspRegExpOptions{
 				Expression: "^Test",
 			},
 		},
@@ -48,11 +48,11 @@ var regExpTests = []struct {
 	},
 	{
 		"!pass",
-		_regExp{
+		inspRegExp{
 			condition: condition{
 				Negate: true,
 			},
-			Options: _regExpOptions{
+			Options: inspRegExpOptions{
 				Expression: "ABC",
 			},
 		},
@@ -66,6 +66,8 @@ func TestRegExp(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range regExpTests {
+		var _ Inspector = test.inspector
+
 		capsule.SetData(test.test)
 
 		check, err := test.inspector.Inspect(ctx, capsule)
@@ -79,7 +81,7 @@ func TestRegExp(t *testing.T) {
 	}
 }
 
-func benchmarkRegExpByte(b *testing.B, inspector _regExp, capsule config.Capsule) {
+func benchmarkRegExpByte(b *testing.B, inspector inspRegExp, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

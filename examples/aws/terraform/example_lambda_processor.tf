@@ -3,9 +3,9 @@
 # reads from raw Kinesis stream, writes to processed Kinesis stream
 ################################################
 
-module "lambda_example_processor" {
+module "lambda_processor" {
   source        = "/workspaces/substation/build/terraform/aws/lambda"
-  function_name = "substation_example_processor"
+  function_name = "substation_processor"
   description   = "Substation Lambda that is triggered from the raw Kinesis stream and writes data to the processed Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id
   kms_arn       = module.kms_substation.arn
@@ -14,7 +14,7 @@ module "lambda_example_processor" {
 
   env = {
     "AWS_MAX_ATTEMPTS" : 10
-    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_processor"
+    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_processor"
     "SUBSTATION_HANDLER" : "AWS_KINESIS"
     "SUBSTATION_DEBUG" : 1
     "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
@@ -24,9 +24,9 @@ module "lambda_example_processor" {
   }
 }
 
-resource "aws_lambda_event_source_mapping" "lambda_esm_example_processor" {
-  event_source_arn                   = module.kinesis_example_raw.arn
-  function_name                      = module.lambda_example_processor.arn
+resource "aws_lambda_event_source_mapping" "lambda_esm_processor" {
+  event_source_arn                   = module.kinesis_raw.arn
+  function_name                      = module.lambda_processor.arn
   maximum_batching_window_in_seconds = 30
   batch_size                         = 100
   parallelization_factor             = 1
@@ -38,31 +38,31 @@ resource "aws_lambda_event_source_mapping" "lambda_esm_example_processor" {
 ################################################
 
 # allows processor Lambda to read from DynamoDB tables for enrichment
-module "iam_lambda_example_processor_dynamodb_read" {
+module "iam_lambda_processor_dynamodb_read" {
   source    = "/workspaces/substation/build/terraform/aws/iam"
   resources = ["*"]
 }
 
-module "iam_lambda_example_processor_dynamodb_read_attachment" {
+module "iam_lambda_processor_dynamodb_read_attachment" {
   source = "/workspaces/substation/build/terraform/aws/iam_attachment"
-  id     = "${module.lambda_example_processor.name}_dynamodb_read"
-  policy = module.iam_lambda_example_processor_dynamodb_read.dynamodb_read_policy
+  id     = "${module.lambda_processor.name}_dynamodb_read"
+  policy = module.iam_lambda_processor_dynamodb_read.dynamodb_read_policy
   roles = [
-    module.lambda_example_processor.role
+    module.lambda_processor.role
   ]
 }
 
 # allows processor Lambda to execute Lambda for enrichment
-module "iam_lambda_example_processor_lambda_execute" {
+module "iam_lambda_processor_lambda_execute" {
   source    = "/workspaces/substation/build/terraform/aws/iam"
   resources = ["*"]
 }
 
-module "iam_lambda_example_processor_lambda_execute_attachment" {
+module "iam_lambda_processor_lambda_execute_attachment" {
   source = "/workspaces/substation/build/terraform/aws/iam_attachment"
-  id     = "${module.lambda_example_processor.name}_lambda_execute"
-  policy = module.iam_lambda_example_processor_lambda_execute.lambda_execute_policy
+  id     = "${module.lambda_processor.name}_lambda_execute"
+  policy = module.iam_lambda_processor_lambda_execute.lambda_execute_policy
   roles = [
-    module.lambda_example_processor.role
+    module.lambda_processor.role
   ]
 }

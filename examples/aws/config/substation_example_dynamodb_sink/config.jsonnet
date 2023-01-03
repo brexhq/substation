@@ -4,7 +4,7 @@ local consts = import 'consts.libsonnet';
 local dynamodb = import 'dynamodb.libsonnet';
 
 {
-  sink: sub.interfaces.sink.aws_dynamodb(settings={table:'substation_example', key:consts.ddb_payload}),
+  sink: sub.interfaces.sink.aws_dynamodb(settings={table:'substation', key:consts.ddb_payload}),
   // use the batch transform to modify before it's written to DynamoDB.
   transform: {
     type: 'batch',

@@ -2,10 +2,10 @@
 # raw data stream
 ################################################
 
-module "kinesis_example_raw" {
+module "kinesis_raw" {
   source            = "/workspaces/substation/build/terraform/aws/kinesis"
   kms_key_id        = module.kms_substation.arn
-  stream_name       = "substation_example_raw"
+  stream_name       = "substation_raw"
   autoscaling_topic = aws_sns_topic.autoscaling_topic.arn
 
   tags = {
@@ -17,21 +17,21 @@ module "kinesis_example_raw" {
 ## raw data stream read permissions
 ################################################
 
-module "iam_example_kinesis_raw_read" {
+module "iam_kinesis_raw_read" {
   source = "/workspaces/substation/build/terraform/aws/iam"
   resources = [
-    module.kinesis_example_raw.arn,
+    module.kinesis_raw.arn,
   ]
 }
 
-module "iam_example_kinesis_raw_read_attachment" {
+module "iam_kinesis_raw_read_attachment" {
   source = "/workspaces/substation/build/terraform/aws/iam_attachment"
-  id     = "substation_example_kinesis_raw_read"
-  policy = module.iam_example_kinesis_raw_read.kinesis_read_policy
+  id     = "substation_kinesis_raw_read"
+  policy = module.iam_kinesis_raw_read.kinesis_read_policy
   roles = [
     module.lambda_autoscaling.role,
-    module.lambda_example_processor.role,
-    module.lambda_example_raw_s3_sink.role,
+    module.lambda_processor.role,
+    module.lambda_raw_s3_sink.role,
   ]
 }
 
@@ -39,23 +39,23 @@ module "iam_example_kinesis_raw_read_attachment" {
 ## raw data stream write permissions
 ################################################
 
-module "iam_example_kinesis_raw_write" {
+module "iam_kinesis_raw_write" {
   source = "/workspaces/substation/build/terraform/aws/iam"
   resources = [
-    module.kinesis_example_raw.arn,
+    module.kinesis_raw.arn,
   ]
 }
 
-module "iam_example_kinesis_raw_write_attachment" {
+module "iam_kinesis_raw_write_attachment" {
   source = "/workspaces/substation/build/terraform/aws/iam_attachment"
-  id     = "substation_example_kinesis_raw_write"
-  policy = module.iam_example_kinesis_raw_write.kinesis_write_policy
+  id     = "substation_kinesis_raw_write"
+  policy = module.iam_kinesis_raw_write.kinesis_write_policy
   roles = [
-    module.lambda_example_gateway_source.role,
-    module.lambda_example_s3_source.role,
-    module.lambda_example_sns_source.role,
-    module.lambda_example_sqs_source.role,
-    module.gateway_example_kinesis_source.role,
+    module.lambda_gateway_source.role,
+    module.lambda_s3_source.role,
+    module.lambda_sns_source.role,
+    module.lambda_sqs_source.role,
+    module.gateway_kinesis_source.role,
   ]
 }
 
@@ -63,10 +63,10 @@ module "iam_example_kinesis_raw_write_attachment" {
 # processed data stream
 ################################################
 
-module "kinesis_example_processed" {
+module "kinesis_processed" {
   source            = "/workspaces/substation/build/terraform/aws/kinesis"
   kms_key_id        = module.kms_substation.arn
-  stream_name       = "substation_example_processed"
+  stream_name       = "substation_processed"
   autoscaling_topic = aws_sns_topic.autoscaling_topic.arn
 
   tags = {
@@ -78,20 +78,20 @@ module "kinesis_example_processed" {
 ## processed data stream read permissions
 ################################################
 
-module "iam_example_kinesis_processed_read" {
+module "iam_kinesis_processed_read" {
   source = "/workspaces/substation/build/terraform/aws/iam"
   resources = [
-    module.kinesis_example_processed.arn,
+    module.kinesis_processed.arn,
   ]
 }
 
-module "iam_example_kinesis_processed_read_attachment" {
+module "iam_kinesis_processed_read_attachment" {
   source = "/workspaces/substation/build/terraform/aws/iam_attachment"
-  id     = "substation_example_kinesis_processed_read"
-  policy = module.iam_example_kinesis_processed_read.kinesis_read_policy
+  id     = "substation_kinesis_processed_read"
+  policy = module.iam_kinesis_processed_read.kinesis_read_policy
   roles = [
-    module.lambda_example_dynamodb_sink.role,
-    module.lambda_example_processed_s3_sink.role,
+    module.lambda_dynamodb_sink.role,
+    module.lambda_processed_s3_sink.role,
   ]
 }
 
@@ -99,18 +99,18 @@ module "iam_example_kinesis_processed_read_attachment" {
 ## processed data stream write permissions
 ################################################
 
-module "iam_example_kinesis_processed_write" {
+module "iam_kinesis_processed_write" {
   source = "/workspaces/substation/build/terraform/aws/iam"
   resources = [
-    module.kinesis_example_processed.arn,
+    module.kinesis_processed.arn,
   ]
 }
 
-module "iam_example_kinesis_processed_write_attachment" {
+module "iam_kinesis_processed_write_attachment" {
   source = "/workspaces/substation/build/terraform/aws/iam_attachment"
-  id     = "substation_example_kinesis_processed_write"
-  policy = module.iam_example_kinesis_processed_write.kinesis_write_policy
+  id     = "substation_kinesis_processed_write"
+  policy = module.iam_kinesis_processed_write.kinesis_write_policy
   roles = [
-    module.lambda_example_processor.role,
+    module.lambda_processor.role,
   ]
 }

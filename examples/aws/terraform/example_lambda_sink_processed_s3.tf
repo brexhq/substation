@@ -1,22 +1,11 @@
 ################################################
-# S3 bucket
-# data is written from the processed Kinesis stream to the bucket
-################################################
-
-module "s3_example_processed_sink" {
-  source  = "/workspaces/substation/build/terraform/aws/s3"
-  kms_arn = module.kms_substation.arn
-  bucket  = "substation-example-processed"
-}
-
-################################################
 # Lambda
 # reads from processed Kinesis stream, writes to S3
 ################################################
 
-module "lambda_example_processed_s3_sink" {
+module "lambda_processed_s3_sink" {
   source        = "/workspaces/substation/build/terraform/aws/lambda"
-  function_name = "substation_example_processed_s3_sink"
+  function_name = "substation_processed_s3_sink"
   description   = "Substation Lambda that is triggered from the processed Kinesis stream and writes data to S3"
   appconfig_id  = aws_appconfig_application.substation.id
   kms_arn       = module.kms_substation.arn
@@ -25,7 +14,7 @@ module "lambda_example_processed_s3_sink" {
 
   env = {
     "AWS_MAX_ATTEMPTS" : 10
-    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_processed_s3_sink"
+    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_processed_s3_sink"
     "SUBSTATION_HANDLER" : "AWS_KINESIS"
     "SUBSTATION_DEBUG" : 1
     "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
@@ -35,31 +24,11 @@ module "lambda_example_processed_s3_sink" {
   }
 }
 
-resource "aws_lambda_event_source_mapping" "lambda_esm_example_processed_s3_sink" {
-  event_source_arn                   = module.kinesis_example_processed.arn
-  function_name                      = module.lambda_example_processed_s3_sink.arn
+resource "aws_lambda_event_source_mapping" "lambda_esm_processed_s3_sink" {
+  event_source_arn                   = module.kinesis_processed.arn
+  function_name                      = module.lambda_processed_s3_sink.arn
   maximum_batching_window_in_seconds = 30
   batch_size                         = 100
   parallelization_factor             = 1
   starting_position                  = "LATEST"
-}
-
-################################################
-## permissions
-################################################
-
-module "iam_lambda_example_processed_s3_sink_write" {
-  source = "/workspaces/substation/build/terraform/aws/iam"
-  resources = [
-    "${module.s3_example_processed_sink.arn}/*",
-  ]
-}
-
-module "iam_lambda_example_processed_s3_sink_write_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
-  id     = "${module.lambda_example_processed_s3_sink.name}_write"
-  policy = module.iam_lambda_example_processed_s3_sink_write.s3_write_policy
-  roles = [
-    module.lambda_example_processed_s3_sink.role
-  ]
 }

@@ -7,7 +7,6 @@ module "iam_kms_read" {
   source = "../../../build/terraform/aws/iam"
   resources = [
     module.kms_substation.arn,
-    # aws_kms_key.xray_key.arn,
   ]
 }
 
@@ -38,7 +37,6 @@ module "iam_kms_write" {
   source = "../../../build/terraform/aws/iam"
   resources = [
     module.kms_substation.arn,
-    # aws_kms_key.xray_key.arn,
   ]
 }
 

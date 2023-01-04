@@ -10,9 +10,8 @@ Contains the core Substation application code. This code can be used to create n
 
 ## aws/lambda
 
-Contains Substation apps deployed as AWS Lambda functions. More information is available in 
-[cmd/aws/lambda/README.md](/cmd/aws/lambda/README.md).
+Contains apps deployed as AWS Lambda functions.
 
-## file/substation
+## development/
 
-Reads and processes data from local disk, HTTP(S) URL, or AWS S3 URL. The app is recommended for local testing and development.
+Contains apps that aid in testing and development.

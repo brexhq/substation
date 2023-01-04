@@ -15,7 +15,7 @@ RUN apt-get update && \
 COPY . /usr/local/go/src/substation/
 RUN sh /usr/local/go/src/substation/build/scripts/proto/compile.sh
 RUN go test -timeout 30s -v ./... 
-WORKDIR /usr/local/go/src/substation/cmd/file/substation
+WORKDIR /usr/local/go/src/substation/cmd/development/substation
 RUN CGO_ENABLED=0 go build -o /bin/substation
 
 FROM scratch

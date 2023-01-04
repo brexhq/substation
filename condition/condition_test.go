@@ -428,7 +428,7 @@ func BenchmarkNone(b *testing.B) {
 	}
 }
 
-func TestFactory(t *testing.T) {
+func TestNewInspector(t *testing.T) {
 	for _, test := range allTests {
 		_, err := NewInspector(test.conf[0])
 		if err != nil {
@@ -437,17 +437,17 @@ func TestFactory(t *testing.T) {
 	}
 }
 
-func benchmarkFactory(b *testing.B, conf config.Config) {
+func benchmarkNewInspector(b *testing.B, conf config.Config) {
 	for i := 0; i < b.N; i++ {
 		_, _ = NewInspector(conf)
 	}
 }
 
-func BenchmarkFactory(b *testing.B) {
+func BenchmarkNewInspector(b *testing.B) {
 	for _, test := range allTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkFactory(b, test.conf[0])
+				benchmarkNewInspector(b, test.conf[0])
 			},
 		)
 	}

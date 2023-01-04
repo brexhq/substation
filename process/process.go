@@ -19,9 +19,6 @@ const errInvalidDirection = errors.Error("invalid direction")
 // errMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
 const errMissingRequiredOptions = errors.Error("missing required options")
 
-// errInvalidFactoryInput is returned when an unsupported processor is referenced in any Factory.
-const errInvalidFactoryInput = errors.Error("invalid factory input")
-
 type process struct {
 	// Condition optionally enables processing depending on the outcome of data inspection.
 	Condition condition.Config `json:"condition"`
@@ -157,7 +154,7 @@ func NewApplier(cfg config.Config) (Applier, error) {
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process: make_applier: type %q settings %+v: %v", cfg.Type, cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("process: new_applier: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 
@@ -335,7 +332,7 @@ func NewBatcher(cfg config.Config) (Batcher, error) {
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	default:
-		return nil, fmt.Errorf("process: make_batcher: type %q settings %+v: %v", cfg.Type, cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("process: new_batcher: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 

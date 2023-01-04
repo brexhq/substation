@@ -8,9 +8,6 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errInvalidFactoryInput is returned when an unsupported Sink is referenced in Factory.
-const errInvalidFactoryInput = errors.Error("invalid factory input")
-
 type Sink interface {
 	Send(context.Context, *config.Channel) error
 }
@@ -55,6 +52,6 @@ func New(cfg config.Config) (Sink, error) {
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
 	default:
-		return nil, fmt.Errorf("Sink: settings %v: %v", cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("sink: settings %v: %v", cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }

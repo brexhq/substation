@@ -8,9 +8,6 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errInvalidFactoryInput is returned when an unsupported Metrics destination is referenced in Factory.
-const errInvalidFactoryInput = errors.Error("invalid factory input")
-
 // referenced across all metrics generators
 var (
 	metricsDestination string
@@ -83,6 +80,6 @@ func Make(destination string) (generator, error) {
 		var m AWSCloudWatchEmbeddedMetrics
 		return m, nil
 	default:
-		return nil, fmt.Errorf("metrics destination %s: %v", destination, errInvalidFactoryInput)
+		return nil, fmt.Errorf("metrics destination %s: %v", destination, errors.ErrInvalidFactoryInput)
 	}
 }

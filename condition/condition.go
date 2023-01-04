@@ -9,10 +9,6 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errInvalidFactoryInput is returned when an unsupported type is
-// referenced in any factory.
-const errInvalidFactoryInput = errors.Error("invalid factory input")
-
 // errOperatorMissingInspectors is returned when an Operator that requires
 // inspectors is created with no inspectors.
 const errOperatorMissingInspectors = errors.Error("missing inspectors")
@@ -85,7 +81,7 @@ func NewInspector(cfg config.Config) (Inspector, error) {
 		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	default:
-		return nil, fmt.Errorf("condition: make_inspector: type %q settings %+v: %v", cfg.Type, cfg.Settings, errInvalidFactoryInput)
+		return nil, fmt.Errorf("condition: new_inspector: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 

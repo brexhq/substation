@@ -10,9 +10,6 @@ import (
 	"github.com/brexhq/substation/internal/ip"
 )
 
-// errInvalidFactoryInput is returned when an unsupported OpenCloser is referenced in Factory.
-const errInvalidFactoryInput = errors.Error("invalid factory input")
-
 // databases are global variables that can be accessed across the application by using the Factory function.
 var (
 	ip2loc      IP2Location
@@ -41,6 +38,6 @@ func Get(cfg config.Config) (OpenCloser, error) {
 		_ = config.Decode(cfg.Settings, &maxMindCity)
 		return &maxMindCity, nil
 	default:
-		return nil, fmt.Errorf("database %s: %v", t, errInvalidFactoryInput)
+		return nil, fmt.Errorf("database %s: %v", t, errors.ErrInvalidFactoryInput)
 	}
 }

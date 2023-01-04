@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.8.0](https://github.com/brexhq/substation/compare/v0.7.1...v0.8.0) (2023-01-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* Breaking Public APIs ([#53](https://github.com/brexhq/substation/issues/53))
+
+### Code Refactoring
+
+* Breaking Public APIs ([#53](https://github.com/brexhq/substation/issues/53)) ([433ec9c](https://github.com/brexhq/substation/commit/433ec9cd5821660549e0ab9d2a81d69fdc49cb1c))
+
 ## [0.7.1](https://github.com/brexhq/substation/compare/v0.7.0...v0.7.1) (2022-12-19)
 
 

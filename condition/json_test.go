@@ -9,48 +9,54 @@ import (
 
 var jsonSchemaTests = []struct {
 	name      string
-	inspector JSONSchema
+	inspector inspJSONSchema
 	test      []byte
 	expected  bool
 }{
 	{
 		"string",
-		JSONSchema{
-			Schema: []struct {
-				Key  string `json:"key"`
-				Type string `json:"type"`
-			}{
-				{Key: "hello", Type: "String"},
+		inspJSONSchema{
+			Options: inspJSONSchemaOptions{
+				Schema: []struct {
+					Key  string `json:"key"`
+					Type string `json:"type"`
+				}{
+					{Key: "hello", Type: "String"},
+				},
 			},
-			Negate: false,
 		},
 		[]byte(`{"foo":"bar"}`),
 		true,
 	},
 	{
 		"!string",
-		JSONSchema{
-			Schema: []struct {
-				Key  string `json:"key"`
-				Type string `json:"type"`
-			}{
-				{Key: "foo", Type: "String"},
+		inspJSONSchema{
+			Options: inspJSONSchemaOptions{
+				Schema: []struct {
+					Key  string `json:"key"`
+					Type string `json:"type"`
+				}{
+					{Key: "foo", Type: "String"},
+				},
 			},
-			Negate: false,
 		},
 		[]byte(`{"foo":123}`),
 		false,
 	},
 	{
 		"string array",
-		JSONSchema{
-			Schema: []struct {
-				Key  string `json:"key"`
-				Type string `json:"type"`
-			}{
-				{Key: "foo", Type: "String/Array"},
+		inspJSONSchema{
+			condition: condition{
+				Negate: true,
 			},
-			Negate: true,
+			Options: inspJSONSchemaOptions{
+				Schema: []struct {
+					Key  string `json:"key"`
+					Type string `json:"type"`
+				}{
+					{Key: "foo", Type: "String/Array"},
+				},
+			},
 		},
 		[]byte(`{"foo":["bar","baz"]}`),
 		true,
@@ -62,6 +68,8 @@ func TestJSONSchema(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range jsonSchemaTests {
+		var _ Inspector = test.inspector
+
 		capsule.SetData(test.test)
 
 		check, err := test.inspector.Inspect(ctx, capsule)
@@ -75,7 +83,7 @@ func TestJSONSchema(t *testing.T) {
 	}
 }
 
-func benchmarkJSONSchemaByte(b *testing.B, inspector JSONSchema, capsule config.Capsule) {
+func benchmarkJSONSchemaByte(b *testing.B, inspector inspJSONSchema, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)
@@ -96,34 +104,38 @@ func BenchmarkJSONSchemaByte(b *testing.B) {
 
 var jsonValidTests = []struct {
 	name      string
-	inspector JSONValid
+	inspector inspJSONValid
 	test      []byte
 	expected  bool
 }{
 	{
 		"valid",
-		JSONValid{},
+		inspJSONValid{},
 		[]byte(`{"hello":"world"}`),
 		true,
 	},
 	{
 		"invalid",
-		JSONValid{},
+		inspJSONValid{},
 		[]byte(`{hello:"world"}`),
 		false,
 	},
 	{
 		"!invalid",
-		JSONValid{
-			Negate: true,
+		inspJSONValid{
+			condition: condition{
+				Negate: true,
+			},
 		},
 		[]byte(`{"hello":"world"}`),
 		false,
 	},
 	{
 		"!valid",
-		JSONValid{
-			Negate: true,
+		inspJSONValid{
+			condition: condition{
+				Negate: true,
+			},
 		},
 		[]byte(`{hello:"world"}`),
 		true,
@@ -148,7 +160,7 @@ func TestJSONValid(t *testing.T) {
 	}
 }
 
-func benchmarkJSONValidByte(b *testing.B, inspector JSONValid, capsule config.Capsule) {
+func benchmarkJSONValidByte(b *testing.B, inspector inspJSONValid, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

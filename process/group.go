@@ -4,70 +4,47 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-Group processes data by grouping JSON arrays into an array of tuples or array of JSON objects. The processor supports these patterns:
-
-	JSON array:
-		{"group":[["foo","bar"],[111,222]]} >>> {"group":[["foo",111],["bar",222]]}
-		{"group":[["foo","bar"],[111,222]]} >>> {"group":[{"name":foo","size":111},{"name":"bar","size":222}]}
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "group",
-		"settings": {
-			"input_key": "group",
-			"output_key": "group"
-		}
-	}
-*/
-type Group struct {
-	Options   GroupOptions     `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+// group processes data by grouping object arrays into an array of tuples or array of objects.
+//
+// This processor supports the object handling pattern.
+type procGroup struct {
+	process
+	Options procGroupOptions `json:"options"`
 }
 
-/*
-GroupOptions contains custom options for the Group processor:
-
-	Keys (optional):
-		path where values from InputKey are written to, creating new JSON objects
-*/
-type GroupOptions struct {
+type procGroupOptions struct {
+	// Keys determines where processed values are set in newly created objects.
+	//
+	// This is optional and defaults to creating an array of tuples instead
+	// of an array of objects.
 	Keys []string `json:"keys"`
 }
 
-// Close closes resources opened by the Group processor.
-func (p Group) Close(context.Context) error {
+// String returns the processor settings as an object.
+func (p procGroup) String() string {
+	return toString(p)
+}
+
+// Closes resources opened by the processor.
+func (p procGroup) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Group processor. Conditions are optionally applied to the data to enable processing.
-func (p Group) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process group: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
-	if err != nil {
-		return nil, fmt.Errorf("process group: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procGroup) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return batchApply(ctx, capsules, p, p.Condition)
 }
 
-// Apply processes encapsulated data with the Group processor.
-func (p Group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p procGroup) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON arrays, error early if there are no keys
-	if p.InputKey == "" && p.OutputKey == "" {
-		return capsule, fmt.Errorf("process group: options %+v: %v", p.Options, errMissingRequiredOptions)
+	if p.Key == "" && p.SetKey == "" {
+		return capsule, fmt.Errorf("process: group: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	if len(p.Options.Keys) == 0 {
@@ -78,7 +55,7 @@ func (p Group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 		// 	cache[0][]interface{}{"foo",123}
 		// 	cache[1][]interface{}{"bar",456}
 		cache := make(map[int][]interface{})
-		result := capsule.Get(p.InputKey)
+		result := capsule.Get(p.Key)
 		for _, res := range result.Array() {
 			for i, r := range res.Array() {
 				cache[i] = append(cache[i], r.Value())
@@ -91,8 +68,8 @@ func (p Group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 		}
 
 		// [["foo",123],["bar",456]]
-		if err := capsule.Set(p.OutputKey, value); err != nil {
-			return capsule, fmt.Errorf("process group: %v", err)
+		if err := capsule.Set(p.SetKey, value); err != nil {
+			return capsule, fmt.Errorf("process: group: %v", err)
 		}
 
 		return capsule, nil
@@ -108,12 +85,12 @@ func (p Group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 	cache := make(map[int][]byte)
 
 	var err error
-	result := capsule.Get(p.InputKey)
+	result := capsule.Get(p.Key)
 	for i, res := range result.Array() {
 		for j, r := range res.Array() {
 			cache[j], err = json.Set(cache[j], p.Options.Keys[i], r)
 			if err != nil {
-				return capsule, fmt.Errorf("process group: %v", err)
+				return capsule, fmt.Errorf("process: group: %v", err)
 			}
 		}
 	}
@@ -124,14 +101,14 @@ func (p Group) Apply(ctx context.Context, capsule config.Capsule) (config.Capsul
 	for i := 0; i < len(cache); i++ {
 		value, err = json.Set(value, fmt.Sprintf("%d", i), cache[i])
 		if err != nil {
-			return capsule, fmt.Errorf("process group: %v", err)
+			return capsule, fmt.Errorf("process: group: %v", err)
 		}
 	}
 
 	// JSON arrays must be set using SetRaw to preserve structure
 	// [{"name":"foo","size":123},{"name":"bar","size":456}]
-	if err := capsule.SetRaw(p.OutputKey, value); err != nil {
-		return capsule, fmt.Errorf("process group: %v", err)
+	if err := capsule.SetRaw(p.SetKey, value); err != nil {
+		return capsule, fmt.Errorf("process: group: %v", err)
 	}
 
 	return capsule, nil

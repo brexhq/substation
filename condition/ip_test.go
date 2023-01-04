@@ -9,87 +9,109 @@ import (
 
 var ipTests = []struct {
 	name      string
-	inspector IP
+	inspector inspIP
 	test      []byte
 	expected  bool
 }{
 	{
 		"json",
-		IP{
-			Type: "private",
-			Key:  "ip_address",
+		inspIP{
+			condition: condition{
+				Key: "ip_address",
+			},
+			Options: inspIPOptions{
+				Type: "private",
+			},
 		},
 		[]byte(`{"ip_address":"192.168.1.2"}`),
 		true,
 	},
 	{
 		"valid",
-		IP{
-			Type: "valid",
+		inspIP{
+			Options: inspIPOptions{
+				Type: "valid",
+			},
 		},
 		[]byte("192.168.1.2"),
 		true,
 	},
 	{
 		"invalid",
-		IP{
-			Type: "valid",
+		inspIP{
+			Options: inspIPOptions{
+				Type: "valid",
+			},
 		},
 		[]byte("foo"),
 		false,
 	},
 	{
 		"multicast",
-		IP{
-			Type: "multicast",
+		inspIP{
+			Options: inspIPOptions{
+				Type: "multicast",
+			},
 		},
 		[]byte("224.0.0.12"),
 		true,
 	},
 	{
 		"multicast_link_local",
-		IP{
-			Type: "multicast_link_local",
+		inspIP{
+			Options: inspIPOptions{
+				Type: "multicast_link_local",
+			},
 		},
 		[]byte("224.0.0.12"),
 		true,
 	},
 	{
 		"unicast_global",
-		IP{
-			Type: "unicast_global",
+		inspIP{
+			Options: inspIPOptions{
+				Type: "unicast_global",
+			},
 		},
 		[]byte("8.8.8.8"),
 		true,
 	},
 	{
 		"private",
-		IP{
-			Type: "private",
+		inspIP{
+			Options: inspIPOptions{
+				Type: "private",
+			},
 		},
 		[]byte("8.8.8.8"),
 		false,
 	},
 	{
 		"unicast_link_local",
-		IP{
-			Type: "unicast_link_local",
+		inspIP{
+			Options: inspIPOptions{
+				Type: "unicast_link_local",
+			},
 		},
 		[]byte("169.254.255.255"),
 		true,
 	},
 	{
 		"loopback",
-		IP{
-			Type: "loopback",
+		inspIP{
+			Options: inspIPOptions{
+				Type: "loopback",
+			},
 		},
 		[]byte("127.0.0.1"),
 		true,
 	},
 	{
 		"unspecified",
-		IP{
-			Type: "unspecified",
+		inspIP{
+			Options: inspIPOptions{
+				Type: "unspecified",
+			},
 		},
 		[]byte("0.0.0.0"),
 		true,
@@ -101,6 +123,8 @@ func TestIP(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range ipTests {
+		var _ Inspector = test.inspector
+
 		capsule.SetData(test.test)
 
 		check, err := test.inspector.Inspect(ctx, capsule)
@@ -114,7 +138,7 @@ func TestIP(t *testing.T) {
 	}
 }
 
-func benchmarkIPByte(b *testing.B, inspector IP, capsule config.Capsule) {
+func benchmarkIPByte(b *testing.B, inspector inspIP, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

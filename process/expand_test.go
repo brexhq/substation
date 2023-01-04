@@ -10,15 +10,17 @@ import (
 
 var expandTests = []struct {
 	name     string
-	proc     Expand
+	proc     procExpand
 	test     []byte
 	expected [][]byte
 	err      error
 }{
 	{
 		"JSON",
-		Expand{
-			InputKey: "expand",
+		procExpand{
+			process: process{
+				Key: "expand",
+			},
 		},
 		[]byte(`{"expand":[{"foo":"bar"}]}`),
 		[][]byte{
@@ -28,8 +30,10 @@ var expandTests = []struct {
 	},
 	{
 		"JSON extra key",
-		Expand{
-			InputKey: "expand",
+		procExpand{
+			process: process{
+				Key: "expand",
+			},
 		},
 		[]byte(`{"expand":[{"foo":"bar"},{"quux":"corge"}],"baz":"qux"}`),
 		[][]byte{
@@ -40,7 +44,7 @@ var expandTests = []struct {
 	},
 	{
 		"data",
-		Expand{},
+		procExpand{},
 		[]byte(`[{"foo":"bar"},{"quux":"corge"}]`),
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
@@ -55,11 +59,13 @@ func TestExpand(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range expandTests {
+		var _ Batcher = test.proc
+
 		slice := make([]config.Capsule, 1)
 		capsule.SetData(test.test)
 		slice[0] = capsule
 
-		result, err := test.proc.ApplyBatch(ctx, slice)
+		result, err := test.proc.Batch(ctx, slice...)
 		if err != nil {
 			t.Error(err)
 		}
@@ -73,10 +79,10 @@ func TestExpand(t *testing.T) {
 	}
 }
 
-func benchmarkExpand(b *testing.B, slicer Expand, slice []config.Capsule) {
+func benchmarkExpand(b *testing.B, slicer procExpand, slice []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = slicer.ApplyBatch(ctx, slice)
+		_, _ = slicer.Batch(ctx, slice...)
 	}
 }
 

@@ -192,7 +192,7 @@ func (c *Capsule) SetMetadata(i interface{}) (*Capsule, error) {
 // Channel provides methods for safely writing capsule data to and closing channels. Data should be read directly from the channel (e.g., ch.C).
 type Channel struct {
 	C      chan Capsule
-	mutex  sync.Mutex
+	mu     sync.Mutex
 	closed bool
 }
 
@@ -203,8 +203,9 @@ func NewChannel() *Channel {
 
 // Close closes a channel and relies on a mutex to prevent panicking if the channel is closed by multiple goroutines.
 func (c *Channel) Close() {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if !c.closed {
 		close(c.C)
 		c.closed = true

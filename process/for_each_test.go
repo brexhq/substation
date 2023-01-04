@@ -8,19 +8,21 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var foreachTests = []struct {
+var forEachTests = []struct {
 	name     string
-	proc     ForEach
+	proc     procForEach
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"base64",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "base64",
 					Settings: map[string]interface{}{
@@ -37,16 +39,18 @@ var foreachTests = []struct {
 	},
 	{
 		"capture",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "capture",
 					Settings: map[string]interface{}{
 						"options": map[string]interface{}{
 							"expression": "^([^@]*)@.*$",
-							"function":   "find",
+							"type":       "find",
 						},
 					},
 				},
@@ -58,15 +62,17 @@ var foreachTests = []struct {
 	},
 	{
 		"case",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "case",
 					Settings: map[string]interface{}{
 						"options": map[string]interface{}{
-							"case": "lower",
+							"type": "lower",
 						},
 					},
 				},
@@ -77,31 +83,13 @@ var foreachTests = []struct {
 		nil,
 	},
 	{
-		"concat",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
-				Processor: config.Config{
-					Type: "concat",
-					Settings: map[string]interface{}{
-						"options": map[string]interface{}{
-							"separator": ".",
-						},
-					},
-				},
-			},
-		},
-		[]byte(`{"input":[["foo","bar"],["baz","qux"]]}`),
-		[]byte(`{"input":[["foo","bar"],["baz","qux"]],"output":["foo.bar","baz.qux"]}`),
-		nil,
-	},
-	{
 		"convert",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "convert",
 					Settings: map[string]interface{}{
@@ -118,15 +106,17 @@ var foreachTests = []struct {
 	},
 	{
 		"domain",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "domain",
 					Settings: map[string]interface{}{
 						"options": map[string]interface{}{
-							"function": "subdomain",
+							"type": "subdomain",
 						},
 					},
 				},
@@ -138,15 +128,17 @@ var foreachTests = []struct {
 	},
 	{
 		"flatten",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "flatten",
 					Settings: map[string]interface{}{
-						"input_key":  "flatten",
-						"output_key": "flatten",
+						"key":     "flatten",
+						"set_key": "flatten",
 						"options": map[string]interface{}{
 							"deep": true,
 						},
@@ -160,15 +152,17 @@ var foreachTests = []struct {
 	},
 	{
 		"group",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "group",
 					Settings: map[string]interface{}{
-						"input_key":  "group",
-						"output_key": "group",
+						"key":     "group",
+						"set_key": "group",
 					},
 				},
 			},
@@ -179,10 +173,12 @@ var foreachTests = []struct {
 	},
 	{
 		"hash",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "hash",
 					Settings: map[string]interface{}{
@@ -199,14 +195,16 @@ var foreachTests = []struct {
 	},
 	{
 		"insert",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "insert",
 					Settings: map[string]interface{}{
-						"output_key": "baz",
+						"set_key": "baz",
 						"options": map[string]interface{}{
 							"value": "qux",
 						},
@@ -219,11 +217,35 @@ var foreachTests = []struct {
 		nil,
 	},
 	{
+		"join",
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
+				Processor: config.Config{
+					Type: "join",
+					Settings: map[string]interface{}{
+						"options": map[string]interface{}{
+							"separator": ".",
+						},
+					},
+				},
+			},
+		},
+		[]byte(`{"input":[["foo","bar"],["baz","qux"]]}`),
+		[]byte(`{"input":[["foo","bar"],["baz","qux"]],"output":["foo.bar","baz.qux"]}`),
+		nil,
+	},
+	{
 		"math",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "math",
 					Settings: map[string]interface{}{
@@ -240,10 +262,12 @@ var foreachTests = []struct {
 	},
 	{
 		"pipeline",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "pipeline",
 					Settings: map[string]interface{}{
@@ -277,10 +301,12 @@ var foreachTests = []struct {
 	},
 	{
 		"replace",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "replace",
 					Settings: map[string]interface{}{
@@ -298,16 +324,18 @@ var foreachTests = []struct {
 	},
 	{
 		"time",
-		ForEach{
-			InputKey:  "input",
-			OutputKey: "output.-1",
-			Options: ForEachOptions{
+		procForEach{
+			process: process{
+				Key:    "input",
+				SetKey: "output.-1",
+			},
+			Options: procForEachOptions{
 				Processor: config.Config{
 					Type: "time",
 					Settings: map[string]interface{}{
 						"options": map[string]interface{}{
-							"input_format":  "2006-01-02T15:04:05Z",
-							"output_format": "2006-01-02T15:04:05.000000Z",
+							"format":     "2006-01-02T15:04:05Z",
+							"set_format": "2006-01-02T15:04:05.000000Z",
 						},
 					},
 				},
@@ -323,7 +351,10 @@ func TestForEach(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range foreachTests {
+	for _, test := range forEachTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -337,16 +368,16 @@ func TestForEach(t *testing.T) {
 	}
 }
 
-func benchmarkForEach(b *testing.B, applicator ForEach, test config.Capsule) {
+func benchmarkForEach(b *testing.B, applier procForEach, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 
 func BenchmarkForEach(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range foreachTests {
+	for _, test := range forEachTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)

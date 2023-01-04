@@ -7,19 +7,11 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-/*
-Stdout sinks data to stdout.
+// stdout sinks data to standard output.
+type sinkStdout struct{}
 
-When loaded with a factory, the sink uses this JSON configuration:
-
-	{
-		"type": "stdout"
-	}
-*/
-type Stdout struct{}
-
-// Send sinks a channel of encapsulated data with the Stdout sink.
-func (sink *Stdout) Send(ctx context.Context, ch *config.Channel) error {
+// Send sinks a channel of encapsulated data with the sink.
+func (s *sinkStdout) Send(ctx context.Context, ch *config.Channel) error {
 	var count int
 	for capsule := range ch.C {
 		select {

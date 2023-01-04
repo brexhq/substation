@@ -108,13 +108,13 @@ func SetRaw(json []byte, key string, value interface{}) (tmp []byte, err error) 
 func Valid(data interface{}) bool {
 	switch v := data.(type) {
 	case []byte:
-		if !bytes.HasPrefix(v, []byte(`{`)) {
+		if !bytes.HasPrefix(v, []byte(`{`)) && !bytes.HasPrefix(v, []byte(`[`)) {
 			return false
 		}
 
 		return json.Valid(v)
 	case string:
-		if !strings.HasPrefix(v, `{`) {
+		if !strings.HasPrefix(v, `{`) && !strings.HasPrefix(v, `[`) {
 			return false
 		}
 
@@ -126,7 +126,7 @@ func Valid(data interface{}) bool {
 		}
 
 		s := v.String()
-		if !strings.HasPrefix(s, `{`) {
+		if !strings.HasPrefix(s, `{`) && !strings.HasPrefix(s, `[`) {
 			return false
 		}
 

@@ -9,55 +9,40 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errStringsInvalidFunction is returned when the Strings inspector is configured with an invalid function.
-const errStringsInvalidFunction = errors.Error("invalid function")
+// errStringsInvalidType is returned when the strings inspector is configured with an invalid type.
+const errStringsInvalidType = errors.Error("invalid type")
 
-/*
-Strings evaluates data using string functions. This inspector uses the standard library's strings package.
-
-The inspector has these settings:
-
-	Function:
-		string evaluation function to use during inspection
-		must be one of:
-			equals
-			contains
-			endswith
-			startswith
-	Expression:
-		substring expression to use during inspection
-	Key (optional):
-		JSON key-value to retrieve for inspection
-	Negate (optional):
-		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
-		defaults to false
-
-The inspector supports these patterns:
-
-	JSON:
-		{"foo":"bar"} == bar
-	data:
-		bar == bar
-
-When loaded with a factory, the inspector uses this JSON configuration:
-
-	{
-		"type": "strings",
-		"settings": {
-			"function": "endswith",
-			"expression": "bar"
-		}
-	}
-*/
-type Strings struct {
-	Function   string `json:"function"`
-	Expression string `json:"expression"`
-	Key        string `json:"key"`
-	Negate     bool   `json:"negate"`
+// strings evaluates data using Types from the standard library's strings package.
+//
+// This inspector supports the data and object handling patterns.
+type inspStrings struct {
+	condition
+	Options inspStringsOptions `json:"options"`
 }
 
-// Inspect evaluates encapsulated data with the Strings inspector.
-func (c Strings) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+type inspStringsOptions struct {
+	// Type is the string evaluation Type used during inspection.
+	//
+	// Must be one of:
+	//
+	// - equals
+	//
+	// - contains
+	//
+	// - starts_with
+	//
+	// - ends_with
+	Type string `json:"type"`
+	// Expression is a substring used during inspection.
+	Expression string `json:"expression"`
+}
+
+func (c inspStrings) String() string {
+	return toString(c)
+}
+
+// Inspect evaluates encapsulated data with the strings inspector.
+func (c inspStrings) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
 		check = string(capsule.Data())
@@ -66,19 +51,19 @@ func (c Strings) Inspect(ctx context.Context, capsule config.Capsule) (output bo
 	}
 
 	var matched bool
-	switch s := c.Function; s {
+	switch s := c.Options.Type; s {
 	case "equals":
-		if check == c.Expression {
+		if check == c.Options.Expression {
 			matched = true
 		}
 	case "contains":
-		matched = strings.Contains(check, c.Expression)
-	case "endswith":
-		matched = strings.HasSuffix(check, c.Expression)
-	case "startswith":
-		matched = strings.HasPrefix(check, c.Expression)
+		matched = strings.Contains(check, c.Options.Expression)
+	case "starts_with":
+		matched = strings.HasPrefix(check, c.Options.Expression)
+	case "ends_with":
+		matched = strings.HasSuffix(check, c.Options.Expression)
 	default:
-		return false, fmt.Errorf("condition strings: function %s: %v", c.Function, errStringsInvalidFunction)
+		return false, fmt.Errorf("condition: strings: type %s: %v", c.Options.Type, errStringsInvalidType)
 	}
 
 	if c.Negate {

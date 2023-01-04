@@ -10,62 +10,42 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-/*
-Split processes data by splitting it into multiple elements or items. The processor supports these patterns:
-
-	JSON:
-		{"split":"foo.bar"} >>> {"split":["foo","bar"]}
-	data:
-		foo\nbar\nbaz\qux >>> foo bar baz qux
-		{"foo":"bar"}\n{"baz":"qux"} >>> {"foo":"bar"} {"baz":"qux"}
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "split",
-		"settings": {
-			"options": {
-				"separator": "."
-			},
-			"input_key": "split",
-			"output_key": "split"
-		}
-	}
-*/
-type Split struct {
-	Options   SplitOptions     `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+// split processes data by splitting it into multiple elements in an object array, objects, or strings.
+//
+// This processor supports the data and object handling patterns.
+type procSplit struct {
+	process
+	Options procSplitOptions `json:"options"`
 }
 
-/*
-SplitOptions contains custom options settings for the Split processor:
-
-	Separator:
-		string that separates aggregated data
-*/
-type SplitOptions struct {
+type procSplitOptions struct {
+	// Separator is the string that splits data.
 	Separator string `json:"separator"`
 }
 
-// Close closes resources opened by the Split processor.
-func (p Split) Close(context.Context) error {
+// String returns the processor settings as an object.
+func (p procSplit) String() string {
+	return toString(p)
+}
+
+// Closes resources opened by the processor.
+func (p procSplit) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Split processor. Conditions are optionally applied to the data to enable processing.
-func (p Split) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procSplit) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	op, err := condition.NewOperator(p.Condition)
 	if err != nil {
-		return nil, fmt.Errorf("process split: %v", err)
+		return nil, fmt.Errorf("process: split: %v", err)
 	}
 
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
 		ok, err := op.Operate(ctx, capsule)
 		if err != nil {
-			return nil, fmt.Errorf("process split: %v", err)
+			return nil, fmt.Errorf("process: split: %v", err)
 		}
 
 		if !ok {
@@ -74,10 +54,10 @@ func (p Split) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]con
 		}
 
 		// JSON processing
-		if p.InputKey != "" && p.OutputKey != "" {
+		if p.Key != "" && p.SetKey != "" {
 			pcap, err := p.Apply(ctx, capsule)
 			if err != nil {
-				return nil, fmt.Errorf("process split: %v", err)
+				return nil, fmt.Errorf("process: split: %v", err)
 			}
 			newCapsules = append(newCapsules, pcap)
 
@@ -85,7 +65,7 @@ func (p Split) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]con
 		}
 
 		// data processing
-		if p.InputKey == "" && p.OutputKey == "" {
+		if p.Key == "" && p.SetKey == "" {
 			newCapsule := config.NewCapsule()
 			for _, x := range bytes.Split(capsule.Data(), []byte(p.Options.Separator)) {
 				newCapsule.SetData(x)
@@ -95,29 +75,29 @@ func (p Split) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]con
 			continue
 		}
 
-		return nil, fmt.Errorf("process split: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+		return nil, fmt.Errorf("process: split: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	return newCapsules, nil
 }
 
-// Apply processes encapsulated data with the Split processor.
-func (p Split) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p procSplit) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Separator == "" {
-		return capsule, fmt.Errorf("process split: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: split: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" || p.OutputKey == "" {
-		return capsule, fmt.Errorf("process split: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	if p.Key == "" || p.SetKey == "" {
+		return capsule, fmt.Errorf("process: split: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
-	result := capsule.Get(p.InputKey).String()
+	result := capsule.Get(p.Key).String()
 	value := strings.Split(result, p.Options.Separator)
 
-	if err := capsule.Set(p.OutputKey, value); err != nil {
-		return capsule, fmt.Errorf("process split: %v", err)
+	if err := capsule.Set(p.SetKey, value); err != nil {
+		return capsule, fmt.Errorf("process: split: %v", err)
 	}
 
 	return capsule, nil

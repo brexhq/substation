@@ -8,46 +8,28 @@ import (
 	"github.com/brexhq/substation/internal/regexp"
 )
 
-/*
-RegExp evaluates data using a regular expression. This inspector uses a regexp cache provided by internal/regexp.
-
-The inspector has these settings:
-
-	Expression:
-		regular expression to use during inspection
-	Key (optional):
-		JSON key-value to retrieve for inspection
-	Negate (optional):
-		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
-		defaults to false
-
-The inspector supports these patterns:
-
-	JSON:
-		{"foo":"bar"} == ^bar
-	data:
-		bar == ^bar
-
-When loaded with a factory, the inspector uses this JSON configuration:
-
-	{
-		"type": "regexp",
-		"settings": {
-			"expression": "^bar"
-		},
-	}
-*/
-type RegExp struct {
-	Expression string `json:"expression"`
-	Key        string `json:"key"`
-	Negate     bool   `json:"negate"`
+// regExp evaluates data using a regular expression.
+//
+// This inspector supports the data and object handling patterns.
+type inspRegExp struct {
+	condition
+	Options inspRegExpOptions `json:"options"`
 }
 
-// Inspect evaluates encapsulated data with the RegExp inspector.
-func (c RegExp) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
-	re, err := regexp.Compile(c.Expression)
+type inspRegExpOptions struct {
+	// Expression is the regular expression used during inspection.
+	Expression string `json:"expression"`
+}
+
+func (c inspRegExp) String() string {
+	return toString(c)
+}
+
+// Inspect evaluates encapsulated data with the regExp inspector.
+func (c inspRegExp) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+	re, err := regexp.Compile(c.Options.Expression)
 	if err != nil {
-		return false, fmt.Errorf("condition regexp: %v", err)
+		return false, fmt.Errorf("condition: regexp: %v", err)
 	}
 
 	var matched bool

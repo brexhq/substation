@@ -10,20 +10,22 @@ import (
 
 var captureTests = []struct {
 	name     string
-	proc     Capture
+	proc     procCapture
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON find",
-		Capture{
-			Options: CaptureOptions{
-				Expression: "^([^@]*)@.*$",
-				Function:   "find",
+		procCapture{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
+			Options: procCaptureOptions{
+				Expression: "^([^@]*)@.*$",
+				Type:       "find",
+			},
 		},
 		[]byte(`{"foo":"bar@qux.corge"}`),
 		[]byte(`{"foo":"bar"}`),
@@ -31,14 +33,16 @@ var captureTests = []struct {
 	},
 	{
 		"JSON find_all",
-		Capture{
-			Options: CaptureOptions{
+		procCapture{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: procCaptureOptions{
 				Expression: "(.{1})",
-				Function:   "find_all",
+				Type:       "find_all",
 				Count:      3,
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"bar"}`),
 		[]byte(`{"foo":["b","a","r"]}`),
@@ -46,10 +50,10 @@ var captureTests = []struct {
 	},
 	{
 		"data",
-		Capture{
-			Options: CaptureOptions{
+		procCapture{
+			Options: procCaptureOptions{
 				Expression: "^([^@]*)@.*$",
-				Function:   "find",
+				Type:       "find",
 			},
 		},
 		[]byte(`bar@qux.corge`),
@@ -57,10 +61,10 @@ var captureTests = []struct {
 		nil,
 	},
 	{
-		"named_group",
-		Capture{
-			Options: CaptureOptions{
-				Function:   "named_group",
+		"namedprocGroup",
+		procCapture{
+			Options: procCaptureOptions{
+				Type:       "namedprocGroup",
 				Expression: "(?P<foo>[a-zA-Z]+) (?P<qux>[a-zA-Z]+)",
 			},
 		},
@@ -75,6 +79,9 @@ func TestCapture(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range captureTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -88,10 +95,10 @@ func TestCapture(t *testing.T) {
 	}
 }
 
-func benchmarkCapture(b *testing.B, applicator Capture, test config.Capsule) {
+func benchmarkCapture(b *testing.B, applier procCapture, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

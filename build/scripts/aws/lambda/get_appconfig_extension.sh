@@ -9,11 +9,6 @@ if [ -z $AWS_ARCHITECTURE ]; then
   exit 1
 fi
 
-if [ -z $AWS_PROFILE ]; then
-  >&2 echo "Error: AWS_PROFILE not set."
-  exit 1
-fi
-
 if [ -z $AWS_REGION ]; then
   >&2 echo "Error: AWS_REGION not set."
   exit 1

@@ -10,19 +10,21 @@ import (
 
 var convertTests = []struct {
 	name     string
-	proc     Convert
+	proc     procConvert
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"bool true",
-		Convert{
-			Options: ConvertOptions{
+		procConvert{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: procConvertOptions{
 				Type: "bool",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"true"}`),
 		[]byte(`{"foo":true}`),
@@ -30,12 +32,14 @@ var convertTests = []struct {
 	},
 	{
 		"bool false",
-		Convert{
-			Options: ConvertOptions{
+		procConvert{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: procConvertOptions{
 				Type: "bool",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"false"}`),
 		[]byte(`{"foo":false}`),
@@ -43,12 +47,14 @@ var convertTests = []struct {
 	},
 	{
 		"int",
-		Convert{
-			Options: ConvertOptions{
+		procConvert{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: procConvertOptions{
 				Type: "int",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"-123"}`),
 		[]byte(`{"foo":-123}`),
@@ -56,12 +62,14 @@ var convertTests = []struct {
 	},
 	{
 		"float",
-		Convert{
-			Options: ConvertOptions{
+		procConvert{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: procConvertOptions{
 				Type: "float",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"123.456"}`),
 		[]byte(`{"foo":123.456}`),
@@ -69,12 +77,14 @@ var convertTests = []struct {
 	},
 	{
 		"uint",
-		Convert{
-			Options: ConvertOptions{
+		procConvert{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: procConvertOptions{
 				Type: "uint",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":"123"}`),
 		[]byte(`{"foo":123}`),
@@ -82,12 +92,14 @@ var convertTests = []struct {
 	},
 	{
 		"string",
-		Convert{
-			Options: ConvertOptions{
+		procConvert{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: procConvertOptions{
 				Type: "string",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":123}`),
 		[]byte(`{"foo":"123"}`),
@@ -95,12 +107,14 @@ var convertTests = []struct {
 	},
 	{
 		"int",
-		Convert{
-			Options: ConvertOptions{
+		procConvert{
+			process: process{
+				Key:    "foo",
+				SetKey: "foo",
+			},
+			Options: procConvertOptions{
 				Type: "int",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
 		[]byte(`{"foo":123.456}`),
 		[]byte(`{"foo":123}`),
@@ -113,6 +127,9 @@ func TestConvert(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range convertTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -126,10 +143,10 @@ func TestConvert(t *testing.T) {
 	}
 }
 
-func benchmarkConvert(b *testing.B, applicator Convert, test config.Capsule) {
+func benchmarkConvert(b *testing.B, applier procConvert, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

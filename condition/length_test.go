@@ -9,193 +9,255 @@ import (
 
 var lengthTests = []struct {
 	name      string
-	inspector Length
+	inspector inspLength
 	test      []byte
 	expected  bool
 }{
 	{
 		"pass",
-		Length{
-			Key:      "foo",
-			Value:    3,
-			Function: "equals",
+		inspLength{
+			condition: condition{
+				Key: "foo",
+			},
+			Options: inspLengthOptions{
+				Value: 3,
+				Type:  "equals",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		true,
 	},
 	{
 		"pass",
-		Length{
-			Value:    3,
-			Function: "equals",
+		inspLength{
+			Options: inspLengthOptions{
+				Value: 3,
+				Type:  "equals",
+			},
 		},
 		[]byte(`bar`),
 		true,
 	},
 	{
 		"fail",
-		Length{
-			Key:      "foo",
-			Value:    4,
-			Function: "equals",
+		inspLength{
+			condition: condition{
+				Key: "foo",
+			},
+			Options: inspLengthOptions{
+				Value: 4,
+				Type:  "equals",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		false,
 	},
 	{
 		"fail",
-		Length{
-			Value:    4,
-			Function: "equals",
+		inspLength{
+			Options: inspLengthOptions{
+				Value: 4,
+				Type:  "equals",
+			},
 		},
 		[]byte(`bar`),
 		false,
 	},
 	{
 		"pass",
-		Length{
-			Key:      "foo",
-			Value:    4,
-			Function: "lessthan",
+		inspLength{
+			condition: condition{
+				Key: "foo",
+			},
+			Options: inspLengthOptions{
+				Value: 4,
+				Type:  "less_than",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		true,
 	},
 	{
 		"pass",
-		Length{
-			Value:    4,
-			Function: "lessthan",
+		inspLength{
+			Options: inspLengthOptions{
+				Value: 4,
+				Type:  "less_than",
+			},
 		},
 		[]byte(`bar`),
 		true,
 	},
 	{
 		"fail",
-		Length{
-			Key:      "foo",
-			Value:    3,
-			Function: "lessthan",
+		inspLength{
+			condition: condition{
+				Key: "foo",
+			},
+			Options: inspLengthOptions{
+				Value: 3,
+				Type:  "less_than",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		false,
 	},
 	{
 		"fail",
-		Length{
-			Value:    3,
-			Function: "lessthan",
+		inspLength{
+			Options: inspLengthOptions{
+				Value: 3,
+				Type:  "less_than",
+			},
 		},
 		[]byte(`bar`),
 		false,
 	},
 	{
 		"pass",
-		Length{
-			Key:      "foo",
-			Value:    2,
-			Function: "greaterthan",
+		inspLength{
+			condition: condition{
+				Key: "foo",
+			},
+			Options: inspLengthOptions{
+				Value: 2,
+				Type:  "greater_than",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		true,
 	},
 	{
 		"pass",
-		Length{
-			Value:    2,
-			Function: "greaterthan",
+		inspLength{
+			Options: inspLengthOptions{
+				Value: 2,
+				Type:  "greater_than",
+			},
 		},
 		[]byte(`bar`),
 		true,
 	},
 	{
 		"fail",
-		Length{
-			Key:      "foo",
-			Value:    3,
-			Function: "greaterthan",
+		inspLength{
+			condition: condition{
+				Key: "foo",
+			},
+			Options: inspLengthOptions{
+				Value: 3,
+				Type:  "greater_than",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		false,
 	},
 	{
 		"fail",
-		Length{
-			Value:    3,
-			Function: "greaterthan",
+		inspLength{
+			Options: inspLengthOptions{
+				Value: 3,
+				Type:  "greater_than",
+			},
 		},
 		[]byte(`bar`),
 		false,
 	},
 	{
 		"!pass",
-		Length{
-			Key:      "foo",
-			Value:    3,
-			Function: "equals",
-			Negate:   true,
+		inspLength{
+			condition: condition{
+				Key:    "foo",
+				Negate: true,
+			},
+			Options: inspLengthOptions{
+				Value: 3,
+				Type:  "equals",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		false,
 	},
 	{
 		"!pass",
-		Length{
-			Value:    3,
-			Function: "equals",
-			Negate:   true,
+		inspLength{
+			condition: condition{
+				Negate: true,
+			},
+			Options: inspLengthOptions{
+				Value: 3,
+				Type:  "equals",
+			},
 		},
 		[]byte(`bar`),
 		false,
 	},
 	{
 		"!pass",
-		Length{
-			Key:      "foo",
-			Value:    4,
-			Function: "lessthan",
-			Negate:   true,
+		inspLength{
+			condition: condition{
+				Key:    "foo",
+				Negate: true,
+			},
+			Options: inspLengthOptions{
+				Value: 4,
+				Type:  "less_than",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		false,
 	},
 	{
 		"!pass",
-		Length{
-			Value:    4,
-			Function: "lessthan",
-			Negate:   true,
+		inspLength{
+			condition: condition{
+				Negate: true,
+			},
+			Options: inspLengthOptions{
+				Value: 4,
+				Type:  "less_than",
+			},
 		},
 		[]byte(`bar`),
 		false,
 	},
 	{
 		"!pass",
-		Length{
-			Key:      "foo",
-			Value:    2,
-			Function: "greaterthan",
-			Negate:   true,
+		inspLength{
+			condition: condition{
+				Key:    "foo",
+				Negate: true,
+			},
+			Options: inspLengthOptions{
+				Value: 2,
+				Type:  "greater_than",
+			},
 		},
 		[]byte(`{"foo":"bar"}`),
 		false,
 	},
 	{
 		"!pass",
-		Length{
-			Value:    2,
-			Function: "greaterthan",
-			Negate:   true,
+		inspLength{
+			condition: condition{
+				Negate: true,
+			},
+			Options: inspLengthOptions{
+				Value: 2,
+				Type:  "greater_than",
+			},
 		},
 		[]byte(`bar`),
 		false,
 	},
 	{
 		"rune pass",
-		Length{
-			Type:     "rune",
-			Value:    3,
-			Function: "equals",
+		inspLength{
+			Options: inspLengthOptions{
+				Measurement: "rune",
+				Value:       3,
+				Type:        "equals",
+			},
 		},
 		// 3 runes (characters), 4 bytes
 		[]byte("a£c"),
@@ -203,10 +265,15 @@ var lengthTests = []struct {
 	},
 	{
 		"array pass",
-		Length{
-			Key:      "foo",
-			Value:    3,
-			Function: "equals",
+		inspLength{
+			condition: condition{
+				Key: "foo",
+			},
+			Options: inspLengthOptions{
+				Measurement: "rune",
+				Value:       3,
+				Type:        "equals",
+			},
 		},
 		[]byte(`{"foo":["bar",2,{"baz":"qux"}]}`),
 		true,
@@ -218,6 +285,8 @@ func TestLength(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range lengthTests {
+		var _ Inspector = test.inspector
+
 		capsule.SetData(test.test)
 
 		check, err := test.inspector.Inspect(ctx, capsule)
@@ -233,7 +302,7 @@ func TestLength(t *testing.T) {
 	}
 }
 
-func benchmarkLengthByte(b *testing.B, inspector Length, capsule config.Capsule) {
+func benchmarkLengthByte(b *testing.B, inspector inspLength, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

@@ -20,7 +20,7 @@ var processTests = []struct {
 			{
 				Type: "copy",
 				Settings: map[string]interface{}{
-					"output_key": "foo",
+					"set_key": "foo",
 				},
 			},
 		},
@@ -33,7 +33,7 @@ var processTests = []struct {
 			{
 				Type: "insert",
 				Settings: map[string]interface{}{
-					"output_key": "foo",
+					"set_key": "foo",
 					"options": map[string]interface{}{
 						"value": "bar",
 					},
@@ -82,8 +82,8 @@ var processTests = []struct {
 					"options": map[string]interface{}{
 						"separator": ".",
 					},
-					"input_key":  "foo",
-					"output_key": "foo",
+					"key":     "foo",
+					"set_key": "foo",
 				},
 			},
 		},
@@ -114,11 +114,11 @@ var processTests = []struct {
 			{
 				Type: "time",
 				Settings: map[string]interface{}{
-					"input_key":  "foo",
-					"output_key": "foo",
+					"key":     "foo",
+					"set_key": "foo",
 					"options": map[string]interface{}{
-						"input_format":  "unix",
-						"output_format": "2006-01-02T15:04:05.000000Z",
+						"format":     "unix",
+						"set_format": "2006-01-02T15:04:05.000000Z",
 					},
 				},
 			},
@@ -134,35 +134,12 @@ func TestApply(t *testing.T) {
 	for _, test := range processTests {
 		capsule.SetData(test.test)
 
-		applicators, err := MakeApplicators(test.conf)
+		appliers, err := NewAppliers(test.conf...)
 		if err != nil {
 			t.Error(err)
 		}
 
-		result, err := Apply(ctx, capsule, applicators...)
-		if err != nil {
-			t.Error(err)
-		}
-
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %v, got %v", test.expected, result)
-		}
-	}
-}
-
-func TestApplicatorFactory(t *testing.T) {
-	ctx := context.TODO()
-	capsule := config.NewCapsule()
-	for _, test := range processTests {
-		capsule.SetData(test.test)
-
-		conf := test.conf[0]
-		applicator, err := ApplicatorFactory(conf)
-		if err != nil {
-			t.Error(err)
-		}
-
-		result, err := applicator.Apply(ctx, capsule)
+		result, err := Apply(ctx, capsule, appliers...)
 		if err != nil {
 			t.Error(err)
 		}
@@ -173,7 +150,7 @@ func TestApplicatorFactory(t *testing.T) {
 	}
 }
 
-func TestApplyBatch(t *testing.T) {
+func TestBatch(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 	for _, test := range processTests {
@@ -182,38 +159,12 @@ func TestApplyBatch(t *testing.T) {
 		batch := make([]config.Capsule, 1)
 		batch[0] = capsule
 
-		applicators, err := MakeBatchApplicators(test.conf)
+		appliers, err := NewBatchers(test.conf...)
 		if err != nil {
 			t.Error(err)
 		}
 
-		result, err := ApplyBatch(ctx, batch, applicators...)
-		if err != nil {
-			t.Error(err)
-		}
-
-		if !bytes.Equal(result[0].Data(), test.expected) {
-			t.Errorf("expected %v, got %v", test.expected, result)
-		}
-	}
-}
-
-func TestBatchApplicatorFactory(t *testing.T) {
-	ctx := context.TODO()
-	capsule := config.NewCapsule()
-	batch := make([]config.Capsule, 1)
-
-	for _, test := range processTests {
-		capsule.SetData(test.test)
-		batch[0] = capsule
-
-		conf := test.conf[0]
-		applicator, err := BatchApplicatorFactory(conf)
-		if err != nil {
-			t.Error(err)
-		}
-
-		result, err := applicator.ApplyBatch(ctx, batch)
+		result, err := Batch(ctx, batch, appliers...)
 		if err != nil {
 			t.Error(err)
 		}
@@ -221,17 +172,5 @@ func TestBatchApplicatorFactory(t *testing.T) {
 		if !bytes.Equal(result[0].Data(), test.expected) {
 			t.Errorf("expected %v, got %v", test.expected, result)
 		}
-	}
-}
-
-func BenchmarkApplicatorFactory(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_, _ = ApplicatorFactory(processTests[0].conf[0])
-	}
-}
-
-func BenchmarkBatchApplicatorFactory(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_, _ = BatchApplicatorFactory(processTests[0].conf[0])
 	}
 }

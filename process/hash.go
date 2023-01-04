@@ -5,89 +5,59 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"fmt"
-	"math/rand"
-	"time"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errHashInvalidAlgorithm is returned when the Hash processor is configured with an invalid algorithm.
+// errHashInvalidAlgorithm is returned when the hash processor is configured with an invalid algorithm.
 const errHashInvalidAlgorithm = errors.Error("invalid algorithm")
 
-/*
-Hash processes data by calculating hashes. The processor supports these patterns:
-
-	JSON:
-		{"hash":"foo"} >>> {"hash":"acbd18db4cc2f85cedef654fccc4a4d8"}
-	data:
-		foo >>> acbd18db4cc2f85cedef654fccc4a4d8
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "hash",
-		"settings": {
-			"options": {
-				"algorithm": "md5"
-			},
-			"input_key": "hash",
-			"output_key": "hash"
-		}
-	}
-*/
-type Hash struct {
-	Options   HashOptions      `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+// hash processes data by calculating hashes (https://en.wikipedia.org/wiki/CryptographicprocHash_function).
+//
+// This processor supports the data and object handling patterns.
+type procHash struct {
+	process
+	Options procHashOptions `json:"options"`
 }
 
-/*
-HashOptions contains custom options for the Hash processor:
-
-	Algorithm:
-		hashing algorithm applied to the data
-		must be one of:
-			md5
-			sha256
-*/
-type HashOptions struct {
+type procHashOptions struct {
+	// Algorithm is the hashing algorithm applied to the data.
+	//
+	// Must be one of:
+	//
+	// - md5
+	//
+	// - sha256
 	Algorithm string `json:"algorithm"`
 }
 
-// Close closes resources opened by the Hash processor.
-func (p Hash) Close(context.Context) error {
+// String returns the processor settings as an object.
+func (p procHash) String() string {
+	return toString(p)
+}
+
+// Closes resources opened by the processor.
+func (p procHash) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Hash processor. Conditions are optionally applied to the data to enable processing.
-func (p Hash) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	rand.Seed(time.Now().UnixNano())
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process hash: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
-	if err != nil {
-		return nil, fmt.Errorf("process hash: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procHash) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return batchApply(ctx, capsules, p, p.Condition)
 }
 
-// Apply processes encapsulated data with the Hash processor.
-func (p Hash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p procHash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Algorithm == "" {
-		return capsule, fmt.Errorf("process hash: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: hash: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
-	if p.InputKey != "" && p.OutputKey != "" {
-		result := capsule.Get(p.InputKey).String()
+	if p.Key != "" && p.SetKey != "" {
+		result := capsule.Get(p.Key).String()
 
 		var value string
 		switch p.Options.Algorithm {
@@ -98,18 +68,18 @@ func (p Hash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 			sum := sha256.Sum256([]byte(result))
 			value = fmt.Sprintf("%x", sum)
 		default:
-			return capsule, fmt.Errorf("process hash: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
+			return capsule, fmt.Errorf("process: hash: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
 		}
 
-		if err := capsule.Set(p.OutputKey, value); err != nil {
-			return capsule, fmt.Errorf("process hash: %v", err)
+		if err := capsule.Set(p.SetKey, value); err != nil {
+			return capsule, fmt.Errorf("process: hash: %v", err)
 		}
 
 		return capsule, nil
 	}
 
 	// data processing
-	if p.InputKey == "" && p.OutputKey == "" {
+	if p.Key == "" && p.SetKey == "" {
 		var value string
 		switch p.Options.Algorithm {
 		case "md5":
@@ -119,12 +89,12 @@ func (p Hash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 			sum := sha256.Sum256(capsule.Data())
 			value = fmt.Sprintf("%x", sum)
 		default:
-			return capsule, fmt.Errorf("process hash: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
+			return capsule, fmt.Errorf("process: hash: algorithm %s: %v", p.Options.Algorithm, errHashInvalidAlgorithm)
 		}
 
 		capsule.SetData([]byte(value))
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process hash: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: hash: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }

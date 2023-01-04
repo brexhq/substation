@@ -5,89 +5,47 @@ import (
 	gojson "encoding/json"
 	"fmt"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-ForEach processes data by iterating and applying a processor to each element in a JSON array. The processor supports these patterns:
-
-	JSON:
-		{"input":["ABC","DEF"]} >>> {"input":["ABC","DEF"],"output":["abc","def"]}
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "for_each",
-		"settings": {
-			"options": {
-				"processor": {
-					"type": "case",
-					"settings": {
-						"options": {
-							"case": "lower"
-						}
-					}
-				}
-			},
-			input_key: "input",
-			output_key: "output.-1"
-		}
-	}
-*/
-type ForEach struct {
-	Options   ForEachOptions   `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+// forEach processes data by iterating and applying a processor to each element
+// in an object array. If multiple processors need to be applied to each element,
+// then the pipeline processor should be used to create a nested data processing
+// workflow.
+//
+// This processor supports the object handling pattern.
+type procForEach struct {
+	process
+	Options procForEachOptions `json:"options"`
 }
 
-/*
-ForEachOptions contains custom options for the ForEach processor:
-
-	Processor:
-		processor applied to the data
-*/
-type ForEachOptions struct {
-	Processor config.Config
+type procForEachOptions struct {
+	// Processor applied to each element in the object array.
+	Processor config.Config `json:"processor"`
 }
 
-// Close closes resources opened by the ForEach processor.
-func (p ForEach) Close(context.Context) error {
+// String returns the processor settings as an object.
+func (p procForEach) String() string {
+	return toString(p)
+}
+
+// Closes resources opened by the processor.
+func (p procForEach) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the ForEach processor. Conditions are optionally applied to the data to enable processing.
-func (p ForEach) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process for_each: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
-	if err != nil {
-		return nil, fmt.Errorf("process for_each: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procForEach) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return batchApply(ctx, capsules, p, p.Condition)
 }
 
-/*
-Apply processes encapsulated data with the ForEach processor.
-
-JSON values are treated as arrays and the configured
-processor is applied to each element in the array. If multiple
-processors need to be applied to each element, then the
-Pipeline processor should be used to create a nested data
-processing workflow. For example:
-
-	ForEach -> Pipeline -> [Copy, Delete, Copy]
-*/
-func (p ForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p procForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" && p.OutputKey == "" {
-		return capsule, fmt.Errorf("process for_each: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	if p.Key == "" && p.SetKey == "" {
+		return capsule, fmt.Errorf("process: for_each: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
 	// configured processor is converted to a JSON object so that the
@@ -97,28 +55,28 @@ func (p ForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 	conf, _ := gojson.Marshal(p.Options.Processor)
 
 	inputKey := p.Options.Processor.Type
-	if innerKey, ok := p.Options.Processor.Settings["input_key"].(string); ok && innerKey != "" {
+	if innerKey, ok := p.Options.Processor.Settings["key"].(string); ok && innerKey != "" {
 		inputKey = p.Options.Processor.Type + "." + innerKey
 	}
-	conf, _ = json.Set(conf, "settings.input_key", inputKey)
+	conf, _ = json.Set(conf, "settings.key", inputKey)
 
 	outputKey := p.Options.Processor.Type
-	if innerKey, ok := p.Options.Processor.Settings["output_key"].(string); ok && innerKey != "" {
+	if innerKey, ok := p.Options.Processor.Settings["set_key"].(string); ok && innerKey != "" {
 		outputKey = p.Options.Processor.Type + "." + innerKey
 	}
-	conf, _ = json.Set(conf, "settings.output_key", outputKey)
+	conf, _ = json.Set(conf, "settings.set_key", outputKey)
 
 	var processor config.Config
 	if err := gojson.Unmarshal(conf, &processor); err != nil {
 		return capsule, err
 	}
 
-	applicator, err := ApplicatorFactory(processor)
+	applier, err := NewApplier(processor)
 	if err != nil {
-		return capsule, fmt.Errorf("process for_each: %v", err)
+		return capsule, fmt.Errorf("process: for_each: %v", err)
 	}
 
-	result := capsule.Get(p.InputKey)
+	result := capsule.Get(p.Key)
 	if !result.IsArray() {
 		return capsule, nil
 	}
@@ -126,17 +84,17 @@ func (p ForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 	for _, res := range result.Array() {
 		tmpCap := config.NewCapsule()
 		if err := tmpCap.Set(processor.Type, res); err != nil {
-			return capsule, fmt.Errorf("process for_each: %v", err)
+			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}
 
-		tmpCap, err = applicator.Apply(ctx, tmpCap)
+		tmpCap, err = applier.Apply(ctx, tmpCap)
 		if err != nil {
-			return capsule, fmt.Errorf("process for_each: %v", err)
+			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}
 
 		value := tmpCap.Get(processor.Type)
-		if err := capsule.Set(p.OutputKey, value); err != nil {
-			return capsule, fmt.Errorf("process for_each: %v", err)
+		if err := capsule.Set(p.SetKey, value); err != nil {
+			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}
 	}
 

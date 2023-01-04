@@ -4,84 +4,55 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
-/*
-Convert processes data by converting values between types (e.g., string to integer, integer to float). The processor supports these patterns:
-
-	JSON:
-		{"convert":"true"} >>> {"convert":true}
-		{"convert":"-123"} >>> {"convert":-123}
-		{"convert":123} >>> {"convert":"123"}
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "convert",
-		"settings": {
-			"options": {
-				"type": "bool"
-			},
-			"input_key": "convert",
-			"output_key": "convert"
-		}
-	}
-*/
-type Convert struct {
-	Options   ConvertOptions   `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+// convert processes data by changing its type (e.g., bool, int, string).
+//
+// This processor supports the object handling pattern.
+type procConvert struct {
+	process
+	Options procConvertOptions `json:"options"`
 }
 
-/*
-ConvertOptions contains custom options for the Convert processor:
-
-	Type:
-		type that the value is converted to
-		must be one of:
-			bool (boolean)
-			int (integer)
-			float
-			uint (unsigned integer)
-			string
-*/
-type ConvertOptions struct {
+type procConvertOptions struct {
+	// Type is the target conversion type.
+	//
+	// Must be one of:
+	//	- bool (boolean)
+	//	- int (integer)
+	//	- float
+	//	- uint (unsigned integer)
+	//	- string
 	Type string `json:"type"`
 }
 
-// Close closes resources opened by the Convert processor.
-func (p Convert) Close(context.Context) error {
+// String returns the processor settings as an object.
+func (p procConvert) String() string {
+	return toString(p)
+}
+
+// Closes resources opened by the processor.
+func (p procConvert) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Convert processor. Conditions are optionally applied to the data to enable processing.
-func (p Convert) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process convert: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
-	if err != nil {
-		return nil, fmt.Errorf("process convert: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procConvert) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return batchApply(ctx, capsules, p, p.Condition)
 }
 
-// Apply processes encapsulated data with the Convert processor.
-func (p Convert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p procConvert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Type == "" {
-		return capsule, fmt.Errorf("process convert: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: convert: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
-	if p.InputKey != "" && p.OutputKey != "" {
-		result := capsule.Get(p.InputKey)
+	if p.Key != "" && p.SetKey != "" {
+		result := capsule.Get(p.Key)
 
 		var value interface{}
 		switch p.Options.Type {
@@ -97,12 +68,12 @@ func (p Convert) Apply(ctx context.Context, capsule config.Capsule) (config.Caps
 			value = result.String()
 		}
 
-		if err := capsule.Set(p.OutputKey, value); err != nil {
-			return capsule, fmt.Errorf("process convert: %v", err)
+		if err := capsule.Set(p.SetKey, value); err != nil {
+			return capsule, fmt.Errorf("process: convert: %v", err)
 		}
 
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process convert: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: convert: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }

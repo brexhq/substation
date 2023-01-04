@@ -9,23 +9,27 @@ import (
 
 var forEachTests = []struct {
 	name      string
-	inspector ForEach
+	inspector inspForEach
 	test      []byte
 	expected  bool
 	err       error
 }{
 	{
-		"strings startswith all",
-		ForEach{
-			Key:    "input",
-			Negate: false,
-			Type:   "all",
-			Options: ForEachOptions{
+		"strings starts_with all",
+		inspForEach{
+			condition: condition{
+				Key:    "input",
+				Negate: false,
+			},
+			Options: inspForEachOptions{
+				Type: "all",
 				Inspector: config.Config{
 					Type: "strings",
 					Settings: map[string]interface{}{
-						"function":   "startswith",
-						"expression": "f",
+						"options": map[string]interface{}{
+							"type":       "starts_with",
+							"expression": "f",
+						},
 					},
 				},
 			},
@@ -36,15 +40,19 @@ var forEachTests = []struct {
 	},
 	{
 		"ip private all",
-		ForEach{
-			Key:    "input",
-			Negate: false,
-			Type:   "all",
-			Options: ForEachOptions{
+		inspForEach{
+			condition: condition{
+				Key:    "input",
+				Negate: false,
+			},
+			Options: inspForEachOptions{
+				Type: "all",
 				Inspector: config.Config{
 					Type: "ip",
 					Settings: map[string]interface{}{
-						"type": "private",
+						"options": map[string]interface{}{
+							"type": "private",
+						},
 					},
 				},
 			},
@@ -55,15 +63,19 @@ var forEachTests = []struct {
 	},
 	{
 		"regexp any",
-		ForEach{
-			Key:    "input",
-			Negate: false,
-			Type:   "any",
-			Options: ForEachOptions{
+		inspForEach{
+			condition: condition{
+				Key:    "input",
+				Negate: false,
+			},
+			Options: inspForEachOptions{
+				Type: "any",
 				Inspector: config.Config{
 					Type: "regexp",
 					Settings: map[string]interface{}{
-						"expression": "^fizz$",
+						"options": map[string]interface{}{
+							"expression": "^fizz$",
+						},
 					},
 				},
 			},
@@ -74,16 +86,20 @@ var forEachTests = []struct {
 	},
 	{
 		"length none",
-		ForEach{
-			Key:    "input",
-			Negate: false,
-			Type:   "none",
-			Options: ForEachOptions{
+		inspForEach{
+			condition: condition{
+				Key:    "input",
+				Negate: false,
+			},
+			Options: inspForEachOptions{
+				Type: "none",
 				Inspector: config.Config{
 					Type: "length",
 					Settings: map[string]interface{}{
-						"function": "greaterthan",
-						"value":    7,
+						"options": map[string]interface{}{
+							"type":  "greater_than",
+							"value": 7,
+						},
 					},
 				},
 			},
@@ -94,16 +110,20 @@ var forEachTests = []struct {
 	},
 	{
 		"length all",
-		ForEach{
-			Key:    "input",
-			Negate: false,
-			Type:   "all",
-			Options: ForEachOptions{
+		inspForEach{
+			condition: condition{
+				Key:    "input",
+				Negate: false,
+			},
+			Options: inspForEachOptions{
+				Type: "all",
 				Inspector: config.Config{
 					Type: "length",
 					Settings: map[string]interface{}{
-						"function": "equals",
-						"value":    4,
+						"options": map[string]interface{}{
+							"type":  "equals",
+							"value": 4,
+						},
 					},
 				},
 			},
@@ -119,6 +139,8 @@ func TestForEach(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, tt := range forEachTests {
+		var _ Inspector = tt.inspector
+
 		t.Run(tt.name, func(t *testing.T) {
 			capsule.SetData(tt.test)
 
@@ -134,7 +156,7 @@ func TestForEach(t *testing.T) {
 	}
 }
 
-func benchmarkForEachByte(b *testing.B, inspector ForEach, capsule config.Capsule) {
+func benchmarkForEachByte(b *testing.B, inspector inspForEach, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

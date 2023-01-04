@@ -10,61 +10,69 @@ import (
 
 var mathTests = []struct {
 	name     string
-	proc     Math
+	proc     procMath
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"add",
-		Math{
-			Options: MathOptions{
+		procMath{
+			process: process{
+				Key:    "math",
+				SetKey: "math",
+			},
+			Options: procMathOptions{
 				Operation: "add",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
-		[]byte(`{"foo":[1,3]}`),
-		[]byte(`{"foo":4}`),
+		[]byte(`{"math":[1,3]}`),
+		[]byte(`{"math":4}`),
 		nil,
 	},
 	{
 		"subtract",
-		Math{
-			Options: MathOptions{
+		procMath{
+			process: process{
+				Key:    "math",
+				SetKey: "math",
+			},
+			Options: procMathOptions{
 				Operation: "subtract",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
-		[]byte(`{"foo":[5,2]}`),
-		[]byte(`{"foo":3}`),
+		[]byte(`{"math":[5,2]}`),
+		[]byte(`{"math":3}`),
 		nil,
 	},
 	{
 		"multiply",
-		Math{
-			Options: MathOptions{
+		procMath{
+			process: process{
+				Key:    "math",
+				SetKey: "math",
+			},
+			Options: procMathOptions{
 				Operation: "multiply",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
-		[]byte(`{"foo":[10,2]}`),
-		[]byte(`{"foo":20}`),
+		[]byte(`{"math":[10,2]}`),
+		[]byte(`{"math":20}`),
 		nil,
 	},
 	{
 		"divide",
-		Math{
-			Options: MathOptions{
+		procMath{
+			process: process{
+				Key:    "math",
+				SetKey: "math",
+			},
+			Options: procMathOptions{
 				Operation: "divide",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
-		[]byte(`{"foo":[10,2]}`),
-		[]byte(`{"foo":5}`),
+		[]byte(`{"math":[10,2]}`),
+		[]byte(`{"math":5}`),
 		nil,
 	},
 }
@@ -74,6 +82,9 @@ func TestMath(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range mathTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -87,10 +98,10 @@ func TestMath(t *testing.T) {
 	}
 }
 
-func benchmarkMath(b *testing.B, applicator Math, test config.Capsule) {
+func benchmarkMath(b *testing.B, applier procMath, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

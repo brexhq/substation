@@ -1,6 +1,6 @@
 # terraform
 
-This directory contains Terraform configuration files for deploying Substation to AWS.
+Contains Terraform configuration files for deploying Substation to AWS.
 
 ## Using Terraform
 

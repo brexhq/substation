@@ -7,60 +7,38 @@ import (
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-JSONSchema evaluates JSON objects against a minimal schema parser.
-
-The inspector has these settings:
-
-	Schema.Key:
-		JSON key-value to retrieve for inspection
-	Schema.Type:
-		value type used during inspection of the Schema.Key
-		must be one of:
-			string
-			number (float, int)
-			boolean (true, false)
-			json
-	Negate (optional):
-		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
-		defaults to false
-
-The inspector supports these patterns:
-
-	JSON:
-		{"foo":"bar","baz":123} == string,number
-
-When loaded with a factory, the inspector uses this JSON configuration:
-
-	{
-		"type": "json_schema",
-		"settings": {
-			"schema": [
-				{
-					"key": "foo",
-					"type": "string"
-				},
-				{
-					"key": "bar",
-					"type": "number"
-				}
-			]
-		}
-	}
-*/
-type JSONSchema struct {
-	Schema []struct {
-		Key  string `json:"key"`
-		Type string `json:"type"`
-	} `json:"schema"`
-	Negate bool `json:"negate"`
+// jsonSchema evaluates objects against a minimal schema parser.
+//
+// This inspector supports the object handling pattern.
+type inspJSONSchema struct {
+	condition
+	Options inspJSONSchemaOptions `json:"options"`
 }
 
-// Inspect evaluates encapsulated data with the JSONSchema inspector.
-func (c JSONSchema) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+type inspJSONSchemaOptions struct {
+	Schema []struct {
+		// Key is the JSON key to retrieve for inspection.
+		Key string `json:"key"`
+		// Type is the expected value type for Key.
+		//
+		// Must be one of:
+		//	- string
+		//	- number (float, int)
+		//	- boolean (true, false)
+		//	- json
+		Type string `json:"type"`
+	} `json:"schema"`
+}
+
+func (c inspJSONSchema) String() string {
+	return toString(c)
+}
+
+// Inspect evaluates encapsulated data with the jsonSchema inspector.
+func (c inspJSONSchema) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	matched := true
 
-	for _, schema := range c.Schema {
+	for _, schema := range c.Options.Schema {
 		result := capsule.Get(schema.Key)
 		rtype := json.Types[result.Type]
 
@@ -94,33 +72,19 @@ func (c JSONSchema) Inspect(ctx context.Context, capsule config.Capsule) (output
 	return matched, nil
 }
 
-/*
-JSONValid evaluates JSON objects for validity.
-
-The inspector has these settings:
-
-	Negate (optional):
-		if set to true, then the inspection is negated (i.e., true becomes false, false becomes true)
-		defaults to false
-
-The inspector supports these patterns:
-
-	data:
-		{"foo":"bar","baz":123} == valid
-		foo == invalid
-
-When loaded with a factory, the inspector uses this JSON configuration:
-
-	{
-		"type": "json_valid"
-	}
-*/
-type JSONValid struct {
-	Negate bool `json:"negate"`
+// jsonValid evaluates objects for validity.
+//
+// This inspector supports the object handling pattern.
+type inspJSONValid struct {
+	condition
 }
 
-// Inspect evaluates encapsulated data with the JSONValid inspector.
-func (c JSONValid) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+func (c inspJSONValid) String() string {
+	return toString(c)
+}
+
+// Inspect evaluates encapsulated data with the jsonValid inspector.
+func (c inspJSONValid) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	matched := json.Valid(capsule.Data())
 
 	if c.Negate {

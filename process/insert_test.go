@@ -10,95 +10,109 @@ import (
 
 var insertTests = []struct {
 	name     string
-	proc     Insert
+	proc     procInsert
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"byte",
-		Insert{
-			Options: InsertOptions{
-				Value: []byte{98, 97, 114},
+		procInsert{
+			process: process{
+				SetKey: "insert",
 			},
-			OutputKey: "foo",
+			Options: procInsertOptions{
+				Value: []byte{102, 111, 111},
+			},
 		},
 		[]byte{},
-		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"insert":"foo"}`),
 		nil,
 	},
 	{
 		"string",
-		Insert{
-			Options: InsertOptions{
-				Value: "bar",
+		procInsert{
+			process: process{
+				SetKey: "insert",
 			},
-			OutputKey: "foo",
+			Options: procInsertOptions{
+				Value: "foo",
+			},
 		},
 		[]byte{},
-		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"insert":"foo"}`),
 		nil,
 	},
 	{
 		"int",
-		Insert{
-			Options: InsertOptions{
+		procInsert{
+			process: process{
+				SetKey: "insert",
+			},
+			Options: procInsertOptions{
 				Value: 10,
 			},
-			OutputKey: "foo",
 		},
-		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":10}`),
+		[]byte(`{"insert":"foo"}`),
+		[]byte(`{"insert":10}`),
 		nil,
 	},
 	{
 		"string array",
-		Insert{
-			Options: InsertOptions{
-				Value: []string{"bar", "baz", "qux"},
+		procInsert{
+			process: process{
+				SetKey: "insert",
 			},
-			OutputKey: "foo",
+			Options: procInsertOptions{
+				Value: []string{"bar", "baz"},
+			},
 		},
-		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":["bar","baz","qux"]}`),
+		[]byte(`{"insert":"foo"}`),
+		[]byte(`{"insert":["bar","baz"]}`),
 		nil,
 	},
 	{
 		"map",
-		Insert{
-			Options: InsertOptions{
+		procInsert{
+			process: process{
+				SetKey: "insert",
+			},
+			Options: procInsertOptions{
 				Value: map[string]string{
-					"baz": "qux",
+					"bar": "baz",
 				},
 			},
-			OutputKey: "foo",
 		},
-		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":{"baz":"qux"}}`),
+		[]byte(`{"insert":"foo"}`),
+		[]byte(`{"insert":{"bar":"baz"}}`),
 		nil,
 	},
 	{
 		"JSON",
-		Insert{
-			Options: InsertOptions{
-				Value: `{"baz":"qux"}`,
+		procInsert{
+			process: process{
+				SetKey: "insert",
 			},
-			OutputKey: "foo",
+			Options: procInsertOptions{
+				Value: `{"bar":"baz"}`,
+			},
 		},
-		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":{"baz":"qux"}}`),
+		[]byte(`{"insert":"bar"}`),
+		[]byte(`{"insert":{"bar":"baz"}}`),
 		nil,
 	},
 	{
 		"zlib",
-		Insert{
-			Options: InsertOptions{
+		procInsert{
+			process: process{
+				SetKey: "insert",
+			},
+			Options: procInsertOptions{
 				Value: []byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},
 			},
-			OutputKey: "foo",
 		},
-		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
+		[]byte(`{"insert":"bar"}`),
+		[]byte(`{"insert":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
 		nil,
 	},
 }
@@ -108,6 +122,9 @@ func TestInsert(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range insertTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -121,10 +138,10 @@ func TestInsert(t *testing.T) {
 	}
 }
 
-func benchmarkInsert(b *testing.B, applicator Insert, test config.Capsule) {
+func benchmarkInsert(b *testing.B, applier procInsert, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

@@ -11,43 +11,47 @@ import (
 
 var replaceTests = []struct {
 	name     string
-	proc     Replace
+	proc     procReplace
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"json",
-		Replace{
-			Options: ReplaceOptions{
+		procReplace{
+			process: process{
+				Key:    "replace",
+				SetKey: "replace",
+			},
+			Options: procReplaceOptions{
 				Old: "r",
 				New: "z",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
-		[]byte(`{"foo":"bar"}`),
-		[]byte(`{"foo":"baz"}`),
+		[]byte(`{"replace":"bar"}`),
+		[]byte(`{"replace":"baz"}`),
 		nil,
 	},
 	{
 		"json delete",
-		Replace{
-			Options: ReplaceOptions{
+		procReplace{
+			process: process{
+				Key:    "replace",
+				SetKey: "replace",
+			},
+			Options: procReplaceOptions{
 				Old: "z",
 				New: "",
 			},
-			InputKey:  "foo",
-			OutputKey: "foo",
 		},
-		[]byte(`{"foo":"fizz"}`),
-		[]byte(`{"foo":"fi"}`),
+		[]byte(`{"replace":"fizz"}`),
+		[]byte(`{"replace":"fi"}`),
 		nil,
 	},
 	{
 		"data",
-		Replace{
-			Options: ReplaceOptions{
+		procReplace{
+			Options: procReplaceOptions{
 				Old: "r",
 				New: "z",
 			},
@@ -58,8 +62,8 @@ var replaceTests = []struct {
 	},
 	{
 		"data delete",
-		Replace{
-			Options: ReplaceOptions{
+		procReplace{
+			Options: procReplaceOptions{
 				Old: "r",
 				New: "",
 			},
@@ -70,8 +74,8 @@ var replaceTests = []struct {
 	},
 	{
 		"data",
-		Replace{
-			Options: ReplaceOptions{
+		procReplace{
+			Options: procReplaceOptions{
 				New: "z",
 			},
 		},
@@ -86,6 +90,9 @@ func TestReplace(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range replaceTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -102,10 +109,10 @@ func TestReplace(t *testing.T) {
 	}
 }
 
-func benchmarkReplace(b *testing.B, applicator Replace, test config.Capsule) {
+func benchmarkReplace(b *testing.B, applier procReplace, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

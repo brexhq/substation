@@ -1,8 +1,9 @@
-local sinklib = import '../../build/config/sink.libsonnet';
-local event = import './event.libsonnet';
+local sub = import '../../build/config/substation.libsonnet';
+
+local event = import 'event.libsonnet';
 
 {
-  sink: sinklib.stdout,
+  sink: sub.interfaces.sink.stdout,
   transform: {
     type: 'batch',
     settings: {

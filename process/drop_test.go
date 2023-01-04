@@ -9,13 +9,13 @@ import (
 
 var dropTests = []struct {
 	name string
-	proc Drop
+	proc procDrop
 	test [][]byte
 	err  error
 }{
 	{
 		"drop",
-		Drop{},
+		procDrop{},
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
 			[]byte(`{"foo":"baz"}`),
@@ -36,7 +36,7 @@ func TestDrop(t *testing.T) {
 			capsules = append(capsules, capsule)
 		}
 
-		result, err := test.proc.ApplyBatch(ctx, capsules)
+		result, err := test.proc.Batch(ctx, capsules...)
 		if err != nil {
 			t.Error(err)
 		}
@@ -48,16 +48,18 @@ func TestDrop(t *testing.T) {
 	}
 }
 
-func benchmarkDrop(b *testing.B, applicator Drop, capsules []config.Capsule) {
+func benchmarkDrop(b *testing.B, applier procDrop, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.ApplyBatch(ctx, capsules)
+		_, _ = applier.Batch(ctx, capsules...)
 	}
 }
 
 func BenchmarkDrop(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range dropTests {
+		var _ Batcher = test.proc
+
 		var capsules []config.Capsule
 		for _, t := range test.test {
 			capsule.SetData(t)

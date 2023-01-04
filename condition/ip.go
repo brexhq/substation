@@ -9,58 +9,46 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errIPInvalidType is returned when the IP inspector is configured with an invalid type.
+// errIPInvalidType is returned when the ip inspector is configured with an invalid type.
 const errIPInvalidType = errors.Error("invalid type")
 
-/*
-IP evaluates IP addresses by their type and usage. This inspector uses the standard library's net package to identify the type and usage of the address (more information is available here: https://pkg.go.dev/net#IP).
-
-The inspector has these settings:
-
-	Type:
-		IP address type used during inspection.
-
-		Must be one of:
-			valid: valid address of any type
-			loopback: valid loopback address
-			multicast: valid multicast address
-			multicast_link_local: valid link local multicast address
-			private: valid private address
-			unicast_global: valid global unicast address
-			unicast_link_local: valid link local unicast address
-			unspecified: valid "unspecified" address (e.g., 0.0.0.0, ::)
-	Key (optional):
-		JSON key-value to retrieve for inspection.
-	Negate (optional):
-		If set to true, then the inspection is negated (i.e., true becomes false, false becomes true).
-
-		Defaults to false.
-
-The inspector supports these patterns:
-
-	JSON:
-		{"ip_address":"10.0.0.1"} == private
-
-	data:
-		10.0.0.1 == private
-
-When loaded with a factory, the inspector uses this JSON configuration:
-
-	{
-		"type": "ip",
-		"settings": {
-			"type": "private"
-		}
-	}
-*/
-type IP struct {
-	Type   string `json:"type"`
-	Key    string `json:"key"`
-	Negate bool   `json:"negate"`
+// ip evaluates IP addresses by their type and usage using the standard library's net package (more information is available here: https://pkg.go.dev/net#ip).
+//
+// This inspector supports the data and object handling patterns.
+type inspIP struct {
+	condition
+	Options inspIPOptions `json:"options"`
 }
 
-// Inspect evaluates encapsulated data with the IP inspector.
-func (c IP) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+type inspIPOptions struct {
+	// Type is the IP address type used for comparison during inspection.
+	//
+	// Must be one of:
+	//
+	// - valid: valid address of any type
+	//
+	// - loopback: valid loopback address
+	//
+	// - multicast: valid multicast address
+	//
+	// - multicast_link_local: valid link local multicast address
+	//
+	// - private: valid private address
+	//
+	// - unicast_global: valid global unicast address
+	//
+	// - unicast_link_local: valid link local unicast address
+	//
+	// - unspecified: valid "unspecified" address (e.g., 0.0.0.0, ::)
+	Type string `json:"type"`
+}
+
+func (c inspIP) String() string {
+	return toString(c)
+}
+
+// Inspect evaluates encapsulated data with the ip inspector.
+func (c inspIP) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	var check string
 	if c.Key == "" {
 		check = string(capsule.Data())
@@ -70,7 +58,7 @@ func (c IP) Inspect(ctx context.Context, capsule config.Capsule) (output bool, e
 
 	ip := net.ParseIP(check)
 	var matched bool
-	switch s := c.Type; s {
+	switch c.Options.Type {
 	case "valid":
 		matched = ip != nil
 	case "loopback":
@@ -88,7 +76,7 @@ func (c IP) Inspect(ctx context.Context, capsule config.Capsule) (output bool, e
 	case "unspecified":
 		matched = ip.IsUnspecified()
 	default:
-		return false, fmt.Errorf("condition ip: type %s: %v", c.Type, errIPInvalidType)
+		return false, fmt.Errorf("condition: ip: type %s: %v", c.Options.Type, errIPInvalidType)
 	}
 
 	if c.Negate {

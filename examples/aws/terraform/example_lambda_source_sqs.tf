@@ -3,8 +3,8 @@
 # sends data to Lambda
 ################################################
 
-module "sqs_example_source" {
-  source     = "/workspaces/substation/build/terraform/aws/sqs"
+module "sqs_source" {
+  source     = "../../../build/terraform/aws/sqs"
   kms_key_id = module.kms_substation.key_id
   name       = "substation_sqs_example"
   # timeout must match timeout on Lambda
@@ -16,9 +16,9 @@ module "sqs_example_source" {
 # reads from SQS queue, writes to raw Kinesis stream
 ################################################
 
-module "lambda_example_sqs_source" {
-  source        = "/workspaces/substation/build/terraform/aws/lambda"
-  function_name = "substation_example_sqs_source"
+module "lambda_sqs_source" {
+  source        = "../../../build/terraform/aws/lambda"
+  function_name = "substation_sqs_source"
   description   = "Substation Lambda that is triggered from SQS and writes data to the raw Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id
   kms_arn       = module.kms_substation.arn
@@ -28,7 +28,7 @@ module "lambda_example_sqs_source" {
 
   env = {
     "AWS_MAX_ATTEMPTS" : 10
-    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_sqs_source"
+    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_sqs_source"
     "SUBSTATION_HANDLER" : "AWS_SQS"
     "SUBSTATION_DEBUG" : 1
     "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
@@ -43,9 +43,9 @@ module "lambda_example_sqs_source" {
   ]
 }
 
-resource "aws_lambda_event_source_mapping" "lambda_esm_example_sqs_source" {
-  event_source_arn                   = module.sqs_example_source.arn
-  function_name                      = module.lambda_example_sqs_source.arn
+resource "aws_lambda_event_source_mapping" "lambda_esm_sqs_source" {
+  event_source_arn                   = module.sqs_source.arn
+  function_name                      = module.lambda_sqs_source.arn
   maximum_batching_window_in_seconds = 30
   batch_size                         = 100
 }
@@ -54,18 +54,18 @@ resource "aws_lambda_event_source_mapping" "lambda_esm_example_sqs_source" {
 ## permissions
 ################################################
 
-module "iam_lambda_example_sqs_source_read" {
-  source = "/workspaces/substation/build/terraform/aws/iam"
+module "iam_lambda_sqs_source_read" {
+  source = "../../../build/terraform/aws/iam"
   resources = [
-    "${module.sqs_example_source.arn}",
+    "${module.sqs_source.arn}",
   ]
 }
 
-module "iam_lambda_example_sqs_source_read_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
-  id     = "${module.lambda_example_sqs_source.name}_read"
-  policy = module.iam_lambda_example_sqs_source_read.sqs_read_policy
+module "iam_lambda_sqs_source_read_attachment" {
+  source = "../../../build/terraform/aws/iam_attachment"
+  id     = "${module.lambda_sqs_source.name}_read"
+  policy = module.iam_lambda_sqs_source_read.sqs_read_policy
   roles = [
-    module.lambda_example_sqs_source.role
+    module.lambda_sqs_source.role
   ]
 }

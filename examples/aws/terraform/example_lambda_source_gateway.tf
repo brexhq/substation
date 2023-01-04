@@ -3,10 +3,10 @@
 # sends data to Lambda
 ################################################
 
-module "gateway_example_lambda_source" {
-  source       = "/workspaces/substation/build/terraform/aws/api_gateway/lambda"
+module "gateway_lambda_source" {
+  source       = "../../../build/terraform/aws/api_gateway/lambda"
   name         = "substation_lambda_example"
-  function_arn = module.lambda_example_gateway_source.arn
+  function_arn = module.lambda_gateway_source.arn
 }
 
 ################################################
@@ -14,9 +14,9 @@ module "gateway_example_lambda_source" {
 # reads from API Gateway, writes to raw Kinesis stream
 ################################################
 
-module "lambda_example_gateway_source" {
-  source        = "/workspaces/substation/build/terraform/aws/lambda"
-  function_name = "substation_example_gateway_source"
+module "lambda_gateway_source" {
+  source        = "../../../build/terraform/aws/lambda"
+  function_name = "substation_gateway_source"
   description   = "Substation Lambda that is triggered from an API Gateway and writes data to the raw Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id
   kms_arn       = module.kms_substation.arn
@@ -25,7 +25,7 @@ module "lambda_example_gateway_source" {
 
   env = {
     "AWS_MAX_ATTEMPTS" : 10
-    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_gateway_source"
+    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_gateway_source"
     "SUBSTATION_HANDLER" : "AWS_API_GATEWAY"
     "SUBSTATION_DEBUG" : 1
     "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"

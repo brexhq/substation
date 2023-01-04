@@ -6,182 +6,229 @@ src="https://github.com/brexhq/substation/blob/main/substation_logo.png" />
 </p>
 
 <p align="center">
-Substation is a toolkit for creating highly configurable, no maintenance, and cost efficient serverless data pipelines.
+Substation is a data pipeline and transformation toolkit written in Go.
 </p>
+
+## Resources
+* Documentation: https://substation.readme.io/docs
+* Recipes: https://substation.readme.io/recipes
+* Announcements: https://github.com/brexhq/substation/discussions/categories/announcements
+* Announcement Post: https://medium.com/brexeng/announcing-substation-188d049d979b
 
 ## What is Substation?
 
-Originally designed to collect, normalize, and enrich security event data, Substation provides methods for achieving [high quality data](https://en.wikipedia.org/wiki/Data_quality#Definitions) through interconnected, serverless data pipelines.
+Substation provides three unique data handling capabilities: 
+* modular, cloud native data pipelines that support 100s of unique designs
+* event-driven ingest, transform, load (ITL) applications that evaluate, process, and deliver data in real-time
+* Go packages for creating custom data processing applications
 
-Substation also provides Go packages for filtering and modifying JSON data.
-
-## Features
-
-As an event-driven ingest, transform, and load application, Substation has these features:
-
-* real-time event filtering and processing
-* cross-dataset event correlation and enrichment
-* concurrent event routing to downstream systems
-* runs on containers, built for extensibility
-  + support for new event filters and processors
-  + support for new ingest sources and load destinations
-  + supports creation of custom applications (e.g., multi-cloud)
-
-As a package, Substation has these features:
-
-* [evaluate and filter JSON objects](condition/)
-* [modify data from, to, and in-place as JSON objects](process/)
-
-## Use Cases
-
-Substation was originally designed to support the mission of achieving high quality data for threat hunting, threat detection, and incident response, but it can be used to move data between many distributed systems and services. Here are some example use cases:
-
-* data availability: sink data to an intermediary streaming service such as AWS Kinesis, then concurrently sink it to a data lake, data warehouse, and SIEM
-* data consistency: normalize data across every dataset using a permissive schema such as the [Elastic Common Schema](https://www.elastic.co/guide/en/ecs/current/index.html)
-* data completeness: enrich data by integrating AWS Lambda functions and building self-populating AWS DynamoDB tables for low latency, real-time event context
-
-## Example Data Pipelines
-
-### Simple
-
-The simplest data pipeline is one with a single source (ingest), a single transform, and a single sink (load). The diagram below shows pipelines that ingest data from different sources and sink it unmodified to a data warehouse where it can be used for analysis.
-
-```mermaid
-
-graph TD
-    sink(Data Warehouse)
-
-    %% pipeline one
-    source_a(HTTPS Source)
-    processing_a[Transfer]
-
-    %% flow
-    subgraph pipeline X
-    source_a ---|Push| processing_a
-    end
-
-    processing_a ---|Push| sink
-
-    %% pipeline two
-    source_b(Data Lake)
-    processing_b[Transfer]
-
-    %% flow
-    subgraph pipeline Y
-    source_b ---|Pull| processing_b
-    end
-
-    processing_b ---|Push| sink
+Substation can transform logs like this ...
+```json
+{
+  "ts": 1591367999.305988,
+  "uid": "CMdzit1AMNsmfAIiQc",
+  "id.orig_h": "192.168.4.76",
+  "id.orig_p": 36844,
+  "id.resp_h": "192.168.4.1",
+  "id.resp_p": 53,
+  "proto": "udp",
+  "service": "dns",
+  "duration": 0.06685185432434082,
+  "orig_bytes": 62,
+  "resp_bytes": 141,
+  "conn_state": "SF",
+  "missed_bytes": 0,
+  "history": "Dd",
+  "orig_pkts": 2,
+  "orig_ip_bytes": 118,
+  "resp_pkts": 2,
+  "resp_ip_bytes": 197
+}
+{
+  "ts": 1591367999.430166,
+  "uid": "C5bLoe2Mvxqhawzqqd",
+  "id.orig_h": "192.168.4.76",
+  "id.orig_p": 46378,
+  "id.resp_h": "31.3.245.133",
+  "id.resp_p": 80,
+  "proto": "tcp",
+  "service": "http",
+  "duration": 0.25411510467529297,
+  "orig_bytes": 77,
+  "resp_bytes": 295,
+  "conn_state": "SF",
+  "missed_bytes": 0,
+  "history": "ShADadFf",
+  "orig_pkts": 6,
+  "orig_ip_bytes": 397,
+  "resp_pkts": 4,
+  "resp_ip_bytes": 511
+}
 ```
 
-### Complex
+... into this ...
 
-The complexity of a data pipeline, including its features and how it connects with other pipelines, is up to the user. The diagram below shows two complex data pipelines that have these feature:
-
-* both pipelines write unmodified data to intermediary streaming data storage (e.g., AWS Kinesis) to support concurrent consumers and downstream systems
-* both pipelines transform data by enriching it from their own inter-pipeline metadata lookup (e.g., AWS DynamoDB)
-* pipeline Y additionally transforms data by enriching it from pipeline X's metadata lookup
-
-```mermaid
-
-graph TD
-
-    %% pipeline a
-    source_a_http(HTTPS Source)
-    sink_a_streaming(Streaming Data Storage)
-    sink_a_metadata(Metadata Lookup)
-    sink_a_persistent[Data Warehouse]
-    processing_a_http[Transfer]
-    processing_a_persistent[Transform]
-    processing_a_metadata[Transform]
-
-    %% flow
-    subgraph pipeline Y
-    source_a_http ---|Push| processing_a_http
-    processing_a_http ---|Push| sink_a_streaming
-    sink_a_streaming ---|Pull| processing_a_persistent
-    sink_a_streaming ---|Pull| processing_a_metadata
-    processing_a_persistent---|Push| sink_a_persistent
-    processing_a_persistent---|Pull| sink_a_metadata
-    processing_a_metadata ---|Push| sink_a_metadata
-    end
-
-    processing_a_persistent ---|Pull| sink_b_metadata
-
-    %% pipeline b
-    source_b_http(HTTPS Source)
-    sink_b_streaming(Streaming Data Storage)
-    sink_b_metadata(Metadata Lookup)
-    sink_b_persistent(Data Warehouse)
-    processing_b_http[Transfer]
-    processing_b_persistent[Transform]
-    processing_b_metadata[Transform]
-
-    %% flow
-    subgraph pipeline X
-    source_b_http ---|Push| processing_b_http
-    processing_b_http ---|Push| sink_b_streaming
-    sink_b_streaming ---|Pull| processing_b_persistent
-    sink_b_streaming ---|Pull| processing_b_metadata
-    processing_b_persistent---|Push| sink_b_persistent
-    processing_b_persistent---|Pull| sink_b_metadata
-    processing_b_metadata ---|Push| sink_b_metadata
-    end
+```json
+{
+  "event": {
+    "original": {
+      "ts": 1591367999.305988,
+      "uid": "CMdzit1AMNsmfAIiQc",
+      "id.orig_h": "192.168.4.76",
+      "id.orig_p": 36844,
+      "id.resp_h": "192.168.4.1",
+      "id.resp_p": 53,
+      "proto": "udp",
+      "service": "dns",
+      "duration": 0.06685185432434082,
+      "orig_bytes": 62,
+      "resp_bytes": 141,
+      "conn_state": "SF",
+      "missed_bytes": 0,
+      "history": "Dd",
+      "orig_pkts": 2,
+      "orig_ip_bytes": 118,
+      "resp_pkts": 2,
+      "resp_ip_bytes": 197
+    },
+    "hash": "7ed38f773271e700e2d55984a2ba7902be9ec8c2922e52fc7558aeade425c3de",
+    "created": "2022-12-30T17:20:41.027457Z",
+    "id": "CMdzit1AMNsmfAIiQc",
+    "kind": "event",
+    "category": [
+      "network"
+    ],
+    "action": "network-connection",
+    "outcome": "success",
+    "duration": 66851854.32434082
+  },
+  "@timestamp": "2020-06-05T14:39:59.305988Z",
+  "client": {
+    "address": "192.168.4.76",
+    "ip": "192.168.4.76",
+    "port": 36844,
+    "packets": 2,
+    "bytes": 62
+  },
+  "server": {
+    "address": "192.168.4.1",
+    "ip": "192.168.4.1",
+    "port": 53,
+    "packets": 2,
+    "bytes": 141
+  },
+  "network": {
+    "protocol": "udp",
+    "bytes": 203,
+    "packets": 4,
+    "direction": "internal"
+  }
+}
+{
+  "event": {
+    "original": {
+      "ts": 1591367999.430166,
+      "uid": "C5bLoe2Mvxqhawzqqd",
+      "id.orig_h": "192.168.4.76",
+      "id.orig_p": 46378,
+      "id.resp_h": "31.3.245.133",
+      "id.resp_p": 80,
+      "proto": "tcp",
+      "service": "http",
+      "duration": 0.25411510467529297,
+      "orig_bytes": 77,
+      "resp_bytes": 295,
+      "conn_state": "SF",
+      "missed_bytes": 0,
+      "history": "ShADadFf",
+      "orig_pkts": 6,
+      "orig_ip_bytes": 397,
+      "resp_pkts": 4,
+      "resp_ip_bytes": 511
+    },
+    "hash": "af70ea0b38e1fb529e230d3eca6badd54cd6a080d7fcb909cac4ee0191bb788f",
+    "created": "2022-12-30T17:20:41.027505Z",
+    "id": "C5bLoe2Mvxqhawzqqd",
+    "kind": "event",
+    "category": [
+      "network"
+    ],
+    "action": "network-connection",
+    "outcome": "success",
+    "duration": 254115104.67529297
+  },
+  "@timestamp": "2020-06-05T14:39:59.430166Z",
+  "client": {
+    "address": "192.168.4.76",
+    "ip": "192.168.4.76",
+    "port": 46378,
+    "packets": 6,
+    "bytes": 77
+  },
+  "server": {
+    "address": "31.3.245.133",
+    "ip": "31.3.245.133",
+    "port": 80,
+    "packets": 4,
+    "bytes": 295,
+    "domain": "h31-3-245-133.host.redstation.co.uk",
+    "top_level_domain": "co.uk",
+    "subdomain": "h31-3-245-133.host",
+    "registered_domain": "redstation.co.uk",
+    "as": {
+      "number": 20860,
+      "organization": {
+        "name": "Iomart Cloud Services Limited"
+      }
+    },
+    "geo": {
+      "continent_name": "Europe",
+      "country_name": "United Kingdom",
+      "city_name": "Manchester",
+      "location": {
+        "latitude": 53.5039,
+        "longitude": -2.1959
+      },
+      "accuracy": 1000
+    }
+  },
+  "network": {
+    "protocol": "tcp",
+    "bytes": 372,
+    "packets": 10,
+    "direction": "outbound"
+  }
+}
 ```
 
-As a toolkit, Substation makes no assumptions about how data pipelines are configured and connected. We encourage experimentation and outside-the-box thinking when it comes to pipeline design!
+... using this ...
 
-## Quickstart
+```jsonnet
+local sub = import 'substation.libsonnet';
 
-Users can use the steps below to test Substation's functionality. We recommend doing the steps below in a Docker container (we've included [Visual Studio Code configurations](https://code.visualstudio.com/docs/remote/containers) for developing and testing Substation in `.devcontainer/` and `.vscode/` ).
+local event = import 'event.libsonnet';
+local client = import 'client.libsonnet';
+local server = import 'server.libsonnet';
+local network = import 'network.libsonnet';
 
-### Step 0: Set Environment Variable
-
-```bash
-export SUBSTATION_ROOT=/path/to/repository
+{
+  sink: sub.interfaces.sink.stdout,
+  transform: {
+    type: 'batch',
+    settings: {
+      processors:
+        event.processors
+        + client.processors
+        + server.processors
+        + network.processors
+    },
+  },
+}
 ```
 
-### Step 1: Compile the File Binary
+... running in any pipeline like these ...
 
-Run the commands below to compile the Substation `file` app.
-
-```bash
-cd $SUBSTATION_ROOT/cmd/file/substation/ && \
-go build . && \
-./substation -h
-```
-
-### Step 2: Compile the quickstart Configuration File
-
-Run the command below to compile the [quickstart Jsonnet configuration files](examples/quickstart/) into a Substation JSON config.
-
-```bash
-cd $SUBSTATION_ROOT && \
-sh build/scripts/config/compile.sh
-```
-
-### Step 3: Test Substation
-
-Run the command below to test Substation. 
-
-After this, we recommend reviewing the [config](/config/) documentation and running more tests with other event processors to learn how the app works.
-
-```bash
-cd $SUBSTATION_ROOT && \
-./cmd/file/substation/substation -input examples/quickstart/data.json -config examples/quickstart/config.json
-```
-
-Users can continue exploring the system by iterating on the quickstart config, building and running custom [example](/examples/condition/data/) [applications](/examples/process/data/), and deploying a [data pipeline in AWS](/examples/aws/).
-
-## Additional Documentation
-
-More documentation about Substation can be found across the project, including:
-
-* [Using Conditions to Evaluate JSON Objects](/condition/)
-* [Using Processors to Modify JSON Objects](/process/)
-* [Configuration Syntax](/build/config/)
-* [Deploying to AWS](/examples/aws/)
-* [How to Contribute](/CONTRIBUTING.md)
+![alt text](substation_architecture.png)
 
 ## Licensing
 

@@ -10,16 +10,18 @@ import (
 
 var groupTests = []struct {
 	name     string
-	proc     Group
+	proc     procGroup
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"tuples",
-		Group{
-			InputKey:  "group",
-			OutputKey: "group",
+		procGroup{
+			process: process{
+				Key:    "group",
+				SetKey: "group",
+			},
 		},
 		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
 		[]byte(`{"group":[["foo",123],["bar",456]]}`),
@@ -27,15 +29,17 @@ var groupTests = []struct {
 	},
 	{
 		"objects",
-		Group{
-			Options: GroupOptions{
-				Keys: []string{"name.test", "size"},
+		procGroup{
+			process: process{
+				Key:    "group",
+				SetKey: "group",
 			},
-			InputKey:  "group",
-			OutputKey: "group",
+			Options: procGroupOptions{
+				Keys: []string{"qux.quux", "corge"},
+			},
 		},
 		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
-		[]byte(`{"group":[{"name":{"test":"foo"},"size":123},{"name":{"test":"bar"},"size":456}]}`),
+		[]byte(`{"group":[{"qux":{"quux":"foo"},"corge":123},{"qux":{"quux":"bar"},"corge":456}]}`),
 		nil,
 	},
 }
@@ -45,6 +49,9 @@ func TestGroup(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range groupTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -58,10 +65,10 @@ func TestGroup(t *testing.T) {
 	}
 }
 
-func benchmarkGroup(b *testing.B, applicator Group, test config.Capsule) {
+func benchmarkGroup(b *testing.B, applier procGroup, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

@@ -129,6 +129,13 @@ var setTests = []struct {
 		expected: []byte(`{"foo":"bar","baz":{"qux":"quux"}}`),
 	},
 	{
+		name:     "JSON array",
+		key:      "baz",
+		value:    []byte(`["qux","quux"]`),
+		test:     []byte(`{"foo":"bar"}`),
+		expected: []byte(`{"foo":"bar","baz":["qux","quux"]}`),
+	},
+	{
 		name:     "bytes",
 		key:      "baz",
 		value:    []byte{120, 156, 5, 192, 33, 13, 0, 0, 0, 128, 176, 182, 216, 247, 119, 44, 6, 2, 130, 1, 69},

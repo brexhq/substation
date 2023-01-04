@@ -9,128 +9,164 @@ import (
 
 var stringsTests = []struct {
 	name      string
-	inspector Strings
+	inspector inspStrings
 	test      []byte
 	expected  bool
 }{
 	{
 		"pass",
-		Strings{
-			Function:   "startswith",
-			Expression: "Test",
-			Key:        "foo",
+		inspStrings{
+			condition: condition{
+				Key: "foo",
+			},
+			Options: inspStringsOptions{
+				Type:       "starts_with",
+				Expression: "Test",
+			},
 		},
 		[]byte(`{"foo":"Test"}`),
 		true,
 	},
 	{
 		"pass",
-		Strings{
-			Function:   "startswith",
-			Expression: "Test",
+		inspStrings{
+			Options: inspStringsOptions{
+				Type:       "starts_with",
+				Expression: "Test",
+			},
 		},
 		[]byte("Test"),
 		true,
 	},
 	{
 		"fail",
-		Strings{
-			Function:   "startswith",
-			Expression: "Test",
+		inspStrings{
+			Options: inspStringsOptions{
+				Type:       "starts_with",
+				Expression: "Test",
+			},
 		},
 		[]byte("-Test"),
 		false,
 	},
 	{
 		"pass",
-		Strings{
-			Function:   "equals",
-			Expression: "Test",
+		inspStrings{
+			Options: inspStringsOptions{
+				Type:       "equals",
+				Expression: "Test",
+			},
 		},
 		[]byte("Test"),
 		true,
 	},
 	{
 		"fail",
-		Strings{
-			Function:   "equals",
-			Expression: "Test",
+		inspStrings{
+			Options: inspStringsOptions{
+				Type:       "equals",
+				Expression: "Test",
+			},
 		},
 		[]byte("-Test"),
 		false,
 	},
 	{
 		"pass",
-		Strings{
-			Function:   "contains",
-			Expression: "es",
+		inspStrings{
+			Options: inspStringsOptions{
+				Type:       "contains",
+				Expression: "es",
+			},
 		},
 		[]byte("Test"),
 		true,
 	},
 	{
 		"fail",
-		Strings{
-			Function:   "contains",
-			Expression: "ABC",
+		inspStrings{
+			Options: inspStringsOptions{
+				Type:       "contains",
+				Expression: "ABC",
+			},
 		},
 		[]byte("Test"),
 		false,
 	},
 	{
 		"!fail",
-		Strings{
-			Function:   "startswith",
-			Negate:     true,
-			Expression: "XYZ",
+		inspStrings{
+			condition: condition{
+				Negate: true,
+			},
+			Options: inspStringsOptions{
+				Type:       "starts_with",
+				Expression: "XYZ",
+			},
 		},
 		[]byte("ABC"),
 		true,
 	},
 	{
 		"!pass",
-		Strings{
-			Function:   "startswith",
-			Negate:     true,
-			Expression: "ABC",
+		inspStrings{
+			condition: condition{
+				Negate: true,
+			},
+			Options: inspStringsOptions{
+				Type:       "starts_with",
+				Expression: "ABC",
+			},
 		},
 		[]byte("ABC"),
 		false,
 	},
 	{
 		"!pass",
-		Strings{
-			Function:   "equals",
-			Negate:     true,
-			Expression: "",
+		inspStrings{
+			condition: condition{
+				Negate: true,
+			},
+			Options: inspStringsOptions{
+				Type:       "equals",
+				Expression: "",
+			},
 		},
 		[]byte(""),
 		false,
 	},
 	{
 		"!pass",
-		Strings{
-			Function:   "contains",
-			Negate:     true,
-			Expression: "A",
+		inspStrings{
+			condition: condition{
+				Negate: true,
+			},
+			Options: inspStringsOptions{
+				Type:       "contains",
+				Expression: "A",
+			},
 		},
 		[]byte("ABC"),
 		false,
 	},
 	{
 		"pass",
-		Strings{
-			Function:   "equals",
-			Expression: "\"\"",
+		inspStrings{
+			Options: inspStringsOptions{
+				Type:       "equals",
+				Expression: "\"\"",
+			},
 		},
 		[]byte("\"\""),
 		true,
 	},
 	{
 		"pass",
-		Strings{
-			Function:   "equals",
-			Expression: "",
+		inspStrings{
+			Options: inspStringsOptions{
+				Type:       "equals",
+				Expression: "",
+			},
 		},
 		[]byte(``),
 		true,
@@ -142,6 +178,8 @@ func TestStrings(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range stringsTests {
+		var _ Inspector = test.inspector
+
 		capsule.SetData(test.test)
 
 		check, err := test.inspector.Inspect(ctx, capsule)
@@ -155,7 +193,7 @@ func TestStrings(t *testing.T) {
 	}
 }
 
-func benchmarkStringsByte(b *testing.B, inspector Strings, capsule config.Capsule) {
+func benchmarkStringsByte(b *testing.B, inspector inspStrings, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)

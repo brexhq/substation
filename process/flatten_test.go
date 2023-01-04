@@ -10,29 +10,33 @@ import (
 
 var flattenTests = []struct {
 	name     string
-	proc     Flatten
+	proc     procFlatten
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"json",
-		Flatten{
-			InputKey:  "flatten",
-			OutputKey: "flatten",
+		procFlatten{
+			process: process{
+				Key:    "flatten",
+				SetKey: "flatten",
+			},
 		},
 		[]byte(`{"flatten":["foo",["bar"]]}`),
 		[]byte(`{"flatten":["foo","bar"]}`),
 		nil,
 	},
 	{
-		"json deep flatten",
-		Flatten{
-			Options: FlattenOptions{
+		"json deep procFlatten",
+		procFlatten{
+			process: process{
+				Key:    "flatten",
+				SetKey: "flatten",
+			},
+			Options: procFlattenOptions{
 				Deep: true,
 			},
-			InputKey:  "flatten",
-			OutputKey: "flatten",
 		},
 		[]byte(`{"flatten":[["foo"],[[["bar",[["baz"]]]]]]}`),
 		[]byte(`{"flatten":["foo","bar","baz"]}`),
@@ -45,6 +49,9 @@ func TestFlatten(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range flattenTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -58,10 +65,10 @@ func TestFlatten(t *testing.T) {
 	}
 }
 
-func benchmarkFlatten(b *testing.B, applicator Flatten, test config.Capsule) {
+func benchmarkFlatten(b *testing.B, applier procFlatten, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

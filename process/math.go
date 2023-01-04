@@ -4,105 +4,82 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
-/*
-Math processes data by applying mathematic operations. The processor supports these patterns:
-
-	JSON:
-		{"math":[1,3]} >>> {"math":4}
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "math",
-		"settings": {
-			"options": {
-				"operation": "add"
-			},
-			"input_key": "math",
-			"output_key": "math"
-		}
-	}
-*/
-type Math struct {
-	Options   MathOptions      `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+// math processes data by applying mathematic operations.
+//
+// This processor supports the object handling pattern.
+type procMath struct {
+	process
+	Options procMathOptions `json:"options"`
 }
 
-/*
-MathOptions contains custom options for the Math processor:
-
-	Operation:
-		operator applied to the data
-		must be one of:
-			add
-			subtract
-			multiply
-			divide
-*/
-type MathOptions struct {
+type procMathOptions struct {
+	// Operation determines the operator applied to the data.
+	//
+	// Must be one of:
+	//
+	// - add
+	//
+	// - subtract
+	//
+	// - multiply
+	//
+	// - divide
 	Operation string `json:"operation"`
 }
 
-// Close closes resources opened by the Math processor.
-func (p Math) Close(context.Context) error {
+// String returns the processor settings as an object.
+func (p procMath) String() string {
+	return toString(p)
+}
+
+// Closes resources opened by the processor.
+func (p procMath) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Math processor. Conditions are optionally applied to the data to enable processing.
-func (p Math) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process math: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
-	if err != nil {
-		return nil, fmt.Errorf("process math: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procMath) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return batchApply(ctx, capsules, p, p.Condition)
 }
 
-// Apply processes encapsulated data with the Math processor.
-func (p Math) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p procMath) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Operation == "" {
-		return capsule, fmt.Errorf("process math: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return capsule, fmt.Errorf("process: math: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// only supports JSON, error early if there are no keys
-	if p.InputKey == "" && p.OutputKey == "" {
-		return capsule, fmt.Errorf("process math: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	if p.Key == "" && p.SetKey == "" {
+		return capsule, fmt.Errorf("process: math: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}
 
-	var value int64
-	result := capsule.Get(p.InputKey)
+	var value float64
+	result := capsule.Get(p.Key)
 	for i, res := range result.Array() {
 		if i == 0 {
-			value = res.Int()
+			value = res.Float()
 			continue
 		}
 
 		switch p.Options.Operation {
 		case "add":
-			value += res.Int()
+			value += res.Float()
 		case "subtract":
-			value -= res.Int()
+			value -= res.Float()
 		case "multiply":
-			value *= res.Int()
+			value *= res.Float()
 		case "divide":
-			value /= res.Int()
+			value /= res.Float()
 		}
 	}
 
-	if err := capsule.Set(p.OutputKey, value); err != nil {
-		return capsule, fmt.Errorf("process math: %v", err)
+	if err := capsule.Set(p.SetKey, value); err != nil {
+		return capsule, fmt.Errorf("process: math: %v", err)
 	}
 
 	return capsule, nil

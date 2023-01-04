@@ -6,104 +6,67 @@ import (
 	"net"
 	"time"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
 var dnsResolver net.Resolver
 
-/*
-DNS processes data by querying domains or IP addresses in the Domain Name System (DNS). By default, this processor can take up to 1 second per DNS query and may have significant impact on end-to-end data processing latency. If Substation is running in AWS Lambda with Kinesis, then this latency can be mitigated by increasing the parallelization factor of the Lambda (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
-
-The processor supports these patterns:
-
-	JSON:
-	  	{"ip":"8.8.8.8"} >>> {"ip":"8.8.8.8","domains":["dns.google."]}
-		{"domain":"dns.google"} >>> {"domain":"dns.google","ips":["8.8.4.4","8.8.8.8","2001:4860:4860::8844","2001:4860:4860::8888"]}
-	data:
-		8.8.8.8 >>> dns.google.
-		dns.google >>> 8.8.4.4
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "dns",
-		"settings": {
-			"options": {
-				"function": "reverse_lookup"
-			},
-			"input_key": "ip",
-			"output_key": "domains"
-		}
-	}
-*/
-type DNS struct {
-	Options   DNSOptions       `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+// dns processes data by querying domains or IP addresses in the Domain Name
+// System (DNS). By default, this processor can take up to 1 second per DNS
+// query and may have significant impact on end-to-end data processing latency.
+// If Substation is running in AWS Lambda with Kinesis, then this latency can be
+//
+//	mitigated by increasing the parallelization factor of the Lambda
+//
+// (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
+type procDNS struct {
+	process
+	Options procDNSOptions `json:"options"`
 }
 
-/*
-DNSOptions contains custom options for the DNS processor.
-
-	Function:
-		Type of query made to DNS.
-
-		Must be one of:
-			forward_lookup (retrieve IP addresses associated with a domain)
-			reverse_lookup (retrieve domains associated with an IP address)
-			query_txt (retrieve TXT records for a domain)
-
-	Timeout (optional):
-		Amount of time to wait (in milliseconds) for a response.
-
-		Defaults to 1000 milliseconds (1 second).
-
-	ErrorOnFailure (optional):
-		If set to true, then errors from the DNS request will cause the processor to fail.
-
-		Defaults to false.
-*/
-type DNSOptions struct {
-	Function       string `json:"function"`
-	Timeout        int    `json:"timeout"`
-	ErrorOnFailure bool   `json:"error_on_failure"`
+type procDNSOptions struct {
+	// Type is the query type made to DNS.
+	//
+	// Must be one of:
+	//
+	// - forward_lookup: retrieve IP addresses associated with a domain
+	//
+	// - reverse_lookup: retrieve domains associated with an IP address
+	//
+	// - query_txt: retrieve TXT records for a domain
+	Type string `json:"type"`
+	// Timeout is the amount of time to wait (in milliseconds) for
+	// a response.
+	//
+	// This is optional and defaults to 1000 milliseconds (1 second).
+	Timeout int `json:"timeout"`
 }
 
-// Close closes resources opened by the DNS processor.
-func (p DNS) Close(context.Context) error {
+// Closes resources opened by the processor.
+func (p procDNS) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the DNS processor. Conditions are optionally applied to the data to enable processing.
-func (p DNS) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process dns: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
-	if err != nil {
-		return nil, fmt.Errorf("process dns: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procDNS) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return batchApply(ctx, capsules, p, p.Condition)
 }
 
-// Apply processes encapsulated data with the DNS processor.
-//nolint: gocognit
-func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+//
+//nolint:gocognit
+func (p procDNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
-	if p.Options.Function == "" {
-		return capsule, fmt.Errorf("process dns: options %+v: %v", p.Options, errMissingRequiredOptions)
+	if p.Options.Type == "" {
+		return capsule, fmt.Errorf("process: dns: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	var timeout time.Duration
 	if p.Options.Timeout != 0 {
 		timeout = time.Duration(p.Options.Timeout) * time.Millisecond
 	} else {
-		timeout = time.Duration(1000) * time.Millisecond
+		timeout = 1000 * time.Millisecond
 	}
 
 	resolverCtx, cancel := context.WithTimeout(ctx, timeout)
@@ -111,40 +74,40 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 
 	// JSON processing
 	//nolint: nestif // ignore nesting
-	if p.InputKey != "" && p.OutputKey != "" {
-		res := capsule.Get(p.InputKey).String()
+	if p.Key != "" && p.SetKey != "" {
+		res := capsule.Get(p.Key).String()
 
-		switch p.Options.Function {
+		switch p.Options.Type {
 		case "forward_lookup":
 			addrs, err := dnsResolver.LookupHost(resolverCtx, res)
-			if err != nil && p.Options.ErrorOnFailure {
-				return capsule, fmt.Errorf("process dns: %v", err)
+			if err != nil && p.IgnoreErrors {
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
-			if err := capsule.Set(p.OutputKey, addrs); err != nil {
-				return capsule, fmt.Errorf("process dns: %v", err)
+			if err := capsule.Set(p.SetKey, addrs); err != nil {
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			return capsule, nil
 		case "reverse_lookup":
 			names, err := dnsResolver.LookupAddr(resolverCtx, res)
-			if err != nil && p.Options.ErrorOnFailure {
-				return capsule, fmt.Errorf("process dns: %v", err)
+			if err != nil && p.IgnoreErrors {
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
-			if err := capsule.Set(p.OutputKey, names); err != nil {
-				return capsule, fmt.Errorf("process dns: %v", err)
+			if err := capsule.Set(p.SetKey, names); err != nil {
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			return capsule, nil
 		case "query_txt":
 			records, err := dnsResolver.LookupTXT(resolverCtx, res)
-			if err != nil && p.Options.ErrorOnFailure {
-				return capsule, fmt.Errorf("process dns: %v", err)
+			if err != nil && p.IgnoreErrors {
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
-			if err := capsule.Set(p.OutputKey, records); err != nil {
-				return capsule, fmt.Errorf("process dns: %v", err)
+			if err := capsule.Set(p.SetKey, records); err != nil {
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			return capsule, nil
@@ -154,14 +117,14 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 	}
 
 	// data processing
-	if p.InputKey == "" && p.OutputKey == "" {
+	if p.Key == "" && p.SetKey == "" {
 		res := string(capsule.Data())
 
-		switch p.Options.Function {
+		switch p.Options.Type {
 		case "forward_lookup":
 			addrs, err := dnsResolver.LookupHost(resolverCtx, res)
-			if err != nil && p.Options.ErrorOnFailure {
-				return capsule, fmt.Errorf("process dns: %v", err)
+			if err != nil && p.IgnoreErrors {
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			// can only return one value, which is the first address
@@ -170,8 +133,8 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 			return capsule, nil
 		case "reverse_lookup":
 			names, err := dnsResolver.LookupAddr(resolverCtx, res)
-			if err != nil && p.Options.ErrorOnFailure {
-				return capsule, fmt.Errorf("process dns: %v", err)
+			if err != nil && p.IgnoreErrors {
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			// can only return one value, which is the first name
@@ -179,8 +142,8 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 			return capsule, nil
 		case "query_txt":
 			records, err := dnsResolver.LookupTXT(resolverCtx, res)
-			if err != nil && p.Options.ErrorOnFailure {
-				return capsule, fmt.Errorf("process dns: %v", err)
+			if err != nil && p.IgnoreErrors {
+				return capsule, fmt.Errorf("process: dns: %v", err)
 			}
 
 			// can only return one value, which is the first record
@@ -191,5 +154,5 @@ func (p DNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule,
 		}
 	}
 
-	return capsule, fmt.Errorf("process dns: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: dns: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }

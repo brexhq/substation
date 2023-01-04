@@ -1,6 +1,6 @@
 # lambda
 
-Contains Substation apps deployed as AWS Lambda functions. All Lambda functions get their configurations from [AWS AppConfig](https://docs.aws.amazon.com/appconfig/latest/userguide/what-is-appconfig.html).
+Contains Substation apps deployed as AWS Lambda functions. All Lambda functions get their configurations from [AWS AppConfig](https://docs.aws.amazon.com/appconfig/latest/userguide/what-is-appconfig.html) or AWS S3.
 
 ## autoscaling
 

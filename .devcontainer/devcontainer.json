@@ -3,10 +3,12 @@
 	"build": {
 		"dockerfile": "Dockerfile"
 	},
+	"remoteUser": "root",
 	"extensions": [
 		"golang.go",
 		"hashicorp.terraform",
-		"zxh404.vscode-proto3"
+		"zxh404.vscode-proto3",
+		"grafana.vscode-jsonnet"
 	],
 	"postCreateCommand": "bash .devcontainer/install-dev-tools.sh"
 }

@@ -14,50 +14,43 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-/*
-gRPC sinks data to a server that implements the server API for the Sink service. This sink can also be used for inter-process communication (IPC) by using a localhost server. By default, the sink creates an insecure connection that is unauthenticated and unencrypted.
-
-The sink has these settings:
-
-	Server:
-		Address and port number for the server that data is sent to
-	Timeout (optional):
-		Amount of time (in seconds) to wait before cancelling the request
-		defaults to 10 seconds
-	Certificate (optional):
-		File containing the server certificate, enables SSL/TLS server authentication
-		The certificate file can be stored locally or remotely
-
-When loaded with a factory, the sink uses this JSON configuration:
-
-	{
-		"type": "grpc",
-		"settings": {
-			"server": "localhost:50051"
-		}
-	}
-*/
-type Grpc struct {
-	Server      string `json:"server"`
-	Timeout     int    `json:"timeout"`
+// sinkGRPC sinks data to a server that implements the server API for the Sink service.
+//
+// This sink can be used for inter-process communication (IPC) by using a localhost
+// server. By default, the sink creates an insecure connection that is unauthenticated
+// and unencrypted.
+type sinkGRPC struct {
+	// Server is the address and port number for the server that data is sent to.
+	Server string `json:"server"`
+	// Timeout is the amount of time (in seconds) to wait before cancelling the request.
+	//
+	// This is optional and defaults to 10 seconds.
+	Timeout int `json:"timeout"`
+	// Certificate is a file containing a server certificate, which enables SSL/TLS
+	// server authentication.
+	//
+	// This is optional and defaults to unauthenticated and unencrypted connections.
+	// The certificate file can be either a path on local disk, an HTTP(S) URL, or
+	// an AWS S3 URL.
 	Certificate string `json:"certificate"`
 }
 
-func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
+// Send sinks a channel of encapsulated data with the sink.
+func (s *sinkGRPC) Send(ctx context.Context, ch *config.Channel) error {
 	// https://grpc.io/docs/guides/auth/#base-case---no-encryption-or-authentication
 	creds := grpc.WithTransportCredentials(insecure.NewCredentials())
 
 	// https://grpc.io/docs/guides/auth/#with-server-authentication-ssltls
-	if sink.Certificate != "" {
-		cert, err := file.Get(ctx, sink.Certificate)
+	if s.Certificate != "" {
+		cert, err := file.Get(ctx, s.Certificate)
 		if err != nil {
-			return fmt.Errorf("sink grpc: %v", err)
+			return fmt.Errorf("sink: grpc: %v", err)
 		}
 		defer os.Remove(cert)
 
 		c, err := credentials.NewClientTLSFromFile(cert, "")
 		if err != nil {
-			return fmt.Errorf("sink grpc: %v", err)
+			return fmt.Errorf("sink: grpc: %v", err)
 		}
 
 		creds = grpc.WithTransportCredentials(c)
@@ -66,15 +59,15 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 	var opts []grpc.DialOption
 	opts = append(opts, creds)
 
-	conn, err := grpc.DialContext(ctx, sink.Server, opts...)
+	conn, err := grpc.DialContext(ctx, s.Server, opts...)
 	if err != nil {
-		return fmt.Errorf("sink grpc: %v", err)
+		return fmt.Errorf("sink: grpc: %v", err)
 	}
 	defer conn.Close()
 
 	timeout := 10 * time.Second
-	if sink.Timeout != 0 {
-		timeout = time.Duration(sink.Timeout) * time.Second
+	if s.Timeout != 0 {
+		timeout = time.Duration(s.Timeout) * time.Second
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
@@ -83,7 +76,7 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 	client := pb.NewSinkServiceClient(conn)
 	stream, err := client.Send(ctx, grpc.WaitForReady(true))
 	if err != nil {
-		return fmt.Errorf("sink grpc: %v", err)
+		return fmt.Errorf("sink: grpc: %v", err)
 	}
 
 	for capsule := range ch.C {
@@ -96,7 +89,7 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 			}
 
 			if err := stream.Send(p); err != nil {
-				return fmt.Errorf("sink grpc: %v", err)
+				return fmt.Errorf("sink: grpc: %v", err)
 			}
 		}
 	}
@@ -104,7 +97,7 @@ func (sink *Grpc) Send(ctx context.Context, ch *config.Channel) error {
 	// server must acknowledge the receipt of all capsules
 	// if this doesn't happen, then the app will deadlock
 	if _, err := stream.CloseAndRecv(); err != nil {
-		return fmt.Errorf("sink grpc: %v", err)
+		return fmt.Errorf("sink: grpc: %v", err)
 	}
 
 	return nil

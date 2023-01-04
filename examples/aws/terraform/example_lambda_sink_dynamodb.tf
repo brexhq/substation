@@ -3,10 +3,10 @@
 # metadata is written from the processed Kinesis stream and read by the processor Lambda
 ################################################
 
-module "dynamodb_example_sink" {
-  source     = "/workspaces/substation/build/terraform/aws/dynamodb"
+module "dynamodb_sink" {
+  source     = "../../../build/terraform/aws/dynamodb"
   kms_arn    = module.kms_substation.arn
-  table_name = "substation_example"
+  table_name = "substation"
   hash_key   = "PK"
   attributes = [
     {
@@ -21,9 +21,9 @@ module "dynamodb_example_sink" {
 # reads from processed Kinesis stream, writes to DynamoDB table
 ################################################
 
-module "lambda_example_dynamodb_sink" {
-  source        = "/workspaces/substation/build/terraform/aws/lambda"
-  function_name = "substation_example_dynamodb_sink"
+module "lambda_dynamodb_sink" {
+  source        = "../../../build/terraform/aws/lambda"
+  function_name = "substation_dynamodb_sink"
   description   = "Substation Lambda that is triggered from the processed Kinesis stream and writes data to DynamoDB"
   appconfig_id  = aws_appconfig_application.substation.id
   kms_arn       = module.kms_substation.arn
@@ -32,7 +32,7 @@ module "lambda_example_dynamodb_sink" {
 
   env = {
     "AWS_MAX_ATTEMPTS" : 10
-    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_example_dynamodb_sink"
+    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_dynamodb_sink"
     "SUBSTATION_HANDLER" : "AWS_KINESIS"
     "SUBSTATION_DEBUG" : 1
     "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
@@ -42,9 +42,9 @@ module "lambda_example_dynamodb_sink" {
   }
 }
 
-resource "aws_lambda_event_source_mapping" "lambda_esm_example_dynamodb_sink" {
-  event_source_arn                   = module.kinesis_example_processed.arn
-  function_name                      = module.lambda_example_dynamodb_sink.arn
+resource "aws_lambda_event_source_mapping" "lambda_esm_dynamodb_sink" {
+  event_source_arn                   = module.kinesis_processed.arn
+  function_name                      = module.lambda_dynamodb_sink.arn
   maximum_batching_window_in_seconds = 30
   batch_size                         = 100
   parallelization_factor             = 1
@@ -55,18 +55,18 @@ resource "aws_lambda_event_source_mapping" "lambda_esm_example_dynamodb_sink" {
 ## permissions
 ################################################
 
-module "iam_lambda_example_dynamodb_sink_write" {
-  source = "/workspaces/substation/build/terraform/aws/iam"
+module "iam_lambda_dynamodb_sink_write" {
+  source = "../../../build/terraform/aws/iam"
   resources = [
-    module.dynamodb_example_sink.arn,
+    module.dynamodb_sink.arn,
   ]
 }
 
-module "iam_lambda_example_dynamodb_sink_write_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
-  id     = "${module.lambda_example_dynamodb_sink.name}_write"
-  policy = module.iam_lambda_example_dynamodb_sink_write.dynamodb_write_policy
+module "iam_lambda_dynamodb_sink_write_attachment" {
+  source = "../../../build/terraform/aws/iam_attachment"
+  id     = "${module.lambda_dynamodb_sink.name}_write"
+  policy = module.iam_lambda_dynamodb_sink_write.dynamodb_write_policy
   roles = [
-    module.lambda_example_dynamodb_sink.role
+    module.lambda_dynamodb_sink.role
   ]
 }

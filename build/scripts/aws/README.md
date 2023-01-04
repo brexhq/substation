@@ -1,6 +1,6 @@
 # aws
 
-This directory contains scripts for AWS deployments.
+Contains scripts for AWS deployments.
 
 ## ecr_login.sh
 

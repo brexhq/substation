@@ -10,15 +10,17 @@ import (
 
 var deleteTests = []struct {
 	name     string
-	proc     Delete
+	proc     procDelete
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"string",
-		Delete{
-			InputKey: "baz",
+		procDelete{
+			process: process{
+				Key: "baz",
+			},
 		},
 		[]byte(`{"foo":"bar","baz":"qux"}`),
 		[]byte(`{"foo":"bar"}`),
@@ -26,8 +28,10 @@ var deleteTests = []struct {
 	},
 	{
 		"JSON",
-		Delete{
-			InputKey: "baz",
+		procDelete{
+			process: process{
+				Key: "baz",
+			},
 		},
 		[]byte(`{"foo":"bar","baz":{"qux":"quux"}}`),
 		[]byte(`{"foo":"bar"}`),
@@ -39,7 +43,10 @@ func TestDelete(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range convertTests {
+	for _, test := range deleteTests {
+		var _ Applier = test.proc
+		var _ Batcher = test.proc
+
 		capsule.SetData(test.test)
 
 		result, err := test.proc.Apply(ctx, capsule)
@@ -53,10 +60,10 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func benchmarkDelete(b *testing.B, applicator Delete, test config.Capsule) {
+func benchmarkDelete(b *testing.B, applier procDelete, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.Apply(ctx, test)
+		_, _ = applier.Apply(ctx, test)
 	}
 }
 

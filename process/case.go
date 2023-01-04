@@ -8,89 +8,64 @@ import (
 
 	"github.com/iancoleman/strcase"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errCaseInvalid is returned when the Case processor is configured with an invalid case.
+// errCaseInvalid is returned when the Case processor is configured with
+// an invalid case.
 const errCaseInvalid = errors.Error("invalid case")
 
-/*
-Case processes data by changing the case of a string or byte slice. The processor supports these patterns:
-
-	JSON:
-		{"case":"foo"} >>> {"case":"FOO"}
-	data:
-		foo >>> FOO
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "case",
-		"settings": {
-			"options": {
-				"case": "upper"
-			},
-			"input_key": "case",
-			"output_key": "case"
-		}
-	}
-*/
-type Case struct {
-	Options   CaseOptions      `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+// case processes data by modifying letter case (https://en.wikipedia.org/wiki/LetterprocCase).
+//
+// This processor supports the data and object handling patterns.
+type procCase struct {
+	process
+	Options procCaseOptions `json:"options"`
 }
 
-/*
-CaseOptions contains custom options for the Case processor:
-
-	Case:
-		case to convert the string or byte to
-		must be one of:
-			upper
-			lower
-			snake (strings only)
-*/
-type CaseOptions struct {
-	Case string `json:"case"`
+type procCaseOptions struct {
+	// Type is the case formatting that is applied.
+	//
+	// Must be one of:
+	//
+	// - upper
+	//
+	// - lower
+	//
+	// - snake
+	Type string `json:"type"`
 }
 
-// Close closes resources opened by the Case processor.
-func (p Case) Close(context.Context) error {
+// String returns the processor settings as an object.
+func (p procCase) String() string {
+	return toString(p)
+}
+
+// Closes resources opened by the processor.
+func (p procCase) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Case processor. Conditions are optionally applied to the data to enable processing.
-func (p Case) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process case: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
-	if err != nil {
-		return nil, fmt.Errorf("process case: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procCase) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return batchApply(ctx, capsules, p, p.Condition)
 }
 
-// Apply processes encapsulated data with the Case processor.
-func (p Case) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p procCase) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
-	if p.Options.Case == "" {
-		return capsule, fmt.Errorf("process case: options %+v: %v", p.Options, errMissingRequiredOptions)
+	if p.Options.Type == "" {
+		return capsule, fmt.Errorf("process: case: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// JSON processing
-	if p.InputKey != "" && p.OutputKey != "" {
-		result := capsule.Get(p.InputKey).String()
+	if p.Key != "" && p.SetKey != "" {
+		result := capsule.Get(p.Key).String()
 
 		var value string
-		switch p.Options.Case {
+		switch p.Options.Type {
 		case "upper":
 			value = strings.ToUpper(result)
 		case "lower":
@@ -98,31 +73,31 @@ func (p Case) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 		case "snake":
 			value = strcase.ToSnake(result)
 		default:
-			return capsule, fmt.Errorf("process case: case %s: %v", p.Options.Case, errCaseInvalid)
+			return capsule, fmt.Errorf("process: case: case %s: %v", p.Options.Type, errCaseInvalid)
 		}
 
-		if err := capsule.Set(p.OutputKey, value); err != nil {
-			return capsule, fmt.Errorf("process case: %v", err)
+		if err := capsule.Set(p.SetKey, value); err != nil {
+			return capsule, fmt.Errorf("process: case: %v", err)
 		}
 
 		return capsule, nil
 	}
 
 	// data processing
-	if p.InputKey == "" && p.OutputKey == "" {
+	if p.Key == "" && p.SetKey == "" {
 		var value []byte
-		switch p.Options.Case {
+		switch p.Options.Type {
 		case "upper":
 			value = bytes.ToUpper(capsule.Data())
 		case "lower":
 			value = bytes.ToLower(capsule.Data())
 		default:
-			return capsule, fmt.Errorf("process case: case %s: %v", p.Options.Case, errCaseInvalid)
+			return capsule, fmt.Errorf("process: case: case %s: %v", p.Options.Type, errCaseInvalid)
 		}
 
 		capsule.SetData(value)
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process case: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: case: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }

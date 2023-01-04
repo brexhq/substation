@@ -10,14 +10,14 @@ import (
 
 var countTests = []struct {
 	name     string
-	proc     Count
+	proc     procCount
 	test     [][]byte
 	expected []byte
 	err      error
 }{
 	{
 		"count",
-		Count{},
+		procCount{},
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
 			[]byte(`{"foo":"baz"}`),
@@ -33,13 +33,15 @@ func TestCount(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range countTests {
+		var _ Batcher = test.proc
+
 		var capsules []config.Capsule
 		for _, t := range test.test {
 			capsule.SetData(t)
 			capsules = append(capsules, capsule)
 		}
 
-		result, err := test.proc.ApplyBatch(ctx, capsules)
+		result, err := test.proc.Batch(ctx, capsules...)
 		if err != nil {
 			t.Error(err)
 		}
@@ -51,10 +53,10 @@ func TestCount(t *testing.T) {
 	}
 }
 
-func benchmarkCount(b *testing.B, applicator Count, capsules []config.Capsule) {
+func benchmarkCount(b *testing.B, applier procCount, capsules []config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = applicator.ApplyBatch(ctx, capsules)
+		_, _ = applier.Batch(ctx, capsules...)
 	}
 }
 

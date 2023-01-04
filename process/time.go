@@ -7,114 +7,91 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
 
-/*
-Time processes data by converting time values between formats. The processor supports these patterns:
-
-	JSON:
-		{"time":1639877490.061} >>> {"time":"2021-12-19T01:31:30.061000Z"}
-	data:
-		1639877490.061 >>> 2021-12-19T01:31:30.061000Z
-
-When loaded with a factory, the processor uses this JSON configuration:
-
-	{
-		"type": "time",
-		"settings": {
-			"options": {
-				"input_format": "unix",
-				"output_format": "2006-01-02T15:04:05.000000Z"
-			},
-			"input_key": "time",
-			"output_key": "time"
-		}
-	}
-*/
-type Time struct {
-	Options   TimeOptions      `json:"options"`
-	Condition condition.Config `json:"condition"`
-	InputKey  string           `json:"input_key"`
-	OutputKey string           `json:"output_key"`
+// time processes data by converting time values between formats.
+//
+// This processor supports the data and object handling patterns.
+type procTime struct {
+	process
+	Options procTimeOptions `json:"options"`
 }
 
-/*
-TimeOptions contains custom options for the Time processor:
-
-	InputFormat:
-		time format of the input
-		must be one of:
-			pattern-based layouts (https://gobyexample.com/time-formatting-parsing)
-			unix: epoch (supports fractions of a second)
-			unix_milli: epoch milliseconds
-			now: current time
-	OutputFormat:
-		time format of the output
-		must be one of:
-			pattern-based layouts (https://gobyexample.com/time-formatting-parsing)
-			unix: epoch
-			unix_milli: epoch milliseconds
-	InputLocation (optional):
-		time zone abbreviation for the input
-		defaults to UTC
-	OutputLocation (optional):
-		time zone abbreviation for the output
-		defaults to UTC
-*/
-type TimeOptions struct {
-	InputFormat    string `json:"input_format"`
-	OutputFormat   string `json:"output_format"`
-	InputLocation  string `json:"input_location"`
-	OutputLocation string `json:"output_location"`
+type procTimeOptions struct {
+	// Format is the time format of the data.
+	//
+	// Must be one of:
+	//
+	// - pattern-based layouts (https://gobyexample.com/procTime-formatting-parsing)
+	//
+	// - unix: epoch (supports fractions of a second)
+	//
+	// - unix_milli: epoch milliseconds
+	//
+	// - now: current time
+	Format string `json:"format"`
+	// Location is the timezone abbreviation of the data.
+	//
+	// This is optional and defaults to UTC.
+	Location string `json:"location"`
+	// SetFormat is the time format of the processed data.
+	//
+	// Must be one of:
+	//
+	// - pattern-based layouts (https://gobyexample.com/procTime-formatting-parsing)
+	//
+	// - unix: epoch (supports fractions of a second)
+	//
+	// - unix_milli: epoch milliseconds
+	SetFormat string `json:"set_format"`
+	// SetLocation is the timezone abbreviation of the processed data.
+	//
+	// This is optional and defaults to UTC.
+	SetLocation string `json:"set_location"`
 }
 
-// Close closes resources opened by the Time processor.
-func (p Time) Close(context.Context) error {
+// String returns the processor settings as an object.
+func (p procTime) String() string {
+	return toString(p)
+}
+
+// Closes resources opened by the processor.
+func (p procTime) Close(context.Context) error {
 	return nil
 }
 
-// ApplyBatch processes a slice of encapsulated data with the Time processor. Conditions are optionally applied to the data to enable processing.
-func (p Time) ApplyBatch(ctx context.Context, capsules []config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.OperatorFactory(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process time: %v", err)
-	}
-
-	capsules, err = conditionallyApplyBatch(ctx, capsules, op, p)
-	if err != nil {
-		return nil, fmt.Errorf("process time: %v", err)
-	}
-
-	return capsules, nil
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procTime) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return batchApply(ctx, capsules, p, p.Condition)
 }
 
-// Apply processes encapsulated data with the Time processor.
-func (p Time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+// Apply processes a capsule with the processor.
+func (p procTime) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
-	if p.Options.InputFormat == "" || p.Options.OutputFormat == "" {
-		return capsule, fmt.Errorf("process time: options %+v: %v", p.Options, errMissingRequiredOptions)
+	if p.Options.Format == "" || p.Options.SetFormat == "" {
+		return capsule, fmt.Errorf("process: time: options %+v: %v", p.Options, errMissingRequiredOptions)
 	}
 
 	// "now" processing, supports json and data
-	if p.Options.InputFormat == "now" {
+	if p.Options.Format == "now" {
 		ts := time.Now()
 
 		var value interface{}
-		switch p.Options.OutputFormat {
+		switch p.Options.SetFormat {
 		case "unix":
 			value = ts.Unix()
 		case "unix_milli":
 			value = ts.UnixMilli()
 		default:
-			value = ts.Format(p.Options.OutputFormat)
+			value = ts.Format(p.Options.SetFormat)
 		}
 
-		if p.OutputKey != "" {
-			if err := capsule.Set(p.OutputKey, value); err != nil {
-				return capsule, fmt.Errorf("process time: %v", err)
+		if p.SetKey != "" {
+			if err := capsule.Set(p.SetKey, value); err != nil {
+				return capsule, fmt.Errorf("process: time: %v", err)
 			}
 
 			return capsule, nil
@@ -131,37 +108,37 @@ func (p Time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 	}
 
 	// json processing
-	if p.InputKey != "" && p.OutputKey != "" {
-		result := capsule.Get(p.InputKey)
+	if p.Key != "" && p.SetKey != "" {
+		result := capsule.Get(p.Key)
 
-		// return input, otherwise time defaults to 1970
+		// return input, otherwise procTime defaults to 1970
 		if result.Type.String() == "Null" {
 			return capsule, nil
 		}
 
-		value, err := p.time(result)
+		value, err := p.procTime(result)
 		if err != nil {
-			return capsule, fmt.Errorf("process time: %v", err)
+			return capsule, fmt.Errorf("process: time: %v", err)
 		}
 
-		if err := capsule.Set(p.OutputKey, value); err != nil {
-			return capsule, fmt.Errorf("process time: %v", err)
+		if err := capsule.Set(p.SetKey, value); err != nil {
+			return capsule, fmt.Errorf("process: time: %v", err)
 		}
 
 		return capsule, nil
 	}
 
 	// data processing
-	if p.InputKey == "" && p.OutputKey == "" {
+	if p.Key == "" && p.SetKey == "" {
 		tmp, err := json.Set([]byte{}, "tmp", capsule.Data())
 		if err != nil {
-			return capsule, fmt.Errorf("process time: %v", err)
+			return capsule, fmt.Errorf("process: time: %v", err)
 		}
 
 		res := json.Get(tmp, "tmp")
-		value, err := p.time(res)
+		value, err := p.procTime(res)
 		if err != nil {
-			return capsule, fmt.Errorf("process time: %v", err)
+			return capsule, fmt.Errorf("process: time: %v", err)
 		}
 
 		switch v := value.(type) {
@@ -174,12 +151,12 @@ func (p Time) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule
 		return capsule, nil
 	}
 
-	return capsule, fmt.Errorf("process time: inputkey %s outputkey %s: %v", p.InputKey, p.OutputKey, errInvalidDataPattern)
+	return capsule, fmt.Errorf("process: time: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 }
 
-func (p Time) time(result json.Result) (interface{}, error) {
+func (p procTime) procTime(result json.Result) (interface{}, error) {
 	var timeDate time.Time
-	switch p.Options.InputFormat {
+	switch p.Options.Format {
 	case "unix":
 		secs := math.Floor(result.Float())
 		nanos := math.Round((result.Float() - secs) * 1000000000)
@@ -188,41 +165,41 @@ func (p Time) time(result json.Result) (interface{}, error) {
 		secs := math.Floor(result.Float())
 		timeDate = time.Unix(0, int64(secs)*1000000)
 	default:
-		if p.Options.InputLocation != "" {
-			loc, err := time.LoadLocation(p.Options.InputLocation)
+		if p.Options.Location != "" {
+			loc, err := time.LoadLocation(p.Options.Location)
 			if err != nil {
-				return nil, fmt.Errorf("process time: location %s: %v", p.Options.InputLocation, err)
+				return nil, fmt.Errorf("process: time: location %s: %v", p.Options.Location, err)
 			}
 
-			timeDate, err = time.ParseInLocation(p.Options.InputFormat, result.String(), loc)
+			timeDate, err = time.ParseInLocation(p.Options.Format, result.String(), loc)
 			if err != nil {
-				return nil, fmt.Errorf("process time parse: format %s location %s: %v", p.Options.InputFormat, p.Options.InputLocation, err)
+				return nil, fmt.Errorf("process: time parse: format %s location %s: %v", p.Options.Format, p.Options.Location, err)
 			}
 		} else {
 			var err error
-			timeDate, err = time.Parse(p.Options.InputFormat, result.String())
+			timeDate, err = time.Parse(p.Options.Format, result.String())
 			if err != nil {
-				return nil, fmt.Errorf("process time parse: format %s: %v", p.Options.InputFormat, err)
+				return nil, fmt.Errorf("process: time parse: format %s: %v", p.Options.Format, err)
 			}
 		}
 	}
 
 	timeDate = timeDate.UTC()
-	if p.Options.OutputLocation != "" {
-		loc, err := time.LoadLocation(p.Options.OutputLocation)
+	if p.Options.SetLocation != "" {
+		loc, err := time.LoadLocation(p.Options.SetLocation)
 		if err != nil {
-			return nil, fmt.Errorf("process time: location %s: %v", p.Options.OutputLocation, err)
+			return nil, fmt.Errorf("process: time: location %s: %v", p.Options.SetLocation, err)
 		}
 
 		timeDate = timeDate.In(loc)
 	}
 
-	switch p.Options.OutputFormat {
+	switch p.Options.SetFormat {
 	case "unix":
 		return timeDate.Unix(), nil
 	case "unix_milli":
 		return timeDate.UnixMilli(), nil
 	default:
-		return timeDate.Format(p.Options.OutputFormat), nil
+		return timeDate.Format(p.Options.SetFormat), nil
 	}
 }

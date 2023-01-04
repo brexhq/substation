@@ -12,19 +12,16 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-/*
-Random evaluates data based on a random choice. This inspector uses the standard library's rand package. This is best paired with the drop processor and can be used to integration test new configurations and deployments.
+// random evaluates data based on a random choice using the standard library's rand package.
+//
+// This inspector supports the data and object handling patterns.
+type inspRandom struct{}
 
-When loaded with a factory, the inspector uses this JSON configuration:
+func (c inspRandom) String() string {
+	return toString(c)
+}
 
-	{
-		"type": "random"
-	}
-*/
-type Random struct{}
-
-// Inspect evaluates encapsulated data with the Random inspector.
-func (c Random) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
-	matched := rand.Intn(2) == 1
-	return matched, nil
+// Inspect evaluates encapsulated data with the random inspector.
+func (c inspRandom) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+	return rand.Intn(2) == 1, nil
 }

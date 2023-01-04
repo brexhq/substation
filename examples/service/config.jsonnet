@@ -1,7 +1,7 @@
-local sinklib = import '../../build/config/sink.libsonnet';
+local sub = import '../../build/config/substation.libsonnet';
 
 {
-  sink: sinklib.grpc(server='localhost:50051'),
+  sink: sub.interfaces.sink.grpc(settings={server:'localhost:50051'}),
   transform: {
     type: 'transfer',
   },

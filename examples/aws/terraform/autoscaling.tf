@@ -11,7 +11,7 @@ resource "aws_sns_topic" "autoscaling_topic" {
 
 # first runs of this Terraform will fail due to an empty ECR image
 module "lambda_autoscaling" {
-  source        = "/workspaces/substation/build/terraform/aws/lambda"
+  source        = "../../../build/terraform/aws/lambda"
   function_name = "substation_autoscaling"
   description   = "Autoscales Kinesis streams based on data volume and size"
   appconfig_id  = aws_appconfig_application.substation.id
@@ -54,12 +54,12 @@ resource "aws_lambda_permission" "autoscaling_invoke" {
 # required for updating shard counts on Kinesis streams
 # resources can be isolated, but defaults to all streams
 module "autoscaling_kinesis_modify" {
-  source    = "/workspaces/substation/build/terraform/aws/iam"
+  source    = "../../../build/terraform/aws/iam"
   resources = ["*"]
 }
 
 module "autoscaling_kinesis_modify_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "substation_autoscaling_kinesis_modify_attachment"
   policy = module.autoscaling_kinesis_modify.kinesis_modify_policy
   roles = [
@@ -70,12 +70,12 @@ module "autoscaling_kinesis_modify_attachment" {
 # required for reading active shard counts for Kinesis streams
 # resources can be isolated, but defaults to all streams
 module "autoscaling_kinesis_read" {
-  source    = "/workspaces/substation/build/terraform/aws/iam"
+  source    = "../../../build/terraform/aws/iam"
   resources = ["*"]
 }
 
 module "autoscaling_kinesis_read_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "substation_autoscaling_kinesis_read_attachment"
   policy = module.autoscaling_kinesis_read.kinesis_read_policy
   roles = [
@@ -86,12 +86,12 @@ module "autoscaling_kinesis_read_attachment" {
 # required for resetting CloudWatch alarm states
 # resources can be isolated, but defaults to all streams
 module "autoscaling_cloudwatch_modify" {
-  source    = "/workspaces/substation/build/terraform/aws/iam"
+  source    = "../../../build/terraform/aws/iam"
   resources = ["*"]
 }
 
 module "autoscaling_cloudwatch_modify_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "substation_autoscaling_cloudwatch_modify_attachment"
   policy = module.autoscaling_cloudwatch_modify.cloudwatch_modify_policy
   roles = [
@@ -102,12 +102,12 @@ module "autoscaling_cloudwatch_modify_attachment" {
 # required for updating CloudWatch alarm variables
 # resources can be isolated, but defaults to all streams
 module "autoscaling_cloudwatch_write" {
-  source    = "/workspaces/substation/build/terraform/aws/iam"
+  source    = "../../../build/terraform/aws/iam"
   resources = ["*"]
 }
 
 module "autoscaling_cloudwatch_write_attachment" {
-  source = "/workspaces/substation/build/terraform/aws/iam_attachment"
+  source = "../../../build/terraform/aws/iam_attachment"
   id     = "substation_autoscaling_cloudwatch_write_attachment"
   policy = module.autoscaling_cloudwatch_write.cloudwatch_write_policy
   roles = [

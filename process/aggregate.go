@@ -51,7 +51,7 @@ type procAggregateOptions struct {
 	// buffer before emitting aggregated data.
 	//
 	// This is optional and defaults to 1000 items.
-	MaxCount int `json:"maxprocCount"`
+	MaxCount int `json:"max_count"`
 	// MaxSize determines the maximum size (in bytes) of items stored
 	// in the buffer before emitting aggregated data.
 	//

@@ -21,7 +21,7 @@ type procPipeline struct {
 
 type procPipelineOptions struct {
 	// Processors applied in series to the data.
-	Processors []config.Config
+	Processors []config.Config `json:"processors"`
 }
 
 // String returns the processor settings as an object.

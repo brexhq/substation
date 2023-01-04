@@ -22,7 +22,7 @@ type procForEach struct {
 
 type procForEachOptions struct {
 	// Processor applied to each element in the object array.
-	Processor config.Config
+	Processor config.Config `json:"processor"`
 }
 
 // String returns the processor settings as an object.

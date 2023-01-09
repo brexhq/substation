@@ -34,6 +34,23 @@
         settings: { database: null, language: 'en' },
       },
     },
+    kv_store: {
+      aws_dynamodb: {
+        settings: { table: null, attributes: { partition_key: null, value: null, ttl: null } },
+      },
+      csv_file: {
+        settings: { file: null, column: null, delimiter: ',', header: null },
+      },
+      json_file: {
+        settings: { file: null },
+      },
+      memory: {
+        settings: { capacity: 1024 },
+      },
+      text_file: {
+        settings: { file: null },
+      },
+    },
     processor: {
       aggregate: {
         options: { key: null, separator: null, max_count: 1000, max_size: 10000 },
@@ -83,6 +100,9 @@
       join: {
         options: { separator: null },
       },
+      kv_store: {
+        options: { type: null, prefix: null, offset_ttl: null, kv_options: null },
+      },
       math: {
         options: { operation: null },
       },
@@ -105,10 +125,10 @@
     },
     sink: {
       aws_dynamodb: {
-        settings: { table: null, key: null }
+        settings: { table: null, key: null },
       },
       aws_kinesis: {
-        settings: { stream: null, partition: null, partition_key: null, shard_redistribution: false }
+        settings: { stream: null, partition: null, partition_key: null, shard_redistribution: false },
       },
       aws_kinesis_firehose: {
         settings: { stream: null },
@@ -117,10 +137,10 @@
         settings: { bucket: null, prefix: null, prefix_key: null },
       },
       aws_sqs: {
-        settings: { queue: null }
+        settings: { queue: null },
       },
       grpc: {
-        settings:{ server: null, timeout: null, certificate: null },
+        settings: { server: null, timeout: null, certificate: null },
       },
       http: {
         settings: { url: null, headers: null, headers_key: null },
@@ -414,6 +434,14 @@
         type: 'join',
         settings: std.mergePatch({ options: opt }, s),
       },
+      kv_store(options=$.defaults.processor.kv_store.options,
+               settings=$.interfaces.processor.settings): {
+        local opt = std.mergePatch($.defaults.processor.kv_store.options, options),
+        local s = std.mergePatch($.interfaces.processor.settings, settings),
+
+        type: 'kv_store',
+        settings: std.mergePatch({ options: opt }, s),
+      },
       math(options=$.defaults.processor.math.options,
            settings=$.interfaces.processor.settings): {
         local opt = std.mergePatch($.defaults.processor.math.options, options),
@@ -514,6 +542,39 @@
         local s = std.mergePatch($.defaults.sink.sumologic.settings, settings),
 
         type: 'sumologic',
+        settings: s,
+      },
+    },
+    // mirrors interfaces from the internal/kv_store package
+    kv_store: {
+      aws_dynamodb(settings=$.defaults.kv_store.aws_dynamodb.settings): {
+        local s = std.mergePatch($.defaults.kv_store.aws_dynamodb.settings, settings),
+
+        type: 'aws_dynamodb',
+        settings: s,
+      },
+      csv_file(settings=$.defaults.kv_store.csv_file.settings): {
+        local s = std.mergePatch($.defaults.kv_store.csv_file.settings, settings),
+
+        type: 'csv_file',
+        settings: s,
+      },
+      json_file(settings=$.defaults.kv_store.json_file.settings): {
+        local s = std.mergePatch($.defaults.kv_store.json_file.settings, settings),
+
+        type: 'json_file',
+        settings: s,
+      },
+      memory(settings=$.defaults.kv_store.memory.settings): {
+        local s = std.mergePatch($.defaults.kv_store.memory.settings, settings),
+
+        type: 'memory',
+        settings: s,
+      },
+      text_file(settings=$.defaults.kv_store.text_file.settings): {
+        local s = std.mergePatch($.defaults.kv_store.text_file.settings, settings),
+
+        type: 'text_file',
         settings: s,
       },
     },
@@ -638,17 +699,17 @@
           // this works by copying the object into a metadata key, replacing the
           // object with empty data, then copying the metadata key into the
           // object.
-          options={processors:
-          if key == '@this'
-          then [
-            $.interfaces.processor.copy(settings={ set_key: '!metadata move' }),
-            $.interfaces.processor.copy(settings={ key: '!metadata __null' }),
-            $.interfaces.processor.copy(settings={ key: '!metadata move', set_key: set_key }),
-          ]
-          else [
-            $.interfaces.processor.copy(settings={ key: key, set_key: set_key }),
-            $.interfaces.processor.delete(settings={ key: key }),
-          ]},
+          options={ processors:
+            if key == '@this'
+            then [
+              $.interfaces.processor.copy(settings={ set_key: '!metadata move' }),
+              $.interfaces.processor.copy(settings={ key: '!metadata __null' }),
+              $.interfaces.processor.copy(settings={ key: '!metadata move', set_key: set_key }),
+            ]
+            else [
+              $.interfaces.processor.copy(settings={ key: key, set_key: set_key }),
+              $.interfaces.processor.delete(settings={ key: key }),
+            ] },
           settings={ condition: condition },
         ),
       },
@@ -669,70 +730,72 @@
           local opts = $.interfaces.processor.copy,
 
           processor: $.interfaces.processor.pipeline(
-            options={processors:[
-            $.interfaces.processor.copy(settings={ key: key, set_key: $.helpers.key.append_array(set_key) })
-            for key in keys
-          ]}, settings={ condition: condition }),
+            options={ processors: [
+              $.interfaces.processor.copy(settings={ key: key, set_key: $.helpers.key.append_array(set_key) })
+              for key in keys
+            ] }, settings={ condition: condition }
+          ),
         },
       },
       dns: {
         // queries the Team Cymru Malware Hash Registry (https://www.team-cymru.com/mhr).
         //
         // MHR enriches hash data with a summary of results from anti-virus engines.
-        // this patterns will cause significant latency in a data pipeline and should
-        // be used in combination with a caching deployment patterns
+        // this pattern will cause significant latency in a data pipeline and should
+        // be used in combination with a caching deployment patterns.
         query_team_cymru_mhr(key, set_key='!metadata dns.query_team_cymru_mhr', condition=null): {
           local mhr_query = '!metadata query_team_cymru_mhr',
           local mhr_response = '!metadata response_team_cymru_mhr',
 
           processor: $.interfaces.processor.pipeline(
-            options={processors:[
-            // creates the MHR query domain by concatenating the key with the MHR service domain
-            $.interfaces.processor.copy(
-              settings={ key: key, set_key: $.helpers.key.append_array(mhr_query) }
-            ),
-            $.interfaces.processor.insert(
-              options={ value: 'hash.cymru.com' },
-              settings={ set_key: $.helpers.key.append_array(mhr_query) }
-            ),
-            $.interfaces.processor.join(
-              options={ separator: '.' },
-              settings={ key: mhr_query, set_key: mhr_query }
-            ),
-            // performs MHR query and parses returned value `["epoch" "hits"]` into object `{"team_cymru":{"epoch":"", "hits":""}}`
-            $.interfaces.processor.dns(
-              options={ type: 'query_txt' },
-              settings={ key: mhr_query, set_key: mhr_response }
-            ),
-            $.interfaces.processor.split(
-              options={ separator: ' ' },
-              settings={ key: $.helpers.key.get_element(mhr_response, 0), set_key: mhr_response }
-            ),
-            $.interfaces.processor.copy(
-              settings={ key: $.helpers.key.get_element(mhr_response, 0), set_key: $.helpers.key.append(set_key, 'epoch') }
-            ),
-            $.interfaces.processor.copy(
-              settings={ key: $.helpers.key.get_element(mhr_response, 1), set_key: $.helpers.key.append(set_key, 'hits') }
-            ),
-            // converts values from strings to integers
-            $.interfaces.processor.convert(
-              options={ type: 'int' },
-              settings={
-                key: $.helpers.key.append(set_key, 'epoch'),
-                set_key: $.helpers.key.append(set_key, 'epoch'),
-              }
-            ),
-            $.interfaces.processor.convert(
-              options={ type: 'int' },
-              settings={
-                key: $.helpers.key.append(set_key, 'hits'),
-                set_key: $.helpers.key.append(set_key, 'hits'),
-              }
-            ),
-            // delete remaining keys
-            $.interfaces.processor.delete(settings={ key: mhr_query }),
-            $.interfaces.processor.delete(settings={ key: mhr_response }),
-          ]}, settings={ condition: condition }),
+            options={ processors: [
+              // creates the MHR query domain by concatenating the key with the MHR service domain
+              $.interfaces.processor.copy(
+                settings={ key: key, set_key: $.helpers.key.append_array(mhr_query) }
+              ),
+              $.interfaces.processor.insert(
+                options={ value: 'hash.cymru.com' },
+                settings={ set_key: $.helpers.key.append_array(mhr_query) }
+              ),
+              $.interfaces.processor.join(
+                options={ separator: '.' },
+                settings={ key: mhr_query, set_key: mhr_query }
+              ),
+              // performs MHR query and parses returned value `["epoch" "hits"]` into object `{"team_cymru":{"epoch":"", "hits":""}}`
+              $.interfaces.processor.dns(
+                options={ type: 'query_txt' },
+                settings={ key: mhr_query, set_key: mhr_response }
+              ),
+              $.interfaces.processor.split(
+                options={ separator: ' ' },
+                settings={ key: $.helpers.key.get_element(mhr_response, 0), set_key: mhr_response }
+              ),
+              $.interfaces.processor.copy(
+                settings={ key: $.helpers.key.get_element(mhr_response, 0), set_key: $.helpers.key.append(set_key, 'epoch') }
+              ),
+              $.interfaces.processor.copy(
+                settings={ key: $.helpers.key.get_element(mhr_response, 1), set_key: $.helpers.key.append(set_key, 'hits') }
+              ),
+              // converts values from strings to integers
+              $.interfaces.processor.convert(
+                options={ type: 'int' },
+                settings={
+                  key: $.helpers.key.append(set_key, 'epoch'),
+                  set_key: $.helpers.key.append(set_key, 'epoch'),
+                }
+              ),
+              $.interfaces.processor.convert(
+                options={ type: 'int' },
+                settings={
+                  key: $.helpers.key.append(set_key, 'hits'),
+                  set_key: $.helpers.key.append(set_key, 'hits'),
+                }
+              ),
+              // delete remaining keys
+              $.interfaces.processor.delete(settings={ key: mhr_query }),
+              $.interfaces.processor.delete(settings={ key: mhr_response }),
+            ] }, settings={ condition: condition }
+          ),
         },
       },
       drop: {
@@ -770,10 +833,10 @@
             // if data is not plaintext, then decode and hash it
             $.interfaces.processor.pipeline(
               options={ processors: [
-              $.interfaces.processor.base64(options={ direction: 'from' }),
-              $.interfaces.processor.hash(hash_opts),
-            ] }, 
-            settings={ key: key, set_key: set_key, condition: $.interfaces.operator.none([is_plaintext]) }
+                $.interfaces.processor.base64(options={ direction: 'from' }),
+                $.interfaces.processor.hash(hash_opts),
+              ] },
+              settings={ key: key, set_key: set_key, condition: $.interfaces.operator.none([is_plaintext]) }
             ),
             // delete copied data
             $.interfaces.processor.delete(settings={ key: key }),
@@ -792,6 +855,194 @@
             options,
             settings={ key: key, set_key: set_key, condition: c }
           ),
+        },
+      },
+      kv_store: {
+        // implements a cache-aside pattern using the KV store processor:
+        // - perform a get against the KV store
+        // - if the get succeeds, then the value is put into set_key
+        // - if the get fails, then the processor runs, the value is put into set_key, 
+        // and the value is put into the KV store
+        // 
+        // this pattern uses the KV store processor's prefix option to automatically
+        // organize keys in the store. by default the prefix is the value of set_key.
+        // if the processor produces no output (null), then a static value is put into
+        // the KV store that indicates the source processor and the result (e.g., 
+        // 'dns:null').
+        // 
+        // the resulting KV store action (get or set) is stored in the key
+        // '!metadata kv_store.activity'. activity use this schema:
+        // 'kv_store:[action]:[set_key]'. for example: if the value retrieved from the 
+        // store was set into the key 'server.domain', then the result is 
+        // 'kv_store:get:server.domain'. if the same key were used in a set action, 
+        // then the result is 'kv_store:set:server.domain'. this can be used as metadata
+        // to inform users which values were retrieved and put into the KV store.
+        // 
+        // learn more about the cache-aside pattern here: 
+        // https://docs.aws.amazon.com/whitepapers/latest/database-caching-strategies-using-redis/caching-patterns.html.
+        cache_aside(processor, kv_options, offset_ttl=0, prefix=null, keep_kv_open=true): {
+          local key = processor.settings.key,
+          local set_key = processor.settings.set_key,
+          local pfix = if prefix != null then prefix else set_key,
+          local c = if std.objectHas(processor.settings, 'condition') then processor.settings.condition else null,
+
+          // these keys are deleted when the pattern exits
+          local _path = '!metadata kv_store.cache_aside',
+          local _store_key = '!metadata kv_store.cache_aside.value',
+          local _processor_flag = '!metadata kv_store.cache_aside.insp.processor_flag',
+          local _null_flag = '!metadata kv_store.cache_aside.insp.null_flag',
+          local _kv_store_activity = '!metadata _kv_store.cache_aside.activity',
+
+          // this key persists after the pattern exits
+          // activity from every KV store can be retained by copying this key into the 
+          // capsule's data
+          local kv_store_activity = '!metadata kv_store.activity',
+
+          local kv_hit = $.interfaces.operator.all([
+            $.patterns.inspector.length.gt_zero(key=_store_key)
+          ]),
+          local kv_miss = $.interfaces.operator.all([
+            $.patterns.inspector.length.eq_zero(key=_store_key)
+          ]),
+
+          // if there was no result from the KV store and the processor flag is bool 
+          // true, then the processor runs
+          local run_processor = $.interfaces.operator.all([
+            $.patterns.inspector.length.eq_zero(key=_store_key),
+            $.patterns.inspector.length.gt_zero(key=_processor_flag),
+            $.patterns.inspector.length.eq_zero(key=_store_key),
+          ]),
+
+          // if the processor ran and the result is null, then a static value is
+          // crearted for putting into the KV store
+          local processor_returned_null = $.interfaces.operator.all([
+            $.patterns.inspector.length.gt_zero(key=_processor_flag),
+            $.patterns.inspector.length.eq_zero(key=set_key),
+          ]),
+          local insert_static_val = $.interfaces.operator.all([
+            $.patterns.inspector.length.gt_zero(key=_null_flag),
+          ]),
+
+          processor:
+            [
+              // flag determines if the processor should run based on its condition
+              $.interfaces.processor.insert(
+                settings={ set_key: _processor_flag, condition: c },
+                options={ value: true }
+              ),
+              // performs a KV store get using the value from set_key as a prefix
+              // this relies on the condition from the processor
+              $.interfaces.processor.kv_store(
+                settings={ key: key, set_key: _store_key, condition: c, ignore_close: keep_kv_open },
+                options={ type: 'get', prefix: pfix, kv_options: kv_options }
+              ),
+              // if there is a hit in the KV store, then the value is set and tagged
+              $.interfaces.processor.copy(
+                settings={ key: _store_key, set_key: set_key, condition: kv_hit },
+              ),
+              $.interfaces.processor.copy(
+                settings={ key: set_key, set_key: set_key, condition: kv_hit },
+              ),
+              $.interfaces.processor.insert(
+                settings={ set_key: $.helpers.key.append_array(_kv_store_activity), condition: kv_hit },
+                options={ value: 'kv_store:get' }
+              ),
+              $.interfaces.processor.insert(
+                settings={ set_key: $.helpers.key.append_array(_kv_store_activity), condition: kv_hit },
+                options={ value: set_key }
+              ),
+              $.interfaces.processor.join(
+                settings={ key: _kv_store_activity, set_key: $.helpers.key.append_array(kv_store_activity), condition: kv_hit },
+                options={ separator: ':' }
+              ),
+              // if there is a miss and the processor flag is true, then the processor runs
+              $.patterns.processor.replace_condition(processor, condition=run_processor, force=true).processor[0],
+              // if the processor result is null, then a static value is created in its place
+              // the value indicates which processor produced the null value (e.g., 'dns:null')
+              $.interfaces.processor.insert(
+                settings={ set_key: _null_flag, condition: processor_returned_null },
+                options={ value: true }
+              ),
+              $.interfaces.processor.delete(
+                settings={ key: set_key, condition: insert_static_val },
+              ),
+              $.interfaces.processor.insert(
+                settings={ set_key: $.helpers.key.append_array(set_key), condition: insert_static_val },
+                options={ value: processor.type }
+              ),
+              $.interfaces.processor.insert(
+                settings={ set_key: $.helpers.key.append_array(set_key), condition: insert_static_val },
+                options={ value: 'null' }
+              ),
+              $.interfaces.processor.join(
+                settings={ key: set_key, set_key: set_key, condition: insert_static_val },
+                options={ separator: ':' }
+              ),
+              // the resulting value is put into the KV store and tagged
+              $.interfaces.processor.copy(
+                settings={ key: set_key, set_key: set_key, condition: kv_miss },
+              ),
+              $.interfaces.processor.kv_store(
+                settings={ key: processor.settings.set_key, set_key: key, condition: kv_miss, ignore_close: keep_kv_open },
+                options={ type: 'set', prefix: pfix, offset_ttl: offset_ttl, kv_options: kv_options }
+              ),
+              $.interfaces.processor.insert(
+                settings={ set_key: $.helpers.key.append_array(_kv_store_activity), condition: kv_miss },
+                options={ value: 'kv_store:set' }
+              ),
+              $.interfaces.processor.insert(
+                settings={ set_key: $.helpers.key.append_array(_kv_store_activity), condition: kv_miss },
+                options={ value: set_key }
+              ),
+              $.interfaces.processor.join(
+                settings={ key: _kv_store_activity, set_key: $.helpers.key.append_array(kv_store_activity), condition: kv_miss },
+                options={ separator: ':' }
+              ),
+              // temporary keys are cleaned up to prevent collisions with the next pattern
+              $.interfaces.processor.delete(
+                settings={ key: _path }
+              ),
+            ],
+        },
+        // retrieves indicator matches from a Zeek Intelligence Framework file. the file
+        // is put into a read-only key-value store. by default, results are stored in an
+        // array within the capsule's metadata and KV store misses (no indicator match)
+        // are ignored.
+        //
+        // this is compatible with the Zeek Intelligence feeds provided by Critical Path
+        // Security: https://github.com/CriticalPathSecurity/Zeek-Intelligence-Feeds.
+        zeek_intel(
+          key,
+          set_key=$.helpers.key.append_array('!metadata kv_store.zeek_intel'),
+          condition=null,
+          file=null,
+          header='indicator\tindicator_type\tmeta_source\tmeta_do_notice\tmeta_desc',
+        ): {
+          local kv_options = {
+            file: file,
+            column: 'indicator',
+            delimiter: '\t',
+            header: header,
+          },
+
+          local _zeek_intel = '!metadata _kv_store.zeek_intel',
+
+          processor:
+            [
+              $.interfaces.processor.kv_store(
+                settings={ key: key, set_key: _zeek_intel, condition: condition },
+                options={ type: 'get', kv_options: $.interfaces.kv_store.csv_file(kv_options) }
+              ),
+            ] + $.patterns.processor.if_not_empty(
+              $.interfaces.processor.copy(
+                settings={ key: _zeek_intel, set_key: set_key },
+              ),
+              key=_zeek_intel,
+            ).processor + [
+              $.interfaces.processor.delete(
+                settings={ key: _zeek_intel },
+              ),
+            ],
         },
       },
       time: {

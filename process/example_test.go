@@ -313,3 +313,67 @@ func Example_iPDatabase() {
 
 	fmt.Println(string(capsule.Data()))
 }
+
+func Example_kVStore() {
+	capsule := config.NewCapsule()
+	capsule.SetData([]byte(`{"foo":"bar"}`))
+
+	// the value from key "foo" is first set into the KV store and
+	// then retrieved from the KV store and set into key "baz". if
+	// the KV options are identical across processors, then the same
+	// KV store is used in each call. this also allows for the use of
+	// multiple KV stores.
+	cfg := []config.Config{
+		{
+			Type: "kv_store",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "setter",
+				"options": map[string]interface{}{
+					"type": "set",
+					"kv_options": map[string]interface{}{
+						"type": "memory",
+						"settings": map[string]interface{}{
+							"capacitiy": 10,
+						},
+					},
+				},
+			},
+		},
+		{
+			Type: "kv_store",
+			Settings: map[string]interface{}{
+				"key":     "setter",
+				"set_key": "baz",
+				"options": map[string]interface{}{
+					"type": "get",
+					"kv_options": map[string]interface{}{
+						"type": "memory",
+						"settings": map[string]interface{}{
+							"capacitiy": 10,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	appliers, err := process.NewAppliers(cfg...)
+	if err != nil {
+		// handle err
+		panic(err)
+	}
+
+	//nolint: errcheck // errors are ignored in case processing fails in a single applier
+	defer process.CloseAppliers(context.TODO(), appliers...)
+
+	for _, app := range appliers {
+		capsule, err = app.Apply(context.TODO(), capsule)
+		if err != nil {
+			// handle err
+			panic(err)
+		}
+	}
+
+	fmt.Println(string(capsule.Data()))
+}

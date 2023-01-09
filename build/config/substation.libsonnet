@@ -861,24 +861,24 @@
         // implements a cache-aside pattern using the KV store processor:
         // - perform a get against the KV store
         // - if the get succeeds, then the value is put into set_key
-        // - if the get fails, then the processor runs, the value is put into set_key, 
+        // - if the get fails, then the processor runs, the value is put into set_key,
         // and the value is put into the KV store
-        // 
+        //
         // this pattern uses the KV store processor's prefix option to automatically
         // organize keys in the store. by default the prefix is the value of set_key.
         // if the processor produces no output (null), then a static value is put into
-        // the KV store that indicates the source processor and the result (e.g., 
+        // the KV store that indicates the source processor and the result (e.g.,
         // 'dns:null').
-        // 
+        //
         // the resulting KV store action (get or set) is stored in the key
         // '!metadata kv_store.activity'. activity use this schema:
-        // 'kv_store:[action]:[set_key]'. for example: if the value retrieved from the 
-        // store was set into the key 'server.domain', then the result is 
-        // 'kv_store:get:server.domain'. if the same key were used in a set action, 
+        // 'kv_store:[action]:[set_key]'. for example: if the value retrieved from the
+        // store was set into the key 'server.domain', then the result is
+        // 'kv_store:get:server.domain'. if the same key were used in a set action,
         // then the result is 'kv_store:set:server.domain'. this can be used as metadata
         // to inform users which values were retrieved and put into the KV store.
-        // 
-        // learn more about the cache-aside pattern here: 
+        //
+        // learn more about the cache-aside pattern here:
         // https://docs.aws.amazon.com/whitepapers/latest/database-caching-strategies-using-redis/caching-patterns.html.
         cache_aside(processor, kv_options, offset_ttl=0, prefix=null, keep_kv_open=true): {
           local key = processor.settings.key,
@@ -894,18 +894,18 @@
           local _kv_store_activity = '!metadata _kv_store.cache_aside.activity',
 
           // this key persists after the pattern exits
-          // activity from every KV store can be retained by copying this key into the 
+          // activity from every KV store can be retained by copying this key into the
           // capsule's data
           local kv_store_activity = '!metadata kv_store.activity',
 
           local kv_hit = $.interfaces.operator.all([
-            $.patterns.inspector.length.gt_zero(key=_store_key)
+            $.patterns.inspector.length.gt_zero(key=_store_key),
           ]),
           local kv_miss = $.interfaces.operator.all([
-            $.patterns.inspector.length.eq_zero(key=_store_key)
+            $.patterns.inspector.length.eq_zero(key=_store_key),
           ]),
 
-          // if there was no result from the KV store and the processor flag is bool 
+          // if there was no result from the KV store and the processor flag is bool
           // true, then the processor runs
           local run_processor = $.interfaces.operator.all([
             $.patterns.inspector.length.eq_zero(key=_store_key),
@@ -1017,6 +1017,7 @@
           condition=null,
           file=null,
           header='indicator\tindicator_type\tmeta_source\tmeta_do_notice\tmeta_desc',
+          keep_kv_open=true
         ): {
           local kv_options = {
             file: file,
@@ -1030,7 +1031,7 @@
           processor:
             [
               $.interfaces.processor.kv_store(
-                settings={ key: key, set_key: _zeek_intel, condition: condition },
+                settings={ key: key, set_key: _zeek_intel, condition: condition, ignore_close: keep_kv_open },
                 options={ type: 'get', kv_options: $.interfaces.kv_store.csv_file(kv_options) }
               ),
             ] + $.patterns.processor.if_not_empty(

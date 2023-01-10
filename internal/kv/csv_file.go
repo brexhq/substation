@@ -11,8 +11,12 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
 )
+
+// errCSVFileColumnNotFound is returned when the column is not found in the CSV header.
+var errCSVFileColumnNotFound = errors.Error("column not found")
 
 // kvCSVFile is a read-only key-value store that is derived from a CSV file and
 // stored in memory.
@@ -158,6 +162,10 @@ func (store *kvCSVFile) Setup(ctx context.Context) error {
 				}
 
 				key = row[i]
+			}
+
+			if key == "" {
+				return fmt.Errorf("kv: csv_file: %v", errCSVFileColumnNotFound)
 			}
 
 			// the KV store value is the row with the column's value removed

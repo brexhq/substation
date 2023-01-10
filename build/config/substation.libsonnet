@@ -998,19 +998,20 @@
                 settings={ key: _kv_store_activity, set_key: $.helpers.key.append_array(kv_store_activity), condition: kv_miss },
                 options={ separator: ':' }
               ),
-              // temporary keys are cleaned up to prevent collisions with the next pattern
+              // temporary keys are removed to prevent collisions with the next pattern call
               $.interfaces.processor.delete(
                 settings={ key: _path }
               ),
             ],
         },
-        // retrieves indicator matches from a Zeek Intelligence Framework file. the file
-        // is put into a read-only key-value store. by default, results are stored in an
-        // array within the capsule's metadata and KV store misses (no indicator match)
-        // are ignored.
+        // provides indicator matching against a Zeek Intelligence Framework file. the
+        // file is loaded into a read-only key-value store and by default indicator matches
+        // are stored in an array in the capsule's metadata. KV store misses (no indicator
+        // match) are ignored. more information about the Zeek Intelligence Framework
+        // can be found here: https://docs.zeek.org/en/master/frameworks/intel.html.
         //
-        // this is compatible with the Zeek Intelligence feeds provided by Critical Path
-        // Security: https://github.com/CriticalPathSecurity/Zeek-Intelligence-Feeds.
+        // by default this pattern is compatible with the Zeek Intelligence Feeds provided
+        // by Critical Path Security: https://github.com/CriticalPathSecurity/Zeek-Intelligence-Feeds.
         zeek_intel(
           key,
           set_key=$.helpers.key.append_array('!metadata kv_store.zeek_intel'),
@@ -1034,12 +1035,23 @@
                 settings={ key: key, set_key: _zeek_intel, condition: condition, ignore_close: keep_kv_open },
                 options={ type: 'get', kv_options: $.interfaces.kv_store.csv_file(kv_options) }
               ),
-            ] + $.patterns.processor.if_not_empty(
-              $.interfaces.processor.copy(
-                settings={ key: _zeek_intel, set_key: set_key },
+              // if the indicator is matched, then insert the field it matched on and copy to
+              // the set_key. this mimics the schema of the Zeek Intel framework.
+              $.interfaces.processor.pipeline(
+                settings={ condition: $.interfaces.operator.all([
+                  $.patterns.inspector.length.gt_zero(key=_zeek_intel),
+                ]) },
+                options={ processors: [
+                  $.interfaces.processor.insert(
+                    settings={ set_key: $.helpers.key.append(_zeek_intel, 'seen_where') },
+                    options={ value: key }
+                  ),
+                  $.interfaces.processor.copy(
+                    settings={ key: _zeek_intel, set_key: set_key },
+                  ),
+                ] },
               ),
-              key=_zeek_intel,
-            ).processor + [
+              // temporary keys are removed to prevent collisions with the next pattern call
               $.interfaces.processor.delete(
                 settings={ key: _zeek_intel },
               ),

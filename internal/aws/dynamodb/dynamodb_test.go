@@ -11,6 +11,58 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 )
 
+type mockedGetItem struct {
+	dynamodbiface.DynamoDBAPI
+	Resp dynamodb.GetItemOutput
+}
+
+func (m mockedGetItem) GetItemWithContext(ctx aws.Context, input *dynamodb.GetItemInput, opts ...request.Option) (*dynamodb.GetItemOutput, error) {
+	return &m.Resp, nil
+}
+
+func TestGetItem(t *testing.T) {
+	tests := []struct {
+		resp     dynamodb.GetItemOutput
+		expected string
+	}{
+		{
+			resp: dynamodb.GetItemOutput{
+				Item: map[string]*dynamodb.AttributeValue{
+					"foo": {
+						S: aws.String("bar"),
+					},
+				},
+				ConsumedCapacity: &dynamodb.ConsumedCapacity{},
+			},
+			expected: "bar",
+		},
+	}
+
+	ctx := context.TODO()
+
+	for _, test := range tests {
+		a := API{
+			mockedGetItem{Resp: test.resp},
+		}
+
+		m := make(map[string]interface{})
+		resp, err := a.GetItem(ctx, "", m)
+		if err != nil {
+			t.Fatalf("%d, unexpected error", err)
+		}
+
+		var item map[string]interface{}
+		err = dynamodbattribute.UnmarshalMap(resp.Item, &item)
+		if err != nil {
+			t.Fatalf("%v, unexpected error", err)
+		}
+
+		if item["foo"] != test.expected {
+			t.Errorf("expected %+v, got %s", item["foo"], test.expected)
+		}
+	}
+}
+
 type mockedPutItem struct {
 	dynamodbiface.DynamoDBAPI
 	Resp dynamodb.PutItemOutput

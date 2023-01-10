@@ -9,3 +9,9 @@ func (e Error) Error() string { return string(e) }
 
 // ErrInvalidFactoryInput is returned when an unsupported input is referenced in any factory function.
 const ErrInvalidFactoryInput = Error("invalid factory input")
+
+// ErrMissingRequiredOptions is returned when a component does not have the required options to properly run.
+const ErrMissingRequiredOptions = Error("missing required options")
+
+// ErrInvalidType is returned when a component is configured with an invalid type.
+const ErrInvalidType = Error("invalid type")

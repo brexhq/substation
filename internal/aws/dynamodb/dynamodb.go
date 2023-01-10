@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
 )
@@ -101,6 +102,27 @@ func (a *API) Query(ctx aws.Context, table, partitionKey, sortKey, keyConditionE
 		})
 	if err != nil {
 		return nil, fmt.Errorf("query table %s key condition expression %s: %v", table, keyConditionExpression, err)
+	}
+
+	return resp, nil
+}
+
+// GetItem is a convenience wrapper for getting items into a DynamoDB table.
+func (a *API) GetItem(ctx aws.Context, table string, attributes map[string]interface{}) (resp *dynamodb.GetItemOutput, err error) {
+	attr, err := dynamodbattribute.MarshalMap(attributes)
+	if err != nil {
+		return nil, fmt.Errorf("get_item: table %s: %v", table, err)
+	}
+
+	resp, err = a.Client.GetItemWithContext(
+		ctx,
+		&dynamodb.GetItemInput{
+			TableName: aws.String(table),
+			Key:       attr,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("get_item: table %s: %v", table, err)
 	}
 
 	return resp, nil

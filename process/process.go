@@ -129,6 +129,10 @@ func NewApplier(cfg config.Config) (Applier, error) {
 		var p procJoin
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
+	case "kv_store":
+		var p procKVStore
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
 	case "math":
 		var p procMath
 		_ = config.Decode(cfg.Settings, &p)
@@ -217,7 +221,7 @@ type Batcher interface {
 }
 
 // NewBatcher returns a configured Batcher from a processor configuration.
-func NewBatcher(cfg config.Config) (Batcher, error) {
+func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop // ignore cyclomatic complexity
 	switch cfg.Type {
 	case "aggregate":
 		var p procAggregate
@@ -305,6 +309,10 @@ func NewBatcher(cfg config.Config) (Batcher, error) {
 		return p, nil
 	case "join":
 		var p procJoin
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "kv_store":
+		var p procKVStore
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "math":

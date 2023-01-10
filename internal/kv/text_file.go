@@ -57,6 +57,9 @@ func (store *kvTextFile) SetWithTTL(ctx context.Context, key string, val interfa
 
 // IsEnabled returns true if the store is ready for use.
 func (store *kvTextFile) IsEnabled() bool {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
 	return store.items != nil
 }
 

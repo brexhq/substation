@@ -95,6 +95,9 @@ func (store *kvMemory) SetWithTTL(ctx context.Context, key string, val interface
 
 // IsEnabled returns true if the store is ready for use.
 func (store *kvMemory) IsEnabled() bool {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
 	return store.items != nil
 }
 

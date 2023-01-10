@@ -88,6 +88,9 @@ func (store *kvCSVFile) SetWithTTL(ctx context.Context, key string, val interfac
 
 // IsEnabled returns true if the store is ready for use.
 func (store *kvCSVFile) IsEnabled() bool {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
 	return store.items != nil
 }
 

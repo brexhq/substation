@@ -52,6 +52,9 @@ func (store *kvJSONFile) SetWithTTL(ctx context.Context, key string, val interfa
 
 // IsEnabled returns true if the store is ready for use.
 func (store *kvJSONFile) IsEnabled() bool {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
 	return store.object != nil
 }
 

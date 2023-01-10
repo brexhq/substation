@@ -2,30 +2,25 @@ package kv
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
 
 	"github.com/brexhq/substation/internal/file"
+	"github.com/brexhq/substation/internal/json"
 )
+
+// errJSONFileInvalid is returned when the file contains invalid JSON.
+var errJSONFileInvalid = fmt.Errorf("invalid JSON")
 
 // kvJSONFile is a read-only key-value store that is derived from a file containing
 // an object and stored in memory.
-//
-// For example, if the file contains this data:
-//
-//	{"foo":"bar","baz":"qux","quux":"corge"}
-//
-// The store becomes this:
-//
-//	map[foo:bar baz:qux quux:corge]
 type kvJSONFile struct {
 	// File contains the location of the text file. This can be either a path on local
 	// disk, an HTTP(S) URL, or an AWS S3 URL.
-	File  string `json:"file"`
-	mu    sync.Mutex
-	items map[string]interface{}
+	File   string `json:"file"`
+	mu     sync.Mutex
+	object []byte
 }
 
 func (store *kvJSONFile) String() string {
@@ -37,11 +32,12 @@ func (store *kvJSONFile) Get(ctx context.Context, key string) (interface{}, erro
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
-	if val, ok := store.items[key]; ok {
-		return val, nil
+	res := json.Get(store.object, key)
+	if json.Types[res.Type] == "Null" {
+		return nil, nil
 	}
 
-	return nil, nil
+	return res.Value(), nil
 }
 
 // Set is unused because this is a read-only store.
@@ -56,7 +52,7 @@ func (store *kvJSONFile) SetWithTTL(ctx context.Context, key string, val interfa
 
 // IsEnabled returns true if the store is ready for use.
 func (store *kvJSONFile) IsEnabled() bool {
-	return store.items != nil
+	return store.object != nil
 }
 
 // Setup creates the store by reading the text file into memory.
@@ -65,11 +61,9 @@ func (store *kvJSONFile) Setup(ctx context.Context) error {
 	defer store.mu.Unlock()
 
 	// avoids unnecessary setup
-	if store.items != nil {
+	if store.object != nil {
 		return nil
 	}
-
-	store.items = make(map[string]interface{})
 
 	path, err := file.Get(ctx, store.File)
 	defer os.Remove(path)
@@ -82,10 +76,11 @@ func (store *kvJSONFile) Setup(ctx context.Context) error {
 		return fmt.Errorf("kv: json_file: %v", err)
 	}
 
-	if err := json.Unmarshal(buf, &store.items); err != nil {
-		return fmt.Errorf("kv: json_file: %v", err)
+	if !json.Valid(buf) {
+		return fmt.Errorf("kv: json_file: %v", errJSONFileInvalid)
 	}
 
+	store.object = buf
 	return nil
 }
 
@@ -95,10 +90,10 @@ func (store *kvJSONFile) Close() error {
 	defer store.mu.Unlock()
 
 	// avoids unnecessary closing
-	if store.items == nil {
+	if store.object == nil {
 		return nil
 	}
 
-	store.items = nil
+	store.object = nil
 	return nil
 }

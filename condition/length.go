@@ -9,9 +9,6 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errLengthInvalidType is returned when the length inspector is configured with an invalid type.
-const errLengthInvalidType = errors.Error("invalid type")
-
 // length evaluates data using len Types.
 //
 // This inspector supports the data and object handling patterns. If the input is an array, then the number of elements in the array is inspected.
@@ -93,7 +90,7 @@ func (c inspLength) match(length int) (bool, error) {
 			matched = true
 		}
 	default:
-		return false, fmt.Errorf("condition: length: type %s: %v", c.Options.Type, errLengthInvalidType)
+		return false, fmt.Errorf("condition: length: type %s: %v", c.Options.Type, errors.ErrInvalidType)
 	}
 
 	if c.Negate {

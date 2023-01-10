@@ -10,8 +10,6 @@ import (
 	"github.com/brexhq/substation/internal/kv"
 )
 
-const errKVStoreInvalidType = errors.Error("invalid type")
-
 // kvStore processes data by retrieving values from and putting values into
 // key-value (KV) stores.
 //
@@ -137,6 +135,6 @@ func (p procKVStore) Apply(ctx context.Context, capsule config.Capsule) (config.
 
 		return capsule, nil
 	default:
-		return capsule, fmt.Errorf("process: kv_store: %v", errKVStoreInvalidType)
+		return capsule, fmt.Errorf("process: kv_store: %v", errors.ErrInvalidType)
 	}
 }

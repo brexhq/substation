@@ -8,9 +8,6 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errForEachInvalidType is returned when the forEach inspector is configured with an invalid type.
-const errForEachInvalidType = errors.Error("invalid type")
-
 // forEach evaluates conditions by iterating and applying an inspector to each element in a JSON array.
 //
 // This inspector supports the object handling pattern.
@@ -73,7 +70,7 @@ func (c inspForEach) Inspect(ctx context.Context, capsule config.Capsule) (outpu
 	case "none":
 		output = matched == 0
 	default:
-		return false, fmt.Errorf("condition: for_each: type %q: %v", c.Options.Type, errForEachInvalidType)
+		return false, fmt.Errorf("condition: for_each: type %q: %v", c.Options.Type, errors.ErrInvalidType)
 	}
 
 	if c.Negate {

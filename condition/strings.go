@@ -9,9 +9,6 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-// errStringsInvalidType is returned when the strings inspector is configured with an invalid type.
-const errStringsInvalidType = errors.Error("invalid type")
-
 // strings evaluates data using Types from the standard library's strings package.
 //
 // This inspector supports the data and object handling patterns.
@@ -63,7 +60,7 @@ func (c inspStrings) Inspect(ctx context.Context, capsule config.Capsule) (outpu
 	case "ends_with":
 		matched = strings.HasSuffix(check, c.Options.Expression)
 	default:
-		return false, fmt.Errorf("condition: strings: type %s: %v", c.Options.Type, errStringsInvalidType)
+		return false, fmt.Errorf("condition: strings: type %s: %v", c.Options.Type, errors.ErrInvalidType)
 	}
 
 	if c.Negate {

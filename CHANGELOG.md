@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/brexhq/substation/compare/v0.8.0...v0.8.1) (2023-01-10)
+
+
+### Features
+
+* Add Key-Value Store Functionality ([#66](https://github.com/brexhq/substation/issues/66)) ([39b88c9](https://github.com/brexhq/substation/commit/39b88c94bb0acc0dec6994ea8b0b8076b68a8153))
+
 ## [0.8.0](https://github.com/brexhq/substation/compare/v0.7.1...v0.8.0) (2023-01-04)
 
 

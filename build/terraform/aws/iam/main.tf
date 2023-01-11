@@ -88,6 +88,7 @@ data "aws_iam_policy_document" "dynamodb_read" {
   statement {
     effect = "Allow"
     actions = [
+      "dynamodb:GetItem",
       "dynamodb:Query",
     ]
     resources = var.resources

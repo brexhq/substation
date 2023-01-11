@@ -901,16 +901,12 @@
           local kv_hit = $.interfaces.operator.all([
             $.patterns.inspector.length.gt_zero(key=_store_key),
           ]),
-          local kv_miss = $.interfaces.operator.all([
-            $.patterns.inspector.length.eq_zero(key=_store_key),
-          ]),
 
           // if there was no result from the KV store and the processor flag is bool
           // true, then the processor runs
-          local run_processor = $.interfaces.operator.all([
+          local kv_miss = $.interfaces.operator.all([
             $.patterns.inspector.length.eq_zero(key=_store_key),
             $.patterns.inspector.length.gt_zero(key=_processor_flag),
-            $.patterns.inspector.length.eq_zero(key=_store_key),
           ]),
 
           // if the processor ran and the result is null, then a static value is
@@ -956,7 +952,7 @@
                 options={ separator: ':' }
               ),
               // if there is a miss and the processor flag is true, then the processor runs
-              $.patterns.processor.replace_condition(processor, condition=run_processor, force=true).processor[0],
+              $.patterns.processor.replace_condition(processor, condition=kv_miss, force=true).processor[0],
               // if the processor result is null, then a static value is created in its place
               // the value indicates which processor produced the null value (e.g., 'dns:null')
               $.interfaces.processor.insert(

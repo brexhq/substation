@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/brexhq/substation/compare/v0.8.1...v0.8.2) (2023-01-11)
+
+
+### Features
+
+* Add Sort Key Support to the AWS DynamoDB KV Store ([#68](https://github.com/brexhq/substation/issues/68)) ([517e913](https://github.com/brexhq/substation/commit/517e913ef5373e81117e6e57512f0138b2c30333))
+
 ## [0.8.1](https://github.com/brexhq/substation/compare/v0.8.0...v0.8.1) (2023-01-10)
 
 

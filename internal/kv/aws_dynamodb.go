@@ -13,15 +13,20 @@ import (
 // This KV store supports per-item time-to-live (TTL) and has some limitations when
 // interacting with DynamoDB:
 //
-// - Does not support Sort (Range) Keys
-//
 // - Does not support Global Secondary Indexes
 type kvAWSDynamoDB struct {
 	// Table is the DynamoDB table that items are read and written to.
 	Table      string `json:"table"`
 	Attributes struct {
-		// PartitionKey is the table attribute where keys are read from and written to.
+		// PartitionKey is the table's parition key attribute.
+		//
+		// This is required for all tables.
 		PartitionKey string `json:"partition_key"`
+		// SortKey is the table's sort (range) key attribute.
+		//
+		// This must be used if the table uses a composite primary key schema
+		// (partition key and sort key). Only string types are supported.
+		SortKey string `json:"sort_key"`
 		// Value is the table attribute where values are read from and written to.
 		Value string `json:"value"`
 		// TTL is the table attribute where time-to-live is stored.
@@ -48,6 +53,10 @@ func (store *kvAWSDynamoDB) Get(ctx context.Context, key string) (interface{}, e
 		store.Attributes.PartitionKey: key,
 	}
 
+	if store.Attributes.SortKey != "" {
+		m[store.Attributes.SortKey] = "substation:kv_store"
+	}
+
 	resp, err := store.api.GetItem(ctx, store.Table, m)
 	if err != nil {
 		return "", err
@@ -72,6 +81,10 @@ func (store *kvAWSDynamoDB) Set(ctx context.Context, key string, val interface{}
 		store.Attributes.Value:        val,
 	}
 
+	if store.Attributes.SortKey != "" {
+		m[store.Attributes.SortKey] = "substation:kv_store"
+	}
+
 	record, err := dynamodbattribute.MarshalMap(m)
 	if err != nil {
 		return err
@@ -94,6 +107,10 @@ func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val inte
 		store.Attributes.PartitionKey: key,
 		store.Attributes.Value:        val,
 		store.Attributes.TTL:          ttl,
+	}
+
+	if store.Attributes.SortKey != "" {
+		m[store.Attributes.SortKey] = "substation:kv_store"
 	}
 
 	record, err := dynamodbattribute.MarshalMap(m)

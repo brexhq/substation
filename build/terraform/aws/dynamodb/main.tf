@@ -9,7 +9,7 @@ resource "aws_dynamodb_table" "table" {
   # services can opt in to use TTL functionality at runtime
   # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html
   ttl {
-    attribute_name = "TTL"
+    attribute_name = "ttl"
     enabled        = true
   }
   point_in_time_recovery {

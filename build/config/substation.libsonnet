@@ -36,7 +36,7 @@
     },
     kv_store: {
       aws_dynamodb: {
-        settings: { table: null, attributes: { partition_key: null, value: null, ttl: null } },
+        settings: { table: null, attributes: { partition_key: null, sort_key: null, value: null, ttl: null } },
       },
       csv_file: {
         settings: { file: null, column: null, delimiter: ',', header: null },

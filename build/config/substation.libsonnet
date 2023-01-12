@@ -1000,6 +1000,58 @@
               ),
             ],
         },
+        // provides indicator matching against an Emerging Threats Compromised IP address file.
+        // more information about Emerging Threats is available here: https://doc.emergingthreats.net/.
+        emerging_threats_compromised_address(
+          key,
+          set_key=$.helpers.key.append_array('!metadata kv_store.emerging_threats_compromised_address'),
+          file='https://rules.emergingthreats.net/blockrules/compromised-ips.txt',
+          keep_kv_open=true,
+        ): {
+          local kv_options = {
+            file: file,
+          },
+
+          local _et_comp_addr = '!metadata _kv_store.emerging_threats_compromised_address',
+
+          processor: [
+            $.interfaces.processor.kv_store(
+              settings={ key: key, set_key: _et_comp_addr, condition: $.patterns.operator.ip.public(key=key), ignore_close: keep_kv_open },
+              options={ type: 'get', kv_options: $.interfaces.kv_store.text_file(kv_options) }
+            ),
+            $.interfaces.processor.pipeline(
+              // the text file KV store returns true or false, so we use the string inspector
+              // to coerce the value to a string then compare it to 'true'
+              settings={ condition: $.interfaces.operator.all([
+                $.interfaces.inspector.strings(
+                  settings={ key: _et_comp_addr },
+                  options={ type: 'equals', expression: 'true' }
+                ),
+              ]) },
+              options={ processors: [
+                // previous value, either true or false, is deleted so the field can be reused
+                $.interfaces.processor.delete(
+                  settings={ key: _et_comp_addr },
+                ),
+                $.interfaces.processor.insert(
+                  settings={ set_key: $.helpers.key.append(_et_comp_addr, 'matched_field') },
+                  options={ value: key }
+                ),
+                $.interfaces.processor.insert(
+                  settings={ set_key: $.helpers.key.append(_et_comp_addr, 'reference') },
+                  options={ value: file }
+                ),
+                $.interfaces.processor.copy(
+                  settings={ key: _et_comp_addr, set_key: set_key },
+                ),
+              ] },
+            ),
+            // temporary keys are removed to prevent collisions with the next pattern call
+            $.interfaces.processor.delete(
+              settings={ key: _et_comp_addr },
+            ),
+          ],
+        },
         // provides indicator matching against a Zeek Intelligence Framework file. the
         // file is loaded into a read-only key-value store and by default indicator matches
         // are stored in an array in the capsule's metadata. KV store misses (no indicator

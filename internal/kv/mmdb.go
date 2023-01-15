@@ -19,10 +19,11 @@ var errMMDBKeyMustBeAddr = errors.Error("key must be IP address")
 // KvMMDB is a read-only key-value store that is derived from any MaxMind database
 // format (MMDB) file.
 //
-// MMDB is an open source database file format that maps IPv4 and IPv6 addresses to data records, and is most commonly utilized by MaxMind GeoIP databases. Learn more about
-// the file format here: https://maxmind.github.io/MaxMind-DB/.
+// MMDB is an open source database file format that maps IPv4 and IPv6 addresses to
+// data records, and is most commonly utilized by MaxMind GeoIP databases. Learn more
+// about the file format here: https://maxmind.github.io/MaxMind-DB/.
 type kvMMDB struct {
-	// File contains the location of the text file. This can be either a path on local
+	// File contains the location of the MMDB file. This can be either a path on local
 	// disk, an HTTP(S) URL, or an AWS S3 URL.
 	File   string `json:"file"`
 	mu     sync.Mutex

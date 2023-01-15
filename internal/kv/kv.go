@@ -65,6 +65,10 @@ func Get(cfg config.Config) (Storer, error) {
 		var c kvMemory
 		_ = config.Decode(cfg.Settings, &c)
 		m[sig] = &c
+	case "mmdb":
+		var c kvMMDB
+		_ = config.Decode(cfg.Settings, &c)
+		m[sig] = &c
 	case "text_file":
 		var c kvTextFile
 		_ = config.Decode(cfg.Settings, &c)

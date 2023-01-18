@@ -31,6 +31,11 @@ module "microservice" {
   ]
 }
 
+resource "aws_lambda_function_url" "substation_microservice" {
+  function_name      = module.microservice.name
+  authorization_type = "NONE"
+}
+
 ################################################
 # appconfig permissions
 # all Lambda must have this policy

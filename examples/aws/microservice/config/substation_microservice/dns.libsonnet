@@ -21,6 +21,12 @@ local kv = sub.interfaces.kv_store.memory(
 );
 
 local processors = [
+  // dynamically handles input from either Lambda URL or sync invocation
+  sub.interfaces.processor.copy(
+    settings={key: 'body', condition: sub.interfaces.operator.all([
+      sub.patterns.inspector.length.gt_zero(key='body')
+    ])}
+  ),
   // DNS processor is wrapped in the KV store -- DNS requests
   // are only made if the input is not already in the store.
   // values are kept in the store for 1 hour.

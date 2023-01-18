@@ -19,7 +19,7 @@ import (
 //
 // This implementation of Substation only supports the object data handling pattern
 // -- if the payload sent to the Lambda is not JSON, then the invocation will fail.
-func lambdaAsyncHandler(ctx context.Context, event map[string]interface{}) error {
+func lambdaAsyncHandler(ctx context.Context, event json.RawMessage) error {
 	evt, err := json.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("lambda async: %v", err)
@@ -96,7 +96,7 @@ const errLambdaSyncMultipleItems = errors.Error("transformed data into multiple 
 //
 // - Must use the gRPC sink configured to send data to localhost:50051 -- data is routed
 // from the sink to the handler using the Substation gRPC Sink service
-func lambdaSyncHandler(ctx context.Context, event map[string]interface{}) (map[string]interface{}, error) {
+func lambdaSyncHandler(ctx context.Context, event json.RawMessage) (json.RawMessage, error) {
 	evt, err := json.Marshal(event)
 	if err != nil {
 		return nil, fmt.Errorf("lambda sync: %v", err)
@@ -173,7 +173,7 @@ func lambdaSyncHandler(ctx context.Context, event map[string]interface{}) (map[s
 	}
 
 	capsule := srv.Capsules[0]
-	var output map[string]interface{}
+	var output json.RawMessage
 	if err := json.Unmarshal(capsule.Data(), &output); err != nil {
 		return nil, fmt.Errorf("lambda sync: %v", err)
 	}

@@ -18,6 +18,7 @@ module "iam_appconfig_read_attachment" {
     module.lambda_dynamodb_sink.role,
     module.lambda_raw_s3_sink.role,
     module.lambda_processed_s3_sink.role,
+    module.lambda_async_source.role,
     module.lambda_gateway_source.role,
     module.lambda_s3_source.role,
     module.lambda_sns_source.role,

@@ -1,4 +1,4 @@
-# aws
+# pipeline
 
 This example deploys a data pipeline to AWS that makes use of every Substation component.
 
@@ -24,12 +24,14 @@ graph TD
     kinesis_lambda[Processor Lambda]
     enrichment_lambda[Data Enrichment Lambda]
     s3_warehouse_sink_lambda[S3 Sink Lambda]
+    async_source_lambda[Async Source Lambda]
     s3_source_lambda[S3 Source Lambda]
     s3_lake_sink_lambda[S3 Sink Lambda]
     sns_source_lambda[SNS Source Lambda]
     sqs_source_lambda[SQS Source Lambda]
 
     %% ingest
+    async_source_lambda ---|Push| kinesis_raw
     gateway ---|Push| gateway_lambda ---|Push| kinesis_raw
     gateway_kinesis ---|Push| kinesis_raw
     s3_source_bucket ---|Pull| s3_source_lambda ---|Push| kinesis_raw

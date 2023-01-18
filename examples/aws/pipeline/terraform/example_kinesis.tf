@@ -29,7 +29,6 @@ module "iam_kinesis_raw_read_attachment" {
   id     = "substation_kinesis_raw_read"
   policy = module.iam_kinesis_raw_read.kinesis_read_policy
   roles = [
-    module.lambda_autoscaling.role,
     module.lambda_processor.role,
     module.lambda_raw_s3_sink.role,
   ]
@@ -51,6 +50,7 @@ module "iam_kinesis_raw_write_attachment" {
   id     = "substation_kinesis_raw_write"
   policy = module.iam_kinesis_raw_write.kinesis_write_policy
   roles = [
+    module.lambda_async_source.role,
     module.lambda_gateway_source.role,
     module.lambda_s3_source.role,
     module.lambda_sns_source.role,

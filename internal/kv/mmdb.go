@@ -26,7 +26,7 @@ type kvMMDB struct {
 	// File contains the location of the MMDB file. This can be either a path on local
 	// disk, an HTTP(S) URL, or an AWS S3 URL.
 	File   string `json:"file"`
-	mu     sync.Mutex
+	mu     sync.RWMutex
 	reader *maxminddb.Reader
 }
 
@@ -36,8 +36,8 @@ func (store *kvMMDB) String() string {
 
 // Get retrieves a value from the store.
 func (store *kvMMDB) Get(ctx context.Context, key string) (interface{}, error) {
-	store.mu.Lock()
-	defer store.mu.Unlock()
+	store.mu.RLock()
+	defer store.mu.RUnlock()
 
 	addr := net.ParseIP(key)
 	if addr == nil {

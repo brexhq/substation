@@ -4,7 +4,7 @@
 ################################################
 
 module "lambda_processed_s3_sink" {
-  source        = "../../../build/terraform/aws/lambda"
+  source        = "../../../../build/terraform/aws/lambda"
   function_name = "substation_processed_s3_sink"
   description   = "Substation Lambda that is triggered from the processed Kinesis stream and writes data to S3"
   appconfig_id  = aws_appconfig_application.substation.id
@@ -22,6 +22,11 @@ module "lambda_processed_s3_sink" {
   tags = {
     owner = "example"
   }
+
+  depends_on = [
+    aws_appconfig_application.substation,
+    module.ecr_substation.repository_url,
+  ]
 }
 
 resource "aws_lambda_event_source_mapping" "lambda_esm_processed_s3_sink" {

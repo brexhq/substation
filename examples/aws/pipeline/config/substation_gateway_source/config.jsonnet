@@ -1,4 +1,4 @@
-local sub = import '../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 {
   sink: sub.interfaces.sink.aws_kinesis(settings={stream:'substation_raw'}),

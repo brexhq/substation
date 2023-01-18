@@ -4,18 +4,19 @@
 ################################################
 
 module "iam_kms_read" {
-  source = "../../../build/terraform/aws/iam"
+  source = "../../../../build/terraform/aws/iam"
   resources = [
     module.kms_substation.arn,
   ]
 }
 
 module "iam_kms_read_attachment" {
-  source = "../../../build/terraform/aws/iam_attachment"
+  source = "../../../../build/terraform/aws/iam_attachment"
   id     = "substation_kms_read"
   policy = module.iam_kms_read.kms_read_policy
   roles = [
     module.lambda_autoscaling.role,
+    module.lambda_enrichment.role,
     module.lambda_processor.role,
     module.lambda_dynamodb_sink.role,
     module.lambda_processed_s3_sink.role,
@@ -35,18 +36,19 @@ module "iam_kms_read_attachment" {
 ################################################
 
 module "iam_kms_write" {
-  source = "../../../build/terraform/aws/iam"
+  source = "../../../../build/terraform/aws/iam"
   resources = [
     module.kms_substation.arn,
   ]
 }
 
 module "iam_kms_write_attachment" {
-  source = "../../../build/terraform/aws/iam_attachment"
+  source = "../../../../build/terraform/aws/iam_attachment"
   id     = "substation_kms_write"
   policy = module.iam_kms_write.kms_write_policy
   roles = [
     module.lambda_autoscaling.role,
+    module.lambda_enrichment.role,
     module.lambda_processor.role,
     module.lambda_dynamodb_sink.role,
     module.lambda_processed_s3_sink.role,

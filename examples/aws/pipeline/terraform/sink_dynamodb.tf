@@ -4,7 +4,7 @@
 ################################################
 
 module "dynamodb_sink" {
-  source     = "../../../build/terraform/aws/dynamodb"
+  source     = "../../../../build/terraform/aws/dynamodb"
   kms_arn    = module.kms_substation.arn
   table_name = "substation"
   hash_key   = "PK"
@@ -22,7 +22,7 @@ module "dynamodb_sink" {
 ################################################
 
 module "lambda_dynamodb_sink" {
-  source        = "../../../build/terraform/aws/lambda"
+  source        = "../../../../build/terraform/aws/lambda"
   function_name = "substation_dynamodb_sink"
   description   = "Substation Lambda that is triggered from the processed Kinesis stream and writes data to DynamoDB"
   appconfig_id  = aws_appconfig_application.substation.id
@@ -40,6 +40,11 @@ module "lambda_dynamodb_sink" {
   tags = {
     owner = "example"
   }
+
+  depends_on = [
+    aws_appconfig_application.substation,
+    module.ecr_substation.repository_url,
+  ]
 }
 
 resource "aws_lambda_event_source_mapping" "lambda_esm_dynamodb_sink" {
@@ -56,14 +61,14 @@ resource "aws_lambda_event_source_mapping" "lambda_esm_dynamodb_sink" {
 ################################################
 
 module "iam_lambda_dynamodb_sink_write" {
-  source = "../../../build/terraform/aws/iam"
+  source = "../../../../build/terraform/aws/iam"
   resources = [
     module.dynamodb_sink.arn,
   ]
 }
 
 module "iam_lambda_dynamodb_sink_write_attachment" {
-  source = "../../../build/terraform/aws/iam_attachment"
+  source = "../../../../build/terraform/aws/iam_attachment"
   id     = "${module.lambda_dynamodb_sink.name}_write"
   policy = module.iam_lambda_dynamodb_sink_write.dynamodb_write_policy
   roles = [

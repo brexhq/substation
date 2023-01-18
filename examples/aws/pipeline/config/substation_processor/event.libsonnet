@@ -1,4 +1,4 @@
-local sub = import '../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 local processors = [
   // https://www.elastic.co/guide/en/ecs/current/ecs-event.html#field-event-hash

@@ -4,7 +4,7 @@
 ################################################
 
 module "sqs_source" {
-  source     = "../../../build/terraform/aws/sqs"
+  source     = "../../../../build/terraform/aws/sqs"
   kms_key_id = module.kms_substation.key_id
   name       = "substation_sqs_example"
   # timeout must match timeout on Lambda
@@ -17,7 +17,7 @@ module "sqs_source" {
 ################################################
 
 module "lambda_sqs_source" {
-  source        = "../../../build/terraform/aws/lambda"
+  source        = "../../../../build/terraform/aws/lambda"
   function_name = "substation_sqs_source"
   description   = "Substation Lambda that is triggered from SQS and writes data to the raw Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id
@@ -55,14 +55,14 @@ resource "aws_lambda_event_source_mapping" "lambda_esm_sqs_source" {
 ################################################
 
 module "iam_lambda_sqs_source_read" {
-  source = "../../../build/terraform/aws/iam"
+  source = "../../../../build/terraform/aws/iam"
   resources = [
     "${module.sqs_source.arn}",
   ]
 }
 
 module "iam_lambda_sqs_source_read_attachment" {
-  source = "../../../build/terraform/aws/iam_attachment"
+  source = "../../../../build/terraform/aws/iam_attachment"
   id     = "${module.lambda_sqs_source.name}_read"
   policy = module.iam_lambda_sqs_source_read.sqs_read_policy
   roles = [

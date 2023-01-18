@@ -4,7 +4,7 @@
 ################################################
 
 module "lambda_s3_source" {
-  source        = "../../../build/terraform/aws/lambda"
+  source        = "../../../../build/terraform/aws/lambda"
   function_name = "substation_s3_source"
   description   = "Substation Lambda that is triggered from S3 and writes data to the raw Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id

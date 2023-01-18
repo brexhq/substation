@@ -70,10 +70,3 @@ module "ecr_substation" {
   name    = "substation"
   kms_arn = module.kms_substation.arn
 }
-
-# repository for the autoscaling app
-module "ecr_autoscaling" {
-  source  = "../../../../build/terraform/aws/ecr"
-  name    = "substation_autoscaling"
-  kms_arn = module.kms_substation.arn
-}

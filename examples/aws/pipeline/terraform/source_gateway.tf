@@ -1,10 +1,21 @@
 ################################################
 # API Gateway
+# sends data to raw Kinesis stream
+################################################
+
+module "gateway_kinesis_source" {
+  source = "../../../../build/terraform/aws/api_gateway/kinesis"
+  name   = "substation_kinesis_example"
+  stream = "substation_raw"
+}
+
+################################################
+# API Gateway
 # sends data to Lambda
 ################################################
 
 module "gateway_lambda_source" {
-  source       = "../../../build/terraform/aws/api_gateway/lambda"
+  source       = "../../../../build/terraform/aws/api_gateway/lambda"
   name         = "substation_lambda_example"
   function_arn = module.lambda_gateway_source.arn
 }
@@ -15,7 +26,7 @@ module "gateway_lambda_source" {
 ################################################
 
 module "lambda_gateway_source" {
-  source        = "../../../build/terraform/aws/lambda"
+  source        = "../../../../build/terraform/aws/lambda"
   function_name = "substation_gateway_source"
   description   = "Substation Lambda that is triggered from an API Gateway and writes data to the raw Kinesis stream"
   appconfig_id  = aws_appconfig_application.substation.id
@@ -33,4 +44,9 @@ module "lambda_gateway_source" {
   tags = {
     owner = "example"
   }
+
+  depends_on = [
+    aws_appconfig_application.substation,
+    module.ecr_substation.repository_url,
+  ]
 }

@@ -47,6 +47,9 @@
       memory: {
         settings: { capacity: 1024 },
       },
+      mmdb: {
+        settings: { file: null },
+      },
       text_file: {
         settings: { file: null },
       },
@@ -569,6 +572,12 @@
         local s = std.mergePatch($.defaults.kv_store.memory.settings, settings),
 
         type: 'memory',
+        settings: s,
+      },
+      mmdb(settings=$.defaults.kv_store.mmdb.settings): {
+        local s = std.mergePatch($.defaults.kv_store.mmdb.settings, settings),
+
+        type: 'mmdb',
         settings: s,
       },
       text_file(settings=$.defaults.kv_store.text_file.settings): {

@@ -27,6 +27,8 @@ We recommend using one autoscaling Lambda for an entire Substation deployment, b
 This app handles ingest, transform, and load (ITL) for data from these AWS services:
 * [API Gateway](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html)
 * [Kinesis Data Streams](https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html)
+* [Asynchronous Invocation (Lambda)](https://docs.aws.amazon.com/lambda/latest/dg/invocation-async.html)
+* [Synchronous Invocation (Lambda)](https://docs.aws.amazon.com/lambda/latest/dg/invocation-sync.html)
 * [S3](https://docs.aws.amazon.com/lambda/latest/dg/with-s3.html)
 * [S3 via SNS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ways-to-add-notification-config-to-bucket.html)
 * [SNS](https://docs.aws.amazon.com/lambda/latest/dg/with-sns.html)

@@ -100,6 +100,9 @@
       insert: {
         options: { value: null },
       },
+      ip_database: {
+        options: { type: null, settings: null }
+      },
       join: {
         options: { separator: null },
       },
@@ -366,13 +369,13 @@
         local s = std.mergePatch($.interfaces.processor.settings, settings),
 
         type: 'drop',
-        settings: settings,
+        settings: s,
       },
       expand(settings=$.interfaces.processor.settings): {
         local s = std.mergePatch($.interfaces.processor.settings, settings),
 
         type: 'expand',
-        settings: settings,
+        settings: s,
       },
       flatten(options=$.defaults.processor.flatten.options,
               settings=$.interfaces.processor.settings): {
@@ -398,7 +401,7 @@
         type: 'group',
         settings: std.mergePatch({ options: opt }, s),
       },
-      gzip(options=$.defaults.gzip.capture.options,
+      gzip(options=$.defaults.processor.gzip.options,
            settings=$.interfaces.processor.settings): {
         local opt = std.mergePatch($.defaults.processor.gzip.options, options),
         local s = std.mergePatch($.interfaces.processor.settings, settings),
@@ -422,12 +425,13 @@
         type: 'insert',
         settings: std.mergePatch({ options: opt }, s),
       },
-      ip_database(options=$.defaults.processor.insert.options,
+      ip_database(options=$.defaults.processor.ip_database.options,
                   settings=$.interfaces.processor.settings): {
+        local opt = std.mergePatch($.defaults.processor.ip_database.options, options),
         local s = std.mergePatch($.interfaces.processor.settings, settings),
 
         type: 'ip_database',
-        settings: std.mergePatch({ options: options }, s),
+        settings: std.mergePatch({ options: opt }, s),
       },
       join(options=$.defaults.processor.join.options,
            settings=$.interfaces.processor.settings): {
@@ -461,9 +465,9 @@
         type: 'pipeline',
         settings: std.mergePatch({ options: opt }, s),
       },
-      pretty_print(options=$.defaults.processor.direction.options,
+      pretty_print(options=$.defaults.processor.pretty_print.options,
                    settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.direction.options, options),
+        local opt = std.mergePatch($.defaults.processor.pretty_print.options, options),
         local s = std.mergePatch($.interfaces.processor.settings, settings),
 
         type: 'pretty_print',

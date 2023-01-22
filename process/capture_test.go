@@ -64,7 +64,7 @@ var captureTests = []struct {
 		"namedprocGroup",
 		procCapture{
 			Options: procCaptureOptions{
-				Type:       "namedprocGroup",
+				Type:       "named_group",
 				Expression: "(?P<foo>[a-zA-Z]+) (?P<qux>[a-zA-Z]+)",
 			},
 		},

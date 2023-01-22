@@ -41,7 +41,7 @@ type procAggregateOptions struct {
 	//
 	// This is only used when handling objects and defaults to an
 	// empty string.
-	Key string `json:"aggregate_key"`
+	Key string `json:"key"`
 	// Separator is the string that joins aggregated data.
 	//
 	// This is only used when handling data and defaults to an empty

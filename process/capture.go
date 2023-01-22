@@ -28,7 +28,7 @@ type procCaptureOptions struct {
 	//
 	// - find_all: applies the FindAll(String)?Submatch function (see count)
 	//
-	// - namedprocGroup: applies the Find(String)?Submatch function and stores
+	// - named_group: applies the Find(String)?Submatch function and stores
 	// values as objects using subexpressions
 	Type string `json:"type"`
 	// Count manages the number of repeated capture groups.
@@ -106,7 +106,7 @@ func (p procCapture) Apply(ctx context.Context, capsule config.Capsule) (config.
 			capsule.SetData(match[1])
 
 			return capsule, nil
-		case "namedprocGroup":
+		case "named_group":
 			newCapsule := config.NewCapsule()
 
 			names := re.SubexpNames()

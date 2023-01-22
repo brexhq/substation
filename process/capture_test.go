@@ -61,7 +61,7 @@ var captureTests = []struct {
 		nil,
 	},
 	{
-		"namedprocGroup",
+		"named_group",
 		procCapture{
 			Options: procCaptureOptions{
 				Type:       "named_group",

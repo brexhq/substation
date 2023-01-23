@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.3](https://github.com/brexhq/substation/compare/v0.8.2...v0.8.3) (2023-01-23)
+
+
+### Features
+
+* Add MMDB Key-Value Store ([#71](https://github.com/brexhq/substation/issues/71)) ([cee1932](https://github.com/brexhq/substation/commit/cee1932cdb73d3f826361f75a5a3a4c57b01d2fa))
+* Add Sync and Async AWS Lambda Ingest ([#72](https://github.com/brexhq/substation/issues/72)) ([141fdf5](https://github.com/brexhq/substation/commit/141fdf543381bd7969a16e65394194ae6042c991))
+
+
+### Bug Fixes
+
+* Aggregate & Capture Processor Options ([#75](https://github.com/brexhq/substation/issues/75)) ([46233a4](https://github.com/brexhq/substation/commit/46233a4164521b6cc30b0c6bae14f9a88d41ee1a))
+
 ## [0.8.2](https://github.com/brexhq/substation/compare/v0.8.1...v0.8.2) (2023-01-11)
 
 

@@ -21,8 +21,8 @@ var (
 	secretsManagerAPI secretsmanager.API
 )
 
-// Regexp is used for interpolating secrets.
-const Regexp = `{{(SECRETS_[A-Z]+:[^}]+)}}`
+// secretsRe is used for parsing secrets during interpolation.
+const secretsRe = `{{(SECRETS_[A-Z]+:[^}]+)}}`
 
 // errSecretNotFound is returned when Get is called but no secret is found.
 const errSecretNotFound = errors.Error("secret not found")
@@ -96,29 +96,35 @@ func Get(ctx context.Context, secret string) (string, error) {
 	return "", fmt.Errorf("secrets %s: %v", secret, errSecretNotFound)
 }
 
-// Interpolate identifies when a string contains a secret and interpolates
-// the secret with the string.
-func Interpolate(ctx context.Context, s string, exp string) (string, error) {
+// Interpolate identifies when a string contains one or more secrets and
+// interpolates each secret with the string.
+func Interpolate(ctx context.Context, s string) (string, error) {
 	if !strings.Contains(s, "{{SECRETS_") {
 		return s, nil
 	}
 
-	re, err := regexp.Compile(exp)
+	re, err := regexp.Compile(secretsRe)
 	if err != nil {
 		return "", err
 	}
 
-	match := re.FindStringSubmatch(s)
-	if len(match) == 0 {
-		return s, nil
+	matches := re.FindAllStringSubmatch(s, -1)
+	for _, m := range matches {
+		if len(m) == 0 {
+			continue
+		}
+
+		secret, err := Get(ctx, m[len(m)-1])
+		if err != nil {
+			return "", err
+		}
+
+		// replace the original match once for each secret
+		old := fmt.Sprintf("{{%s}}", m[len(m)-1])
+		s = strings.Replace(s, old, secret, 1)
 	}
 
-	secret, err := Get(ctx, match[len(match)-1])
-	if err != nil {
-		return "", err
-	}
-
-	return re.ReplaceAllString(s, secret), nil
+	return s, nil
 }
 
 func init() {

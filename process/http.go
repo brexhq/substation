@@ -87,7 +87,7 @@ func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 	var headers []http.Header
 	for _, hdr := range p.Options.Headers {
 		// retrieve secret and interpolate with header value
-		v, err := secrets.Interpolate(ctx, hdr.Value, secrets.Regexp)
+		v, err := secrets.Interpolate(ctx, hdr.Value)
 		if err != nil {
 			return capsule, fmt.Errorf("process: http: %v", err)
 		}
@@ -120,7 +120,7 @@ func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 	}
 
 	// retrieve secret and interpolate with URL
-	url, err := secrets.Interpolate(ctx, url, secrets.Regexp)
+	url, err := secrets.Interpolate(ctx, url)
 	if err != nil {
 		return capsule, fmt.Errorf("process: http: %v", err)
 	}
@@ -135,7 +135,9 @@ func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 
 		body := capsule.Get(p.Options.BodyKey).String()
 		resp, err := httpClient.Post(ctx, url, body, headers...)
-		if err != nil {
+		if err != nil && p.IgnoreErrors {
+			return capsule, nil
+		} else if err != nil {
 			return capsule, fmt.Errorf("process: http: %v", err)
 		}
 		defer resp.Body.Close()
@@ -161,7 +163,9 @@ func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 		fallthrough
 	default:
 		resp, err := httpClient.Get(ctx, url, headers...)
-		if err != nil {
+		if err != nil && p.IgnoreErrors {
+			return capsule, nil
+		} else if err != nil {
 			return capsule, fmt.Errorf("process: http: %v", err)
 		}
 		defer resp.Body.Close()

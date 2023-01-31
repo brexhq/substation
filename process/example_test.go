@@ -240,8 +240,8 @@ func Example_dNS() {
 		{
 			Type: "dns",
 			Settings: map[string]interface{}{
-				"input_key":  "addr",
-				"output_key": "domains",
+				"key":     "addr",
+				"set_key": "domains",
 				"options": map[string]interface{}{
 					"function": "reverse_lookup",
 				},
@@ -266,6 +266,61 @@ func Example_dNS() {
 		}
 	}
 
+	fmt.Println(string(capsule.Data()))
+}
+
+func Example_hTTP() {
+	capsule := config.NewCapsule()
+	capsule.SetData([]byte(`{"addr":"8.8.8.8"}`))
+
+	// enriches the IP address by querying the GreyNoise Community API.
+	// authenticating to GreyNoise is accomplished by interpolating a
+	// secret inside an HTTP header. refer to the GreyNoise documentation
+	// for more information:
+	// https://docs.greynoise.io/reference/get_v3-community-ip.
+	cfg := []config.Config{
+		{
+			Type: "http",
+			Settings: map[string]interface{}{
+				"key": "addr",
+				// the HTTP response body is written to this key
+				"set_key": "greynoise",
+				"options": map[string]interface{}{
+					"method": "get",
+					// the value from "addr" is interpolated into %s
+					"url": "https://api.greynoise.io/v3/community/%s",
+					"headers": []map[string]interface{}{
+						{
+							"key": "key",
+							// this secret must be stored in the environment
+							// variable GREYNOISE_API
+							"value": "{{SECRETS_ENV:GREYNOISE_API}}",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	appliers, err := process.NewAppliers(cfg...)
+	if err != nil {
+		// handle err
+		panic(err)
+	}
+
+	//nolint: errcheck // errors are ignored in case processing fails in a single applier
+	defer process.CloseAppliers(context.TODO(), appliers...)
+
+	for _, app := range appliers {
+		capsule, err = app.Apply(context.TODO(), capsule)
+		if err != nil {
+			// handle err
+			panic(err)
+		}
+	}
+
+	// sample output (which may change day to day)
+	// {"addr":"8.8.8.8","greynoise":{"ip":"8.8.8.8","noise":false,"riot":true,"classification":"benign","name":"Google Public DNS","link":"https://viz.greynoise.io/riot/8.8.8.8","last_seen":"2023-01-30","message":"Success"}}
 	fmt.Println(string(capsule.Data()))
 }
 

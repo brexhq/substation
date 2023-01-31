@@ -1,0 +1,205 @@
+package process
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	gohttp "net/http"
+	"strings"
+
+	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/http"
+	"github.com/brexhq/substation/internal/secrets"
+)
+
+var httpClient http.HTTP
+
+// http processes data by retrieving a payload from an HTTP(S) URL. The HTTP client
+// used by the processor uses an exponential retry strategy that makes up to four requests
+// and does not wait more than 30 seconds for each retry, which may have significant impact
+// on end-to-end data processing latency. If Substation is running in AWS Lambda with
+// Kinesis, then this latency can be mitigated by increasing the parallelization factor
+// of the Lambda (https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html).
+//
+// This processor supports the data and object handling patterns.
+type procHTTP struct {
+	process
+	Options procHTTPOptions `json:"options"`
+}
+
+type procHTTPOptions struct {
+	// Method is the HTTP method used in the call.
+	//
+	// Must be one of:
+	//
+	// - GET
+	//
+	// - POST
+	//
+	// Defaults to GET.
+	Method string `json:"method"`
+	// URL is the HTTP(S) endpoint that data is retrieved from.
+	//
+	// If the substring "%s" is in the URL, then the URL is interpolated with
+	// the data (either value from Key or the data). URLs may also be interpolated
+	// with secrets by using Substation's secrets retrieval syntax (e.g., {{SECRETS_*}}).
+	URL string `json:"url"`
+	// Headers are an array of objects that contain HTTP headers sent in the request.
+	// Values may refer to secrets that are retrieved using Subtation's secrets
+	// syntax (e.g., SECRETS_*).
+	//
+	// This is optional and has no default.
+	Headers []struct {
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	} `json:"headers"`
+	// BodyKey retrieves a value from an object that is used as the message body.
+	// This is only used in HTTP requests that send payloads to the server.
+	//
+	// This is optional and has no default.
+	BodyKey string `json:"body_key"`
+}
+
+// Closes resources opened by the processor.
+func (p procHTTP) Close(context.Context) error {
+	return nil
+}
+
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procHTTP) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return batchApply(ctx, capsules, p, p.Condition)
+}
+
+// Apply processes a capsule with the processor.
+func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+	// error early if required options are missing
+	if p.Options.URL == "" {
+		return capsule, fmt.Errorf("process: http: options %+v: %v", p.Options, errMissingRequiredOptions)
+	}
+
+	if !httpClient.IsEnabled() {
+		httpClient.Setup()
+	}
+
+	var headers []http.Header
+	for _, hdr := range p.Options.Headers {
+		// retrieve secret and interpolate with header value
+		v, err := secrets.Interpolate(ctx, hdr.Value, secrets.Regexp)
+		if err != nil {
+			return capsule, fmt.Errorf("process: http: %v", err)
+		}
+
+		headers = append(headers, http.Header{
+			Key:   hdr.Key,
+			Value: v,
+		})
+	}
+
+	// the URL can exist in three states:
+	//
+	// - no interpolation, the URL is unchanged
+	//
+	// - object interpolation, the URL is interpolated with the
+	// object's key (object handling pattern)
+	//
+	// - data interpolation, the URL is interpolated with the data
+	// (data handling pattern)
+	//
+	// the URL is always interpolated by replacing the substring
+	// %s with either the object key's value or the data.
+	url := p.Options.URL
+	if strings.Contains(url, "%s") {
+		if p.Key != "" {
+			url = strings.Replace(url, "%s", capsule.Get(p.Key).String(), 1)
+		} else {
+			url = strings.Replace(url, "%s", string(capsule.Data()), 1)
+		}
+	}
+
+	// retrieve secret and interpolate with URL
+	url, err := secrets.Interpolate(ctx, url, secrets.Regexp)
+	if err != nil {
+		return capsule, fmt.Errorf("process: http: %v", err)
+	}
+
+	switch p.Options.Method {
+	// POST only supports the object handling pattern
+	case gohttp.MethodPost:
+		// BodyKey is a requirement, otherwise there is no payload to send
+		if p.Options.BodyKey == "" {
+			return capsule, fmt.Errorf("process: http: options %+v: %v", p.Options, errMissingRequiredOptions)
+		}
+
+		body := capsule.Get(p.Options.BodyKey).String()
+		resp, err := httpClient.Post(ctx, url, body, headers...)
+		if err != nil {
+			return capsule, fmt.Errorf("process: http: %v", err)
+		}
+		defer resp.Body.Close()
+
+		res, err := parseResponse(resp)
+		if err != nil {
+			return capsule, fmt.Errorf("process: http: %v", err)
+		}
+
+		// if SetKey exists, then the response body is written into the capsule,
+		// but otherwise the response is not stored and the capsule is returned
+		// as-is
+		if p.SetKey != "" {
+			if err := capsule.Set(p.SetKey, res); err != nil {
+				return capsule, fmt.Errorf("process: http: %v", err)
+			}
+			return capsule, nil
+		}
+
+		return capsule, nil
+	// GET must be the last condition and fallthrough since it is the default Method
+	case gohttp.MethodGet:
+		fallthrough
+	default:
+		resp, err := httpClient.Get(ctx, url, headers...)
+		if err != nil {
+			return capsule, fmt.Errorf("process: http: %v", err)
+		}
+		defer resp.Body.Close()
+
+		res, err := parseResponse(resp)
+		if err != nil {
+			return capsule, fmt.Errorf("process: http: %v", err)
+		}
+
+		// object processing
+		if p.SetKey != "" {
+			if err := capsule.Set(p.SetKey, res); err != nil {
+				return capsule, fmt.Errorf("process: http: %v", err)
+			}
+			return capsule, nil
+		}
+
+		// data processing
+		capsule.SetData(res)
+		return capsule, nil
+	}
+}
+
+func parseResponse(resp *gohttp.Response) ([]byte, error) {
+	buf, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("process: http: %v", err)
+	}
+
+	dst := &bytes.Buffer{}
+	if json.Valid(buf) {
+		// compact converts a multi-line object into a single-line object.
+		if err := json.Compact(dst, buf); err != nil {
+			return nil, fmt.Errorf("process: http: %v", err)
+		}
+	} else {
+		dst = bytes.NewBuffer(buf)
+	}
+
+	return dst.Bytes(), nil
+}

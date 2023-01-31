@@ -58,7 +58,7 @@ func (s *sinkHTTP) Send(ctx context.Context, ch *config.Channel) error {
 
 			for _, hdr := range s.Headers {
 				// retrieve secret and interpolate with header value
-				v, err := secrets.Interpolate(ctx, hdr.Value, secrets.Regexp)
+				v, err := secrets.Interpolate(ctx, hdr.Value)
 				if err != nil {
 					return fmt.Errorf("sink: http: %v", err)
 				}
@@ -82,7 +82,7 @@ func (s *sinkHTTP) Send(ctx context.Context, ch *config.Channel) error {
 			}
 
 			// retrieve secret and interpolate with URL
-			url, err := secrets.Interpolate(ctx, s.URL, secrets.Regexp)
+			url, err := secrets.Interpolate(ctx, s.URL)
 			if err != nil {
 				return fmt.Errorf("sink: http: %v", err)
 			}

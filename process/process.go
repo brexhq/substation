@@ -129,6 +129,10 @@ func NewApplier(cfg config.Config) (Applier, error) {
 		var p procJoin
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
+	case "jq":
+		var p procJQ
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
 	case "kv_store":
 		var p procKVStore
 		_ = config.Decode(cfg.Settings, &p)
@@ -309,6 +313,10 @@ func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop // ignore
 		return p, nil
 	case "join":
 		var p procJoin
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "jq":
+		var p procJQ
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "kv_store":

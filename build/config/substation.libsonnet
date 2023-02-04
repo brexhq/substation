@@ -97,11 +97,14 @@
       hash: {
         options: { algorithm: 'sha256' },
       },
+      http: {
+        options: { method: 'get', url: null, headers: null, key: null },
+      },
       insert: {
         options: { value: null },
       },
       ip_database: {
-        options: { type: null, settings: null }
+        options: { type: null, settings: null },
       },
       join: {
         options: { separator: null },
@@ -415,6 +418,14 @@
         local s = std.mergePatch($.interfaces.processor.settings, settings),
 
         type: 'hash',
+        settings: std.mergePatch({ options: opt }, s),
+      },
+      http(options=$.defaults.processor.http.options,
+           settings=$.interfaces.processor.settings): {
+        local opt = std.mergePatch($.defaults.processor.http.options, options),
+        local s = std.mergePatch($.interfaces.processor.settings, settings),
+
+        type: 'http',
         settings: std.mergePatch({ options: opt }, s),
       },
       insert(options=$.defaults.processor.insert.options,
@@ -866,6 +877,70 @@
 
           processor: $.interfaces.processor.ip_database(
             options,
+            settings={ key: key, set_key: set_key, condition: c }
+          ),
+        },
+      },
+      http: {
+        // queries the Cloudflare IP Intelligence API for any DNS domain.
+        // the user and token must be stored as secrets in CLOUDFLARE_USER
+        // and CLOUDFLARE_TOKEN.
+        // 
+        // WIP
+        cloudflare_intel_domain(key, set_key='!metadata cloudflare_intel_domain', condition=null, secrets_provider='ENV'): {
+          local c = if condition != null then condition else $.interfaces.operator.all([
+            $.patterns.inspector.length.gt_zero(key=key),
+          ]),
+
+          local url = std.format('https://api.cloudflare.com/client/v4/accounts/{{SECRETS_%s:CLOUDFLARE_USER}}/intel/domain', secrets_provider) + '?domain=%s',
+
+          processor: $.interfaces.processor.http(
+            options={ url: url, headers: [{ key: 'Authorization', value: std.format('Bearer {{SECRETS_%s:CLOUDFLARE_TOKEN}}', secrets_provider) }] },
+            settings={ key: key, set_key: set_key, condition: c }
+          ),
+        },
+        // queries the Cloudflare IP Intelligence API for any public IPv4 address.
+        // the user and token must be stored as secrets in CLOUDFLARE_USER
+        // and CLOUDFLARE_TOKEN.
+        // 
+        // WIP
+        cloudflare_intel_ipv4(key, set_key='!metadata cloudflare_intel_ipv4', condition=null, secrets_provider='ENV'): {
+          local c = if condition != null then condition else $.patterns.operator.ip.public(key),
+
+          local url = std.format('https://api.cloudflare.com/client/v4/accounts/${SECRETS_%s:CLOUDFLARE_USER}/intel/ip?ipv4=${data}', secrets_provider),
+
+          processor: $.interfaces.processor.http(
+            options={
+              url: url,
+              headers: [
+                {
+                  key: 'Authorization',
+                  value: std.format('Bearer ${SECRETS_%s:CLOUDFLARE_TOKEN}', secrets_provider),
+                },
+              ],
+            },
+            settings={ key: key, set_key: set_key, condition: c }
+          ),
+        },
+        // queries the GreyNoise Community API for any IP address.
+        // the API key must be stored as a secret in GREYNOISE_KEY.
+        // 
+        // WIP
+        greynoise_community(key, set_key='!metadata greynoise_community', condition=null, secrets_provider='ENV', type='community'): {
+          local c = if condition != null then condition else $.patterns.operator.ip.public(key),
+
+          local url = 'https://api.greynoise.io/v3/community/${data}',
+
+          processor: $.interfaces.processor.http(
+            options={
+              url: url,
+              headers: [
+                {
+                  key: 'key',
+                  value: std.format('${SECRETS_%s:GREYNOISE_KEY}', secrets_provider),
+                },
+              ],
+            },
             settings={ key: key, set_key: set_key, condition: c }
           ),
         },

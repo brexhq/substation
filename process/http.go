@@ -14,6 +14,9 @@ import (
 	"github.com/brexhq/substation/internal/secrets"
 )
 
+// httpInterp is used for interpolating data into URLs.
+const httpInterp = `${data}`
+
 var httpClient http.HTTP
 
 // http processes data by retrieving a payload from an HTTP(S) URL. The HTTP client
@@ -42,13 +45,12 @@ type procHTTPOptions struct {
 	Method string `json:"method"`
 	// URL is the HTTP(S) endpoint that data is retrieved from.
 	//
-	// If the substring "%s" is in the URL, then the URL is interpolated with
-	// the data (either value from Key or the data). URLs may also be interpolated
-	// with secrets by using Substation's secrets retrieval syntax (e.g., {{SECRETS_*}}).
+	// If the substring ${data} is in the URL, then the URL is interpolated with
+	// data (either the value from Key or the raw data). URLs may be optionally
+	// interpolated with secrets (e.g., ${SECRETS_ENV:FOO}).
 	URL string `json:"url"`
 	// Headers are an array of objects that contain HTTP headers sent in the request.
-	// Values may refer to secrets that are retrieved using Subtation's secrets
-	// syntax (e.g., SECRETS_*).
+	// Values may be optionally interpolated with secrets (e.g., ${SECRETS_ENV:FOO}).
 	//
 	// This is optional and has no default.
 	Headers []struct {
@@ -102,20 +104,19 @@ func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 	//
 	// - no interpolation, the URL is unchanged
 	//
-	// - object interpolation, the URL is interpolated with the
-	// object's key (object handling pattern)
+	// - object-based interpolation, the URL is interpolated
+	// using the object handling pattern.
 	//
-	// - data interpolation, the URL is interpolated with the data
-	// (data handling pattern)
+	// - data-based interpolation, the URL is interpolated
+	// using the data handling pattern.
 	//
-	// the URL is always interpolated by replacing the substring
-	// %s with either the object key's value or the data.
+	// the URL is always interpolated with the substring ${data}
 	url := p.Options.URL
-	if strings.Contains(url, "%s") {
+	if strings.Contains(url, httpInterp) {
 		if p.Key != "" {
-			url = strings.Replace(url, "%s", capsule.Get(p.Key).String(), 1)
+			url = strings.Replace(url, httpInterp, capsule.Get(p.Key).String(), 1)
 		} else {
-			url = strings.Replace(url, "%s", string(capsule.Data()), 1)
+			url = strings.Replace(url, httpInterp, string(capsule.Data()), 1)
 		}
 	}
 

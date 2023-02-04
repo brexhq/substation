@@ -10,16 +10,16 @@ import (
 
 var jsonTests = []struct {
 	name     string
-	proc     _jq
+	proc     procJQ
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"recursively remove null and empty values",
-		_jq{
+		procJQ{
 			process: process{},
-			Options: _jqOptions{
+			Options: procJQOptions{
 				Query: `walk( if type == "object" then 
 				with_entries( select( 
 					(.value != "") and 
@@ -54,7 +54,7 @@ func TestJq(t *testing.T) {
 	}
 }
 
-func benchmarkJq(b *testing.B, applier _jq, test config.Capsule) {
+func benchmarkJq(b *testing.B, applier procJQ, test config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = applier.Apply(ctx, test)

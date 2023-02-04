@@ -287,14 +287,14 @@ func Example_hTTP() {
 				"set_key": "greynoise",
 				"options": map[string]interface{}{
 					"method": "get",
-					// the value from "addr" is interpolated into %s
-					"url": "https://api.greynoise.io/v3/community/%s",
+					// the value from "addr" is interpolated into ${data}
+					"url": "https://api.greynoise.io/v3/community/${data}",
 					"headers": []map[string]interface{}{
 						{
 							"key": "key",
 							// this secret must be stored in the environment
 							// variable GREYNOISE_API
-							"value": "{{SECRETS_ENV:GREYNOISE_API}}",
+							"value": "${SECRETS_ENV:GREYNOISE_API}",
 						},
 					},
 				},

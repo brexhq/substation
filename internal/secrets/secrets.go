@@ -21,9 +21,9 @@ var (
 	secretsManagerAPI secretsmanager.API
 )
 
-// secretsRe is used for parsing secrets during interpolation. Secrets
-// must not contain any curly brackets.
-const secretsRe = `${(SECRETS_[A-Z]+:[^}]+)}`
+// interpRe is used for parsing secrets during interpolation. Secrets
+// must not contain any curly braces.
+const interpRe = `\${(SECRETS_[A-Z]+:[^}]+)}`
 
 // errSecretNotFound is returned when Get is called but no secret is found.
 const errSecretNotFound = errors.Error("secret not found")
@@ -38,7 +38,7 @@ Get retrieves a secret from these locations (in order):
 
 - AWS Secrets Manager (SECRETS_AWS)
 
-Secret identification relies on the naming convention SECRETS_[LOCATION]:[POINTER]
+Secret identification relies on the naming convention SECRETS_[LOCATION]:[NAME]
 so that select components of the system can identify and parse secrets. Secrets
 should only be put into configurations and never in data or objects that flow
 through the system. Not all components will use secrets; if the component does,
@@ -98,13 +98,26 @@ func Get(ctx context.Context, secret string) (string, error) {
 }
 
 // Interpolate identifies when a string contains one or more secrets and
-// interpolates each secret with the string.
+// interpolates each secret with the string. This function uses the same
+// convention as the standard library's regexp package for capturing named
+// groups (${name}).
+//
+// For example, if the string is "/path/to/{SECRETS_ENV:FOO}" and BAR is the
+// secret stored in the environment variable FOO, then the interpolated string
+// is "/path/to/BAR".
+//
+// Multiple secrets can be stored in a single string; if the string is
+// "/path/to/{SECRETS_ENV:FOO}/{SECRETS_ENV:BAZ}", then the interpolated string
+// is "/path/to/BAR/QUX".
+//
+// If more than one interpolation function is applied to a string (e.g., non-secrets
+// capture groups), then this function must be called first.
 func Interpolate(ctx context.Context, s string) (string, error) {
 	if !strings.Contains(s, "${SECRETS_") {
 		return s, nil
 	}
 
-	re, err := regexp.Compile(secretsRe)
+	re, err := regexp.Compile(interpRe)
 	if err != nil {
 		return "", err
 	}
@@ -120,7 +133,10 @@ func Interpolate(ctx context.Context, s string) (string, error) {
 			return "", err
 		}
 
-		// replace the original match once for each secret
+		// replaces each substring with a secret.
+		// if the secret is BAR and the string was
+		// "/path/to/secret/{SECRETS_ENV:FOO}", then the interpolated
+		// string output is "/path/to/secret/BAR".
 		old := fmt.Sprintf("${%s}", m[len(m)-1])
 		s = strings.Replace(s, old, secret, 1)
 	}

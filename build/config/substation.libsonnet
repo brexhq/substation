@@ -922,14 +922,19 @@
             settings={ key: key, set_key: set_key, condition: c }
           ),
         },
-        // queries the GreyNoise Community API for any IP address.
-        // the API key must be stored as a secret in GREYNOISE_KEY.
-        // 
-        // WIP
-        greynoise_community(key, set_key='!metadata greynoise_community', condition=null, secrets_provider='ENV', type='community'): {
+        // queries any GreyNoise IP API endpoints.
+        greynoise(key, set_key='!metadata greynoise', condition=null, secrets_provider='ENV', endpoint='community'): {
+          // by default, only lookup valid, public IP addresses
           local c = if condition != null then condition else $.patterns.operator.ip.public(key),
 
-          local url = 'https://api.greynoise.io/v3/community/${data}',
+          // only the Community API is v3, all other API endpoints are v2
+          local version = if endpoint == 'community' then 'v3' else 'v2',
+
+          // the URL is composed of three variables:
+          // - the API version
+          // - the API endpoint
+          // - the HTTP processor's data interpolation substring
+          local url = std.format('https://api.greynoise.io/%s/%s/%s', [version, endpoint, '${data}']),
 
           processor: $.interfaces.processor.http(
             options={
@@ -937,6 +942,36 @@
               headers: [
                 {
                   key: 'key',
+                  // the secret can be stored in any supported location
+                  value: std.format('${SECRETS_%s:GREYNOISE_KEY}', secrets_provider),
+                },
+              ],
+            },
+            settings={ key: key, set_key: set_key, condition: c }
+          ),
+        },
+        // queries any GreyNoise Bulk IP API endpoints. 
+        greynoise_bulk(key, set_key='!metadata greynoise', condition=null, secrets_provider='ENV', endpoint='community'): {
+          // by default, only lookup valid, public IP addresses
+          local c = condition,
+
+          // all bulk API endpoints are v2
+          local version = 'v2',
+
+          // the URL is composed of two variables:
+          // - the API version
+          // - the API endpoint
+          local url = std.format('https://api.greynoise.io/%s/%s', [version, endpoint]),
+
+          processor: $.interfaces.processor.http(
+            options={
+              url: url,
+              method: 'POST',
+              body_key: key,
+              headers: [
+                {
+                  key: 'key',
+                  // the secret can be stored in any supported location
                   value: std.format('${SECRETS_%s:GREYNOISE_KEY}', secrets_provider),
                 },
               ],

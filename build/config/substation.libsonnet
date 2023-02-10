@@ -882,46 +882,6 @@
         },
       },
       http: {
-        // queries the Cloudflare IP Intelligence API for any DNS domain.
-        // the user and token must be stored as secrets in CLOUDFLARE_USER
-        // and CLOUDFLARE_TOKEN.
-        // 
-        // WIP
-        cloudflare_intel_domain(key, set_key='!metadata cloudflare_intel_domain', condition=null, secrets_provider='ENV'): {
-          local c = if condition != null then condition else $.interfaces.operator.all([
-            $.patterns.inspector.length.gt_zero(key=key),
-          ]),
-
-          local url = std.format('https://api.cloudflare.com/client/v4/accounts/{{SECRETS_%s:CLOUDFLARE_USER}}/intel/domain', secrets_provider) + '?domain=%s',
-
-          processor: $.interfaces.processor.http(
-            options={ url: url, headers: [{ key: 'Authorization', value: std.format('Bearer {{SECRETS_%s:CLOUDFLARE_TOKEN}}', secrets_provider) }] },
-            settings={ key: key, set_key: set_key, condition: c }
-          ),
-        },
-        // queries the Cloudflare IP Intelligence API for any public IPv4 address.
-        // the user and token must be stored as secrets in CLOUDFLARE_USER
-        // and CLOUDFLARE_TOKEN.
-        // 
-        // WIP
-        cloudflare_intel_ipv4(key, set_key='!metadata cloudflare_intel_ipv4', condition=null, secrets_provider='ENV'): {
-          local c = if condition != null then condition else $.patterns.operator.ip.public(key),
-
-          local url = std.format('https://api.cloudflare.com/client/v4/accounts/${SECRETS_%s:CLOUDFLARE_USER}/intel/ip?ipv4=${data}', secrets_provider),
-
-          processor: $.interfaces.processor.http(
-            options={
-              url: url,
-              headers: [
-                {
-                  key: 'Authorization',
-                  value: std.format('Bearer ${SECRETS_%s:CLOUDFLARE_TOKEN}', secrets_provider),
-                },
-              ],
-            },
-            settings={ key: key, set_key: set_key, condition: c }
-          ),
-        },
         // queries any GreyNoise IP API endpoints.
         greynoise(key, set_key='!metadata greynoise', condition=null, secrets_provider='ENV', endpoint='community'): {
           // by default, only lookup valid, public IP addresses
@@ -951,10 +911,7 @@
           ),
         },
         // queries any GreyNoise Bulk IP API endpoints. 
-        greynoise_bulk(key, set_key='!metadata greynoise', condition=null, secrets_provider='ENV', endpoint='community'): {
-          // by default, only lookup valid, public IP addresses
-          local c = condition,
-
+        greynoise_bulk(key, set_key='!metadata greynoise', condition=null, secrets_provider='ENV', endpoint='noise/multi/quick'): {
           // all bulk API endpoints are v2
           local version = 'v2',
 
@@ -976,7 +933,7 @@
                 },
               ],
             },
-            settings={ key: key, set_key: set_key, condition: c }
+            settings={ key: key, set_key: set_key, condition: condition }
           ),
         },
       },

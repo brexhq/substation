@@ -225,7 +225,7 @@ type Batcher interface {
 }
 
 // NewBatcher returns a configured Batcher from a processor configuration.
-func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop // ignore cyclomatic complexity
+func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
 	case "aggregate":
 		var p procAggregate

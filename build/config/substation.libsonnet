@@ -97,11 +97,14 @@
       hash: {
         options: { algorithm: 'sha256' },
       },
+      http: {
+        options: { method: 'get', url: null, headers: null, key: null },
+      },
       insert: {
         options: { value: null },
       },
       ip_database: {
-        options: { type: null, settings: null }
+        options: { type: null, settings: null },
       },
       join: {
         options: { separator: null },
@@ -415,6 +418,14 @@
         local s = std.mergePatch($.interfaces.processor.settings, settings),
 
         type: 'hash',
+        settings: std.mergePatch({ options: opt }, s),
+      },
+      http(options=$.defaults.processor.http.options,
+           settings=$.interfaces.processor.settings): {
+        local opt = std.mergePatch($.defaults.processor.http.options, options),
+        local s = std.mergePatch($.interfaces.processor.settings, settings),
+
+        type: 'http',
         settings: std.mergePatch({ options: opt }, s),
       },
       insert(options=$.defaults.processor.insert.options,
@@ -867,6 +878,62 @@
           processor: $.interfaces.processor.ip_database(
             options,
             settings={ key: key, set_key: set_key, condition: c }
+          ),
+        },
+      },
+      http: {
+        // queries any GreyNoise IP API endpoints.
+        greynoise(key, set_key='!metadata greynoise', condition=null, secrets_provider='ENV', endpoint='community'): {
+          // by default, only lookup valid, public IP addresses
+          local c = if condition != null then condition else $.patterns.operator.ip.public(key),
+
+          // only the Community API is v3, all other API endpoints are v2
+          local version = if endpoint == 'community' then 'v3' else 'v2',
+
+          // the URL is composed of three variables:
+          // - the API version
+          // - the API endpoint
+          // - the HTTP processor's data interpolation substring
+          local url = std.format('https://api.greynoise.io/%s/%s/%s', [version, endpoint, '${data}']),
+
+          processor: $.interfaces.processor.http(
+            options={
+              url: url,
+              headers: [
+                {
+                  key: 'key',
+                  // the secret can be stored in any supported location
+                  value: std.format('${SECRETS_%s:GREYNOISE_KEY}', secrets_provider),
+                },
+              ],
+            },
+            settings={ key: key, set_key: set_key, condition: c }
+          ),
+        },
+        // queries any GreyNoise Bulk IP API endpoints. 
+        greynoise_bulk(key, set_key='!metadata greynoise', condition=null, secrets_provider='ENV', endpoint='noise/multi/quick'): {
+          // all bulk API endpoints are v2
+          local version = 'v2',
+
+          // the URL is composed of two variables:
+          // - the API version
+          // - the API endpoint
+          local url = std.format('https://api.greynoise.io/%s/%s', [version, endpoint]),
+
+          processor: $.interfaces.processor.http(
+            options={
+              url: url,
+              method: 'POST',
+              body_key: key,
+              headers: [
+                {
+                  key: 'key',
+                  // the secret can be stored in any supported location
+                  value: std.format('${SECRETS_%s:GREYNOISE_KEY}', secrets_provider),
+                },
+              ],
+            },
+            settings={ key: key, set_key: set_key, condition: condition }
           ),
         },
       },

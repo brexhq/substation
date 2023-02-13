@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/aws/aws-xray-sdk-go/xray"
@@ -42,10 +41,14 @@ func (h *HTTP) IsEnabled() bool {
 }
 
 // Get is a context-aware convenience function for making GET requests.
-func (h *HTTP) Get(ctx context.Context, url string) (*http.Response, error) {
+func (h *HTTP) Get(ctx context.Context, url string, headers ...Header) (*http.Response, error) {
 	req, err := retryablehttp.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("http get URL %s: %v", url, err)
+	}
+
+	for _, h := range headers {
+		req.Header.Add(h.Key, h.Value)
 	}
 
 	reqCtx := req.WithContext(ctx)
@@ -84,8 +87,6 @@ func (h *HTTP) Post(ctx context.Context, url string, payload interface{}, header
 	if err != nil {
 		return nil, fmt.Errorf("http post URL %s: %v", url, err)
 	}
-	_, _ = io.Copy(io.Discard, resp.Body)
-	defer resp.Body.Close()
 
 	return resp, nil
 }

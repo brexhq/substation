@@ -80,6 +80,38 @@ func Get(cfg config.Config) (Storer, error) {
 	return m[sig], nil
 }
 
+// New returns a Storer.
+func New(cfg config.Config) (Storer, error) {
+	switch t := cfg.Type; t {
+	case "aws_dynamodb":
+		var c kvAWSDynamoDB
+		_ = config.Decode(cfg.Settings, &c)
+		return &c, nil
+	case "csv_file":
+		var c kvCSVFile
+		_ = config.Decode(cfg.Settings, &c)
+		return &c, nil
+	case "json_file":
+		var c kvJSONFile
+		_ = config.Decode(cfg.Settings, &c)
+		return &c, nil
+	case "memory":
+		var c kvMemory
+		_ = config.Decode(cfg.Settings, &c)
+		return &c, nil
+	case "mmdb":
+		var c kvMMDB
+		_ = config.Decode(cfg.Settings, &c)
+		return &c, nil
+	case "text_file":
+		var c kvTextFile
+		_ = config.Decode(cfg.Settings, &c)
+		return &c, nil
+	default:
+		return nil, fmt.Errorf("kv_store: %s: %v", t, errors.ErrInvalidFactoryInput)
+	}
+}
+
 func init() {
 	m = make(map[string]Storer)
 }

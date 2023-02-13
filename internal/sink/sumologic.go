@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/jshlbrd/go-aggregate"
@@ -102,10 +103,15 @@ func (s *sinkSumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 					buf.WriteString(fmt.Sprintf("%s\n", i))
 				}
 
-				if _, err := sumoLogicClient.Post(ctx, s.URL, buf.Bytes(), h...); err != nil {
+				resp, err := sumoLogicClient.Post(ctx, s.URL, buf.Bytes(), h...)
+				if err != nil {
 					// Post err returns metadata
 					return fmt.Errorf("sink: sumologic: %v", err)
 				}
+
+				//nolint:errcheck // response body is discarded to avoid resource leaks
+				io.Copy(io.Discard, resp.Body)
+				resp.Body.Close()
 
 				log.WithField(
 					"category", category,
@@ -138,10 +144,15 @@ func (s *sinkSumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 			buf.WriteString(fmt.Sprintf("%s\n", b))
 		}
 
-		if _, err := sumoLogicClient.Post(ctx, s.URL, buf.Bytes(), h...); err != nil {
+		resp, err := sumoLogicClient.Post(ctx, s.URL, buf.Bytes(), h...)
+		if err != nil {
 			// Post err returns metadata
 			return fmt.Errorf("sink: sumologic: %v", err)
 		}
+
+		//nolint:errcheck // response body is discarded to avoid resource leaks
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
 
 		log.WithField(
 			"count", count,

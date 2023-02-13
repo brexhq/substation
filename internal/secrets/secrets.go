@@ -1,4 +1,4 @@
-// Package secrets provides functions for retrieving local and remote secrets
+// Package secrets provides functions for retrieving local and remote secrets and interpolating them into configuration files
 package secrets
 
 import (

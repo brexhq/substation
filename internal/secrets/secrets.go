@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	goregexp "regexp"
 	"strings"
 	"time"
 
@@ -17,7 +16,9 @@ import (
 )
 
 var (
-	interpRe *goregexp.Regexp
+	// interpRe is used for parsing secrets during interpolation. Secrets
+	// must not contain any curly braces.
+	interpRe = regexp.MustCompile(`\${(SECRETS_[A-Z]+:[^}]+)}`)
 	// KV store is used as a secrets cache
 	cache             kv.Storer
 	secretsManagerAPI secretsmanager.API
@@ -138,10 +139,6 @@ func Interpolate(ctx context.Context, s string) (string, error) {
 }
 
 func init() {
-	// interpRe is used for parsing secrets during interpolation. Secrets
-	// must not contain any curly braces.
-	interpRe = regexp.MustCompile(`\${(SECRETS_[A-Z]+:[^}]+)}`)
-
 	kv, err := kv.New(config.Config{
 		Type: "memory",
 		Settings: map[string]interface{}{

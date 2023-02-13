@@ -54,6 +54,8 @@ func (p procCapture) Batch(ctx context.Context, capsules ...config.Capsule) ([]c
 }
 
 // Apply processes a capsule with the processor.
+//
+//nolint:gocognit
 func (p procCapture) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// error early if required options are missing
 	if p.Options.Expression == "" || p.Options.Type == "" {
@@ -92,6 +94,27 @@ func (p procCapture) Apply(ctx context.Context, capsule config.Capsule) (config.
 
 			if err := capsule.Set(p.SetKey, matches); err != nil {
 				return capsule, fmt.Errorf("process: capture: %v", err)
+			}
+
+			return capsule, nil
+		case "named_group":
+			names := re.SubexpNames()
+			matches := re.FindStringSubmatch(result)
+			for i, m := range matches {
+				if i == 0 {
+					continue
+				}
+
+				// if the same key is used multiple times, then this will correctly
+				// set multiple named groups into that key.
+				//
+				// if set_key is "foo" and the first group returns {"bar":"baz"}, then
+				// the output is {"foo":{"bar":"baz"}}. if the second group returns
+				// {"qux":"quux"} then the output is {"foo":{"bar":"baz","qux":"quux"}}.
+				setKey := p.SetKey + "." + names[i]
+				if err := capsule.Set(setKey, m); err != nil {
+					return capsule, fmt.Errorf("process: capture: %v", err)
+				}
 			}
 
 			return capsule, nil

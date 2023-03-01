@@ -16,39 +16,113 @@ var expandTests = []struct {
 	err      error
 }{
 	{
-		"JSON",
+		"objects",
 		procExpand{
 			process: process{
-				Key: "expand",
+				Key: "a",
 			},
 		},
-		[]byte(`{"expand":[{"foo":"bar"}]}`),
+		[]byte(`{"a":[{"b":"c"}]}`),
 		[][]byte{
-			[]byte(`{"foo":"bar"}`),
+			[]byte(`{"b":"c"}`),
 		},
 		nil,
 	},
 	{
-		"JSON extra key",
+		"objects with key",
 		procExpand{
 			process: process{
-				Key: "expand",
+				Key: "a",
 			},
 		},
-		[]byte(`{"expand":[{"foo":"bar"},{"quux":"corge"}],"baz":"qux"}`),
+		[]byte(`{"a":[{"b":"c"},{"d":"e"}],"x":"y"}`),
 		[][]byte{
-			[]byte(`{"foo":"bar","baz":"qux"}`),
-			[]byte(`{"quux":"corge","baz":"qux"}`),
+			[]byte(`{"x":"y","b":"c"}`),
+			[]byte(`{"x":"y","d":"e"}`),
 		},
 		nil,
 	},
 	{
-		"data",
+		"non-objects with key",
+		procExpand{
+			process: process{
+				Key: "a",
+			},
+		},
+		[]byte(`{"a":["b","c"],"d":"e"}`),
+		[][]byte{
+			[]byte(`{"d":"e"}`),
+			[]byte(`{"d":"e"}`),
+		},
+		nil,
+	},
+	{
+		"objects with set key",
+		procExpand{
+			process: process{
+				Key:    "a",
+				SetKey: "a",
+			},
+		},
+		[]byte(`{"a":[{"b":"c"},{"d":"e"}],"x":"y"}`),
+		[][]byte{
+			[]byte(`{"x":"y","a":{"b":"c"}}`),
+			[]byte(`{"x":"y","a":{"d":"e"}}`),
+		},
+		nil,
+	},
+	{
+		"strings with key",
+		procExpand{
+			process: process{
+				Key:    "a",
+				SetKey: "a",
+			},
+		},
+		[]byte(`{"a":["b","c"],"d":"e"}`),
+		[][]byte{
+			[]byte(`{"d":"e","a":"b"}`),
+			[]byte(`{"d":"e","a":"c"}`),
+		},
+		nil,
+	},
+	{
+		"objects with deeply nested set key",
+		procExpand{
+			process: process{
+				Key:    "a.b",
+				SetKey: "a.b.c.d",
+			},
+		},
+		[]byte(`{"a":{"b":[{"g":"h"},{"i":"j"}],"x":"y"}}`),
+		[][]byte{
+			[]byte(`{"a":{"x":"y","b":{"c":{"d":{"g":"h"}}}}}`),
+			[]byte(`{"a":{"x":"y","b":{"c":{"d":{"i":"j"}}}}}`),
+		},
+		nil,
+	},
+	{
+		"objects overwriting set key",
+		procExpand{
+			process: process{
+				Key:    "a.b",
+				SetKey: "a",
+			},
+		},
+		[]byte(`{"a":{"b":[{"c":"d"},{"e":"f"}],"x":"y"}}`),
+		[][]byte{
+			[]byte(`{"a":{"c":"d"}}`),
+			[]byte(`{"a":{"e":"f"}}`),
+		},
+		nil,
+	},
+	{
+		"data array",
 		procExpand{},
-		[]byte(`[{"foo":"bar"},{"quux":"corge"}]`),
+		[]byte(`[{"a":"b"},{"c":"d"}]`),
 		[][]byte{
-			[]byte(`{"foo":"bar"}`),
-			[]byte(`{"quux":"corge"}`),
+			[]byte(`{"a":"b"}`),
+			[]byte(`{"c":"d"}`),
 		},
 		nil,
 	},

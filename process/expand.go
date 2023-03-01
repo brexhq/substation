@@ -46,51 +46,83 @@ func (p procExpand) Batch(ctx context.Context, capsules ...config.Capsule) ([]co
 			continue
 		}
 
-		// data is processed by retrieving and iterating the
-		// array containing JSON objects and setting
-		// any additional keys from the root object into each
-		// expanded object. if there is no Key, then the
-		// input is processed as an array.
+		// data is processed by retrieving and iterating an
+		// array containing JSON objects (result) and setting
+		// any remaining keys from the object (remains) into
+		// each new object. if there is no Key, then the input
+		// is treated as an array.
 		//
-		// root:
-		// 	{"procExpand":[{"foo":"bar"},{"baz":"qux"}],"quux":"corge"}
-		// expanded:
+		// input:
+		// 	{"expand":[{"foo":"bar"},{"baz":"qux"}],"quux":"corge"}
+		// result:
+		//  [{"foo":"bar"},{"baz":"qux"}]
+		// remains:
+		// 	{"quux":"corge"}
+		// output:
 		// 	{"foo":"bar","quux":"corge"}
 		// 	{"baz":"qux","quux":"corge"}
-		root := capsule.Get("@this")
-		result := root
+		var result, remains json.Result
 
-		// JSON processing
-		// the Get / Delete routine is a hack to speed up processing
-		// very large objects, like those output by AWS CloudTrail.
 		if p.Key != "" {
-			rootBytes, err := json.Delete([]byte(root.String()), p.Key)
-			if err != nil {
+			result = json.Get(capsule.Data(), p.Key)
+
+			// deleting the key from the object speeds
+			// up processing large objects.
+			if err := capsule.Delete(p.Key); err != nil {
 				return nil, fmt.Errorf("process: expand: %v", err)
 			}
 
-			root = json.Get(rootBytes, "@this")
-			result = capsule.Get(p.Key)
+			remains = json.Get(capsule.Data(), "@this")
+		} else {
+			// remains is unused when there is no key
+			result = json.Get(capsule.Data(), "@this")
 		}
 
-		// retains metadata from the original capsule
-		newCapsule := capsule
 		for _, res := range result.Array() {
-			var err error
+			// retains metadata from the original event
+			newCapsule := capsule
+			newCapsule.SetData([]byte{})
 
-			procExpand := []byte(res.String())
-			for key, val := range root.Map() {
-				if key == p.Key {
-					continue
-				}
+			// data processing
+			//
+			// elements from the array become new data.
+			if p.Key == "" {
+				newCapsule.SetData([]byte(res.String()))
+				newCapsules = append(newCapsules, newCapsule)
+				continue
+			}
 
-				procExpand, err = json.Set(procExpand, key, val)
-				if err != nil {
+			// object processing
+			//
+			// remaining keys from the original object are added
+			// to the new object.
+			for key, val := range remains.Map() {
+				if err = newCapsule.Set(key, val); err != nil {
 					return nil, fmt.Errorf("process: expand: %v", err)
 				}
 			}
 
-			newCapsule.SetData(procExpand)
+			if p.SetKey != "" {
+				if err := newCapsule.Set(p.SetKey, res); err != nil {
+					return nil, fmt.Errorf("process: expand: %v", err)
+				}
+
+				newCapsules = append(newCapsules, newCapsule)
+				continue
+			}
+
+			// at this point there should be two objects that need to be
+			// merged into a single object. the objects are merged using
+			// the GJSON @join function, which joins all objects that are
+			// in an array. if the array contains non-object data, then
+			// it is ignored.
+			//
+			// [{"foo":"bar"},{"baz":"qux"}}] becomes {"foo":"bar","baz":"qux"}
+			// [{"foo":"bar"},{"baz":"qux"},"quux"] becomes {"foo":"bar","baz":"qux"}
+			tmp := fmt.Sprintf(`[%s,%s]`, newCapsule.Data(), res.String())
+			join := json.Get([]byte(tmp), "@join")
+			newCapsule.SetData([]byte(join.String()))
+
 			newCapsules = append(newCapsules, newCapsule)
 		}
 	}

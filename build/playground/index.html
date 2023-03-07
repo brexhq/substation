@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>substation-playground</title>
+    <title>Substation Playground</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/hack-font@3/build/web/hack.css">
     <script src="wasm_exec.js"></script>
@@ -52,7 +52,7 @@
         #config {
             display: block;
             height: 100%;
-            min-height: 375px;
+            min-height: 340px;
             width: 100%;
             max-width: 1000px;
             border-radius: 15px;
@@ -73,8 +73,9 @@
         #output {
             display: inline-block;
             height: 100%;
-            min-height: 375px;
-            width: 49%;
+            min-height: 285px;
+            margin-left: 5px;
+            width: calc(50% - 10px);
             max-width: 1000px;
             border-radius: 15px;
             background-color: #272822;
@@ -86,12 +87,11 @@
             outline: none;
             box-shadow: 0px 15px 15px rgba(0, 0, 0, 0.3);
             resize: none;
-            margin: 10px auto;
         }
 
         .top {
             display: block;
-            margin: 40px auto 40px auto;
+            margin: 20px auto 20px auto;
             text-align: center;
         }
 
@@ -147,7 +147,8 @@
         <div class="top">
             <img src="substation_logo.png" height="100" class="logo">
             <div class="sub">PLAYGROUND</div>
-            <p><a href="https://substation.readme.io/" target="_blank">Substation</a> is a cloud native data pipeline and transformation
+            <p><a href="https://substation.readme.io/" target="_blank">Substation</a> is a cloud native data pipeline
+                and transformation
                 toolkit -- now in the browser!</p>
         </div>
         <div>

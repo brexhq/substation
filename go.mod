@@ -8,6 +8,7 @@ require (
 	github.com/aws/aws-xray-sdk-go v1.8.0
 	github.com/awslabs/kinesis-aggregation/go v0.0.0-20221116143518-d545ec06b62c
 	github.com/golang/protobuf v1.5.2
+	github.com/google/go-jsonnet v0.19.1
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-retryablehttp v0.7.1
 	github.com/iancoleman/strcase v0.2.0
@@ -39,4 +40,6 @@ require (
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef // indirect
+	gopkg.in/yaml.v2 v2.2.8 // indirect
+	sigs.k8s.io/yaml v1.1.0 // indirect
 )

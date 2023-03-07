@@ -214,9 +214,9 @@
 		settings={key: 'c'}
 	),
 	
-	// Processors are conditionally applied to data using conditions, which are a combination
-	// of operators (all, any, none) and inspectors. This processor copies the value from \`a\` to
-	// \`c\` if the value of \`a\` is greater than zero.
+	// Processors are conditionally applied to data using a condition, which is a combination
+	// of operators (all, any, none) and inspectors. This processor copies the value from \`a\`
+	// to \`c\` if the value of \`a\` is greater than zero.
 	sub.interfaces.processor.copy(
 		settings={key: 'a', set_key: 'c', condition: sub.interfaces.operator.all(
 			sub.interfaces.inspector.length(

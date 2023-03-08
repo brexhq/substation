@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,7 +29,7 @@ type options struct {
 	Input  string
 	Config string
 
-	ForceSinkStdout bool
+	ForceSink string
 }
 
 // getConfig contextually retrieves a Substation configuration.
@@ -60,7 +61,7 @@ func main() {
 	timeout := flag.Duration("timeout", 10*time.Second, "timeout")
 	flag.StringVar(&opts.Input, "input", "", "file to parse")
 	flag.StringVar(&opts.Config, "config", "", "Substation configuration file")
-	flag.BoolVar(&opts.ForceSinkStdout, "force-stdout", false, "force sink output to stdout")
+	flag.StringVar(&opts.ForceSink, "force-sink", "", "force sink output to value (supported: stdout)")
 	flag.Parse()
 
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
@@ -84,23 +85,18 @@ func run(ctx context.Context, opts options) error {
 		return fmt.Errorf("run: %v", err)
 	}
 
-	if opts.ForceSinkStdout {
+	if opts.ForceSink != "" {
 		c, err = sub.GetConfig()
 		if err != nil {
 			return fmt.Errorf("run: %v", err)
 		}
 
-		oldConfig, err := io.ReadAll(c)
+		newConfig, err := mutateSink(c, opts.ForceSink)
 		if err != nil {
 			return fmt.Errorf("run: %v", err)
 		}
 
-		newConfig, err := json.Set(oldConfig, "sink.type", "stdout")
-		if err != nil {
-			return fmt.Errorf("run: %v", err)
-		}
-
-		if err := sub.SetConfig(bytes.NewReader(newConfig)); err != nil {
+		if err := sub.SetConfig(newConfig); err != nil {
 			return fmt.Errorf("run: %v", err)
 		}
 	}
@@ -182,4 +178,30 @@ func run(ctx context.Context, opts options) error {
 	}
 
 	return nil
+}
+
+func mutateSink(cfg io.Reader, forceSink string) (*bytes.Reader, error) {
+	oldConfig, err := io.ReadAll(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("run: %v", err)
+	}
+
+	var r *bytes.Reader
+
+	switch {
+	case forceSink == "stdout":
+		newConfig, err := json.Set(oldConfig, "sink.type", forceSink)
+		if err != nil {
+			return nil, fmt.Errorf("run: %v", err)
+		}
+		r = bytes.NewReader(newConfig)
+	case strings.HasPrefix(forceSink, "http://"):
+		return nil, fmt.Errorf("-force-sink http://* not yet implemented")
+	case strings.HasPrefix(forceSink, "s3://"):
+		return nil, fmt.Errorf("-force-sink s3://* not yet implemented")
+	default:
+		return nil, fmt.Errorf("%q not supported for -force-sink", forceSink)
+	}
+
+	return r, nil
 }

@@ -6,23 +6,27 @@ src="https://github.com/brexhq/substation/blob/main/substation_logo.png" />
 </p>
 
 <p align="center">
-Substation is a data pipeline and transformation toolkit written in Go.
+Substation is a cloud native data pipeline and transformation toolkit written in Go.
 </p>
 
 ## Resources
-* Documentation: https://substation.readme.io/docs
-* Recipes: https://substation.readme.io/recipes
-* Announcements: https://github.com/brexhq/substation/discussions/categories/announcements
-* Announcement Post: https://medium.com/brexeng/announcing-substation-188d049d979b
+
+* Playground: <https://substation.run>
+* Documentation: <https://substation.readme.io/docs>
+* Recipes: <https://substation.readme.io/recipes>
+* Announcements: <https://github.com/brexhq/substation/discussions/categories/announcements>
+* Announcement Post: <https://medium.com/brexeng/announcing-substation-188d049d979b>
 
 ## What is Substation?
 
-Substation provides three unique data handling capabilities: 
-* modular, cloud native data pipelines that support 100s of unique designs
-* event-driven ingest, transform, load (ITL) applications that evaluate, process, and deliver data in real-time
+Substation provides three unique data handling capabilities:
+
+* Modular, cloud native data pipelines that support 100s of unique designs
+* Event-driven ingest, transform, load (ITL) applications that evaluate, process, and deliver data in real-time
 * Go packages for creating custom data processing applications
 
 Substation can transform logs like this ...
+
 ```json
 {
   "ts": 1591367999.305988,
@@ -226,7 +230,7 @@ local network = import 'network.libsonnet';
 }
 ```
 
-... running in any pipeline like these ...
+... running in any data pipeline like these ...
 
 ![alt text](substation_architecture.png)
 

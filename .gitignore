@@ -26,6 +26,9 @@ playground.wasm.gz
 wasm_exec.js
 build/playground/substation_logo.png
 
+# Ignore macOS system files
+.DS_Store
+
 # Archive files
 *.zip
 

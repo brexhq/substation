@@ -82,8 +82,8 @@ func (sub *substation) SetConfig(r io.Reader) error {
 	return nil
 }
 
-// GetConfig retreives the configuration of the app.
-func (sub *substation) GetConfig() (io.Reader, error) {
+// Config retreives the configuration of the app.
+func (sub *substation) Config() (io.Reader, error) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(sub.config); err != nil {
 		return nil, err

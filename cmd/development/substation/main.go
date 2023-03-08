@@ -86,7 +86,7 @@ func run(ctx context.Context, opts options) error {
 	}
 
 	if opts.ForceSink != "" {
-		c, err = sub.GetConfig()
+		c, err = sub.Config()
 		if err != nil {
 			return fmt.Errorf("run: %v", err)
 		}

@@ -21,6 +21,9 @@ CHANGELOG.md
 !examples/*/data.json
 !examples/quickstart/data.json
 
+# Ignore macOS system files
+.DS_Store
+
 # Archive files
 *.zip
 

@@ -44,6 +44,10 @@ type Inspector interface {
 // NewInspector returns a configured Inspector from an Inspector configuration.
 func NewInspector(cfg config.Config) (Inspector, error) {
 	switch cfg.Type {
+	case "condition":
+		var i inspCondition
+		_ = config.Decode(cfg.Settings, &i)
+		return i, nil
 	case "content":
 		var i inspContent
 		_ = config.Decode(cfg.Settings, &i)
@@ -243,4 +247,38 @@ func (o opEmpty) Operate(ctx context.Context, capsule config.Capsule) (bool, err
 type Config struct {
 	Operator   string          `json:"operator"`
 	Inspectors []config.Config `json:"inspectors"`
+}
+
+// condition evaluates data with a condition (operator and inspectors).
+//
+// This inspector supports the object handling patterns of the inspectors passed to the condition.
+type inspCondition struct {
+	condition
+	Options Config `json:"options"`
+}
+
+func (c inspCondition) String() string {
+	return toString(c)
+}
+
+// Inspect evaluates encapsulated data with the condition inspector.
+func (c inspCondition) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
+	op, err := NewOperator(c.Options)
+	if err != nil {
+		return false, err
+	}
+
+	// this inspector does not directly interpret data, instead the
+	// capsule is passed through and each configured inspector
+	// applies its own data interpretation.
+	matched, err := op.Operate(ctx, capsule)
+	if err != nil {
+		return false, err
+	}
+
+	if c.Negate {
+		return !matched, nil
+	}
+
+	return matched, nil
 }

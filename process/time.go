@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
@@ -24,7 +25,7 @@ type procTimeOptions struct {
 	//
 	// Must be one of:
 	//
-	// - pattern-based layouts (https://gobyexample.com/procTime-formatting-parsing)
+	// - pattern-based layouts (https://gobyexample.com/time-formatting-parsing)
 	//
 	// - unix: epoch (supports fractions of a second)
 	//
@@ -40,7 +41,7 @@ type procTimeOptions struct {
 	//
 	// Must be one of:
 	//
-	// - pattern-based layouts (https://gobyexample.com/procTime-formatting-parsing)
+	// - pattern-based layouts (https://gobyexample.com/time-formatting-parsing)
 	//
 	// - unix: epoch (supports fractions of a second)
 	//
@@ -62,19 +63,34 @@ func (p procTime) Close(context.Context) error {
 	return nil
 }
 
+// Create a new time processor.
+func newProcTime(cfg config.Config) (p procTime, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procTime{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procTime{}, err
+	}
+
+	// error early if required options are missing
+	if p.Options.Format == "" || p.Options.SetFormat == "" {
+		return procTime{}, fmt.Errorf("process: time: options %+v: %v", p.Options, errMissingRequiredOptions)
+	}
+
+	return p, nil
+}
+
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procTime) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procTime) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Format == "" || p.Options.SetFormat == "" {
-		return capsule, fmt.Errorf("process: time: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
 	// "now" processing, supports json and data
 	if p.Options.Format == "now" {
 		ts := time.Now()

@@ -6,6 +6,8 @@ import (
 	gojson "encoding/json"
 	"fmt"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
@@ -57,6 +59,31 @@ type procPrettyPrintOptions struct {
 	Direction string `json:"direction"`
 }
 
+// Create a new pretty print processor.
+func newProcPrettyPrint(cfg config.Config) (p procPrettyPrint, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procPrettyPrint{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procPrettyPrint{}, err
+	}
+
+	//  validate option.direction
+	if !slices.Contains(
+		[]string{
+			"to",
+			"from",
+		},
+		p.Options.Direction) {
+		return procPrettyPrint{}, fmt.Errorf("process: pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procPrettyPrint) String() string {
 	return toString(p)
@@ -80,22 +107,12 @@ func (p procPrettyPrint) Close(context.Context) error {
 // then the stack of bytes has JSON compaction
 // applied and the result is emitted as a new object.
 func (p procPrettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Direction == "" {
-		return nil, fmt.Errorf("process: pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
-	op, err := condition.NewOperator(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process: pretty_print: %v", err)
-	}
-
 	var count int
 	var stack []byte
 
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
-		ok, err := op.Operate(ctx, capsule)
+		ok, err := p.operator.Operate(ctx, capsule)
 		if err != nil {
 			return nil, fmt.Errorf("process: pretty_print: %v", err)
 		}
@@ -161,11 +178,6 @@ func (p procPrettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) 
 // this support is unnecessary for multi-line objects that
 // are stored in a single byte array.
 func (p procPrettyPrint) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Direction == "" {
-		return capsule, fmt.Errorf("process: pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
 	switch p.Options.Direction {
 	case "to":
 		capsule.SetData([]byte(capsule.Get(ppModifier).String()))

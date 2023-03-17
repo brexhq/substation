@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	ipdb "github.com/brexhq/substation/internal/ip/database"
 )
@@ -26,6 +27,8 @@ import (
 type procIPDatabase struct {
 	process
 	Options config.Config `json:"options"`
+
+	db ipdb.OpenCloser
 }
 
 // String returns the processor settings as an object.
@@ -53,33 +56,47 @@ func (p procIPDatabase) Close(ctx context.Context) error {
 	return nil
 }
 
+// Create a new IP database processor.
+func newProcIPDatabase(cfg config.Config) (p procIPDatabase, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procIPDatabase{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procIPDatabase{}, err
+	}
+
+	// only supports JSON, fail if there are no keys
+	if p.Key == "" && p.SetKey == "" {
+		return procIPDatabase{}, fmt.Errorf("process: ip_database: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	}
+
+	p.db, err = ipdb.Get(p.Options)
+	if err != nil {
+		return procIPDatabase{}, fmt.Errorf("process: ip_database: %v", err)
+	}
+
+	if !p.db.IsEnabled() {
+		if err := p.db.Open(context.Background()); err != nil {
+			return procIPDatabase{}, fmt.Errorf("process: ip_database: %v", err)
+		}
+	}
+
+	return p, nil
+}
+
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procIPDatabase) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procIPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// only supports JSON, error early if there are no keys
-	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process: ip_database: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
-	}
-
-	db, err := ipdb.Get(p.Options)
-	if err != nil {
-		return capsule, fmt.Errorf("process: ip_database: %v", err)
-	}
-
-	// lazy load the database
-	if !db.IsEnabled() {
-		if err := db.Open(ctx); err != nil {
-			return capsule, fmt.Errorf("process: ip_database: %v", err)
-		}
-	}
-
 	res := capsule.Get(p.Key).String()
-	record, err := db.Get(res)
+	record, err := p.db.Get(res)
 	if err != nil {
 		return capsule, fmt.Errorf("process: ip_database: %v", err)
 	}

@@ -64,10 +64,24 @@ type sinkAWSS3 struct {
 	FileCompression config.Config `json:"file_compression"`
 }
 
+// Create a new AWS S3 sink.
+func newSinkAWSS3(cfg config.Config) (s sinkAWSS3, err error) {
+	err = config.Decode(cfg.Settings, &s)
+	if err != nil {
+		return sinkAWSS3{}, err
+	}
+
+	if s.Bucket == "" {
+		return sinkAWSS3{}, fmt.Errorf("sink: aws_s3: bucket missing")
+	}
+
+	return s, nil
+}
+
 // Send sinks a channel of encapsulated data with the sink.
 //
 //nolint:gocognit
-func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
+func (s sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 	if !s3uploader.IsEnabled() {
 		s3uploader.Setup()
 	}

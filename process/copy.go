@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
@@ -12,6 +13,21 @@ import (
 // This processor supports the data and object handling patterns.
 type procCopy struct {
 	process
+}
+
+// Create a new copy processor.
+func newProcCopy(cfg config.Config) (p procCopy, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procCopy{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procCopy{}, err
+	}
+
+	return p, nil
 }
 
 // String returns the processor settings as an object.
@@ -27,7 +43,7 @@ func (p procCopy) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procCopy) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.

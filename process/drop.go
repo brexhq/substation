@@ -15,6 +15,21 @@ type procDrop struct {
 	process
 }
 
+// Create a new drop processor.
+func newProcDrop(cfg config.Config) (p procDrop, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procDrop{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procDrop{}, err
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procDrop) String() string {
 	return toString(p)
@@ -28,14 +43,9 @@ func (p procDrop) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procDrop) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.NewOperator(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process: drop: %v", err)
-	}
-
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
-		ok, err := op.Operate(ctx, capsule)
+		ok, err := p.operator.Operate(ctx, capsule)
 		if err != nil {
 			return nil, fmt.Errorf("process: drop: %v", err)
 		}

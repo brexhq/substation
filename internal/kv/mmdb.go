@@ -9,6 +9,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
 	"github.com/oschwald/maxminddb-golang"
@@ -28,8 +29,24 @@ type kvMMDB struct {
 	// File contains the location of the MMDB file. This can be either a path on local
 	// disk, an HTTP(S) URL, or an AWS S3 URL.
 	File   string `json:"file"`
-	mu     sync.RWMutex
+	mu     *sync.RWMutex
 	reader *maxminddb.Reader
+}
+
+// Create a new MMDB KV store.
+func newKVMMDB(cfg config.Config) (kvMMDB, error) {
+	var store kvMMDB
+	err := config.Decode(cfg.Settings, &store)
+	if err != nil {
+		return kvMMDB{}, err
+	}
+	store.mu = new(sync.RWMutex)
+
+	if store.File == "" {
+		return kvMMDB{}, fmt.Errorf("kv: mmdb: options %+v: %w", &store, errMissingRequiredOptions)
+	}
+
+	return store, nil
 }
 
 func (store *kvMMDB) String() string {

@@ -23,6 +23,31 @@ type procSplitOptions struct {
 	Separator string `json:"separator"`
 }
 
+// Create a new split processor.
+func newProcSplit(cfg config.Config) (p procSplit, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procSplit{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procSplit{}, err
+	}
+
+	// fail if required options are missing
+	if p.Options.Separator == "" {
+		return procSplit{}, fmt.Errorf("process: split: options %+v: %v", p.Options, errMissingRequiredOptions)
+	}
+
+	// only supports JSON, fail if there are no keys
+	if p.Key == "" || p.SetKey == "" {
+		return procSplit{}, fmt.Errorf("process: split: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procSplit) String() string {
 	return toString(p)
@@ -36,14 +61,9 @@ func (p procSplit) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procSplit) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.NewOperator(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process: split: %v", err)
-	}
-
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
-		ok, err := op.Operate(ctx, capsule)
+		ok, err := p.operator.Operate(ctx, capsule)
 		if err != nil {
 			return nil, fmt.Errorf("process: split: %v", err)
 		}
@@ -83,16 +103,6 @@ func (p procSplit) Batch(ctx context.Context, capsules ...config.Capsule) ([]con
 
 // Apply processes a capsule with the processor.
 func (p procSplit) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Separator == "" {
-		return capsule, fmt.Errorf("process: split: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
-	// only supports JSON, error early if there are no keys
-	if p.Key == "" || p.SetKey == "" {
-		return capsule, fmt.Errorf("process: split: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
-	}
-
 	result := capsule.Get(p.Key).String()
 	value := strings.Split(result, p.Options.Separator)
 

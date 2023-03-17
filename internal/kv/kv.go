@@ -15,6 +15,8 @@ var (
 	m  map[string]Storer
 	// errSetNotSupported is returned when the KV set action is not supported.
 	errSetNotSupported = errors.Error("set not supported")
+	// errMissingRequiredOptions is returned when a KV store does not have the required options to properly execute.
+	errMissingRequiredOptions = errors.Error("missing required options")
 )
 
 // Storer provides tools for getting values from and putting values into key-value stores.
@@ -50,28 +52,40 @@ func Get(cfg config.Config) (Storer, error) {
 
 	switch t := cfg.Type; t {
 	case "aws_dynamodb":
-		var c kvAWSDynamoDB
-		_ = config.Decode(cfg.Settings, &c)
+		c, err := newKVAWSDyanmoDB(cfg)
+		if err != nil {
+			return nil, err
+		}
 		m[sig] = &c
 	case "csv_file":
-		var c kvCSVFile
-		_ = config.Decode(cfg.Settings, &c)
+		c, err := newKVCSVFile(cfg)
+		if err != nil {
+			return nil, err
+		}
 		m[sig] = &c
 	case "json_file":
-		var c kvJSONFile
-		_ = config.Decode(cfg.Settings, &c)
+		c, err := newKVJSONFile(cfg)
+		if err != nil {
+			return nil, err
+		}
 		m[sig] = &c
 	case "memory":
-		var c kvMemory
-		_ = config.Decode(cfg.Settings, &c)
+		c, err := newKVMemory(cfg)
+		if err != nil {
+			return nil, err
+		}
 		m[sig] = &c
 	case "mmdb":
-		var c kvMMDB
-		_ = config.Decode(cfg.Settings, &c)
+		c, err := newKVMMDB(cfg)
+		if err != nil {
+			return nil, err
+		}
 		m[sig] = &c
 	case "text_file":
-		var c kvTextFile
-		_ = config.Decode(cfg.Settings, &c)
+		c, err := newKVTextFile(cfg)
+		if err != nil {
+			return nil, err
+		}
 		m[sig] = &c
 	default:
 		return nil, fmt.Errorf("kv_store: %s: %v", t, errors.ErrInvalidFactoryInput)
@@ -84,29 +98,23 @@ func Get(cfg config.Config) (Storer, error) {
 func New(cfg config.Config) (Storer, error) {
 	switch t := cfg.Type; t {
 	case "aws_dynamodb":
-		var c kvAWSDynamoDB
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		c, err := newKVAWSDyanmoDB(cfg)
+		return &c, err
 	case "csv_file":
-		var c kvCSVFile
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		c, err := newKVCSVFile(cfg)
+		return &c, err
 	case "json_file":
-		var c kvJSONFile
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		c, err := newKVJSONFile(cfg)
+		return &c, err
 	case "memory":
-		var c kvMemory
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		c, err := newKVMemory(cfg)
+		return &c, err
 	case "mmdb":
-		var c kvMMDB
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		c, err := newKVMMDB(cfg)
+		return &c, err
 	case "text_file":
-		var c kvTextFile
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		c, err := newKVTextFile(cfg)
+		return &c, err
 	default:
 		return nil, fmt.Errorf("kv_store: %s: %v", t, errors.ErrInvalidFactoryInput)
 	}

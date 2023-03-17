@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/file"
 	"github.com/brexhq/substation/internal/json"
 )
@@ -19,8 +20,24 @@ type kvJSONFile struct {
 	// File contains the location of the text file. This can be either a path on local
 	// disk, an HTTP(S) URL, or an AWS S3 URL.
 	File   string `json:"file"`
-	mu     sync.Mutex
+	mu     *sync.Mutex
 	object []byte
+}
+
+// Create a new JSON file KV store.
+func newKVJSONFile(cfg config.Config) (kvJSONFile, error) {
+	var store kvJSONFile
+	err := config.Decode(cfg.Settings, &store)
+	if err != nil {
+		return kvJSONFile{}, err
+	}
+	store.mu = new(sync.Mutex)
+
+	if store.File == "" {
+		return kvJSONFile{}, fmt.Errorf("kv: json: options %+v: %w", &store, errMissingRequiredOptions)
+	}
+
+	return store, nil
 }
 
 func (store *kvJSONFile) String() string {

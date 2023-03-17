@@ -3,6 +3,7 @@ package condition
 import (
 	"context"
 	"fmt"
+	goregexp "regexp"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/regexp"
@@ -14,11 +15,28 @@ import (
 type inspRegExp struct {
 	condition
 	Options inspRegExpOptions `json:"options"`
+
+	re *goregexp.Regexp
 }
 
 type inspRegExpOptions struct {
 	// Expression is the regular expression used during inspection.
 	Expression string `json:"expression"`
+}
+
+// Creates a new regexp inspector.
+func newInspRegExp(cfg config.Config) (c inspRegExp, err error) {
+	err = config.Decode(cfg.Settings, &c)
+	if err != nil {
+		return inspRegExp{}, err
+	}
+
+	c.re, err = regexp.Compile(c.Options.Expression)
+	if err != nil {
+		return inspRegExp{}, fmt.Errorf("condition: regexp: %v", err)
+	}
+
+	return c, nil
 }
 
 func (c inspRegExp) String() string {
@@ -27,17 +45,12 @@ func (c inspRegExp) String() string {
 
 // Inspect evaluates encapsulated data with the regExp inspector.
 func (c inspRegExp) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
-	re, err := regexp.Compile(c.Options.Expression)
-	if err != nil {
-		return false, fmt.Errorf("condition: regexp: %v", err)
-	}
-
 	var matched bool
 	if c.Key == "" {
-		matched = re.Match(capsule.Data())
+		matched = c.re.Match(capsule.Data())
 	} else {
 		res := capsule.Get(c.Key).String()
-		matched = re.MatchString(res)
+		matched = c.re.MatchString(res)
 	}
 
 	if c.Negate {

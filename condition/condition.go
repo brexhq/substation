@@ -49,41 +49,23 @@ func NewInspector(cfg config.Config) (Inspector, error) {
 		_ = config.Decode(cfg.Settings, &i)
 		return i, nil
 	case "content":
-		var i inspContent
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspContent(cfg)
 	case "for_each":
-		var i inspForEach
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspForEach(cfg)
 	case "ip":
-		var i inspIP
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspIP(cfg)
 	case "json_schema":
-		var i inspJSONSchema
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspJSONSchema(cfg)
 	case "json_valid":
-		var i inspJSONValid
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspJSONValid(cfg)
 	case "length":
-		var i inspLength
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspLength(cfg)
 	case "random":
-		var i inspRandom
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspRandom(cfg)
 	case "regexp":
-		var i inspRegExp
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspRegExp(cfg)
 	case "strings":
-		var i inspStrings
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspStrings(cfg)
 	default:
 		return nil, fmt.Errorf("condition: new_inspector: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}

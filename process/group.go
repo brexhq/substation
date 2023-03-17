@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/json"
 )
@@ -24,6 +25,26 @@ type procGroupOptions struct {
 	Keys []string `json:"keys"`
 }
 
+// Create a new group processor.
+func newProcGroup(cfg config.Config) (p procGroup, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procGroup{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procGroup{}, err
+	}
+
+	// only supports JSON arrays, fail if there are no keys
+	if p.Key == "" && p.SetKey == "" {
+		return procGroup{}, fmt.Errorf("process: group: options %+v: %v", p.Options, errMissingRequiredOptions)
+	}
+
+	return procGroup{}, nil
+}
+
 // String returns the processor settings as an object.
 func (p procGroup) String() string {
 	return toString(p)
@@ -37,16 +58,11 @@ func (p procGroup) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procGroup) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procGroup) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// only supports JSON arrays, error early if there are no keys
-	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process: group: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
 	if len(p.Options.Keys) == 0 {
 		// elements in the values array are stored at their
 		// relative position inside the map to maintain order

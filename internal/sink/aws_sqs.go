@@ -30,8 +30,22 @@ type sinkAWSSQS struct {
 	Queue string `json:"queue"`
 }
 
+// Create a new AWS SQS sink.
+func newSinkAWSSQS(cfg config.Config) (s sinkAWSSQS, err error) {
+	err = config.Decode(cfg.Settings, &s)
+	if err != nil {
+		return sinkAWSSQS{}, err
+	}
+
+	if s.Queue == "" {
+		return sinkAWSSQS{}, fmt.Errorf("sink: aws_sqs: queue missing")
+	}
+
+	return s, nil
+}
+
 // Send sinks a channel of encapsulated data with the sink.
-func (s *sinkAWSSQS) Send(ctx context.Context, ch *config.Channel) error {
+func (s sinkAWSSQS) Send(ctx context.Context, ch *config.Channel) error {
 	if !sqsAPI.IsEnabled() {
 		sqsAPI.Setup()
 	}

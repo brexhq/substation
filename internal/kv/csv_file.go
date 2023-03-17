@@ -11,6 +11,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
 )
@@ -56,8 +57,24 @@ type kvCSVFile struct {
 	// This is optional and defaults to using the first line of the CSV file as the
 	// header.
 	Header string `json:"header"`
-	mu     sync.Mutex
+	mu     *sync.Mutex
 	items  map[string]map[string]interface{}
+}
+
+// Create a new CSV file KV store.
+func newKVCSVFile(cfg config.Config) (kvCSVFile, error) {
+	var store kvCSVFile
+	err := config.Decode(cfg.Settings, &store)
+	if err != nil {
+		return kvCSVFile{}, err
+	}
+	store.mu = new(sync.Mutex)
+
+	if store.File == "" || store.Column == "" {
+		return kvCSVFile{}, fmt.Errorf("kv: csv: options %+v: %w", &store, errMissingRequiredOptions)
+	}
+
+	return store, nil
 }
 
 func (store *kvCSVFile) String() string {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
@@ -22,6 +23,26 @@ type procFlattenOptions struct {
 	Deep bool `json:"deep"`
 }
 
+// Create a new flatten processor.
+func newProcFlatten(cfg config.Config) (p procFlatten, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procFlatten{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procFlatten{}, err
+	}
+
+	// only supports JSON arrays, fail if there are no keys
+	if p.Key == "" && p.SetKey == "" {
+		return procFlatten{}, fmt.Errorf("process: flatten: options %+v: %v", p.Options, errMissingRequiredOptions)
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procFlatten) String() string {
 	return toString(p)
@@ -35,16 +56,11 @@ func (p procFlatten) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procFlatten) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procFlatten) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// only supports JSON, error early if there are no keys
-	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process: flatten: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
-	}
-
 	var value interface{}
 	if p.Options.Deep {
 		value = capsule.Get(p.Key + `|@flatten:{"deep":true}`)

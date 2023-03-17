@@ -8,6 +8,9 @@ import (
 	"net"
 	"time"
 
+	"golang.org/x/exp/slices"
+
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
@@ -44,6 +47,38 @@ type procDNSOptions struct {
 	Timeout int `json:"timeout"`
 }
 
+// Create a new DNS processor.
+func newProcDNS(cfg config.Config) (p procDNS, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procDNS{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procDNS{}, err
+	}
+
+	//  validate option.type
+	if !slices.Contains(
+		[]string{
+			"forward_lookup",
+			"reverse_lookup",
+			"query_txt",
+		},
+		p.Options.Type) {
+		return procDNS{}, fmt.Errorf("process: dns: options %+v: %v", p.Options, errMissingRequiredOptions)
+	}
+
+	// validate data processing pattern
+	if (p.Key != "" && p.SetKey == "") ||
+		(p.Key == "" && p.SetKey != "") {
+		return procDNS{}, fmt.Errorf("process: dns: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	}
+
+	return p, nil
+}
+
 // Closes resources opened by the processor.
 func (p procDNS) Close(context.Context) error {
 	return nil
@@ -52,18 +87,13 @@ func (p procDNS) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procDNS) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 //
 //nolint:gocognit
 func (p procDNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Type == "" {
-		return capsule, fmt.Errorf("process: dns: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
 	var timeout time.Duration
 	if p.Options.Timeout != 0 {
 		timeout = time.Duration(p.Options.Timeout) * time.Millisecond

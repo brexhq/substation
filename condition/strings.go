@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 )
@@ -36,6 +38,30 @@ type inspStringsOptions struct {
 	Type string `json:"type"`
 	// Expression is a substring used during inspection.
 	Expression string `json:"expression"`
+}
+
+// Creates a new strings inspector.
+func newInspStrings(cfg config.Config) (c inspStrings, err error) {
+	err = config.Decode(cfg.Settings, &c)
+	if err != nil {
+		return inspStrings{}, err
+	}
+
+	//  validate option.type
+	if !slices.Contains(
+		[]string{
+			"equals",
+			"contains",
+			"starts_with",
+			"ends_with",
+		},
+		c.Options.Type) {
+		return inspStrings{}, fmt.Errorf("condition: strings: type %q invalid: %w", c.Options.Type, errors.ErrMissingRequiredOptions)
+	}
+
+	// TODO(shellcromancer): should we check that expression != "" if Type != "equals"?
+
+	return c, nil
 }
 
 func (c inspStrings) String() string {

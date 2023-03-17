@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
@@ -12,6 +13,24 @@ import (
 // This processor supports the object handling pattern.
 type procDelete struct {
 	process
+}
+
+// Create a new delete processor.
+func newProcDelete(cfg config.Config) (p procDelete, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procDelete{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procDelete{}, err
+	}
+
+	if p.Key == "" {
+		return procDelete{}, fmt.Errorf("process: delete: key %q: %v", p.Key, errInvalidDataPattern)
+	}
+	return p, nil
 }
 
 // String returns the processor settings as an object.
@@ -27,16 +46,11 @@ func (p procDelete) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procDelete) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procDelete) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// only supports JSON, error early if there are no keys
-	if p.Key == "" {
-		return capsule, fmt.Errorf("process: delete: key %s: %v", p.Key, errInvalidDataPattern)
-	}
-
 	if err := capsule.Delete(p.Key); err != nil {
 		return capsule, fmt.Errorf("process: delete: %v", err)
 	}

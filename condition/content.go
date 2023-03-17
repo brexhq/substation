@@ -2,8 +2,10 @@ package condition
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/media"
 )
 
@@ -21,6 +23,20 @@ type inspContent struct {
 type inspContentOptions struct {
 	// Type is the media type used for comparison during inspection. Media types follow this specification: https://mimesniff.spec.whatwg.org/.
 	Type string `json:"type"`
+}
+
+// Creates a new content inspector.
+func newInspContent(cfg config.Config) (c inspContent, err error) {
+	err = config.Decode(cfg.Settings, &c)
+	if err != nil {
+		return inspContent{}, err
+	}
+
+	if c.Options.Type == "" {
+		return inspContent{}, fmt.Errorf("condition: content: type missing: %w", errors.ErrMissingRequiredOptions)
+	}
+
+	return c, nil
 }
 
 func (c inspContent) String() string {

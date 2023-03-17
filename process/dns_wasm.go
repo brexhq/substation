@@ -17,6 +17,10 @@ type procDNS struct {
 
 type procDNSOptions struct{}
 
+func newProcDNS(cfg config.Config) (p procDNS, err error) {
+	return procDNS{}, fmt.Errorf("process: dns: %v", syscall.ENOSYS)
+}
+
 func (p procDNS) Close(context.Context) error {
 	return nil
 }

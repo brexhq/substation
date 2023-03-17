@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
@@ -20,6 +21,31 @@ type procJoinOptions struct {
 	Separator string `json:"separator"`
 }
 
+// Create a new join processor.
+func newProcJoin(cfg config.Config) (p procJoin, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procJoin{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procJoin{}, err
+	}
+
+	// fail if required options are missing
+	if p.Options.Separator == "" {
+		return procJoin{}, fmt.Errorf("process: join: options %+v: %v", p.Options, errMissingRequiredOptions)
+	}
+
+	// only supports JSON, fail if there are no keys
+	if p.Key == "" && p.SetKey == "" {
+		return procJoin{}, fmt.Errorf("process: join: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procJoin) String() string {
 	return toString(p)
@@ -33,21 +59,11 @@ func (p procJoin) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procJoin) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes encapsulated data with the processor.
 func (p procJoin) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Separator == "" {
-		return capsule, fmt.Errorf("process: join: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
-	// only supports JSON, error early if there are no keys
-	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process: join: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
-	}
-
 	// data is processed by retrieving and iterating the
 	// array (Key) containing string values and joining
 	// each one with the separator string

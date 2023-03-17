@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 )
@@ -17,11 +18,33 @@ const errPipelineArrayInput = errors.Error("input is an array")
 type procPipeline struct {
 	process
 	Options procPipelineOptions `json:"options"`
+
+	appliers []Applier
 }
 
 type procPipelineOptions struct {
 	// Processors applied in series to the data.
 	Processors []config.Config `json:"processors"`
+}
+
+// Create a new pipeline processor.
+func newProcPipeline(cfg config.Config) (p procPipeline, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procPipeline{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procPipeline{}, err
+	}
+
+	p.appliers, err = NewAppliers(p.Options.Processors...)
+	if err != nil {
+		return procPipeline{}, fmt.Errorf("process: pipeline: processors %+v: %v", p.Options.Processors, err)
+	}
+
+	return p, nil
 }
 
 // String returns the processor settings as an object.
@@ -37,7 +60,7 @@ func (p procPipeline) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procPipeline) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
@@ -52,11 +75,6 @@ func (p procPipeline) Batch(ctx context.Context, capsules ...config.Capsule) ([]
 // should be run through the forEach processor (which can
 // encapsulate the pipeline processor).
 func (p procPipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	appliers, err := NewAppliers(p.Options.Processors...)
-	if err != nil {
-		return capsule, fmt.Errorf("process: pipeline: processors %+v: %v", p.Options.Processors, err)
-	}
-
 	if p.Key != "" && p.SetKey != "" {
 		result := capsule.Get(p.Key)
 		if result.IsArray() {
@@ -66,7 +84,7 @@ func (p procPipeline) Apply(ctx context.Context, capsule config.Capsule) (config
 		newCapsule := config.NewCapsule()
 		newCapsule.SetData([]byte(result.String()))
 
-		newCapsule, err = Apply(ctx, newCapsule, appliers...)
+		newCapsule, err := Apply(ctx, newCapsule, p.appliers...)
 		if err != nil {
 			return capsule, fmt.Errorf("process: pipeline: %v", err)
 		}
@@ -80,7 +98,7 @@ func (p procPipeline) Apply(ctx context.Context, capsule config.Capsule) (config
 
 	// data processing
 	if p.Key == "" && p.SetKey == "" {
-		tmp, err := Apply(ctx, capsule, appliers...)
+		tmp, err := Apply(ctx, capsule, p.appliers...)
 		if err != nil {
 			return capsule, fmt.Errorf("process: pipeline: %v", err)
 		}

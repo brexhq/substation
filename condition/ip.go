@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 )
@@ -38,6 +40,32 @@ type inspIPOptions struct {
 	//
 	// - unspecified: valid "unspecified" address (e.g., 0.0.0.0, ::)
 	Type string `json:"type"`
+}
+
+// Creates a new IP inspector.
+func newInspIP(cfg config.Config) (c inspIP, err error) {
+	err = config.Decode(cfg.Settings, &c)
+	if err != nil {
+		return inspIP{}, err
+	}
+
+	//  validate option.type
+	if !slices.Contains(
+		[]string{
+			"valid",
+			"loopback",
+			"multicast",
+			"multicast_link_local",
+			"private",
+			"unicast_global",
+			"unicast_link_local",
+			"unspecified",
+		},
+		c.Options.Type) {
+		return inspIP{}, fmt.Errorf("condition: ip: type %q invalid: %w", c.Options.Type, errors.ErrMissingRequiredOptions)
+	}
+
+	return c, nil
 }
 
 func (c inspIP) String() string {

@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"io"
 
+	"golang.org/x/exp/slices"
+
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
@@ -25,6 +28,28 @@ type procGzipOptions struct {
 	//	- to: compress to gzip
 	// 	- from: decompress from gzip
 	Direction string `json:"direction"`
+}
+
+// Create a new gzip processor.
+func newProcGzip(cfg config.Config) (p procGzip, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procGzip{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procGzip{}, err
+	}
+
+	// fail for invalid option.direction
+	if !slices.Contains(
+		[]string{"to", "from"},
+		p.Options.Direction) {
+		return procGzip{}, fmt.Errorf("process: gzip: options %+v: %v", p.Options, errMissingRequiredOptions)
+	}
+
+	return p, nil
 }
 
 // String returns the processor settings as an object.
@@ -68,16 +93,11 @@ func (p procGzip) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procGzip) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procGzip) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Direction == "" {
-		return capsule, fmt.Errorf("process: gzip: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
 	var value []byte
 	switch p.Options.Direction {
 	case "from":

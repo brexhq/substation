@@ -69,6 +69,29 @@ func (p procAggregate) Close(context.Context) error {
 	return nil
 }
 
+// Create a new aggregate processor.
+func newProcAggregate(cfg config.Config) (p procAggregate, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procAggregate{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procAggregate{}, err
+	}
+
+	if p.Options.MaxCount == 0 {
+		p.Options.MaxCount = 1000
+	}
+
+	if p.Options.MaxSize == 0 {
+		p.Options.MaxSize = 10000
+	}
+
+	return p, nil
+}
+
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procAggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
@@ -79,22 +102,9 @@ func (p procAggregate) Batch(ctx context.Context, capsules ...config.Capsule) ([
 	var aggregateKeys []string
 	buffer := map[string]*aggregate.Bytes{}
 
-	if p.Options.MaxCount == 0 {
-		p.Options.MaxCount = 1000
-	}
-
-	if p.Options.MaxSize == 0 {
-		p.Options.MaxSize = 10000
-	}
-
-	op, err := condition.NewOperator(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process: aggregate: %v", err)
-	}
-
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
-		ok, err := op.Operate(ctx, capsule)
+		ok, err := p.operator.Operate(ctx, capsule)
 		if err != nil {
 			return nil, fmt.Errorf("process: aggregate: %v", err)
 		}

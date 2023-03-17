@@ -34,45 +34,27 @@ type Sink interface {
 func New(cfg config.Config) (Sink, error) {
 	switch t := cfg.Type; t {
 	case "aws_dynamodb":
-		var s sinkAWSDynamoDB
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
+		return newSinkAWSDynamoDB(cfg)
 	case "aws_kinesis":
-		var s sinkAWSKinesis
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
+		return newSinkAWSKinesis(cfg)
 	case "aws_kinesis_firehose":
-		var s sinkAWSKinesisFirehose
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
+		return newSinkAWSKinesisFirehose(cfg)
 	case "aws_s3":
-		var s sinkAWSS3
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
+		return newSinkAWSS3(cfg)
 	case "aws_sqs":
-		var s sinkAWSSQS
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
+		return newSinkAWSSQS(cfg)
 	case "file":
 		var s sinkFile
 		_ = config.Decode(cfg.Settings, &s)
 		return &s, nil
 	case "grpc":
-		var s sinkGRPC
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
+		return newSinkGRPC(cfg)
 	case "http":
-		var s sinkHTTP
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
+		return newSinkHTTP(cfg)
 	case "stdout":
-		var s sinkStdout
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
+		return newSinkStdout(cfg)
 	case "sumologic":
-		var s sinkSumoLogic
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
+		return newSinkSumoLogic(cfg)
 	default:
 		return nil, fmt.Errorf("sink: settings %v: %v", cfg.Settings, errors.ErrInvalidFactoryInput)
 	}

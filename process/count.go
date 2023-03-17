@@ -12,6 +12,16 @@ import (
 // This processor supports the data and object handling patterns.
 type procCount struct{}
 
+// Create a new count processor.
+func newProcCount(cfg config.Config) (p procCount, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procCount{}, err
+	}
+
+	return p, nil
+}
+
 // Closes resources opened by the processor.
 func (p procCount) Close(context.Context) error {
 	return nil

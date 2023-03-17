@@ -2,8 +2,10 @@ package kv
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
 	"github.com/brexhq/substation/internal/errors"
 )
@@ -36,6 +38,21 @@ type kvAWSDynamoDB struct {
 		TTL string `json:"ttl"`
 	} `json:"attributes"`
 	api dynamodb.API
+}
+
+// Create a new AWS DynamoDB KV store.
+func newKVAWSDyanmoDB(cfg config.Config) (kvAWSDynamoDB, error) {
+	var store kvAWSDynamoDB
+	err := config.Decode(cfg.Settings, &store)
+	if err != nil {
+		return kvAWSDynamoDB{}, err
+	}
+
+	if store.Table == "" {
+		return kvAWSDynamoDB{}, fmt.Errorf("kv: aws_dynamodb: options %+v: %w", &store, errMissingRequiredOptions)
+	}
+
+	return store, nil
 }
 
 func (store *kvAWSDynamoDB) String() string {

@@ -33,8 +33,22 @@ type sinkHTTP struct {
 	HeadersKey string `json:"headers_key"`
 }
 
+// Create a new HTTP sink.
+func newSinkHTTP(cfg config.Config) (s sinkHTTP, err error) {
+	err = config.Decode(cfg.Settings, &s)
+	if err != nil {
+		return sinkHTTP{}, err
+	}
+
+	if s.URL == "" {
+		return sinkHTTP{}, fmt.Errorf("sink: http: URL missing")
+	}
+
+	return s, nil
+}
+
 // Send sinks a channel of encapsulated data with the sink.
-func (s *sinkHTTP) Send(ctx context.Context, ch *config.Channel) error {
+func (s sinkHTTP) Send(ctx context.Context, ch *config.Channel) error {
 	if !httpClient.IsEnabled() {
 		httpClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {

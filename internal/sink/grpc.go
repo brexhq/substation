@@ -35,8 +35,22 @@ type sinkGRPC struct {
 	Certificate string `json:"certificate"`
 }
 
+// Create a new gRPC sink.
+func newSinkGRPC(cfg config.Config) (s sinkGRPC, err error) {
+	err = config.Decode(cfg.Settings, &s)
+	if err != nil {
+		return sinkGRPC{}, err
+	}
+
+	if s.Server == "" {
+		return sinkGRPC{}, fmt.Errorf("sink: grpc: server missing")
+	}
+
+	return s, nil
+}
+
 // Send sinks a channel of encapsulated data with the sink.
-func (s *sinkGRPC) Send(ctx context.Context, ch *config.Channel) error {
+func (s sinkGRPC) Send(ctx context.Context, ch *config.Channel) error {
 	// https://grpc.io/docs/guides/auth/#base-case---no-encryption-or-authentication
 	creds := grpc.WithTransportCredentials(insecure.NewCredentials())
 

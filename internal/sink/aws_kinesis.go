@@ -39,8 +39,22 @@ type sinkAWSKinesis struct {
 	ShardRedistribution bool `json:"shard_redistribution"`
 }
 
+// Create a new AWS Kinesis sink.
+func newSinkAWSKinesis(cfg config.Config) (s sinkAWSKinesis, err error) {
+	err = config.Decode(cfg.Settings, &s)
+	if err != nil {
+		return sinkAWSKinesis{}, err
+	}
+
+	if s.Stream == "" {
+		return sinkAWSKinesis{}, fmt.Errorf("sink: aws_kinesis: stream missing")
+	}
+
+	return s, nil
+}
+
 // Send sinks a channel of encapsulated data with the sink.
-func (s *sinkAWSKinesis) Send(ctx context.Context, ch *config.Channel) error {
+func (s sinkAWSKinesis) Send(ctx context.Context, ch *config.Channel) error {
 	if !kinesisAPI.IsEnabled() {
 		kinesisAPI.Setup()
 	}

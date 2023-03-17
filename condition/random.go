@@ -17,6 +17,16 @@ func init() {
 // This inspector supports the data and object handling patterns.
 type inspRandom struct{}
 
+// Creates a new random inspector.
+func newInspRandom(cfg config.Config) (c inspRandom, err error) {
+	err = config.Decode(cfg.Settings, &c)
+	if err != nil {
+		return inspRandom{}, err
+	}
+
+	return c, nil
+}
+
 func (c inspRandom) String() string {
 	return toString(c)
 }

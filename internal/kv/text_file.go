@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/file"
 )
 
@@ -29,8 +30,24 @@ type kvTextFile struct {
 	// File contains the location of the text file. This can be either a path on local
 	// disk, an HTTP(S) URL, or an AWS S3 URL.
 	File  string `json:"file"`
-	mu    sync.Mutex
+	mu    *sync.Mutex
 	items []string
+}
+
+// Create a new text file KV store.
+func newKVTextFile(cfg config.Config) (kvTextFile, error) {
+	var store kvTextFile
+	err := config.Decode(cfg.Settings, &store)
+	if err != nil {
+		return kvTextFile{}, err
+	}
+	store.mu = new(sync.Mutex)
+
+	if store.File == "" {
+		return kvTextFile{}, fmt.Errorf("kv: text_file: options %+v: %w", &store, errMissingRequiredOptions)
+	}
+
+	return store, nil
 }
 
 func (store *kvTextFile) String() string {

@@ -5,6 +5,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"github.com/brexhq/substation/config"
 )
 
 // kvMemory is a read-write key-value store that is stored in memory.
@@ -16,9 +18,21 @@ type kvMemory struct {
 	//
 	// This is optional and defaults to 1024 values.
 	Capacity int `json:"capacity"`
-	mu       sync.Mutex
+	mu       *sync.Mutex
 	lru      list.List
 	items    map[string]*list.Element
+}
+
+// Create a new memory KV store.
+func newKVMemory(cfg config.Config) (kvMemory, error) {
+	var store kvMemory
+	err := config.Decode(cfg.Settings, &store)
+	if err != nil {
+		return kvMemory{}, err
+	}
+	store.mu = new(sync.Mutex)
+
+	return store, nil
 }
 
 func (store *kvMemory) String() string {

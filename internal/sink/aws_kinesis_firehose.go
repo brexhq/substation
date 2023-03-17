@@ -34,8 +34,22 @@ type sinkAWSKinesisFirehose struct {
 	Stream string `json:"stream"`
 }
 
+// Create a new AWS Kinesis Firehose sink.
+func newSinkAWSKinesisFirehose(cfg config.Config) (s sinkAWSKinesisFirehose, err error) {
+	err = config.Decode(cfg.Settings, &s)
+	if err != nil {
+		return sinkAWSKinesisFirehose{}, err
+	}
+
+	if s.Stream == "" {
+		return sinkAWSKinesisFirehose{}, fmt.Errorf("sink: aws_kinesis_firehose: stream missing")
+	}
+
+	return s, nil
+}
+
 // Send sinks a channel of encapsulated data with the sink.
-func (s *sinkAWSKinesisFirehose) Send(ctx context.Context, ch *config.Channel) error {
+func (s sinkAWSKinesisFirehose) Send(ctx context.Context, ch *config.Channel) error {
 	if !firehoseAPI.IsEnabled() {
 		firehoseAPI.Setup()
 	}

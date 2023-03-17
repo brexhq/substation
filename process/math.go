@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/exp/slices"
+
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 )
 
@@ -30,6 +33,38 @@ type procMathOptions struct {
 	Operation string `json:"operation"`
 }
 
+// Create a new math processor.
+func newProcMath(cfg config.Config) (p procMath, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procMath{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procMath{}, err
+	}
+
+	//  validate option.operation
+	if !slices.Contains(
+		[]string{
+			"add",
+			"subtract",
+			"multiply",
+			"divide",
+		},
+		p.Options.Operation) {
+		return procMath{}, fmt.Errorf("process: math: options %+v: %v", p.Options, errMissingRequiredOptions)
+	}
+
+	// only supports JSON, fail if there are no keys
+	if p.Key == "" && p.SetKey == "" {
+		return procMath{}, fmt.Errorf("process: math: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procMath) String() string {
 	return toString(p)
@@ -43,21 +78,11 @@ func (p procMath) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procMath) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procMath) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Operation == "" {
-		return capsule, fmt.Errorf("process: math: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
-	// only supports JSON, error early if there are no keys
-	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process: math: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
-	}
-
 	var value float64
 	result := capsule.Get(p.Key)
 	for i, res := range result.Array() {

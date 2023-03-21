@@ -7,7 +7,6 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-// all inspectors must return true for and to return true
 var allTests = []struct {
 	name     string
 	conf     []config.Config
@@ -101,6 +100,62 @@ var allTests = []struct {
 		[]byte("foo"),
 		true,
 	},
+	// this test joins multiple ANY operators with an ALL operator, implementing the following logic:
+	// if ( "foo" starts with "f" OR "foo" ends with "b" ) AND ( len("foo") == 3 ) then return true
+	{
+		"condition",
+		[]config.Config{
+			{
+				Type: "condition",
+				Settings: map[string]interface{}{
+					"options": map[string]interface{}{
+						"operator": "any",
+						"inspectors": []config.Config{
+							{
+								Type: "strings",
+								Settings: map[string]interface{}{
+									"options": map[string]interface{}{
+										"expression": "f",
+										"type":       "starts_with",
+									},
+								},
+							},
+							{
+								Type: "strings",
+								Settings: map[string]interface{}{
+									"options": map[string]interface{}{
+										"expression": "b",
+										"type":       "ends_with",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				Type: "condition",
+				Settings: map[string]interface{}{
+					"options": map[string]interface{}{
+						"operator": "all",
+						"inspectors": []config.Config{
+							{
+								Type: "length",
+								Settings: map[string]interface{}{
+									"options": map[string]interface{}{
+										"value": 3,
+										"type":  "equals",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		[]byte("foo"),
+		true,
+	},
 }
 
 func TestAll(t *testing.T) {
@@ -152,7 +207,6 @@ func BenchmarkAll(b *testing.B) {
 	}
 }
 
-// any inspector must return true for or to return true
 var anyTests = []struct {
 	name     string
 	conf     []config.Config
@@ -243,6 +297,62 @@ var anyTests = []struct {
 		[]byte("foo"),
 		true,
 	},
+	// this test joins multiple ALL operators with an ANY operator, implementing the following logic:
+	// if ( len("foo") == 4 AND "foo" starts with "f" ) OR ( len("foo") == 3 ) then return true
+	{
+		"condition",
+		[]config.Config{
+			{
+				Type: "condition",
+				Settings: map[string]interface{}{
+					"options": map[string]interface{}{
+						"operator": "all",
+						"inspectors": []config.Config{
+							{
+								Type: "length",
+								Settings: map[string]interface{}{
+									"options": map[string]interface{}{
+										"value": 4,
+										"type":  "equals",
+									},
+								},
+							},
+							{
+								Type: "strings",
+								Settings: map[string]interface{}{
+									"options": map[string]interface{}{
+										"expression": "f",
+										"type":       "starts_with",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				Type: "condition",
+				Settings: map[string]interface{}{
+					"options": map[string]interface{}{
+						"operator": "all",
+						"inspectors": []config.Config{
+							{
+								Type: "length",
+								Settings: map[string]interface{}{
+									"options": map[string]interface{}{
+										"value": 3,
+										"type":  "equals",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		[]byte("foo"),
+		true,
+	},
 }
 
 func TestAny(t *testing.T) {
@@ -294,7 +404,6 @@ func BenchmarkAny(b *testing.B) {
 	}
 }
 
-// any inspector must return true for none to return false
 var noneTests = []struct {
 	name     string
 	conf     []config.Config
@@ -448,6 +557,94 @@ func BenchmarkNewInspector(b *testing.B) {
 		b.Run(test.name,
 			func(b *testing.B) {
 				benchmarkNewInspector(b, test.conf[0])
+			},
+		)
+	}
+}
+
+var conditionTests = []struct {
+	name      string
+	inspector inspCondition
+	test      []byte
+	expected  bool
+}{
+	{
+		"object",
+		inspCondition{
+			Options: Config{
+				Operator: "all",
+				Inspectors: []config.Config{
+					{
+						Type: "ip",
+						Settings: map[string]interface{}{
+							"key": "ip_address",
+							"options": map[string]interface{}{
+								"type": "private",
+							},
+						},
+					},
+				},
+			},
+		},
+		[]byte(`{"ip_address":"192.168.1.2"}`),
+		true,
+	},
+	{
+		"data",
+		inspCondition{
+			Options: Config{
+				Operator: "all",
+				Inspectors: []config.Config{
+					{
+						Type: "ip",
+						Settings: map[string]interface{}{
+							"options": map[string]interface{}{
+								"type": "private",
+							},
+						},
+					},
+				},
+			},
+		},
+		[]byte("192.168.1.2"),
+		true,
+	},
+}
+
+func TestCondition(t *testing.T) {
+	ctx := context.TODO()
+	capsule := config.NewCapsule()
+
+	for _, test := range conditionTests {
+		var _ Inspector = test.inspector
+
+		capsule.SetData(test.test)
+
+		check, err := test.inspector.Inspect(ctx, capsule)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if test.expected != check {
+			t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
+		}
+	}
+}
+
+func benchmarkCondition(b *testing.B, inspector inspCondition, capsule config.Capsule) {
+	ctx := context.TODO()
+	for i := 0; i < b.N; i++ {
+		_, _ = inspector.Inspect(ctx, capsule)
+	}
+}
+
+func BenchmarkCondition(b *testing.B) {
+	capsule := config.NewCapsule()
+	for _, test := range conditionTests {
+		b.Run(test.name,
+			func(b *testing.B) {
+				capsule.SetData(test.test)
+				benchmarkCondition(b, test.inspector, capsule)
 			},
 		)
 	}

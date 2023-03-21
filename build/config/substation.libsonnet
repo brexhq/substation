@@ -198,6 +198,15 @@
     },
     inspector: {
       settings: { key: null, negate: null },
+      condition(options=null,
+                settings=$.interfaces.inspector.settings): {
+        assert options != null : 'invalid inspector options',
+        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
+        local s = std.mergePatch($.interfaces.inspector.settings, settings),
+
+        type: 'condition',
+        settings: std.mergePatch({ options: options }, s),
+      },
       content(options=$.defaults.inspector.content.options,
               settings=$.interfaces.inspector.settings): {
         local opt = std.mergePatch($.defaults.inspector.content.options, options),

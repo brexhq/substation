@@ -13,15 +13,16 @@ import (
 // errJqNoOutputGenerated is returned when the jq query generates no output.
 const errJqNoOutputGenerated = errors.Error("no output generated")
 
-// jq processes data by applying jq queries to it.
+// jq processes data by applying jq queries.
 //
-// This processor supports the object handling pattern.
+// This processor supports the data handling pattern.
 type procJQ struct {
 	process
 	Options procJQOptions `json:"options"`
 }
 
 type procJQOptions struct {
+	// Query is the jq query applied to data.
 	Query string `json:"query"`
 }
 

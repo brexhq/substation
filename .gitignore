@@ -20,6 +20,14 @@ CHANGELOG.md
 !examples/condition/data.json
 !examples/*/data.json
 !examples/quickstart/data.json
+# ignore playground files
+playground.wasm
+playground.wasm.gz
+wasm_exec.js
+build/playground/substation_logo.png
+
+# Ignore macOS system files
+.DS_Store
 
 # Archive files
 *.zip

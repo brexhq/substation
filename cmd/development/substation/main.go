@@ -7,19 +7,29 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/brexhq/substation/cmd"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/bufio"
 	"github.com/brexhq/substation/internal/file"
-	"golang.org/x/sync/errgroup"
+	"github.com/brexhq/substation/internal/json"
 )
 
 type metadata struct {
 	Name string `json:"name"`
 	Size int64  `json:"size"`
+}
+
+type options struct {
+	Input  string
+	Config string
+
+	ForceSink string
 }
 
 // getConfig contextually retrieves a Substation configuration.
@@ -46,30 +56,49 @@ func getConfig(ctx context.Context, cfg string) (io.Reader, error) {
 }
 
 func main() {
-	input := flag.String("input", "", "file to parse")
-	config := flag.String("config", "", "Substation configuration file")
+	var opts options
+
 	timeout := flag.Duration("timeout", 10*time.Second, "timeout")
+	flag.StringVar(&opts.Input, "input", "", "file to parse")
+	flag.StringVar(&opts.Config, "config", "", "Substation configuration file")
+	flag.StringVar(&opts.ForceSink, "force-sink", "", "force sink output to value (supported: stdout)")
 	flag.Parse()
 
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	if err := run(ctx, *input, *config); err != nil {
+	if err := run(ctx, opts); err != nil {
 		panic(fmt.Errorf("main: %v", err))
 	}
 }
 
-func run(ctx context.Context, input, cfg string) error {
+func run(ctx context.Context, opts options) error {
 	sub := cmd.New()
 
 	// load configuration file
-	c, err := getConfig(ctx, cfg)
+	c, err := getConfig(ctx, opts.Config)
 	if err != nil {
 		return fmt.Errorf("run: %v", err)
 	}
 
 	if err := sub.SetConfig(c); err != nil {
 		return fmt.Errorf("run: %v", err)
+	}
+
+	if opts.ForceSink != "" {
+		c, err = sub.Config()
+		if err != nil {
+			return fmt.Errorf("run: %v", err)
+		}
+
+		newConfig, err := mutateSink(c, opts.ForceSink)
+		if err != nil {
+			return fmt.Errorf("run: %v", err)
+		}
+
+		if err := sub.SetConfig(newConfig); err != nil {
+			return fmt.Errorf("run: %v", err)
+		}
 	}
 
 	group, ctx := errgroup.WithContext(ctx)
@@ -90,7 +119,7 @@ func run(ctx context.Context, input, cfg string) error {
 
 	// ingest
 	group.Go(func() error {
-		fi, err := file.Get(ctx, input)
+		fi, err := file.Get(ctx, opts.Input)
 		if err != nil {
 			return err
 		}
@@ -109,7 +138,7 @@ func run(ctx context.Context, input, cfg string) error {
 
 		capsule := config.NewCapsule()
 		if _, err = capsule.SetMetadata(metadata{
-			input,
+			opts.Input,
 			fs.Size(),
 		}); err != nil {
 			return fmt.Errorf("run: %v", err)
@@ -149,4 +178,30 @@ func run(ctx context.Context, input, cfg string) error {
 	}
 
 	return nil
+}
+
+func mutateSink(cfg io.Reader, forceSink string) (*bytes.Reader, error) {
+	oldConfig, err := io.ReadAll(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("run: %v", err)
+	}
+
+	var r *bytes.Reader
+
+	switch {
+	case forceSink == "stdout":
+		newConfig, err := json.Set(oldConfig, "sink.type", forceSink)
+		if err != nil {
+			return nil, fmt.Errorf("run: %v", err)
+		}
+		r = bytes.NewReader(newConfig)
+	case strings.HasPrefix(forceSink, "http://"):
+		return nil, fmt.Errorf("-force-sink http://* not yet implemented")
+	case strings.HasPrefix(forceSink, "s3://"):
+		return nil, fmt.Errorf("-force-sink s3://* not yet implemented")
+	default:
+		return nil, fmt.Errorf("%q not supported for -force-sink", forceSink)
+	}
+
+	return r, nil
 }

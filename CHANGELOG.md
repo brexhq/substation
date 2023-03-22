@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.8.4](https://github.com/brexhq/substation/compare/v0.8.3...v0.8.4) (2023-03-08)
+
+
+### Features
+
+* Add Playground Demo ([#82](https://github.com/brexhq/substation/issues/82)) ([f519eaf](https://github.com/brexhq/substation/commit/f519eaff367c0f7b2cebd0ba995f247424dc4d79))
+* **CLI:** adds force-sink flag ([#84](https://github.com/brexhq/substation/issues/84)) ([cb7e697](https://github.com/brexhq/substation/commit/cb7e6974993ac9116e9a564f4cdda343ae3f50a3))
+* HTTP Processing & Secrets Retrieval ([#77](https://github.com/brexhq/substation/issues/77)) ([f4e7329](https://github.com/brexhq/substation/commit/f4e73296facefebfde9806d7332d2f2411604a94))
+* object named groups ([#78](https://github.com/brexhq/substation/issues/78)) ([d5f687c](https://github.com/brexhq/substation/commit/d5f687c83227ec149d37224b0a360c843ae3aacf))
+* setkey support ([#81](https://github.com/brexhq/substation/issues/81)) ([5419f5e](https://github.com/brexhq/substation/commit/5419f5ece82ac8dc2ef70412816bada15390da6a))
+
 ## [0.8.3](https://github.com/brexhq/substation/compare/v0.8.2...v0.8.3) (2023-01-23)
 
 

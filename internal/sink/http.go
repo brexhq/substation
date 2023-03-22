@@ -3,11 +3,13 @@ package sink
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
+	"github.com/brexhq/substation/internal/secrets"
 )
 
 var httpClient http.HTTP
@@ -54,13 +56,17 @@ func (s *sinkHTTP) Send(ctx context.Context, ch *config.Channel) error {
 				})
 			}
 
-			if len(s.Headers) > 0 {
-				for _, header := range s.Headers {
-					headers = append(headers, http.Header{
-						Key:   header.Key,
-						Value: header.Value,
-					})
+			for _, hdr := range s.Headers {
+				// retrieve secret and interpolate with header value
+				v, err := secrets.Interpolate(ctx, hdr.Value)
+				if err != nil {
+					return fmt.Errorf("sink: http: %v", err)
 				}
+
+				headers = append(headers, http.Header{
+					Key:   hdr.Key,
+					Value: v,
+				})
 			}
 
 			if s.HeadersKey != "" {
@@ -75,11 +81,21 @@ func (s *sinkHTTP) Send(ctx context.Context, ch *config.Channel) error {
 				}
 			}
 
-			_, err := httpClient.Post(ctx, s.URL, string(capsule.Data()), headers...)
+			// retrieve secret and interpolate with URL
+			url, err := secrets.Interpolate(ctx, s.URL)
+			if err != nil {
+				return fmt.Errorf("sink: http: %v", err)
+			}
+
+			resp, err := httpClient.Post(ctx, url, string(capsule.Data()), headers...)
 			if err != nil {
 				// Post err returns metadata
 				return fmt.Errorf("sink: http: %v", err)
 			}
+
+			//nolint:errcheck // response body is discarded to avoid resource leaks
+			io.Copy(io.Discard, resp.Body)
+			resp.Body.Close()
 		}
 	}
 

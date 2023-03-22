@@ -117,6 +117,10 @@ func NewApplier(cfg config.Config) (Applier, error) {
 		var p procHash
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
+	case "http":
+		var p procHTTP
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
 	case "insert":
 		var p procInsert
 		_ = config.Decode(cfg.Settings, &p)
@@ -225,7 +229,7 @@ type Batcher interface {
 }
 
 // NewBatcher returns a configured Batcher from a processor configuration.
-func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop // ignore cyclomatic complexity
+func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
 	case "aggregate":
 		var p procAggregate
@@ -301,6 +305,10 @@ func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop // ignore
 		return p, nil
 	case "hash":
 		var p procHash
+		_ = config.Decode(cfg.Settings, &p)
+		return p, nil
+	case "http":
+		var p procHTTP
 		_ = config.Decode(cfg.Settings, &p)
 		return p, nil
 	case "insert":

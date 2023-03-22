@@ -15,3 +15,7 @@ Contains apps deployed as AWS Lambda functions.
 ## development/
 
 Contains apps that aid in testing and development.
+
+## playground/
+
+Contains apps deployed in the browser using WebAssembly.

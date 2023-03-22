@@ -72,6 +72,22 @@ var captureTests = []struct {
 		[]byte(`{"foo":"bar","qux":"quux"}`),
 		nil,
 	},
+	{
+		"named_group",
+		procCapture{
+			process: process{
+				Key:    "capture",
+				SetKey: "capture",
+			},
+			Options: procCaptureOptions{
+				Type:       "named_group",
+				Expression: "(?P<foo>[a-zA-Z]+) (?P<qux>[a-zA-Z]+)",
+			},
+		},
+		[]byte(`{"capture":"bar quux"}`),
+		[]byte(`{"capture":{"foo":"bar","qux":"quux"}}`),
+		nil,
+	},
 }
 
 func TestCapture(t *testing.T) {

@@ -16,7 +16,67 @@ var jsonTests = []struct {
 	err      error
 }{
 	{
-		"recursively remove null and empty values",
+		"access",
+		procJQ{
+			process: process{},
+			Options: procJQOptions{
+				Query: `.a`,
+			},
+		},
+		[]byte(`{"a":"b"}`),
+		[]byte(`"b"`),
+		nil,
+	},
+	{
+		"access",
+		procJQ{
+			process: process{},
+			Options: procJQOptions{
+				Query: `.a, .c`,
+			},
+		},
+		[]byte(`{"a":"b","c":"d"}`),
+		[]byte(`["b","d"]`),
+		nil,
+	},
+	{
+		"access",
+		procJQ{
+			process: process{},
+			Options: procJQOptions{
+				Query: `.a`,
+			},
+		},
+		[]byte(`{"a":{"b":"c"}}`),
+		[]byte(`{"b":"c"}`),
+		nil,
+	},
+	{
+		"array",
+		procJQ{
+			process: process{},
+			Options: procJQOptions{
+				Query: `.a`,
+			},
+		},
+		[]byte(`{"a":["b","c","d"]}`),
+		[]byte(`["b","c","d"]`),
+		nil,
+	},
+	{
+		"slice",
+		procJQ{
+			process: process{},
+			Options: procJQOptions{
+				Query: `.a[-1:]`,
+			},
+		},
+		[]byte(`{"a":["b","c","d","e","f","g"]}`),
+		[]byte(`["g"]`),
+		nil,
+	},
+	{
+		"recursion",
 		procJQ{
 			process: process{},
 			Options: procJQOptions{
@@ -30,8 +90,8 @@ var jsonTests = []struct {
 				. end)`,
 			},
 		},
-		[]byte(`{"foo":{"bar":{"baz":""}},"qux":null,"quux":"corge"}`),
-		[]byte(`{"quux":"corge"}`),
+		[]byte(`{"a":{"b":{"c":""}},"d":null,"e":"f"}`),
+		[]byte(`{"e":"f"}`),
 		nil,
 	},
 }

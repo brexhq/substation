@@ -13,6 +13,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.1
 	github.com/iancoleman/strcase v0.2.0
 	github.com/ip2location/ip2location-go/v9 v9.5.0
+	github.com/itchyny/gojq v0.12.11
 	github.com/jshlbrd/go-aggregate v0.1.1
 	github.com/oschwald/geoip2-golang v1.8.0
 	github.com/oschwald/maxminddb-golang v1.10.0
@@ -30,6 +31,7 @@ require (
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	github.com/itchyny/timefmt-go v0.1.5 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/compress v1.15.13 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

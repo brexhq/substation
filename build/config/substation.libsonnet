@@ -109,6 +109,9 @@
       join: {
         options: { separator: null },
       },
+      jq: {
+        options: { query: null },
+      },
       kv_store: {
         options: { type: null, prefix: null, offset_ttl: null, kv_options: null },
       },
@@ -459,6 +462,14 @@
         local s = std.mergePatch($.interfaces.processor.settings, settings),
 
         type: 'join',
+        settings: std.mergePatch({ options: opt }, s),
+      },
+      jq(options=$.defaults.processor.jq.options,
+           settings=$.interfaces.processor.settings): {
+        local opt = std.mergePatch($.defaults.processor.jq.options, options),
+        local s = std.mergePatch($.interfaces.processor.settings, settings),
+
+        type: 'jq',
         settings: std.mergePatch({ options: opt }, s),
       },
       kv_store(options=$.defaults.processor.kv_store.options,

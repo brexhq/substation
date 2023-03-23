@@ -55,7 +55,7 @@ func (p procJQ) Apply(ctx context.Context, capsule config.Capsule) (config.Capsu
 	}
 
 	var arr []interface{}
-	iter := query.Run(i)
+	iter := query.RunWithContext(ctx, i)
 
 	for {
 		v, ok := iter.Next()

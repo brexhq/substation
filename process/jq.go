@@ -5,6 +5,7 @@ import (
 	gojson "encoding/json"
 	"fmt"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/itchyny/gojq"
@@ -19,11 +20,33 @@ const errJqNoOutputGenerated = errors.Error("no output generated")
 type procJQ struct {
 	process
 	Options procJQOptions `json:"options"`
+
+	query *gojq.Query
 }
 
 type procJQOptions struct {
 	// Query is the jq query applied to data.
 	Query string `json:"query"`
+}
+
+// Create a new join processor.
+func newProcJQ(cfg config.Config) (p procJQ, err error) {
+	err = config.Decode(cfg.Settings, &p)
+	if err != nil {
+		return procJQ{}, err
+	}
+
+	p.operator, err = condition.NewOperator(p.Condition)
+	if err != nil {
+		return procJQ{}, err
+	}
+
+	p.query, err = gojq.Parse(p.Options.Query)
+	if err != nil {
+		return procJQ{}, err
+	}
+
+	return p, nil
 }
 
 // String returns the processor settings as an object.
@@ -39,23 +62,18 @@ func (p procJQ) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procJQ) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes encapsulated data with the processor.
 func (p procJQ) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	query, err := gojq.Parse(p.Options.Query)
-	if err != nil {
-		return capsule, err
-	}
-
 	var i interface{}
 	if err := gojson.Unmarshal(capsule.Data(), &i); err != nil {
 		return capsule, fmt.Errorf("process: jq: %v", err)
 	}
 
 	var arr []interface{}
-	iter := query.RunWithContext(ctx, i)
+	iter := p.query.RunWithContext(ctx, i)
 
 	for {
 		v, ok := iter.Next()
@@ -69,6 +87,7 @@ func (p procJQ) Apply(ctx context.Context, capsule config.Capsule) (config.Capsu
 		arr = append(arr, v)
 	}
 
+	var err error
 	var b []byte
 	switch len(arr) {
 	case 0:

@@ -10,17 +10,19 @@ import (
 
 var jsonTests = []struct {
 	name     string
-	proc     procJQ
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"access",
-		procJQ{
-			process: process{},
-			Options: procJQOptions{
-				Query: `.a`,
+		config.Config{
+			Type: "jq",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"query": `.a`,
+				},
 			},
 		},
 		[]byte(`{"a":"b"}`),
@@ -29,10 +31,12 @@ var jsonTests = []struct {
 	},
 	{
 		"access",
-		procJQ{
-			process: process{},
-			Options: procJQOptions{
-				Query: `.a, .c`,
+		config.Config{
+			Type: "jq",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"query": `.a, .c`,
+				},
 			},
 		},
 		[]byte(`{"a":"b","c":"d"}`),
@@ -41,10 +45,12 @@ var jsonTests = []struct {
 	},
 	{
 		"access",
-		procJQ{
-			process: process{},
-			Options: procJQOptions{
-				Query: `.a`,
+		config.Config{
+			Type: "jq",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"query": `.a`,
+				},
 			},
 		},
 		[]byte(`{"a":{"b":"c"}}`),
@@ -53,10 +59,12 @@ var jsonTests = []struct {
 	},
 	{
 		"array",
-		procJQ{
-			process: process{},
-			Options: procJQOptions{
-				Query: `.a`,
+		config.Config{
+			Type: "jq",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"query": `.a`,
+				},
 			},
 		},
 		[]byte(`{"a":["b","c","d"]}`),
@@ -65,10 +73,12 @@ var jsonTests = []struct {
 	},
 	{
 		"slice",
-		procJQ{
-			process: process{},
-			Options: procJQOptions{
-				Query: `.a[-1:]`,
+		config.Config{
+			Type: "jq",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"query": `.a[-1:]`,
+				},
 			},
 		},
 		[]byte(`{"a":["b","c","d","e","f","g"]}`),
@@ -77,17 +87,32 @@ var jsonTests = []struct {
 	},
 	{
 		"recursion",
-		procJQ{
-			process: process{},
-			Options: procJQOptions{
-				Query: `walk( if type == "object" then 
-				with_entries( select( 
-					(.value != "") and 
-					(.value != {}) and
-					(.value != null)
-				) ) 
-			else 
-				. end)`,
+		// procJQ{
+		// 	process: process{},
+		// 	Options: procJQOptions{
+		// 		Query: `walk( if type == "object" then
+		// 		with_entries( select(
+		// 			(.value != "") and
+		// 			(.value != {}) and
+		// 			(.value != null)
+		// 		) )
+		// 	else
+		// 		. end)`,
+		// 	},
+		// },
+		config.Config{
+			Type: "jq",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"query": `walk( if type == "object" then 
+					with_entries( select( 
+						(.value != "") and 
+						(.value != {}) and
+						(.value != null)
+					) ) 
+				else 
+					. end)`,
+				},
 			},
 		},
 		[]byte(`{"a":{"b":{"c":""}},"d":null,"e":"f"}`),
@@ -101,16 +126,23 @@ func TestJq(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range jsonTests {
-		capsule.SetData(test.test)
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			proc, err := newProcJQ(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -124,10 +156,15 @@ func benchmarkJq(b *testing.B, applier procJQ, test config.Capsule) {
 func BenchmarkJq(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range jsonTests {
+		proc, err := newProcJQ(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkJq(b, test.proc, capsule)
+				benchmarkJq(b, proc, capsule)
 			},
 		)
 	}

@@ -137,14 +137,11 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 			}
 			if s.Path.SuffixKey != "" {
 				suffix := capsule.Get(s.Path.SuffixKey).String()
-				fmt.Println(suffix)
-
 				if suffix == "" {
 					return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, object, errAWSS3EmptySuffix)
 				}
 
 				innerObject = strings.Replace(innerObject, "${PATH_SUFFIX}", suffix, 1)
-				fmt.Println(innerObject)
 			}
 
 			// TODO: remove in v1.0.0
@@ -152,8 +149,6 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 				prefix := capsule.Get(s.Path.PrefixKey).String()
 				innerObject = prefix + "/" + object
 			}
-
-			fmt.Println(innerObject)
 
 			if _, ok := files[innerObject]; !ok {
 				f, err := os.CreateTemp("", "substation")

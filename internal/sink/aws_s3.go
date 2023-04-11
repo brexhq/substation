@@ -229,10 +229,10 @@ If the struct is empty, then this default object name is used: prefix/year/month
 func createKeyName(p s3Path) string {
 	var path string
 
-	if p.Prefix != "" {
-		path = p.Prefix + "/"
-	} else if p.PrefixKey != "" {
+	if p.PrefixKey != "" {
 		path = "${PATH_PREFIX}/"
+	} else if p.Prefix != "" {
+		path = p.Prefix + "/"
 	}
 
 	if p.DateFormat != "" {
@@ -248,10 +248,10 @@ func createKeyName(p s3Path) string {
 		path += uuid.NewString()
 	}
 
-	if p.Suffix != "" {
-		path += p.Suffix
-	} else if p.SuffixKey != "" {
+	if p.SuffixKey != "" {
 		path += "${PATH_SUFFIX}"
+	} else if p.Suffix != "" {
+		path += p.Suffix
 	}
 
 	// currently only supports gzip compression

@@ -43,7 +43,7 @@ func newKVMMDB(cfg config.Config) (kvMMDB, error) {
 	store.mu = new(sync.RWMutex)
 
 	if store.File == "" {
-		return kvMMDB{}, fmt.Errorf("kv: mmdb: options %+v: %w", &store, errMissingRequiredOptions)
+		return kvMMDB{}, fmt.Errorf("kv: mmdb: options %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
 	return store, nil

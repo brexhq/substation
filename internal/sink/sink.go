@@ -56,7 +56,7 @@ func New(cfg config.Config) (Sink, error) {
 	case "sumologic":
 		return newSinkSumoLogic(cfg)
 	default:
-		return nil, fmt.Errorf("sink: settings %v: %v", cfg.Settings, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("sink: settings %v: %w", cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 

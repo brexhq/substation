@@ -8,6 +8,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
 
 // math processes data by applying mathematic operations.
@@ -54,7 +55,7 @@ func newProcMath(cfg config.Config) (p procMath, err error) {
 			"divide",
 		},
 		p.Options.Operation) {
-		return procMath{}, fmt.Errorf("process: math: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procMath{}, fmt.Errorf("process: math: operation %q: %v", p.Options.Operation, errors.ErrInvalidOptionInput)
 	}
 
 	// only supports JSON, fail if there are no keys

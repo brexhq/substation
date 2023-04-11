@@ -9,6 +9,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/regexp"
 )
 
@@ -63,12 +64,12 @@ func newProcCapture(cfg config.Config) (p procCapture, err error) {
 			"named_group",
 		},
 		p.Options.Type) {
-		return procCapture{}, fmt.Errorf("process: capture: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procCapture{}, fmt.Errorf("process: capture: type %q: %v", p.Options.Type, errors.ErrInvalidOptionInput)
 	}
 
 	// fail if required options are missing
 	if p.Options.Expression == "" {
-		return procCapture{}, fmt.Errorf("process: capture: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procCapture{}, fmt.Errorf("process: capture: option \"expression\": %v", errors.ErrMissingRequiredOption)
 	}
 
 	if _, err = regexp.Compile(p.Options.Expression); err != nil {

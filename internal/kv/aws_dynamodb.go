@@ -49,7 +49,7 @@ func newKVAWSDyanmoDB(cfg config.Config) (kvAWSDynamoDB, error) {
 	}
 
 	if store.Table == "" {
-		return kvAWSDynamoDB{}, fmt.Errorf("kv: aws_dynamodb: options %+v: %w", &store, errMissingRequiredOptions)
+		return kvAWSDynamoDB{}, fmt.Errorf("kv: aws_dynamodb: options %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
 	return store, nil
@@ -117,7 +117,7 @@ func (store *kvAWSDynamoDB) Set(ctx context.Context, key string, val interface{}
 // SetWithTTL adds an item to the DynamoDB table with a time-to-live (TTL) attribute.
 func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
 	if store.Attributes.TTL == "" {
-		return errors.ErrMissingRequiredOptions
+		return errors.ErrMissingRequiredOption
 	}
 
 	m := map[string]interface{}{
@@ -150,7 +150,7 @@ func (store *kvAWSDynamoDB) IsEnabled() bool {
 // Setup creates a new DynamoDB client.
 func (store *kvAWSDynamoDB) Setup(ctx context.Context) error {
 	if store.Table == "" || store.Attributes.PartitionKey == "" {
-		return errors.ErrMissingRequiredOptions
+		return errors.ErrMissingRequiredOption
 	}
 
 	// avoids unnecessary setup

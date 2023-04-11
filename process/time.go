@@ -9,6 +9,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
@@ -77,7 +78,7 @@ func newProcTime(cfg config.Config) (p procTime, err error) {
 
 	// error early if required options are missing
 	if p.Options.Format == "" || p.Options.SetFormat == "" {
-		return procTime{}, fmt.Errorf("process: time: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procTime{}, fmt.Errorf("process: time: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
 	}
 
 	return p, nil

@@ -69,7 +69,7 @@ func newProcDomain(cfg config.Config) (p procDomain, err error) {
 			"subdomain",
 		},
 		p.Options.Type) {
-		return procDomain{}, fmt.Errorf("process: domain: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procDomain{}, fmt.Errorf("process: domain: options %q: %v", p.Options.Type, errors.ErrInvalidOptionInput)
 	}
 
 	// validate data processing pattern

@@ -3,6 +3,7 @@ package condition
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"golang.org/x/exp/slices"
 
@@ -26,10 +27,10 @@ type inspJSONSchemaOptions struct {
 		// Type is the expected value type for Key.
 		//
 		// Must be one of:
-		//	- string
-		//	- number (float, int)
-		//	- boolean (true, false)
-		//	- json
+		//	- String
+		//	- Number (float, int)
+		//	- Boolean (true, false)
+		//	- JSON
 		Type string `json:"type"`
 	} `json:"schema"`
 }
@@ -45,13 +46,13 @@ func newInspJSONSchema(cfg config.Config) (c inspJSONSchema, err error) {
 	for _, s := range c.Options.Schema {
 		if !slices.Contains(
 			[]string{
-				"string",
-				"number",
-				"boolen",
-				"json",
+				"String",
+				"Number",
+				"Boolen",
+				"JSON",
 			},
-			s.Type) {
-			return inspJSONSchema{}, fmt.Errorf("condition: json: type %q invalid: %w", s.Type, errors.ErrMissingRequiredOptions)
+			strings.TrimSuffix(s.Type, "/Array")) {
+			return inspJSONSchema{}, fmt.Errorf("condition: json: type %q invalid: %v", s.Type, errors.ErrInvalidOptionInput)
 		}
 	}
 

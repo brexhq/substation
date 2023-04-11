@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
 	"github.com/brexhq/substation/internal/json"
 )
@@ -34,7 +35,7 @@ func newKVJSONFile(cfg config.Config) (kvJSONFile, error) {
 	store.mu = new(sync.Mutex)
 
 	if store.File == "" {
-		return kvJSONFile{}, fmt.Errorf("kv: json: options %+v: %w", &store, errMissingRequiredOptions)
+		return kvJSONFile{}, fmt.Errorf("kv: json: options %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
 	return store, nil

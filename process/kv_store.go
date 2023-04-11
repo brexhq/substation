@@ -75,7 +75,7 @@ func newProcKVStore(cfg config.Config) (p procKVStore, err error) {
 			"set",
 		},
 		p.Options.Type) {
-		return procKVStore{}, fmt.Errorf("process: kv_store: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procKVStore{}, fmt.Errorf("process: kv_store: type %q: %v", p.Options.Type, errors.ErrInvalidOptionInput)
 	}
 
 	// only supports objects, fail if there are no keys

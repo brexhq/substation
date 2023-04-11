@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
 )
 
@@ -44,7 +45,7 @@ func newKVTextFile(cfg config.Config) (kvTextFile, error) {
 	store.mu = new(sync.Mutex)
 
 	if store.File == "" {
-		return kvTextFile{}, fmt.Errorf("kv: text_file: options %+v: %w", &store, errMissingRequiredOptions)
+		return kvTextFile{}, fmt.Errorf("kv: text_file: options %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
 	return store, nil

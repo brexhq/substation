@@ -8,6 +8,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
 
 // replace processes data by replacing characters in strings.
@@ -42,7 +43,7 @@ func newProcReplace(cfg config.Config) (p procReplace, err error) {
 	}
 
 	if p.Options.Old == "" {
-		return procReplace{}, fmt.Errorf("process: replace: options %+v: %w", p.Options, errMissingRequiredOptions)
+		return procReplace{}, fmt.Errorf("process: replace: %v old", errors.ErrMissingRequiredOption)
 	}
 
 	// default to procReplace all

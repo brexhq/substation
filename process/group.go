@@ -6,6 +6,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
@@ -39,10 +40,10 @@ func newProcGroup(cfg config.Config) (p procGroup, err error) {
 
 	// only supports JSON arrays, fail if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return procGroup{}, fmt.Errorf("process: group: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procGroup{}, fmt.Errorf("process: group: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
 	}
 
-	return procGroup{}, nil
+	return p, nil
 }
 
 // String returns the processor settings as an object.

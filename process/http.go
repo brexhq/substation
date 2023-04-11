@@ -13,6 +13,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/secrets"
 )
@@ -88,11 +89,11 @@ func newProcHTTP(cfg config.Config) (p procHTTP, err error) {
 
 	// error early if required options are missing
 	if p.Options.URL == "" {
-		return procHTTP{}, fmt.Errorf("process: http: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procHTTP{}, fmt.Errorf("process: http: option url: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if p.Options.Method == "POST" && p.Options.BodyKey == "" {
-		return procHTTP{}, fmt.Errorf("process: http: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procHTTP{}, fmt.Errorf("process: http: options body_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if !httpClient.IsEnabled() {
@@ -155,7 +156,7 @@ func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 	case gohttp.MethodPost:
 		// BodyKey is a requirement, otherwise there is no payload to send
 		if p.Options.BodyKey == "" {
-			return capsule, fmt.Errorf("process: http: options %+v: %v", p.Options, errMissingRequiredOptions)
+			return capsule, fmt.Errorf("process: http: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
 		}
 
 		body := capsule.Get(p.Options.BodyKey).String()

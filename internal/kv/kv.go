@@ -15,8 +15,6 @@ var (
 	m  map[string]Storer
 	// errSetNotSupported is returned when the KV set action is not supported.
 	errSetNotSupported = errors.Error("set not supported")
-	// errMissingRequiredOptions is returned when a KV store does not have the required options to properly execute.
-	errMissingRequiredOptions = errors.Error("missing required options")
 )
 
 // Storer provides tools for getting values from and putting values into key-value stores.

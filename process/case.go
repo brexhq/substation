@@ -59,7 +59,7 @@ func newProcCase(cfg config.Config) (p procCase, err error) {
 			"snake",
 		},
 		p.Options.Type) {
-		return procCase{}, fmt.Errorf("process: case: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procCase{}, fmt.Errorf("process: case: type %q: %v", p.Options, errors.ErrInvalidOptionInput)
 	}
 
 	// validate data processing pattern

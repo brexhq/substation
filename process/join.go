@@ -6,6 +6,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
 
 // join processes data by joinenating values in an object array.
@@ -35,7 +36,7 @@ func newProcJoin(cfg config.Config) (p procJoin, err error) {
 
 	// fail if required options are missing
 	if p.Options.Separator == "" {
-		return procJoin{}, fmt.Errorf("process: join: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procJoin{}, fmt.Errorf("process: join: separator: %v", errors.ErrMissingRequiredOption)
 	}
 
 	// only supports JSON, fail if there are no keys

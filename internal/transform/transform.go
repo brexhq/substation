@@ -17,14 +17,10 @@ type Transformer interface {
 func New(cfg config.Config) (Transformer, error) {
 	switch t := cfg.Type; t {
 	case "batch":
-		var t tformBatch
-		_ = config.Decode(cfg.Settings, &t)
-		return &t, nil
+		return newTformBatch(cfg)
 	case "transfer":
-		var t tformTransfer
-		_ = config.Decode(cfg.Settings, &t)
-		return &t, nil
+		return newTformTransfer(cfg)
 	default:
-		return nil, fmt.Errorf("transform settings %v: %v", cfg.Settings, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("transform settings %v: %w", cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }

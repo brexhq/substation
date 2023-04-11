@@ -11,6 +11,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
 
 // gzip processes data by compressing or decompressing gzip.
@@ -46,7 +47,7 @@ func newProcGzip(cfg config.Config) (p procGzip, err error) {
 	if !slices.Contains(
 		[]string{"to", "from"},
 		p.Options.Direction) {
-		return procGzip{}, fmt.Errorf("process: gzip: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procGzip{}, fmt.Errorf("process: gzip: direction %q: %v", p.Options.Direction, errors.ErrInvalidOptionInput)
 	}
 
 	return p, nil

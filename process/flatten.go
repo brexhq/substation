@@ -6,6 +6,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
 
 // flatten processes data by flattening object arrays.
@@ -37,7 +38,7 @@ func newProcFlatten(cfg config.Config) (p procFlatten, err error) {
 
 	// only supports JSON arrays, fail if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return procFlatten{}, fmt.Errorf("process: flatten: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procFlatten{}, fmt.Errorf("process: flatten: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
 	}
 
 	return p, nil

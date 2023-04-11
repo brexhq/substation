@@ -8,6 +8,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
 
 // split processes data by splitting it into multiple elements in an object array, objects, or strings.
@@ -37,12 +38,7 @@ func newProcSplit(cfg config.Config) (p procSplit, err error) {
 
 	// fail if required options are missing
 	if p.Options.Separator == "" {
-		return procSplit{}, fmt.Errorf("process: split: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
-	// only supports JSON, fail if there are no keys
-	if p.Key == "" || p.SetKey == "" {
-		return procSplit{}, fmt.Errorf("process: split: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return procSplit{}, fmt.Errorf("process: split: %v separator", errors.ErrMissingRequiredOption)
 	}
 
 	return p, nil

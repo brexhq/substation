@@ -71,7 +71,7 @@ func newKVCSVFile(cfg config.Config) (kvCSVFile, error) {
 	store.mu = new(sync.Mutex)
 
 	if store.File == "" || store.Column == "" {
-		return kvCSVFile{}, fmt.Errorf("kv: csv: options %+v: %w", &store, errMissingRequiredOptions)
+		return kvCSVFile{}, fmt.Errorf("kv: csv: options %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
 	return store, nil

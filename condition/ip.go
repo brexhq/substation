@@ -62,7 +62,7 @@ func newInspIP(cfg config.Config) (c inspIP, err error) {
 			"unspecified",
 		},
 		c.Options.Type) {
-		return inspIP{}, fmt.Errorf("condition: ip: type %q invalid: %w", c.Options.Type, errors.ErrMissingRequiredOptions)
+		return inspIP{}, fmt.Errorf("condition: ip: type %q invalid: %v", c.Options.Type, errors.ErrInvalidOptionInput)
 	}
 
 	return c, nil

@@ -62,12 +62,7 @@ func newProcAWSLambda(cfg config.Config) (p procAWSLambda, err error) {
 
 	// fail if required options are missing
 	if p.Options.FunctionName == "" {
-		return procAWSLambda{}, fmt.Errorf("process: aws_lambda: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
-	// only supports JSON, fail if there are no keys
-	if p.Key == "" && p.SetKey == "" {
-		return procAWSLambda{}, fmt.Errorf("process: aws_lambda: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return procAWSLambda{}, fmt.Errorf("process: aws_lambda: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
 	}
 
 	return p, nil

@@ -7,6 +7,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
@@ -20,8 +21,8 @@ type procForEach struct {
 	process
 	Options procForEachOptions `json:"options"`
 
-	processor config.Config
-	applier   Applier
+	procCfg config.Config
+	applier Applier
 }
 
 type procForEachOptions struct {
@@ -43,7 +44,7 @@ func newProcForEach(cfg config.Config) (p procForEach, err error) {
 
 	// only supports JSON arrays, fail if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return procForEach{}, fmt.Errorf("process: for_each: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procForEach{}, fmt.Errorf("process: for_each: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
 	}
 
 	// configured processor is converted to a JSON object so that the
@@ -64,17 +65,16 @@ func newProcForEach(cfg config.Config) (p procForEach, err error) {
 	}
 	conf, _ = json.Set(conf, "settings.set_key", outputKey)
 
-	var processor config.Config
-	if err := gojson.Unmarshal(conf, &p.processor); err != nil {
+	if err := gojson.Unmarshal(conf, &p.procCfg); err != nil {
 		return procForEach{}, err
 	}
 
-	p.applier, err = NewApplier(processor)
+	p.applier, err = NewApplier(p.procCfg)
 	if err != nil {
 		return procForEach{}, fmt.Errorf("process: for_each: %v", err)
 	}
 
-	return procForEach{}, nil
+	return p, nil
 }
 
 // String returns the processor settings as an object.
@@ -102,7 +102,7 @@ func (p procForEach) Apply(ctx context.Context, capsule config.Capsule) (config.
 
 	for _, res := range result.Array() {
 		tmpCap := config.NewCapsule()
-		if err := tmpCap.Set(p.processor.Type, res); err != nil {
+		if err := tmpCap.Set(p.procCfg.Type, res); err != nil {
 			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}
 
@@ -111,7 +111,7 @@ func (p procForEach) Apply(ctx context.Context, capsule config.Capsule) (config.
 			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}
 
-		value := tmpCap.Get(p.processor.Type)
+		value := tmpCap.Get(p.procCfg.Type)
 		if err := capsule.Set(p.SetKey, value); err != nil {
 			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}

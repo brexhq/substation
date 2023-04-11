@@ -54,7 +54,7 @@ func newProcHash(cfg config.Config) (p procHash, err error) {
 			"sha256",
 		},
 		p.Options.Algorithm) {
-		return procHash{}, fmt.Errorf("process: hash: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procHash{}, fmt.Errorf("process: hash: algorithm %q: %v", p.Options.Algorithm, errors.ErrInvalidOptionInput)
 	}
 
 	return p, nil

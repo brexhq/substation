@@ -16,9 +16,6 @@ var errInvalidDataPattern = errors.Error("invalid data access pattern")
 // errInvalidDirection is returned when a processor is configured with an invalid direction setting.
 const errInvalidDirection = errors.Error("invalid direction")
 
-// errMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
-const errMissingRequiredOptions = errors.Error("missing required options")
-
 type process struct {
 	// Condition optionally enables processing depending on the outcome of data inspection.
 	Condition condition.Config `json:"condition"`
@@ -71,7 +68,7 @@ func NewApplier(cfg config.Config) (Applier, error) {
 	case "case":
 		return newProcCase(cfg)
 	case "convert":
-		return newProcCase(cfg)
+		return newProcConvert(cfg)
 	case "copy":
 		return newProcCopy(cfg)
 	case "delete":
@@ -117,7 +114,7 @@ func NewApplier(cfg config.Config) (Applier, error) {
 	case "time":
 		return newProcTime(cfg)
 	default:
-		return nil, fmt.Errorf("process: new_applier: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("process: new_applier: type %q settings %+v: %w", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 
@@ -247,7 +244,7 @@ func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop, gocyclo 
 	case "time":
 		return newProcTime(cfg)
 	default:
-		return nil, fmt.Errorf("process: new_batcher: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("process: new_batcher: type %q settings %+v: %w", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 

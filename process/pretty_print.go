@@ -78,7 +78,7 @@ func newProcPrettyPrint(cfg config.Config) (p procPrettyPrint, err error) {
 			"from",
 		},
 		p.Options.Direction) {
-		return procPrettyPrint{}, fmt.Errorf("process: pretty_print: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procPrettyPrint{}, fmt.Errorf("process: pretty_print: direction %q: %v", p.Options.Direction, errors.ErrMissingRequiredOption)
 	}
 
 	return p, nil

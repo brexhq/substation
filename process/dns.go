@@ -12,6 +12,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
 
 var dnsResolver net.Resolver
@@ -67,7 +68,7 @@ func newProcDNS(cfg config.Config) (p procDNS, err error) {
 			"query_txt",
 		},
 		p.Options.Type) {
-		return procDNS{}, fmt.Errorf("process: dns: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procDNS{}, fmt.Errorf("process: dns: type %q: %v", p.Options.Type, errors.ErrInvalidOptionInput)
 	}
 
 	// validate data processing pattern

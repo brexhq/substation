@@ -50,14 +50,13 @@ func newInspForEach(cfg config.Config) (c inspForEach, err error) {
 			"all",
 		},
 		c.Options.Type) {
-		return inspForEach{}, fmt.Errorf("condition: for_each: type invalid: %w", errors.ErrMissingRequiredOptions)
+		return inspForEach{}, fmt.Errorf("condition: for_each: type %q invalid: %v", c.Options.Type, errors.ErrInvalidOptionInput)
 	}
 
-	inspector, err := NewInspector(c.Options.Inspector)
+	c.inspector, err = NewInspector(c.Options.Inspector)
 	if err != nil {
-		return inspForEach{}, fmt.Errorf("condition: for_each: %w", err)
+		return inspForEach{}, fmt.Errorf("condition: for_each: %v", err)
 	}
-	c.inspector = inspector
 
 	return c, nil
 }

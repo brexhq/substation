@@ -56,10 +56,10 @@ func newInspStrings(cfg config.Config) (c inspStrings, err error) {
 			"ends_with",
 		},
 		c.Options.Type) {
-		return inspStrings{}, fmt.Errorf("condition: strings: type %q invalid: %w", c.Options.Type, errors.ErrMissingRequiredOptions)
+		return inspStrings{}, fmt.Errorf("condition: strings: type %q invalid: %v", c.Options.Type, errors.ErrInvalidOptionInput)
 	}
 
-	// TODO(shellcromancer): should we check that expression != "" if Type != "equals"?
+	// TODO(shellcromancer): should we check that the expression != "" if Type != "equals"?
 
 	return c, nil
 }

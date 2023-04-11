@@ -87,7 +87,7 @@ func newProcAWSDynamoDB(cfg config.Config) (p procAWSDynamoDB, err error) {
 
 	// fail if required options are missing
 	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
-		return procAWSDynamoDB{}, fmt.Errorf("process: aws_dynamodb: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procAWSDynamoDB{}, fmt.Errorf("process: aws_dynamodb: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
 	}
 
 	// only supports JSON, fao; if there are no keys

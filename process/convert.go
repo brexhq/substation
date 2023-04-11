@@ -8,6 +8,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
 
 // convert processes data by changing its type (e.g., bool, int, string).
@@ -52,7 +53,7 @@ func newProcConvert(cfg config.Config) (p procConvert, err error) {
 			"string",
 		},
 		p.Options.Type) {
-		return procConvert{}, fmt.Errorf("process: convert: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procConvert{}, fmt.Errorf("process: convert: type %q: %v", p.Options.Type, errors.ErrInvalidOptionInput)
 	}
 
 	return p, nil

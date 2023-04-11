@@ -33,7 +33,7 @@ func newInspContent(cfg config.Config) (c inspContent, err error) {
 	}
 
 	if c.Options.Type == "" {
-		return inspContent{}, fmt.Errorf("condition: content: type missing: %w", errors.ErrMissingRequiredOptions)
+		return inspContent{}, fmt.Errorf("condition: content: type missing: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return c, nil

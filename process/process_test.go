@@ -132,21 +132,23 @@ func TestApply(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 	for _, test := range processTests {
-		capsule.SetData(test.test)
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		appliers, err := NewAppliers(test.conf...)
-		if err != nil {
-			t.Error(err)
-		}
+			appliers, err := NewAppliers(test.conf...)
+			if err != nil {
+				t.Error(err)
+			}
 
-		result, err := Apply(ctx, capsule, appliers...)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := Apply(ctx, capsule, appliers...)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %v, got %v", test.expected, result)
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %v, got %v", test.expected, result)
+			}
+		})
 	}
 }
 
@@ -154,23 +156,25 @@ func TestBatch(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 	for _, test := range processTests {
-		capsule.SetData(test.test)
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		batch := make([]config.Capsule, 1)
-		batch[0] = capsule
+			batch := make([]config.Capsule, 1)
+			batch[0] = capsule
 
-		appliers, err := NewBatchers(test.conf...)
-		if err != nil {
-			t.Error(err)
-		}
+			appliers, err := NewBatchers(test.conf...)
+			if err != nil {
+				t.Error(err)
+			}
 
-		result, err := Batch(ctx, batch, appliers...)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := Batch(ctx, batch, appliers...)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result[0].Data(), test.expected) {
-			t.Errorf("expected %v, got %v", test.expected, result)
-		}
+			if !bytes.Equal(result[0].Data(), test.expected) {
+				t.Errorf("expected %v, got %v", test.expected, result)
+			}
+		})
 	}
 }

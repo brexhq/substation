@@ -8,18 +8,26 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procBase64{}
+	_ Batcher = procBase64{}
+)
+
 var base64Tests = []struct {
 	name     string
-	proc     procBase64
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"data decode",
-		procBase64{
-			Options: procBase64Options{
-				Direction: "from",
+		config.Config{
+			Type: "base64",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"direction": "from",
+				},
 			},
 		},
 		[]byte(`YmFy`),
@@ -28,9 +36,12 @@ var base64Tests = []struct {
 	},
 	{
 		"data encode",
-		procBase64{
-			Options: procBase64Options{
-				Direction: "to",
+		config.Config{
+			Type: "base64",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"direction": "to",
+				},
 			},
 		},
 		[]byte(`bar`),
@@ -39,13 +50,14 @@ var base64Tests = []struct {
 	},
 	{
 		"JSON decode",
-		procBase64{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procBase64Options{
-				Direction: "from",
+		config.Config{
+			Type: "base64",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"direction": "from",
+				},
 			},
 		},
 		[]byte(`{"foo":"YmFy"}`),
@@ -59,19 +71,23 @@ func TestBase64(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range base64Tests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcBase64(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -85,10 +101,15 @@ func benchmarkbase64(b *testing.B, applier procBase64, test config.Capsule) {
 func BenchmarkBase64(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range base64Tests {
+		proc, err := newProcBase64(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkbase64(b, test.proc, capsule)
+				benchmarkbase64(b, proc, capsule)
 			},
 		)
 	}

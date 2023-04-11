@@ -7,21 +7,24 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var _ Inspector = inspStrings{}
+
 var stringsTests = []struct {
-	name      string
-	inspector inspStrings
-	test      []byte
-	expected  bool
+	name     string
+	cfg      config.Config
+	test     []byte
+	expected bool
 }{
 	{
 		"pass",
-		inspStrings{
-			condition: condition{
-				Key: "foo",
-			},
-			Options: inspStringsOptions{
-				Type:       "starts_with",
-				Expression: "Test",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"key": "foo",
+				"options": map[string]interface{}{
+					"type":       "starts_with",
+					"expression": "Test",
+				},
 			},
 		},
 		[]byte(`{"foo":"Test"}`),
@@ -29,10 +32,13 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		inspStrings{
-			Options: inspStringsOptions{
-				Type:       "starts_with",
-				Expression: "Test",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":       "starts_with",
+					"expression": "Test",
+				},
 			},
 		},
 		[]byte("Test"),
@@ -40,10 +46,13 @@ var stringsTests = []struct {
 	},
 	{
 		"fail",
-		inspStrings{
-			Options: inspStringsOptions{
-				Type:       "starts_with",
-				Expression: "Test",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":       "starts_with",
+					"expression": "Test",
+				},
 			},
 		},
 		[]byte("-Test"),
@@ -51,10 +60,13 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		inspStrings{
-			Options: inspStringsOptions{
-				Type:       "equals",
-				Expression: "Test",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":       "equals",
+					"expression": "Test",
+				},
 			},
 		},
 		[]byte("Test"),
@@ -62,10 +74,13 @@ var stringsTests = []struct {
 	},
 	{
 		"fail",
-		inspStrings{
-			Options: inspStringsOptions{
-				Type:       "equals",
-				Expression: "Test",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":       "equals",
+					"expression": "Test",
+				},
 			},
 		},
 		[]byte("-Test"),
@@ -73,10 +88,13 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		inspStrings{
-			Options: inspStringsOptions{
-				Type:       "contains",
-				Expression: "es",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":       "contains",
+					"expression": "es",
+				},
 			},
 		},
 		[]byte("Test"),
@@ -84,10 +102,13 @@ var stringsTests = []struct {
 	},
 	{
 		"fail",
-		inspStrings{
-			Options: inspStringsOptions{
-				Type:       "contains",
-				Expression: "ABC",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":       "contains",
+					"expression": "ABC",
+				},
 			},
 		},
 		[]byte("Test"),
@@ -95,13 +116,14 @@ var stringsTests = []struct {
 	},
 	{
 		"!fail",
-		inspStrings{
-			condition: condition{
-				Negate: true,
-			},
-			Options: inspStringsOptions{
-				Type:       "starts_with",
-				Expression: "XYZ",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":       "starts_with",
+					"expression": "XYZ",
+				},
 			},
 		},
 		[]byte("ABC"),
@@ -109,13 +131,14 @@ var stringsTests = []struct {
 	},
 	{
 		"!pass",
-		inspStrings{
-			condition: condition{
-				Negate: true,
-			},
-			Options: inspStringsOptions{
-				Type:       "starts_with",
-				Expression: "ABC",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":       "starts_with",
+					"expression": "ABC",
+				},
 			},
 		},
 		[]byte("ABC"),
@@ -123,13 +146,14 @@ var stringsTests = []struct {
 	},
 	{
 		"!pass",
-		inspStrings{
-			condition: condition{
-				Negate: true,
-			},
-			Options: inspStringsOptions{
-				Type:       "equals",
-				Expression: "",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":       "equals",
+					"expression": "",
+				},
 			},
 		},
 		[]byte(""),
@@ -137,13 +161,14 @@ var stringsTests = []struct {
 	},
 	{
 		"!pass",
-		inspStrings{
-			condition: condition{
-				Negate: true,
-			},
-			Options: inspStringsOptions{
-				Type:       "contains",
-				Expression: "A",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":       "contains",
+					"expression": "A",
+				},
 			},
 		},
 		[]byte("ABC"),
@@ -151,10 +176,13 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		inspStrings{
-			Options: inspStringsOptions{
-				Type:       "equals",
-				Expression: "\"\"",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":       "equals",
+					"expression": `""`,
+				},
 			},
 		},
 		[]byte("\"\""),
@@ -162,10 +190,14 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		inspStrings{
-			Options: inspStringsOptions{
-				Type:       "equals",
-				Expression: "",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"key": "foo",
+				"options": map[string]interface{}{
+					"type":       "equals",
+					"expression": "",
+				},
 			},
 		},
 		[]byte(``),
@@ -228,18 +260,23 @@ func TestStrings(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range stringsTests {
-		var _ Inspector = test.inspector
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			insp, err := newInspStrings(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		check, err := test.inspector.Inspect(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			check, err := insp.Inspect(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if test.expected != check {
-			t.Errorf("expected %v, got %v", test.expected, check)
-		}
+			if test.expected != check {
+				t.Errorf("expected %v, got %v", test.expected, check)
+			}
+		})
 	}
 }
 
@@ -253,10 +290,15 @@ func benchmarkStringsByte(b *testing.B, inspector inspStrings, capsule config.Ca
 func BenchmarkStringsByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range stringsTests {
+		insp, err := newInspStrings(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkStringsByte(b, test.inspector, capsule)
+				benchmarkStringsByte(b, insp, capsule)
 			},
 		)
 	}

@@ -8,22 +8,28 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procConvert{}
+	_ Batcher = procConvert{}
+)
+
 var convertTests = []struct {
 	name     string
-	proc     procConvert
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"bool true",
-		procConvert{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procConvertOptions{
-				Type: "bool",
+		config.Config{
+			Type: "convert",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "bool",
+				},
 			},
 		},
 		[]byte(`{"foo":"true"}`),
@@ -32,13 +38,14 @@ var convertTests = []struct {
 	},
 	{
 		"bool false",
-		procConvert{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procConvertOptions{
-				Type: "bool",
+		config.Config{
+			Type: "convert",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "bool",
+				},
 			},
 		},
 		[]byte(`{"foo":"false"}`),
@@ -47,13 +54,14 @@ var convertTests = []struct {
 	},
 	{
 		"int",
-		procConvert{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procConvertOptions{
-				Type: "int",
+		config.Config{
+			Type: "convert",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "int",
+				},
 			},
 		},
 		[]byte(`{"foo":"-123"}`),
@@ -62,13 +70,14 @@ var convertTests = []struct {
 	},
 	{
 		"float",
-		procConvert{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procConvertOptions{
-				Type: "float",
+		config.Config{
+			Type: "convert",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "float",
+				},
 			},
 		},
 		[]byte(`{"foo":"123.456"}`),
@@ -77,13 +86,14 @@ var convertTests = []struct {
 	},
 	{
 		"uint",
-		procConvert{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procConvertOptions{
-				Type: "uint",
+		config.Config{
+			Type: "convert",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "uint",
+				},
 			},
 		},
 		[]byte(`{"foo":"123"}`),
@@ -92,13 +102,14 @@ var convertTests = []struct {
 	},
 	{
 		"string",
-		procConvert{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procConvertOptions{
-				Type: "string",
+		config.Config{
+			Type: "convert",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "string",
+				},
 			},
 		},
 		[]byte(`{"foo":123}`),
@@ -107,13 +118,14 @@ var convertTests = []struct {
 	},
 	{
 		"int",
-		procConvert{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procConvertOptions{
-				Type: "int",
+		config.Config{
+			Type: "convert",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "int",
+				},
 			},
 		},
 		[]byte(`{"foo":123.456}`),
@@ -127,19 +139,23 @@ func TestConvert(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range convertTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcConvert(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -153,10 +169,15 @@ func benchmarkConvert(b *testing.B, applier procConvert, test config.Capsule) {
 func BenchmarkConvert(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range convertTests {
+		proc, err := newProcConvert(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkConvert(b, test.proc, capsule)
+				benchmarkConvert(b, proc, capsule)
 			},
 		)
 	}

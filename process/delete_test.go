@@ -8,18 +8,24 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procDelete{}
+	_ Batcher = procDelete{}
+)
+
 var deleteTests = []struct {
 	name     string
-	proc     procDelete
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"string",
-		procDelete{
-			process: process{
-				Key: "baz",
+		config.Config{
+			Type: "delete",
+			Settings: map[string]interface{}{
+				"key": "baz",
 			},
 		},
 		[]byte(`{"foo":"bar","baz":"qux"}`),
@@ -28,9 +34,10 @@ var deleteTests = []struct {
 	},
 	{
 		"JSON",
-		procDelete{
-			process: process{
-				Key: "baz",
+		config.Config{
+			Type: "delete",
+			Settings: map[string]interface{}{
+				"key": "baz",
 			},
 		},
 		[]byte(`{"foo":"bar","baz":{"qux":"quux"}}`),
@@ -44,19 +51,23 @@ func TestDelete(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range deleteTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcDelete(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -70,10 +81,15 @@ func benchmarkDelete(b *testing.B, applier procDelete, test config.Capsule) {
 func BenchmarkDelete(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range deleteTests {
+		proc, err := newProcDelete(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkDelete(b, test.proc, capsule)
+				benchmarkDelete(b, proc, capsule)
 			},
 		)
 	}

@@ -163,26 +163,28 @@ func TestAll(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range allTests {
-		capsule.SetData(test.test)
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		cfg := Config{
-			Operator:   "all",
-			Inspectors: test.conf,
-		}
+			cfg := Config{
+				Operator:   "all",
+				Inspectors: test.conf,
+			}
 
-		op, err := NewOperator(cfg)
-		if err != nil {
-			t.Error(err)
-		}
+			op, err := NewOperator(cfg)
+			if err != nil {
+				t.Error(err)
+			}
 
-		ok, err := op.Operate(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			ok, err := op.Operate(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if ok != test.expected {
-			t.Errorf("expected %v, got %v", test.expected, ok)
-		}
+			if ok != test.expected {
+				t.Errorf("expected %v, got %v", test.expected, ok)
+			}
+		})
 	}
 }
 
@@ -493,26 +495,28 @@ func TestNone(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range noneTests {
-		capsule.SetData(test.test)
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		cfg := Config{
-			Operator:   "none",
-			Inspectors: test.conf,
-		}
+			cfg := Config{
+				Operator:   "none",
+				Inspectors: test.conf,
+			}
 
-		op, err := NewOperator(cfg)
-		if err != nil {
-			t.Error(err)
-		}
+			op, err := NewOperator(cfg)
+			if err != nil {
+				t.Error(err)
+			}
 
-		ok, err := op.Operate(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			ok, err := op.Operate(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if ok != test.expected {
-			t.Errorf("expected %v, got %v", test.expected, ok)
-		}
+			if ok != test.expected {
+				t.Errorf("expected %v, got %v", test.expected, ok)
+			}
+		})
 	}
 }
 
@@ -616,18 +620,20 @@ func TestCondition(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range conditionTests {
-		var _ Inspector = test.inspector
+		t.Run(test.name, func(t *testing.T) {
+			var _ Inspector = test.inspector
 
-		capsule.SetData(test.test)
+			capsule.SetData(test.test)
 
-		check, err := test.inspector.Inspect(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			check, err := test.inspector.Inspect(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if test.expected != check {
-			t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
-		}
+			if test.expected != check {
+				t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
+			}
+		})
 	}
 }
 

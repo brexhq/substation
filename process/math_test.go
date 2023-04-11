@@ -8,22 +8,28 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procMath{}
+	_ Batcher = procMath{}
+)
+
 var mathTests = []struct {
 	name     string
-	proc     procMath
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"add",
-		procMath{
-			process: process{
-				Key:    "math",
-				SetKey: "math",
-			},
-			Options: procMathOptions{
-				Operation: "add",
+		config.Config{
+			Type: "add",
+			Settings: map[string]interface{}{
+				"key":     "math",
+				"set_key": "math",
+				"options": map[string]interface{}{
+					"operation": "add",
+				},
 			},
 		},
 		[]byte(`{"math":[1,3]}`),
@@ -32,13 +38,14 @@ var mathTests = []struct {
 	},
 	{
 		"subtract",
-		procMath{
-			process: process{
-				Key:    "math",
-				SetKey: "math",
-			},
-			Options: procMathOptions{
-				Operation: "subtract",
+		config.Config{
+			Type: "add",
+			Settings: map[string]interface{}{
+				"key":     "math",
+				"set_key": "math",
+				"options": map[string]interface{}{
+					"operation": "subtract",
+				},
 			},
 		},
 		[]byte(`{"math":[5,2]}`),
@@ -47,13 +54,14 @@ var mathTests = []struct {
 	},
 	{
 		"multiply",
-		procMath{
-			process: process{
-				Key:    "math",
-				SetKey: "math",
-			},
-			Options: procMathOptions{
-				Operation: "multiply",
+		config.Config{
+			Type: "add",
+			Settings: map[string]interface{}{
+				"key":     "math",
+				"set_key": "math",
+				"options": map[string]interface{}{
+					"operation": "multiply",
+				},
 			},
 		},
 		[]byte(`{"math":[10,2]}`),
@@ -62,13 +70,14 @@ var mathTests = []struct {
 	},
 	{
 		"divide",
-		procMath{
-			process: process{
-				Key:    "math",
-				SetKey: "math",
-			},
-			Options: procMathOptions{
-				Operation: "divide",
+		config.Config{
+			Type: "add",
+			Settings: map[string]interface{}{
+				"key":     "math",
+				"set_key": "math",
+				"options": map[string]interface{}{
+					"operation": "divide",
+				},
 			},
 		},
 		[]byte(`{"math":[10,2]}`),
@@ -82,19 +91,23 @@ func TestMath(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range mathTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcMath(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -108,10 +121,15 @@ func benchmarkMath(b *testing.B, applier procMath, test config.Capsule) {
 func BenchmarkMath(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range mathTests {
+		proc, err := newProcMath(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkMath(b, test.proc, capsule)
+				benchmarkMath(b, proc, capsule)
 			},
 		)
 	}

@@ -8,22 +8,28 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procSplit{}
+	_ Batcher = procSplit{}
+)
+
 var splitTests = []struct {
 	name     string
-	proc     procSplit
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON",
-		procSplit{
-			process: process{
-				Key:    "split",
-				SetKey: "split",
-			},
-			Options: procSplitOptions{
-				Separator: ".",
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"key":     "split",
+				"set_key": "split",
+				"options": map[string]interface{}{
+					"separator": ".",
+				},
 			},
 		},
 		[]byte(`{"split":"foo.bar"}`),
@@ -37,19 +43,23 @@ func TestSplit(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range splitTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcSplit(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -63,10 +73,15 @@ func benchmarkSplit(b *testing.B, proc procSplit, capsule config.Capsule) {
 func BenchmarkSplit(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range splitTests {
+		proc, err := newProcSplit(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkSplit(b, test.proc, capsule)
+				benchmarkSplit(b, proc, capsule)
 			},
 		)
 	}
@@ -74,16 +89,19 @@ func BenchmarkSplit(b *testing.B) {
 
 var splitBatchTests = []struct {
 	name     string
-	proc     procSplit
+	cfg      config.Config
 	test     [][]byte
 	expected [][]byte
 	err      error
 }{
 	{
 		"data",
-		procSplit{
-			Options: procSplitOptions{
-				Separator: `\n`,
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"separator": `\n`,
+				},
 			},
 		},
 		[][]byte{
@@ -102,23 +120,30 @@ func TestSplitBatch(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 	for _, test := range splitBatchTests {
-		var capsules []config.Capsule
-		for _, t := range test.test {
-			capsule.SetData(t)
-			capsules = append(capsules, capsule)
-		}
-
-		result, err := test.proc.Batch(ctx, capsules...)
-		if err != nil {
-			t.Error(err)
-		}
-
-		for i, res := range result {
-			expected := test.expected[i]
-			if !bytes.Equal(expected, res.Data()) {
-				t.Errorf("expected %s, got %s", expected, string(res.Data()))
+		t.Run(test.name, func(t *testing.T) {
+			var capsules []config.Capsule
+			for _, t := range test.test {
+				capsule.SetData(t)
+				capsules = append(capsules, capsule)
 			}
-		}
+
+			proc, err := newProcSplit(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := proc.Batch(ctx, capsules...)
+			if err != nil {
+				t.Error(err)
+			}
+
+			for i, res := range result {
+				expected := test.expected[i]
+				if !bytes.Equal(expected, res.Data()) {
+					t.Errorf("expected %s, got %s", expected, string(res.Data()))
+				}
+			}
+		})
 	}
 }
 
@@ -132,6 +157,11 @@ func benchmarksplitBatch(b *testing.B, proc procSplit, capsules []config.Capsule
 func BenchmarkSplitBatch(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range splitBatchTests {
+		proc, err := newProcSplit(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				var capsules []config.Capsule
@@ -139,7 +169,7 @@ func BenchmarkSplitBatch(b *testing.B) {
 					capsule.SetData(t)
 					capsules = append(capsules, capsule)
 				}
-				benchmarksplitBatch(b, test.proc, capsules)
+				benchmarksplitBatch(b, proc, capsules)
 			},
 		)
 	}

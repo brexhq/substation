@@ -7,15 +7,17 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var _ Batcher = procDrop{}
+
 var dropTests = []struct {
 	name string
-	proc procDrop
+	cfg  config.Config
 	test [][]byte
 	err  error
 }{
 	{
 		"drop",
-		procDrop{},
+		config.Config{},
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
 			[]byte(`{"foo":"baz"}`),
@@ -36,7 +38,12 @@ func TestDrop(t *testing.T) {
 			capsules = append(capsules, capsule)
 		}
 
-		result, err := test.proc.Batch(ctx, capsules...)
+		proc, err := newProcDrop(test.cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		result, err := proc.Batch(ctx, capsules...)
 		if err != nil {
 			t.Error(err)
 		}
@@ -58,17 +65,20 @@ func benchmarkDrop(b *testing.B, applier procDrop, capsules []config.Capsule) {
 func BenchmarkDrop(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range dropTests {
-		var _ Batcher = test.proc
-
 		var capsules []config.Capsule
 		for _, t := range test.test {
 			capsule.SetData(t)
 			capsules = append(capsules, capsule)
 		}
 
+		proc, err := newProcDrop(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkDrop(b, test.proc, capsules)
+				benchmarkDrop(b, proc, capsules)
 			},
 		)
 	}

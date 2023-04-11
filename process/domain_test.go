@@ -8,22 +8,37 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procDomain{}
+	_ Batcher = procDomain{}
+)
+
 var domainTests = []struct {
 	name     string
-	proc     procDomain
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON tld",
-		procDomain{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procDomainOptions{
-				Type: "tld",
+		// procDomain{
+		// 	process: process{
+		// 		Key:    "foo",
+		// 		SetKey: "foo",
+		// 	},
+		// 	Options: procDomainOptions{
+		// 		Type: "tld",
+		// 	},
+		// },
+		config.Config{
+			Type: "domain",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "tld",
+				},
 			},
 		},
 		[]byte(`{"foo":"bar.com"}`),
@@ -31,14 +46,24 @@ var domainTests = []struct {
 		nil,
 	},
 	{
-		"JSON procDomain",
-		procDomain{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procDomainOptions{
-				Type: "domain",
+		"JSON domain",
+		// procDomain{
+		// 	process: process{
+		// 		Key:    "foo",
+		// 		SetKey: "foo",
+		// 	},
+		// 	Options: procDomainOptions{
+		// 		Type: "domain",
+		// 	},
+		// },
+		config.Config{
+			Type: "domain",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "domain",
+				},
 			},
 		},
 		[]byte(`{"foo":"www.example.com"}`),
@@ -47,13 +72,23 @@ var domainTests = []struct {
 	},
 	{
 		"JSON subdomain",
-		procDomain{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procDomainOptions{
-				Type: "subdomain",
+		// procDomain{
+		// 	process: process{
+		// 		Key:    "foo",
+		// 		SetKey: "foo",
+		// 	},
+		// 	Options: procDomainOptions{
+		// 		Type: "subdomain",
+		// 	},
+		// },
+		config.Config{
+			Type: "domain",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "subdomain",
+				},
 			},
 		},
 		[]byte(`{"foo":"www.bar.com"}`),
@@ -63,13 +98,23 @@ var domainTests = []struct {
 	// empty subdomain, returns empty
 	{
 		"JSON subdomain",
-		procDomain{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procDomainOptions{
-				Type: "subdomain",
+		// procDomain{
+		// 	process: process{
+		// 		Key:    "foo",
+		// 		SetKey: "foo",
+		// 	},
+		// 	Options: procDomainOptions{
+		// 		Type: "subdomain",
+		// 	},
+		// },
+		config.Config{
+			Type: "domain",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "subdomain",
+				},
 			},
 		},
 		[]byte(`{"foo":"example.com"}`),
@@ -78,9 +123,17 @@ var domainTests = []struct {
 	},
 	{
 		"data",
-		procDomain{
-			Options: procDomainOptions{
-				Type: "subdomain",
+		// procDomain{
+		// 	Options: procDomainOptions{
+		// 		Type: "subdomain",
+		// 	},
+		// },
+		config.Config{
+			Type: "domain",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "subdomain",
+				},
 			},
 		},
 		[]byte(`www.bar.com`),
@@ -94,19 +147,23 @@ func TestDomain(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range domainTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcDomain(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -120,10 +177,15 @@ func benchmarkDomain(b *testing.B, applier procDomain, test config.Capsule) {
 func BenchmarkDomain(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range domainTests {
+		proc, err := newProcDomain(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkDomain(b, test.proc, capsule)
+				benchmarkDomain(b, proc, capsule)
 			},
 		)
 	}

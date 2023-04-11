@@ -7,18 +7,24 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var _ Inspector = inspContent{}
+
 var contentTests = []struct {
-	name      string
-	inspector inspContent
-	test      []byte
-	expected  bool
+	name     string
+	cfg      config.Config
+	test     []byte
+	expected bool
 }{
 	// matching Gzip against valid Gzip header
 	{
 		"gzip",
-		inspContent{
-			Options: inspContentOptions{
-				Type: "application/x-gzip",
+		config.Config{
+			Type: "content",
+			Settings: map[string]interface{}{
+				"key": "ip_address",
+				"options": map[string]interface{}{
+					"type": "application/x-gzip",
+				},
 			},
 		},
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255},
@@ -27,9 +33,12 @@ var contentTests = []struct {
 	// matching Gzip against invalid Gzip header (bytes swapped)
 	{
 		"!gzip",
-		inspContent{
-			Options: inspContentOptions{
-				Type: "application/x-gzip",
+		config.Config{
+			Type: "content",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "application/x-gzip",
+				},
 			},
 		},
 		[]byte{255, 139, 8, 0, 0, 0, 0, 0, 0, 31},
@@ -38,12 +47,13 @@ var contentTests = []struct {
 	// matching Gzip against invalid Gzip header (bytes swapped) with negation
 	{
 		"gzip",
-		inspContent{
-			condition: condition{
-				Negate: true,
-			},
-			Options: inspContentOptions{
-				Type: "application/x-gzip",
+		config.Config{
+			Type: "content",
+			Settings: map[string]interface{}{
+				"negate": true,
+				"options": map[string]interface{}{
+					"type": "application/x-gzip",
+				},
 			},
 		},
 		[]byte{255, 139, 8, 0, 0, 0, 0, 0, 0, 31},
@@ -52,9 +62,17 @@ var contentTests = []struct {
 	// matching Zip against valid Zip header
 	{
 		"zip",
-		inspContent{
-			Options: inspContentOptions{
-				Type: "application/zip",
+		// inspContent{
+		// 	Options: inspContentOptions{
+		// 		Type: "application/zip",
+		// 	},
+		// },
+		config.Config{
+			Type: "content",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "application/zip",
+				},
 			},
 		},
 		[]byte{80, 75, 0o3, 0o4},
@@ -63,9 +81,17 @@ var contentTests = []struct {
 	// matching Gzip against valid Zip header
 	{
 		"!zip",
-		inspContent{
-			Options: inspContentOptions{
-				Type: "application/zip",
+		// inspContent{
+		// 	Options: inspContentOptions{
+		// 		Type: "application/zip",
+		// 	},
+		// },
+		config.Config{
+			Type: "content",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "application/zip",
+				},
 			},
 		},
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255},
@@ -74,9 +100,17 @@ var contentTests = []struct {
 	// matching Zip against invalid Zip header (bytes swapped)
 	{
 		"!zip",
-		inspContent{
-			Options: inspContentOptions{
-				Type: "application/zip",
+		// inspContent{
+		// 	Options: inspContentOptions{
+		// 		Type: "application/zip",
+		// 	},
+		// },
+		config.Config{
+			Type: "content",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "application/zip",
+				},
 			},
 		},
 		[]byte{0o4, 75, 0o3, 80},
@@ -89,18 +123,23 @@ func TestContent(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range contentTests {
-		var _ Inspector = test.inspector
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			insp, err := newInspContent(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		check, err := test.inspector.Inspect(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			check, err := insp.Inspect(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if test.expected != check {
-			t.Errorf("expected %v, got %v", test.expected, check)
-		}
+			if test.expected != check {
+				t.Errorf("expected %v, got %v", test.expected, check)
+			}
+		})
 	}
 }
 
@@ -114,10 +153,15 @@ func benchmarkContent(b *testing.B, inspector inspContent, capsule config.Capsul
 func BenchmarkContent(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range contentTests {
+		insp, err := newInspContent(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkContent(b, test.inspector, capsule)
+				benchmarkContent(b, insp, capsule)
 			},
 		)
 	}

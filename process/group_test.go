@@ -8,19 +8,25 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procGroup{}
+	_ Batcher = procGroup{}
+)
+
 var groupTests = []struct {
 	name     string
-	proc     procGroup
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"tuples",
-		procGroup{
-			process: process{
-				Key:    "group",
-				SetKey: "group",
+		config.Config{
+			Type: "group",
+			Settings: map[string]interface{}{
+				"key":     "group",
+				"set_key": "group",
 			},
 		},
 		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
@@ -29,13 +35,14 @@ var groupTests = []struct {
 	},
 	{
 		"objects",
-		procGroup{
-			process: process{
-				Key:    "group",
-				SetKey: "group",
-			},
-			Options: procGroupOptions{
-				Keys: []string{"qux.quux", "corge"},
+		config.Config{
+			Type: "group",
+			Settings: map[string]interface{}{
+				"key":     "group",
+				"set_key": "group",
+				"options": map[string]interface{}{
+					"keys": []string{"qux.quux", "corge"},
+				},
 			},
 		},
 		[]byte(`{"group":[["foo","bar"],[123,456]]}`),
@@ -49,19 +56,23 @@ func TestGroup(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range groupTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcGroup(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -75,10 +86,15 @@ func benchmarkGroup(b *testing.B, applier procGroup, test config.Capsule) {
 func BenchmarkGroup(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range groupTests {
+		proc, err := newProcGroup(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkGroup(b, test.proc, capsule)
+				benchmarkGroup(b, proc, capsule)
 			},
 		)
 	}

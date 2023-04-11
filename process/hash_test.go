@@ -8,22 +8,28 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procHash{}
+	_ Batcher = procHash{}
+)
+
 var hashTests = []struct {
 	name     string
-	proc     procHash
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON md5",
-		procHash{
-			process: process{
-				Key:    "hash",
-				SetKey: "hash",
-			},
-			Options: procHashOptions{
-				Algorithm: "md5",
+		config.Config{
+			Type: "hash",
+			Settings: map[string]interface{}{
+				"key":     "hash",
+				"set_key": "hash",
+				"options": map[string]interface{}{
+					"algorithm": "md5",
+				},
 			},
 		},
 		[]byte(`{"hash":"foo"}`),
@@ -32,13 +38,14 @@ var hashTests = []struct {
 	},
 	{
 		"JSON sha256",
-		procHash{
-			process: process{
-				Key:    "hash",
-				SetKey: "hash",
-			},
-			Options: procHashOptions{
-				Algorithm: "sha256",
+		config.Config{
+			Type: "hash",
+			Settings: map[string]interface{}{
+				"key":     "hash",
+				"set_key": "hash",
+				"options": map[string]interface{}{
+					"algorithm": "sha256",
+				},
 			},
 		},
 		[]byte(`{"hash":"foo"}`),
@@ -47,13 +54,14 @@ var hashTests = []struct {
 	},
 	{
 		"JSON @this sha256",
-		procHash{
-			process: process{
-				Key:    "@this",
-				SetKey: "hash",
-			},
-			Options: procHashOptions{
-				Algorithm: "sha256",
+		config.Config{
+			Type: "hash",
+			Settings: map[string]interface{}{
+				"key":     "@this",
+				"set_key": "hash",
+				"options": map[string]interface{}{
+					"algorithm": "sha256",
+				},
 			},
 		},
 		[]byte(`{"hash":"foo"}`),
@@ -62,9 +70,12 @@ var hashTests = []struct {
 	},
 	{
 		"data md5",
-		procHash{
-			Options: procHashOptions{
-				Algorithm: "md5",
+		config.Config{
+			Type: "hash",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"algorithm": "md5",
+				},
 			},
 		},
 		[]byte(`foo`),
@@ -73,9 +84,12 @@ var hashTests = []struct {
 	},
 	{
 		"data sha256",
-		procHash{
-			Options: procHashOptions{
-				Algorithm: "sha256",
+		config.Config{
+			Type: "hash",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"algorithm": "sha256",
+				},
 			},
 		},
 		[]byte(`foo`),
@@ -89,19 +103,23 @@ func TestHash(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range hashTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcHash(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -115,10 +133,15 @@ func benchmarkHash(b *testing.B, applier procHash, test config.Capsule) {
 func BenchmarkHash(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range hashTests {
+		proc, err := newProcHash(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkHash(b, test.proc, capsule)
+				benchmarkHash(b, proc, capsule)
 			},
 		)
 	}

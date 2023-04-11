@@ -8,21 +8,29 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procTime{}
+	_ Batcher = procTime{}
+)
+
 var setFmt = "2006-01-02T15:04:05.000000Z"
 
 var timeTests = []struct {
 	name     string
-	proc     procTime
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"data string",
-		procTime{
-			Options: procTimeOptions{
-				Format:    "2006-01-02T15:04:05Z",
-				SetFormat: setFmt,
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"format":     "2006-01-02T15:04:05Z",
+					"set_format": setFmt,
+				},
 			},
 		},
 		[]byte(`2021-03-06T00:02:57Z`),
@@ -31,10 +39,13 @@ var timeTests = []struct {
 	},
 	{
 		"data unix",
-		procTime{
-			Options: procTimeOptions{
-				Format:    "unix",
-				SetFormat: setFmt,
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"format":     "unix",
+					"set_format": setFmt,
+				},
 			},
 		},
 		[]byte(`1639877490.061`),
@@ -43,10 +54,13 @@ var timeTests = []struct {
 	},
 	{
 		"data unix to unix_milli",
-		procTime{
-			Options: procTimeOptions{
-				Format:    "unix",
-				SetFormat: "unix_milli",
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"format":     "unix",
+					"set_format": "unix_milli",
+				},
 			},
 		},
 		[]byte(`1639877490.061`),
@@ -55,14 +69,15 @@ var timeTests = []struct {
 	},
 	{
 		"JSON",
-		procTime{
-			process: process{
-				Key:    "time",
-				SetKey: "time",
-			},
-			Options: procTimeOptions{
-				Format:    "2006-01-02T15:04:05Z",
-				SetFormat: setFmt,
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"key":     "time",
+				"set_key": "time",
+				"options": map[string]interface{}{
+					"format":     "2006-01-02T15:04:05Z",
+					"set_format": setFmt,
+				},
 			},
 		},
 		[]byte(`{"time":"2021-03-06T00:02:57Z"}`),
@@ -71,14 +86,15 @@ var timeTests = []struct {
 	},
 	{
 		"JSON from unix",
-		procTime{
-			process: process{
-				Key:    "time",
-				SetKey: "time",
-			},
-			Options: procTimeOptions{
-				Format:    "unix",
-				SetFormat: setFmt,
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"key":     "time",
+				"set_key": "time",
+				"options": map[string]interface{}{
+					"format":     "unix",
+					"set_format": setFmt,
+				},
 			},
 		},
 		[]byte(`{"time":1639877490}`),
@@ -87,14 +103,15 @@ var timeTests = []struct {
 	},
 	{
 		"JSON to unix",
-		procTime{
-			process: process{
-				Key:    "time",
-				SetKey: "time",
-			},
-			Options: procTimeOptions{
-				Format:    setFmt,
-				SetFormat: "unix",
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"key":     "time",
+				"set_key": "time",
+				"options": map[string]interface{}{
+					"format":     setFmt,
+					"set_format": "unix",
+				},
 			},
 		},
 		[]byte(`{"time":"2021-12-19T01:31:30.000000Z"}`),
@@ -103,14 +120,15 @@ var timeTests = []struct {
 	},
 	{
 		"JSON from unix_milli",
-		procTime{
-			process: process{
-				Key:    "time",
-				SetKey: "time",
-			},
-			Options: procTimeOptions{
-				Format:    "unix_milli",
-				SetFormat: setFmt,
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"key":     "time",
+				"set_key": "time",
+				"options": map[string]interface{}{
+					"format":     "unix_milli",
+					"set_format": setFmt,
+				},
 			},
 		},
 		[]byte(`{"time":1654459632263}`),
@@ -119,14 +137,15 @@ var timeTests = []struct {
 	},
 	{
 		"JSON to unix_milli",
-		procTime{
-			process: process{
-				Key:    "time",
-				SetKey: "time",
-			},
-			Options: procTimeOptions{
-				Format:    setFmt,
-				SetFormat: "unix_milli",
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"key":     "time",
+				"set_key": "time",
+				"options": map[string]interface{}{
+					"format":     setFmt,
+					"set_format": "unix_milli",
+				},
 			},
 		},
 		[]byte(`{"time":"2022-06-05T20:07:12.263000Z"}`),
@@ -135,14 +154,15 @@ var timeTests = []struct {
 	},
 	{
 		"JSON unix to unix_milli",
-		procTime{
-			process: process{
-				Key:    "time",
-				SetKey: "time",
-			},
-			Options: procTimeOptions{
-				Format:    "unix",
-				SetFormat: "unix_milli",
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"key":     "time",
+				"set_key": "time",
+				"options": map[string]interface{}{
+					"format":     "unix",
+					"set_format": "unix_milli",
+				},
 			},
 		},
 		[]byte(`{"time":1639877490}`),
@@ -151,14 +171,15 @@ var timeTests = []struct {
 	},
 	{
 		"JSON offset conversion",
-		procTime{
-			process: process{
-				Key:    "time",
-				SetKey: "time",
-			},
-			Options: procTimeOptions{
-				Format:    "2006-Jan-02 Monday 03:04:05 -0700",
-				SetFormat: "2006-Jan-02 Monday 03:04:05 -0700",
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"key":     "time",
+				"set_key": "time",
+				"options": map[string]interface{}{
+					"format":     "2006-Jan-02 Monday 03:04:05 -0700",
+					"set_format": "2006-Jan-02 Monday 03:04:05 -0700",
+				},
 			},
 		},
 		[]byte(`{"time":"2020-Jan-29 Wednesday 12:19:25 -0500"}`),
@@ -167,15 +188,16 @@ var timeTests = []struct {
 	},
 	{
 		"JSON offset to local conversion",
-		procTime{
-			process: process{
-				Key:    "time",
-				SetKey: "time",
-			},
-			Options: procTimeOptions{
-				Format:      "2006-Jan-02 Monday 03:04:05 -0700",
-				SetFormat:   "2006-Jan-02 Monday 03:04:05 PM",
-				SetLocation: "America/New_York",
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"key":     "time",
+				"set_key": "time",
+				"options": map[string]interface{}{
+					"format":       "2006-Jan-02 Monday 03:04:05 -0700",
+					"set_format":   "2006-Jan-02 Monday 03:04:05 PM",
+					"set_location": "America/New_York",
+				},
 			},
 		},
 		// 12:19:25 AM in Pacific Standard time
@@ -186,16 +208,29 @@ var timeTests = []struct {
 	},
 	{
 		"JSON local to local conversion",
-		procTime{
-			process: process{
-				Key:    "time",
-				SetKey: "time",
-			},
-			Options: procTimeOptions{
-				Format:      "2006-Jan-02 Monday 03:04:05",
-				Location:    "America/Los_Angeles",
-				SetFormat:   "2006-Jan-02 Monday 03:04:05",
-				SetLocation: "America/New_York",
+		// procTime{
+		// 	process: process{
+		// 		Key:    "time",
+		// 		SetKey: "time",
+		// 	},
+		// 	Options: procTimeOptions{
+		// 		Format:      "2006-Jan-02 Monday 03:04:05",
+		// 		Location:    "America/Los_Angeles",
+		// 		SetFormat:   "2006-Jan-02 Monday 03:04:05",
+		// 		SetLocation: "America/New_York",
+		// 	},
+		// },
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"key":     "time",
+				"set_key": "time",
+				"options": map[string]interface{}{
+					"format":       "2006-Jan-02 Monday 03:04:05",
+					"location":     "America/Los_Angeles",
+					"set_format":   "2006-Jan-02 Monday 03:04:05",
+					"set_location": "America/New_York",
+				},
 			},
 		},
 		// 12:19:25 AM in Pacific Standard time
@@ -211,19 +246,23 @@ func TestTime(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range timeTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcTime(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -237,10 +276,15 @@ func benchmarkTime(b *testing.B, applier procTime, test config.Capsule) {
 func BenchmarkTime(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range timeTests {
+		proc, err := newProcTime(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkTime(b, test.proc, capsule)
+				benchmarkTime(b, proc, capsule)
 			},
 		)
 	}

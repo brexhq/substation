@@ -8,18 +8,21 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var _ Batcher = procExpand{}
+
 var expandTests = []struct {
 	name     string
-	proc     procExpand
+	cfg      config.Config
 	test     []byte
 	expected [][]byte
 	err      error
 }{
 	{
 		"objects",
-		procExpand{
-			process: process{
-				Key: "a",
+		config.Config{
+			Type: "expand",
+			Settings: map[string]interface{}{
+				"key": "a",
 			},
 		},
 		[]byte(`{"a":[{"b":"c"}]}`),
@@ -30,9 +33,10 @@ var expandTests = []struct {
 	},
 	{
 		"objects with key",
-		procExpand{
-			process: process{
-				Key: "a",
+		config.Config{
+			Type: "expand",
+			Settings: map[string]interface{}{
+				"key": "a",
 			},
 		},
 		[]byte(`{"a":[{"b":"c"},{"d":"e"}],"x":"y"}`),
@@ -44,9 +48,10 @@ var expandTests = []struct {
 	},
 	{
 		"non-objects with key",
-		procExpand{
-			process: process{
-				Key: "a",
+		config.Config{
+			Type: "expand",
+			Settings: map[string]interface{}{
+				"key": "a",
 			},
 		},
 		[]byte(`{"a":["b","c"],"d":"e"}`),
@@ -58,10 +63,11 @@ var expandTests = []struct {
 	},
 	{
 		"objects with set key",
-		procExpand{
-			process: process{
-				Key:    "a",
-				SetKey: "a",
+		config.Config{
+			Type: "expand",
+			Settings: map[string]interface{}{
+				"key":     "a",
+				"set_key": "a",
 			},
 		},
 		[]byte(`{"a":[{"b":"c"},{"d":"e"}],"x":"y"}`),
@@ -73,10 +79,11 @@ var expandTests = []struct {
 	},
 	{
 		"strings with key",
-		procExpand{
-			process: process{
-				Key:    "a",
-				SetKey: "a",
+		config.Config{
+			Type: "expand",
+			Settings: map[string]interface{}{
+				"key":     "a",
+				"set_key": "a",
 			},
 		},
 		[]byte(`{"a":["b","c"],"d":"e"}`),
@@ -88,10 +95,11 @@ var expandTests = []struct {
 	},
 	{
 		"objects with deeply nested set key",
-		procExpand{
-			process: process{
-				Key:    "a.b",
-				SetKey: "a.b.c.d",
+		config.Config{
+			Type: "expand",
+			Settings: map[string]interface{}{
+				"key":     "a.b",
+				"set_key": "a.b.c.d",
 			},
 		},
 		[]byte(`{"a":{"b":[{"g":"h"},{"i":"j"}],"x":"y"}}`),
@@ -103,10 +111,11 @@ var expandTests = []struct {
 	},
 	{
 		"objects overwriting set key",
-		procExpand{
-			process: process{
-				Key:    "a.b",
-				SetKey: "a",
+		config.Config{
+			Type: "expand",
+			Settings: map[string]interface{}{
+				"key":     "a.b",
+				"set_key": "a",
 			},
 		},
 		[]byte(`{"a":{"b":[{"c":"d"},{"e":"f"}],"x":"y"}}`),
@@ -118,7 +127,9 @@ var expandTests = []struct {
 	},
 	{
 		"data array",
-		procExpand{},
+		config.Config{
+			Type: "expand",
+		},
 		[]byte(`[{"a":"b"},{"c":"d"}]`),
 		[][]byte{
 			[]byte(`{"a":"b"}`),
@@ -133,23 +144,28 @@ func TestExpand(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range expandTests {
-		var _ Batcher = test.proc
-
-		slice := make([]config.Capsule, 1)
-		capsule.SetData(test.test)
-		slice[0] = capsule
-
-		result, err := test.proc.Batch(ctx, slice...)
-		if err != nil {
-			t.Error(err)
-		}
-
-		for i, res := range result {
-			expected := test.expected[i]
-			if !bytes.Equal(expected, res.Data()) {
-				t.Errorf("expected %s, got %s", expected, res)
+		t.Run(test.name, func(t *testing.T) {
+			proc, err := newProcExpand(test.cfg)
+			if err != nil {
+				t.Fatal(err)
 			}
-		}
+
+			slice := make([]config.Capsule, 1)
+			capsule.SetData(test.test)
+			slice[0] = capsule
+
+			result, err := proc.Batch(ctx, slice...)
+			if err != nil {
+				t.Error(err)
+			}
+
+			for i, res := range result {
+				expected := test.expected[i]
+				if !bytes.Equal(expected, res.Data()) {
+					t.Errorf("expected %s, got %s", expected, res)
+				}
+			}
+		})
 	}
 }
 
@@ -167,9 +183,14 @@ func BenchmarkExpand(b *testing.B) {
 		capsule.SetData(test.test)
 		slice[0] = capsule
 
+		proc, err := newProcExpand(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkExpand(b, test.proc, slice)
+				benchmarkExpand(b, proc, slice)
 			},
 		)
 	}

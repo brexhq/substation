@@ -7,71 +7,24 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var _ Inspector = inspLength{}
+
 var lengthTests = []struct {
-	name      string
-	inspector inspLength
-	test      []byte
-	expected  bool
+	name     string
+	cfg      config.Config
+	test     []byte
+	expected bool
 }{
 	{
 		"pass",
-		inspLength{
-			condition: condition{
-				Key: "foo",
-			},
-			Options: inspLengthOptions{
-				Value: 3,
-				Type:  "equals",
-			},
-		},
-		[]byte(`{"foo":"bar"}`),
-		true,
-	},
-	{
-		"pass",
-		inspLength{
-			Options: inspLengthOptions{
-				Value: 3,
-				Type:  "equals",
-			},
-		},
-		[]byte(`bar`),
-		true,
-	},
-	{
-		"fail",
-		inspLength{
-			condition: condition{
-				Key: "foo",
-			},
-			Options: inspLengthOptions{
-				Value: 4,
-				Type:  "equals",
-			},
-		},
-		[]byte(`{"foo":"bar"}`),
-		false,
-	},
-	{
-		"fail",
-		inspLength{
-			Options: inspLengthOptions{
-				Value: 4,
-				Type:  "equals",
-			},
-		},
-		[]byte(`bar`),
-		false,
-	},
-	{
-		"pass",
-		inspLength{
-			condition: condition{
-				Key: "foo",
-			},
-			Options: inspLengthOptions{
-				Value: 4,
-				Type:  "less_than",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"key": "foo",
+				"options": map[string]interface{}{
+					"type":  "equals",
+					"value": 3,
+				},
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -79,10 +32,13 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		inspLength{
-			Options: inspLengthOptions{
-				Value: 4,
-				Type:  "less_than",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":  "equals",
+					"value": 3,
+				},
 			},
 		},
 		[]byte(`bar`),
@@ -90,13 +46,14 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		inspLength{
-			condition: condition{
-				Key: "foo",
-			},
-			Options: inspLengthOptions{
-				Value: 3,
-				Type:  "less_than",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"key": "foo",
+				"options": map[string]interface{}{
+					"type":  "equals",
+					"value": 4,
+				},
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -104,10 +61,13 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		inspLength{
-			Options: inspLengthOptions{
-				Value: 3,
-				Type:  "less_than",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":  "equals",
+					"value": 4,
+				},
 			},
 		},
 		[]byte(`bar`),
@@ -115,13 +75,23 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		inspLength{
-			condition: condition{
-				Key: "foo",
-			},
-			Options: inspLengthOptions{
-				Value: 2,
-				Type:  "greater_than",
+		// inspLength{
+		// 	condition: condition{
+		// 		Key: "foo",
+		// 	},
+		// 	Options: inspLengthOptions{
+		// 		Value: 4,
+		// 		Type:  "less_than",
+		// 	},
+		// },
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"key": "foo",
+				"options": map[string]interface{}{
+					"type":  "less_than",
+					"value": 4,
+				},
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -129,10 +99,19 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		inspLength{
-			Options: inspLengthOptions{
-				Value: 2,
-				Type:  "greater_than",
+		// inspLength{
+		// 	Options: inspLengthOptions{
+		// 		Value: 4,
+		// 		Type:  "less_than",
+		// 	},
+		// },
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":  "less_than",
+					"value": 4,
+				},
 			},
 		},
 		[]byte(`bar`),
@@ -140,13 +119,23 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		inspLength{
-			condition: condition{
-				Key: "foo",
-			},
-			Options: inspLengthOptions{
-				Value: 3,
-				Type:  "greater_than",
+		// inspLength{
+		// 	condition: condition{
+		// 		Key: "foo",
+		// 	},
+		// 	Options: inspLengthOptions{
+		// 		Value: 3,
+		// 		Type:  "less_than",
+		// 	},
+		// },
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"key": "foo",
+				"options": map[string]interface{}{
+					"type":  "less_than",
+					"value": 3,
+				},
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -154,10 +143,92 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		inspLength{
-			Options: inspLengthOptions{
-				Value: 3,
-				Type:  "greater_than",
+		// inspLength{
+		// 	Options: inspLengthOptions{
+		// 		Value: 3,
+		// 		Type:  "less_than",
+		// 	},
+		// },
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":  "less_than",
+					"value": 3,
+				},
+			},
+		},
+		[]byte(`bar`),
+		false,
+	},
+	{
+		"pass",
+		// inspLength{
+		// 	condition: condition{
+		// 		Key: "foo",
+		// 	},
+		// 	Options: inspLengthOptions{
+		// 		Value: 2,
+		// 		Type:  "greater_than",
+		// 	},
+		// },
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"key": "foo",
+				"options": map[string]interface{}{
+					"type":  "greater_than",
+					"value": 2,
+				},
+			},
+		},
+		[]byte(`{"foo":"bar"}`),
+		true,
+	},
+	{
+		"pass",
+		// inspLength{
+		// 	Options: inspLengthOptions{
+		// 		Value: 2,
+		// 		Type:  "greater_than",
+		// 	},
+		// },
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":  "greater_than",
+					"value": 2,
+				},
+			},
+		},
+		[]byte(`bar`),
+		true,
+	},
+	{
+		"fail",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"key": "foo",
+				"options": map[string]interface{}{
+					"type":  "greater_than",
+					"value": 3,
+				},
+			},
+		},
+		[]byte(`{"foo":"bar"}`),
+		false,
+	},
+	{
+		"fail",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":  "greater_than",
+					"value": 3,
+				},
 			},
 		},
 		[]byte(`bar`),
@@ -165,14 +236,15 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		inspLength{
-			condition: condition{
-				Key:    "foo",
-				Negate: true,
-			},
-			Options: inspLengthOptions{
-				Value: 3,
-				Type:  "equals",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"key":    "foo",
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":  "equals",
+					"value": 3,
+				},
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -180,13 +252,14 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		inspLength{
-			condition: condition{
-				Negate: true,
-			},
-			Options: inspLengthOptions{
-				Value: 3,
-				Type:  "equals",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":  "equals",
+					"value": 3,
+				},
 			},
 		},
 		[]byte(`bar`),
@@ -194,14 +267,15 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		inspLength{
-			condition: condition{
-				Key:    "foo",
-				Negate: true,
-			},
-			Options: inspLengthOptions{
-				Value: 4,
-				Type:  "less_than",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"key":    "foo",
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":  "less_than",
+					"value": 4,
+				},
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -209,13 +283,14 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		inspLength{
-			condition: condition{
-				Negate: true,
-			},
-			Options: inspLengthOptions{
-				Value: 4,
-				Type:  "less_than",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":  "less_than",
+					"value": 4,
+				},
 			},
 		},
 		[]byte(`bar`),
@@ -223,14 +298,15 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		inspLength{
-			condition: condition{
-				Key:    "foo",
-				Negate: true,
-			},
-			Options: inspLengthOptions{
-				Value: 2,
-				Type:  "greater_than",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"key":    "foo",
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":  "greater_than",
+					"value": 2,
+				},
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -238,13 +314,14 @@ var lengthTests = []struct {
 	},
 	{
 		"!pass",
-		inspLength{
-			condition: condition{
-				Negate: true,
-			},
-			Options: inspLengthOptions{
-				Value: 2,
-				Type:  "greater_than",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":  "greater_than",
+					"value": 2,
+				},
 			},
 		},
 		[]byte(`bar`),
@@ -252,11 +329,14 @@ var lengthTests = []struct {
 	},
 	{
 		"rune pass",
-		inspLength{
-			Options: inspLengthOptions{
-				Measurement: "rune",
-				Value:       3,
-				Type:        "equals",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"measurement": "rune",
+					"type":        "equals",
+					"value":       3,
+				},
 			},
 		},
 		// 3 runes (characters), 4 bytes
@@ -265,14 +345,15 @@ var lengthTests = []struct {
 	},
 	{
 		"array pass",
-		inspLength{
-			condition: condition{
-				Key: "foo",
-			},
-			Options: inspLengthOptions{
-				Measurement: "rune",
-				Value:       3,
-				Type:        "equals",
+		config.Config{
+			Type: "length",
+			Settings: map[string]interface{}{
+				"key": "foo",
+				"options": map[string]interface{}{
+					"measurement": "rune",
+					"type":        "equals",
+					"value":       3,
+				},
 			},
 		},
 		[]byte(`{"foo":["bar",2,{"baz":"qux"}]}`),
@@ -285,20 +366,25 @@ func TestLength(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range lengthTests {
-		var _ Inspector = test.inspector
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			insp, err := newInspLength(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		check, err := test.inspector.Inspect(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			check, err := insp.Inspect(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if test.expected != check {
-			t.Errorf("expected %v, got %v", test.expected, check)
-			t.Errorf("settings: %+v", test.inspector)
-			t.Errorf("test: %+v", string(test.test))
-		}
+			if test.expected != check {
+				t.Errorf("expected %v, got %v", test.expected, check)
+				t.Errorf("settings: %+v", test.cfg)
+				t.Errorf("test: %+v", string(test.test))
+			}
+		})
 	}
 }
 
@@ -312,10 +398,15 @@ func benchmarkLengthByte(b *testing.B, inspector inspLength, capsule config.Caps
 func BenchmarkLengthByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range lengthTests {
+		insp, err := newInspLength(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkLengthByte(b, test.inspector, capsule)
+				benchmarkLengthByte(b, insp, capsule)
 			},
 		)
 	}

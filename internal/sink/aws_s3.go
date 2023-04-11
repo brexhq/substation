@@ -125,8 +125,8 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 			innerObject := object
 
 			// if either prefix or suffix keys are set, then the object name is non-default
-			// and can be safely interpolated. if either are empty strings, then the values
-			// are removed from the object name.
+			// and can be safely interpolated. if either are empty strings, then an error
+			// is returned.
 			if s.Path.PrefixKey != "" {
 				prefix := capsule.Get(s.Path.PrefixKey).String()
 				if prefix == "" {

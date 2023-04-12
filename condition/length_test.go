@@ -75,15 +75,6 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		// inspLength{
-		// 	condition: condition{
-		// 		Key: "foo",
-		// 	},
-		// 	Options: inspLengthOptions{
-		// 		Value: 4,
-		// 		Type:  "less_than",
-		// 	},
-		// },
 		config.Config{
 			Type: "length",
 			Settings: map[string]interface{}{
@@ -99,12 +90,6 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		// inspLength{
-		// 	Options: inspLengthOptions{
-		// 		Value: 4,
-		// 		Type:  "less_than",
-		// 	},
-		// },
 		config.Config{
 			Type: "length",
 			Settings: map[string]interface{}{
@@ -119,15 +104,6 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		// inspLength{
-		// 	condition: condition{
-		// 		Key: "foo",
-		// 	},
-		// 	Options: inspLengthOptions{
-		// 		Value: 3,
-		// 		Type:  "less_than",
-		// 	},
-		// },
 		config.Config{
 			Type: "length",
 			Settings: map[string]interface{}{
@@ -143,12 +119,6 @@ var lengthTests = []struct {
 	},
 	{
 		"fail",
-		// inspLength{
-		// 	Options: inspLengthOptions{
-		// 		Value: 3,
-		// 		Type:  "less_than",
-		// 	},
-		// },
 		config.Config{
 			Type: "length",
 			Settings: map[string]interface{}{
@@ -163,15 +133,6 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		// inspLength{
-		// 	condition: condition{
-		// 		Key: "foo",
-		// 	},
-		// 	Options: inspLengthOptions{
-		// 		Value: 2,
-		// 		Type:  "greater_than",
-		// 	},
-		// },
 		config.Config{
 			Type: "length",
 			Settings: map[string]interface{}{
@@ -187,12 +148,6 @@ var lengthTests = []struct {
 	},
 	{
 		"pass",
-		// inspLength{
-		// 	Options: inspLengthOptions{
-		// 		Value: 2,
-		// 		Type:  "greater_than",
-		// 	},
-		// },
 		config.Config{
 			Type: "length",
 			Settings: map[string]interface{}{

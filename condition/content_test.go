@@ -62,11 +62,6 @@ var contentTests = []struct {
 	// matching Zip against valid Zip header
 	{
 		"zip",
-		// inspContent{
-		// 	Options: inspContentOptions{
-		// 		Type: "application/zip",
-		// 	},
-		// },
 		config.Config{
 			Type: "content",
 			Settings: map[string]interface{}{
@@ -81,11 +76,6 @@ var contentTests = []struct {
 	// matching Gzip against valid Zip header
 	{
 		"!zip",
-		// inspContent{
-		// 	Options: inspContentOptions{
-		// 		Type: "application/zip",
-		// 	},
-		// },
 		config.Config{
 			Type: "content",
 			Settings: map[string]interface{}{

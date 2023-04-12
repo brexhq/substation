@@ -61,7 +61,7 @@ func newInspIP(cfg config.Config) (c inspIP, err error) {
 			"unspecified",
 		},
 		c.Options.Type) {
-		return inspIP{}, fmt.Errorf("condition: ip: type %q: %v", c.Options.Type, errors.ErrInvalidOptionInput)
+		return inspIP{}, fmt.Errorf("condition: ip: type %q: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	return c, nil
@@ -100,7 +100,7 @@ func (c inspIP) Inspect(ctx context.Context, capsule config.Capsule) (output boo
 	case "unspecified":
 		matched = ip.IsUnspecified()
 	default:
-		return false, fmt.Errorf("condition: ip: type %s: %v", c.Options.Type, errors.ErrInvalidType)
+		return false, fmt.Errorf("condition: ip: type %s: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	if c.Negate {

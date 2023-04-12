@@ -54,7 +54,7 @@ func newProcMath(cfg config.Config) (p procMath, err error) {
 			"divide",
 		},
 		p.Options.Operation) {
-		return procMath{}, fmt.Errorf("process: math: operation %q: %v", p.Options.Operation, errors.ErrInvalidOptionInput)
+		return procMath{}, fmt.Errorf("process: math: operation %q: %v", p.Options.Operation, errors.ErrInvalidOption)
 	}
 
 	// only supports JSON, fail if there are no keys

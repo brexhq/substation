@@ -67,7 +67,7 @@ func newProcDNS(cfg config.Config) (p procDNS, err error) {
 			"query_txt",
 		},
 		p.Options.Type) {
-		return procDNS{}, fmt.Errorf("process: dns: type %q: %v", p.Options.Type, errors.ErrInvalidOptionInput)
+		return procDNS{}, fmt.Errorf("process: dns: type %q: %v", p.Options.Type, errors.ErrInvalidOption)
 	}
 
 	// validate data processing pattern

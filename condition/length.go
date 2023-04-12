@@ -59,7 +59,7 @@ func newInspLength(cfg config.Config) (c inspLength, err error) {
 			"less_than",
 		},
 		c.Options.Type) {
-		return inspLength{}, fmt.Errorf("condition: length: type %q: %v", c.Options.Type, errors.ErrInvalidOptionInput)
+		return inspLength{}, fmt.Errorf("condition: length: type %q: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	if c.Options.Measurement == "" {
@@ -72,7 +72,7 @@ func newInspLength(cfg config.Config) (c inspLength, err error) {
 			"rune",
 		},
 		c.Options.Measurement) {
-		return inspLength{}, fmt.Errorf("condition: length: measurement %q invalid: %v", c.Options.Measurement, errors.ErrInvalidOptionInput)
+		return inspLength{}, fmt.Errorf("condition: length: measurement %q invalid: %v", c.Options.Measurement, errors.ErrInvalidOption)
 	}
 
 	return c, nil
@@ -125,7 +125,7 @@ func (c inspLength) match(length int) (bool, error) {
 			matched = true
 		}
 	default:
-		return false, fmt.Errorf("condition: length: type %s: %v", c.Options.Type, errors.ErrInvalidType)
+		return false, fmt.Errorf("condition: length: type %s: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	if c.Negate {

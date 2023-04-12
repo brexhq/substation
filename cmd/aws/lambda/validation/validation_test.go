@@ -87,7 +87,7 @@ var testCfgs = []struct {
 			}
 		  }
 		 `),
-		errors.ErrInvalidOptionInput,
+		errors.ErrInvalidOption,
 	},
 	{
 		"valid config",

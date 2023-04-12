@@ -52,7 +52,7 @@ func newProcConvert(cfg config.Config) (p procConvert, err error) {
 			"string",
 		},
 		p.Options.Type) {
-		return procConvert{}, fmt.Errorf("process: convert: type %q: %v", p.Options.Type, errors.ErrInvalidOptionInput)
+		return procConvert{}, fmt.Errorf("process: convert: type %q: %v", p.Options.Type, errors.ErrInvalidOption)
 	}
 
 	return p, nil

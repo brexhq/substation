@@ -62,7 +62,7 @@ func newProcCapture(cfg config.Config) (p procCapture, err error) {
 			"named_group",
 		},
 		p.Options.Type) {
-		return procCapture{}, fmt.Errorf("process: capture: type %q: %v", p.Options.Type, errors.ErrInvalidOptionInput)
+		return procCapture{}, fmt.Errorf("process: capture: type %q: %v", p.Options.Type, errors.ErrInvalidOption)
 	}
 
 	// fail if required options are missing

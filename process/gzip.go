@@ -46,7 +46,7 @@ func newProcGzip(cfg config.Config) (p procGzip, err error) {
 	if !slices.Contains(
 		[]string{"to", "from"},
 		p.Options.Direction) {
-		return procGzip{}, fmt.Errorf("process: gzip: direction %q: %v", p.Options.Direction, errors.ErrInvalidOptionInput)
+		return procGzip{}, fmt.Errorf("process: gzip: direction %q: %v", p.Options.Direction, errors.ErrInvalidOption)
 	}
 
 	return p, nil

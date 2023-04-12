@@ -74,7 +74,7 @@ func newProcKVStore(cfg config.Config) (p procKVStore, err error) {
 			"set",
 		},
 		p.Options.Type) {
-		return procKVStore{}, fmt.Errorf("process: kv_store: type %q: %v", p.Options.Type, errors.ErrInvalidOptionInput)
+		return procKVStore{}, fmt.Errorf("process: kv_store: type %q: %v", p.Options.Type, errors.ErrInvalidOption)
 	}
 
 	// only supports objects, fail if there are no keys
@@ -162,6 +162,6 @@ func (p procKVStore) Apply(ctx context.Context, capsule config.Capsule) (config.
 
 		return capsule, nil
 	default:
-		return capsule, fmt.Errorf("process: kv_store: %v", errors.ErrInvalidType)
+		return capsule, fmt.Errorf("process: kv_store: %v", errors.ErrInvalidOption)
 	}
 }

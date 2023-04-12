@@ -55,7 +55,7 @@ func newInspStrings(cfg config.Config) (c inspStrings, err error) {
 			"ends_with",
 		},
 		c.Options.Type) {
-		return inspStrings{}, fmt.Errorf("condition: strings: type %q: %v", c.Options.Type, errors.ErrInvalidOptionInput)
+		return inspStrings{}, fmt.Errorf("condition: strings: type %q: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	// TODO(shellcromancer): should we check that the expression != "" if Type != "equals"?
@@ -93,7 +93,7 @@ func (c inspStrings) Inspect(ctx context.Context, capsule config.Capsule) (outpu
 	case "less_than":
 		matched = strings.Compare(check, c.Options.Expression) < 0
 	default:
-		return false, fmt.Errorf("condition: strings: type %s: %v", c.Options.Type, errors.ErrInvalidType)
+		return false, fmt.Errorf("condition: strings: type %s: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	if c.Negate {

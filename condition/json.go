@@ -51,7 +51,7 @@ func newInspJSONSchema(cfg config.Config) (c inspJSONSchema, err error) {
 				"JSON",
 			},
 			strings.TrimSuffix(s.Type, "/Array")) {
-			return inspJSONSchema{}, fmt.Errorf("condition: json: type %q: %v", s.Type, errors.ErrInvalidOptionInput)
+			return inspJSONSchema{}, fmt.Errorf("condition: json: type %q: %v", s.Type, errors.ErrInvalidOption)
 		}
 	}
 

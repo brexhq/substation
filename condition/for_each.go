@@ -49,7 +49,7 @@ func newInspForEach(cfg config.Config) (c inspForEach, err error) {
 			"all",
 		},
 		c.Options.Type) {
-		return inspForEach{}, fmt.Errorf("condition: for_each: type %q: %v", c.Options.Type, errors.ErrInvalidOptionInput)
+		return inspForEach{}, fmt.Errorf("condition: for_each: type %q: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	c.inspector, err = NewInspector(c.Options.Inspector)
@@ -94,7 +94,7 @@ func (c inspForEach) Inspect(ctx context.Context, capsule config.Capsule) (outpu
 	case "none":
 		output = matched == 0
 	default:
-		return false, fmt.Errorf("condition: for_each: type %q: %v", c.Options.Type, errors.ErrInvalidType)
+		return false, fmt.Errorf("condition: for_each: type %q: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	if c.Negate {

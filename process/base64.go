@@ -55,7 +55,7 @@ func newProcBase64(cfg config.Config) (p procBase64, err error) {
 			"from",
 		},
 		p.Options.Direction) {
-		return procBase64{}, fmt.Errorf("process: base64: direction %q %v", p.Options, errors.ErrInvalidOptionInput)
+		return procBase64{}, fmt.Errorf("process: base64: direction %q %v", p.Options, errors.ErrInvalidOption)
 	}
 
 	return p, nil

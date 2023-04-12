@@ -30,12 +30,12 @@ type procJQOptions struct {
 }
 
 // Create a new join processor.
-func newProcJQ(cfg config.Config) (p procJQ, err error) {
+func newProcJQ(ctx context.Context, cfg config.Config) (p procJQ, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procJQ{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procJQ{}, err
 	}

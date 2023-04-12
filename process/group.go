@@ -27,12 +27,12 @@ type procGroupOptions struct {
 }
 
 // Create a new group processor.
-func newProcGroup(cfg config.Config) (p procGroup, err error) {
+func newProcGroup(ctx context.Context, cfg config.Config) (p procGroup, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procGroup{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procGroup{}, err
 	}

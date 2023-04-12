@@ -70,12 +70,12 @@ func (p procAggregate) Close(context.Context) error {
 }
 
 // Create a new aggregate processor.
-func newProcAggregate(cfg config.Config) (p procAggregate, err error) {
+func newProcAggregate(ctx context.Context, cfg config.Config) (p procAggregate, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procAggregate{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procAggregate{}, err
 	}

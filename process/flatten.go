@@ -25,12 +25,12 @@ type procFlattenOptions struct {
 }
 
 // Create a new flatten processor.
-func newProcFlatten(cfg config.Config) (p procFlatten, err error) {
+func newProcFlatten(ctx context.Context, cfg config.Config) (p procFlatten, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procFlatten{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procFlatten{}, err
 	}

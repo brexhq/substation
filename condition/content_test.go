@@ -116,7 +116,7 @@ func TestContent(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			insp, err := newInspContent(test.cfg)
+			insp, err := newInspContent(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -143,7 +143,7 @@ func benchmarkContent(b *testing.B, inspector inspContent, capsule config.Capsul
 func BenchmarkContent(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range contentTests {
-		insp, err := newInspContent(test.cfg)
+		insp, err := newInspContent(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

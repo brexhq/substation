@@ -78,7 +78,7 @@ func TestCase(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcCase(test.cfg)
+			proc, err := newProcCase(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -105,7 +105,7 @@ func benchmarkCase(b *testing.B, applier procCase, test config.Capsule) {
 func BenchmarkCase(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range caseTests {
-		proc, err := newProcCase(test.cfg)
+		proc, err := newProcCase(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

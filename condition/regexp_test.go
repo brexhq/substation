@@ -79,7 +79,7 @@ func TestRegExp(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			insp, err := newInspRegExp(test.cfg)
+			insp, err := newInspRegExp(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -106,7 +106,7 @@ func benchmarkRegExpByte(b *testing.B, inspector inspRegExp, capsule config.Caps
 func BenchmarkRegExpByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range regExpTests {
-		insp, err := newInspRegExp(test.cfg)
+		insp, err := newInspRegExp(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -93,7 +93,7 @@ func TestReplace(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcReplace(test.cfg)
+			proc, err := newProcReplace(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -120,7 +120,7 @@ func benchmarkReplace(b *testing.B, applier procReplace, test config.Capsule) {
 func BenchmarkReplace(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range replaceTests {
-		proc, err := newProcReplace(test.cfg)
+		proc, err := newProcReplace(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

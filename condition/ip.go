@@ -43,7 +43,7 @@ type inspIPOptions struct {
 }
 
 // Creates a new IP inspector.
-func newInspIP(cfg config.Config) (c inspIP, err error) {
+func newInspIP(_ context.Context, cfg config.Config) (c inspIP, err error) {
 	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspIP{}, err
 	}

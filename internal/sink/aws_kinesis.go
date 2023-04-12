@@ -41,7 +41,7 @@ type sinkAWSKinesis struct {
 }
 
 // Create a new AWS Kinesis sink.
-func newSinkAWSKinesis(cfg config.Config) (s sinkAWSKinesis, err error) {
+func newSinkAWSKinesis(_ context.Context, cfg config.Config) (s sinkAWSKinesis, err error) {
 	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkAWSKinesis{}, err
 	}

@@ -20,12 +20,12 @@ type tformBatch struct {
 	batchers []process.Batcher
 }
 
-func newTformBatch(cfg config.Config) (t tformBatch, err error) {
+func newTformBatch(ctx context.Context, cfg config.Config) (t tformBatch, err error) {
 	if err = config.Decode(cfg.Settings, &t); err != nil {
 		return tformBatch{}, err
 	}
 
-	t.batchers, err = process.NewBatchers(t.Processors...)
+	t.batchers, err = process.NewBatchers(ctx, t.Processors...)
 	if err != nil {
 		return tformBatch{}, err
 	}

@@ -110,7 +110,7 @@ func TestCapture(t *testing.T) {
 
 	for _, test := range captureTests {
 		t.Run(test.name, func(t *testing.T) {
-			proc, err := newProcCapture(test.cfg)
+			proc, err := newProcCapture(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -139,7 +139,7 @@ func benchmarkCapture(b *testing.B, applier procCapture, test config.Capsule) {
 func BenchmarkCapture(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range captureTests {
-		proc, err := newProcCapture(test.cfg)
+		proc, err := newProcCapture(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

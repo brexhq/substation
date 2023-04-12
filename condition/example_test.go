@@ -20,7 +20,7 @@ func ExampleNewInspector() {
 	}
 
 	// inspector is retrieved from the factory
-	inspector, err := condition.NewInspector(cfg)
+	inspector, err := condition.NewInspector(context.TODO(), cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -41,7 +41,7 @@ func ExampleNewInspectors() {
 	}
 
 	// one or more inspectors are created
-	inspectors, err := condition.NewInspectors(cfg)
+	inspectors, err := condition.NewInspectors(context.TODO(), cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -53,6 +53,7 @@ func ExampleNewInspectors() {
 }
 
 func ExampleInspectBytes() {
+	ctx := context.TODO()
 	// data must be gzip
 	cfg := config.Config{
 		Type: "content",
@@ -64,7 +65,7 @@ func ExampleInspectBytes() {
 	}
 
 	// inspector is retrieved from the factory
-	inspector, err := condition.NewInspector(cfg)
+	inspector, err := condition.NewInspector(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -72,7 +73,7 @@ func ExampleInspectBytes() {
 
 	// inspector is applied to bytes
 	b := []byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255}
-	ok, err := condition.InspectBytes(context.TODO(), b, inspector)
+	ok, err := condition.InspectBytes(ctx, b, inspector)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -114,7 +115,7 @@ func ExampleNewOperator() {
 	}
 
 	// operators are retrieved from the factory.
-	operator, err := condition.NewOperator(opCfg)
+	operator, err := condition.NewOperator(context.TODO(), opCfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -124,6 +125,7 @@ func ExampleNewOperator() {
 }
 
 func ExampleOperateBytes() {
+	ctx := context.TODO()
 	// data must have a length greater than zero and contain
 	// the substring "iz"
 	cfg := []config.Config{
@@ -155,7 +157,7 @@ func ExampleOperateBytes() {
 	}
 
 	// operator is retrieved from the factory
-	operator, err := condition.NewOperator(opCfg)
+	operator, err := condition.NewOperator(ctx, opCfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -163,7 +165,7 @@ func ExampleOperateBytes() {
 
 	// operator is applied to bytes
 	b := []byte("fizzy")
-	ok, err := condition.OperateBytes(context.TODO(), b, operator)
+	ok, err := condition.OperateBytes(ctx, b, operator)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -174,6 +176,7 @@ func ExampleOperateBytes() {
 }
 
 func Example_inspect() {
+	ctx := context.TODO()
 	// data must be gzip
 	cfg := config.Config{
 		Type: "content",
@@ -185,7 +188,7 @@ func Example_inspect() {
 	}
 
 	// inspector is retrieved from the factory
-	inspector, err := condition.NewInspector(cfg)
+	inspector, err := condition.NewInspector(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -195,7 +198,7 @@ func Example_inspect() {
 	capsule := config.NewCapsule()
 	capsule.SetData([]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255})
 
-	ok, err := inspector.Inspect(context.TODO(), capsule)
+	ok, err := inspector.Inspect(ctx, capsule)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -206,6 +209,7 @@ func Example_inspect() {
 }
 
 func Example_operate() {
+	ctx := context.TODO()
 	// data must have a length greater than zero and contain
 	// the substring "iz"
 	cfg := []config.Config{
@@ -237,7 +241,7 @@ func Example_operate() {
 	}
 
 	// operator is retrieved from the factory
-	operator, err := condition.NewOperator(opCfg)
+	operator, err := condition.NewOperator(ctx, opCfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -247,7 +251,7 @@ func Example_operate() {
 	capsule := config.NewCapsule()
 	capsule.SetData([]byte("fizzy"))
 
-	ok, err := operator.Operate(context.TODO(), capsule)
+	ok, err := operator.Operate(ctx, capsule)
 	if err != nil {
 		// handle err
 		panic(err)

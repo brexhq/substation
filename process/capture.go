@@ -44,12 +44,12 @@ type procCaptureOptions struct {
 }
 
 // Create a new capture processor.
-func newProcCapture(cfg config.Config) (p procCapture, err error) {
+func newProcCapture(ctx context.Context, cfg config.Config) (p procCapture, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procCapture{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procCapture{}, err
 	}

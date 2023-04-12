@@ -324,7 +324,7 @@ func TestLength(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			insp, err := newInspLength(test.cfg)
+			insp, err := newInspLength(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -353,7 +353,7 @@ func benchmarkLengthByte(b *testing.B, inspector inspLength, capsule config.Caps
 func BenchmarkLengthByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range lengthTests {
-		insp, err := newInspLength(test.cfg)
+		insp, err := newInspLength(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

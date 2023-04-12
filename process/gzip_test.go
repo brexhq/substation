@@ -58,7 +58,7 @@ func TestGzip(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcGzip(test.cfg)
+			proc, err := newProcGzip(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -85,7 +85,7 @@ func benchmarkGzip(b *testing.B, applier procGzip, test config.Capsule) {
 func BenchmarkGzip(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range gzipTests {
-		proc, err := newProcGzip(test.cfg)
+		proc, err := newProcGzip(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

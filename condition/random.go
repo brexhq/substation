@@ -18,7 +18,7 @@ func init() {
 type inspRandom struct{}
 
 // Creates a new random inspector.
-func newInspRandom(cfg config.Config) (c inspRandom, err error) {
+func newInspRandom(_ context.Context, cfg config.Config) (c inspRandom, err error) {
 	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspRandom{}, err
 	}

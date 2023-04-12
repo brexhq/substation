@@ -38,7 +38,7 @@ func TestDrop(t *testing.T) {
 			capsules = append(capsules, capsule)
 		}
 
-		proc, err := newProcDrop(test.cfg)
+		proc, err := newProcDrop(ctx, test.cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -71,7 +71,7 @@ func BenchmarkDrop(b *testing.B) {
 			capsules = append(capsules, capsule)
 		}
 
-		proc, err := newProcDrop(test.cfg)
+		proc, err := newProcDrop(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

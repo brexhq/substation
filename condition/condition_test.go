@@ -171,7 +171,7 @@ func TestAll(t *testing.T) {
 				Inspectors: test.conf,
 			}
 
-			op, err := NewOperator(cfg)
+			op, err := NewOperator(ctx, cfg)
 			if err != nil {
 				t.Error(err)
 			}
@@ -191,7 +191,7 @@ func TestAll(t *testing.T) {
 func benchmarkAll(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := NewInspectors(conf...)
+		inspectors, _ := NewInspectors(ctx, conf...)
 		op := opAll{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
@@ -369,7 +369,7 @@ func TestAny(t *testing.T) {
 			Inspectors: test.conf,
 		}
 
-		op, err := NewOperator(cfg)
+		op, err := NewOperator(ctx, cfg)
 		if err != nil {
 			t.Error(err)
 		}
@@ -388,7 +388,7 @@ func TestAny(t *testing.T) {
 func benchmarkAny(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := NewInspectors(conf...)
+		inspectors, _ := NewInspectors(ctx, conf...)
 		op := opAny{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
@@ -503,7 +503,7 @@ func TestNone(t *testing.T) {
 				Inspectors: test.conf,
 			}
 
-			op, err := NewOperator(cfg)
+			op, err := NewOperator(ctx, cfg)
 			if err != nil {
 				t.Error(err)
 			}
@@ -523,7 +523,7 @@ func TestNone(t *testing.T) {
 func benchmarkNone(b *testing.B, conf []config.Config, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := NewInspectors(conf...)
+		inspectors, _ := NewInspectors(ctx, conf...)
 		op := opNone{inspectors}
 		_, _ = op.Operate(ctx, capsule)
 	}
@@ -543,7 +543,7 @@ func BenchmarkNone(b *testing.B) {
 
 func TestNewInspector(t *testing.T) {
 	for _, test := range allTests {
-		_, err := NewInspector(test.conf[0])
+		_, err := NewInspector(context.TODO(), test.conf[0])
 		if err != nil {
 			t.Error(err)
 		}
@@ -552,7 +552,7 @@ func TestNewInspector(t *testing.T) {
 
 func benchmarkNewInspector(b *testing.B, conf config.Config) {
 	for i := 0; i < b.N; i++ {
-		_, _ = NewInspector(conf)
+		_, _ = NewInspector(context.TODO(), conf)
 	}
 }
 
@@ -631,7 +631,7 @@ func TestCondition(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			insp, err := newInspCondition(test.cfg)
+			insp, err := newInspCondition(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -658,7 +658,7 @@ func benchmarkCondition(b *testing.B, inspector inspCondition, capsule config.Ca
 func BenchmarkCondition(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range conditionTests {
-		insp, err := newInspCondition(test.cfg)
+		insp, err := newInspCondition(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

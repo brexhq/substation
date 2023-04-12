@@ -57,12 +57,12 @@ type procKVStoreOptions struct {
 }
 
 // Create a new pipeline processor.
-func newProcKVStore(cfg config.Config) (p procKVStore, err error) {
+func newProcKVStore(ctx context.Context, cfg config.Config) (p procKVStore, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procKVStore{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procKVStore{}, err
 	}
@@ -87,7 +87,6 @@ func newProcKVStore(cfg config.Config) (p procKVStore, err error) {
 		return procKVStore{}, fmt.Errorf("process: kv_store: %v", err)
 	}
 
-	ctx := context.Background()
 	// lazy load the KV store
 	if !p.kvStore.IsEnabled() {
 		if err := p.kvStore.Setup(ctx); err != nil {

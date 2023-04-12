@@ -17,7 +17,7 @@ type procHTTP struct {
 
 type procHTTPOptions struct{}
 
-func newProcHTTP(cfg config.Config) (p procHTTP, err error) {
+func newProcHTTP(ctx context.Context, cfg config.Config) (p procHTTP, err error) {
 	return procHTTP{}, fmt.Errorf("process: http: %v", syscall.ENOSYS)
 }
 

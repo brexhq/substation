@@ -106,7 +106,7 @@ func TestHash(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcHash(test.cfg)
+			proc, err := newProcHash(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -133,7 +133,7 @@ func benchmarkHash(b *testing.B, applier procHash, test config.Capsule) {
 func BenchmarkHash(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range hashTests {
-		proc, err := newProcHash(test.cfg)
+		proc, err := newProcHash(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

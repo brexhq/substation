@@ -36,7 +36,7 @@ type inspJSONSchemaOptions struct {
 }
 
 // Creates a new JSON schema inspector.
-func newInspJSONSchema(cfg config.Config) (c inspJSONSchema, err error) {
+func newInspJSONSchema(_ context.Context, cfg config.Config) (c inspJSONSchema, err error) {
 	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspJSONSchema{}, err
 	}
@@ -108,7 +108,7 @@ type inspJSONValid struct {
 }
 
 // Creates a new JSON valid inspector.
-func newInspJSONValid(cfg config.Config) (c inspJSONValid, err error) {
+func newInspJSONValid(_ context.Context, cfg config.Config) (c inspJSONValid, err error) {
 	err = config.Decode(cfg.Settings, &c)
 	if err != nil {
 		return inspJSONValid{}, err

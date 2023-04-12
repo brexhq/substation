@@ -116,7 +116,7 @@ func TestJq(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcJQ(test.cfg)
+			proc, err := newProcJQ(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -143,7 +143,7 @@ func benchmarkJq(b *testing.B, applier procJQ, test config.Capsule) {
 func BenchmarkJq(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range jsonTests {
-		proc, err := newProcJQ(test.cfg)
+		proc, err := newProcJQ(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

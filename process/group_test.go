@@ -59,7 +59,7 @@ func TestGroup(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcGroup(test.cfg)
+			proc, err := newProcGroup(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -86,7 +86,7 @@ func benchmarkGroup(b *testing.B, applier procGroup, test config.Capsule) {
 func BenchmarkGroup(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range groupTests {
-		proc, err := newProcGroup(test.cfg)
+		proc, err := newProcGroup(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

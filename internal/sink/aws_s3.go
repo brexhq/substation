@@ -66,7 +66,7 @@ type sinkAWSS3 struct {
 }
 
 // Create a new AWS S3 sink.
-func newSinkAWSS3(cfg config.Config) (s sinkAWSS3, err error) {
+func newSinkAWSS3(_ context.Context, cfg config.Config) (s sinkAWSS3, err error) {
 	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkAWSS3{}, err
 	}

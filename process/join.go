@@ -23,12 +23,12 @@ type procJoinOptions struct {
 }
 
 // Create a new join processor.
-func newProcJoin(cfg config.Config) (p procJoin, err error) {
+func newProcJoin(ctx context.Context, cfg config.Config) (p procJoin, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procJoin{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procJoin{}, err
 	}

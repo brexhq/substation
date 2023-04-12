@@ -31,7 +31,7 @@ type sinkAWSSQS struct {
 }
 
 // Create a new AWS SQS sink.
-func newSinkAWSSQS(cfg config.Config) (s sinkAWSSQS, err error) {
+func newSinkAWSSQS(_ context.Context, cfg config.Config) (s sinkAWSSQS, err error) {
 	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkAWSSQS{}, err
 	}

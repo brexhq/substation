@@ -35,12 +35,12 @@ type procMathOptions struct {
 }
 
 // Create a new math processor.
-func newProcMath(cfg config.Config) (p procMath, err error) {
+func newProcMath(ctx context.Context, cfg config.Config) (p procMath, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procMath{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procMath{}, err
 	}

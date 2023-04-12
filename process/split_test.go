@@ -46,7 +46,7 @@ func TestSplit(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcSplit(test.cfg)
+			proc, err := newProcSplit(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -73,7 +73,7 @@ func benchmarkSplit(b *testing.B, proc procSplit, capsule config.Capsule) {
 func BenchmarkSplit(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range splitTests {
-		proc, err := newProcSplit(test.cfg)
+		proc, err := newProcSplit(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -127,7 +127,7 @@ func TestSplitBatch(t *testing.T) {
 				capsules = append(capsules, capsule)
 			}
 
-			proc, err := newProcSplit(test.cfg)
+			proc, err := newProcSplit(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -157,7 +157,7 @@ func benchmarksplitBatch(b *testing.B, proc procSplit, capsules []config.Capsule
 func BenchmarkSplitBatch(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range splitBatchTests {
-		proc, err := newProcSplit(test.cfg)
+		proc, err := newProcSplit(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

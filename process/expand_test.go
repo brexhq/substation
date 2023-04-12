@@ -145,7 +145,7 @@ func TestExpand(t *testing.T) {
 
 	for _, test := range expandTests {
 		t.Run(test.name, func(t *testing.T) {
-			proc, err := newProcExpand(test.cfg)
+			proc, err := newProcExpand(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -183,7 +183,7 @@ func BenchmarkExpand(b *testing.B) {
 		capsule.SetData(test.test)
 		slice[0] = capsule
 
-		proc, err := newProcExpand(test.cfg)
+		proc, err := newProcExpand(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

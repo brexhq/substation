@@ -74,7 +74,7 @@ func TestBase64(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcBase64(test.cfg)
+			proc, err := newProcBase64(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -101,7 +101,7 @@ func benchmarkbase64(b *testing.B, applier procBase64, test config.Capsule) {
 func BenchmarkBase64(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range base64Tests {
-		proc, err := newProcBase64(test.cfg)
+		proc, err := newProcBase64(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

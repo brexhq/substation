@@ -42,38 +42,38 @@ type Inspector interface {
 }
 
 // NewInspector returns a configured Inspector from an Inspector configuration.
-func NewInspector(cfg config.Config) (Inspector, error) {
+func NewInspector(ctx context.Context, cfg config.Config) (Inspector, error) {
 	switch cfg.Type {
 	case "condition":
-		return newInspCondition(cfg)
+		return newInspCondition(ctx, cfg)
 	case "content":
-		return newInspContent(cfg)
+		return newInspContent(ctx, cfg)
 	case "for_each":
-		return newInspForEach(cfg)
+		return newInspForEach(ctx, cfg)
 	case "ip":
-		return newInspIP(cfg)
+		return newInspIP(ctx, cfg)
 	case "json_schema":
-		return newInspJSONSchema(cfg)
+		return newInspJSONSchema(ctx, cfg)
 	case "json_valid":
-		return newInspJSONValid(cfg)
+		return newInspJSONValid(ctx, cfg)
 	case "length":
-		return newInspLength(cfg)
+		return newInspLength(ctx, cfg)
 	case "random":
-		return newInspRandom(cfg)
+		return newInspRandom(ctx, cfg)
 	case "regexp":
-		return newInspRegExp(cfg)
+		return newInspRegExp(ctx, cfg)
 	case "strings":
-		return newInspStrings(cfg)
+		return newInspStrings(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("condition: new_inspector: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 
 // NewInspectors accepts one or more Inspector configurations and returns configured inspectors.
-func NewInspectors(cfg ...config.Config) ([]Inspector, error) {
+func NewInspectors(ctx context.Context, cfg ...config.Config) ([]Inspector, error) {
 	var inspectors []Inspector
 	for _, c := range cfg {
-		Inspector, err := NewInspector(c)
+		Inspector, err := NewInspector(ctx, c)
 		if err != nil {
 			return nil, err
 		}
@@ -96,8 +96,8 @@ type Operator interface {
 }
 
 // NewOperator returns a configured Operator from an Operator configuration.
-func NewOperator(cfg Config) (Operator, error) {
-	inspectors, err := NewInspectors(cfg.Inspectors...)
+func NewOperator(ctx context.Context, cfg Config) (Operator, error) {
+	inspectors, err := NewInspectors(ctx, cfg.Inspectors...)
 	if err != nil {
 		return nil, err
 	}
@@ -240,12 +240,12 @@ type inspCondition struct {
 }
 
 // Creates a new condition inspector.
-func newInspCondition(cfg config.Config) (c inspCondition, err error) {
+func newInspCondition(ctx context.Context, cfg config.Config) (c inspCondition, err error) {
 	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspCondition{}, err
 	}
 
-	c.op, err = NewOperator(c.Options)
+	c.op, err = NewOperator(ctx, c.Options)
 	if err != nil {
 		return inspCondition{}, err
 	}

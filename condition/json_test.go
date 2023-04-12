@@ -83,7 +83,7 @@ func TestJSONSchema(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			insp, err := newInspJSONSchema(test.cfg)
+			insp, err := newInspJSONSchema(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -110,7 +110,7 @@ func benchmarkJSONSchemaByte(b *testing.B, inspector inspJSONSchema, capsule con
 func BenchmarkJSONSchemaByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range jsonSchemaTests {
-		insp, err := newInspJSONSchema(test.cfg)
+		insp, err := newInspJSONSchema(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -178,7 +178,7 @@ func TestJSONValid(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			insp, err := newInspJSONValid(test.cfg)
+			insp, err := newInspJSONValid(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -205,7 +205,7 @@ func benchmarkJSONValidByte(b *testing.B, inspector inspJSONValid, capsule confi
 func BenchmarkJSONValidByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range jsonValidTests {
-		insp, err := newInspJSONValid(test.cfg)
+		insp, err := newInspJSONValid(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

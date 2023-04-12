@@ -16,12 +16,12 @@ type procCopy struct {
 }
 
 // Create a new copy processor.
-func newProcCopy(cfg config.Config) (p procCopy, err error) {
+func newProcCopy(ctx context.Context, cfg config.Config) (p procCopy, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procCopy{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procCopy{}, err
 	}

@@ -59,7 +59,7 @@ func TestFlatten(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcFlatten(test.cfg)
+			proc, err := newProcFlatten(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -86,7 +86,7 @@ func benchmarkFlatten(b *testing.B, applier procFlatten, test config.Capsule) {
 func BenchmarkFlatten(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range flattenTests {
-		proc, err := newProcFlatten(test.cfg)
+		proc, err := newProcFlatten(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

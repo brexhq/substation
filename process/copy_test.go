@@ -117,7 +117,7 @@ func TestCopy(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcCopy(test.cfg)
+			proc, err := newProcCopy(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -144,7 +144,7 @@ func benchmarkCopy(b *testing.B, applier procCopy, test config.Capsule) {
 func BenchmarkCopy(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range copyTests {
-		proc, err := newProcCopy(test.cfg)
+		proc, err := newProcCopy(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

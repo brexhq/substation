@@ -37,7 +37,7 @@ type sinkGRPC struct {
 }
 
 // Create a new gRPC sink.
-func newSinkGRPC(cfg config.Config) (s sinkGRPC, err error) {
+func newSinkGRPC(_ context.Context, cfg config.Config) (s sinkGRPC, err error) {
 	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkGRPC{}, err
 	}

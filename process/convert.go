@@ -32,12 +32,12 @@ type procConvertOptions struct {
 }
 
 // Create a new convert processor.
-func newProcConvert(cfg config.Config) (p procConvert, err error) {
+func newProcConvert(ctx context.Context, cfg config.Config) (p procConvert, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procConvert{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procConvert{}, err
 	}

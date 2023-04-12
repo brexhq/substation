@@ -49,12 +49,12 @@ type procDNSOptions struct {
 }
 
 // Create a new DNS processor.
-func newProcDNS(cfg config.Config) (p procDNS, err error) {
+func newProcDNS(ctx context.Context, cfg config.Config) (p procDNS, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procDNS{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procDNS{}, err
 	}

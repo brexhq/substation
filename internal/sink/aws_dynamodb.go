@@ -34,7 +34,7 @@ type sinkAWSDynamoDB struct {
 }
 
 // Create a new AWS DynamoDB sink.
-func newSinkAWSDynamoDB(cfg config.Config) (s sinkAWSDynamoDB, err error) {
+func newSinkAWSDynamoDB(_ context.Context, cfg config.Config) (s sinkAWSDynamoDB, err error) {
 	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkAWSDynamoDB{}, err
 	}

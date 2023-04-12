@@ -94,7 +94,7 @@ func TestMath(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcMath(test.cfg)
+			proc, err := newProcMath(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -121,7 +121,7 @@ func benchmarkMath(b *testing.B, applier procMath, test config.Capsule) {
 func BenchmarkMath(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range mathTests {
-		proc, err := newProcMath(test.cfg)
+		proc, err := newProcMath(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

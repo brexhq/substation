@@ -46,7 +46,7 @@ type inspLengthOptions struct {
 }
 
 // Creates a new length inspector.
-func newInspLength(cfg config.Config) (c inspLength, err error) {
+func newInspLength(_ context.Context, cfg config.Config) (c inspLength, err error) {
 	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspLength{}, err
 	}

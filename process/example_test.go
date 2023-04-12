@@ -9,6 +9,8 @@ import (
 )
 
 func ExampleNewApplier() {
+	ctx := context.TODO()
+
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -19,7 +21,7 @@ func ExampleNewApplier() {
 	}
 
 	// applier is retrieved from the factory
-	applier, err := process.NewApplier(cfg)
+	applier, err := process.NewApplier(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -30,6 +32,8 @@ func ExampleNewApplier() {
 }
 
 func ExampleNewAppliers() {
+	ctx := context.TODO()
+
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -40,7 +44,7 @@ func ExampleNewAppliers() {
 	}
 
 	// one or more appliers are created
-	appliers, err := process.NewAppliers(cfg)
+	appliers, err := process.NewAppliers(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -53,6 +57,8 @@ func ExampleNewAppliers() {
 }
 
 func ExampleApplyBytes() {
+	ctx := context.TODO()
+
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -63,7 +69,7 @@ func ExampleApplyBytes() {
 	}
 
 	// applier is retrieved from the factory
-	applier, err := process.NewApplier(cfg)
+	applier, err := process.NewApplier(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -82,6 +88,8 @@ func ExampleApplyBytes() {
 }
 
 func ExampleNewBatcher() {
+	ctx := context.TODO()
+
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -92,7 +100,7 @@ func ExampleNewBatcher() {
 	}
 
 	// one or more appliers are created
-	batcher, err := process.NewBatcher(cfg)
+	batcher, err := process.NewBatcher(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -103,6 +111,8 @@ func ExampleNewBatcher() {
 }
 
 func ExampleNewBatchers() {
+	ctx := context.TODO()
+
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -113,7 +123,7 @@ func ExampleNewBatchers() {
 	}
 
 	// one or more batchers are created
-	batchers, err := process.NewBatchers(cfg)
+	batchers, err := process.NewBatchers(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -126,6 +136,8 @@ func ExampleNewBatchers() {
 }
 
 func ExampleBatchBytes() {
+	ctx := context.TODO()
+
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -136,7 +148,7 @@ func ExampleBatchBytes() {
 	}
 
 	// batcher is retrieved from the factory
-	batcher, err := process.NewBatcher(cfg)
+	batcher, err := process.NewBatcher(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -157,6 +169,8 @@ func ExampleBatchBytes() {
 }
 
 func Example_applier() {
+	ctx := context.TODO()
+
 	// copies the value of key "foo" into key "baz"
 	cfg := config.Config{
 		Type: "copy",
@@ -167,7 +181,7 @@ func Example_applier() {
 	}
 
 	// applier is retrieved from the factory
-	applier, err := process.NewApplier(cfg)
+	applier, err := process.NewApplier(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -177,7 +191,7 @@ func Example_applier() {
 	capsule := config.NewCapsule()
 	capsule.SetData([]byte(`{"foo":"fizz"}`))
 
-	capsule, err = applier.Apply(context.TODO(), capsule)
+	capsule, err = applier.Apply(ctx, capsule)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -189,6 +203,8 @@ func Example_applier() {
 }
 
 func Example_batcher() {
+	ctx := context.TODO()
+
 	// copies the value of key "foo" into key "bar"
 	cfg := config.Config{
 		Type: "copy",
@@ -199,7 +215,7 @@ func Example_batcher() {
 	}
 
 	// batcher is retrieved from the factory
-	batcher, err := process.NewBatcher(cfg)
+	batcher, err := process.NewBatcher(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -232,6 +248,8 @@ func Example_batcher() {
 }
 
 func Example_dNS() {
+	ctx := context.TODO()
+
 	capsule := config.NewCapsule()
 	capsule.SetData([]byte(`{"addr":"8.8.8.8"}`))
 
@@ -249,7 +267,7 @@ func Example_dNS() {
 		},
 	}
 
-	appliers, err := process.NewAppliers(cfg...)
+	appliers, err := process.NewAppliers(ctx, cfg...)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -270,6 +288,7 @@ func Example_dNS() {
 }
 
 func Example_hTTP() {
+	ctx := context.TODO()
 	capsule := config.NewCapsule()
 	capsule.SetData([]byte(`{"addr":"8.8.8.8"}`))
 
@@ -302,17 +321,17 @@ func Example_hTTP() {
 		},
 	}
 
-	appliers, err := process.NewAppliers(cfg...)
+	appliers, err := process.NewAppliers(ctx, cfg...)
 	if err != nil {
 		// handle err
 		panic(err)
 	}
 
 	//nolint: errcheck // errors are ignored in case processing fails in a single applier
-	defer process.CloseAppliers(context.TODO(), appliers...)
+	defer process.CloseAppliers(ctx, appliers...)
 
 	for _, app := range appliers {
-		capsule, err = app.Apply(context.TODO(), capsule)
+		capsule, err = app.Apply(ctx, capsule)
 		if err != nil {
 			// handle err
 			panic(err)
@@ -325,6 +344,7 @@ func Example_hTTP() {
 }
 
 func Example_iPDatabase() {
+	ctx := context.TODO()
 	capsule := config.NewCapsule()
 	capsule.SetData([]byte(`{"addr":"8.8.8.8"}`))
 
@@ -349,17 +369,17 @@ func Example_iPDatabase() {
 		},
 	}
 
-	appliers, err := process.NewAppliers(cfg...)
+	appliers, err := process.NewAppliers(ctx, cfg...)
 	if err != nil {
 		// handle err
 		panic(err)
 	}
 
 	//nolint: errcheck // errors are ignored in case processing fails in a single applier
-	defer process.CloseAppliers(context.TODO(), appliers...)
+	defer process.CloseAppliers(ctx, appliers...)
 
 	for _, app := range appliers {
-		capsule, err = app.Apply(context.TODO(), capsule)
+		capsule, err = app.Apply(ctx, capsule)
 		if err != nil {
 			// handle err
 			panic(err)
@@ -370,6 +390,8 @@ func Example_iPDatabase() {
 }
 
 func Example_kVStore() {
+	ctx := context.TODO()
+
 	capsule := config.NewCapsule()
 	capsule.SetData([]byte(`{"foo":"bar"}`))
 
@@ -413,17 +435,17 @@ func Example_kVStore() {
 		},
 	}
 
-	appliers, err := process.NewAppliers(cfg...)
+	appliers, err := process.NewAppliers(ctx, cfg...)
 	if err != nil {
 		// handle err
 		panic(err)
 	}
 
 	//nolint: errcheck // errors are ignored in case processing fails in a single applier
-	defer process.CloseAppliers(context.TODO(), appliers...)
+	defer process.CloseAppliers(ctx, appliers...)
 
 	for _, app := range appliers {
-		capsule, err = app.Apply(context.TODO(), capsule)
+		capsule, err = app.Apply(ctx, capsule)
 		if err != nil {
 			// handle err
 			panic(err)

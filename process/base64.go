@@ -38,12 +38,12 @@ type procBase64Options struct {
 }
 
 // Create a new base64 processor.
-func newProcBase64(cfg config.Config) (p procBase64, err error) {
+func newProcBase64(ctx context.Context, cfg config.Config) (p procBase64, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procBase64{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procBase64{}, err
 	}

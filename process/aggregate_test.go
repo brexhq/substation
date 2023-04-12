@@ -201,7 +201,7 @@ func TestAggregate(t *testing.T) {
 
 	for _, test := range aggregateTests {
 		t.Run(test.name, func(t *testing.T) {
-			proc, err := newProcAggregate(test.cfg)
+			proc, err := newProcAggregate(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -238,7 +238,7 @@ func benchmarkAggregate(b *testing.B, batcher procAggregate, capsules []config.C
 func BenchmarkAggregate(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range aggregateTests {
-		proc, err := newProcAggregate(test.cfg)
+		proc, err := newProcAggregate(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

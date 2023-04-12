@@ -31,12 +31,12 @@ type procReplaceOptions struct {
 }
 
 // Create a new replace processor.
-func newProcReplace(cfg config.Config) (p procReplace, err error) {
+func newProcReplace(ctx context.Context, cfg config.Config) (p procReplace, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procReplace{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procReplace{}, err
 	}

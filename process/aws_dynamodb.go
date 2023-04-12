@@ -74,12 +74,12 @@ func (p procAWSDynamoDB) Close(context.Context) error {
 }
 
 // Create a new AWS DynamoDB processor.
-func newProcAWSDynamoDB(cfg config.Config) (p procAWSDynamoDB, err error) {
+func newProcAWSDynamoDB(ctx context.Context, cfg config.Config) (p procAWSDynamoDB, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procAWSDynamoDB{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procAWSDynamoDB{}, err
 	}

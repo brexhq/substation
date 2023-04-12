@@ -17,7 +17,7 @@ type procAWSLambda struct {
 
 type procAWSLambdaOptions struct{}
 
-func newProcAWSLambda(cfg config.Config) (p procAWSLambda, err error) {
+func newProcAWSLambda(ctx context.Context, cfg config.Config) (p procAWSLambda, err error) {
 	return procAWSLambda{}, fmt.Errorf("process: aws_lambda: %v", syscall.ENOSYS)
 }
 

@@ -49,12 +49,12 @@ func (p procAWSLambda) Close(context.Context) error {
 }
 
 // Create a new AWS Lambda processor.
-func newProcAWSLambda(cfg config.Config) (p procAWSLambda, err error) {
+func newProcAWSLambda(ctx context.Context, cfg config.Config) (p procAWSLambda, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procAWSLambda{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procAWSLambda{}, err
 	}

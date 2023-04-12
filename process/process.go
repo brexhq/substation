@@ -55,73 +55,73 @@ type Applier interface {
 }
 
 // NewApplier returns a configured Applier from a processor configuration.
-func NewApplier(cfg config.Config) (Applier, error) {
+func NewApplier(ctx context.Context, cfg config.Config) (Applier, error) {
 	switch cfg.Type {
 	case "aws_dynamodb":
-		return newProcAWSDynamoDB(cfg)
+		return newProcAWSDynamoDB(ctx, cfg)
 	case "aws_lambda":
-		return newProcAWSLambda(cfg)
+		return newProcAWSLambda(ctx, cfg)
 	case "base64":
-		return newProcBase64(cfg)
+		return newProcBase64(ctx, cfg)
 	case "capture":
-		return newProcCapture(cfg)
+		return newProcCapture(ctx, cfg)
 	case "case":
-		return newProcCase(cfg)
+		return newProcCase(ctx, cfg)
 	case "convert":
-		return newProcConvert(cfg)
+		return newProcConvert(ctx, cfg)
 	case "copy":
-		return newProcCopy(cfg)
+		return newProcCopy(ctx, cfg)
 	case "delete":
-		return newProcDelete(cfg)
+		return newProcDelete(ctx, cfg)
 	case "dns":
-		return newProcDNS(cfg)
+		return newProcDNS(ctx, cfg)
 	case "domain":
-		return newProcDomain(cfg)
+		return newProcDomain(ctx, cfg)
 	case "flatten":
-		return newProcFlatten(cfg)
+		return newProcFlatten(ctx, cfg)
 	case "for_each":
-		return newProcForEach(cfg)
+		return newProcForEach(ctx, cfg)
 	case "group":
-		return newProcGroup(cfg)
+		return newProcGroup(ctx, cfg)
 	case "gzip":
-		return newProcGzip(cfg)
+		return newProcGzip(ctx, cfg)
 	case "hash":
-		return newProcHash(cfg)
+		return newProcHash(ctx, cfg)
 	case "http":
-		return newProcHTTP(cfg)
+		return newProcHTTP(ctx, cfg)
 	case "insert":
-		return newProcInsert(cfg)
+		return newProcInsert(ctx, cfg)
 	case "ip_database":
-		return newProcIPDatabase(cfg)
+		return newProcIPDatabase(ctx, cfg)
 	case "join":
-		return newProcJoin(cfg)
+		return newProcJoin(ctx, cfg)
 	case "jq":
-		return newProcJQ(cfg)
+		return newProcJQ(ctx, cfg)
 	case "kv_store":
-		return newProcKVStore(cfg)
+		return newProcKVStore(ctx, cfg)
 	case "math":
-		return newProcMath(cfg)
+		return newProcMath(ctx, cfg)
 	case "pipeline":
-		return newProcPipeline(cfg)
+		return newProcPipeline(ctx, cfg)
 	case "pretty_print":
-		return newProcPrettyPrint(cfg)
+		return newProcPrettyPrint(ctx, cfg)
 	case "replace":
-		return newProcReplace(cfg)
+		return newProcReplace(ctx, cfg)
 	case "split":
-		return newProcSplit(cfg)
+		return newProcSplit(ctx, cfg)
 	case "time":
-		return newProcTime(cfg)
+		return newProcTime(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("process: new_applier: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 
 // NewAppliers accepts one or more processor configurations and returns configured appliers.
-func NewAppliers(cfg ...config.Config) ([]Applier, error) {
+func NewAppliers(ctx context.Context, cfg ...config.Config) ([]Applier, error) {
 	var apps []Applier
 
 	for _, c := range cfg {
-		a, err := NewApplier(c)
+		a, err := NewApplier(ctx, c)
 		if err != nil {
 			return nil, err
 		}
@@ -175,81 +175,81 @@ type Batcher interface {
 }
 
 // NewBatcher returns a configured Batcher from a processor configuration.
-func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
+func NewBatcher(ctx context.Context, cfg config.Config) (Batcher, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
 	case "aggregate":
-		return newProcAggregate(cfg)
+		return newProcAggregate(ctx, cfg)
 	case "aws_dynamodb":
-		return newProcAWSDynamoDB(cfg)
+		return newProcAWSDynamoDB(ctx, cfg)
 	case "aws_lambda":
-		return newProcAWSLambda(cfg)
+		return newProcAWSLambda(ctx, cfg)
 	case "base64":
-		return newProcBase64(cfg)
+		return newProcBase64(ctx, cfg)
 	case "capture":
-		return newProcCapture(cfg)
+		return newProcCapture(ctx, cfg)
 	case "case":
-		return newProcCase(cfg)
+		return newProcCase(ctx, cfg)
 	case "convert":
-		return newProcConvert(cfg)
+		return newProcConvert(ctx, cfg)
 	case "copy":
-		return newProcCopy(cfg)
+		return newProcCopy(ctx, cfg)
 	case "count":
-		return newProcCount(cfg)
+		return newProcCount(ctx, cfg)
 	case "delete":
-		return newProcDelete(cfg)
+		return newProcDelete(ctx, cfg)
 	case "dns":
-		return newProcDNS(cfg)
+		return newProcDNS(ctx, cfg)
 	case "domain":
-		return newProcDomain(cfg)
+		return newProcDomain(ctx, cfg)
 	case "drop":
-		return newProcDrop(cfg)
+		return newProcDrop(ctx, cfg)
 	case "expand":
-		return newProcExpand(cfg)
+		return newProcExpand(ctx, cfg)
 	case "flatten":
-		return newProcFlatten(cfg)
+		return newProcFlatten(ctx, cfg)
 	case "for_each":
-		return newProcForEach(cfg)
+		return newProcForEach(ctx, cfg)
 	case "group":
-		return newProcGroup(cfg)
+		return newProcGroup(ctx, cfg)
 	case "gzip":
-		return newProcGzip(cfg)
+		return newProcGzip(ctx, cfg)
 	case "hash":
-		return newProcHash(cfg)
+		return newProcHash(ctx, cfg)
 	case "http":
-		return newProcHTTP(cfg)
+		return newProcHTTP(ctx, cfg)
 	case "insert":
-		return newProcInsert(cfg)
+		return newProcInsert(ctx, cfg)
 	case "ip_database":
-		return newProcIPDatabase(cfg)
+		return newProcIPDatabase(ctx, cfg)
 	case "join":
-		return newProcJoin(cfg)
+		return newProcJoin(ctx, cfg)
 	case "jq":
-		return newProcJQ(cfg)
+		return newProcJQ(ctx, cfg)
 	case "kv_store":
-		return newProcKVStore(cfg)
+		return newProcKVStore(ctx, cfg)
 	case "math":
-		return newProcMath(cfg)
+		return newProcMath(ctx, cfg)
 	case "pipeline":
-		return newProcPipeline(cfg)
+		return newProcPipeline(ctx, cfg)
 	case "pretty_print":
-		return newProcPrettyPrint(cfg)
+		return newProcPrettyPrint(ctx, cfg)
 	case "replace":
-		return newProcReplace(cfg)
+		return newProcReplace(ctx, cfg)
 	case "split":
-		return newProcSplit(cfg)
+		return newProcSplit(ctx, cfg)
 	case "time":
-		return newProcTime(cfg)
+		return newProcTime(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("process: new_batcher: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 
 // NewBatchers accepts one or more processor configurations and returns configured batchers.
-func NewBatchers(cfg ...config.Config) ([]Batcher, error) {
+func NewBatchers(ctx context.Context, cfg ...config.Config) ([]Batcher, error) {
 	var bats []Batcher
 
 	for _, c := range cfg {
-		b, err := NewBatcher(c)
+		b, err := NewBatcher(ctx, c)
 		if err != nil {
 			return nil, err
 		}

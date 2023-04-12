@@ -16,12 +16,12 @@ type procDelete struct {
 }
 
 // Create a new delete processor.
-func newProcDelete(cfg config.Config) (p procDelete, err error) {
+func newProcDelete(ctx context.Context, cfg config.Config) (p procDelete, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procDelete{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procDelete{}, err
 	}

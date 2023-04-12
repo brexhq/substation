@@ -31,12 +31,12 @@ type procForEachOptions struct {
 }
 
 // Create a new "for each" processor.
-func newProcForEach(cfg config.Config) (p procForEach, err error) {
+func newProcForEach(ctx context.Context, cfg config.Config) (p procForEach, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procForEach{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procForEach{}, err
 	}
@@ -68,7 +68,7 @@ func newProcForEach(cfg config.Config) (p procForEach, err error) {
 		return procForEach{}, err
 	}
 
-	p.applier, err = NewApplier(p.procCfg)
+	p.applier, err = NewApplier(ctx, p.procCfg)
 	if err != nil {
 		return procForEach{}, fmt.Errorf("process: for_each: %v", err)
 	}

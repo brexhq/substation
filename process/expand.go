@@ -17,12 +17,12 @@ type procExpand struct {
 }
 
 // Create a new expand processor.
-func newProcExpand(cfg config.Config) (p procExpand, err error) {
+func newProcExpand(ctx context.Context, cfg config.Config) (p procExpand, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procExpand{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procExpand{}, err
 	}

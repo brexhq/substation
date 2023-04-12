@@ -237,7 +237,7 @@ func TestTime(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcTime(test.cfg)
+			proc, err := newProcTime(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -264,7 +264,7 @@ func benchmarkTime(b *testing.B, applier procTime, test config.Capsule) {
 func BenchmarkTime(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range timeTests {
-		proc, err := newProcTime(test.cfg)
+		proc, err := newProcTime(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

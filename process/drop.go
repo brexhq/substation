@@ -16,12 +16,12 @@ type procDrop struct {
 }
 
 // Create a new drop processor.
-func newProcDrop(cfg config.Config) (p procDrop, err error) {
+func newProcDrop(ctx context.Context, cfg config.Config) (p procDrop, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procDrop{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procDrop{}, err
 	}

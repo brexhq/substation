@@ -46,7 +46,7 @@ func TestJoin(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcJoin(test.cfg)
+			proc, err := newProcJoin(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -73,7 +73,7 @@ func benchmarkJoin(b *testing.B, applier procJoin, test config.Capsule) {
 func BenchmarkJoin(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range joinTests {
-		proc, err := newProcJoin(test.cfg)
+		proc, err := newProcJoin(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -11,7 +11,7 @@ import (
 // transfer transforms data without modification.
 type tformTransfer struct{}
 
-func newTformTransfer(cfg config.Config) (t tformTransfer, err error) {
+func newTformTransfer(_ context.Context, cfg config.Config) (t tformTransfer, err error) {
 	if err = config.Decode(cfg.Settings, &t); err != nil {
 		return tformTransfer{}, err
 	}

@@ -94,7 +94,7 @@ func TestPipeline(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcPipeline(test.cfg)
+			proc, err := newProcPipeline(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -121,7 +121,7 @@ func benchmarkPipeline(b *testing.B, applier procPipeline, test config.Capsule) 
 func BenchmarkPipeline(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range pipelineTests {
-		proc, err := newProcPipeline(test.cfg)
+		proc, err := newProcPipeline(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -154,7 +154,7 @@ func TestIP(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			insp, err := newInspIP(test.cfg)
+			insp, err := newInspIP(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -181,7 +181,7 @@ func benchmarkIPByte(b *testing.B, inspector inspIP, capsule config.Capsule) {
 func BenchmarkIPByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range ipTests {
-		insp, err := newInspIP(test.cfg)
+		insp, err := newInspIP(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

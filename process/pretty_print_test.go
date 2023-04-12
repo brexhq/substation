@@ -98,7 +98,7 @@ func TestPrettyPrintBatch(t *testing.T) {
 				capsules = append(capsules, capsule)
 			}
 
-			proc, err := newProcPrettyPrint(test.cfg)
+			proc, err := newProcPrettyPrint(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -127,7 +127,7 @@ func benchmarkPrettyPrintBatch(b *testing.B, batcher procPrettyPrint, capsules [
 
 func BenchmarkPrettyPrintBatch(b *testing.B) {
 	for _, test := range prettyPrintBatchTests {
-		proc, err := newProcPrettyPrint(test.cfg)
+		proc, err := newProcPrettyPrint(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -179,7 +179,7 @@ func TestPrettyPrint(t *testing.T) {
 
 	for _, test := range prettyPrintTests {
 		t.Run(test.name, func(t *testing.T) {
-			proc, err := newProcPrettyPrint(test.cfg)
+			proc, err := newProcPrettyPrint(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -208,7 +208,7 @@ func benchmarkPrettyPrint(b *testing.B, proc procPrettyPrint, capsule config.Cap
 func BenchmarkPrettyPrint(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range prettyPrintTests {
-		proc, err := newProcPrettyPrint(test.cfg)
+		proc, err := newProcPrettyPrint(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

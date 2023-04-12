@@ -31,30 +31,26 @@ type Sink interface {
 }
 
 // New returns a configured Sink from a sink configuration.
-func New(cfg config.Config) (Sink, error) {
+func New(ctx context.Context, cfg config.Config) (Sink, error) {
 	switch t := cfg.Type; t {
 	case "aws_dynamodb":
-		return newSinkAWSDynamoDB(cfg)
+		return newSinkAWSDynamoDB(ctx, cfg)
 	case "aws_kinesis":
-		return newSinkAWSKinesis(cfg)
+		return newSinkAWSKinesis(ctx, cfg)
 	case "aws_kinesis_firehose":
-		return newSinkAWSKinesisFirehose(cfg)
+		return newSinkAWSKinesisFirehose(ctx, cfg)
 	case "aws_s3":
-		return newSinkAWSS3(cfg)
+		return newSinkAWSS3(ctx, cfg)
 	case "aws_sqs":
-		return newSinkAWSSQS(cfg)
-	case "file":
-		var s sinkFile
-		_ = config.Decode(cfg.Settings, &s)
-		return &s, nil
+		return newSinkAWSSQS(ctx, cfg)
 	case "grpc":
-		return newSinkGRPC(cfg)
+		return newSinkGRPC(ctx, cfg)
 	case "http":
-		return newSinkHTTP(cfg)
+		return newSinkHTTP(ctx, cfg)
 	case "stdout":
-		return newSinkStdout(cfg)
+		return newSinkStdout(ctx, cfg)
 	case "sumologic":
-		return newSinkSumoLogic(cfg)
+		return newSinkSumoLogic(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("sink: settings %v: %v", cfg.Settings, errors.ErrInvalidFactoryInput)
 	}

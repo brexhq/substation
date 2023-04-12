@@ -17,7 +17,7 @@ type procKVStore struct {
 
 type procKVStoreOptions struct{}
 
-func newProcKVStore(cfg config.Config) (p procKVStore, err error) {
+func newProcKVStore(ctx context.Context, cfg config.Config) (p procKVStore, err error) {
 	return procKVStore{}, fmt.Errorf("process: kv_store: %v", syscall.ENOSYS)
 }
 

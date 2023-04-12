@@ -65,12 +65,12 @@ func (p procTime) Close(context.Context) error {
 }
 
 // Create a new time processor.
-func newProcTime(cfg config.Config) (p procTime, err error) {
+func newProcTime(ctx context.Context, cfg config.Config) (p procTime, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procTime{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procTime{}, err
 	}

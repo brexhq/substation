@@ -147,7 +147,7 @@ func TestForEach(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			capsule.SetData(tt.test)
 
-			insp, err := newInspForEach(tt.cfg)
+			insp, err := newInspForEach(ctx, tt.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -174,7 +174,7 @@ func benchmarkForEachByte(b *testing.B, inspector inspForEach, capsule config.Ca
 func BenchmarkForEachByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range forEachTests {
-		insp, err := newInspForEach(test.cfg)
+		insp, err := newInspForEach(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -41,7 +41,7 @@ type inspStringsOptions struct {
 }
 
 // Creates a new strings inspector.
-func newInspStrings(cfg config.Config) (c inspStrings, err error) {
+func newInspStrings(_ context.Context, cfg config.Config) (c inspStrings, err error) {
 	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspStrings{}, err
 	}
@@ -57,8 +57,6 @@ func newInspStrings(cfg config.Config) (c inspStrings, err error) {
 		c.Options.Type) {
 		return inspStrings{}, fmt.Errorf("condition: strings: type %q: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
-
-	// TODO(shellcromancer): should we check that the expression != "" if Type != "equals"?
 
 	return c, nil
 }

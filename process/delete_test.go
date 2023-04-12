@@ -54,7 +54,7 @@ func TestDelete(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcDelete(test.cfg)
+			proc, err := newProcDelete(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -81,7 +81,7 @@ func benchmarkDelete(b *testing.B, applier procDelete, test config.Capsule) {
 func BenchmarkDelete(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range deleteTests {
-		proc, err := newProcDelete(test.cfg)
+		proc, err := newProcDelete(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

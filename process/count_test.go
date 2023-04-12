@@ -42,7 +42,7 @@ func TestCount(t *testing.T) {
 				capsules = append(capsules, capsule)
 			}
 
-			proc, err := newProcCount(test.cfg)
+			proc, err := newProcCount(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -76,7 +76,7 @@ func BenchmarkCount(b *testing.B) {
 			capsules = append(capsules, capsule)
 		}
 
-		proc, err := newProcCount(test.cfg)
+		proc, err := newProcCount(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

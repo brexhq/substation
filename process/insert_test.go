@@ -122,7 +122,7 @@ func TestInsert(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcInsert(test.cfg)
+			proc, err := newProcInsert(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -149,7 +149,7 @@ func benchmarkInsert(b *testing.B, applier procInsert, test config.Capsule) {
 func BenchmarkInsert(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range insertTests {
-		proc, err := newProcInsert(test.cfg)
+		proc, err := newProcInsert(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

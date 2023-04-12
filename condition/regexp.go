@@ -24,7 +24,7 @@ type inspRegExpOptions struct {
 }
 
 // Creates a new regexp inspector.
-func newInspRegExp(cfg config.Config) (c inspRegExp, err error) {
+func newInspRegExp(_ context.Context, cfg config.Config) (c inspRegExp, err error) {
 	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspRegExp{}, err
 	}

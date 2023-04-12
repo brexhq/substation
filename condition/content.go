@@ -26,7 +26,7 @@ type inspContentOptions struct {
 }
 
 // Creates a new content inspector.
-func newInspContent(cfg config.Config) (c inspContent, err error) {
+func newInspContent(_ context.Context, cfg config.Config) (c inspContent, err error) {
 	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspContent{}, err
 	}

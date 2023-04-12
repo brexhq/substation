@@ -22,12 +22,12 @@ type procInsertOptions struct {
 }
 
 // Create a new insert processor.
-func newProcInsert(cfg config.Config) (p procInsert, err error) {
+func newProcInsert(ctx context.Context, cfg config.Config) (p procInsert, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procInsert{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procInsert{}, err
 	}

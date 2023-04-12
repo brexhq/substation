@@ -35,7 +35,7 @@ type sinkAWSKinesisFirehose struct {
 }
 
 // Create a new AWS Kinesis Firehose sink.
-func newSinkAWSKinesisFirehose(cfg config.Config) (s sinkAWSKinesisFirehose, err error) {
+func newSinkAWSKinesisFirehose(_ context.Context, cfg config.Config) (s sinkAWSKinesisFirehose, err error) {
 	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkAWSKinesisFirehose{}, err
 	}

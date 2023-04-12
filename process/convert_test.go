@@ -142,7 +142,7 @@ func TestConvert(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcConvert(test.cfg)
+			proc, err := newProcConvert(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -169,7 +169,7 @@ func benchmarkConvert(b *testing.B, applier procConvert, test config.Capsule) {
 func BenchmarkConvert(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range convertTests {
-		proc, err := newProcConvert(test.cfg)
+		proc, err := newProcConvert(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

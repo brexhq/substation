@@ -35,7 +35,7 @@ type sinkHTTP struct {
 }
 
 // Create a new HTTP sink.
-func newSinkHTTP(cfg config.Config) (s sinkHTTP, err error) {
+func newSinkHTTP(_ context.Context, cfg config.Config) (s sinkHTTP, err error) {
 	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkHTTP{}, err
 	}

@@ -263,7 +263,7 @@ func TestStrings(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			insp, err := newInspStrings(test.cfg)
+			insp, err := newInspStrings(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -290,7 +290,7 @@ func benchmarkStringsByte(b *testing.B, inspector inspStrings, capsule config.Ca
 func BenchmarkStringsByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range stringsTests {
-		insp, err := newInspStrings(test.cfg)
+		insp, err := newInspStrings(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -154,7 +154,7 @@ func (sub *substation) Block(ctx context.Context, group *errgroup.Group) error {
 func (sub *substation) Transform(ctx context.Context, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
-	t, err := transform.New(sub.config.Transform)
+	t, err := transform.New(ctx, sub.config.Transform)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (sub *substation) WaitTransform(wg *sync.WaitGroup) {
 func (sub *substation) Sink(ctx context.Context, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
-	s, err := sink.New(sub.config.Sink)
+	s, err := sink.New(ctx, sub.config.Sink)
 	if err != nil {
 		return err
 	}

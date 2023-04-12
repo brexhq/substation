@@ -13,7 +13,7 @@ import (
 type procCount struct{}
 
 // Create a new count processor.
-func newProcCount(cfg config.Config) (p procCount, err error) {
+func newProcCount(_ context.Context, cfg config.Config) (p procCount, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procCount{}, err
 	}

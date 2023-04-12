@@ -57,12 +57,12 @@ func (p procIPDatabase) Close(ctx context.Context) error {
 }
 
 // Create a new IP database processor.
-func newProcIPDatabase(cfg config.Config) (p procIPDatabase, err error) {
+func newProcIPDatabase(ctx context.Context, cfg config.Config) (p procIPDatabase, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procIPDatabase{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procIPDatabase{}, err
 	}

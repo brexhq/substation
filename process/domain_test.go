@@ -109,7 +109,7 @@ func TestDomain(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcDomain(test.cfg)
+			proc, err := newProcDomain(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -136,7 +136,7 @@ func benchmarkDomain(b *testing.B, applier procDomain, test config.Capsule) {
 func BenchmarkDomain(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range domainTests {
-		proc, err := newProcDomain(test.cfg)
+		proc, err := newProcDomain(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

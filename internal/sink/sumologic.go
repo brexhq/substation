@@ -45,7 +45,7 @@ type sinkSumoLogic struct {
 }
 
 // Create a new SumoLogic sink.
-func newSinkSumoLogic(cfg config.Config) (s sinkSumoLogic, err error) {
+func newSinkSumoLogic(_ context.Context, cfg config.Config) (s sinkSumoLogic, err error) {
 	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkSumoLogic{}, err
 	}

@@ -76,12 +76,12 @@ func (p procHTTP) Close(context.Context) error {
 }
 
 // Create a new HTTP processor.
-func newProcHTTP(cfg config.Config) (p procHTTP, err error) {
+func newProcHTTP(ctx context.Context, cfg config.Config) (p procHTTP, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procHTTP{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procHTTP{}, err
 	}
@@ -99,7 +99,6 @@ func newProcHTTP(cfg config.Config) (p procHTTP, err error) {
 		httpClient.Setup()
 	}
 
-	ctx := context.Background()
 	for _, hdr := range p.Options.Headers {
 		// retrieve secret and interpolate with header value
 		v, err := secrets.Interpolate(ctx, hdr.Value)

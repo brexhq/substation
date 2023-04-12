@@ -40,12 +40,12 @@ type procCaseOptions struct {
 }
 
 // Create a new case processor.
-func newProcCase(cfg config.Config) (p procCase, err error) {
+func newProcCase(ctx context.Context, cfg config.Config) (p procCase, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procCase{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procCase{}, err
 	}

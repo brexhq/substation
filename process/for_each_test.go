@@ -374,7 +374,7 @@ func TestForEach(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			proc, err := newProcForEach(test.cfg)
+			proc, err := newProcForEach(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -401,7 +401,7 @@ func benchmarkForEach(b *testing.B, applier procForEach, test config.Capsule) {
 func BenchmarkForEach(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range forEachTests {
-		proc, err := newProcForEach(test.cfg)
+		proc, err := newProcForEach(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

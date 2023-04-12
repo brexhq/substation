@@ -28,17 +28,17 @@ type procPipelineOptions struct {
 }
 
 // Create a new pipeline processor.
-func newProcPipeline(cfg config.Config) (p procPipeline, err error) {
+func newProcPipeline(ctx context.Context, cfg config.Config) (p procPipeline, err error) {
 	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procPipeline{}, err
 	}
 
-	p.operator, err = condition.NewOperator(p.Condition)
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
 	if err != nil {
 		return procPipeline{}, err
 	}
 
-	p.appliers, err = NewAppliers(p.Options.Processors...)
+	p.appliers, err = NewAppliers(ctx, p.Options.Processors...)
 	if err != nil {
 		return procPipeline{}, fmt.Errorf("process: pipeline: processors %+v: %v", p.Options.Processors, err)
 	}

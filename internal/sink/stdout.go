@@ -11,7 +11,7 @@ import (
 type sinkStdout struct{}
 
 // Create a new stdout sink.
-func newSinkStdout(cfg config.Config) (s *sinkStdout, err error) {
+func newSinkStdout(_ context.Context, cfg config.Config) (s *sinkStdout, err error) {
 	err = config.Decode(cfg.Settings, &s)
 	if err != nil {
 		return &sinkStdout{}, err

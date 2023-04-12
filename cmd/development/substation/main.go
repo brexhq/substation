@@ -186,14 +186,33 @@ func mutateSink(cfg io.Reader, forceSink string) (*bytes.Reader, error) {
 		return nil, fmt.Errorf("run: %v", err)
 	}
 
+	// removes the configured sink
+	oldConfig, err = json.Delete(oldConfig, "sink")
+	if err != nil {
+		return nil, fmt.Errorf("run: %v", err)
+	}
+
 	var r *bytes.Reader
 
 	switch {
-	case forceSink == "stdout":
+	case forceSink == "stdout" || forceSink == "file":
 		newConfig, err := json.Set(oldConfig, "sink.type", forceSink)
 		if err != nil {
 			return nil, fmt.Errorf("run: %v", err)
 		}
+		r = bytes.NewReader(newConfig)
+	case strings.HasPrefix(forceSink, "file://"):
+		newConfig, err := json.Set(oldConfig, "sink.type", "file")
+		if err != nil {
+			return nil, fmt.Errorf("run: %v", err)
+		}
+
+		// the path for the file is the remainder of the string
+		newConfig, err = json.Set(newConfig, "sink.settings.file_path.suffix", strings.TrimPrefix(forceSink, "file://"))
+		if err != nil {
+			return nil, fmt.Errorf("run: %v", err)
+		}
+
 		r = bytes.NewReader(newConfig)
 	case strings.HasPrefix(forceSink, "http://"):
 		return nil, fmt.Errorf("-force-sink http://* not yet implemented")

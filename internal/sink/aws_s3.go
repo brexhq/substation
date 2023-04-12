@@ -28,44 +28,6 @@ const (
 
 var s3uploader s3manager.UploaderAPI
 
-type s3Path struct {
-	// Prefix is a prefix prepended to the object path.
-	//
-	// This is optional and has no default.
-	Prefix string `json:"prefix"`
-	// PrefixKey retrieves a value from an object that is used as
-	// the prefix prepended to the object path. If used, then
-	// this overrides Prefix.
-	//
-	// This is optional and has no default.
-	PrefixKey string `json:"prefix_key"`
-	// Suffix is a suffix appended to the object path and is used as
-	// the object filename.
-	//
-	// This is optional and has no default.
-	Suffix string `json:"suffix"`
-	// SuffixKey retrieves a value from an object that is used as
-	// the suffix appended to the object path. If used, then
-	// this overrides Suffix.
-	//
-	// This is optional and has no default.
-	SuffixKey string `json:"suffix_key"`
-	// DateFormat inserts a formatted date string into the object path.
-	// This string uses the Go time package format.
-	//
-	// This is optional and has no default.
-	DateFormat string `json:"date_format"`
-	// UUID inserts a random UUID into the object path. If a suffix is
-	// not set, then this is used as the object filename.
-	//
-	// This is optional and has no default.
-	UUID *bool `json:"uuid"`
-	// Extension appends a file extension to the object path.
-	//
-	// This is optional and has no default.
-	Extension *bool `json:"extension"`
-}
-
 // awsS3 sinks data as gzip compressed objects to an AWS S3 bucket.
 //
 // Object names contain the year, month, and day the data was processed
@@ -83,13 +45,13 @@ type sinkAWSS3 struct {
 	//
 	// This is optional and has no default.
 	PrefixKey string `json:"prefix_key"`
-	// Path determines how the object path is constructed. One of these
-	// formats is constructed depending on the configuration:
+	// FilePath determines how the name of the uploaded object is constructed.
+	// One of these formats is constructed depending on the configuration:
 	//
 	// - prefix/date_format/uuid.extension
 	//
 	// - prefix/date_format/uuid/suffix.extension
-	Path s3Path `json:"path"`
+	FilePath filePath `json:"file_path"`
 }
 
 // Send sinks a channel of encapsulated data with the sink.
@@ -100,9 +62,11 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 
 	files := make(map[string]*os.File)
 
-	object := createKeyName(s.Path)
+	object := s.FilePath.New()
 	if object == "" {
-		// default object name is the current year, month, and day with a random UUID
+		// default object name is:
+		// - year, month, and day
+		// - random UUID
 		object = time.Now().Format("2006/01/02") + "/" + uuid.New().String()
 		// currently only supports gzip compression
 		object += ".gz"
@@ -127,16 +91,16 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 			// if either prefix or suffix keys are set, then the object name is non-default
 			// and can be safely interpolated. if either are empty strings, then an error
 			// is returned.
-			if s.Path.PrefixKey != "" {
-				prefix := capsule.Get(s.Path.PrefixKey).String()
+			if s.FilePath.PrefixKey != "" {
+				prefix := capsule.Get(s.FilePath.PrefixKey).String()
 				if prefix == "" {
 					return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, object, errAWSS3EmptyPrefix)
 				}
 
 				innerObject = strings.Replace(innerObject, "${PATH_PREFIX}", prefix, 1)
 			}
-			if s.Path.SuffixKey != "" {
-				suffix := capsule.Get(s.Path.SuffixKey).String()
+			if s.FilePath.SuffixKey != "" {
+				suffix := capsule.Get(s.FilePath.SuffixKey).String()
 				if suffix == "" {
 					return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, object, errAWSS3EmptySuffix)
 				}
@@ -146,7 +110,7 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 
 			// TODO: remove in v1.0.0
 			if s.PrefixKey != "" {
-				prefix := capsule.Get(s.Path.PrefixKey).String()
+				prefix := capsule.Get(s.FilePath.PrefixKey).String()
 				innerObject = prefix + "/" + object
 			}
 
@@ -184,12 +148,14 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 			return fmt.Errorf("sink: aws_s3: bucket %s: %v", s.Bucket, err)
 		}
 
-		reader, w := io.Pipe()
-		gz := gzip.NewWriter(w)
+		reader, writer := io.Pipe()
+		defer reader.Close()
 
 		// goroutine avoids deadlock
 		go func() {
-			defer w.Close()
+			// currently only supports gzip compression
+			gz := gzip.NewWriter(writer)
+			defer writer.Close()
 			defer gz.Close()
 
 			_, _ = io.Copy(gz, file)
@@ -215,49 +181,4 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 	}
 
 	return nil
-}
-
-/*
-createKeyName constructs an object key name from the s3Path struct and generates a
-name that follows one of these formats depending on the configuration:
-
-- prefix/date_format/uuid.extension
-- prefix/date_format/uuid/suffix.extension
-
-If the struct is empty, then this default object name is used: prefix/year/month/day/uuid.extension.
-*/
-func createKeyName(p s3Path) string {
-	var path string
-
-	if p.PrefixKey != "" {
-		path = "${PATH_PREFIX}/"
-	} else if p.Prefix != "" {
-		path = p.Prefix + "/"
-	}
-
-	if p.DateFormat != "" {
-		path += time.Now().Format(p.DateFormat) + "/"
-	}
-
-	// if suffix exists, then UUID is a directory and not a file. if it doesn't exist,
-	// then UUID is a file.
-	switch {
-	case (p.Suffix != "" || p.SuffixKey != "") && p.UUID != nil && *p.UUID:
-		path += uuid.NewString() + "/"
-	case p.UUID != nil && *p.UUID:
-		path += uuid.NewString()
-	}
-
-	if p.SuffixKey != "" {
-		path += "${PATH_SUFFIX}"
-	} else if p.Suffix != "" {
-		path += p.Suffix
-	}
-
-	// currently only supports gzip compression
-	if p.Extension != nil && *p.Extension {
-		path += ".gz"
-	}
-
-	return path
 }

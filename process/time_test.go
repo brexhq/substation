@@ -208,18 +208,6 @@ var timeTests = []struct {
 	},
 	{
 		"JSON local to local conversion",
-		// procTime{
-		// 	process: process{
-		// 		Key:    "time",
-		// 		SetKey: "time",
-		// 	},
-		// 	Options: procTimeOptions{
-		// 		Format:      "2006-Jan-02 Monday 03:04:05",
-		// 		Location:    "America/Los_Angeles",
-		// 		SetFormat:   "2006-Jan-02 Monday 03:04:05",
-		// 		SetLocation: "America/New_York",
-		// 	},
-		// },
 		config.Config{
 			Type: "split",
 			Settings: map[string]interface{}{

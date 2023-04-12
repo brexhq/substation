@@ -87,19 +87,6 @@ var jsonTests = []struct {
 	},
 	{
 		"recursion",
-		// procJQ{
-		// 	process: process{},
-		// 	Options: procJQOptions{
-		// 		Query: `walk( if type == "object" then
-		// 		with_entries( select(
-		// 			(.value != "") and
-		// 			(.value != {}) and
-		// 			(.value != null)
-		// 		) )
-		// 	else
-		// 		. end)`,
-		// 	},
-		// },
 		config.Config{
 			Type: "jq",
 			Settings: map[string]interface{}{

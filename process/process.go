@@ -96,9 +96,7 @@ func NewApplier(cfg config.Config) (Applier, error) {
 	case "join":
 		return newProcJoin(cfg)
 	case "jq":
-		var p procJQ
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcJQ(cfg)
 	case "kv_store":
 		return newProcKVStore(cfg)
 	case "math":
@@ -114,7 +112,7 @@ func NewApplier(cfg config.Config) (Applier, error) {
 	case "time":
 		return newProcTime(cfg)
 	default:
-		return nil, fmt.Errorf("process: new_applier: type %q settings %+v: %w", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("process: new_applier: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 
@@ -226,9 +224,7 @@ func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop, gocyclo 
 	case "join":
 		return newProcJoin(cfg)
 	case "jq":
-		var p procJQ
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcJQ(cfg)
 	case "kv_store":
 		return newProcKVStore(cfg)
 	case "math":
@@ -244,7 +240,7 @@ func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop, gocyclo 
 	case "time":
 		return newProcTime(cfg)
 	default:
-		return nil, fmt.Errorf("process: new_batcher: type %q settings %+v: %w", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("process: new_batcher: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 

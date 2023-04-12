@@ -22,15 +22,6 @@ var domainTests = []struct {
 }{
 	{
 		"JSON tld",
-		// procDomain{
-		// 	process: process{
-		// 		Key:    "foo",
-		// 		SetKey: "foo",
-		// 	},
-		// 	Options: procDomainOptions{
-		// 		Type: "tld",
-		// 	},
-		// },
 		config.Config{
 			Type: "domain",
 			Settings: map[string]interface{}{
@@ -47,15 +38,6 @@ var domainTests = []struct {
 	},
 	{
 		"JSON domain",
-		// procDomain{
-		// 	process: process{
-		// 		Key:    "foo",
-		// 		SetKey: "foo",
-		// 	},
-		// 	Options: procDomainOptions{
-		// 		Type: "domain",
-		// 	},
-		// },
 		config.Config{
 			Type: "domain",
 			Settings: map[string]interface{}{
@@ -72,15 +54,6 @@ var domainTests = []struct {
 	},
 	{
 		"JSON subdomain",
-		// procDomain{
-		// 	process: process{
-		// 		Key:    "foo",
-		// 		SetKey: "foo",
-		// 	},
-		// 	Options: procDomainOptions{
-		// 		Type: "subdomain",
-		// 	},
-		// },
 		config.Config{
 			Type: "domain",
 			Settings: map[string]interface{}{
@@ -98,15 +71,6 @@ var domainTests = []struct {
 	// empty subdomain, returns empty
 	{
 		"JSON subdomain",
-		// procDomain{
-		// 	process: process{
-		// 		Key:    "foo",
-		// 		SetKey: "foo",
-		// 	},
-		// 	Options: procDomainOptions{
-		// 		Type: "subdomain",
-		// 	},
-		// },
 		config.Config{
 			Type: "domain",
 			Settings: map[string]interface{}{
@@ -123,11 +87,6 @@ var domainTests = []struct {
 	},
 	{
 		"data",
-		// procDomain{
-		// 	Options: procDomainOptions{
-		// 		Type: "subdomain",
-		// 	},
-		// },
 		config.Config{
 			Type: "domain",
 			Settings: map[string]interface{}{

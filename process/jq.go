@@ -40,6 +40,10 @@ func newProcJQ(cfg config.Config) (p procJQ, err error) {
 		return procJQ{}, err
 	}
 
+	if p.Options.Query == "" {
+		return procJQ{}, fmt.Errorf("process: jq: query %q: %v", p.Options.Query, errors.ErrMissingRequiredOption)
+	}
+
 	p.query, err = gojq.Parse(p.Options.Query)
 	if err != nil {
 		return procJQ{}, err

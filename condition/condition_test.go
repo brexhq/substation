@@ -567,23 +567,26 @@ func BenchmarkNewInspector(b *testing.B) {
 }
 
 var conditionTests = []struct {
-	name      string
-	inspector inspCondition
-	test      []byte
-	expected  bool
+	name     string
+	cfg      config.Config
+	test     []byte
+	expected bool
 }{
 	{
 		"object",
-		inspCondition{
-			Options: Config{
-				Operator: "all",
-				Inspectors: []config.Config{
-					{
-						Type: "ip",
-						Settings: map[string]interface{}{
-							"key": "ip_address",
-							"options": map[string]interface{}{
-								"type": "private",
+		config.Config{
+			Type: "condition",
+			Settings: map[string]interface{}{
+				"options": Config{
+					Operator: "all",
+					Inspectors: []config.Config{
+						{
+							Type: "ip",
+							Settings: map[string]interface{}{
+								"key": "ip_address",
+								"options": map[string]interface{}{
+									"type": "private",
+								},
 							},
 						},
 					},
@@ -595,15 +598,18 @@ var conditionTests = []struct {
 	},
 	{
 		"data",
-		inspCondition{
-			Options: Config{
-				Operator: "all",
-				Inspectors: []config.Config{
-					{
-						Type: "ip",
-						Settings: map[string]interface{}{
-							"options": map[string]interface{}{
-								"type": "private",
+		config.Config{
+			Type: "condition",
+			Settings: map[string]interface{}{
+				"options": Config{
+					Operator: "all",
+					Inspectors: []config.Config{
+						{
+							Type: "ip",
+							Settings: map[string]interface{}{
+								"options": map[string]interface{}{
+									"type": "private",
+								},
 							},
 						},
 					},
@@ -615,17 +621,22 @@ var conditionTests = []struct {
 	},
 }
 
+var _ Inspector = inspCondition{}
+
 func TestCondition(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
 	for _, test := range conditionTests {
 		t.Run(test.name, func(t *testing.T) {
-			var _ Inspector = test.inspector
-
 			capsule.SetData(test.test)
 
-			check, err := test.inspector.Inspect(ctx, capsule)
+			insp, err := newInspCondition(test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			check, err := insp.Inspect(ctx, capsule)
 			if err != nil {
 				t.Error(err)
 			}
@@ -647,10 +658,15 @@ func benchmarkCondition(b *testing.B, inspector inspCondition, capsule config.Ca
 func BenchmarkCondition(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range conditionTests {
+		insp, err := newInspCondition(test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkCondition(b, test.inspector, capsule)
+				benchmarkCondition(b, insp, capsule)
 			},
 		)
 	}

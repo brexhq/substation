@@ -45,9 +45,7 @@ type Inspector interface {
 func NewInspector(cfg config.Config) (Inspector, error) {
 	switch cfg.Type {
 	case "condition":
-		var i inspCondition
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspCondition(cfg)
 	case "content":
 		return newInspContent(cfg)
 	case "for_each":
@@ -237,6 +235,23 @@ type Config struct {
 type inspCondition struct {
 	condition
 	Options Config `json:"options"`
+
+	op Operator
+}
+
+// Creates a new condition inspector.
+func newInspCondition(cfg config.Config) (c inspCondition, err error) {
+	err = config.Decode(cfg.Settings, &c)
+	if err != nil {
+		return inspCondition{}, err
+	}
+
+	c.op, err = NewOperator(c.Options)
+	if err != nil {
+		return inspCondition{}, err
+	}
+
+	return c, nil
 }
 
 func (c inspCondition) String() string {
@@ -245,15 +260,10 @@ func (c inspCondition) String() string {
 
 // Inspect evaluates encapsulated data with the condition inspector.
 func (c inspCondition) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
-	op, err := NewOperator(c.Options)
-	if err != nil {
-		return false, err
-	}
-
 	// this inspector does not directly interpret data, instead the
 	// capsule is passed through and each configured inspector
 	// applies its own data interpretation.
-	matched, err := op.Operate(ctx, capsule)
+	matched, err := c.op.Operate(ctx, capsule)
 	if err != nil {
 		return false, err
 	}

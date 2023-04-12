@@ -78,7 +78,7 @@ func newProcIPDatabase(ctx context.Context, cfg config.Config) (p procIPDatabase
 	}
 
 	if !p.db.IsEnabled() {
-		if err := p.db.Open(context.Background()); err != nil {
+		if err := p.db.Open(ctx); err != nil {
 			return procIPDatabase{}, fmt.Errorf("process: ip_database: %v", err)
 		}
 	}

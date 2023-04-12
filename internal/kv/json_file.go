@@ -26,18 +26,18 @@ type kvJSONFile struct {
 }
 
 // Create a new JSON file KV store.
-func newKVJSONFile(cfg config.Config) (kvJSONFile, error) {
+func newKVJSONFile(cfg config.Config) (*kvJSONFile, error) {
 	var store kvJSONFile
 	if err := config.Decode(cfg.Settings, &store); err != nil {
-		return kvJSONFile{}, err
+		return nil, err
 	}
 	store.mu = new(sync.Mutex)
 
 	if store.File == "" {
-		return kvJSONFile{}, fmt.Errorf("kv: json: options %+v: %v", &store, errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("kv: json: options %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
-	return store, nil
+	return &store, nil
 }
 
 func (store *kvJSONFile) String() string {

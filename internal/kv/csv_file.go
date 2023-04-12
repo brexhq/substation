@@ -57,23 +57,22 @@ type kvCSVFile struct {
 	// This is optional and defaults to using the first line of the CSV file as the
 	// header.
 	Header string `json:"header"`
-	mu     *sync.Mutex
+	mu     sync.Mutex
 	items  map[string]map[string]interface{}
 }
 
 // Create a new CSV file KV store.
-func newKVCSVFile(cfg config.Config) (kvCSVFile, error) {
+func newKVCSVFile(cfg config.Config) (*kvCSVFile, error) {
 	var store kvCSVFile
 	if err := config.Decode(cfg.Settings, &store); err != nil {
-		return kvCSVFile{}, err
+		return nil, err
 	}
-	store.mu = new(sync.Mutex)
 
 	if store.File == "" || store.Column == "" {
-		return kvCSVFile{}, fmt.Errorf("kv: csv: options %+v: %v", &store, errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("kv: csv: options %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
-	return store, nil
+	return &store, nil
 }
 
 func (store *kvCSVFile) String() string {

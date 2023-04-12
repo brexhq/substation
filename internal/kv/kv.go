@@ -48,46 +48,11 @@ func Get(cfg config.Config) (Storer, error) {
 		return store, nil
 	}
 
-	switch t := cfg.Type; t {
-	case "aws_dynamodb":
-		c, err := newKVAWSDyanmoDB(cfg)
-		if err != nil {
-			return nil, err
-		}
-		m[sig] = &c
-	case "csv_file":
-		c, err := newKVCSVFile(cfg)
-		if err != nil {
-			return nil, err
-		}
-		m[sig] = &c
-	case "json_file":
-		c, err := newKVJSONFile(cfg)
-		if err != nil {
-			return nil, err
-		}
-		m[sig] = &c
-	case "memory":
-		c, err := newKVMemory(cfg)
-		if err != nil {
-			return nil, err
-		}
-		m[sig] = &c
-	case "mmdb":
-		c, err := newKVMMDB(cfg)
-		if err != nil {
-			return nil, err
-		}
-		m[sig] = &c
-	case "text_file":
-		c, err := newKVTextFile(cfg)
-		if err != nil {
-			return nil, err
-		}
-		m[sig] = &c
-	default:
-		return nil, fmt.Errorf("kv_store: %s: %v", t, errors.ErrInvalidFactoryInput)
+	storer, err := New(cfg)
+	if err != nil {
+		return nil, err
 	}
+	m[sig] = storer
 
 	return m[sig], nil
 }
@@ -96,23 +61,17 @@ func Get(cfg config.Config) (Storer, error) {
 func New(cfg config.Config) (Storer, error) {
 	switch t := cfg.Type; t {
 	case "aws_dynamodb":
-		c, err := newKVAWSDyanmoDB(cfg)
-		return &c, err
+		return newKVAWSDyanmoDB(cfg)
 	case "csv_file":
-		c, err := newKVCSVFile(cfg)
-		return &c, err
+		return newKVCSVFile(cfg)
 	case "json_file":
-		c, err := newKVJSONFile(cfg)
-		return &c, err
+		return newKVJSONFile(cfg)
 	case "memory":
-		c, err := newKVMemory(cfg)
-		return &c, err
+		return newKVMemory(cfg)
 	case "mmdb":
-		c, err := newKVMMDB(cfg)
-		return &c, err
+		return newKVMMDB(cfg)
 	case "text_file":
-		c, err := newKVTextFile(cfg)
-		return &c, err
+		return newKVTextFile(cfg)
 	default:
 		return nil, fmt.Errorf("kv_store: %s: %v", t, errors.ErrInvalidFactoryInput)
 	}

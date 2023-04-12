@@ -29,23 +29,22 @@ type kvMMDB struct {
 	// File contains the location of the MMDB file. This can be either a path on local
 	// disk, an HTTP(S) URL, or an AWS S3 URL.
 	File   string `json:"file"`
-	mu     *sync.RWMutex
+	mu     sync.RWMutex
 	reader *maxminddb.Reader
 }
 
 // Create a new MMDB KV store.
-func newKVMMDB(cfg config.Config) (kvMMDB, error) {
+func newKVMMDB(cfg config.Config) (*kvMMDB, error) {
 	var store kvMMDB
 	if err := config.Decode(cfg.Settings, &store); err != nil {
-		return kvMMDB{}, err
+		return nil, err
 	}
-	store.mu = new(sync.RWMutex)
 
 	if store.File == "" {
-		return kvMMDB{}, fmt.Errorf("kv: mmdb: options %+v: %v", &store, errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("kv: mmdb: options %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
-	return store, nil
+	return &store, nil
 }
 
 func (store *kvMMDB) String() string {

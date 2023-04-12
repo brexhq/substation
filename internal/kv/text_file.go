@@ -31,23 +31,22 @@ type kvTextFile struct {
 	// File contains the location of the text file. This can be either a path on local
 	// disk, an HTTP(S) URL, or an AWS S3 URL.
 	File  string `json:"file"`
-	mu    *sync.Mutex
+	mu    sync.Mutex
 	items []string
 }
 
 // Create a new text file KV store.
-func newKVTextFile(cfg config.Config) (kvTextFile, error) {
+func newKVTextFile(cfg config.Config) (*kvTextFile, error) {
 	var store kvTextFile
 	if err := config.Decode(cfg.Settings, &store); err != nil {
-		return kvTextFile{}, err
+		return nil, err
 	}
-	store.mu = new(sync.Mutex)
 
 	if store.File == "" {
-		return kvTextFile{}, fmt.Errorf("kv: text_file: options %+v: %v", &store, errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("kv: text_file: options %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
-	return store, nil
+	return &store, nil
 }
 
 func (store *kvTextFile) String() string {

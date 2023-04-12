@@ -41,17 +41,17 @@ type kvAWSDynamoDB struct {
 }
 
 // Create a new AWS DynamoDB KV store.
-func newKVAWSDyanmoDB(cfg config.Config) (kvAWSDynamoDB, error) {
+func newKVAWSDyanmoDB(cfg config.Config) (*kvAWSDynamoDB, error) {
 	var store kvAWSDynamoDB
 	if err := config.Decode(cfg.Settings, &store); err != nil {
-		return kvAWSDynamoDB{}, err
+		return nil, err
 	}
 
 	if store.Table == "" {
-		return kvAWSDynamoDB{}, fmt.Errorf("kv: aws_dynamodb: options %+v: %v", &store, errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("kv: aws_dynamodb: table %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
-	return store, nil
+	return &store, nil
 }
 
 func (store *kvAWSDynamoDB) String() string {

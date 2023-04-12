@@ -3,12 +3,6 @@ ARG AWS_ARCHITECTURE=x86_64
 FROM golang:1.19 as build
 ENV GO111MODULE=on
 
-# install AppConfig Lambda extension
-COPY build/scripts/aws/lambda/extension.zip /tmp/extension.zip
-RUN apt-get update && \
-	apt-get install -y unzip && \
-  	unzip /tmp/extension.zip -d /opt
-
 # install deps
 WORKDIR /usr/local/go/src/substation/
 COPY ./go.mod .

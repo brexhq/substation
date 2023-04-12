@@ -3,14 +3,13 @@ package process
 import (
 	"context"
 	"fmt"
-	goregexp "regexp"
+	"regexp"
 
 	"golang.org/x/exp/slices"
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/regexp"
 )
 
 // capture processes data by capturing values using regular expressions.
@@ -20,7 +19,7 @@ type procCapture struct {
 	process
 	Options procCaptureOptions `json:"options"`
 
-	re *goregexp.Regexp
+	re *regexp.Regexp
 }
 
 type procCaptureOptions struct {

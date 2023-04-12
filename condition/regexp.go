@@ -3,10 +3,9 @@ package condition
 import (
 	"context"
 	"fmt"
-	goregexp "regexp"
+	"regexp"
 
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/regexp"
 )
 
 // regExp evaluates data using a regular expression.
@@ -16,7 +15,7 @@ type inspRegExp struct {
 	condition
 	Options inspRegExpOptions `json:"options"`
 
-	re *goregexp.Regexp
+	re *regexp.Regexp
 }
 
 type inspRegExpOptions struct {

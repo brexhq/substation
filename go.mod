@@ -21,7 +21,6 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/tidwall/gjson v1.14.4
 	github.com/tidwall/sjson v1.2.5
-	github.com/umisama/go-regexpcache v0.0.0-20150417035358-2444a542492f
 	go.uber.org/goleak v1.2.0
 	golang.org/x/net v0.7.0
 	golang.org/x/sync v0.1.0

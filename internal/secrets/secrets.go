@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/brexhq/substation/internal/aws/secretsmanager"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/kv"
-	"github.com/brexhq/substation/internal/regexp"
 )
 
 var (

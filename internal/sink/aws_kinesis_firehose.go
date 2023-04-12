@@ -36,13 +36,12 @@ type sinkAWSKinesisFirehose struct {
 
 // Create a new AWS Kinesis Firehose sink.
 func newSinkAWSKinesisFirehose(cfg config.Config) (s sinkAWSKinesisFirehose, err error) {
-	err = config.Decode(cfg.Settings, &s)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkAWSKinesisFirehose{}, err
 	}
 
 	if s.Stream == "" {
-		return sinkAWSKinesisFirehose{}, fmt.Errorf("sink: aws_kinesis_firehose: stream missing")
+		return sinkAWSKinesisFirehose{}, fmt.Errorf("sink: aws_kinesis_firehose: stream: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return s, nil

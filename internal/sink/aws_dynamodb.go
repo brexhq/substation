@@ -35,13 +35,12 @@ type sinkAWSDynamoDB struct {
 
 // Create a new AWS DynamoDB sink.
 func newSinkAWSDynamoDB(cfg config.Config) (s sinkAWSDynamoDB, err error) {
-	err = config.Decode(cfg.Settings, &s)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkAWSDynamoDB{}, err
 	}
 
 	if s.Table == "" {
-		return sinkAWSDynamoDB{}, fmt.Errorf("sink: aws_dynamodb: table missing")
+		return sinkAWSDynamoDB{}, fmt.Errorf("sink: aws_dynamodb: table: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return s, nil

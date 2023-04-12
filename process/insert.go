@@ -23,8 +23,7 @@ type procInsertOptions struct {
 
 // Create a new insert processor.
 func newProcInsert(cfg config.Config) (p procInsert, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procInsert{}, err
 	}
 

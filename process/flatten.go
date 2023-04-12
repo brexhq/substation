@@ -26,8 +26,7 @@ type procFlattenOptions struct {
 
 // Create a new flatten processor.
 func newProcFlatten(cfg config.Config) (p procFlatten, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procFlatten{}, err
 	}
 

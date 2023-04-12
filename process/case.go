@@ -41,8 +41,7 @@ type procCaseOptions struct {
 
 // Create a new case processor.
 func newProcCase(cfg config.Config) (p procCase, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procCase{}, err
 	}
 

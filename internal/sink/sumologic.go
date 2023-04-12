@@ -46,13 +46,12 @@ type sinkSumoLogic struct {
 
 // Create a new SumoLogic sink.
 func newSinkSumoLogic(cfg config.Config) (s sinkSumoLogic, err error) {
-	err = config.Decode(cfg.Settings, &s)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkSumoLogic{}, err
 	}
 
 	if s.URL == "" {
-		return sinkSumoLogic{}, fmt.Errorf("sink: sumologic: missing URL")
+		return sinkSumoLogic{}, fmt.Errorf("sink: sumologic: URL: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return s, nil

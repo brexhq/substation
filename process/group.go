@@ -28,8 +28,7 @@ type procGroupOptions struct {
 
 // Create a new group processor.
 func newProcGroup(cfg config.Config) (p procGroup, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procGroup{}, err
 	}
 

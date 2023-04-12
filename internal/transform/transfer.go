@@ -12,8 +12,7 @@ import (
 type tformTransfer struct{}
 
 func newTformTransfer(cfg config.Config) (t tformTransfer, err error) {
-	err = config.Decode(cfg.Settings, &t)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &t); err != nil {
 		return tformTransfer{}, err
 	}
 

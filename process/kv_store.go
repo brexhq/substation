@@ -58,8 +58,7 @@ type procKVStoreOptions struct {
 
 // Create a new pipeline processor.
 func newProcKVStore(cfg config.Config) (p procKVStore, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procKVStore{}, err
 	}
 

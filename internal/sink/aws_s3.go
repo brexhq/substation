@@ -12,6 +12,7 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/s3manager"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/log"
 )
 
@@ -66,13 +67,12 @@ type sinkAWSS3 struct {
 
 // Create a new AWS S3 sink.
 func newSinkAWSS3(cfg config.Config) (s sinkAWSS3, err error) {
-	err = config.Decode(cfg.Settings, &s)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkAWSS3{}, err
 	}
 
 	if s.Bucket == "" {
-		return sinkAWSS3{}, fmt.Errorf("sink: aws_s3: bucket missing")
+		return sinkAWSS3{}, fmt.Errorf("sink: aws_s3: bucket stream: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return s, nil

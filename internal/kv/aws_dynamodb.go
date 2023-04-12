@@ -43,8 +43,7 @@ type kvAWSDynamoDB struct {
 // Create a new AWS DynamoDB KV store.
 func newKVAWSDyanmoDB(cfg config.Config) (kvAWSDynamoDB, error) {
 	var store kvAWSDynamoDB
-	err := config.Decode(cfg.Settings, &store)
-	if err != nil {
+	if err := config.Decode(cfg.Settings, &store); err != nil {
 		return kvAWSDynamoDB{}, err
 	}
 

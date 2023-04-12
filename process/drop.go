@@ -17,8 +17,7 @@ type procDrop struct {
 
 // Create a new drop processor.
 func newProcDrop(cfg config.Config) (p procDrop, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procDrop{}, err
 	}
 

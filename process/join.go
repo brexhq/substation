@@ -24,8 +24,7 @@ type procJoinOptions struct {
 
 // Create a new join processor.
 func newProcJoin(cfg config.Config) (p procJoin, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procJoin{}, err
 	}
 

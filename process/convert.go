@@ -33,8 +33,7 @@ type procConvertOptions struct {
 
 // Create a new convert processor.
 func newProcConvert(cfg config.Config) (p procConvert, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procConvert{}, err
 	}
 

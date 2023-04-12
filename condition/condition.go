@@ -241,8 +241,7 @@ type inspCondition struct {
 
 // Creates a new condition inspector.
 func newInspCondition(cfg config.Config) (c inspCondition, err error) {
-	err = config.Decode(cfg.Settings, &c)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspCondition{}, err
 	}
 

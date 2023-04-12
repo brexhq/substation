@@ -71,8 +71,7 @@ func (p procAggregate) Close(context.Context) error {
 
 // Create a new aggregate processor.
 func newProcAggregate(cfg config.Config) (p procAggregate, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procAggregate{}, err
 	}
 

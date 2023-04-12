@@ -18,8 +18,7 @@ type procExpand struct {
 
 // Create a new expand processor.
 func newProcExpand(cfg config.Config) (p procExpand, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procExpand{}, err
 	}
 

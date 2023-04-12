@@ -26,8 +26,7 @@ type kvMemory struct {
 // Create a new memory KV store.
 func newKVMemory(cfg config.Config) (kvMemory, error) {
 	var store kvMemory
-	err := config.Decode(cfg.Settings, &store)
-	if err != nil {
+	if err := config.Decode(cfg.Settings, &store); err != nil {
 		return kvMemory{}, err
 	}
 	store.mu = new(sync.Mutex)

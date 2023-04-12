@@ -39,8 +39,7 @@ type procBase64Options struct {
 
 // Create a new base64 processor.
 func newProcBase64(cfg config.Config) (p procBase64, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procBase64{}, err
 	}
 

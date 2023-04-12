@@ -64,8 +64,7 @@ type kvCSVFile struct {
 // Create a new CSV file KV store.
 func newKVCSVFile(cfg config.Config) (kvCSVFile, error) {
 	var store kvCSVFile
-	err := config.Decode(cfg.Settings, &store)
-	if err != nil {
+	if err := config.Decode(cfg.Settings, &store); err != nil {
 		return kvCSVFile{}, err
 	}
 	store.mu = new(sync.Mutex)

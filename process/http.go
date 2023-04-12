@@ -77,8 +77,7 @@ func (p procHTTP) Close(context.Context) error {
 
 // Create a new HTTP processor.
 func newProcHTTP(cfg config.Config) (p procHTTP, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procHTTP{}, err
 	}
 

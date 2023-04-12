@@ -37,8 +37,7 @@ type inspJSONSchemaOptions struct {
 
 // Creates a new JSON schema inspector.
 func newInspJSONSchema(cfg config.Config) (c inspJSONSchema, err error) {
-	err = config.Decode(cfg.Settings, &c)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspJSONSchema{}, err
 	}
 
@@ -52,7 +51,7 @@ func newInspJSONSchema(cfg config.Config) (c inspJSONSchema, err error) {
 				"JSON",
 			},
 			strings.TrimSuffix(s.Type, "/Array")) {
-			return inspJSONSchema{}, fmt.Errorf("condition: json: type %q invalid: %v", s.Type, errors.ErrInvalidOptionInput)
+			return inspJSONSchema{}, fmt.Errorf("condition: json: type %q: %v", s.Type, errors.ErrInvalidOptionInput)
 		}
 	}
 

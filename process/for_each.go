@@ -32,8 +32,7 @@ type procForEachOptions struct {
 
 // Create a new "for each" processor.
 func newProcForEach(cfg config.Config) (p procForEach, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procForEach{}, err
 	}
 

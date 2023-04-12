@@ -33,8 +33,7 @@ type procGzipOptions struct {
 
 // Create a new gzip processor.
 func newProcGzip(cfg config.Config) (p procGzip, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procGzip{}, err
 	}
 

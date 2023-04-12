@@ -29,8 +29,7 @@ type procPipelineOptions struct {
 
 // Create a new pipeline processor.
 func newProcPipeline(cfg config.Config) (p procPipeline, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procPipeline{}, err
 	}
 

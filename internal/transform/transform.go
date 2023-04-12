@@ -21,6 +21,6 @@ func New(cfg config.Config) (Transformer, error) {
 	case "transfer":
 		return newTformTransfer(cfg)
 	default:
-		return nil, fmt.Errorf("transform settings %v: %w", cfg.Settings, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("transform settings %v: %v", cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }

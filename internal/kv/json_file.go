@@ -28,8 +28,7 @@ type kvJSONFile struct {
 // Create a new JSON file KV store.
 func newKVJSONFile(cfg config.Config) (kvJSONFile, error) {
 	var store kvJSONFile
-	err := config.Decode(cfg.Settings, &store)
-	if err != nil {
+	if err := config.Decode(cfg.Settings, &store); err != nil {
 		return kvJSONFile{}, err
 	}
 	store.mu = new(sync.Mutex)

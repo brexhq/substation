@@ -8,6 +8,7 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/kinesis"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/log"
 )
 
@@ -41,13 +42,12 @@ type sinkAWSKinesis struct {
 
 // Create a new AWS Kinesis sink.
 func newSinkAWSKinesis(cfg config.Config) (s sinkAWSKinesis, err error) {
-	err = config.Decode(cfg.Settings, &s)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkAWSKinesis{}, err
 	}
 
 	if s.Stream == "" {
-		return sinkAWSKinesis{}, fmt.Errorf("sink: aws_kinesis: stream missing")
+		return sinkAWSKinesis{}, fmt.Errorf("sink: aws_kinesis: stream stream: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return s, nil

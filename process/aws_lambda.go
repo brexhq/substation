@@ -50,8 +50,7 @@ func (p procAWSLambda) Close(context.Context) error {
 
 // Create a new AWS Lambda processor.
 func newProcAWSLambda(cfg config.Config) (p procAWSLambda, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procAWSLambda{}, err
 	}
 

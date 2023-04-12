@@ -58,8 +58,7 @@ func (p procIPDatabase) Close(ctx context.Context) error {
 
 // Create a new IP database processor.
 func newProcIPDatabase(cfg config.Config) (p procIPDatabase, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procIPDatabase{}, err
 	}
 

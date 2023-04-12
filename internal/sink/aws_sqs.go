@@ -32,13 +32,12 @@ type sinkAWSSQS struct {
 
 // Create a new AWS SQS sink.
 func newSinkAWSSQS(cfg config.Config) (s sinkAWSSQS, err error) {
-	err = config.Decode(cfg.Settings, &s)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkAWSSQS{}, err
 	}
 
 	if s.Queue == "" {
-		return sinkAWSSQS{}, fmt.Errorf("sink: aws_sqs: queue missing")
+		return sinkAWSSQS{}, fmt.Errorf("sink: aws_sqs: queue: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return s, nil

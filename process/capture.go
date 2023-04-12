@@ -46,8 +46,7 @@ type procCaptureOptions struct {
 
 // Create a new capture processor.
 func newProcCapture(cfg config.Config) (p procCapture, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procCapture{}, err
 	}
 

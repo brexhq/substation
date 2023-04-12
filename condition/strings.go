@@ -42,8 +42,7 @@ type inspStringsOptions struct {
 
 // Creates a new strings inspector.
 func newInspStrings(cfg config.Config) (c inspStrings, err error) {
-	err = config.Decode(cfg.Settings, &c)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspStrings{}, err
 	}
 
@@ -56,7 +55,7 @@ func newInspStrings(cfg config.Config) (c inspStrings, err error) {
 			"ends_with",
 		},
 		c.Options.Type) {
-		return inspStrings{}, fmt.Errorf("condition: strings: type %q invalid: %v", c.Options.Type, errors.ErrInvalidOptionInput)
+		return inspStrings{}, fmt.Errorf("condition: strings: type %q: %v", c.Options.Type, errors.ErrInvalidOptionInput)
 	}
 
 	// TODO(shellcromancer): should we check that the expression != "" if Type != "equals"?

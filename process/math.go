@@ -36,8 +36,7 @@ type procMathOptions struct {
 
 // Create a new math processor.
 func newProcMath(cfg config.Config) (p procMath, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procMath{}, err
 	}
 

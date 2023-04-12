@@ -50,8 +50,7 @@ type procDNSOptions struct {
 
 // Create a new DNS processor.
 func newProcDNS(cfg config.Config) (p procDNS, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procDNS{}, err
 	}
 

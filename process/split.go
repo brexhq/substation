@@ -26,8 +26,7 @@ type procSplitOptions struct {
 
 // Create a new split processor.
 func newProcSplit(cfg config.Config) (p procSplit, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procSplit{}, err
 	}
 

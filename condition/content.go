@@ -27,13 +27,12 @@ type inspContentOptions struct {
 
 // Creates a new content inspector.
 func newInspContent(cfg config.Config) (c inspContent, err error) {
-	err = config.Decode(cfg.Settings, &c)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspContent{}, err
 	}
 
 	if c.Options.Type == "" {
-		return inspContent{}, fmt.Errorf("condition: content: type missing: %v", errors.ErrMissingRequiredOption)
+		return inspContent{}, fmt.Errorf("condition: content: type: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return c, nil

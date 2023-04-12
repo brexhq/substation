@@ -36,8 +36,7 @@ type kvMMDB struct {
 // Create a new MMDB KV store.
 func newKVMMDB(cfg config.Config) (kvMMDB, error) {
 	var store kvMMDB
-	err := config.Decode(cfg.Settings, &store)
-	if err != nil {
+	if err := config.Decode(cfg.Settings, &store); err != nil {
 		return kvMMDB{}, err
 	}
 	store.mu = new(sync.RWMutex)

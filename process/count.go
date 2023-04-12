@@ -14,8 +14,7 @@ type procCount struct{}
 
 // Create a new count processor.
 func newProcCount(cfg config.Config) (p procCount, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procCount{}, err
 	}
 

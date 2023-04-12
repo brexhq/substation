@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/secrets"
@@ -35,13 +36,12 @@ type sinkHTTP struct {
 
 // Create a new HTTP sink.
 func newSinkHTTP(cfg config.Config) (s sinkHTTP, err error) {
-	err = config.Decode(cfg.Settings, &s)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkHTTP{}, err
 	}
 
 	if s.URL == "" {
-		return sinkHTTP{}, fmt.Errorf("sink: http: URL missing")
+		return sinkHTTP{}, fmt.Errorf("sink: http: URL: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return s, nil

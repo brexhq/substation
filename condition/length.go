@@ -47,8 +47,7 @@ type inspLengthOptions struct {
 
 // Creates a new length inspector.
 func newInspLength(cfg config.Config) (c inspLength, err error) {
-	err = config.Decode(cfg.Settings, &c)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspLength{}, err
 	}
 
@@ -60,7 +59,7 @@ func newInspLength(cfg config.Config) (c inspLength, err error) {
 			"less_than",
 		},
 		c.Options.Type) {
-		return inspLength{}, fmt.Errorf("condition: length: type %q invalid: %v", c.Options.Type, errors.ErrInvalidOptionInput)
+		return inspLength{}, fmt.Errorf("condition: length: type %q: %v", c.Options.Type, errors.ErrInvalidOptionInput)
 	}
 
 	if c.Options.Measurement == "" {

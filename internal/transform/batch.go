@@ -21,8 +21,7 @@ type tformBatch struct {
 }
 
 func newTformBatch(cfg config.Config) (t tformBatch, err error) {
-	err = config.Decode(cfg.Settings, &t)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &t); err != nil {
 		return tformBatch{}, err
 	}
 

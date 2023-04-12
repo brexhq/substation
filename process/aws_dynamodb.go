@@ -75,8 +75,7 @@ func (p procAWSDynamoDB) Close(context.Context) error {
 
 // Create a new AWS DynamoDB processor.
 func newProcAWSDynamoDB(cfg config.Config) (p procAWSDynamoDB, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procAWSDynamoDB{}, err
 	}
 
@@ -90,7 +89,7 @@ func newProcAWSDynamoDB(cfg config.Config) (p procAWSDynamoDB, err error) {
 		return procAWSDynamoDB{}, fmt.Errorf("process: aws_dynamodb: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
 	}
 
-	// only supports JSON, fao; if there are no keys
+	// only supports JSON, fail; if there are no keys
 	if p.Key == "" && p.SetKey == "" {
 		return procAWSDynamoDB{}, fmt.Errorf("process: aws_dynamodb: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
 	}

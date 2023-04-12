@@ -37,8 +37,7 @@ type procHashOptions struct {
 
 // Create a new hash processor.
 func newProcHash(cfg config.Config) (p procHash, err error) {
-	err = config.Decode(cfg.Settings, &p)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
 		return procHash{}, err
 	}
 

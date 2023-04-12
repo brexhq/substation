@@ -37,8 +37,7 @@ type inspForEachOptions struct {
 
 // Creates a new "for each" inspector.
 func newInspForEach(cfg config.Config) (c inspForEach, err error) {
-	err = config.Decode(cfg.Settings, &c)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &c); err != nil {
 		return inspForEach{}, err
 	}
 
@@ -50,7 +49,7 @@ func newInspForEach(cfg config.Config) (c inspForEach, err error) {
 			"all",
 		},
 		c.Options.Type) {
-		return inspForEach{}, fmt.Errorf("condition: for_each: type %q invalid: %v", c.Options.Type, errors.ErrInvalidOptionInput)
+		return inspForEach{}, fmt.Errorf("condition: for_each: type %q: %v", c.Options.Type, errors.ErrInvalidOptionInput)
 	}
 
 	c.inspector, err = NewInspector(c.Options.Inspector)

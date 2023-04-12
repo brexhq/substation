@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
 	pb "github.com/brexhq/substation/proto/v1beta"
 	"google.golang.org/grpc"
@@ -37,13 +38,12 @@ type sinkGRPC struct {
 
 // Create a new gRPC sink.
 func newSinkGRPC(cfg config.Config) (s sinkGRPC, err error) {
-	err = config.Decode(cfg.Settings, &s)
-	if err != nil {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
 		return sinkGRPC{}, err
 	}
 
 	if s.Server == "" {
-		return sinkGRPC{}, fmt.Errorf("sink: grpc: server missing")
+		return sinkGRPC{}, fmt.Errorf("sink: grpc: server: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return s, nil

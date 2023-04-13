@@ -1,10 +1,8 @@
 package sink
 
 import (
-	"compress/gzip"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,7 +37,7 @@ type sinkFile struct {
 
 // Send sinks a channel of encapsulated data with the sink.
 func (s *sinkFile) Send(ctx context.Context, ch *config.Channel) error {
-	files := make(map[string]*os.File)
+	files := make(map[string]*fw)
 
 	path := s.FilePath.New()
 	if path == "" {
@@ -52,14 +50,9 @@ func (s *sinkFile) Send(ctx context.Context, ch *config.Channel) error {
 		// - current directory
 		// - year, month, and day
 		// - random UUID
-		path = cwd + "/" + time.Now().Format("2006/01/02") + "/" + uuid.New().String()
-
-		// currently only supports gzip compression
-		path += ".gz"
+		// - extension (always .gz)
+		path = cwd + "/" + time.Now().Format("2006/01/02") + "/" + uuid.New().String() + ".gz"
 	}
-
-	// newline character for Unix-based systems, not compatible with Windows
-	separator := []byte("\n")
 
 	for capsule := range ch.C {
 		select {
@@ -90,67 +83,38 @@ func (s *sinkFile) Send(ctx context.Context, ch *config.Channel) error {
 			}
 
 			if _, ok := files[innerPath]; !ok {
-				f, err := os.CreateTemp("", "substation")
+				if err := os.MkdirAll(filepath.Dir(innerPath), 0o770); err != nil {
+					return fmt.Errorf("sink: file: file_path %s: %v", path, err)
+				}
+
+				f, err := os.Create(innerPath)
 				if err != nil {
 					return fmt.Errorf("sink: file: file_path %s: %v", innerPath, err)
 				}
 
-				defer os.Remove(f.Name()) //nolint:staticcheck // SA9001: channel is closed on error, defer will run
-				defer f.Close()           //nolint:staticcheck // SA9001: channel is closed on error, defer will run
-				files[innerPath] = f
+				// TODO: make FileFormat configurable
+				files[innerPath] = NewFileWrapper(f, config.Config{Type: "text"})
+				defer files[innerPath].Close() //nolint:staticcheck // SA9001: channel is closed on error, defer will run
 			}
 
 			if _, err := files[innerPath].Write(capsule.Data()); err != nil {
-				return fmt.Errorf("sink: file: file_path %s: %v", innerPath, err)
-			}
-			if _, err := files[innerPath].Write(separator); err != nil {
 				return fmt.Errorf("sink: file: file_path %s: %v", innerPath, err)
 			}
 		}
 	}
 
 	for path, file := range files {
-		if _, err := file.Seek(0, 0); err != nil {
-			return fmt.Errorf("sink: file: %v", err)
-		}
-
-		if err := os.MkdirAll(filepath.Dir(path), 0o770); err != nil {
-			return fmt.Errorf("sink: file: file_path %s: %v", path, err)
-		}
-
-		f, err := os.Create(path)
-		if err != nil {
-			fmt.Println("could not open file")
-			return fmt.Errorf("sink: file: file_path %s: %v", path, err)
-		}
-		defer f.Close()
-
-		reader, writer := io.Pipe()
-		defer reader.Close()
-
-		// goroutine avoids deadlock
-		go func() {
-			// currently only supports gzip compression
-			gz := gzip.NewWriter(f)
-			defer writer.Close()
-			defer gz.Close()
-
-			_, _ = io.Copy(gz, file)
-		}()
-
-		if _, err := io.Copy(f, reader); err != nil {
-			return fmt.Errorf("sink: file: file_path %s: %v", path, err)
-		}
-
-		fs, err := f.Stat()
+		fs, err := file.Stat()
 		if err != nil {
 			return fmt.Errorf("sink: file: %v", err)
 		}
 
 		log.WithField(
-			"file_path", path,
+			"path", path,
 		).WithField(
 			"size", fs.Size(),
+		).WithField(
+			"type", file.Type(),
 		).Debug("wrote data to file")
 	}
 

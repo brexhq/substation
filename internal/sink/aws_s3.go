@@ -1,10 +1,8 @@
 package sink
 
 import (
-	"compress/gzip"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 	"time"
@@ -60,25 +58,21 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 		s3uploader.Setup()
 	}
 
-	files := make(map[string]*os.File)
+	files := make(map[string]*fw)
 
 	object := s.FilePath.New()
 	if object == "" {
 		// default object name is:
 		// - year, month, and day
 		// - random UUID
-		object = time.Now().Format("2006/01/02") + "/" + uuid.New().String()
-		// currently only supports gzip compression
-		object += ".gz"
+		// - extension (always .gz)
+		object = time.Now().Format("2006/01/02") + "/" + uuid.New().String() + ".gz"
 
 		// TODO: remove in v1.0.0
 		if s.Prefix != "" {
 			object = s.Prefix + "/" + object
 		}
 	}
-
-	// newline character for Unix-based systems
-	separator := []byte("\n")
 
 	for capsule := range ch.C {
 		select {
@@ -110,7 +104,7 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 
 			// TODO: remove in v1.0.0
 			if s.PrefixKey != "" {
-				prefix := capsule.Get(s.FilePath.PrefixKey).String()
+				prefix := capsule.Get(s.PrefixKey).String()
 				innerObject = prefix + "/" + object
 			}
 
@@ -121,52 +115,38 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 				}
 
 				defer os.Remove(f.Name()) //nolint:staticcheck // SA9001: channel is closed on error, defer will run
-				defer f.Close()           //nolint:staticcheck // SA9001: channel is closed on error, defer will run
 
-				files[innerObject] = f
+				// TODO: make FileFormat configurable
+				files[innerObject] = NewFileWrapper(f, config.Config{Type: "text_gzip"})
+				defer files[innerObject].Close() //nolint:staticcheck // SA9001: channel is closed on error, defer will run
 			}
 
 			if _, err := files[innerObject].Write(capsule.Data()); err != nil {
 				return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, innerObject, err)
 			}
-			if _, err := files[innerObject].Write(separator); err != nil {
-				return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, innerObject, err)
-			}
 		}
 	}
 
-	/*
-		uploading data to S3 requires the following steps:
-			- reset offset to zero so the file content can be read
-			- connect gzip writer to a pipe writer
-			- copy file content to the gzip writer (copies to the pipe reader)
-			- generate the S3 object key
-			- upload the pipe reader to the bucket using the generated key
-	*/
 	for object, file := range files {
-		if _, err := file.Seek(0, 0); err != nil {
-			return fmt.Errorf("sink: aws_s3: bucket %s: %v", s.Bucket, err)
-		}
-
-		reader, writer := io.Pipe()
-		defer reader.Close()
-
-		// goroutine avoids deadlock
-		go func() {
-			// currently only supports gzip compression
-			gz := gzip.NewWriter(writer)
-			defer writer.Close()
-			defer gz.Close()
-
-			_, _ = io.Copy(gz, file)
-		}()
-
-		if _, err := s3uploader.Upload(ctx, s.Bucket, object, reader); err != nil {
+		// close to flush the file buffers before uploading to S3
+		if err := file.Close(); err != nil {
 			return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, object, err)
 		}
 
-		// s3uploader.Upload does not return the size of uploaded data, so we use the size of the uncompressed file when reporting stats for debugging
-		fs, err := file.Stat()
+		// s3uploader requires an open file (reader)
+		f, err := os.Open(file.Name())
+		if err != nil {
+			return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, object, err)
+		}
+		defer f.Close()
+
+		if _, err := s3uploader.Upload(ctx, s.Bucket, object, f); err != nil {
+			return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, object, err)
+		}
+
+		// s3uploader.Upload does not return the size of uploaded data, so we use the size of
+		// the  file when reporting stats for debugging
+		fs, err := f.Stat()
 		if err != nil {
 			return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, object, err)
 		}
@@ -177,6 +157,8 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 			"object", object,
 		).WithField(
 			"size", fs.Size(),
+		).WithField(
+			"type", file.Type(),
 		).Debug("uploaded data to S3")
 	}
 

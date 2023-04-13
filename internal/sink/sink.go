@@ -103,9 +103,9 @@ type filePath struct {
 
 // New constructs a file path that follows one of these formats depending on the configuration:
 //
-// - [prefix]/[date_format]/[uuid].[extension]
+// - [prefix]/[time_format]/[uuid].[extension]
 //
-// - [prefix]/[date_format]/[uuid]/[suffix].[extension]
+// - [prefix]/[time_format]/[uuid]/[suffix].[extension]
 //
 // If the struct is empty, then this returns an empty string.
 func (p filePath) New() (path string) {
@@ -118,7 +118,16 @@ func (p filePath) New() (path string) {
 	}
 
 	if p.TimeFormat != "" {
-		path += time.Now().Format(p.TimeFormat) + "/"
+		now := time.Now()
+
+		switch p.TimeFormat {
+		case "unix":
+			path += fmt.Sprintf("%d/", now.Unix())
+		case "unix_milli":
+			path += fmt.Sprintf("%d/", now.UnixMilli())
+		default:
+			path += now.Format(p.TimeFormat) + "/"
+		}
 	}
 
 	// if suffix exists, then UUID is a directory and not a file. if it doesn't exist,

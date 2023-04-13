@@ -9,8 +9,9 @@ import (
 	"sync"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/brexhq/substation/cmd"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/brexhq/substation/cmd"
 )
 
 func main() {
@@ -26,17 +27,17 @@ func handler(ctx context.Context, event json.RawMessage) error {
 	var e validationEvent
 	err := json.Unmarshal(event, &e)
 	if err != nil {
-		return err
+		return fmt.Errorf("validation: json: %v", err)
 	}
 
 	cfg, err := base64.RawStdEncoding.DecodeString(e.Content)
 	if err != nil {
-		return err
+		return fmt.Errorf("validation: base64: %v", err)
 	}
 
 	sub := cmd.New()
 	if err := sub.SetConfig(bytes.NewReader(cfg)); err != nil {
-		return fmt.Errorf("validation: %v", err)
+		return fmt.Errorf("validation: set_config: %v", err)
 	}
 
 	// maintains app state

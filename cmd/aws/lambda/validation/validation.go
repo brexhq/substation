@@ -27,12 +27,12 @@ func handler(ctx context.Context, event json.RawMessage) error {
 	var e validationEvent
 	err := json.Unmarshal(event, &e)
 	if err != nil {
-		return fmt.Errorf("validation: json: %v", err)
+		return fmt.Errorf("validation: json: %v (%q)", err, string(event))
 	}
 
 	cfg, err := base64.RawStdEncoding.DecodeString(e.Content)
 	if err != nil {
-		return fmt.Errorf("validation: base64: %v", err)
+		return fmt.Errorf("validation: base64: %v (%q)", err, e.Content)
 	}
 
 	sub := cmd.New()

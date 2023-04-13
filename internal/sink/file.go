@@ -93,7 +93,7 @@ func (s *sinkFile) Send(ctx context.Context, ch *config.Channel) error {
 				}
 
 				// TODO: make FileFormat configurable
-				files[innerPath] = NewFileWrapper(f, config.Config{Type: "text"})
+				files[innerPath] = NewFileWrapper(f, config.Config{Type: "text_gzip"})
 				defer files[innerPath].Close() //nolint:staticcheck // SA9001: channel is closed on error, defer will run
 			}
 

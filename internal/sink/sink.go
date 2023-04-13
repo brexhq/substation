@@ -84,11 +84,12 @@ type filePath struct {
 	//
 	// This is optional and has no default.
 	SuffixKey string `json:"suffix_key"`
-	// DateFormat inserts a formatted date string into the file path.
-	// This string uses the Go time package format.
+	// TimeFormat inserts a formatted datetime string into the file path.
+	// The string uses pattern-based layouts
+	// (https://gobyexample.com/procTime-formatting-parsing).
 	//
 	// This is optional and has no default.
-	DateFormat string `json:"date_format"`
+	TimeFormat string `json:"time_format"`
 	// UUID inserts a random UUID into the file path. If a suffix is
 	// not set, then this is used as the filename.
 	//
@@ -116,8 +117,8 @@ func (p filePath) New() (path string) {
 		path = p.Prefix + "/"
 	}
 
-	if p.DateFormat != "" {
-		path += time.Now().Format(p.DateFormat) + "/"
+	if p.TimeFormat != "" {
+		path += time.Now().Format(p.TimeFormat) + "/"
 	}
 
 	// if suffix exists, then UUID is a directory and not a file. if it doesn't exist,

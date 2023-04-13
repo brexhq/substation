@@ -563,7 +563,7 @@
           then std.mergePatch($.defaults.sink.aws_s3.settings, settings)
           // default settings for the new object name style
           // this provides back compatibility with v0.8.4
-          else std.mergePatch({file_path: { date_format: '2006/01/02', uuid: true, extension: true }}, settings),
+          else std.mergePatch({file_path: { time_format: '2006/01/02', uuid: true, extension: true }}, settings),
         
         type: 'aws_s3',
         settings: s,

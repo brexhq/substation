@@ -120,7 +120,7 @@ func TestHandler(t *testing.T) {
 	for _, cfg := range testCfgs {
 		t.Run(cfg.name, func(t *testing.T) {
 			e, err := json.Marshal(validationEvent{
-				Content: base64.RawStdEncoding.EncodeToString(cfg.cfg),
+				Content: base64.StdEncoding.EncodeToString(cfg.cfg),
 				URI:     "arn:aws:lambda:region:account:function:SubstationAppConfigLambdaValidator",
 			})
 			if err != nil {

@@ -30,7 +30,7 @@ func handler(ctx context.Context, event json.RawMessage) error {
 		return fmt.Errorf("validation: json: %v (%q)", err, string(event))
 	}
 
-	cfg, err := base64.RawStdEncoding.DecodeString(e.Content)
+	cfg, err := base64.StdEncoding.DecodeString(e.Content)
 	if err != nil {
 		return fmt.Errorf("validation: base64: %v (%q)", err, e.Content)
 	}

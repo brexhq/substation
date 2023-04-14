@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -63,10 +64,18 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 
 	group.Go(func() error {
 		for _, record := range event.Records {
+			// the S3 object key is URL encoded
+			//
+			// https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
+			objectKey, err := url.QueryUnescape(record.S3.Object.Key)
+			if err != nil {
+				return fmt.Errorf("s3 sns handler: %v", err)
+			}
+
 			log.WithField(
 				"bucket", record.S3.Bucket.Name,
 			).WithField(
-				"key", record.S3.Object.Key,
+				"key", objectKey,
 			).Debug("received S3 trigger")
 
 			dst, err := os.CreateTemp("", "substation")
@@ -76,7 +85,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			defer os.Remove(dst.Name())
 			defer dst.Close()
 
-			if _, err := api.Download(ctx, record.S3.Bucket.Name, record.S3.Object.Key, dst); err != nil {
+			if _, err := api.Download(ctx, record.S3.Bucket.Name, objectKey, dst); err != nil {
 				return fmt.Errorf("s3 handler: %v", err)
 			}
 
@@ -85,7 +94,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				record.EventTime,
 				record.S3.Bucket.Arn,
 				record.S3.Bucket.Name,
-				record.S3.Object.Key,
+				objectKey,
 				record.S3.Object.Size,
 			}); err != nil {
 				return fmt.Errorf("s3 handler: %v", err)
@@ -129,6 +138,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	return nil
 }
 
+//nolint:gocognit
 func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	sub := cmd.New()
 
@@ -174,10 +184,18 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			}
 
 			for _, record := range s3Event.Records {
+				// the S3 object key is URL encoded
+				//
+				// https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
+				objectKey, err := url.QueryUnescape(record.S3.Object.Key)
+				if err != nil {
+					return fmt.Errorf("s3 sns handler: %v", err)
+				}
+
 				log.WithField(
 					"bucket", record.S3.Bucket.Name,
 				).WithField(
-					"key", record.S3.Object.Key,
+					"key", objectKey,
 				).Debug("received S3 trigger")
 
 				dst, err := os.CreateTemp("", "substation")
@@ -187,7 +205,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 				defer os.Remove(dst.Name())
 				defer dst.Close()
 
-				if _, err := api.Download(ctx, record.S3.Bucket.Name, record.S3.Object.Key, dst); err != nil {
+				if _, err := api.Download(ctx, record.S3.Bucket.Name, objectKey, dst); err != nil {
 					return fmt.Errorf("s3 sns handler: %v", err)
 				}
 
@@ -196,7 +214,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					record.EventTime,
 					record.S3.Bucket.Arn,
 					record.S3.Bucket.Name,
-					record.S3.Object.Key,
+					objectKey,
 					record.S3.Object.Size,
 				}); err != nil {
 					return fmt.Errorf("s3 sns handler: %v", err)

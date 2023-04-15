@@ -3,9 +3,21 @@ local sub = import '../../../../../build/config/substation.libsonnet';
 local const = import '../const.libsonnet';
 
 {
-  // writes objects to this S3 path: uuid-substation/raw/2022/01/01/*
-  // change uuid to match the resource created by Terraform
-  sink: sub.interfaces.sink.aws_s3(settings={bucket:const.s3_bucket, prefix:'raw'}),
+  sink: sub.interfaces.sink.aws_s3(
+    settings={
+      // change S3 bucket uuid in const to match the resource created by Terraform
+      bucket: const.s3_bucket,
+      // file path becomes raw/2006/01/02/uuid.extension
+      file_path: {
+        prefix: 'raw',
+        time_format: '2006/01/02',
+        uuid: true,
+        extension: true,
+      },
+      file_format: const.file_format,
+      file_compression: const.file_compression,
+    }
+  ),
   // use the transfer transform so data is not modified in transit
   transform: {
     type: 'transfer',

@@ -146,15 +146,15 @@
         settings: { stream: null },
       },
       aws_s3: {
-        // TODO: remove legacy prefix and prefix_key in v1.0.0
-        settings: { bucket: null, prefix: null, prefix_key: null, file_path: null },
+        // TODO(v1.0.0): remove legacy prefix and prefix_key
+        // TODO(v1.0.0): set format and compression defaults
+        settings: { bucket: null, prefix: null, prefix_key: null, file_path: null, file_format: null, file_compression: null },
       },
       aws_sqs: {
         settings: { queue: null },
       },
       file: {
-        // TODO: remove legacy prefix and prefix_key in v1.0.0
-        settings: { file_path: null },
+        settings: { file_path: null, file_format: { type: 'json' }, file_compression: { type: 'gzip' } },
       },
       grpc: {
         settings: { server: null, timeout: null, certificate: null },

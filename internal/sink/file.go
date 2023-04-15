@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -24,7 +25,7 @@ const (
 	errFileEmptySuffix = errors.Error("empty suffix string")
 )
 
-// file sinks data as gzip compressed files to local disk.
+// file sinks data as files to local disk.
 type sinkFile struct {
 	// FilePath determines how the name of the uploaded object is constructed.
 	// One of these formats is constructed depending on the configuration:
@@ -33,26 +34,73 @@ type sinkFile struct {
 	//
 	// - prefix/date_format/uuid/suffix.extension
 	FilePath filePath `json:"file_path"`
+	// FileFormat determines the format of the file. These file formats are
+	// supported:
+	//
+	// - json
+	//
+	// - text
+	//
+	// - data (binary data)
+	//
+	// If the format type does not have a common file extension, then
+	// no extension is added to the file name.
+	//
+	// Defaults to json.
+	FileFormat config.Config `json:"file_format"`
+	// FileCompression determines the compression type applied to the file.
+	// These compression types are supported:
+	//
+	// - gzip (https://en.wikipedia.org/wiki/Gzip)
+	//
+	// - snappy (https://en.wikipedia.org/wiki/Snappy_(compression))
+	//
+	// - zstd (https://en.wikipedia.org/wiki/Zstd)
+	//
+	// If the compression type does not have a common file extension, then
+	// no extension is added to the file name.
+	//
+	// Defaults to gzip.
+	FileCompression config.Config `json:"file_compression"`
 }
 
 // Send sinks a channel of encapsulated data with the sink.
 func (s *sinkFile) Send(ctx context.Context, ch *config.Channel) error {
 	files := make(map[string]*fw)
 
-	path := s.FilePath.New()
-	if path == "" {
+	// TODO: move to constructor
+	if s.FileFormat.Type == "" {
+		s.FileFormat.Type = "json"
+	}
+
+	// TODO: move to constructor
+	if s.FileCompression.Type == "" {
+		s.FileCompression.Type = "gzip"
+	}
+
+	// file extensions are dynamic and not directly configurable
+	extension := NewFileExtension(s.FileFormat, s.FileCompression)
+	now := time.Now()
+
+	// default file path is: cwd/year/month/day/uuid.extension
+	fpath := s.FilePath.New()
+	if fpath == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("sink: file: %v", err)
 		}
 
-		// default path is:
-		// - current directory
-		// - year, month, and day
-		// - random UUID
-		// - extension (always .gz)
-		path = cwd + "/" + time.Now().Format("2006/01/02") + "/" + uuid.New().String() + ".gz"
+		fpath = path.Join(
+			cwd,
+			now.Format("2006"), now.Format("01"), now.Format("02"),
+			uuid.New().String(),
+		) + extension
+	} else if s.FilePath.Extension {
+		fpath += extension
 	}
+
+	// ensures that the path is OS agnostic
+	fpath = filepath.FromSlash(fpath)
 
 	for capsule := range ch.C {
 		select {
@@ -60,7 +108,7 @@ func (s *sinkFile) Send(ctx context.Context, ch *config.Channel) error {
 			return ctx.Err()
 		default:
 			// innerPath is used so that key values can be interpolated into the file path
-			innerPath := path
+			innerPath := fpath
 
 			// if either prefix or suffix keys are set, then the object name is non-default
 			// and can be safely interpolated. if either are empty strings, then an error
@@ -84,7 +132,7 @@ func (s *sinkFile) Send(ctx context.Context, ch *config.Channel) error {
 
 			if _, ok := files[innerPath]; !ok {
 				if err := os.MkdirAll(filepath.Dir(innerPath), 0o770); err != nil {
-					return fmt.Errorf("sink: file: file_path %s: %v", path, err)
+					return fmt.Errorf("sink: file: file_path %s: %v", fpath, err)
 				}
 
 				f, err := os.Create(innerPath)
@@ -92,8 +140,10 @@ func (s *sinkFile) Send(ctx context.Context, ch *config.Channel) error {
 					return fmt.Errorf("sink: file: file_path %s: %v", innerPath, err)
 				}
 
-				// TODO: make FileFormat configurable
-				files[innerPath] = NewFileWrapper(f, config.Config{Type: "text_gzip"})
+				if files[innerPath], err = NewFileWrapper(f, s.FileFormat, s.FileCompression); err != nil {
+					return fmt.Errorf("sink: file: file_path %s: %v", innerPath, err)
+				}
+
 				defer files[innerPath].Close() //nolint:staticcheck // SA9001: channel is closed on error, defer will run
 			}
 
@@ -114,7 +164,9 @@ func (s *sinkFile) Send(ctx context.Context, ch *config.Channel) error {
 		).WithField(
 			"size", fs.Size(),
 		).WithField(
-			"type", file.Type(),
+			"format", s.FileFormat.Type,
+		).WithField(
+			"compression", s.FileCompression.Type,
 		).Debug("wrote data to file")
 	}
 

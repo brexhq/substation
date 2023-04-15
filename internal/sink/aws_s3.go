@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -26,10 +27,7 @@ const (
 
 var s3uploader s3manager.UploaderAPI
 
-// awsS3 sinks data as gzip compressed objects to an AWS S3 bucket.
-//
-// Object names contain the year, month, and day the data was processed
-// by the sink and can be optionally prefixed with a custom string.
+// awsS3 sinks data as objects to an AWS S3 bucket.
 type sinkAWSS3 struct {
 	// Bucket is the AWS S3 bucket that data is written to.
 	Bucket string `json:"bucket"`
@@ -50,9 +48,35 @@ type sinkAWSS3 struct {
 	//
 	// - prefix/date_format/uuid/suffix.extension
 	FilePath filePath `json:"file_path"`
+	// FileFormat determines the format of the file. These file formats are
+	// supported:
+	//
+	// - data (binary data)
+	//
+	// - json
+	//
+	// - text
+	//
+	// Defaults to json.
+	FileFormat config.Config `json:"file_format"`
+	// FileCompression determines the compression type applied to the file.
+	// These compression types are supported:
+	//
+	// These compression types are supported:
+	//
+	// - gzip (https://en.wikipedia.org/wiki/Gzip)
+	//
+	// - snappy (https://en.wikipedia.org/wiki/Snappy_(compression))
+	//
+	// - zstd (https://en.wikipedia.org/wiki/Zstd)
+	//
+	// Defaults to gzip.
+	FileCompression config.Config `json:"file_compression"`
 }
 
 // Send sinks a channel of encapsulated data with the sink.
+//
+//nolint:gocognit
 func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 	if !s3uploader.IsEnabled() {
 		s3uploader.Setup()
@@ -60,18 +84,39 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 
 	files := make(map[string]*fw)
 
+	// file extensions are dynamic and not directly configurable
+	extension := NewFileExtension(s.FileFormat, s.FileCompression)
+	now := time.Now()
+
+	// default object key is: year/month/day/uuid.extension
 	object := s.FilePath.New()
 	if object == "" {
-		// default object name is:
-		// - year, month, and day
-		// - random UUID
-		// - extension (always .gz)
-		object = time.Now().Format("2006/01/02") + "/" + uuid.New().String() + ".gz"
+		object = path.Join(
+			now.Format("2006"), now.Format("01"), now.Format("02"), uuid.New().String(),
+		) + extension
+	} else if s.FilePath.Extension {
+		object += extension
+	}
 
-		// TODO: remove in v1.0.0
-		if s.Prefix != "" {
-			object = s.Prefix + "/" + object
+	// provides backward compatibility for v0.8.4
+	// TODO(v1.0.0): remove this
+	if s.FileCompression.Type == "" && s.FileFormat.Type == "" {
+		// TODO: move to constructor
+		if s.FileFormat.Type == "" {
+			s.FileFormat.Type = "json"
 		}
+
+		// TODO: move to constructor
+		if s.FileCompression.Type == "" {
+			s.FileCompression.Type = "gzip"
+		}
+
+		object = path.Join(
+			// path.Join ignores empty strings, so this is safe
+			s.Prefix,
+			now.Format("2006"), now.Format("01"), now.Format("02"),
+			uuid.New().String(),
+		) + ".gz"
 	}
 
 	for capsule := range ch.C {
@@ -79,10 +124,10 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			// innerObject is used so that key values can be interpolated into the object name
+			// innerObject is used so that key values can be interpolated into the object key
 			innerObject := object
 
-			// if either prefix or suffix keys are set, then the object name is non-default
+			// if either prefix or suffix keys are set, then the object key is non-default
 			// and can be safely interpolated. if either are empty strings, then an error
 			// is returned.
 			if s.FilePath.PrefixKey != "" {
@@ -102,10 +147,10 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 				innerObject = strings.Replace(innerObject, "${PATH_SUFFIX}", suffix, 1)
 			}
 
-			// TODO: remove in v1.0.0
-			if s.PrefixKey != "" {
+			// TODO(v1.0.0): remove this
+			if s.PrefixKey != "" && s.FileCompression.Type == "" && s.FileFormat.Type == "" {
 				prefix := capsule.Get(s.PrefixKey).String()
-				innerObject = prefix + "/" + object
+				innerObject = path.Join(prefix, object)
 			}
 
 			if _, ok := files[innerObject]; !ok {
@@ -116,8 +161,10 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 
 				defer os.Remove(f.Name()) //nolint:staticcheck // SA9001: channel is closed on error, defer will run
 
-				// TODO: make FileFormat configurable
-				files[innerObject] = NewFileWrapper(f, config.Config{Type: "text_gzip"})
+				if files[innerObject], err = NewFileWrapper(f, s.FileFormat, s.FileCompression); err != nil {
+					return fmt.Errorf("sink: file: file_path %s: %v", innerObject, err)
+				}
+
 				defer files[innerObject].Close() //nolint:staticcheck // SA9001: channel is closed on error, defer will run
 			}
 
@@ -158,7 +205,9 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 		).WithField(
 			"size", fs.Size(),
 		).WithField(
-			"type", file.Type(),
+			"format", s.FileFormat.Type,
+		).WithField(
+			"compression", s.FileCompression.Type,
 		).Debug("uploaded data to S3")
 	}
 

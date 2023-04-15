@@ -1,18 +1,20 @@
 package sink
 
 import (
-	"compress/gzip"
-	"compress/zlib"
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"path"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/google/uuid"
+	"github.com/klauspost/compress/gzip"
+	"github.com/klauspost/compress/snappy"
+	"github.com/klauspost/compress/zstd"
 )
 
 type Sink interface {
@@ -69,50 +71,26 @@ func New(cfg config.Config) (Sink, error) {
 
 type fw struct {
 	*os.File
-	ft  string
-	sep []byte
+	newline []byte
 
-	gz *gzip.Writer
-	zl *zlib.Writer
-}
-
-func (f *fw) Type() string {
-	return f.ft
+	w io.WriteCloser
 }
 
 func (f *fw) Write(b []byte) (int, error) {
-	if strings.HasPrefix(f.ft, "text") {
-		b = append(b, f.sep...)
+	if f.newline != nil {
+		b = append(b, f.newline...)
 	}
 
-	switch f.ft {
-	case "gzip":
-		fallthrough
-	case "text_gzip":
-		return f.gz.Write(b)
-	case "zlib":
-		fallthrough
-	case "text_zlib":
-		return f.gz.Write(b)
-	case "text":
-		fallthrough
-	default:
-		return f.File.Write(b)
+	if f.w != nil {
+		return f.w.Write(b)
 	}
+
+	return f.File.Write(b)
 }
 
 func (f *fw) Close() error {
-	switch f.ft {
-	case "gzip":
-		fallthrough
-	case "text_gzip":
-		if err := f.gz.Close(); err != nil {
-			return err
-		}
-	case "zlib":
-		fallthrough
-	case "text_zlib":
-		if err := f.zl.Close(); err != nil {
+	if f.w != nil {
+		if err := f.w.Close(); err != nil {
 			return err
 		}
 	}
@@ -124,28 +102,38 @@ func (f *fw) Close() error {
 	return nil
 }
 
-func NewFileWrapper(f *os.File, fmt config.Config) *fw {
-	var sep []byte
+func NewFileWrapper(f *os.File, fmt config.Config, cmp config.Config) (*fw, error) {
+	var newline []byte
 	switch runtime.GOOS {
 	case "windows":
-		sep = []byte("\r\n")
+		newline = []byte("\r\n")
 	default:
-		sep = []byte("\n")
+		newline = []byte("\n")
 	}
 
+	// if the file format is not text-based, then newline is unused.
+	// if a file format uses a specific compression, then it should
+	// be configured and returned in this switch.
 	switch fmt.Type {
+	case "data":
+		newline = nil
+	}
+
+	switch cmp.Type {
 	case "gzip":
-		fallthrough
-	case "text_gzip":
-		return &fw{f, fmt.Type, sep, gzip.NewWriter(f), nil}
-	case "zlib":
-		fallthrough
-	case "text_zlib":
-		return &fw{f, fmt.Type, sep, nil, zlib.NewWriter(f)}
-	case "text":
-		return &fw{f, fmt.Type, sep, nil, nil}
+		return &fw{f, newline, gzip.NewWriter(f)}, nil
+	case "snappy":
+		return &fw{f, newline, snappy.NewBufferedWriter(f)}, nil
+	case "zstd":
+		// TODO: add settings support
+		z, err := zstd.NewWriter(f)
+		if err != nil {
+			return nil, err
+		}
+
+		return &fw{f, newline, z}, nil
 	default:
-		return &fw{f, "data", sep, nil, nil}
+		return &fw{f, newline, nil}, nil
 	}
 }
 
@@ -184,13 +172,14 @@ type filePath struct {
 	UUID bool `json:"uuid"`
 	// Extension appends a file extension to the filename.
 	//
-	// This is optional and has no default.
-	Extension string `json:"extension"`
+	// This is optional and defaults to false.
+	Extension bool `json:"extension"`
 }
 
 // New constructs a file path using the pattern
-// [prefix]/[time_format]/[uuid]/[suffix][.extension], where each field is optional
-// and builds on the previous field.
+// [prefix]/[time_format]/[uuid]/[suffix], where each field is optional
+// and builds on the previous field. The caller is responsible for
+// creating an OS agnostic file path (filepath.FromSlash is recommended).
 //
 // If only one field is set, then this constructs a filename,
 // otherwise it constructs a file path.
@@ -198,13 +187,6 @@ type filePath struct {
 // If the struct is empty, then this returns an empty string. The caller is
 // responsible for creating a default file path if needed.
 func (p filePath) New() string {
-	// if all of these fields are empty, then a valid file path cannot be constructed.
-	if p.Prefix == "" && p.PrefixKey == "" &&
-		p.Suffix == "" && p.SuffixKey == "" &&
-		p.TimeFormat == "" && !p.UUID {
-		return ""
-	}
-
 	// temporarily storing values for the file path in an array allows for any
 	// individual field to be used as the filename if no other fields are set.
 	arr := []string{}
@@ -242,10 +224,32 @@ func (p filePath) New() string {
 		arr = append(arr, p.Suffix)
 	}
 
-	// if only one field is set, then this is only a filename, otherwise
-	// it is a file path.
-	path := strings.Join(arr, "/")
+	// if only one field is set, then this returns a filename, otherwise
+	// it returns a file path.
+	return path.Join(arr...)
+}
 
-	// this works regardless of whether an extension is set.
-	return path + p.Extension
+// NewFileExtension returns a file extension based on file format and
+// compression settings. The file extensions constructed by this function
+// match this regular expression: `(\.json|\.txt)?(\.gz|\.zst)?`.
+func NewFileExtension(fmt config.Config, cmp config.Config) (ext string) {
+	switch fmt.Type {
+	case "data":
+		break
+	case "json":
+		ext = ".json"
+	case "text":
+		ext = ".txt"
+	}
+
+	switch cmp.Type {
+	case "gzip":
+		ext += ".gz"
+	case "snappy":
+		break
+	case "zstd":
+		ext += ".zst"
+	}
+
+	return ext
 }

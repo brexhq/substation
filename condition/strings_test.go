@@ -171,6 +171,56 @@ var stringsTests = []struct {
 		[]byte(``),
 		true,
 	},
+	{
+		"pass",
+		inspStrings{
+			Options: inspStringsOptions{
+				Type:       "greater_than",
+				Expression: "a",
+			},
+		},
+		[]byte("b"),
+		true,
+	},
+	{
+		"pass",
+		inspStrings{
+			Options: inspStringsOptions{
+				Type:       "less_than",
+				Expression: "c",
+			},
+		},
+		[]byte("b"),
+		true,
+	},
+	{
+		"pass",
+		inspStrings{
+			condition: condition{
+				Key: "a",
+			},
+			Options: inspStringsOptions{
+				Type:       "greater_than",
+				Expression: "2022-01-01T00:00:00Z",
+			},
+		},
+		[]byte(`{"a":"2023-01-01T00:00:00Z"}`),
+		true,
+	},
+	{
+		"pass",
+		inspStrings{
+			condition: condition{
+				Key: "a",
+			},
+			Options: inspStringsOptions{
+				Type:       "less_than",
+				Expression: "2024-01",
+			},
+		},
+		[]byte(`{"a":"2023-01-01T00:00:00Z"}`),
+		true,
+	},
 }
 
 func TestStrings(t *testing.T) {

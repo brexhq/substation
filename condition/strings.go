@@ -29,6 +29,10 @@ type inspStringsOptions struct {
 	// - starts_with
 	//
 	// - ends_with
+	//
+	// - greater_than
+	//
+	// - less_than
 	Type string `json:"type"`
 	// Expression is a substring used during inspection.
 	Expression string `json:"expression"`
@@ -59,6 +63,10 @@ func (c inspStrings) Inspect(ctx context.Context, capsule config.Capsule) (outpu
 		matched = strings.HasPrefix(check, c.Options.Expression)
 	case "ends_with":
 		matched = strings.HasSuffix(check, c.Options.Expression)
+	case "greater_than":
+		matched = strings.Compare(check, c.Options.Expression) > 0
+	case "less_than":
+		matched = strings.Compare(check, c.Options.Expression) < 0
 	default:
 		return false, fmt.Errorf("condition: strings: type %s: %v", c.Options.Type, errors.ErrInvalidType)
 	}

@@ -558,7 +558,7 @@
         local s = 
           // if prefix or prefix_key exists, then the legacy object name style is used
           // if path exists, then the new object name style is used
-          // TODO: remove legacy support in v1.0.0
+          // TODO(v1.0.0)
           if ( std.objectHas(settings, 'prefix') || std.objectHas(settings, 'prefix_key') ) || std.objectHas(settings, 'file_path')
           then std.mergePatch($.defaults.sink.aws_s3.settings, settings)
           // default settings for the new object name style

@@ -17,6 +17,15 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
+const (
+	// errEmptyPrefix is returned when a file-based sink is configured with a
+	// prefix key, but the key is not found in the object or the key is empty.
+	errEmptyPrefix = errors.Error("empty prefix string")
+	// errEmptySuffix is returned when a file-based sink is configured with a
+	// suffix key, but the key is not found in the object or the key is empty.
+	errEmptySuffix = errors.Error("empty suffix string")
+)
+
 type Sink interface {
 	Send(context.Context, *config.Channel) error
 }
@@ -71,9 +80,8 @@ func New(cfg config.Config) (Sink, error) {
 
 type fw struct {
 	*os.File
+	w       io.WriteCloser
 	newline []byte
-
-	w io.WriteCloser
 }
 
 func (f *fw) Write(b []byte) (int, error) {
@@ -102,7 +110,7 @@ func (f *fw) Close() error {
 	return nil
 }
 
-func NewFileWrapper(f *os.File, fmt config.Config, cmp config.Config) (*fw, error) {
+func NewFileWrapper(f *os.File, format config.Config, compression config.Config) (*fw, error) {
 	var newline []byte
 	switch runtime.GOOS {
 	case "windows":
@@ -114,16 +122,16 @@ func NewFileWrapper(f *os.File, fmt config.Config, cmp config.Config) (*fw, erro
 	// if the file format is not text-based, then newline is unused.
 	// if a file format uses a specific compression, then it should
 	// be configured and returned in this switch.
-	switch fmt.Type {
+	switch format.Type {
 	case "data":
 		newline = nil
 	}
 
-	switch cmp.Type {
+	switch compression.Type {
 	case "gzip":
-		return &fw{f, newline, gzip.NewWriter(f)}, nil
+		return &fw{f, gzip.NewWriter(f), newline}, nil
 	case "snappy":
-		return &fw{f, newline, snappy.NewBufferedWriter(f)}, nil
+		return &fw{f, snappy.NewBufferedWriter(f), newline}, nil
 	case "zstd":
 		// TODO: add settings support
 		z, err := zstd.NewWriter(f)
@@ -131,9 +139,9 @@ func NewFileWrapper(f *os.File, fmt config.Config, cmp config.Config) (*fw, erro
 			return nil, err
 		}
 
-		return &fw{f, newline, z}, nil
+		return &fw{f, z, newline}, nil
 	default:
-		return &fw{f, newline, nil}, nil
+		return &fw{f, nil, newline}, nil
 	}
 }
 
@@ -160,8 +168,13 @@ type filePath struct {
 	// This is optional and has no default.
 	SuffixKey string `json:"suffix_key"`
 	// TimeFormat inserts a formatted datetime string into the file path.
-	// The string uses pattern-based layouts
-	// (https://gobyexample.com/procTime-formatting-parsing).
+	// Must be one of:
+	//
+	// - pattern-based layouts (https://gobyexample.com/procTime-formatting-parsing)
+	//
+	// - unix: epoch (supports fractions of a second)
+	//
+	// - unix_milli: epoch milliseconds
 	//
 	// This is optional and has no default.
 	TimeFormat string `json:"time_format"`
@@ -202,6 +215,7 @@ func (p filePath) New() string {
 	if p.TimeFormat != "" {
 		now := time.Now()
 
+		// these options mirror process/time.go
 		switch p.TimeFormat {
 		case "unix":
 			arr = append(arr, fmt.Sprintf("%d", now.Unix()))
@@ -232,8 +246,8 @@ func (p filePath) New() string {
 // NewFileExtension returns a file extension based on file format and
 // compression settings. The file extensions constructed by this function
 // match this regular expression: `(\.json|\.txt)?(\.gz|\.zst)?`.
-func NewFileExtension(fmt config.Config, cmp config.Config) (ext string) {
-	switch fmt.Type {
+func NewFileExtension(format config.Config, compression config.Config) (ext string) {
+	switch format.Type {
 	case "data":
 		break
 	case "json":
@@ -242,7 +256,7 @@ func NewFileExtension(fmt config.Config, cmp config.Config) (ext string) {
 		ext = ".txt"
 	}
 
-	switch cmp.Type {
+	switch compression.Type {
 	case "gzip":
 		ext += ".gz"
 	case "snappy":

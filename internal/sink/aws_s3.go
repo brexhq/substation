@@ -12,17 +12,7 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/s3manager"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/log"
-)
-
-const (
-	// errAWSS3EmptyPrefix is returned when the sink is configured with a prefix
-	// key, but the key is not found in the object or the key is empty.
-	errAWSS3EmptyPrefix = errors.Error("empty prefix string")
-	// errAWSS3EmptySuffix is returned when the sink is configured with a suffix
-	// key, but the key is not found in the object or the key is empty.
-	errAWSS3EmptySuffix = errors.Error("empty suffix string")
 )
 
 var s3uploader s3manager.UploaderAPI
@@ -133,7 +123,7 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 			if s.FilePath.PrefixKey != "" {
 				prefix := capsule.Get(s.FilePath.PrefixKey).String()
 				if prefix == "" {
-					return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, object, errAWSS3EmptyPrefix)
+					return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, object, errEmptyPrefix)
 				}
 
 				innerObject = strings.Replace(innerObject, "${PATH_PREFIX}", prefix, 1)
@@ -141,7 +131,7 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 			if s.FilePath.SuffixKey != "" {
 				suffix := capsule.Get(s.FilePath.SuffixKey).String()
 				if suffix == "" {
-					return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, object, errAWSS3EmptySuffix)
+					return fmt.Errorf("sink: aws_s3: bucket %s object %s: %v", s.Bucket, object, errEmptySuffix)
 				}
 
 				innerObject = strings.Replace(innerObject, "${PATH_SUFFIX}", suffix, 1)

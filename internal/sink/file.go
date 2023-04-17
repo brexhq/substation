@@ -12,27 +12,13 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/log"
-)
-
-const (
-	// errFileEmptyPrefix is returned when the sink is configured with a prefix
-	// key, but the key is not found in the object or the key is empty.
-	errFileEmptyPrefix = errors.Error("empty prefix string")
-	// errFileEmptySuffix is returned when the sink is configured with a suffix
-	// key, but the key is not found in the object or the key is empty.
-	errFileEmptySuffix = errors.Error("empty suffix string")
 )
 
 // file sinks data as files to local disk.
 type sinkFile struct {
 	// FilePath determines how the name of the uploaded object is constructed.
-	// One of these formats is constructed depending on the configuration:
-	//
-	// - prefix/date_format/uuid.extension
-	//
-	// - prefix/date_format/uuid/suffix.extension
+	// See filePath.New for more information.
 	FilePath filePath `json:"file_path"`
 	// FileFormat determines the format of the file. These file formats are
 	// supported:
@@ -116,7 +102,7 @@ func (s *sinkFile) Send(ctx context.Context, ch *config.Channel) error {
 			if s.FilePath.PrefixKey != "" {
 				prefix := capsule.Get(s.FilePath.PrefixKey).String()
 				if prefix == "" {
-					return fmt.Errorf("sink: file: %v", errFileEmptyPrefix)
+					return fmt.Errorf("sink: file: %v", errEmptyPrefix)
 				}
 
 				innerPath = strings.Replace(innerPath, "${PATH_PREFIX}", prefix, 1)
@@ -124,7 +110,7 @@ func (s *sinkFile) Send(ctx context.Context, ch *config.Channel) error {
 			if s.FilePath.SuffixKey != "" {
 				suffix := capsule.Get(s.FilePath.SuffixKey).String()
 				if suffix == "" {
-					return fmt.Errorf("sink: file: %v", errFileEmptySuffix)
+					return fmt.Errorf("sink: file: %v", errEmptySuffix)
 				}
 
 				innerPath = strings.Replace(innerPath, "${PATH_SUFFIX}", suffix, 1)

@@ -53,6 +53,8 @@ func newInspStrings(_ context.Context, cfg config.Config) (c inspStrings, err er
 			"contains",
 			"starts_with",
 			"ends_with",
+			"greater_than",
+			"less_than",
 		},
 		c.Options.Type) {
 		return inspStrings{}, fmt.Errorf("condition: strings: type %q: %v", c.Options.Type, errors.ErrInvalidOption)

@@ -205,10 +205,13 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		inspStrings{
-			Options: inspStringsOptions{
-				Type:       "greater_than",
-				Expression: "a",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":       "greater_than",
+					"expression": "a",
+				},
 			},
 		},
 		[]byte("b"),
@@ -216,10 +219,13 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		inspStrings{
-			Options: inspStringsOptions{
-				Type:       "less_than",
-				Expression: "c",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":       "less_than",
+					"expression": "c",
+				},
 			},
 		},
 		[]byte("b"),
@@ -227,13 +233,14 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		inspStrings{
-			condition: condition{
-				Key: "a",
-			},
-			Options: inspStringsOptions{
-				Type:       "greater_than",
-				Expression: "2022-01-01T00:00:00Z",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"key": "a",
+				"options": map[string]interface{}{
+					"type":       "greater_than",
+					"expression": "2022-01-01T00:00:00Z",
+				},
 			},
 		},
 		[]byte(`{"a":"2023-01-01T00:00:00Z"}`),
@@ -241,13 +248,14 @@ var stringsTests = []struct {
 	},
 	{
 		"pass",
-		inspStrings{
-			condition: condition{
-				Key: "a",
-			},
-			Options: inspStringsOptions{
-				Type:       "less_than",
-				Expression: "2024-01",
+		config.Config{
+			Type: "strings",
+			Settings: map[string]interface{}{
+				"key": "a",
+				"options": map[string]interface{}{
+					"type":       "less_than",
+					"expression": "2024-01",
+				},
 			},
 		},
 		[]byte(`{"a":"2023-01-01T00:00:00Z"}`),

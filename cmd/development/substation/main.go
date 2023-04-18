@@ -186,22 +186,37 @@ func mutateSink(cfg io.Reader, forceSink string) (*bytes.Reader, error) {
 		return nil, fmt.Errorf("run: %v", err)
 	}
 
-	var r *bytes.Reader
+	// removes the configured sink
+	oldConfig, err = json.Delete(oldConfig, "sink")
+	if err != nil {
+		return nil, fmt.Errorf("run: %v", err)
+	}
+
+	var newSink string
 
 	switch {
-	case forceSink == "stdout":
-		newConfig, err := json.Set(oldConfig, "sink.type", forceSink)
-		if err != nil {
-			return nil, fmt.Errorf("run: %v", err)
-		}
-		r = bytes.NewReader(newConfig)
-	case strings.HasPrefix(forceSink, "http://"):
-		return nil, fmt.Errorf("-force-sink http://* not yet implemented")
+	case forceSink == "stdout" || forceSink == "file":
+		newSink = fmt.Sprintf(`{"type": "%s"}`, forceSink)
+	case strings.HasPrefix(forceSink, "file://"):
+		newSink = fmt.Sprintf(
+			`{"type": "file", "settings": {"file_path": {"suffix": "%s"}}}`,
+			strings.TrimPrefix(forceSink, "file://"),
+		)
+	case strings.HasPrefix(forceSink, "http://") || strings.HasPrefix(forceSink, "https://"):
+		newSink = fmt.Sprintf(
+			`{"type": "http", "settings": {"url": "%s"}}`,
+			forceSink,
+		)
 	case strings.HasPrefix(forceSink, "s3://"):
 		return nil, fmt.Errorf("-force-sink s3://* not yet implemented")
 	default:
 		return nil, fmt.Errorf("%q not supported for -force-sink", forceSink)
 	}
 
-	return r, nil
+	newConfig, err := json.Set(oldConfig, "sink", newSink)
+	if err != nil {
+		return nil, fmt.Errorf("run: %v", err)
+	}
+
+	return bytes.NewReader(newConfig), nil
 }

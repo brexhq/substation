@@ -146,10 +146,15 @@
         settings: { stream: null },
       },
       aws_s3: {
-        settings: { bucket: null, prefix: null, prefix_key: null },
+        // TODO(v1.0.0): remove legacy prefix and prefix_key
+        // TODO(v1.0.0): set format and compression defaults
+        settings: { bucket: null, prefix: null, prefix_key: null, file_path: null, file_format: null, file_compression: null },
       },
       aws_sqs: {
         settings: { queue: null },
+      },
+      file: {
+        settings: { file_path: null, file_format: { type: 'json' }, file_compression: { type: 'gzip' } },
       },
       grpc: {
         settings: { server: null, timeout: null, certificate: null },
@@ -550,8 +555,16 @@
         settings: s,
       },
       aws_s3(settings=$.defaults.sink.aws_s3.settings): {
-        local s = std.mergePatch($.defaults.sink.aws_s3.settings, settings),
-
+        local s = 
+          // if prefix or prefix_key exists, then the legacy object name style is used
+          // if path exists, then the new object name style is used
+          // TODO(v1.0.0)
+          if ( std.objectHas(settings, 'prefix') || std.objectHas(settings, 'prefix_key') ) || std.objectHas(settings, 'file_path')
+          then std.mergePatch($.defaults.sink.aws_s3.settings, settings)
+          // default settings for the new object name style
+          // this provides back compatibility with v0.8.4
+          else std.mergePatch({file_path: { time_format: '2006/01/02', uuid: true, extension: true }}, settings),
+        
         type: 'aws_s3',
         settings: s,
       },
@@ -559,6 +572,12 @@
         local s = std.mergePatch($.defaults.sink.aws_sqs.settings, settings),
 
         type: 'aws_sqs',
+        settings: s,
+      },
+      file(settings=$.defaults.sink.file.settings): {
+        local s = std.mergePatch($.defaults.sink.file.settings, settings),
+
+        type: 'file',
         settings: s,
       },
       grpc(settings=$.defaults.sink.grpc.settings): {

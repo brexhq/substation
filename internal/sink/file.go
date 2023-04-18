@@ -17,7 +17,7 @@ import (
 
 // file sinks data as files to local disk.
 type sinkFile struct {
-	// FilePath determines how the name of the uploaded object is constructed.
+	// FilePath determines how the name of the file is constructed.
 	// See filePath.New for more information.
 	FilePath filePath `json:"file_path"`
 	// FileFormat determines the format of the file. These file formats are

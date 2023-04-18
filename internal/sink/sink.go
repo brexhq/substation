@@ -103,11 +103,7 @@ func (f *fw) Close() error {
 		}
 	}
 
-	if err := f.File.Close(); err != nil {
-		return err
-	}
-
-	return nil
+	return f.File.Close()
 }
 
 func NewFileWrapper(f *os.File, format config.Config, compression config.Config) (*fw, error) {

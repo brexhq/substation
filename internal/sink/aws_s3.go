@@ -32,11 +32,7 @@ type sinkAWSS3 struct {
 	// This is optional and has no default.
 	PrefixKey string `json:"prefix_key"`
 	// FilePath determines how the name of the uploaded object is constructed.
-	// One of these formats is constructed depending on the configuration:
-	//
-	// - prefix/date_format/uuid.extension
-	//
-	// - prefix/date_format/uuid/suffix.extension
+	// See filePath.New for more information.
 	FilePath filePath `json:"file_path"`
 	// FileFormat determines the format of the file. These file formats are
 	// supported:
@@ -47,11 +43,12 @@ type sinkAWSS3 struct {
 	//
 	// - text
 	//
+	// If the format type does not have a common file extension, then
+	// no extension is added to the file name.
+	//
 	// Defaults to json.
 	FileFormat config.Config `json:"file_format"`
 	// FileCompression determines the compression type applied to the file.
-	// These compression types are supported:
-	//
 	// These compression types are supported:
 	//
 	// - gzip (https://en.wikipedia.org/wiki/Gzip)
@@ -59,6 +56,9 @@ type sinkAWSS3 struct {
 	// - snappy (https://en.wikipedia.org/wiki/Snappy_(compression))
 	//
 	// - zstd (https://en.wikipedia.org/wiki/Zstd)
+	//
+	// If the compression type does not have a common file extension, then
+	// no extension is added to the file name.
 	//
 	// Defaults to gzip.
 	FileCompression config.Config `json:"file_compression"`
@@ -82,7 +82,8 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 	object := s.FilePath.New()
 	if object == "" {
 		object = path.Join(
-			now.Format("2006"), now.Format("01"), now.Format("02"), uuid.New().String(),
+			now.Format("2006"), now.Format("01"), now.Format("02"),
+			uuid.New().String(),
 		) + extension
 	} else if s.FilePath.Extension {
 		object += extension
@@ -90,7 +91,8 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 
 	// provides backward compatibility for v0.8.4
 	// TODO(v1.0.0): remove this
-	if s.FileCompression.Type == "" && s.FileFormat.Type == "" {
+	if s.FileCompression.Type == "" && s.FileFormat.Type == "" &&
+		s.FilePath.New() == "" {
 		// TODO: move to constructor
 		if s.FileFormat.Type == "" {
 			s.FileFormat.Type = "json"
@@ -138,7 +140,7 @@ func (s *sinkAWSS3) Send(ctx context.Context, ch *config.Channel) error {
 			}
 
 			// TODO(v1.0.0): remove this
-			if s.PrefixKey != "" && s.FileCompression.Type == "" && s.FileFormat.Type == "" {
+			if s.PrefixKey != "" && s.FilePath.New() == "" {
 				prefix := capsule.Get(s.PrefixKey).String()
 				innerObject = path.Join(prefix, object)
 			}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/kinesis"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/log"
 )
 
@@ -39,8 +40,21 @@ type sinkAWSKinesis struct {
 	ShardRedistribution bool `json:"shard_redistribution"`
 }
 
+// Create a new AWS Kinesis sink.
+func newSinkAWSKinesis(_ context.Context, cfg config.Config) (s sinkAWSKinesis, err error) {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
+		return sinkAWSKinesis{}, err
+	}
+
+	if s.Stream == "" {
+		return sinkAWSKinesis{}, fmt.Errorf("sink: aws_kinesis: stream stream: %v", errors.ErrMissingRequiredOption)
+	}
+
+	return s, nil
+}
+
 // Send sinks a channel of encapsulated data with the sink.
-func (s *sinkAWSKinesis) Send(ctx context.Context, ch *config.Channel) error {
+func (s sinkAWSKinesis) Send(ctx context.Context, ch *config.Channel) error {
 	if !kinesisAPI.IsEnabled() {
 		kinesisAPI.Setup()
 	}

@@ -48,34 +48,11 @@ func Get(cfg config.Config) (Storer, error) {
 		return store, nil
 	}
 
-	switch t := cfg.Type; t {
-	case "aws_dynamodb":
-		var c kvAWSDynamoDB
-		_ = config.Decode(cfg.Settings, &c)
-		m[sig] = &c
-	case "csv_file":
-		var c kvCSVFile
-		_ = config.Decode(cfg.Settings, &c)
-		m[sig] = &c
-	case "json_file":
-		var c kvJSONFile
-		_ = config.Decode(cfg.Settings, &c)
-		m[sig] = &c
-	case "memory":
-		var c kvMemory
-		_ = config.Decode(cfg.Settings, &c)
-		m[sig] = &c
-	case "mmdb":
-		var c kvMMDB
-		_ = config.Decode(cfg.Settings, &c)
-		m[sig] = &c
-	case "text_file":
-		var c kvTextFile
-		_ = config.Decode(cfg.Settings, &c)
-		m[sig] = &c
-	default:
-		return nil, fmt.Errorf("kv_store: %s: %v", t, errors.ErrInvalidFactoryInput)
+	storer, err := New(cfg)
+	if err != nil {
+		return nil, err
 	}
+	m[sig] = storer
 
 	return m[sig], nil
 }
@@ -84,29 +61,17 @@ func Get(cfg config.Config) (Storer, error) {
 func New(cfg config.Config) (Storer, error) {
 	switch t := cfg.Type; t {
 	case "aws_dynamodb":
-		var c kvAWSDynamoDB
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		return newKVAWSDyanmoDB(cfg)
 	case "csv_file":
-		var c kvCSVFile
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		return newKVCSVFile(cfg)
 	case "json_file":
-		var c kvJSONFile
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		return newKVJSONFile(cfg)
 	case "memory":
-		var c kvMemory
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		return newKVMemory(cfg)
 	case "mmdb":
-		var c kvMMDB
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		return newKVMMDB(cfg)
 	case "text_file":
-		var c kvTextFile
-		_ = config.Decode(cfg.Settings, &c)
-		return &c, nil
+		return newKVTextFile(cfg)
 	default:
 		return nil, fmt.Errorf("kv_store: %s: %v", t, errors.ErrInvalidFactoryInput)
 	}

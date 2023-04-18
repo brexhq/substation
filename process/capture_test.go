@@ -8,23 +8,29 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procCapture{}
+	_ Batcher = procCapture{}
+)
+
 var captureTests = []struct {
 	name     string
-	proc     procCapture
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON find",
-		procCapture{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procCaptureOptions{
-				Expression: "^([^@]*)@.*$",
-				Type:       "find",
+		config.Config{
+			Type: "capture",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type":       "find",
+					"expression": "^([^@]*)@.*$",
+				},
 			},
 		},
 		[]byte(`{"foo":"bar@qux.corge"}`),
@@ -33,15 +39,16 @@ var captureTests = []struct {
 	},
 	{
 		"JSON find_all",
-		procCapture{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procCaptureOptions{
-				Expression: "(.{1})",
-				Type:       "find_all",
-				Count:      3,
+		config.Config{
+			Type: "capture",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type":       "find_all",
+					"count":      3,
+					"expression": "(.{1})",
+				},
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -50,10 +57,13 @@ var captureTests = []struct {
 	},
 	{
 		"data",
-		procCapture{
-			Options: procCaptureOptions{
-				Expression: "^([^@]*)@.*$",
-				Type:       "find",
+		config.Config{
+			Type: "capture",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":       "find",
+					"expression": "^([^@]*)@.*$",
+				},
 			},
 		},
 		[]byte(`bar@qux.corge`),
@@ -62,10 +72,13 @@ var captureTests = []struct {
 	},
 	{
 		"named_group",
-		procCapture{
-			Options: procCaptureOptions{
-				Type:       "named_group",
-				Expression: "(?P<foo>[a-zA-Z]+) (?P<qux>[a-zA-Z]+)",
+		config.Config{
+			Type: "capture",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":       "named_group",
+					"expression": "(?P<foo>[a-zA-Z]+) (?P<qux>[a-zA-Z]+)",
+				},
 			},
 		},
 		[]byte(`bar quux`),
@@ -74,14 +87,15 @@ var captureTests = []struct {
 	},
 	{
 		"named_group",
-		procCapture{
-			process: process{
-				Key:    "capture",
-				SetKey: "capture",
-			},
-			Options: procCaptureOptions{
-				Type:       "named_group",
-				Expression: "(?P<foo>[a-zA-Z]+) (?P<qux>[a-zA-Z]+)",
+		config.Config{
+			Type: "capture",
+			Settings: map[string]interface{}{
+				"key":     "capture",
+				"set_key": "capture",
+				"options": map[string]interface{}{
+					"type":       "named_group",
+					"expression": "(?P<foo>[a-zA-Z]+) (?P<qux>[a-zA-Z]+)",
+				},
 			},
 		},
 		[]byte(`{"capture":"bar quux"}`),
@@ -95,19 +109,23 @@ func TestCapture(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range captureTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			proc, err := newProcCapture(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		capsule.SetData(test.test)
+			capsule.SetData(test.test)
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -121,10 +139,15 @@ func benchmarkCapture(b *testing.B, applier procCapture, test config.Capsule) {
 func BenchmarkCapture(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range captureTests {
+		proc, err := newProcCapture(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkCapture(b, test.proc, capsule)
+				benchmarkCapture(b, proc, capsule)
 			},
 		)
 	}

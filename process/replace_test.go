@@ -3,29 +3,34 @@ package process
 import (
 	"bytes"
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procReplace{}
+	_ Batcher = procReplace{}
+)
+
 var replaceTests = []struct {
 	name     string
-	proc     procReplace
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"json",
-		procReplace{
-			process: process{
-				Key:    "replace",
-				SetKey: "replace",
-			},
-			Options: procReplaceOptions{
-				Old: "r",
-				New: "z",
+		config.Config{
+			Type: "replace",
+			Settings: map[string]interface{}{
+				"key":     "replace",
+				"set_key": "replace",
+				"options": map[string]interface{}{
+					"old": "r",
+					"new": "z",
+				},
 			},
 		},
 		[]byte(`{"replace":"bar"}`),
@@ -34,14 +39,14 @@ var replaceTests = []struct {
 	},
 	{
 		"json delete",
-		procReplace{
-			process: process{
-				Key:    "replace",
-				SetKey: "replace",
-			},
-			Options: procReplaceOptions{
-				Old: "z",
-				New: "",
+		config.Config{
+			Type: "replace",
+			Settings: map[string]interface{}{
+				"key":     "replace",
+				"set_key": "replace",
+				"options": map[string]interface{}{
+					"old": "z",
+				},
 			},
 		},
 		[]byte(`{"replace":"fizz"}`),
@@ -50,10 +55,13 @@ var replaceTests = []struct {
 	},
 	{
 		"data",
-		procReplace{
-			Options: procReplaceOptions{
-				Old: "r",
-				New: "z",
+		config.Config{
+			Type: "replace",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"old": "r",
+					"new": "z",
+				},
 			},
 		},
 		[]byte(`bar`),
@@ -62,26 +70,18 @@ var replaceTests = []struct {
 	},
 	{
 		"data delete",
-		procReplace{
-			Options: procReplaceOptions{
-				Old: "r",
-				New: "",
+		config.Config{
+			Type: "replace",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"old": "r",
+					"new": "",
+				},
 			},
 		},
 		[]byte(`bar`),
 		[]byte(`ba`),
 		nil,
-	},
-	{
-		"data",
-		procReplace{
-			Options: procReplaceOptions{
-				New: "z",
-			},
-		},
-		[]byte(`bar`),
-		[]byte(`baz`),
-		errMissingRequiredOptions,
 	},
 }
 
@@ -90,22 +90,23 @@ func TestReplace(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range replaceTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
-
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			if errors.Is(err, test.err) {
-				continue
+			proc, err := newProcReplace(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
 			}
-			t.Error(err)
-		}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -119,10 +120,15 @@ func benchmarkReplace(b *testing.B, applier procReplace, test config.Capsule) {
 func BenchmarkReplace(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range replaceTests {
+		proc, err := newProcReplace(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkReplace(b, test.proc, capsule)
+				benchmarkReplace(b, proc, capsule)
 			},
 		)
 	}

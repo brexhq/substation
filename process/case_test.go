@@ -8,22 +8,28 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procCase{}
+	_ Batcher = procCase{}
+)
+
 var caseTests = []struct {
 	name     string
-	proc     procCase
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON lower",
-		procCase{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procCaseOptions{
-				Type: "lower",
+		config.Config{
+			Type: "case",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "lower",
+				},
 			},
 		},
 		[]byte(`{"foo":"BAR"}`),
@@ -32,13 +38,14 @@ var caseTests = []struct {
 	},
 	{
 		"JSON upper",
-		procCase{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procCaseOptions{
-				Type: "upper",
+		config.Config{
+			Type: "case",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "upper",
+				},
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -47,13 +54,14 @@ var caseTests = []struct {
 	},
 	{
 		"JSON snake",
-		procCase{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procCaseOptions{
-				Type: "snake",
+		config.Config{
+			Type: "case",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"type": "snake",
+				},
 			},
 		},
 		[]byte(`{"foo":"AbC"})`),
@@ -67,19 +75,23 @@ func TestCase(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range caseTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcCase(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -93,10 +105,15 @@ func benchmarkCase(b *testing.B, applier procCase, test config.Capsule) {
 func BenchmarkCase(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range caseTests {
+		proc, err := newProcCase(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkCase(b, test.proc, capsule)
+				benchmarkCase(b, proc, capsule)
 			},
 		)
 	}

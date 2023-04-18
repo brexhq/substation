@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
 
 // replace processes data by replacing characters in strings.
@@ -28,6 +30,29 @@ type procReplaceOptions struct {
 	Count int `json:"count"`
 }
 
+// Create a new replace processor.
+func newProcReplace(ctx context.Context, cfg config.Config) (p procReplace, err error) {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
+		return procReplace{}, err
+	}
+
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
+	if err != nil {
+		return procReplace{}, err
+	}
+
+	if p.Options.Old == "" {
+		return procReplace{}, fmt.Errorf("process: replace: %v old", errors.ErrMissingRequiredOption)
+	}
+
+	// default to procReplace all
+	if p.Options.Count == 0 {
+		p.Options.Count = -1
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procReplace) String() string {
 	return toString(p)
@@ -41,21 +66,11 @@ func (p procReplace) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procReplace) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procReplace) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Old == "" {
-		return capsule, fmt.Errorf("process: replace: options %+v: %w", p.Options, errMissingRequiredOptions)
-	}
-
-	// default to procReplace all
-	if p.Options.Count == 0 {
-		p.Options.Count = -1
-	}
-
 	// JSON processing
 	if p.Key != "" && p.SetKey != "" {
 		result := capsule.Get(p.Key).String()

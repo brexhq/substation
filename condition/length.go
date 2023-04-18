@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"unicode/utf8"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 )
@@ -41,6 +43,39 @@ type inspLengthOptions struct {
 	//
 	// This is optional and defaults to byte.
 	Measurement string `json:"measurement"`
+}
+
+// Creates a new length inspector.
+func newInspLength(_ context.Context, cfg config.Config) (c inspLength, err error) {
+	if err = config.Decode(cfg.Settings, &c); err != nil {
+		return inspLength{}, err
+	}
+
+	//  validate option.type
+	if !slices.Contains(
+		[]string{
+			"equals",
+			"greater_than",
+			"less_than",
+		},
+		c.Options.Type) {
+		return inspLength{}, fmt.Errorf("condition: length: type %q: %v", c.Options.Type, errors.ErrInvalidOption)
+	}
+
+	if c.Options.Measurement == "" {
+		c.Options.Measurement = "byte"
+	}
+	//  validate option.type
+	if !slices.Contains(
+		[]string{
+			"byte",
+			"rune",
+		},
+		c.Options.Measurement) {
+		return inspLength{}, fmt.Errorf("condition: length: measurement %q invalid: %v", c.Options.Measurement, errors.ErrInvalidOption)
+	}
+
+	return c, nil
 }
 
 func (c inspLength) String() string {
@@ -90,7 +125,7 @@ func (c inspLength) match(length int) (bool, error) {
 			matched = true
 		}
 	default:
-		return false, fmt.Errorf("condition: length: type %s: %v", c.Options.Type, errors.ErrInvalidType)
+		return false, fmt.Errorf("condition: length: type %s: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	if c.Negate {

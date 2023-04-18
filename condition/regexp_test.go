@@ -7,17 +7,22 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var _ Inspector = inspRegExp{}
+
 var regExpTests = []struct {
-	name      string
-	inspector inspRegExp
-	test      []byte
-	expected  bool
+	name     string
+	cfg      config.Config
+	test     []byte
+	expected bool
 }{
 	{
 		"pass",
-		inspRegExp{
-			Options: inspRegExpOptions{
-				Expression: "^Test",
+		config.Config{
+			Type: "regexp",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"expression": "^Test",
+				},
 			},
 		},
 		[]byte("Test"),
@@ -25,9 +30,12 @@ var regExpTests = []struct {
 	},
 	{
 		"fail",
-		inspRegExp{
-			Options: inspRegExpOptions{
-				Expression: "^Test",
+		config.Config{
+			Type: "regexp",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"expression": "^Test",
+				},
 			},
 		},
 		[]byte("-Test"),
@@ -35,12 +43,13 @@ var regExpTests = []struct {
 	},
 	{
 		"!fail",
-		inspRegExp{
-			condition: condition{
-				Negate: true,
-			},
-			Options: inspRegExpOptions{
-				Expression: "^Test",
+		config.Config{
+			Type: "regexp",
+			Settings: map[string]interface{}{
+				"negate": true,
+				"options": map[string]interface{}{
+					"expression": "^Test",
+				},
 			},
 		},
 		[]byte("ABC"),
@@ -48,12 +57,13 @@ var regExpTests = []struct {
 	},
 	{
 		"!pass",
-		inspRegExp{
-			condition: condition{
-				Negate: true,
-			},
-			Options: inspRegExpOptions{
-				Expression: "ABC",
+		config.Config{
+			Type: "regexp",
+			Settings: map[string]interface{}{
+				"negate": true,
+				"options": map[string]interface{}{
+					"expression": "ABC",
+				},
 			},
 		},
 		[]byte("ABC"),
@@ -66,18 +76,23 @@ func TestRegExp(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range regExpTests {
-		var _ Inspector = test.inspector
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			insp, err := newInspRegExp(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		check, err := test.inspector.Inspect(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			check, err := insp.Inspect(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if test.expected != check {
-			t.Errorf("expected %v, got %v", test.expected, check)
-		}
+			if test.expected != check {
+				t.Errorf("expected %v, got %v", test.expected, check)
+			}
+		})
 	}
 }
 
@@ -91,10 +106,15 @@ func benchmarkRegExpByte(b *testing.B, inspector inspRegExp, capsule config.Caps
 func BenchmarkRegExpByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range regExpTests {
+		insp, err := newInspRegExp(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkRegExpByte(b, test.inspector, capsule)
+				benchmarkRegExpByte(b, insp, capsule)
 			},
 		)
 	}

@@ -33,8 +33,21 @@ type sinkAWSDynamoDB struct {
 	Key string `json:"key"`
 }
 
+// Create a new AWS DynamoDB sink.
+func newSinkAWSDynamoDB(_ context.Context, cfg config.Config) (s sinkAWSDynamoDB, err error) {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
+		return sinkAWSDynamoDB{}, err
+	}
+
+	if s.Table == "" {
+		return sinkAWSDynamoDB{}, fmt.Errorf("sink: aws_dynamodb: table: %v", errors.ErrMissingRequiredOption)
+	}
+
+	return s, nil
+}
+
 // Send sinks a channel of encapsulated data with the sink.
-func (s *sinkAWSDynamoDB) Send(ctx context.Context, ch *config.Channel) error {
+func (s sinkAWSDynamoDB) Send(ctx context.Context, ch *config.Channel) error {
 	if !dynamodbAPI.IsEnabled() {
 		dynamodbAPI.Setup()
 	}

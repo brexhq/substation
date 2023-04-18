@@ -8,19 +8,25 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procCopy{}
+	_ Batcher = procCopy{}
+)
+
 var copyTests = []struct {
 	name     string
-	proc     procCopy
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"JSON",
-		procCopy{
-			process: process{
-				Key:    "foo",
-				SetKey: "baz",
+		config.Config{
+			Type: "copy",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "baz",
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -29,10 +35,11 @@ var copyTests = []struct {
 	},
 	{
 		"JSON unescape",
-		procCopy{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+		config.Config{
+			Type: "copy",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
 			},
 		},
 		[]byte(`{"foo":"{\"bar\":\"baz\"}"`),
@@ -41,10 +48,11 @@ var copyTests = []struct {
 	},
 	{
 		"JSON unescape",
-		procCopy{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
+		config.Config{
+			Type: "copy",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
 			},
 		},
 		[]byte(`{"foo":"[\"bar\"]"}`),
@@ -53,9 +61,10 @@ var copyTests = []struct {
 	},
 	{
 		"from JSON",
-		procCopy{
-			process: process{
-				Key: "foo",
+		config.Config{
+			Type: "copy",
+			Settings: map[string]interface{}{
+				"key": "foo",
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -64,9 +73,10 @@ var copyTests = []struct {
 	},
 	{
 		"from JSON nested",
-		procCopy{
-			process: process{
-				Key: "foo",
+		config.Config{
+			Type: "copy",
+			Settings: map[string]interface{}{
+				"key": "foo",
 			},
 		},
 		[]byte(`{"foo":{"bar":"baz"}}`),
@@ -75,9 +85,10 @@ var copyTests = []struct {
 	},
 	{
 		"to JSON utf8",
-		procCopy{
-			process: process{
-				SetKey: "bar",
+		config.Config{
+			Type: "copy",
+			Settings: map[string]interface{}{
+				"set_key": "bar",
 			},
 		},
 		[]byte(`baz`),
@@ -86,9 +97,10 @@ var copyTests = []struct {
 	},
 	{
 		"to JSON base64",
-		procCopy{
-			process: process{
-				SetKey: "bar",
+		config.Config{
+			Type: "copy",
+			Settings: map[string]interface{}{
+				"set_key": "bar",
 			},
 		},
 		[]byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},
@@ -102,19 +114,23 @@ func TestCopy(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range copyTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcCopy(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -128,10 +144,15 @@ func benchmarkCopy(b *testing.B, applier procCopy, test config.Capsule) {
 func BenchmarkCopy(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range copyTests {
+		proc, err := newProcCopy(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkCopy(b, test.proc, capsule)
+				benchmarkCopy(b, proc, capsule)
 			},
 		)
 	}

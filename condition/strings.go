@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 )
@@ -38,6 +40,29 @@ type inspStringsOptions struct {
 	Expression string `json:"expression"`
 }
 
+// Creates a new strings inspector.
+func newInspStrings(_ context.Context, cfg config.Config) (c inspStrings, err error) {
+	if err = config.Decode(cfg.Settings, &c); err != nil {
+		return inspStrings{}, err
+	}
+
+	//  validate option.type
+	if !slices.Contains(
+		[]string{
+			"equals",
+			"contains",
+			"starts_with",
+			"ends_with",
+			"greater_than",
+			"less_than",
+		},
+		c.Options.Type) {
+		return inspStrings{}, fmt.Errorf("condition: strings: type %q: %v", c.Options.Type, errors.ErrInvalidOption)
+	}
+
+	return c, nil
+}
+
 func (c inspStrings) String() string {
 	return toString(c)
 }
@@ -68,7 +93,7 @@ func (c inspStrings) Inspect(ctx context.Context, capsule config.Capsule) (outpu
 	case "less_than":
 		matched = strings.Compare(check, c.Options.Expression) < 0
 	default:
-		return false, fmt.Errorf("condition: strings: type %s: %v", c.Options.Type, errors.ErrInvalidType)
+		return false, fmt.Errorf("condition: strings: type %s: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	if c.Negate {

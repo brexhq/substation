@@ -8,19 +8,20 @@ import (
 )
 
 var ipTests = []struct {
-	name      string
-	inspector inspIP
-	test      []byte
-	expected  bool
+	name     string
+	cfg      config.Config
+	test     []byte
+	expected bool
 }{
 	{
 		"json",
-		inspIP{
-			condition: condition{
-				Key: "ip_address",
-			},
-			Options: inspIPOptions{
-				Type: "private",
+		config.Config{
+			Type: "ip",
+			Settings: map[string]interface{}{
+				"key": "ip_address",
+				"options": map[string]interface{}{
+					"type": "private",
+				},
 			},
 		},
 		[]byte(`{"ip_address":"192.168.1.2"}`),
@@ -28,9 +29,12 @@ var ipTests = []struct {
 	},
 	{
 		"valid",
-		inspIP{
-			Options: inspIPOptions{
-				Type: "valid",
+		config.Config{
+			Type: "ip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "valid",
+				},
 			},
 		},
 		[]byte("192.168.1.2"),
@@ -38,9 +42,12 @@ var ipTests = []struct {
 	},
 	{
 		"invalid",
-		inspIP{
-			Options: inspIPOptions{
-				Type: "valid",
+		config.Config{
+			Type: "ip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "valid",
+				},
 			},
 		},
 		[]byte("foo"),
@@ -48,9 +55,12 @@ var ipTests = []struct {
 	},
 	{
 		"multicast",
-		inspIP{
-			Options: inspIPOptions{
-				Type: "multicast",
+		config.Config{
+			Type: "ip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "multicast",
+				},
 			},
 		},
 		[]byte("224.0.0.12"),
@@ -58,9 +68,12 @@ var ipTests = []struct {
 	},
 	{
 		"multicast_link_local",
-		inspIP{
-			Options: inspIPOptions{
-				Type: "multicast_link_local",
+		config.Config{
+			Type: "ip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "multicast_link_local",
+				},
 			},
 		},
 		[]byte("224.0.0.12"),
@@ -68,9 +81,12 @@ var ipTests = []struct {
 	},
 	{
 		"unicast_global",
-		inspIP{
-			Options: inspIPOptions{
-				Type: "unicast_global",
+		config.Config{
+			Type: "ip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "unicast_global",
+				},
 			},
 		},
 		[]byte("8.8.8.8"),
@@ -78,9 +94,12 @@ var ipTests = []struct {
 	},
 	{
 		"private",
-		inspIP{
-			Options: inspIPOptions{
-				Type: "private",
+		config.Config{
+			Type: "ip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "private",
+				},
 			},
 		},
 		[]byte("8.8.8.8"),
@@ -88,9 +107,12 @@ var ipTests = []struct {
 	},
 	{
 		"unicast_link_local",
-		inspIP{
-			Options: inspIPOptions{
-				Type: "unicast_link_local",
+		config.Config{
+			Type: "ip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "unicast_link_local",
+				},
 			},
 		},
 		[]byte("169.254.255.255"),
@@ -98,9 +120,12 @@ var ipTests = []struct {
 	},
 	{
 		"loopback",
-		inspIP{
-			Options: inspIPOptions{
-				Type: "loopback",
+		config.Config{
+			Type: "ip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "loopback",
+				},
 			},
 		},
 		[]byte("127.0.0.1"),
@@ -108,9 +133,12 @@ var ipTests = []struct {
 	},
 	{
 		"unspecified",
-		inspIP{
-			Options: inspIPOptions{
-				Type: "unspecified",
+		config.Config{
+			Type: "ip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type": "unspecified",
+				},
 			},
 		},
 		[]byte("0.0.0.0"),
@@ -123,18 +151,23 @@ func TestIP(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range ipTests {
-		var _ Inspector = test.inspector
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			insp, err := newInspIP(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		check, err := test.inspector.Inspect(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			check, err := insp.Inspect(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if test.expected != check {
-			t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
-		}
+			if test.expected != check {
+				t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
+			}
+		})
 	}
 }
 
@@ -148,10 +181,15 @@ func benchmarkIPByte(b *testing.B, inspector inspIP, capsule config.Capsule) {
 func BenchmarkIPByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range ipTests {
+		insp, err := newInspIP(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkIPByte(b, test.inspector, capsule)
+				benchmarkIPByte(b, insp, capsule)
 			},
 		)
 	}

@@ -17,6 +17,10 @@ type procAWSDynamoDB struct {
 
 type procAWSDynamoDBOptions struct{}
 
+func newProcAWSDynamoDB(ctx context.Context, cfg config.Config) (p procAWSDynamoDB, err error) {
+	return procAWSDynamoDB{}, fmt.Errorf("process: aws_dynamodb: %v", syscall.ENOSYS)
+}
+
 func (p procAWSDynamoDB) String() string {
 	return toString(p)
 }

@@ -44,8 +44,21 @@ type sinkSumoLogic struct {
 	CategoryKey string `json:"category_key"`
 }
 
+// Create a new SumoLogic sink.
+func newSinkSumoLogic(_ context.Context, cfg config.Config) (s sinkSumoLogic, err error) {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
+		return sinkSumoLogic{}, err
+	}
+
+	if s.URL == "" {
+		return sinkSumoLogic{}, fmt.Errorf("sink: sumologic: URL: %v", errors.ErrMissingRequiredOption)
+	}
+
+	return s, nil
+}
+
 // Send sinks a channel of encapsulated data with the sink.
-func (s *sinkSumoLogic) Send(ctx context.Context, ch *config.Channel) error {
+func (s sinkSumoLogic) Send(ctx context.Context, ch *config.Channel) error {
 	if !sumoLogicClient.IsEnabled() {
 		sumoLogicClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {

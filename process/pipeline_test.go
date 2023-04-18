@@ -8,35 +8,41 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procPipeline{}
+	_ Batcher = procPipeline{}
+)
+
 var pipelineTests = []struct {
 	name     string
-	proc     procPipeline
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"json",
-		procPipeline{
-			process: process{
-				Key:    "pipeline",
-				SetKey: "pipeline",
-			},
-			Options: procPipelineOptions{
-				Processors: []config.Config{
-					{
-						Type: "base64",
-						Settings: map[string]interface{}{
-							"options": map[string]interface{}{
-								"direction": "from",
+		config.Config{
+			Type: "pipeline",
+			Settings: map[string]interface{}{
+				"key":     "pipeline",
+				"set_key": "pipeline",
+				"options": map[string]interface{}{
+					"processors": []config.Config{
+						{
+							Type: "base64",
+							Settings: map[string]interface{}{
+								"options": map[string]interface{}{
+									"direction": "from",
+								},
 							},
 						},
-					},
-					{
-						Type: "gzip",
-						Settings: map[string]interface{}{
-							"options": map[string]interface{}{
-								"direction": "from",
+						{
+							Type: "gzip",
+							Settings: map[string]interface{}{
+								"options": map[string]interface{}{
+									"direction": "from",
+								},
 							},
 						},
 					},
@@ -49,22 +55,25 @@ var pipelineTests = []struct {
 	},
 	{
 		"data",
-		procPipeline{
-			Options: procPipelineOptions{
-				Processors: []config.Config{
-					{
-						Type: "base64",
-						Settings: map[string]interface{}{
-							"options": map[string]interface{}{
-								"direction": "from",
+		config.Config{
+			Type: "pipeline",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"processors": []config.Config{
+						{
+							Type: "base64",
+							Settings: map[string]interface{}{
+								"options": map[string]interface{}{
+									"direction": "from",
+								},
 							},
 						},
-					},
-					{
-						Type: "gzip",
-						Settings: map[string]interface{}{
-							"options": map[string]interface{}{
-								"direction": "from",
+						{
+							Type: "gzip",
+							Settings: map[string]interface{}{
+								"options": map[string]interface{}{
+									"direction": "from",
+								},
 							},
 						},
 					},
@@ -82,19 +91,23 @@ func TestPipeline(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range pipelineTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcPipeline(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -108,10 +121,15 @@ func benchmarkPipeline(b *testing.B, applier procPipeline, test config.Capsule) 
 func BenchmarkPipeline(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range pipelineTests {
+		proc, err := newProcPipeline(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkPipeline(b, test.proc, capsule)
+				benchmarkPipeline(b, proc, capsule)
 			},
 		)
 	}

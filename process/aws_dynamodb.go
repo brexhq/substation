@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
 	"github.com/brexhq/substation/internal/errors"
@@ -72,24 +73,37 @@ func (p procAWSDynamoDB) Close(context.Context) error {
 	return nil
 }
 
+// Create a new AWS DynamoDB processor.
+func newProcAWSDynamoDB(ctx context.Context, cfg config.Config) (p procAWSDynamoDB, err error) {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
+		return procAWSDynamoDB{}, err
+	}
+
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
+	if err != nil {
+		return procAWSDynamoDB{}, err
+	}
+
+	// fail if required options are missing
+	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
+		return procAWSDynamoDB{}, fmt.Errorf("process: aws_dynamodb: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
+	}
+
+	// only supports JSON, fail; if there are no keys
+	if p.Key == "" && p.SetKey == "" {
+		return procAWSDynamoDB{}, fmt.Errorf("process: aws_dynamodb: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	}
+	return p, nil
+}
+
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procAWSDynamoDB) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procAWSDynamoDB) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Table == "" || p.Options.KeyConditionExpression == "" {
-		return capsule, fmt.Errorf("process: aws_dynamodb: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
-	// only supports JSON, error early if there are no keys
-	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process: aws_dynamodb: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
-	}
-
 	// lazy load API
 	if !dynamodbAPI.IsEnabled() {
 		dynamodbAPI.Setup()

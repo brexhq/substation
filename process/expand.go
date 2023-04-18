@@ -16,6 +16,20 @@ type procExpand struct {
 	process
 }
 
+// Create a new expand processor.
+func newProcExpand(ctx context.Context, cfg config.Config) (p procExpand, err error) {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
+		return procExpand{}, err
+	}
+
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
+	if err != nil {
+		return procExpand{}, err
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procExpand) String() string {
 	return toString(p)
@@ -29,14 +43,9 @@ func (p procExpand) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procExpand) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	op, err := condition.NewOperator(p.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("process: expand: %v", err)
-	}
-
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
-		ok, err := op.Operate(ctx, capsule)
+		ok, err := p.operator.Operate(ctx, capsule)
 		if err != nil {
 			return nil, fmt.Errorf("process: expand: %v", err)
 		}

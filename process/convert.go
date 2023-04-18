@@ -4,7 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/exp/slices"
+
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 )
 
 // convert processes data by changing its type (e.g., bool, int, string).
@@ -27,6 +31,33 @@ type procConvertOptions struct {
 	Type string `json:"type"`
 }
 
+// Create a new convert processor.
+func newProcConvert(ctx context.Context, cfg config.Config) (p procConvert, err error) {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
+		return procConvert{}, err
+	}
+
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
+	if err != nil {
+		return procConvert{}, err
+	}
+
+	//  validate option.type
+	if !slices.Contains(
+		[]string{
+			"bool",
+			"int",
+			"float",
+			"uint",
+			"string",
+		},
+		p.Options.Type) {
+		return procConvert{}, fmt.Errorf("process: convert: type %q: %v", p.Options.Type, errors.ErrInvalidOption)
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procConvert) String() string {
 	return toString(p)
@@ -40,16 +71,11 @@ func (p procConvert) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procConvert) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procConvert) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Type == "" {
-		return capsule, fmt.Errorf("process: convert: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
 	// only supports JSON, error early if there are no keys
 	if p.Key != "" && p.SetKey != "" {
 		result := capsule.Get(p.Key)

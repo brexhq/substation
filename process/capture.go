@@ -3,9 +3,13 @@ package process
 import (
 	"context"
 	"fmt"
+	"regexp"
 
+	"golang.org/x/exp/slices"
+
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/regexp"
+	"github.com/brexhq/substation/internal/errors"
 )
 
 // capture processes data by capturing values using regular expressions.
@@ -14,6 +18,8 @@ import (
 type procCapture struct {
 	process
 	Options procCaptureOptions `json:"options"`
+
+	re *regexp.Regexp
 }
 
 type procCaptureOptions struct {
@@ -37,6 +43,49 @@ type procCaptureOptions struct {
 	Count int `json:"count"`
 }
 
+// Create a new capture processor.
+func newProcCapture(ctx context.Context, cfg config.Config) (p procCapture, err error) {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
+		return procCapture{}, err
+	}
+
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
+	if err != nil {
+		return procCapture{}, err
+	}
+
+	//  validate option.type
+	if !slices.Contains(
+		[]string{
+			"find",
+			"find_all",
+			"named_group",
+		},
+		p.Options.Type) {
+		return procCapture{}, fmt.Errorf("process: capture: type %q: %v", p.Options.Type, errors.ErrInvalidOption)
+	}
+
+	// fail if required options are missing
+	if p.Options.Expression == "" {
+		return procCapture{}, fmt.Errorf("process: capture: option \"expression\": %v", errors.ErrMissingRequiredOption)
+	}
+
+	if _, err = regexp.Compile(p.Options.Expression); err != nil {
+		return procCapture{}, fmt.Errorf("process: capture: %v", err)
+	}
+
+	if p.Options.Count == 0 {
+		p.Options.Count = -1
+	}
+
+	p.re, err = regexp.Compile(p.Options.Expression)
+	if err != nil {
+		return procCapture{}, fmt.Errorf("process: capture: %v", err)
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procCapture) String() string {
 	return toString(p)
@@ -50,34 +99,18 @@ func (p procCapture) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procCapture) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
-//
-//nolint:gocognit
 func (p procCapture) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Expression == "" || p.Options.Type == "" {
-		return capsule, fmt.Errorf("process: capture: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
-	re, err := regexp.Compile(p.Options.Expression)
-	if err != nil {
-		return capsule, fmt.Errorf("process: capture: %v", err)
-	}
-
-	if p.Options.Count == 0 {
-		p.Options.Count = -1
-	}
-
 	// JSON processing
 	if p.Key != "" && p.SetKey != "" {
 		result := capsule.Get(p.Key).String()
 
 		switch p.Options.Type {
 		case "find":
-			match := re.FindStringSubmatch(result)
+			match := p.re.FindStringSubmatch(result)
 			if err := capsule.Set(p.SetKey, p.getStringMatch(match)); err != nil {
 				return capsule, fmt.Errorf("process: capture: %v", err)
 			}
@@ -86,7 +119,7 @@ func (p procCapture) Apply(ctx context.Context, capsule config.Capsule) (config.
 		case "find_all":
 			var matches []interface{}
 
-			subs := re.FindAllStringSubmatch(result, p.Options.Count)
+			subs := p.re.FindAllStringSubmatch(result, p.Options.Count)
 			for _, s := range subs {
 				m := p.getStringMatch(s)
 				matches = append(matches, m)
@@ -98,8 +131,8 @@ func (p procCapture) Apply(ctx context.Context, capsule config.Capsule) (config.
 
 			return capsule, nil
 		case "named_group":
-			names := re.SubexpNames()
-			matches := re.FindStringSubmatch(result)
+			names := p.re.SubexpNames()
+			matches := p.re.FindStringSubmatch(result)
 			for i, m := range matches {
 				if i == 0 {
 					continue
@@ -125,15 +158,15 @@ func (p procCapture) Apply(ctx context.Context, capsule config.Capsule) (config.
 	if p.Key == "" && p.SetKey == "" {
 		switch p.Options.Type {
 		case "find":
-			match := re.FindSubmatch(capsule.Data())
+			match := p.re.FindSubmatch(capsule.Data())
 			capsule.SetData(match[1])
 
 			return capsule, nil
 		case "named_group":
 			newCapsule := config.NewCapsule()
 
-			names := re.SubexpNames()
-			matches := re.FindSubmatch(capsule.Data())
+			names := p.re.SubexpNames()
+			matches := p.re.FindSubmatch(capsule.Data())
 			for i, m := range matches {
 				if i == 0 {
 					continue

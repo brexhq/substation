@@ -15,6 +15,10 @@ type procIPDatabase struct {
 	Options config.Config `json:"options"`
 }
 
+func newProcIPDatabase(ctx context.Context, cfg config.Config) (p procIPDatabase, err error) {
+	return procIPDatabase{}, fmt.Errorf("process: ip_database: %v", syscall.ENOSYS)
+}
+
 func (p procIPDatabase) String() string {
 	return toString(p)
 }

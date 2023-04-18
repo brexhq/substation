@@ -7,21 +7,29 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Inspector = inspJSONSchema{}
+	_ Inspector = inspJSONValid{}
+)
+
 var jsonSchemaTests = []struct {
-	name      string
-	inspector inspJSONSchema
-	test      []byte
-	expected  bool
+	name     string
+	cfg      config.Config
+	test     []byte
+	expected bool
 }{
 	{
 		"string",
-		inspJSONSchema{
-			Options: inspJSONSchemaOptions{
-				Schema: []struct {
-					Key  string `json:"key"`
-					Type string `json:"type"`
-				}{
-					{Key: "hello", Type: "String"},
+		config.Config{
+			Type: "json_schema",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"schema": []struct {
+						Key  string `json:"key"`
+						Type string `json:"type"`
+					}{
+						{Key: "hello", Type: "String"},
+					},
 				},
 			},
 		},
@@ -30,13 +38,16 @@ var jsonSchemaTests = []struct {
 	},
 	{
 		"!string",
-		inspJSONSchema{
-			Options: inspJSONSchemaOptions{
-				Schema: []struct {
-					Key  string `json:"key"`
-					Type string `json:"type"`
-				}{
-					{Key: "foo", Type: "String"},
+		config.Config{
+			Type: "json_schema",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"schema": []struct {
+						Key  string `json:"key"`
+						Type string `json:"type"`
+					}{
+						{Key: "foo", Type: "String"},
+					},
 				},
 			},
 		},
@@ -45,16 +56,17 @@ var jsonSchemaTests = []struct {
 	},
 	{
 		"string array",
-		inspJSONSchema{
-			condition: condition{
-				Negate: true,
-			},
-			Options: inspJSONSchemaOptions{
-				Schema: []struct {
-					Key  string `json:"key"`
-					Type string `json:"type"`
-				}{
-					{Key: "foo", Type: "String/Array"},
+		config.Config{
+			Type: "json_schema",
+			Settings: map[string]interface{}{
+				"negate": true,
+				"options": map[string]interface{}{
+					"schema": []struct {
+						Key  string `json:"key"`
+						Type string `json:"type"`
+					}{
+						{Key: "foo", Type: "String/Array"},
+					},
 				},
 			},
 		},
@@ -68,18 +80,23 @@ func TestJSONSchema(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range jsonSchemaTests {
-		var _ Inspector = test.inspector
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			insp, err := newInspJSONSchema(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		check, err := test.inspector.Inspect(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			check, err := insp.Inspect(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if test.expected != check {
-			t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
-		}
+			if test.expected != check {
+				t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
+			}
+		})
 	}
 }
 
@@ -93,38 +110,48 @@ func benchmarkJSONSchemaByte(b *testing.B, inspector inspJSONSchema, capsule con
 func BenchmarkJSONSchemaByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range jsonSchemaTests {
+		insp, err := newInspJSONSchema(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkJSONSchemaByte(b, test.inspector, capsule)
+				benchmarkJSONSchemaByte(b, insp, capsule)
 			},
 		)
 	}
 }
 
 var jsonValidTests = []struct {
-	name      string
-	inspector inspJSONValid
-	test      []byte
-	expected  bool
+	name     string
+	cfg      config.Config
+	test     []byte
+	expected bool
 }{
 	{
 		"valid",
-		inspJSONValid{},
+		config.Config{
+			Type: "json_valid",
+		},
 		[]byte(`{"hello":"world"}`),
 		true,
 	},
 	{
 		"invalid",
-		inspJSONValid{},
+		config.Config{
+			Type: "json_valid",
+		},
 		[]byte(`{hello:"world"}`),
 		false,
 	},
 	{
 		"!invalid",
-		inspJSONValid{
-			condition: condition{
-				Negate: true,
+		config.Config{
+			Type: "json_valid",
+			Settings: map[string]interface{}{
+				"negate": true,
 			},
 		},
 		[]byte(`{"hello":"world"}`),
@@ -132,9 +159,10 @@ var jsonValidTests = []struct {
 	},
 	{
 		"!valid",
-		inspJSONValid{
-			condition: condition{
-				Negate: true,
+		config.Config{
+			Type: "json_valid",
+			Settings: map[string]interface{}{
+				"negate": true,
 			},
 		},
 		[]byte(`{hello:"world"}`),
@@ -147,16 +175,23 @@ func TestJSONValid(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range jsonValidTests {
-		capsule.SetData(test.test)
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		check, err := test.inspector.Inspect(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			insp, err := newInspJSONValid(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if test.expected != check {
-			t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
-		}
+			check, err := insp.Inspect(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if test.expected != check {
+				t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
+			}
+		})
 	}
 }
 
@@ -170,10 +205,15 @@ func benchmarkJSONValidByte(b *testing.B, inspector inspJSONValid, capsule confi
 func BenchmarkJSONValidByte(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range jsonValidTests {
+		insp, err := newInspJSONValid(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkJSONValidByte(b, test.inspector, capsule)
+				benchmarkJSONValidByte(b, insp, capsule)
 			},
 		)
 	}

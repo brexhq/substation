@@ -8,18 +8,26 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procGzip{}
+	_ Batcher = procGzip{}
+)
+
 var gzipTests = []struct {
 	name     string
-	proc     procGzip
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"from",
-		procGzip{
-			Options: procGzipOptions{
-				Direction: "from",
+		config.Config{
+			Type: "gzip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"direction": "from",
+				},
 			},
 		},
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0},
@@ -28,9 +36,12 @@ var gzipTests = []struct {
 	},
 	{
 		"to",
-		procGzip{
-			Options: procGzipOptions{
-				Direction: "to",
+		config.Config{
+			Type: "gzip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"direction": "to",
+				},
 			},
 		},
 		[]byte(`foo`),
@@ -44,19 +55,23 @@ func TestGzip(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range gzipTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			capsule.SetData(test.test)
 
-		capsule.SetData(test.test)
+			proc, err := newProcGzip(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -70,10 +85,15 @@ func benchmarkGzip(b *testing.B, applier procGzip, test config.Capsule) {
 func BenchmarkGzip(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range gzipTests {
+		proc, err := newProcGzip(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkGzip(b, test.proc, capsule)
+				benchmarkGzip(b, proc, capsule)
 			},
 		)
 	}

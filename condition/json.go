@@ -2,8 +2,13 @@ package condition
 
 import (
 	"context"
+	"fmt"
+	"strings"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
@@ -22,12 +27,35 @@ type inspJSONSchemaOptions struct {
 		// Type is the expected value type for Key.
 		//
 		// Must be one of:
-		//	- string
-		//	- number (float, int)
-		//	- boolean (true, false)
-		//	- json
+		//	- String
+		//	- Number (float, int)
+		//	- Boolean (true, false)
+		//	- JSON
 		Type string `json:"type"`
 	} `json:"schema"`
+}
+
+// Creates a new JSON schema inspector.
+func newInspJSONSchema(_ context.Context, cfg config.Config) (c inspJSONSchema, err error) {
+	if err = config.Decode(cfg.Settings, &c); err != nil {
+		return inspJSONSchema{}, err
+	}
+
+	//  validate option.schema[]
+	for _, s := range c.Options.Schema {
+		if !slices.Contains(
+			[]string{
+				"String",
+				"Number",
+				"Boolen",
+				"JSON",
+			},
+			strings.TrimSuffix(s.Type, "/Array")) {
+			return inspJSONSchema{}, fmt.Errorf("condition: json: type %q: %v", s.Type, errors.ErrInvalidOption)
+		}
+	}
+
+	return c, nil
 }
 
 func (c inspJSONSchema) String() string {
@@ -77,6 +105,16 @@ func (c inspJSONSchema) Inspect(ctx context.Context, capsule config.Capsule) (ou
 // This inspector supports the object handling pattern.
 type inspJSONValid struct {
 	condition
+}
+
+// Creates a new JSON valid inspector.
+func newInspJSONValid(_ context.Context, cfg config.Config) (c inspJSONValid, err error) {
+	err = config.Decode(cfg.Settings, &c)
+	if err != nil {
+		return inspJSONValid{}, err
+	}
+
+	return c, nil
 }
 
 func (c inspJSONValid) String() string {

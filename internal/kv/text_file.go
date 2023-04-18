@@ -7,6 +7,8 @@ import (
 	"os"
 	"sync"
 
+	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
 )
 
@@ -31,6 +33,20 @@ type kvTextFile struct {
 	File  string `json:"file"`
 	mu    sync.Mutex
 	items []string
+}
+
+// Create a new text file KV store.
+func newKVTextFile(cfg config.Config) (*kvTextFile, error) {
+	var store kvTextFile
+	if err := config.Decode(cfg.Settings, &store); err != nil {
+		return nil, err
+	}
+
+	if store.File == "" {
+		return nil, fmt.Errorf("kv: text_file: options %+v: %v", &store, errors.ErrMissingRequiredOption)
+	}
+
+	return &store, nil
 }
 
 func (store *kvTextFile) String() string {

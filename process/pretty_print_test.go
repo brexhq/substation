@@ -8,18 +8,26 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier = procPrettyPrint{}
+	_ Batcher = procPrettyPrint{}
+)
+
 var prettyPrintBatchTests = []struct {
 	name     string
-	proc     procPrettyPrint
+	cfg      config.Config
 	test     [][]byte
 	expected [][]byte
 	err      error
 }{
 	{
 		"from",
-		procPrettyPrint{
-			Options: procPrettyPrintOptions{
-				Direction: "from",
+		config.Config{
+			Type: "pretty_print",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"direction": "from",
+				},
 			},
 		},
 		[][]byte{
@@ -34,9 +42,12 @@ var prettyPrintBatchTests = []struct {
 	},
 	{
 		"from",
-		procPrettyPrint{
-			Options: procPrettyPrintOptions{
-				Direction: "from",
+		config.Config{
+			Type: "pretty_print",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"direction": "from",
+				},
 			},
 		},
 		[][]byte{
@@ -54,9 +65,12 @@ var prettyPrintBatchTests = []struct {
 	},
 	{
 		"to",
-		procPrettyPrint{
-			Options: procPrettyPrintOptions{
-				Direction: "to",
+		config.Config{
+			Type: "pretty_print",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"direction": "to",
+				},
 			},
 		},
 		[][]byte{
@@ -76,27 +90,31 @@ func TestPrettyPrintBatch(t *testing.T) {
 	ctx := context.TODO()
 
 	for _, test := range prettyPrintBatchTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
-
-		var capsules []config.Capsule
-		capsule := config.NewCapsule()
-		for _, t := range test.test {
-			capsule.SetData(t)
-			capsules = append(capsules, capsule)
-		}
-
-		result, err := test.proc.Batch(ctx, capsules...)
-		if err != nil {
-			t.Error(err)
-		}
-
-		for i, res := range result {
-			expected := test.expected[i]
-			if !bytes.Equal(expected, res.Data()) {
-				t.Errorf("expected %s, got %s", expected, res.Data())
+		t.Run(test.name, func(t *testing.T) {
+			var capsules []config.Capsule
+			capsule := config.NewCapsule()
+			for _, t := range test.test {
+				capsule.SetData(t)
+				capsules = append(capsules, capsule)
 			}
-		}
+
+			proc, err := newProcPrettyPrint(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := proc.Batch(ctx, capsules...)
+			if err != nil {
+				t.Error(err)
+			}
+
+			for i, res := range result {
+				expected := test.expected[i]
+				if !bytes.Equal(expected, res.Data()) {
+					t.Errorf("expected %s, got %s", expected, res.Data())
+				}
+			}
+		})
 	}
 }
 
@@ -109,6 +127,11 @@ func benchmarkPrettyPrintBatch(b *testing.B, batcher procPrettyPrint, capsules [
 
 func BenchmarkPrettyPrintBatch(b *testing.B) {
 	for _, test := range prettyPrintBatchTests {
+		proc, err := newProcPrettyPrint(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsules := make([]config.Capsule, 1)
@@ -118,7 +141,7 @@ func BenchmarkPrettyPrintBatch(b *testing.B) {
 					capsules = append(capsules, capsule)
 				}
 
-				benchmarkPrettyPrintBatch(b, test.proc, capsules)
+				benchmarkPrettyPrintBatch(b, proc, capsules)
 			},
 		)
 	}
@@ -126,16 +149,19 @@ func BenchmarkPrettyPrintBatch(b *testing.B) {
 
 var prettyPrintTests = []struct {
 	name     string
-	proc     procPrettyPrint
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
 }{
 	{
 		"to",
-		procPrettyPrint{
-			Options: procPrettyPrintOptions{
-				Direction: "to",
+		config.Config{
+			Type: "pretty_print",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"direction": "to",
+				},
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -152,16 +178,23 @@ func TestPrettyPrint(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range prettyPrintTests {
-		capsule.SetData(test.test)
+		t.Run(test.name, func(t *testing.T) {
+			proc, err := newProcPrettyPrint(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Apply(ctx, capsule)
-		if err != nil {
-			t.Error(err)
-		}
+			capsule.SetData(test.test)
 
-		if !bytes.Equal(result.Data(), test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, result.Data())
-		}
+			result, err := proc.Apply(ctx, capsule)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if !bytes.Equal(result.Data(), test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, result.Data())
+			}
+		})
 	}
 }
 
@@ -175,10 +208,15 @@ func benchmarkPrettyPrint(b *testing.B, proc procPrettyPrint, capsule config.Cap
 func BenchmarkPrettyPrint(b *testing.B) {
 	capsule := config.NewCapsule()
 	for _, test := range prettyPrintTests {
+		proc, err := newProcPrettyPrint(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkPrettyPrint(b, test.proc, capsule)
+				benchmarkPrettyPrint(b, proc, capsule)
 			},
 		)
 	}

@@ -17,6 +17,10 @@ type procHTTP struct {
 
 type procHTTPOptions struct{}
 
+func newProcHTTP(ctx context.Context, cfg config.Config) (p procHTTP, err error) {
+	return procHTTP{}, fmt.Errorf("process: http: %v", syscall.ENOSYS)
+}
+
 func (p procHTTP) Close(context.Context) error {
 	return nil
 }

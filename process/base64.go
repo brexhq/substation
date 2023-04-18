@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"unicode/utf8"
 
+	"golang.org/x/exp/slices"
+
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/base64"
 	"github.com/brexhq/substation/internal/errors"
@@ -34,6 +37,30 @@ type procBase64Options struct {
 	Direction string `json:"direction"`
 }
 
+// Create a new base64 processor.
+func newProcBase64(ctx context.Context, cfg config.Config) (p procBase64, err error) {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
+		return procBase64{}, err
+	}
+
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
+	if err != nil {
+		return procBase64{}, err
+	}
+
+	//  validate option.type
+	if !slices.Contains(
+		[]string{
+			"to",
+			"from",
+		},
+		p.Options.Direction) {
+		return procBase64{}, fmt.Errorf("process: base64: direction %q %v", p.Options, errors.ErrInvalidOption)
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procBase64) String() string {
 	return toString(p)
@@ -47,16 +74,11 @@ func (p procBase64) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procBase64) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procBase64) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Direction == "" {
-		return capsule, fmt.Errorf("process: base64: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
 	// JSON processing
 	if p.Key != "" && p.SetKey != "" {
 		result := capsule.Get(p.Key).String()

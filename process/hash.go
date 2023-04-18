@@ -6,6 +6,9 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"golang.org/x/exp/slices"
+
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 )
@@ -32,6 +35,30 @@ type procHashOptions struct {
 	Algorithm string `json:"algorithm"`
 }
 
+// Create a new hash processor.
+func newProcHash(ctx context.Context, cfg config.Config) (p procHash, err error) {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
+		return procHash{}, err
+	}
+
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
+	if err != nil {
+		return procHash{}, err
+	}
+
+	//  validate option.algorithm
+	if !slices.Contains(
+		[]string{
+			"md5",
+			"sha256",
+		},
+		p.Options.Algorithm) {
+		return procHash{}, fmt.Errorf("process: hash: algorithm %q: %v", p.Options.Algorithm, errors.ErrInvalidOption)
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procHash) String() string {
 	return toString(p)
@@ -45,16 +72,11 @@ func (p procHash) Close(context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procHash) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procHash) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.Algorithm == "" {
-		return capsule, fmt.Errorf("process: hash: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
 	// JSON processing
 	if p.Key != "" && p.SetKey != "" {
 		result := capsule.Get(p.Key).String()

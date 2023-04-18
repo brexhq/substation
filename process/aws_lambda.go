@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/lambda"
 	"github.com/brexhq/substation/internal/errors"
@@ -47,24 +48,33 @@ func (p procAWSLambda) Close(context.Context) error {
 	return nil
 }
 
+// Create a new AWS Lambda processor.
+func newProcAWSLambda(ctx context.Context, cfg config.Config) (p procAWSLambda, err error) {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
+		return procAWSLambda{}, err
+	}
+
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
+	if err != nil {
+		return procAWSLambda{}, err
+	}
+
+	// fail if required options are missing
+	if p.Options.FunctionName == "" {
+		return procAWSLambda{}, fmt.Errorf("process: aws_lambda: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
+	}
+
+	return p, nil
+}
+
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procAWSLambda) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procAWSLambda) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// error early if required options are missing
-	if p.Options.FunctionName == "" {
-		return capsule, fmt.Errorf("process: aws_lambda: options %+v: %v", p.Options, errMissingRequiredOptions)
-	}
-
-	// only supports JSON, error early if there are no keys
-	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process: aws_lambda: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
-	}
-
 	// lazy load API
 	if !lambdaAPI.IsEnabled() {
 		lambdaAPI.Setup()

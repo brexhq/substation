@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/secrets"
@@ -33,8 +34,21 @@ type sinkHTTP struct {
 	HeadersKey string `json:"headers_key"`
 }
 
+// Create a new HTTP sink.
+func newSinkHTTP(_ context.Context, cfg config.Config) (s sinkHTTP, err error) {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
+		return sinkHTTP{}, err
+	}
+
+	if s.URL == "" {
+		return sinkHTTP{}, fmt.Errorf("sink: http: URL: %v", errors.ErrMissingRequiredOption)
+	}
+
+	return s, nil
+}
+
 // Send sinks a channel of encapsulated data with the sink.
-func (s *sinkHTTP) Send(ctx context.Context, ch *config.Channel) error {
+func (s sinkHTTP) Send(ctx context.Context, ch *config.Channel) error {
 	if !httpClient.IsEnabled() {
 		httpClient.Setup()
 		if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {

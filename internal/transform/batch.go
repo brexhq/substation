@@ -16,22 +16,36 @@ import (
 // Data processing is iterative and each processor is enabled through conditions.
 type tformBatch struct {
 	Processors []config.Config `json:"processors"`
+
+	batchers []process.Batcher
+}
+
+func newTformBatch(ctx context.Context, cfg config.Config) (t tformBatch, err error) {
+	if err = config.Decode(cfg.Settings, &t); err != nil {
+		return tformBatch{}, err
+	}
+
+	t.batchers, err = process.NewBatchers(ctx, t.Processors...)
+	if err != nil {
+		return tformBatch{}, err
+	}
+
+	return t, nil
 }
 
 // Transform processes a channel of encapsulated data with the transform.
-func (t *tformBatch) Transform(ctx context.Context, wg *sync.WaitGroup, in, out *config.Channel) error {
-	batchers, err := process.NewBatchers(t.Processors...)
-	if err != nil {
-		return err
-	}
-
+func (t tformBatch) Transform(ctx context.Context, wg *sync.WaitGroup, in, out *config.Channel) error {
 	/*
-		closing processors in an anonymous goroutine blocked by the WaitGroup from the calling application ensures that all processors across the entire app close after all data transformation is finished. as of now this is the only way to prevent premature closing of processors and avoid panics that can occur if processors running inside one transform attempt to access resources closed by processors running inside of a different t.
+		closing processors in an anonymous goroutine blocked by the WaitGroup from the calling application
+		ensures that all processors across the entire app close after all data transformation is finished.
+		As of now this is the only way to prevent premature closing of processors and avoid panics that can
+		occur if processors running inside one transform attempt to access resources closed by processors
+		running inside of a different t.
 	*/
 	go func() {
 		wg.Wait()
 		//nolint: errcheck // errors are ignored in case closing fails in a single processor
-		process.CloseBatchers(ctx, batchers...)
+		process.CloseBatchers(ctx, t.batchers...)
 	}()
 
 	var received int
@@ -52,7 +66,7 @@ func (t *tformBatch) Transform(ctx context.Context, wg *sync.WaitGroup, in, out 
 	}
 
 	// iteratively process the batch of encapsulated data
-	batch, err = process.Batch(ctx, batch, batchers...)
+	batch, err := process.Batch(ctx, batch, t.batchers...)
 	if err != nil {
 		return err
 	}

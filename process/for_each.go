@@ -5,7 +5,9 @@ import (
 	gojson "encoding/json"
 	"fmt"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
@@ -18,6 +20,9 @@ import (
 type procForEach struct {
 	process
 	Options procForEachOptions `json:"options"`
+
+	procCfg config.Config
+	applier Applier
 }
 
 type procForEachOptions struct {
@@ -25,27 +30,20 @@ type procForEachOptions struct {
 	Processor config.Config `json:"processor"`
 }
 
-// String returns the processor settings as an object.
-func (p procForEach) String() string {
-	return toString(p)
-}
+// Create a new "for each" processor.
+func newProcForEach(ctx context.Context, cfg config.Config) (p procForEach, err error) {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
+		return procForEach{}, err
+	}
 
-// Closes resources opened by the processor.
-func (p procForEach) Close(context.Context) error {
-	return nil
-}
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
+	if err != nil {
+		return procForEach{}, err
+	}
 
-// Batch processes one or more capsules with the processor. Conditions are
-// optionally applied to the data to enable processing.
-func (p procForEach) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
-}
-
-// Apply processes a capsule with the processor.
-func (p procForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// only supports JSON, error early if there are no keys
+	// only supports JSON arrays, fail if there are no keys
 	if p.Key == "" && p.SetKey == "" {
-		return capsule, fmt.Errorf("process: for_each: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+		return procForEach{}, fmt.Errorf("process: for_each: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
 	}
 
 	// configured processor is converted to a JSON object so that the
@@ -66,16 +64,36 @@ func (p procForEach) Apply(ctx context.Context, capsule config.Capsule) (config.
 	}
 	conf, _ = json.Set(conf, "settings.set_key", outputKey)
 
-	var processor config.Config
-	if err := gojson.Unmarshal(conf, &processor); err != nil {
-		return capsule, err
+	if err := gojson.Unmarshal(conf, &p.procCfg); err != nil {
+		return procForEach{}, err
 	}
 
-	applier, err := NewApplier(processor)
+	p.applier, err = NewApplier(ctx, p.procCfg)
 	if err != nil {
-		return capsule, fmt.Errorf("process: for_each: %v", err)
+		return procForEach{}, fmt.Errorf("process: for_each: %v", err)
 	}
 
+	return p, nil
+}
+
+// String returns the processor settings as an object.
+func (p procForEach) String() string {
+	return toString(p)
+}
+
+// Closes resources opened by the processor.
+func (p procForEach) Close(context.Context) error {
+	return nil
+}
+
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procForEach) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return batchApply(ctx, capsules, p, p.operator)
+}
+
+// Apply processes a capsule with the processor.
+func (p procForEach) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	result := capsule.Get(p.Key)
 	if !result.IsArray() {
 		return capsule, nil
@@ -83,16 +101,16 @@ func (p procForEach) Apply(ctx context.Context, capsule config.Capsule) (config.
 
 	for _, res := range result.Array() {
 		tmpCap := config.NewCapsule()
-		if err := tmpCap.Set(processor.Type, res); err != nil {
+		if err := tmpCap.Set(p.procCfg.Type, res); err != nil {
 			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}
 
-		tmpCap, err = applier.Apply(ctx, tmpCap)
+		tmpCap, err := p.applier.Apply(ctx, tmpCap)
 		if err != nil {
 			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}
 
-		value := tmpCap.Get(processor.Type)
+		value := tmpCap.Get(p.procCfg.Type)
 		if err := capsule.Set(p.SetKey, value); err != nil {
 			return capsule, fmt.Errorf("process: for_each: %v", err)
 		}

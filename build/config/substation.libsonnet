@@ -14,7 +14,7 @@
         options: { schema: null },
       },
       length: {
-        options: { type: null, value: null, measurement: 'bytes' },
+        options: { type: null, value: null, measurement: 'byte' },
       },
       regexp: {
         options: { expression: null },

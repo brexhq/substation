@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
 	pb "github.com/brexhq/substation/proto/v1beta"
 	"google.golang.org/grpc"
@@ -35,8 +36,21 @@ type sinkGRPC struct {
 	Certificate string `json:"certificate"`
 }
 
+// Create a new gRPC sink.
+func newSinkGRPC(_ context.Context, cfg config.Config) (s sinkGRPC, err error) {
+	if err = config.Decode(cfg.Settings, &s); err != nil {
+		return sinkGRPC{}, err
+	}
+
+	if s.Server == "" {
+		return sinkGRPC{}, fmt.Errorf("sink: grpc: server: %v", errors.ErrMissingRequiredOption)
+	}
+
+	return s, nil
+}
+
 // Send sinks a channel of encapsulated data with the sink.
-func (s *sinkGRPC) Send(ctx context.Context, ch *config.Channel) error {
+func (s sinkGRPC) Send(ctx context.Context, ch *config.Channel) error {
 	// https://grpc.io/docs/guides/auth/#base-case---no-encryption-or-authentication
 	creds := grpc.WithTransportCredentials(insecure.NewCredentials())
 

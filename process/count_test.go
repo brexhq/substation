@@ -8,16 +8,18 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var _ Batcher = procCount{}
+
 var countTests = []struct {
 	name     string
-	proc     procCount
+	cfg      config.Config
 	test     [][]byte
 	expected []byte
 	err      error
 }{
 	{
 		"count",
-		procCount{},
+		config.Config{},
 		[][]byte{
 			[]byte(`{"foo":"bar"}`),
 			[]byte(`{"foo":"baz"}`),
@@ -33,23 +35,28 @@ func TestCount(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range countTests {
-		var _ Batcher = test.proc
+		t.Run(test.name, func(t *testing.T) {
+			var capsules []config.Capsule
+			for _, t := range test.test {
+				capsule.SetData(t)
+				capsules = append(capsules, capsule)
+			}
 
-		var capsules []config.Capsule
-		for _, t := range test.test {
-			capsule.SetData(t)
-			capsules = append(capsules, capsule)
-		}
+			proc, err := newProcCount(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		result, err := test.proc.Batch(ctx, capsules...)
-		if err != nil {
-			t.Error(err)
-		}
+			result, err := proc.Batch(ctx, capsules...)
+			if err != nil {
+				t.Error(err)
+			}
 
-		count := result[0].Data()
-		if !bytes.Equal(count, test.expected) {
-			t.Errorf("expected %s, got %s", test.expected, count)
-		}
+			count := result[0].Data()
+			if !bytes.Equal(count, test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, count)
+			}
+		})
 	}
 }
 
@@ -69,9 +76,14 @@ func BenchmarkCount(b *testing.B) {
 			capsules = append(capsules, capsule)
 		}
 
+		proc, err := newProcCount(context.TODO(), test.cfg)
+		if err != nil {
+			b.Fatal(err)
+		}
+
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkCount(b, test.proc, capsules)
+				benchmarkCount(b, proc, capsules)
 			},
 		)
 	}

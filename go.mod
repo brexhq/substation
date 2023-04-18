@@ -21,8 +21,8 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/tidwall/gjson v1.14.4
 	github.com/tidwall/sjson v1.2.5
-	github.com/umisama/go-regexpcache v0.0.0-20150417035358-2444a542492f
 	go.uber.org/goleak v1.2.0
+	golang.org/x/exp v0.0.0-20230310171629-522b1b587ee0
 	golang.org/x/net v0.7.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.51.0
@@ -31,7 +31,6 @@ require (
 
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/itchyny/timefmt-go v0.1.5 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect

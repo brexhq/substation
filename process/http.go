@@ -11,7 +11,9 @@ import (
 	gohttp "net/http"
 	"strings"
 
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/secrets"
 )
@@ -32,6 +34,8 @@ var httpClient http.HTTP
 type procHTTP struct {
 	process
 	Options procHTTPOptions `json:"options"`
+
+	headers []http.Header
 }
 
 type procHTTPOptions struct {
@@ -71,37 +75,54 @@ func (p procHTTP) Close(context.Context) error {
 	return nil
 }
 
-// Batch processes one or more capsules with the processor. Conditions are
-// optionally applied to the data to enable processing.
-func (p procHTTP) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
-}
+// Create a new HTTP processor.
+func newProcHTTP(ctx context.Context, cfg config.Config) (p procHTTP, err error) {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
+		return procHTTP{}, err
+	}
 
-// Apply processes a capsule with the processor.
-func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
+	if err != nil {
+		return procHTTP{}, err
+	}
+
 	// error early if required options are missing
 	if p.Options.URL == "" {
-		return capsule, fmt.Errorf("process: http: options %+v: %v", p.Options, errMissingRequiredOptions)
+		return procHTTP{}, fmt.Errorf("process: http: option url: %v", errors.ErrMissingRequiredOption)
+	}
+
+	if p.Options.Method == "POST" && p.Options.BodyKey == "" {
+		return procHTTP{}, fmt.Errorf("process: http: options body_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if !httpClient.IsEnabled() {
 		httpClient.Setup()
 	}
 
-	var headers []http.Header
 	for _, hdr := range p.Options.Headers {
 		// retrieve secret and interpolate with header value
 		v, err := secrets.Interpolate(ctx, hdr.Value)
 		if err != nil {
-			return capsule, fmt.Errorf("process: http: %v", err)
+			return procHTTP{}, fmt.Errorf("process: http: %v", err)
 		}
 
-		headers = append(headers, http.Header{
+		p.headers = append(p.headers, http.Header{
 			Key:   hdr.Key,
 			Value: v,
 		})
 	}
 
+	return p, nil
+}
+
+// Batch processes one or more capsules with the processor. Conditions are
+// optionally applied to the data to enable processing.
+func (p procHTTP) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
+	return batchApply(ctx, capsules, p, p.operator)
+}
+
+// Apply processes a capsule with the processor.
+func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	// the URL can exist in three states:
 	//
 	// - no interpolation, the URL is unchanged
@@ -133,11 +154,11 @@ func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 	case gohttp.MethodPost:
 		// BodyKey is a requirement, otherwise there is no payload to send
 		if p.Options.BodyKey == "" {
-			return capsule, fmt.Errorf("process: http: options %+v: %v", p.Options, errMissingRequiredOptions)
+			return capsule, fmt.Errorf("process: http: options %+v: %v", p.Options, errors.ErrMissingRequiredOption)
 		}
 
 		body := capsule.Get(p.Options.BodyKey).String()
-		resp, err := httpClient.Post(ctx, url, body, headers...)
+		resp, err := httpClient.Post(ctx, url, body, p.headers...)
 		if err != nil && p.IgnoreErrors {
 			return capsule, nil
 		} else if err != nil {
@@ -165,7 +186,7 @@ func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 	case gohttp.MethodGet:
 		fallthrough
 	default:
-		resp, err := httpClient.Get(ctx, url, headers...)
+		resp, err := httpClient.Get(ctx, url, p.headers...)
 		if err != nil && p.IgnoreErrors {
 			return capsule, nil
 		} else if err != nil {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 )
@@ -14,6 +16,8 @@ import (
 type inspForEach struct {
 	condition
 	Options inspForEachOptions `json:"options"`
+
+	inspector Inspector
 }
 
 type inspForEachOptions struct {
@@ -31,23 +35,43 @@ type inspForEachOptions struct {
 	Inspector config.Config `json:"inspector"`
 }
 
+// Creates a new "for each" inspector.
+func newInspForEach(ctx context.Context, cfg config.Config) (c inspForEach, err error) {
+	if err = config.Decode(cfg.Settings, &c); err != nil {
+		return inspForEach{}, err
+	}
+
+	//  validate option.type
+	if !slices.Contains(
+		[]string{
+			"none",
+			"any",
+			"all",
+		},
+		c.Options.Type) {
+		return inspForEach{}, fmt.Errorf("condition: for_each: type %q: %v", c.Options.Type, errors.ErrInvalidOption)
+	}
+
+	c.inspector, err = NewInspector(ctx, c.Options.Inspector)
+	if err != nil {
+		return inspForEach{}, fmt.Errorf("condition: for_each: %v", err)
+	}
+
+	return c, nil
+}
+
 func (c inspForEach) String() string {
 	return toString(c)
 }
 
 // Inspect evaluates encapsulated data with the Content inspector.
 func (c inspForEach) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
-	inspector, err := NewInspector(c.Options.Inspector)
-	if err != nil {
-		return false, fmt.Errorf("condition: for_each: %w", err)
-	}
-
 	var results []bool
 	for _, res := range capsule.Get(c.Key).Array() {
 		tmpCapule := config.NewCapsule()
 		tmpCapule.SetData([]byte(res.String()))
 
-		inspected, err := inspector.Inspect(ctx, tmpCapule)
+		inspected, err := c.inspector.Inspect(ctx, tmpCapule)
 		if err != nil {
 			return false, fmt.Errorf("condition: for_each: %w", err)
 		}
@@ -70,7 +94,7 @@ func (c inspForEach) Inspect(ctx context.Context, capsule config.Capsule) (outpu
 	case "none":
 		output = matched == 0
 	default:
-		return false, fmt.Errorf("condition: for_each: type %q: %v", c.Options.Type, errors.ErrInvalidType)
+		return false, fmt.Errorf("condition: for_each: type %q: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	if c.Negate {

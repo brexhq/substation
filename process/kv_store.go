@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/exp/slices"
+
+	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/kv"
@@ -19,6 +22,8 @@ import (
 type procKVStore struct {
 	process
 	Options procKVStoreOptions `json:"options"`
+
+	kvStore kv.Storer
 }
 
 type procKVStoreOptions struct {
@@ -51,6 +56,47 @@ type procKVStoreOptions struct {
 	KVOptions config.Config `json:"kv_options"`
 }
 
+// Create a new pipeline processor.
+func newProcKVStore(ctx context.Context, cfg config.Config) (p procKVStore, err error) {
+	if err = config.Decode(cfg.Settings, &p); err != nil {
+		return procKVStore{}, err
+	}
+
+	p.operator, err = condition.NewOperator(ctx, p.Condition)
+	if err != nil {
+		return procKVStore{}, err
+	}
+
+	//  validate option.type
+	if !slices.Contains(
+		[]string{
+			"get",
+			"set",
+		},
+		p.Options.Type) {
+		return procKVStore{}, fmt.Errorf("process: kv_store: type %q: %v", p.Options.Type, errors.ErrInvalidOption)
+	}
+
+	// only supports objects, fail if there are no keys
+	if p.Key == "" || p.SetKey == "" {
+		return procKVStore{}, fmt.Errorf("process: kv_store: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
+	}
+
+	p.kvStore, err = kv.Get(p.Options.KVOptions)
+	if err != nil {
+		return procKVStore{}, fmt.Errorf("process: kv_store: %v", err)
+	}
+
+	// lazy load the KV store
+	if !p.kvStore.IsEnabled() {
+		if err := p.kvStore.Setup(ctx); err != nil {
+			return procKVStore{}, fmt.Errorf("process: kv_store: %v", err)
+		}
+	}
+
+	return p, nil
+}
+
 // String returns the processor settings as an object.
 func (p procKVStore) String() string {
 	return toString(p)
@@ -62,13 +108,8 @@ func (p procKVStore) Close(ctx context.Context) error {
 		return nil
 	}
 
-	kvStore, err := kv.Get(p.Options.KVOptions)
-	if err != nil {
-		return fmt.Errorf("close: kv_store: %v", err)
-	}
-
-	if kvStore.IsEnabled() {
-		if err := kvStore.Close(); err != nil {
+	if p.kvStore.IsEnabled() {
+		if err := p.kvStore.Close(); err != nil {
 			return fmt.Errorf("close: kv_store: %v", err)
 		}
 	}
@@ -79,28 +120,11 @@ func (p procKVStore) Close(ctx context.Context) error {
 // Batch processes one or more capsules with the processor. Conditions are
 // optionally applied to the data to enable processing.
 func (p procKVStore) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.Condition)
+	return batchApply(ctx, capsules, p, p.operator)
 }
 
 // Apply processes a capsule with the processor.
 func (p procKVStore) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
-	// only supports objects, error early if there are no keys
-	if p.Key == "" || p.SetKey == "" {
-		return capsule, fmt.Errorf("process: kv_store: key %s set_key %s: %v", p.Key, p.SetKey, errInvalidDataPattern)
-	}
-
-	kvStore, err := kv.Get(p.Options.KVOptions)
-	if err != nil {
-		return capsule, fmt.Errorf("process: kv_store: %v", err)
-	}
-
-	// lazy load the KV store
-	if !kvStore.IsEnabled() {
-		if err := kvStore.Setup(ctx); err != nil {
-			return capsule, fmt.Errorf("process: kv_store: %v", err)
-		}
-	}
-
 	switch p.Options.Type {
 	case "get":
 		key := capsule.Get(p.Key).String()
@@ -108,7 +132,7 @@ func (p procKVStore) Apply(ctx context.Context, capsule config.Capsule) (config.
 			key = fmt.Sprint(p.Options.Prefix, ":", key)
 		}
 
-		val, err := kvStore.Get(ctx, key)
+		val, err := p.kvStore.Get(ctx, key)
 		if err != nil {
 			return capsule, fmt.Errorf("process: kv_store: %v", err)
 		}
@@ -125,18 +149,18 @@ func (p procKVStore) Apply(ctx context.Context, capsule config.Capsule) (config.
 		}
 
 		if p.Options.OffsetTTL == 0 {
-			if err := kvStore.Set(ctx, key, capsule.Get(p.Key).String()); err != nil {
+			if err := p.kvStore.Set(ctx, key, capsule.Get(p.Key).String()); err != nil {
 				return capsule, fmt.Errorf("process: kv_store: %v", err)
 			}
 		} else {
 			ttl := time.Now().Add(time.Duration(p.Options.OffsetTTL) * time.Second).Unix()
-			if err := kvStore.SetWithTTL(ctx, key, capsule.Get(p.Key).String(), ttl); err != nil {
+			if err := p.kvStore.SetWithTTL(ctx, key, capsule.Get(p.Key).String(), ttl); err != nil {
 				return capsule, fmt.Errorf("process: kv_store: %v", err)
 			}
 		}
 
 		return capsule, nil
 	default:
-		return capsule, fmt.Errorf("process: kv_store: %v", errors.ErrInvalidType)
+		return capsule, fmt.Errorf("process: kv_store: %v", errors.ErrInvalidOption)
 	}
 }

@@ -42,58 +42,38 @@ type Inspector interface {
 }
 
 // NewInspector returns a configured Inspector from an Inspector configuration.
-func NewInspector(cfg config.Config) (Inspector, error) {
+func NewInspector(ctx context.Context, cfg config.Config) (Inspector, error) {
 	switch cfg.Type {
 	case "condition":
-		var i inspCondition
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspCondition(ctx, cfg)
 	case "content":
-		var i inspContent
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspContent(ctx, cfg)
 	case "for_each":
-		var i inspForEach
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspForEach(ctx, cfg)
 	case "ip":
-		var i inspIP
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspIP(ctx, cfg)
 	case "json_schema":
-		var i inspJSONSchema
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspJSONSchema(ctx, cfg)
 	case "json_valid":
-		var i inspJSONValid
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspJSONValid(ctx, cfg)
 	case "length":
-		var i inspLength
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspLength(ctx, cfg)
 	case "random":
-		var i inspRandom
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspRandom(ctx, cfg)
 	case "regexp":
-		var i inspRegExp
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspRegExp(ctx, cfg)
 	case "strings":
-		var i inspStrings
-		_ = config.Decode(cfg.Settings, &i)
-		return i, nil
+		return newInspStrings(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("condition: new_inspector: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 
 // NewInspectors accepts one or more Inspector configurations and returns configured inspectors.
-func NewInspectors(cfg ...config.Config) ([]Inspector, error) {
+func NewInspectors(ctx context.Context, cfg ...config.Config) ([]Inspector, error) {
 	var inspectors []Inspector
 	for _, c := range cfg {
-		Inspector, err := NewInspector(c)
+		Inspector, err := NewInspector(ctx, c)
 		if err != nil {
 			return nil, err
 		}
@@ -116,8 +96,8 @@ type Operator interface {
 }
 
 // NewOperator returns a configured Operator from an Operator configuration.
-func NewOperator(cfg Config) (Operator, error) {
-	inspectors, err := NewInspectors(cfg.Inspectors...)
+func NewOperator(ctx context.Context, cfg Config) (Operator, error) {
+	inspectors, err := NewInspectors(ctx, cfg.Inspectors...)
 	if err != nil {
 		return nil, err
 	}
@@ -255,6 +235,22 @@ type Config struct {
 type inspCondition struct {
 	condition
 	Options Config `json:"options"`
+
+	op Operator
+}
+
+// Creates a new condition inspector.
+func newInspCondition(ctx context.Context, cfg config.Config) (c inspCondition, err error) {
+	if err = config.Decode(cfg.Settings, &c); err != nil {
+		return inspCondition{}, err
+	}
+
+	c.op, err = NewOperator(ctx, c.Options)
+	if err != nil {
+		return inspCondition{}, err
+	}
+
+	return c, nil
 }
 
 func (c inspCondition) String() string {
@@ -263,15 +259,10 @@ func (c inspCondition) String() string {
 
 // Inspect evaluates encapsulated data with the condition inspector.
 func (c inspCondition) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
-	op, err := NewOperator(c.Options)
-	if err != nil {
-		return false, err
-	}
-
 	// this inspector does not directly interpret data, instead the
 	// capsule is passed through and each configured inspector
 	// applies its own data interpretation.
-	matched, err := op.Operate(ctx, capsule)
+	matched, err := c.op.Operate(ctx, capsule)
 	if err != nil {
 		return false, err
 	}

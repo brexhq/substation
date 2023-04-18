@@ -16,9 +16,6 @@ var errInvalidDataPattern = errors.Error("invalid data access pattern")
 // errInvalidDirection is returned when a processor is configured with an invalid direction setting.
 const errInvalidDirection = errors.Error("invalid direction")
 
-// errMissingRequiredOptions is returned when a processor does not have the required options to properly execute.
-const errMissingRequiredOptions = errors.Error("missing required options")
-
 type process struct {
 	// Condition optionally enables processing depending on the outcome of data inspection.
 	Condition condition.Config `json:"condition"`
@@ -34,6 +31,9 @@ type process struct {
 	IgnoreClose bool `json:"ignore_close"`
 	// IgnoreErrors overrides returning errors from a processor.
 	IgnoreErrors bool `json:"ignore_errors"`
+
+	// operator built from the Condition configurations.
+	operator condition.Operator
 }
 
 func toString(i interface{}) string {
@@ -55,127 +55,73 @@ type Applier interface {
 }
 
 // NewApplier returns a configured Applier from a processor configuration.
-func NewApplier(cfg config.Config) (Applier, error) {
+func NewApplier(ctx context.Context, cfg config.Config) (Applier, error) {
 	switch cfg.Type {
 	case "aws_dynamodb":
-		var p procAWSDynamoDB
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcAWSDynamoDB(ctx, cfg)
 	case "aws_lambda":
-		var p procAWSLambda
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcAWSLambda(ctx, cfg)
 	case "base64":
-		var p procBase64
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcBase64(ctx, cfg)
 	case "capture":
-		var p procCapture
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcCapture(ctx, cfg)
 	case "case":
-		var p procCase
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcCase(ctx, cfg)
 	case "convert":
-		var p procConvert
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcConvert(ctx, cfg)
 	case "copy":
-		var p procCopy
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcCopy(ctx, cfg)
 	case "delete":
-		var p procDelete
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcDelete(ctx, cfg)
 	case "dns":
-		var p procDNS
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcDNS(ctx, cfg)
 	case "domain":
-		var p procDomain
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcDomain(ctx, cfg)
 	case "flatten":
-		var p procFlatten
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcFlatten(ctx, cfg)
 	case "for_each":
-		var p procForEach
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcForEach(ctx, cfg)
 	case "group":
-		var p procGroup
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcGroup(ctx, cfg)
 	case "gzip":
-		var p procGzip
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcGzip(ctx, cfg)
 	case "hash":
-		var p procHash
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcHash(ctx, cfg)
 	case "http":
-		var p procHTTP
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcHTTP(ctx, cfg)
 	case "insert":
-		var p procInsert
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcInsert(ctx, cfg)
 	case "ip_database":
-		var p procIPDatabase
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcIPDatabase(ctx, cfg)
 	case "join":
-		var p procJoin
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcJoin(ctx, cfg)
 	case "jq":
-		var p procJQ
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcJQ(ctx, cfg)
 	case "kv_store":
-		var p procKVStore
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcKVStore(ctx, cfg)
 	case "math":
-		var p procMath
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcMath(ctx, cfg)
 	case "pipeline":
-		var p procPipeline
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcPipeline(ctx, cfg)
 	case "pretty_print":
-		var p procPrettyPrint
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcPrettyPrint(ctx, cfg)
 	case "replace":
-		var p procReplace
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcReplace(ctx, cfg)
 	case "split":
-		var p procSplit
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcSplit(ctx, cfg)
 	case "time":
-		var p procTime
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcTime(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("process: new_applier: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 
 // NewAppliers accepts one or more processor configurations and returns configured appliers.
-func NewAppliers(cfg ...config.Config) ([]Applier, error) {
+func NewAppliers(ctx context.Context, cfg ...config.Config) ([]Applier, error) {
 	var apps []Applier
 
 	for _, c := range cfg {
-		a, err := NewApplier(c)
+		a, err := NewApplier(ctx, c)
 		if err != nil {
 			return nil, err
 		}
@@ -229,143 +175,81 @@ type Batcher interface {
 }
 
 // NewBatcher returns a configured Batcher from a processor configuration.
-func NewBatcher(cfg config.Config) (Batcher, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
+func NewBatcher(ctx context.Context, cfg config.Config) (Batcher, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
 	case "aggregate":
-		var p procAggregate
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcAggregate(ctx, cfg)
 	case "aws_dynamodb":
-		var p procAWSDynamoDB
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcAWSDynamoDB(ctx, cfg)
 	case "aws_lambda":
-		var p procAWSLambda
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcAWSLambda(ctx, cfg)
 	case "base64":
-		var p procBase64
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcBase64(ctx, cfg)
 	case "capture":
-		var p procCapture
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcCapture(ctx, cfg)
 	case "case":
-		var p procCase
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcCase(ctx, cfg)
 	case "convert":
-		var p procConvert
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcConvert(ctx, cfg)
 	case "copy":
-		var p procCopy
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcCopy(ctx, cfg)
 	case "count":
-		var p procCount
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcCount(ctx, cfg)
 	case "delete":
-		var p procDelete
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcDelete(ctx, cfg)
 	case "dns":
-		var p procDNS
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcDNS(ctx, cfg)
 	case "domain":
-		var p procDomain
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcDomain(ctx, cfg)
 	case "drop":
-		var p procDrop
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcDrop(ctx, cfg)
 	case "expand":
-		var p procExpand
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcExpand(ctx, cfg)
 	case "flatten":
-		var p procFlatten
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcFlatten(ctx, cfg)
 	case "for_each":
-		var p procForEach
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcForEach(ctx, cfg)
 	case "group":
-		var p procGroup
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcGroup(ctx, cfg)
 	case "gzip":
-		var p procGzip
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcGzip(ctx, cfg)
 	case "hash":
-		var p procHash
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcHash(ctx, cfg)
 	case "http":
-		var p procHTTP
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcHTTP(ctx, cfg)
 	case "insert":
-		var p procInsert
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcInsert(ctx, cfg)
 	case "ip_database":
-		var p procIPDatabase
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcIPDatabase(ctx, cfg)
 	case "join":
-		var p procJoin
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcJoin(ctx, cfg)
 	case "jq":
-		var p procJQ
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcJQ(ctx, cfg)
 	case "kv_store":
-		var p procKVStore
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcKVStore(ctx, cfg)
 	case "math":
-		var p procMath
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcMath(ctx, cfg)
 	case "pipeline":
-		var p procPipeline
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcPipeline(ctx, cfg)
 	case "pretty_print":
-		var p procPrettyPrint
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcPrettyPrint(ctx, cfg)
 	case "replace":
-		var p procReplace
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcReplace(ctx, cfg)
 	case "split":
-		var p procSplit
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcSplit(ctx, cfg)
 	case "time":
-		var p procTime
-		_ = config.Decode(cfg.Settings, &p)
-		return p, nil
+		return newProcTime(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("process: new_batcher: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 
 // NewBatchers accepts one or more processor configurations and returns configured batchers.
-func NewBatchers(cfg ...config.Config) ([]Batcher, error) {
+func NewBatchers(ctx context.Context, cfg ...config.Config) ([]Batcher, error) {
 	var bats []Batcher
 
 	for _, c := range cfg {
-		b, err := NewBatcher(c)
+		b, err := NewBatcher(ctx, c)
 		if err != nil {
 			return nil, err
 		}
@@ -432,12 +316,7 @@ func newBatch(s *[]config.Capsule) []config.Capsule {
 	return make([]config.Capsule, 0, 10)
 }
 
-func batchApply(ctx context.Context, capsules []config.Capsule, app Applier, c condition.Config) ([]config.Capsule, error) {
-	op, err := condition.NewOperator(c)
-	if err != nil {
-		return nil, err
-	}
-
+func batchApply(ctx context.Context, capsules []config.Capsule, app Applier, op condition.Operator) ([]config.Capsule, error) {
 	newCapsules := newBatch(&capsules)
 	for _, c := range capsules {
 		ok, err := op.Operate(ctx, c)

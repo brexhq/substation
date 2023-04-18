@@ -33,3 +33,10 @@ This app handles ingest, transform, and load (ITL) for data from these AWS servi
 * [S3 via SNS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ways-to-add-notification-config-to-bucket.html)
 * [SNS](https://docs.aws.amazon.com/lambda/latest/dg/with-sns.html)
 * [SQS](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html)
+
+## validation
+
+This app handles checking if a configuration for the Substation app is valid without processing any data. It supports input from these methods:
+
+* [AppConfig Validation Lambda](https://docs.aws.amazon.com/appconfig/2019-10-09/APIReference/API_Validator.html)
+* [Lambda Invocation](https://docs.aws.amazon.com/lambda/latest/dg/API_Invoke.html)

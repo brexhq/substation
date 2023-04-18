@@ -77,3 +77,10 @@ module "ecr_autoscaling" {
   name    = "substation_autoscaling"
   kms_arn = module.kms_substation.arn
 }
+
+# repository for the validation app
+module "ecr_validation" {
+  source  = "../../../../build/terraform/aws/ecr"
+  name    = "substation_validation"
+  kms_arn = module.kms_substation.arn
+}

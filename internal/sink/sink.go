@@ -43,6 +43,10 @@ func New(ctx context.Context, cfg config.Config) (Sink, error) {
 		return newSinkAWSS3(ctx, cfg)
 	case "aws_sqs":
 		return newSinkAWSSQS(ctx, cfg)
+	case "file":
+		var s sinkFile
+		_ = config.Decode(cfg.Settings, &s)
+		return &s, nil
 	case "grpc":
 		return newSinkGRPC(ctx, cfg)
 	case "http":

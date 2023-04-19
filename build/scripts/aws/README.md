@@ -25,6 +25,14 @@ Python script that manages the upload and deployment of compiled Substation JSON
 
 This script is intended to be deployed to a CI / CD pipeline (e.g., GitHub Actions, Circle CI, Jenkins, etc.), but can be run locally if needed. See [examples/aws/](/examples/aws/) for example usage.
 
+## s3/s3_rehydration.py
+
+Python script that rehydrates data from an S3 bucket into an SNS topic by simulating S3 
+object creation events. This script has some dependencies:
+
+* boto3 must be installed
+* AWS credentials for reading from S3 and writing to SNS
+
 ## lambda/get_appconfig_extension.sh
 
 Bash script that is used to download the [AWS AppConfig Lambda extension](https://docs.aws.amazon.com/appconfig/latest/userguide/appconfig-integration-lambda-extensions.html) for any AWS region. This extension is required for deploying Substation to AWS Lambda.

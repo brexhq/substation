@@ -12,6 +12,8 @@ import (
 
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/media"
+	"github.com/klauspost/compress/snappy"
+	"github.com/klauspost/compress/zstd"
 )
 
 // errInvalidMethod is returned when an invalid scanner method is provided.
@@ -101,6 +103,17 @@ func (s *scanner) ReadFile(file *os.File) error {
 
 		reader = gzipReader
 		s.openHandles = append(s.openHandles, reader)
+	case "application/zstd":
+		zstdReader, err := zstd.NewReader(file)
+		if err != nil {
+			return fmt.Errorf("readopenfile: %v", err)
+		}
+
+		reader = io.NopCloser(zstdReader)
+		s.openHandles = append(s.openHandles, reader)
+	case "application/x-snappy-framed":
+		snappyReader := snappy.NewReader(file)
+		reader = io.NopCloser(snappyReader)
 	default:
 		// file was previously added to openHandles
 		reader = file

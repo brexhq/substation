@@ -17,6 +17,12 @@ func Bytes(b []byte) string {
 	// http.DetectContentType occasionally (rarely) generates false positive matches for application/vnd.ms-fontobject when the bytes are application/x-gzip
 	case bytes.HasPrefix(b, []byte("\x1f\x8b\x08")):
 		return "application/x-gzip"
+	// http.DetectContentType cannot detect zstd
+	case bytes.HasPrefix(b, []byte("\x28\xb5\x2f\xfd")):
+		return "application/x-zstd"
+	// http.DetectContentType cannot detect snappy
+	case bytes.HasPrefix(b, []byte("\xff\x06\x00\x00\x73\x4e\x61\x50\x70\x59")):
+		return "application/x-snappy-framed"
 	default:
 		return http.DetectContentType(b)
 	}

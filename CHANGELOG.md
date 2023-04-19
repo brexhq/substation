@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.9.0](https://github.com/brexhq/substation/compare/v0.8.4...v0.9.0) (2023-04-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* Add AWS AppConfig Lambda Validation app ([#92](https://github.com/brexhq/substation/issues/92))
+
+### Features
+
+* Add AWS AppConfig Lambda Validation app ([#92](https://github.com/brexhq/substation/issues/92)) ([f374137](https://github.com/brexhq/substation/commit/f374137066aaf2b4c1043a88f8d4ff11fb042b38))
+* add gt, lt ([#98](https://github.com/brexhq/substation/issues/98)) ([110253b](https://github.com/brexhq/substation/commit/110253b646ccabc340abe5b1c9f3b66b26cc512d))
+* condition inspector ([#86](https://github.com/brexhq/substation/issues/86)) ([e1fcee6](https://github.com/brexhq/substation/commit/e1fcee60ec377b994e92b5f5b3f64aa7523393ef))
+* Customizable Sink Files ([#93](https://github.com/brexhq/substation/issues/93)) ([bee2463](https://github.com/brexhq/substation/commit/bee2463f2a42f7cd5834f04361fedda71db0927b))
+* JQ Processor ([#88](https://github.com/brexhq/substation/issues/88)) ([0adf249](https://github.com/brexhq/substation/commit/0adf2493c6c6052fc67ee8ae62689c763d91c024))
+
+
+### Bug Fixes
+
+* decode object key ([#96](https://github.com/brexhq/substation/issues/96)) ([9e7a6db](https://github.com/brexhq/substation/commit/9e7a6db6cb1124db596e6e27bb3474ba0e16032b))
+
 ## [0.8.4](https://github.com/brexhq/substation/compare/v0.8.3...v0.8.4) (2023-03-08)
 
 

@@ -1,15 +1,11 @@
 output "vpc_id" {
-  value = aws_vpc.substation_vpc.id
+  value = aws_vpc.vpc.id
 }
 
-output "private_subnet_1" {
-    value = aws_subnet.private_subnet_1.id
+output "private_subnet_id" {
+  value = aws_subnet.private_subnet.id
 }
 
-output "private_subnet_2" {
-    value = aws_subnet.private_subnet_2.id
-}
-
-output "private_subnet_3" {
-    value = aws_subnet.private_subnet_3.id
+output "security_group_id" {
+  value = aws_security_group.allow_substation_tls.id
 }

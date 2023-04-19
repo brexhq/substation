@@ -26,6 +26,7 @@ resource "aws_route_table" "private_route" {
   }
   route {
     ipv6_cidr_block        = "::/0"
+    cidr_block             = "0.0.0.0/0"
     egress_only_gateway_id = aws_egress_only_internet_gateway.substation_egress.id
   }
 }
@@ -44,12 +45,11 @@ resource "aws_security_group" "allow_substation_tls" {
   vpc_id      = aws_vpc.vpc.id
 
   ingress {
-    description      = "TLS from VPC"
-    from_port        = 443
-    to_port          = 443
-    protocol         = "tcp"
-    cidr_blocks      = [aws_vpc.vpc.cidr_block]
-    ipv6_cidr_blocks = [aws_vpc.vpc.ipv6_cidr_block]
+    description = "TLS from VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
   }
 
   egress {

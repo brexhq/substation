@@ -57,8 +57,3 @@ variable "security_group_ids" {
   type    = list(string)
   default = []
 }
-
-variable "use_substation_vpc" {
-  type    = bool
-  default = false
-}

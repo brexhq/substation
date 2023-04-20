@@ -45,8 +45,8 @@ resource "aws_route_table_association" "private_subnet_association" {
 
 # Terraform removes the default egress rule
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group#basic-usage
-resource "aws_security_group" "allow_public_egress" {
-  name        = "substation_allow_public_egress"
+resource "aws_security_group" "public_egress" {
+  name        = "${aws_vpc.vpc.id}-public-egress}"
   description = "Allows outbound traffic from the Substation VPC to the public internet"
   vpc_id      = aws_vpc.vpc.id
 

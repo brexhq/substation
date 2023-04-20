@@ -12,8 +12,14 @@ resource "aws_subnet" "private_subnet" {
 }
 
 # Create egress only IGW
-resource "aws_egress_only_internet_gateway" "substation_egress" {
+resource "aws_internet_gateway" "substation_egress" {
   vpc_id = aws_vpc.vpc.id
+}
+
+# Attach gateway to VPC
+resource "aws_internet_gateway_attachment" "vpc_gateway" {
+  internet_gateway_id = aws_internet_gateway.substation_egress.id
+  vpc_id              = aws_vpc.vpc.id
 }
 
 # Create routes
@@ -25,8 +31,8 @@ resource "aws_route_table" "private_route" {
     # Default route to the internet, no IGW attached
   }
   route {
-    cidr_block             = "0.0.0.0/0"
-    egress_only_gateway_id = aws_egress_only_internet_gateway.substation_egress.id
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.substation_egress.id
   }
 }
 

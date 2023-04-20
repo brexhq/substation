@@ -7,12 +7,11 @@ import (
 	"io"
 	"os"
 
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 )
 
 // errMissingPrefetchEnvVar is returned when a Lambda is deployed without a configured AppConfig URL.
-const errMissingPrefetchEnvVar = errors.Error("missing AWS_APPCONFIG_EXTENSION_PREFETCH_LIST environment variable")
+var errMissingPrefetchEnvVar = fmt.Errorf("missing AWS_APPCONFIG_EXTENSION_PREFETCH_LIST environment variable")
 
 var client http.HTTP
 

@@ -17,7 +17,7 @@ import (
 )
 
 // errCSVFileColumnNotFound is returned when the column is not found in the CSV header.
-var errCSVFileColumnNotFound = errors.Error("column not found")
+var errCSVFileColumnNotFound = fmt.Errorf("column not found")
 
 // kvCSVFile is a read-only key-value store that is derived from a CSV file and
 // stored in memory.

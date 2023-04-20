@@ -15,7 +15,7 @@ import (
 
 // errDomainNoSubdomain is returned when a domain without a subdomain is
 // processed.
-const errDomainNoSubdomain = errors.Error("no subdomain")
+var errDomainNoSubdomain = fmt.Errorf("no subdomain")
 
 // domain processes data by parsing fully qualified domain names (FQDNs) into
 // labels.

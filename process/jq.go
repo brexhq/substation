@@ -12,7 +12,7 @@ import (
 )
 
 // errJqNoOutputGenerated is returned when the jq query generates no output.
-const errJqNoOutputGenerated = errors.Error("no output generated")
+var errJqNoOutputGenerated = fmt.Errorf("no output generated")
 
 // jq processes data by applying jq queries.
 //

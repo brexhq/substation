@@ -10,17 +10,16 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/appconfig"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
 )
 
 var handler string
 
 // errLambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
-const errLambdaMissingHandler = errors.Error("missing SUBSTATION_HANDLER environment variable")
+var errLambdaMissingHandler = fmt.Errorf("missing SUBSTATION_HANDLER environment variable")
 
 // errLambdaInvalidHandler is returned when the Lambda is deployed with an unsupported handler.
-const errLambdaInvalidHandler = errors.Error("invalid handler")
+var errLambdaInvalidHandler = fmt.Errorf("invalid handler")
 
 // getConfig contextually retrieves a Substation configuration.
 func getConfig(ctx context.Context) (io.Reader, error) {

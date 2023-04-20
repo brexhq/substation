@@ -16,7 +16,7 @@ import (
 
 // errCaseInvalid is returned when the Case processor is configured with
 // an invalid case.
-const errCaseInvalid = errors.Error("invalid case")
+var errCaseInvalid = fmt.Errorf("invalid case")
 
 // case processes data by modifying letter case (https://en.wikipedia.org/wiki/LetterprocCase).
 //

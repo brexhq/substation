@@ -12,11 +12,10 @@ import (
 	"github.com/tidwall/sjson"
 
 	"github.com/brexhq/substation/internal/base64"
-	"github.com/brexhq/substation/internal/errors"
 )
 
 // errSetRawInvalid is returned when SetRaw receives an invalid input value.
-const errSetRawInvalid = errors.Error("invalid value interface")
+var errSetRawInvalid = fmt.Errorf("invalid value interface")
 
 // Types maps gjson.Type to strings.
 var Types = map[gjson.Type]string{

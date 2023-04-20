@@ -19,11 +19,11 @@ var dynamodbAPI dynamodb.API
 
 // errAWSDynamodbInputNotAnObject is returned when the input is not an object.
 // Refer to the dynamodb processor documentation for input requirements.
-const errAWSDynamodbInputNotAnObject = errors.Error("input is not an object")
+var errAWSDynamodbInputNotAnObject = fmt.Errorf("input is not an object")
 
 // errAWSDynamodbInputMissingPK is returned when the JSON key "PK" is missing in
 // the input. Refer to the dynamodb processor documentation for input requirements.
-const errAWSDynamodbInputMissingPK = errors.Error("input missing PK")
+var errAWSDynamodbInputMissingPK = fmt.Errorf("input missing PK")
 
 // awsDynamodb processes data by querying a DynamoDB table and returning all
 // matched items as an array of objects. The input must be an object containing

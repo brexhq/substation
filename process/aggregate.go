@@ -7,7 +7,6 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/jshlbrd/go-aggregate"
 )
@@ -16,7 +15,7 @@ import (
 // limit is reached. If this error occurs, then increase the size of
 // the buffer or use the Drop processor to remove data that exceeds
 // the buffer limit.
-const errAggregateSizeLimit = errors.Error("data exceeded size limit")
+var errAggregateSizeLimit = fmt.Errorf("data exceeded size limit")
 
 // aggregate processes data by buffering and aggregating it into a
 // single item.

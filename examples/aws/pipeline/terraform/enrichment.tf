@@ -12,8 +12,8 @@ module "lambda_enrichment" {
   image_uri     = "${module.ecr_substation.repository_url}:latest"
   architectures = ["arm64"]
   # use lower memory and timeouts for microservice deployments
-  memory_size   = 128
-  timeout       = 10
+  memory_size = 128
+  timeout     = 10
 
   env = {
     "AWS_MAX_ATTEMPTS" : 10
@@ -26,8 +26,17 @@ module "lambda_enrichment" {
     owner = "example"
   }
 
+  vpc_config = {
+    subnet_ids = [
+      module.network.private_subnet_id,
+      module.network.public_subnet_id,
+    ]
+    security_group_ids = [module.network.public_egress_security_group_id]
+  }
+
   depends_on = [
     aws_appconfig_application.substation,
-    module.ecr_substation.repository_url,
+    module.ecr_autoscaling.repository_url,
+    module.network,
   ]
 }

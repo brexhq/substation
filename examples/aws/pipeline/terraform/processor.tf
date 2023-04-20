@@ -22,6 +22,20 @@ module "lambda_processor" {
   tags = {
     owner = "example"
   }
+
+  vpc_config = {
+    subnet_ids = [
+      module.network.private_subnet_id,
+      module.network.public_subnet_id,
+    ]
+    security_group_ids = [module.network.public_egress_security_group_id]
+  }
+
+  depends_on = [
+    aws_appconfig_application.substation,
+    module.ecr_autoscaling.repository_url,
+    module.network,
+  ]
 }
 
 resource "aws_lambda_event_source_mapping" "lambda_esm_processor" {
@@ -54,8 +68,8 @@ module "iam_lambda_processor_dynamodb_read_attachment" {
 
 # allows processor Lambda to execute Lambda for enrichment
 module "iam_lambda_processor_lambda_execute" {
-  source    = "../../../../build/terraform/aws/iam"
-  resources = [ "*"
+  source = "../../../../build/terraform/aws/iam"
+  resources = ["*"
     # module.lambda_enrichment.role
   ]
 }

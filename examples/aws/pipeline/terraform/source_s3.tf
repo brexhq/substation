@@ -23,9 +23,18 @@ module "lambda_s3_source" {
     owner = "example"
   }
 
+  vpc_config = {
+    subnet_ids = [
+      module.network.private_subnet_id,
+      module.network.public_subnet_id,
+    ]
+    security_group_ids = [module.network.public_egress_security_group_id]
+  }
+
   depends_on = [
     aws_appconfig_application.substation,
-    module.ecr_substation.repository_url,
+    module.ecr_autoscaling.repository_url,
+    module.network,
   ]
 }
 
@@ -37,7 +46,7 @@ resource "aws_s3_bucket_notification" "lambda_notification_s3_source" {
     lambda_function_arn = module.lambda_s3_source.arn
     events              = ["s3:ObjectCreated:*"]
     # enable prefix and suffix filtering based on the source service that is writing objects to the bucket
-    filter_prefix       = "source/"
+    filter_prefix = "source/"
     # filter_suffix       = var.filter_suffix
   }
 

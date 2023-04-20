@@ -48,12 +48,13 @@ variable "secret" {
   default = false
 }
 
-variable "subnet_ids" {
-  type    = list(string)
-  default = []
-}
-
-variable "security_group_ids" {
-  type    = list(string)
-  default = []
+variable "vpc_config" {
+  type = object({
+    subnet_ids         = list(string)
+    security_group_ids = list(string)
+  })
+  default = {
+    subnet_ids         = []
+    security_group_ids = []
+  }
 }

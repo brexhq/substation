@@ -3,10 +3,6 @@ locals {
   env = var.env[*]
 }
 
-module "vpc" {
-  source = "../networking"
-}
-
 resource "aws_lambda_function" "lambda_function" {
   function_name = var.function_name
   description   = var.description
@@ -18,8 +14,8 @@ resource "aws_lambda_function" "lambda_function" {
   memory_size   = var.memory_size
 
   vpc_config {
-    subnet_ids         = var.subnet_ids == null ? null : var.subnet_ids
-    security_group_ids = var.security_group_ids == null ? null : var.security_group_ids
+    subnet_ids         = var.vpc_config.subnet_ids
+    security_group_ids = var.vpc_config.security_group_ids
   }
 
   tracing_config {
@@ -68,6 +64,12 @@ resource "aws_iam_role_policy_attachment" "xray_write_only_access" {
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution_role" {
   role       = aws_iam_role.role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# permissions for running Lambda in a VPC
+resource "aws_iam_role_policy_attachment" "lambda_vpc_access_execution_role" {
+  role       = aws_iam_role.role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 resource "aws_appconfig_configuration_profile" "config" {

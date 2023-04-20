@@ -5,57 +5,50 @@ resource "aws_vpc" "vpc" {
   tags             = var.tags
 }
 
-# Create private subnets
 resource "aws_subnet" "private_subnet" {
   vpc_id     = aws_vpc.vpc.id
-  cidr_block = var.subnet_cidr
+  cidr_block = var.private_subnet_cidr
+  availability_zone = var.availability_zone
+  tags = var.tags
 }
 
-# Create egress only IGW
-resource "aws_internet_gateway" "substation_egress" {
+resource "aws_subnet" "public_subnet" {
+  vpc_id     = aws_vpc.vpc.id
+  cidr_block = var.public_subnet_cidr
+  availability_zone = var.availability_zone
+  tags = var.tags
+}
+
+resource "aws_internet_gateway" "internet_gateway" {
   vpc_id = aws_vpc.vpc.id
 }
 
-# Attach gateway to VPC
-resource "aws_internet_gateway_attachment" "vpc_gateway" {
-  internet_gateway_id = aws_internet_gateway.substation_egress.id
-  vpc_id              = aws_vpc.vpc.id
+resource "aws_route_table" "public_route" {
+ vpc_id = aws_vpc.vpc.id
+ 
+ route {
+   cidr_block = "0.0.0.0/0"
+   gateway_id = aws_internet_gateway.internet_gateway.id
+ }
+
+ tags = var.tags
 }
 
-# Create routes
-resource "aws_route_table" "private_route" {
-  vpc_id = aws_vpc.vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    # Default route to the internet, no IGW attached
-  }
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.substation_egress.id
-  }
-}
-
-# Private subnet route associations
 resource "aws_route_table_association" "private_subnet_association" {
-  subnet_id      = aws_subnet.private_subnet.id
-  route_table_id = aws_route_table.private_route.id
+  subnet_id      = aws_subnet.public_subnet.id
+  route_table_id = aws_route_table.public_route.id
+
+  depends_on = [
+    aws_subnet.public_subnet,
+  ]
 }
 
-# Default TLS security group for substation VPC
-
-resource "aws_security_group" "allow_substation_tls" {
-  name        = "allow_tls"
-  description = "Allow TLS inbound traffic"
+# Terraform removes the default egress rule
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group#basic-usage
+resource "aws_security_group" "allow_public_egress" {
+  name        = "substation_allow_public_egress"
+  description = "Allows outbound traffic from the Substation VPC to the public internet"
   vpc_id      = aws_vpc.vpc.id
-
-  ingress {
-    description = "TLS from VPC"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
-  }
 
   egress {
     from_port   = 0
@@ -63,8 +56,5 @@ resource "aws_security_group" "allow_substation_tls" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  tags = {
-    Name = "allow_tls"
-  }
+  tags = var.tags
 }

@@ -25,7 +25,6 @@ resource "aws_route_table" "private_route" {
     # Default route to the internet, no IGW attached
   }
   route {
-    ipv6_cidr_block        = "::/0"
     cidr_block             = "0.0.0.0/0"
     egress_only_gateway_id = aws_egress_only_internet_gateway.substation_egress.id
   }
@@ -53,10 +52,10 @@ resource "aws_security_group" "allow_substation_tls" {
   }
 
   egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {

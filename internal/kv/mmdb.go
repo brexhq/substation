@@ -17,7 +17,7 @@ import (
 
 // errMMDBKeyMustBeAddr is returned when the key used in a Get call is not a valid
 // IP address.
-var errMMDBKeyMustBeAddr = errors.Error("key must be IP address")
+var errMMDBKeyMustBeAddr = fmt.Errorf("key must be IP address")
 
 // KvMMDB is a read-only key-value store that is derived from any MaxMind database
 // format (MMDB) file.

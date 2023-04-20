@@ -22,7 +22,7 @@ errSQSMessageSizeLimit is returned when data exceeds the SQS message
 size limit. If this error occurs, then conditions or processors
 should be applied to either drop or reduce the size of the data.
 */
-const errSQSMessageSizeLimit = errors.Error("data exceeded size limit")
+var errSQSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 // awsSQS sinks data to an AWS SQS queue.
 type sinkAWSSQS struct {

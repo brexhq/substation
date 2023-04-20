@@ -14,7 +14,7 @@ var (
 	mu sync.Mutex
 	m  map[string]Storer
 	// errSetNotSupported is returned when the KV set action is not supported.
-	errSetNotSupported = errors.Error("set not supported")
+	errSetNotSupported = fmt.Errorf("set not supported")
 )
 
 // Storer provides tools for getting values from and putting values into key-value stores.

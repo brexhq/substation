@@ -1,10 +1,10 @@
 // package ip provides tools for modifying IP address data.
 package ip
 
-import "github.com/brexhq/substation/internal/errors"
+import "fmt"
 
 // ErrInvalidIPAddress is returned when an invalid IP address is referenced in any function or method.
-const ErrInvalidIPAddress = errors.Error("invalid IP address")
+var ErrInvalidIPAddress = fmt.Errorf("invalid IP address")
 
 // Getter provides a method for getting an enrichment record from any IP address enrichment source.
 type Getter interface {

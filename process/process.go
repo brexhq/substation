@@ -11,10 +11,10 @@ import (
 )
 
 // errInvalidDataPattern is returned when a processor is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
-var errInvalidDataPattern = errors.Error("invalid data access pattern")
+var errInvalidDataPattern = fmt.Errorf("invalid data access pattern")
 
 // errInvalidDirection is returned when a processor is configured with an invalid direction setting.
-const errInvalidDirection = errors.Error("invalid direction")
+var errInvalidDirection = fmt.Errorf("invalid direction")
 
 type process struct {
 	// Condition optionally enables processing depending on the outcome of data inspection.

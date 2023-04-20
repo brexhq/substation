@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/brexhq/substation/internal/aws/s3manager"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 )
 
@@ -19,10 +18,10 @@ var (
 )
 
 // errEmptyFile is returned when Get is called but finds an empty file.
-const errEmptyFile = errors.Error("empty file found")
+var errEmptyFile = fmt.Errorf("empty file found")
 
 // errNoFile is returned when Get is called but no file is found.
-const errNoFile = errors.Error("no file found")
+var errNoFile = fmt.Errorf("no file found")
 
 /*
 Get retrieves a file from these locations (in order):

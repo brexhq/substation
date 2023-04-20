@@ -16,7 +16,7 @@ import (
 // errBase64DecodedBinary is returned when the Base64 processor is configured
 // to decode output into an object, but the output contains binary data and
 // cannot be written into a valid object.
-const errBase64DecodedBinary = errors.Error("cannot write binary as object")
+var errBase64DecodedBinary = fmt.Errorf("cannot write binary as object")
 
 // base64 processes data by converting it to and from base64.
 //

@@ -11,7 +11,6 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws/secretsmanager"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/kv"
 )
 
@@ -25,7 +24,7 @@ var (
 )
 
 // errSecretNotFound is returned when Get is called but no secret is found.
-const errSecretNotFound = errors.Error("secret not found")
+var errSecretNotFound = fmt.Errorf("secret not found")
 
 // ttl enforces a 15 minute rotation for all secrets stored in memory.
 const ttl = 15 * 60

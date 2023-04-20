@@ -17,13 +17,13 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-const (
+var (
 	// errEmptyPrefix is returned when a file-based sink is configured with a
 	// prefix key, but the key is not found in the object or the key is empty.
-	errEmptyPrefix = errors.Error("empty prefix string")
+	errEmptyPrefix = fmt.Errorf("empty prefix string")
 	// errEmptySuffix is returned when a file-based sink is configured with a
 	// suffix key, but the key is not found in the object or the key is empty.
-	errEmptySuffix = errors.Error("empty suffix string")
+	errEmptySuffix = fmt.Errorf("empty suffix string")
 )
 
 type Sink interface {

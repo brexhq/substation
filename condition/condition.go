@@ -11,7 +11,7 @@ import (
 
 // errOperatorMissingInspectors is returned when an Operator that requires
 // inspectors is created with no inspectors.
-const errOperatorMissingInspectors = errors.Error("missing inspectors")
+var errOperatorMissingInspectors = fmt.Errorf("missing inspectors")
 
 type condition struct {
 	// Key retrieves a value from an object for inspection.

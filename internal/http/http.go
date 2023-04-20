@@ -7,12 +7,10 @@ import (
 
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/hashicorp/go-retryablehttp"
-
-	"github.com/brexhq/substation/internal/errors"
 )
 
 // errHTTPInvalidPayload is returned by Post when it receives an unexpected payload interface.
-const errHTTPInvalidPayload = errors.Error("invalid payload interface")
+var errHTTPInvalidPayload = fmt.Errorf("invalid payload interface")
 
 // Header contains a single HTTP header that can be passed to HTTP.Post. Multiple headers can be passed to HTTP.Post as a slice.
 type Header struct {

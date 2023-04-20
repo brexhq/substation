@@ -6,11 +6,10 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/errors"
 )
 
 // errPipelineArrayInput is returned when the pipeline processor is configured to process JSON, but the input is an array. Array values are not supported by this processor, instead the input should be run through the ForEach processor (which can encapsulate the pipeline processor).
-const errPipelineArrayInput = errors.Error("input is an array")
+var errPipelineArrayInput = fmt.Errorf("input is an array")
 
 // pipeline processes data by applying a series of processors.
 //

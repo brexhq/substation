@@ -3,16 +3,16 @@ package config
 
 import (
 	gojson "encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"sync"
 
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 )
 
 // errSetInvalidKey is returned when an invalid key is used in a Capsule Set function.
-const errSetInvalidKey = errors.Error("invalid set key")
+var errSetInvalidKey = fmt.Errorf("invalid set key")
 
 // Config is a template used by Substation interface factories to produce new instances from JSON configurations. Type refers to the type of instance and Settings contains options used in the instance. Examples of this are found in the condition and process packages.
 type Config struct {

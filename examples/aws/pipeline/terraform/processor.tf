@@ -23,12 +23,10 @@ module "lambda_processor" {
     owner = "example"
   }
 
+  # processor Lambda runs within a custom VPC
   vpc_config = {
-    subnet_ids = [
-      module.network.private_subnet_id,
-      module.network.public_subnet_id,
-    ]
-    security_group_ids = [module.network.public_egress_security_group_id]
+    subnet_ids         = module.vpc.private_subnet_ids
+    security_group_ids = [module.vpc.default_security_group_id]
   }
 
   depends_on = [

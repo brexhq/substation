@@ -37,14 +37,6 @@ module "lambda_sqs_source" {
     owner = "example"
   }
 
-  vpc_config = {
-    subnet_ids = [
-      module.network.private_subnet_id,
-      module.network.public_subnet_id,
-    ]
-    security_group_ids = [module.network.public_egress_security_group_id]
-  }
-
   depends_on = [
     aws_appconfig_application.substation,
     module.ecr_autoscaling.repository_url,

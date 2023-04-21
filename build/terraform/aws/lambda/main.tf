@@ -13,6 +13,11 @@ resource "aws_lambda_function" "lambda_function" {
   timeout       = var.timeout
   memory_size   = var.memory_size
 
+  vpc_config {
+    subnet_ids         = var.vpc_config.subnet_ids
+    security_group_ids = var.vpc_config.security_group_ids
+  }
+
   tracing_config {
     mode = "Active"
   }
@@ -59,6 +64,12 @@ resource "aws_iam_role_policy_attachment" "xray_write_only_access" {
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution_role" {
   role       = aws_iam_role.role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# permissions for running Lambda in a VPC
+resource "aws_iam_role_policy_attachment" "lambda_vpc_access_execution_role" {
+  role       = aws_iam_role.role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 resource "aws_appconfig_configuration_profile" "config" {

@@ -84,3 +84,11 @@ module "ecr_validation" {
   name    = "substation_validation"
   kms_arn = module.kms_substation.arn
 }
+
+# By default this creates these resources:
+# - Address space of 64k hosts (split between all subnets)
+# - 1 public subnet with an internet gateway
+# - 3 private subnets each with a NAT gateway
+module "vpc" {
+  source = "../../../../build/terraform/aws/networking/vpc"
+}

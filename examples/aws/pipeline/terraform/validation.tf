@@ -16,7 +16,8 @@ module "lambda_validator" {
 
   depends_on = [
     aws_appconfig_application.substation,
-    module.ecr_validation.repository_url,
+    module.ecr_autoscaling.repository_url,
+    module.network,
   ]
 }
 

@@ -45,6 +45,6 @@ module "iam_s3_write_attachment" {
   policy = module.iam_s3_write.s3_write_policy
   roles = [
     module.lambda_raw_s3_sink.role,
-	module.lambda_processed_s3_sink.role,
+    module.lambda_processed_s3_sink.role,
   ]
 }

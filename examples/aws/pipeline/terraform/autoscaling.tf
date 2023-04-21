@@ -26,6 +26,7 @@ module "lambda_autoscaling" {
   depends_on = [
     aws_appconfig_application.substation,
     module.ecr_autoscaling.repository_url,
+    module.network,
   ]
 }
 

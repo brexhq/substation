@@ -109,3 +109,9 @@ Read more about SNS [here](https://aws.amazon.com/sns/).
 This module is used for creating SQS queues. Queues can be standard or first-in-first-out (FIFO).
 
 Read more about SQS [here](https://aws.amazon.com/sqs/).
+
+### Networking
+
+This module can be used to create a custom VPC with outbound connectivity via a NAT gateway to a public subnet that contains an IGW. This allows for connectivity with VPC only services.
+
+Read more about VPCs [here](https://aws.amazon.com/vpc/).

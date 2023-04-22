@@ -14,7 +14,7 @@ import (
 )
 
 // errHashInvalidAlgorithm is returned when the hash processor is configured with an invalid algorithm.
-const errHashInvalidAlgorithm = errors.Error("invalid algorithm")
+var errHashInvalidAlgorithm = fmt.Errorf("invalid algorithm")
 
 // hash processes data by calculating hashes (https://en.wikipedia.org/wiki/CryptographicprocHash_function).
 //

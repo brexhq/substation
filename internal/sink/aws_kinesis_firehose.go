@@ -23,7 +23,7 @@ Kinesis Firehose record size limit. If this error occurs,
 then conditions or processors should be applied to either
 drop or reduce the size of the data.
 */
-const errFirehoseRecordSizeLimit = errors.Error("data exceeded size limit")
+var errFirehoseRecordSizeLimit = fmt.Errorf("data exceeded size limit")
 
 // awsKinesisFirehose sinks data to an AWS Kinesis Firehose Delivery Stream.
 //

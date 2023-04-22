@@ -18,7 +18,7 @@ var dynamodbAPI dynamodb.API
 //
 // If this error occurs, then parse the data into an object (or drop invalid objects)
 // before it reaches the sink.
-const errDynamoDBNonObject = errors.Error("input must be object")
+var errDynamoDBNonObject = fmt.Errorf("input must be object")
 
 // awsDynamodb sinks data to an AWS DynamoDB table.
 //

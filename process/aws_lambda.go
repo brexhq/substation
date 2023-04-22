@@ -16,7 +16,7 @@ import (
 var lambdaAPI lambda.API
 
 // errAWSLambdaInputNotAnObject is returned when the input is not a JSON object.
-const errAWSLambdaInputNotAnObject = errors.Error("input is not an object")
+var errAWSLambdaInputNotAnObject = fmt.Errorf("input is not an object")
 
 // awsLambda processes data by synchronously invoking an AWS Lambda function
 // and returning the payload. The average latency of synchronously invoking

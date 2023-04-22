@@ -39,7 +39,8 @@ module "lambda_sqs_source" {
 
   depends_on = [
     aws_appconfig_application.substation,
-    module.ecr_substation.repository_url,
+    module.ecr_autoscaling.repository_url,
+    module.network,
   ]
 }
 

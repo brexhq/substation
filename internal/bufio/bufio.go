@@ -10,14 +10,13 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/media"
 	"github.com/klauspost/compress/snappy"
 	"github.com/klauspost/compress/zstd"
 )
 
 // errInvalidMethod is returned when an invalid scanner method is provided.
-const errInvalidMethod = errors.Error("invalid scanner method")
+var errInvalidMethod = fmt.Errorf("invalid scanner method")
 
 // NewScanner returns a new scanner with default settings provided by scanCapacity and scanMethod.
 func NewScanner() *scanner {

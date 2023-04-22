@@ -8,7 +8,6 @@ import (
 
 	"github.com/brexhq/substation/cmd"
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/service"
 	"golang.org/x/sync/errgroup"
 )
@@ -80,7 +79,7 @@ func lambdaAsyncHandler(ctx context.Context, event json.RawMessage) error {
 
 // errLambdaSyncMultipleItems is returned when an invocation of the lambdaSync handler
 // produces multiple items, which cannot be returned.
-const errLambdaSyncMultipleItems = errors.Error("transformed data into multiple items")
+var errLambdaSyncMultipleItems = fmt.Errorf("transformed data into multiple items")
 
 // lambdaSyncHandler implements ITL using a request-reply service that is triggered
 // by synchronous invocation of the Lambda. Read more about synchronous invocation here:

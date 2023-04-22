@@ -47,3 +47,14 @@ variable "secret" {
   type    = bool
   default = false
 }
+
+variable "vpc_config" {
+  type = object({
+    subnet_ids         = list(string)
+    security_group_ids = list(string)
+  })
+  default = {
+    subnet_ids         = []
+    security_group_ids = []
+  }
+}

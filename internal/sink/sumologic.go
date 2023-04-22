@@ -22,7 +22,7 @@ var sumoLogicClient http.HTTP
 //
 // If this error occurs, then parse the data into an object (or drop invalid objects)
 // before it reaches the sink.
-const errSumoLogicNonObject = errors.Error("input must be object")
+var errSumoLogicNonObject = fmt.Errorf("input must be object")
 
 // sumologic sinks data to Sumo Logic using an HTTP collector.
 //

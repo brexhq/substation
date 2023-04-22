@@ -27,7 +27,7 @@ const (
 //
 // The most common causes of this error are invalid input JSON
 // (e.g., {{"foo":"bar"}) or using the processor with multi-core processing enabled.
-const errPrettyPrintIncompleteJSON = errors.Error("incomplete JSON object")
+var errPrettyPrintIncompleteJSON = fmt.Errorf("incomplete JSON object")
 
 // prettyPrint processes data by applying or reversing prettyprint formatting to objects.
 //

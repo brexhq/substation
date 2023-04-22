@@ -20,6 +20,16 @@ var mediaTests = []struct {
 		[]byte("\x1f\x8b\x08"),
 		"application/x-gzip",
 	},
+	{
+		"zstd",
+		[]byte("\x28\xb5\x2f\xfd"),
+		"application/x-zstd",
+	},
+	{
+		"snappy",
+		[]byte("\xff\x06\x00\x00\x73\x4e\x61\x50\x70\x59"),
+		"application/x-snappy-framed",
+	},
 }
 
 func TestBytes(t *testing.T) {

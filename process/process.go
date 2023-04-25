@@ -58,7 +58,7 @@ type Applier interface {
 }
 
 // NewApplier returns a configured Applier from a processor configuration.
-func NewApplier(ctx context.Context, cfg config.Config) (Applier, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
+func NewApplier(ctx context.Context, cfg config.Config) (Applier, error) {
 	switch cfg.Type {
 	case "aws_dynamodb":
 		return newProcAWSDynamoDB(ctx, cfg)

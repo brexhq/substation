@@ -96,7 +96,7 @@ func (p procDNS) Batch(ctx context.Context, capsules ...config.Capsule) ([]confi
 
 // Apply processes a capsule with the processor.
 //
-//nolint:gocognit
+//nolint:gocognit,cyclop // ignore complexity
 func (p procDNS) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
 	if ok, err := p.operator.Operate(ctx, capsule); err != nil {
 		return capsule, fmt.Errorf("process: delete: %v", err)

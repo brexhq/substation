@@ -201,17 +201,18 @@ func BenchmarkExpand(b *testing.B) {
 }
 
 func TestExpandStream(t *testing.T) {
-	group, ctx := errgroup.WithContext(context.TODO())
 	capsule := config.NewCapsule()
 
 	for _, test := range expandTests {
 		t.Run(test.name, func(t *testing.T) {
+			group, ctx := errgroup.WithContext(context.TODO())
+			in, out := config.NewChannel(), config.NewChannel()
+
 			proc, err := newProcExpand(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			in, out := config.NewChannel(), config.NewChannel()
 			group.Go(func() error {
 				if err := proc.Stream(ctx, in, out); err != nil {
 					t.Error(err)

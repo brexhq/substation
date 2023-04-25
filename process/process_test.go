@@ -167,17 +167,18 @@ func TestBatch(t *testing.T) {
 }
 
 func TestStream(t *testing.T) {
-	group, ctx := errgroup.WithContext(context.TODO())
 	capsule := config.NewCapsule()
 
 	for _, test := range processTests {
 		t.Run(test.name, func(t *testing.T) {
+			group, ctx := errgroup.WithContext(context.TODO())
+			in, out := config.NewChannel(), config.NewChannel()
+
 			streamer, err := NewStreamer(ctx, test.conf)
 			if err != nil {
 				t.Error(err)
 			}
 
-			in, out := config.NewChannel(), config.NewChannel()
 			group.Go(func() error {
 				if err := streamer.Stream(ctx, in, out); err != nil {
 					panic(err)

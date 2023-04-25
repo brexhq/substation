@@ -234,17 +234,18 @@ func TestAggregate(t *testing.T) {
 }
 
 func TestAggregateStream(t *testing.T) {
-	group, ctx := errgroup.WithContext(context.TODO())
 	capsule := config.NewCapsule()
 
 	for _, test := range aggregateTests {
 		t.Run(test.name, func(t *testing.T) {
+			group, ctx := errgroup.WithContext(context.TODO())
+			in, out := config.NewChannel(), config.NewChannel()
+
 			proc, err := newProcAggregate(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			in, out := config.NewChannel(), config.NewChannel()
 			group.Go(func() error {
 				if err := proc.Stream(ctx, in, out); err != nil {
 					t.Error(err)

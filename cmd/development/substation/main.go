@@ -11,13 +11,12 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/brexhq/substation/cmd"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/bufio"
 	"github.com/brexhq/substation/internal/file"
 	"github.com/brexhq/substation/internal/json"
+	"golang.org/x/sync/errgroup"
 )
 
 type metadata struct {

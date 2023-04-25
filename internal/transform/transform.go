@@ -18,6 +18,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) {
 	switch t := cfg.Type; t {
 	case "batch":
 		return newTformBatch(ctx, cfg)
+	case "stream":
+		return newTformStream(ctx, cfg)
 	case "transfer":
 		return newTformTransfer(ctx, cfg)
 	default:

@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procCopy{}
-	_ Batcher = procCopy{}
+	_ Applier  = procCopy{}
+	_ Batcher  = procCopy{}
+	_ Streamer = procCopy{}
 )
 
 var copyTests = []struct {

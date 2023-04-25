@@ -7,7 +7,10 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var _ Batcher = procDrop{}
+var (
+	_ Batcher  = procDrop{}
+	_ Streamer = procDrop{}
+)
 
 var dropTests = []struct {
 	name string

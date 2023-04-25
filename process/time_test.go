@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procTime{}
-	_ Batcher = procTime{}
+	_ Applier  = procTime{}
+	_ Batcher  = procTime{}
+	_ Streamer = procTime{}
 )
 
 var setFmt = "2006-01-02T15:04:05.000000Z"

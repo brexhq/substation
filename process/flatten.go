@@ -53,14 +53,24 @@ func (p procFlatten) Close(context.Context) error {
 	return nil
 }
 
-// Batch processes one or more capsules with the processor. Conditions are
-// optionally applied to the data to enable processing.
+// Stream processes a pipeline of capsules with the processor.
+func (p procFlatten) Stream(ctx context.Context, in, out *config.Channel) error {
+	return streamApply(ctx, in, out, p)
+}
+
+// Batch processes one or more capsules with the processor.
 func (p procFlatten) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.operator)
+	return batchApply(ctx, capsules, p)
 }
 
 // Apply processes a capsule with the processor.
 func (p procFlatten) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+	if ok, err := p.operator.Operate(ctx, capsule); err != nil {
+		return capsule, fmt.Errorf("process: flatten: %v", err)
+	} else if !ok {
+		return capsule, nil
+	}
+
 	var value interface{}
 	if p.Options.Deep {
 		value = capsule.Get(p.Key + `|@flatten:{"deep":true}`)

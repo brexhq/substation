@@ -6,6 +6,7 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/process"
+	"golang.org/x/sync/errgroup"
 )
 
 func ExampleNewApplier() {
@@ -168,6 +169,54 @@ func ExampleBatchBytes() {
 	// Output: {"foo":"fizz","bar":"fizz"}
 }
 
+func ExampleNewStreamer() {
+	ctx := context.TODO()
+
+	// copies the value of key "a" into key "z"
+	cfg := config.Config{
+		Type: "copy",
+		Settings: map[string]interface{}{
+			"key":     "a",
+			"set_key": "z",
+		},
+	}
+
+	// create a streamer from the config
+	streamer, err := process.NewStreamer(ctx, cfg)
+	if err != nil {
+		// handle err
+		panic(err)
+	}
+
+	fmt.Println(streamer)
+	// Output: {"condition":{"operator":"","inspectors":null},"key":"a","set_key":"z","ignore_close":false,"ignore_errors":false}
+}
+
+func ExampleNewStreamers() {
+	ctx := context.TODO()
+
+	// copies the value of key "a" into key "z"
+	cfg := config.Config{
+		Type: "copy",
+		Settings: map[string]interface{}{
+			"key":     "a",
+			"set_key": "z",
+		},
+	}
+
+	// one or more streamers are created
+	streamers, err := process.NewStreamers(ctx, cfg)
+	if err != nil {
+		// handle err
+		panic(err)
+	}
+
+	for _, s := range streamers {
+		fmt.Println(s)
+	}
+	// Output: {"condition":{"operator":"","inspectors":null},"key":"a","set_key":"z","ignore_close":false,"ignore_errors":false}
+}
+
 func Example_applier() {
 	ctx := context.TODO()
 
@@ -245,6 +294,65 @@ func Example_batcher() {
 	// Output:
 	// {"foo":"fizz","bar":"fizz"}
 	// {"foo":"fizz","bar":"fizz"}
+}
+
+func Example_streamer() {
+	ctx := context.TODO()
+
+	// copies the value of key "a" into key "z"
+	cfg := config.Config{
+		Type: "copy",
+		Settings: map[string]interface{}{
+			"key":     "a",
+			"set_key": "z",
+		},
+	}
+
+	// streamer is retrieved from the factory
+	streamer, err := process.NewStreamer(ctx, cfg)
+	if err != nil {
+		// handle err
+		panic(err)
+	}
+
+	// setup an error group and channels for streaming data
+	group, ctx := errgroup.WithContext(ctx)
+	in, out := config.NewChannel(), config.NewChannel()
+
+	// first, the streamer goroutine is started
+	group.Go(func() error {
+		if err := streamer.Stream(ctx, in, out); err != nil {
+			panic(err)
+		}
+
+		return nil
+	})
+
+	// second, the reader goroutine is started. reading must precede
+	// writing to prevent blocking the main goroutine.
+	group.Go(func() error {
+		for capsule := range out.C {
+			fmt.Println(string(capsule.Data()))
+		}
+
+		return nil
+	})
+
+	// last, writer sends data to the streamer.
+	capsule := config.NewCapsule()
+	capsule.SetData([]byte(`{"a":"b"}`))
+
+	in.Send(capsule)
+	in.Close()
+
+	// an error in any streamer will cause the entire pipeline, including sending
+	// to the sink, to fail.
+	if err := group.Wait(); err != nil {
+		panic(err)
+	}
+
+	// Output:
+	// {"a":"b","z":"b"}
 }
 
 func Example_dNS() {

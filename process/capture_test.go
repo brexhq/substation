@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procCapture{}
-	_ Batcher = procCapture{}
+	_ Applier  = procCapture{}
+	_ Batcher  = procCapture{}
+	_ Streamer = procCapture{}
 )
 
 var captureTests = []struct {

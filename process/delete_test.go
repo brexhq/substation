@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procDelete{}
-	_ Batcher = procDelete{}
+	_ Applier  = procDelete{}
+	_ Batcher  = procDelete{}
+	_ Streamer = procDelete{}
 )
 
 var deleteTests = []struct {

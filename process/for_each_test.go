@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procForEach{}
-	_ Batcher = procForEach{}
+	_ Applier  = procForEach{}
+	_ Batcher  = procForEach{}
+	_ Streamer = procForEach{}
 )
 
 var forEachTests = []struct {

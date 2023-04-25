@@ -53,17 +53,18 @@ func (p procSplit) Close(context.Context) error {
 	return nil
 }
 
-// Batch processes one or more capsules with the processor. Conditions are
-// optionally applied to the data to enable processing.
+// Stream processes a pipeline of capsules with the processor.
+func (p procSplit) Stream(ctx context.Context, in, out *config.Channel) error {
+	return streamApply(ctx, in, out, p)
+}
+
+// Batch processes one or more capsules with the processor.
 func (p procSplit) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
-		ok, err := p.operator.Operate(ctx, capsule)
-		if err != nil {
+		if ok, err := p.operator.Operate(ctx, capsule); err != nil {
 			return nil, fmt.Errorf("process: split: %v", err)
-		}
-
-		if !ok {
+		} else if !ok {
 			newCapsules = append(newCapsules, capsule)
 			continue
 		}

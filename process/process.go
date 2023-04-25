@@ -44,6 +44,9 @@ func toString(i interface{}) string {
 	case Batcher:
 		b, _ := json.Marshal(v)
 		return string(b)
+	case Streamer:
+		b, _ := json.Marshal(v)
+		return string(b)
 	default:
 		return ""
 	}
@@ -316,19 +319,9 @@ func newBatch(s *[]config.Capsule) []config.Capsule {
 	return make([]config.Capsule, 0, 10)
 }
 
-func batchApply(ctx context.Context, capsules []config.Capsule, app Applier, op condition.Operator) ([]config.Capsule, error) {
+func batchApply(ctx context.Context, capsules []config.Capsule, app Applier) ([]config.Capsule, error) {
 	newCapsules := newBatch(&capsules)
 	for _, c := range capsules {
-		ok, err := op.Operate(ctx, c)
-		if err != nil {
-			return nil, err
-		}
-
-		if !ok {
-			newCapsules = append(newCapsules, c)
-			continue
-		}
-
 		newCapsule, err := app.Apply(ctx, c)
 		if err != nil {
 			return nil, err
@@ -338,4 +331,126 @@ func batchApply(ctx context.Context, capsules []config.Capsule, app Applier, op 
 	}
 
 	return newCapsules, nil
+}
+
+type Streamer interface {
+	Stream(context.Context, *config.Channel, *config.Channel) error
+	Close(context.Context) error
+}
+
+// NewStreamer returns a configured Streamer from a processor configuration.
+func NewStreamer(ctx context.Context, cfg config.Config) (Streamer, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
+	switch cfg.Type {
+	case "aggregate":
+		return newProcAggregate(ctx, cfg)
+	case "aws_dynamodb":
+		return newProcAWSDynamoDB(ctx, cfg)
+	case "aws_lambda":
+		return newProcAWSLambda(ctx, cfg)
+	case "base64":
+		return newProcBase64(ctx, cfg)
+	case "capture":
+		return newProcCapture(ctx, cfg)
+	case "case":
+		return newProcCase(ctx, cfg)
+	case "convert":
+		return newProcConvert(ctx, cfg)
+	case "copy":
+		return newProcCopy(ctx, cfg)
+	case "count":
+		return newProcCount(ctx, cfg)
+	case "delete":
+		return newProcDelete(ctx, cfg)
+	case "dns":
+		return newProcDNS(ctx, cfg)
+	case "domain":
+		return newProcDomain(ctx, cfg)
+	case "drop":
+		return newProcDrop(ctx, cfg)
+	case "expand":
+		return newProcExpand(ctx, cfg)
+	case "flatten":
+		return newProcFlatten(ctx, cfg)
+	case "for_each":
+		return newProcForEach(ctx, cfg)
+	case "group":
+		return newProcGroup(ctx, cfg)
+	case "gzip":
+		return newProcGzip(ctx, cfg)
+	case "hash":
+		return newProcHash(ctx, cfg)
+	case "http":
+		return newProcHTTP(ctx, cfg)
+	case "insert":
+		return newProcInsert(ctx, cfg)
+	case "ip_database":
+		return newProcIPDatabase(ctx, cfg)
+	case "join":
+		return newProcJoin(ctx, cfg)
+	case "jq":
+		return newProcJQ(ctx, cfg)
+	case "kv_store":
+		return newProcKVStore(ctx, cfg)
+	case "math":
+		return newProcMath(ctx, cfg)
+	case "pipeline":
+		return newProcPipeline(ctx, cfg)
+	case "pretty_print":
+		return newProcPrettyPrint(ctx, cfg)
+	case "replace":
+		return newProcReplace(ctx, cfg)
+	case "split":
+		return newProcSplit(ctx, cfg)
+	case "time":
+		return newProcTime(ctx, cfg)
+	default:
+		return nil, fmt.Errorf("process: new_streamer: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
+	}
+}
+
+// NewStreamers accepts one or more processor configurations and returns configured streamers.
+func NewStreamers(ctx context.Context, cfg ...config.Config) ([]Streamer, error) {
+	var streamers []Streamer
+
+	for _, c := range cfg {
+		s, err := NewStreamer(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+
+		streamers = append(streamers, s)
+	}
+
+	return streamers, nil
+}
+
+// CloseStreamers closes all streamers and returns an error if any close fails.
+func CloseStreamers(ctx context.Context, streamers ...Streamer) error {
+	for _, s := range streamers {
+		if err := s.Close(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func streamApply(ctx context.Context, in, out *config.Channel, app Applier) error {
+	defer out.Close()
+
+	for c := range in.C {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			capsule, err := app.Apply(ctx, c)
+			if err != nil {
+				return err
+			}
+
+			out.Send(capsule)
+		}
+	}
+
+	return nil
 }

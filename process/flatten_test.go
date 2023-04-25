@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procFlatten{}
-	_ Batcher = procFlatten{}
+	_ Applier  = procFlatten{}
+	_ Batcher  = procFlatten{}
+	_ Streamer = procFlatten{}
 )
 
 var flattenTests = []struct {

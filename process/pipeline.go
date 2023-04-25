@@ -55,10 +55,14 @@ func (p procPipeline) Close(context.Context) error {
 	return nil
 }
 
-// Batch processes one or more capsules with the processor. Conditions are
-// optionally applied to the data to enable processing.
+// Stream processes a pipeline of capsules with the processor.
+func (p procPipeline) Stream(ctx context.Context, in, out *config.Channel) error {
+	return streamApply(ctx, in, out, p)
+}
+
+// Batch processes one or more capsules with the processor.
 func (p procPipeline) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.operator)
+	return batchApply(ctx, capsules, p)
 }
 
 // Apply processes a capsule with the processor.
@@ -73,6 +77,12 @@ func (p procPipeline) Batch(ctx context.Context, capsules ...config.Capsule) ([]
 // should be run through the forEach processor (which can
 // encapsulate the pipeline processor).
 func (p procPipeline) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+	if ok, err := p.operator.Operate(ctx, capsule); err != nil {
+		return capsule, fmt.Errorf("process: pipeline: %v", err)
+	} else if !ok {
+		return capsule, nil
+	}
+
 	if p.Key != "" && p.SetKey != "" {
 		result := capsule.Get(p.Key)
 		if result.IsArray() {

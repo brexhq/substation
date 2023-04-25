@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procPrettyPrint{}
-	_ Batcher = procPrettyPrint{}
+	_ Applier  = procPrettyPrint{}
+	_ Batcher  = procPrettyPrint{}
+	_ Streamer = procPrettyPrint{}
 )
 
 var prettyPrintBatchTests = []struct {

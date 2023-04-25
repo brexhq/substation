@@ -13,6 +13,12 @@ import (
 	lamb "github.com/brexhq/substation/internal/aws/lambda"
 )
 
+var (
+	_ Applier  = procAWSLambda{}
+	_ Batcher  = procAWSLambda{}
+	_ Streamer = procAWSLambda{}
+)
+
 type mockedInvoke struct {
 	lambdaiface.LambdaAPI
 	Resp lambda.InvokeOutput
@@ -24,7 +30,7 @@ func (m mockedInvoke) InvokeWithContext(ctx aws.Context, input *lambda.InvokeInp
 
 var lambdaTests = []struct {
 	name     string
-	proc     procAWSLambda
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
@@ -32,13 +38,14 @@ var lambdaTests = []struct {
 }{
 	{
 		"JSON",
-		procAWSLambda{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procAWSLambdaOptions{
-				FunctionName: "fooer",
+		config.Config{
+			Type: "aws_lambda",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"function_name": "fooer",
+				},
 			},
 		},
 		[]byte(`{"foo":{"bar":"baz"}}`),
@@ -59,13 +66,14 @@ func TestLambda(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range lambdaTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
-
 		lambdaAPI = test.api
-		capsule.SetData(test.test)
+		proc, err := newProcAWSLambda(ctx, test.cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		result, err := test.proc.Apply(ctx, capsule)
+		capsule.SetData(test.test)
+		result, err := proc.Apply(ctx, capsule)
 		if err != nil {
 			t.Error(err)
 		}
@@ -84,12 +92,19 @@ func benchmarkLambda(b *testing.B, applier procAWSLambda, test config.Capsule) {
 }
 
 func BenchmarkLambda(b *testing.B) {
+	ctx := context.TODO()
 	capsule := config.NewCapsule()
+
 	for _, test := range lambdaTests {
 		b.Run(test.name,
 			func(b *testing.B) {
+				proc, err := newProcAWSLambda(ctx, test.cfg)
+				if err != nil {
+					b.Fatal(err)
+				}
+
 				capsule.SetData(test.test)
-				benchmarkLambda(b, test.proc, capsule)
+				benchmarkLambda(b, proc, capsule)
 			},
 		)
 	}

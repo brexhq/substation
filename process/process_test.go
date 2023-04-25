@@ -6,22 +6,21 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
+	"golang.org/x/sync/errgroup"
 )
 
 var processTests = []struct {
 	name     string
-	conf     []config.Config
+	conf     config.Config
 	test     []byte
 	expected []byte
 }{
 	{
 		"copy",
-		[]config.Config{
-			{
-				Type: "copy",
-				Settings: map[string]interface{}{
-					"set_key": "foo",
-				},
+		config.Config{
+			Type: "copy",
+			Settings: map[string]interface{}{
+				"set_key": "foo",
 			},
 		},
 		[]byte(`bar`),
@@ -29,14 +28,12 @@ var processTests = []struct {
 	},
 	{
 		"insert",
-		[]config.Config{
-			{
-				Type: "insert",
-				Settings: map[string]interface{}{
-					"set_key": "foo",
-					"options": map[string]interface{}{
-						"value": "bar",
-					},
+		config.Config{
+			Type: "insert",
+			Settings: map[string]interface{}{
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"value": "bar",
 				},
 			},
 		},
@@ -45,13 +42,11 @@ var processTests = []struct {
 	},
 	{
 		"gzip",
-		[]config.Config{
-			{
-				Type: "gzip",
-				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"direction": "from",
-					},
+		config.Config{
+			Type: "gzip",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"direction": "from",
 				},
 			},
 		},
@@ -60,13 +55,11 @@ var processTests = []struct {
 	},
 	{
 		"base64",
-		[]config.Config{
-			{
-				Type: "base64",
-				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"direction": "from",
-					},
+		config.Config{
+			Type: "base64",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"direction": "from",
 				},
 			},
 		},
@@ -75,16 +68,14 @@ var processTests = []struct {
 	},
 	{
 		"split",
-		[]config.Config{
-			{
-				Type: "split",
-				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"separator": ".",
-					},
-					"key":     "foo",
-					"set_key": "foo",
+		config.Config{
+			Type: "split",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"separator": ".",
 				},
+				"key":     "foo",
+				"set_key": "foo",
 			},
 		},
 		[]byte(`{"foo":"bar.baz"}`),
@@ -92,13 +83,11 @@ var processTests = []struct {
 	},
 	{
 		"pretty_print",
-		[]config.Config{
-			{
-				Type: "pretty_print",
-				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"direction": "to",
-					},
+		config.Config{
+			Type: "pretty_print",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"direction": "to",
 				},
 			},
 		},
@@ -110,16 +99,14 @@ var processTests = []struct {
 	},
 	{
 		"time",
-		[]config.Config{
-			{
-				Type: "time",
-				Settings: map[string]interface{}{
-					"key":     "foo",
-					"set_key": "foo",
-					"options": map[string]interface{}{
-						"format":     "unix",
-						"set_format": "2006-01-02T15:04:05.000000Z",
-					},
+		config.Config{
+			Type: "time",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"format":     "unix",
+					"set_format": "2006-01-02T15:04:05.000000Z",
 				},
 			},
 		},
@@ -135,12 +122,12 @@ func TestApply(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			appliers, err := NewAppliers(ctx, test.conf...)
+			applier, err := NewApplier(ctx, test.conf)
 			if err != nil {
 				t.Error(err)
 			}
 
-			result, err := Apply(ctx, capsule, appliers...)
+			result, err := Apply(ctx, capsule, applier)
 			if err != nil {
 				t.Error(err)
 			}
@@ -162,18 +149,59 @@ func TestBatch(t *testing.T) {
 			batch := make([]config.Capsule, 1)
 			batch[0] = capsule
 
-			appliers, err := NewBatchers(ctx, test.conf...)
+			batcher, err := NewBatcher(ctx, test.conf)
 			if err != nil {
 				t.Error(err)
 			}
 
-			result, err := Batch(ctx, batch, appliers...)
+			result, err := Batch(ctx, batch, batcher)
 			if err != nil {
 				t.Error(err)
 			}
 
 			if !bytes.Equal(result[0].Data(), test.expected) {
 				t.Errorf("expected %v, got %v", test.expected, result)
+			}
+		})
+	}
+}
+
+func TestStream(t *testing.T) {
+	group, ctx := errgroup.WithContext(context.TODO())
+	capsule := config.NewCapsule()
+
+	for _, test := range processTests {
+		t.Run(test.name, func(t *testing.T) {
+			streamer, err := NewStreamer(ctx, test.conf)
+			if err != nil {
+				t.Error(err)
+			}
+
+			in, out := config.NewChannel(), config.NewChannel()
+			group.Go(func() error {
+				if err := streamer.Stream(ctx, in, out); err != nil {
+					panic(err)
+				}
+
+				return nil
+			})
+
+			group.Go(func() error {
+				for capsule := range out.C {
+					if !bytes.Equal(capsule.Data(), test.expected) {
+						t.Errorf("expected %v, got %v", test.expected, capsule.Data())
+					}
+				}
+
+				return nil
+			})
+
+			capsule.SetData(test.test)
+			in.Send(capsule)
+			in.Close()
+
+			if err := group.Wait(); err != nil {
+				panic(err)
 			}
 		})
 	}

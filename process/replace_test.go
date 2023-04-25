@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procReplace{}
-	_ Batcher = procReplace{}
+	_ Applier  = procReplace{}
+	_ Batcher  = procReplace{}
+	_ Streamer = procReplace{}
 )
 
 var replaceTests = []struct {

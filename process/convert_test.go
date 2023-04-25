@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procConvert{}
-	_ Batcher = procConvert{}
+	_ Applier  = procConvert{}
+	_ Batcher  = procConvert{}
+	_ Streamer = procConvert{}
 )
 
 var convertTests = []struct {

@@ -8,7 +8,10 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var _ Batcher = procCount{}
+var (
+	_ Batcher  = procCount{}
+	_ Streamer = procCount{}
+)
 
 var countTests = []struct {
 	name     string

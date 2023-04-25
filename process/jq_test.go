@@ -8,6 +8,12 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
+var (
+	_ Applier  = procJQ{}
+	_ Batcher  = procJQ{}
+	_ Streamer = procJQ{}
+)
+
 var jsonTests = []struct {
 	name     string
 	cfg      config.Config

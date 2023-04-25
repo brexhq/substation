@@ -56,14 +56,24 @@ func (p procJoin) Close(context.Context) error {
 	return nil
 }
 
-// Batch processes one or more capsules with the processor. Conditions are
-// optionally applied to the data to enable processing.
+// Stream processes a pipeline of capsules with the processor.
+func (p procJoin) Stream(ctx context.Context, in, out *config.Channel) error {
+	return streamApply(ctx, in, out, p)
+}
+
+// Batch processes one or more capsules with the processor.
 func (p procJoin) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.operator)
+	return batchApply(ctx, capsules, p)
 }
 
 // Apply processes encapsulated data with the processor.
 func (p procJoin) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+	if ok, err := p.operator.Operate(ctx, capsule); err != nil {
+		return capsule, fmt.Errorf("process: join: %v", err)
+	} else if !ok {
+		return capsule, nil
+	}
+
 	// data is processed by retrieving and iterating the
 	// array (Key) containing string values and joining
 	// each one with the separator string

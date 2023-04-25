@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procDomain{}
-	_ Batcher = procDomain{}
+	_ Applier  = procDomain{}
+	_ Batcher  = procDomain{}
+	_ Streamer = procDomain{}
 )
 
 var domainTests = []struct {

@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procPipeline{}
-	_ Batcher = procPipeline{}
+	_ Applier  = procPipeline{}
+	_ Batcher  = procPipeline{}
+	_ Streamer = procPipeline{}
 )
 
 var pipelineTests = []struct {

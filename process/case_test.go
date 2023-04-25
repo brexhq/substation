@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procCase{}
-	_ Batcher = procCase{}
+	_ Applier  = procCase{}
+	_ Batcher  = procCase{}
+	_ Streamer = procCase{}
 )
 
 var caseTests = []struct {

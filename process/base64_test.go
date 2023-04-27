@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procBase64{}
-	_ Batcher = procBase64{}
+	_ Applier  = procBase64{}
+	_ Batcher  = procBase64{}
+	_ Streamer = procBase64{}
 )
 
 var base64Tests = []struct {

@@ -31,8 +31,30 @@ func (p procCount) String() string {
 	return toString(p)
 }
 
-// Batch processes one or more capsules with the processor. Conditions are
-// optionally applied to the data to enable processing.
+// Stream processes a pipeline of capsules with the processor.
+func (p procCount) Stream(ctx context.Context, in, out *config.Channel) error {
+	defer out.Close()
+
+	var count int
+	for range in.C {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			count++
+		}
+	}
+
+	newCapsule := config.NewCapsule()
+	if err := newCapsule.Set("count", count); err != nil {
+		return fmt.Errorf("process: count: : %v", err)
+	}
+
+	out.Send(newCapsule)
+	return nil
+}
+
+// Batch processes one or more capsules with the processor.
 func (p procCount) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
 	newCapsule := config.NewCapsule()
 	if err := newCapsule.Set("count", len(capsules)); err != nil {

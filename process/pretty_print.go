@@ -93,6 +93,11 @@ func (p procPrettyPrint) Close(context.Context) error {
 	return nil
 }
 
+// Stream processes a pipeline of capsules with the processor.
+func (p procPrettyPrint) Stream(ctx context.Context, in, out *config.Channel) error {
+	return streamApply(ctx, in, out, p)
+}
+
 // Batch processes one or more capsules with the processor.
 //
 // Applying prettyprint formatting is handled by the
@@ -111,12 +116,9 @@ func (p procPrettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) 
 
 	newCapsules := newBatch(&capsules)
 	for _, capsule := range capsules {
-		ok, err := p.operator.Operate(ctx, capsule)
-		if err != nil {
+		if ok, err := p.operator.Operate(ctx, capsule); err != nil {
 			return nil, fmt.Errorf("process: pretty_print: %v", err)
-		}
-
-		if !ok {
+		} else if !ok {
 			newCapsules = append(newCapsules, capsule)
 			continue
 		}
@@ -177,6 +179,12 @@ func (p procPrettyPrint) Batch(ctx context.Context, capsules ...config.Capsule) 
 // this support is unnecessary for multi-line objects that
 // are stored in a single byte array.
 func (p procPrettyPrint) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+	if ok, err := p.operator.Operate(ctx, capsule); err != nil {
+		return capsule, fmt.Errorf("process: pretty_print: %v", err)
+	} else if !ok {
+		return capsule, nil
+	}
+
 	switch p.Options.Direction {
 	case "to":
 		capsule.SetData([]byte(capsule.Get(ppModifier).String()))

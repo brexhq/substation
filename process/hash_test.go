@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procHash{}
-	_ Batcher = procHash{}
+	_ Applier  = procHash{}
+	_ Batcher  = procHash{}
+	_ Streamer = procHash{}
 )
 
 var hashTests = []struct {

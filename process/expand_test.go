@@ -6,9 +6,13 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
+	"golang.org/x/sync/errgroup"
 )
 
-var _ Batcher = procExpand{}
+var (
+	_ Batcher  = procExpand{}
+	_ Streamer = procExpand{}
+)
 
 var expandTests = []struct {
 	name     string
@@ -193,5 +197,49 @@ func BenchmarkExpand(b *testing.B) {
 				benchmarkExpand(b, proc, slice)
 			},
 		)
+	}
+}
+
+func TestExpandStream(t *testing.T) {
+	capsule := config.NewCapsule()
+
+	for _, test := range expandTests {
+		t.Run(test.name, func(t *testing.T) {
+			group, ctx := errgroup.WithContext(context.TODO())
+			in, out := config.NewChannel(), config.NewChannel()
+
+			proc, err := newProcExpand(ctx, test.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			group.Go(func() error {
+				if err := proc.Stream(ctx, in, out); err != nil {
+					t.Error(err)
+				}
+
+				return nil
+			})
+
+			group.Go(func() error {
+				var i int
+				for res := range out.C {
+					expected := test.expected[i]
+					if !bytes.Equal(expected, res.Data()) {
+						t.Errorf("expected %s, got %s", expected, string(res.Data()))
+					}
+					i++
+				}
+				return nil
+			})
+
+			capsule.SetData(test.test)
+			in.Send(capsule)
+			in.Close()
+
+			if err := group.Wait(); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }

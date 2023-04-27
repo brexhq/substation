@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procSplit{}
-	_ Batcher = procSplit{}
+	_ Applier  = procSplit{}
+	_ Batcher  = procSplit{}
+	_ Streamer = procSplit{}
 )
 
 var splitTests = []struct {

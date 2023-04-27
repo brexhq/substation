@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procMath{}
-	_ Batcher = procMath{}
+	_ Applier  = procMath{}
+	_ Batcher  = procMath{}
+	_ Streamer = procMath{}
 )
 
 var mathTests = []struct {

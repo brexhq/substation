@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procJoin{}
-	_ Batcher = procJoin{}
+	_ Applier  = procJoin{}
+	_ Batcher  = procJoin{}
+	_ Streamer = procJoin{}
 )
 
 var joinTests = []struct {

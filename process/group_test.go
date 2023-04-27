@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procGroup{}
-	_ Batcher = procGroup{}
+	_ Applier  = procGroup{}
+	_ Batcher  = procGroup{}
+	_ Streamer = procGroup{}
 )
 
 var groupTests = []struct {

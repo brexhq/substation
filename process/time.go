@@ -83,14 +83,24 @@ func newProcTime(ctx context.Context, cfg config.Config) (p procTime, err error)
 	return p, nil
 }
 
-// Batch processes one or more capsules with the processor. Conditions are
-// optionally applied to the data to enable processing.
+// Stream processes a pipeline of capsules with the processor.
+func (p procTime) Stream(ctx context.Context, in, out *config.Channel) error {
+	return streamApply(ctx, in, out, p)
+}
+
+// Batch processes one or more capsules with the processor.
 func (p procTime) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.operator)
+	return batchApply(ctx, capsules, p)
 }
 
 // Apply processes a capsule with the processor.
 func (p procTime) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+	if ok, err := p.operator.Operate(ctx, capsule); err != nil {
+		return capsule, fmt.Errorf("process: time: %v", err)
+	} else if !ok {
+		return capsule, nil
+	}
+
 	// "now" processing, supports json and data
 	if p.Options.Format == "now" {
 		ts := time.Now()

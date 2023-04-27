@@ -13,6 +13,12 @@ import (
 	ddb "github.com/brexhq/substation/internal/aws/dynamodb"
 )
 
+var (
+	_ Applier  = procAWSDynamoDB{}
+	_ Batcher  = procAWSDynamoDB{}
+	_ Streamer = procAWSDynamoDB{}
+)
+
 type mockedQuery struct {
 	dynamodbiface.DynamoDBAPI
 	Resp dynamodb.QueryOutput
@@ -24,7 +30,7 @@ func (m mockedQuery) QueryWithContext(ctx aws.Context, input *dynamodb.QueryInpu
 
 var dynamodbTests = []struct {
 	name     string
-	proc     procAWSDynamoDB
+	cfg      config.Config
 	test     []byte
 	expected []byte
 	err      error
@@ -32,14 +38,15 @@ var dynamodbTests = []struct {
 }{
 	{
 		"JSON",
-		procAWSDynamoDB{
-			process: process{
-				Key:    "foo",
-				SetKey: "foo",
-			},
-			Options: procAWSDynamoDBOptions{
-				Table:                  "fooer",
-				KeyConditionExpression: "barre",
+		config.Config{
+			Type: "aws_dynamodb",
+			Settings: map[string]interface{}{
+				"key":     "foo",
+				"set_key": "foo",
+				"options": map[string]interface{}{
+					"table":                    "fooer",
+					"key_condition_expression": "barre",
+				},
 			},
 		},
 		[]byte(`{"foo":{"PK":"bar"}}`),
@@ -66,13 +73,15 @@ func TestDynamoDB(t *testing.T) {
 	capsule := config.NewCapsule()
 
 	for _, test := range dynamodbTests {
-		var _ Applier = test.proc
-		var _ Batcher = test.proc
-
 		dynamodbAPI = test.api
-		capsule.SetData(test.test)
 
-		result, err := test.proc.Apply(ctx, capsule)
+		proc, err := newProcAWSDynamoDB(ctx, test.cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		capsule.SetData(test.test)
+		result, err := proc.Apply(ctx, capsule)
 		if err != nil {
 			t.Error(err)
 		}
@@ -91,13 +100,20 @@ func benchmarkDynamoDB(b *testing.B, applier procAWSDynamoDB, test config.Capsul
 }
 
 func BenchmarkDynamoDB(b *testing.B) {
+	ctx := context.TODO()
 	capsule := config.NewCapsule()
+
 	for _, test := range dynamodbTests {
 		b.Run(test.name,
 			func(b *testing.B) {
 				dynamodbAPI = test.api
+				proc, err := newProcAWSDynamoDB(ctx, test.cfg)
+				if err != nil {
+					b.Fatal(err)
+				}
+
 				capsule.SetData(test.test)
-				benchmarkDynamoDB(b, test.proc, capsule)
+				benchmarkDynamoDB(b, proc, capsule)
 			},
 		)
 	}

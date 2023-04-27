@@ -1,5 +1,6 @@
 //go:build !wasm
 
+// todo(v1.0.0): remove this processor
 package process
 
 import (
@@ -86,14 +87,24 @@ func newProcIPDatabase(ctx context.Context, cfg config.Config) (p procIPDatabase
 	return p, nil
 }
 
-// Batch processes one or more capsules with the processor. Conditions are
-// optionally applied to the data to enable processing.
+// Stream processes a pipeline of capsules with the processor.
+func (p procIPDatabase) Stream(ctx context.Context, in, out *config.Channel) error {
+	return streamApply(ctx, in, out, p)
+}
+
+// Batch processes one or more capsules with the processor.
 func (p procIPDatabase) Batch(ctx context.Context, capsules ...config.Capsule) ([]config.Capsule, error) {
-	return batchApply(ctx, capsules, p, p.operator)
+	return batchApply(ctx, capsules, p)
 }
 
 // Apply processes a capsule with the processor.
 func (p procIPDatabase) Apply(ctx context.Context, capsule config.Capsule) (config.Capsule, error) {
+	if ok, err := p.operator.Operate(ctx, capsule); err != nil {
+		return capsule, fmt.Errorf("process: ip_database: %v", err)
+	} else if !ok {
+		return capsule, nil
+	}
+
 	res := capsule.Get(p.Key).String()
 	record, err := p.db.Get(res)
 	if err != nil {

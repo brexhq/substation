@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procInsert{}
-	_ Batcher = procInsert{}
+	_ Applier  = procInsert{}
+	_ Batcher  = procInsert{}
+	_ Streamer = procInsert{}
 )
 
 var insertTests = []struct {

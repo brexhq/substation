@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Applier = procGzip{}
-	_ Batcher = procGzip{}
+	_ Applier  = procGzip{}
+	_ Batcher  = procGzip{}
+	_ Streamer = procGzip{}
 )
 
 var gzipTests = []struct {

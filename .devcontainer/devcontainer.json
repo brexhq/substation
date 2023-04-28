@@ -10,5 +10,9 @@
 		"zxh404.vscode-proto3",
 		"grafana.vscode-jsonnet"
 	],
+	"runArgs": [
+		"--memory=1g",
+		"--cpus=2"
+	],
 	"postCreateCommand": "bash .devcontainer/install-dev-tools.sh"
 }

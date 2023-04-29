@@ -51,6 +51,8 @@ func New(ctx context.Context, cfg config.Config) (Sink, error) {
 		return newSinkGRPC(ctx, cfg)
 	case "http":
 		return newSinkHTTP(ctx, cfg)
+	case "noop":
+		return newSinkNoop(ctx, cfg)
 	case "stdout":
 		return newSinkStdout(ctx, cfg)
 	case "sumologic":

@@ -20,6 +20,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) {
 		return newTformBatch(ctx, cfg)
 	case "stream":
 		return newTformStream(ctx, cfg)
+	case "noop":
+		fallthrough
 	case "transfer":
 		return newTformTransfer(ctx, cfg)
 	default:

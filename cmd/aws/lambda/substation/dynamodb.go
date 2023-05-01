@@ -23,7 +23,7 @@ type dynamodbMetadata struct {
 	StreamViewType              string    `json:"streamViewType"`
 }
 
-// nolint: gocognit // ignore cognitive complexity
+//nolint: gocognit // ignore cognitive complexity
 func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 	sub := cmd.New()
 

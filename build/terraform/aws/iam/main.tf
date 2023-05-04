@@ -106,6 +106,20 @@ data "aws_iam_policy_document" "dynamodb_write" {
   }
 }
 
+# https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/iam-policy-read-stream-only.html
+data "aws_iam_policy_document" "dynamodb_stream_read" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "dynamodb:GetRecords",
+      "dynamodb:GetShardIterator",
+      "dynamodb:DescribeStream",
+      "dynamodb:ListStreams",
+    ]
+    resources = var.resources
+  }
+}
+
 data "aws_iam_policy_document" "kms_read" {
   statement {
     effect = "Allow"

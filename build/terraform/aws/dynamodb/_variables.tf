@@ -52,6 +52,13 @@ variable "attributes" {
   }))
 }
 
+# change data capture via Streams is enabled by default for the table
+# https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Streams.html
+variable "stream_view_type" {
+  type    = string
+  default = "NEW_AND_OLD_IMAGES"
+}
+
 variable "tags" {
   type    = map(any)
   default = {}

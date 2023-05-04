@@ -189,3 +189,13 @@ data "aws_iam_policy_document" "sqs_write" {
     resources = var.resources
   }
 }
+
+data "aws_iam_policy_document" "sns_write" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "sns:Publish",
+    ]
+    resources = var.resources
+  }
+}

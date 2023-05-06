@@ -59,6 +59,8 @@ func main() {
 	switch h := handler; h {
 	case "AWS_API_GATEWAY":
 		lambda.Start(gatewayHandler)
+	case "AWS_DYNAMODB":
+		lambda.Start(dynamodbHandler)
 	case "AWS_KINESIS":
 		lambda.Start(kinesisHandler)
 	case "AWS_LAMBDA_ASYNC":

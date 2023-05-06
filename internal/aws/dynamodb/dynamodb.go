@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -126,4 +127,80 @@ func (a *API) GetItem(ctx aws.Context, table string, attributes map[string]inter
 	}
 
 	return resp, nil
+}
+
+// ConvertEventsAttributeValue converts events.DynamoDBAttributeValue to dynamodb.AttributeValue.
+func ConvertEventsAttributeValue(v events.DynamoDBAttributeValue) *dynamodb.AttributeValue {
+	switch v.DataType() {
+	case events.DataTypeBinary:
+		return &dynamodb.AttributeValue{
+			B: v.Binary(),
+		}
+	case events.DataTypeBinarySet:
+		return &dynamodb.AttributeValue{
+			BS: v.BinarySet(),
+		}
+	case events.DataTypeNumber:
+		return &dynamodb.AttributeValue{
+			N: aws.String(v.Number()),
+		}
+	case events.DataTypeNumberSet:
+		av := &dynamodb.AttributeValue{}
+
+		for _, n := range v.NumberSet() {
+			av.NS = append(av.NS, aws.String(n))
+		}
+
+		return av
+	case events.DataTypeString:
+		return &dynamodb.AttributeValue{
+			S: aws.String(v.String()),
+		}
+	case events.DataTypeStringSet:
+		av := &dynamodb.AttributeValue{}
+
+		for _, s := range v.StringSet() {
+			av.SS = append(av.SS, aws.String(s))
+		}
+
+		return av
+	case events.DataTypeList:
+		av := &dynamodb.AttributeValue{}
+
+		for _, v := range v.List() {
+			av.L = append(av.L, ConvertEventsAttributeValue(v))
+		}
+
+		return av
+	case events.DataTypeMap:
+		av := &dynamodb.AttributeValue{}
+		av.M = make(map[string]*dynamodb.AttributeValue)
+
+		for k, v := range v.Map() {
+			av.M[k] = ConvertEventsAttributeValue(v)
+		}
+
+		return av
+	case events.DataTypeNull:
+		return &dynamodb.AttributeValue{
+			NULL: aws.Bool(true),
+		}
+	case events.DataTypeBoolean:
+		return &dynamodb.AttributeValue{
+			BOOL: aws.Bool(v.Boolean()),
+		}
+	default:
+		return nil
+	}
+}
+
+// ConvertEventsAttributeValueMap converts a map of events.DynamoDBAttributeValue to a map of dynamodb.AttributeValue.
+func ConvertEventsAttributeValueMap(m map[string]events.DynamoDBAttributeValue) map[string]*dynamodb.AttributeValue {
+	av := make(map[string]*dynamodb.AttributeValue)
+
+	for k, v := range m {
+		av[k] = ConvertEventsAttributeValue(v)
+	}
+
+	return av
 }

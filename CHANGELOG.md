@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9.1](https://github.com/brexhq/substation/compare/v0.9.0...v0.9.1) (2023-05-09)
+
+
+### Features
+
+* Add Benchmark App & No-Op Features ([#108](https://github.com/brexhq/substation/issues/108)) ([ddfb7bc](https://github.com/brexhq/substation/commit/ddfb7bc1f4cd9699766d7673f831d976a150a1fb))
+* Add Stream Transform & Streamer Interface ([#106](https://github.com/brexhq/substation/issues/106)) ([8efd82e](https://github.com/brexhq/substation/commit/8efd82ef0d5c1eb28a9d8316fe5abcea50bfa878))
+* Add Zstandard & Snappy Readers ([#105](https://github.com/brexhq/substation/issues/105)) ([8c69907](https://github.com/brexhq/substation/commit/8c699070f5f6095e34e8d06e7b356ea0d4d5ed40))
+* AWS DynamoDB Ingest (CDC) ([#109](https://github.com/brexhq/substation/issues/109)) ([36c60ac](https://github.com/brexhq/substation/commit/36c60ace4fa829c654c7ec86c606fc8f34ad536b))
+* AWS SNS Sink ([#111](https://github.com/brexhq/substation/issues/111)) ([47e948f](https://github.com/brexhq/substation/commit/47e948f70f1a3df722aec262e0a35ef80ad492d0))
+
 ## [0.9.0](https://github.com/brexhq/substation/compare/v0.8.4...v0.9.0) (2023-04-19)
 
 

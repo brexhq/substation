@@ -25,7 +25,7 @@ resource "aws_dynamodb_table" "table" {
 
   # Streams are only charged for read operations and reads from AWS Lambda are free
   # https://aws.amazon.com/dynamodb/pricing/
-  stream_enabled = true
+  stream_enabled   = true
   stream_view_type = var.stream_view_type
 
   dynamic "attribute" {

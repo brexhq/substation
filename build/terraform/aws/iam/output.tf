@@ -34,6 +34,10 @@ output "dynamodb_write_policy" {
   value = data.aws_iam_policy_document.dynamodb_write.json
 }
 
+output "dynamodb_stream_read_policy" {
+  value = data.aws_iam_policy_document.dynamodb_stream_read.json
+}
+
 output "kms_read_policy" {
   value = data.aws_iam_policy_document.kms_read.json
 }
@@ -56,6 +60,10 @@ output "s3_write_policy" {
 
 output "secretsmanager_read_policy" {
   value = data.aws_iam_policy_document.secretsmanager_read.json
+}
+
+output "sns_write_policy" {
+  value = data.aws_iam_policy_document.sns_write.json
 }
 
 output "sqs_read_policy" {

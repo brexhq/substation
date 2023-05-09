@@ -26,10 +26,8 @@ var errSNSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 // awsSNS sinks data to an AWS SNS topic.
 type sinkAWSSNS struct {
-	// Topic is the AWS SNS topic that data is sent to.
-	Topic string `json:"topic"`
-	// FIFO indicates whether the AWS SNS topic is a FIFO topic.
-	FIFO bool `json:"fifo"`
+	// ARN is the ARN of the AWS SNS topic that data is sent to.
+	ARN string `json:"arn"`
 }
 
 // Create a new AWS SNS sink.
@@ -38,8 +36,8 @@ func newSinkAWSSNS(_ context.Context, cfg config.Config) (s sinkAWSSNS, err erro
 		return sinkAWSSNS{}, err
 	}
 
-	if s.Topic == "" {
-		return sinkAWSSNS{}, fmt.Errorf("sink: aws_sns: topic: %v", errors.ErrMissingRequiredOption)
+	if s.ARN == "" {
+		return sinkAWSSNS{}, fmt.Errorf("sink: aws_sns: arn: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return s, nil
@@ -69,15 +67,13 @@ func (s sinkAWSSNS) Send(ctx context.Context, ch *config.Channel) error {
 			ok := buffer.Add(capsule.Data())
 			if !ok {
 				items := buffer.Get()
-				_, err := snsAPI.PublishBatch(ctx, items, s.Topic, s.FIFO)
+				_, err := snsAPI.PublishBatch(ctx, s.ARN, items)
 				if err != nil {
 					return fmt.Errorf("sink: aws_sns: %v", err)
 				}
 
 				log.WithField(
-					"topic", s.Topic,
-				).WithField(
-					"fifo", s.FIFO,
+					"arn", s.ARN,
 				).WithField(
 					"count", buffer.Count(),
 				).Debug("sent messages to SNS")
@@ -91,15 +87,13 @@ func (s sinkAWSSNS) Send(ctx context.Context, ch *config.Channel) error {
 	// send remaining items in buffer
 	if buffer.Count() > 0 {
 		items := buffer.Get()
-		_, err := snsAPI.PublishBatch(ctx, items, s.Topic, s.FIFO)
+		_, err := snsAPI.PublishBatch(ctx, s.ARN, items)
 		if err != nil {
 			return fmt.Errorf("sink: aws_sns: %v", err)
 		}
 
 		log.WithField(
-			"topic", s.Topic,
-		).WithField(
-			"fifo", s.FIFO,
+			"arn", s.ARN,
 		).WithField(
 			"count", buffer.Count(),
 		).Debug("sent messages to SNS")

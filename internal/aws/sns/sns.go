@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -57,7 +58,7 @@ func (a *API) Setup() {
 }
 
 // Publish is a convenience wrapper for publishing a message to an SNS topic.
-func (a *API) Publish(ctx aws.Context, data []byte, topic string) (*sns.PublishOutput, error) {
+func (a *API) Publish(ctx aws.Context, arn string, data []byte) (*sns.PublishOutput, error) {
 	mgid := uuid.New().String()
 
 	resp, err := a.Client.PublishWithContext(
@@ -65,18 +66,18 @@ func (a *API) Publish(ctx aws.Context, data []byte, topic string) (*sns.PublishO
 		&sns.PublishInput{
 			Message:        aws.String(string(data)),
 			MessageGroupId: aws.String(mgid),
-			TopicArn:       aws.String(topic),
+			TopicArn:       aws.String(arn),
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("publish topic %s: %v", topic, err)
+		return nil, fmt.Errorf("publish arn %s: %v", arn, err)
 	}
 
 	return resp, nil
 }
 
 // PublishBatch is a convenience wrapper for publishing a batch of messages to an SNS topic.
-func (a *API) PublishBatch(ctx aws.Context, data [][]byte, topic string, fifo bool) (*sns.PublishBatchOutput, error) {
+func (a *API) PublishBatch(ctx aws.Context, arn string, data [][]byte) (*sns.PublishBatchOutput, error) {
 	mgid := uuid.New().String()
 
 	var entries []*sns.PublishBatchRequestEntry
@@ -86,7 +87,7 @@ func (a *API) PublishBatch(ctx aws.Context, data [][]byte, topic string, fifo bo
 			Message: aws.String(string(d)),
 		}
 
-		if fifo {
+		if strings.HasSuffix(arn, ".fifo") {
 			entry.MessageGroupId = aws.String(mgid)
 		}
 
@@ -97,7 +98,7 @@ func (a *API) PublishBatch(ctx aws.Context, data [][]byte, topic string, fifo bo
 		ctx,
 		&sns.PublishBatchInput{
 			PublishBatchRequestEntries: entries,
-			TopicArn:                   aws.String(topic),
+			TopicArn:                   aws.String(arn),
 		},
 	)
 
@@ -116,12 +117,12 @@ func (a *API) PublishBatch(ctx aws.Context, data [][]byte, topic string, fifo bo
 		}
 
 		if len(retry) > 0 {
-			_, _ = a.PublishBatch(ctx, retry, topic, fifo)
+			return a.PublishBatch(ctx, arn, retry)
 		}
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("publish batch topic %s: %v", topic, err)
+		return nil, fmt.Errorf("publish batch arn %s: %v", arn, err)
 	}
 
 	return resp, nil

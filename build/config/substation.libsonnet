@@ -150,6 +150,9 @@
         // TODO(v1.0.0): set format and compression defaults
         settings: { bucket: null, prefix: null, prefix_key: null, file_path: null, file_format: null, file_compression: null },
       },
+      aws_sns: {
+        settings: { arn: null },
+      },
       aws_sqs: {
         settings: { queue: null },
       },
@@ -566,6 +569,12 @@
           else std.mergePatch({file_path: { time_format: '2006/01/02', uuid: true, extension: true }}, settings),
         
         type: 'aws_s3',
+        settings: s,
+      },
+      aws_sns(settings=$.defaults.sink.aws_sns.settings): {
+        local s = std.mergePatch($.defaults.sink.aws_sns.settings, settings),
+
+        type: 'aws_sns',
         settings: s,
       },
       aws_sqs(settings=$.defaults.sink.aws_sqs.settings): {

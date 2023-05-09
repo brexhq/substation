@@ -39,7 +39,7 @@ func TestPublish(t *testing.T) {
 			mockedPublish{Resp: test.resp},
 		}
 
-		resp, err := a.Publish(ctx, []byte(""), "")
+		resp, err := a.Publish(ctx, "", []byte(""))
 		if err != nil {
 			t.Fatalf("%v", err)
 		}
@@ -90,7 +90,7 @@ func TestPublishBatch(t *testing.T) {
 			mockedPublishBatch{Resp: test.resp},
 		}
 
-		resp, err := a.PublishBatch(ctx, [][]byte{}, "", false)
+		resp, err := a.PublishBatch(ctx, "", [][]byte{})
 		if err != nil {
 			t.Fatalf("%v", err)
 		}

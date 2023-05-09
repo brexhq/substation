@@ -22,6 +22,7 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) {
 		return newTformStream(ctx, cfg)
 	case "noop":
 		fallthrough
+	// TODO(v1.0.0): remove and replace with noop(?)
 	case "transfer":
 		return newTformTransfer(ctx, cfg)
 	default:

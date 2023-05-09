@@ -31,6 +31,7 @@ var errFirehoseRecordSizeLimit = fmt.Errorf("data exceeded size limit")
 // any failed PutRecord attempts.
 type sinkAWSKinesisFirehose struct {
 	// Stream is the Kinesis Firehose Delivery Stream that data is sent to.
+	// TODO(v1.0.0): replace with ARN
 	Stream string `json:"stream"`
 }
 
@@ -71,7 +72,7 @@ func (s sinkAWSKinesisFirehose) Send(ctx context.Context, ch *config.Channel) er
 			ok := buffer.Add(capsule.Data())
 			if !ok {
 				items := buffer.Get()
-				_, err := firehoseAPI.PutRecordBatch(ctx, items, s.Stream)
+				_, err := firehoseAPI.PutRecordBatch(ctx, s.Stream, items)
 				if err != nil {
 					return fmt.Errorf("sink: aws_kinesis_firehose: %v", err)
 				}
@@ -92,7 +93,7 @@ func (s sinkAWSKinesisFirehose) Send(ctx context.Context, ch *config.Channel) er
 	// send remaining items in buffer
 	if buffer.Count() > 0 {
 		items := buffer.Get()
-		_, err := firehoseAPI.PutRecordBatch(ctx, items, s.Stream)
+		_, err := firehoseAPI.PutRecordBatch(ctx, s.Stream, items)
 		if err != nil {
 			return fmt.Errorf("sink: aws_kinesis_firehose: %v", err)
 		}

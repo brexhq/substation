@@ -21,6 +21,7 @@ var s3uploader s3manager.UploaderAPI
 // awsS3 sinks data as objects to an AWS S3 bucket.
 type sinkAWSS3 struct {
 	// Bucket is the AWS S3 bucket that data is written to.
+	// TODO(v1.0.0): replace with ARN
 	Bucket string `json:"bucket"`
 	// Prefix is a prefix prepended to the object path.
 	//

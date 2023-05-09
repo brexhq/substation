@@ -41,6 +41,8 @@ func New(ctx context.Context, cfg config.Config) (Sink, error) {
 		return newSinkAWSKinesisFirehose(ctx, cfg)
 	case "aws_s3":
 		return newSinkAWSS3(ctx, cfg)
+	case "aws_sns":
+		return newSinkAWSSNS(ctx, cfg)
 	case "aws_sqs":
 		return newSinkAWSSQS(ctx, cfg)
 	case "file":

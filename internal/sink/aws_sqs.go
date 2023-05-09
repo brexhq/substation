@@ -27,6 +27,7 @@ var errSQSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 // awsSQS sinks data to an AWS SQS queue.
 type sinkAWSSQS struct {
 	// Queue is the AWS SQS queue name that data is sent to.
+	// TODO(v1.0.0): replace with ARN
 	Queue string `json:"queue"`
 }
 
@@ -51,9 +52,9 @@ func (s sinkAWSSQS) Send(ctx context.Context, ch *config.Channel) error {
 
 	// SQS limits messages (both individual and batched)
 	// at 256 KB. this buffer will not exceed 256 KB or
-	// 500 messages.
+	// 10 messages.
 	buffer := aggregate.Bytes{}
-	buffer.New(500, sqsMessageSizeLimit)
+	buffer.New(10, sqsMessageSizeLimit)
 
 	for capsule := range ch.C {
 		select {
@@ -67,7 +68,7 @@ func (s sinkAWSSQS) Send(ctx context.Context, ch *config.Channel) error {
 			ok := buffer.Add(capsule.Data())
 			if !ok {
 				items := buffer.Get()
-				_, err := sqsAPI.SendMessageBatch(ctx, items, s.Queue)
+				_, err := sqsAPI.SendMessageBatch(ctx, s.Queue, items)
 				if err != nil {
 					return fmt.Errorf("sink: aws_sqs: %v", err)
 				}
@@ -87,7 +88,7 @@ func (s sinkAWSSQS) Send(ctx context.Context, ch *config.Channel) error {
 	// send remaining items in buffer
 	if buffer.Count() > 0 {
 		items := buffer.Get()
-		_, err := sqsAPI.SendMessageBatch(ctx, items, s.Queue)
+		_, err := sqsAPI.SendMessageBatch(ctx, s.Queue, items)
 		if err != nil {
 			return fmt.Errorf("sink: aws_sqs: %v", err)
 		}

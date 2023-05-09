@@ -46,7 +46,7 @@ func TestSendMessage(t *testing.T) {
 			mockedSendMessage{Resp: test.resp},
 		}
 
-		resp, err := a.SendMessage(ctx, []byte(""), "")
+		resp, err := a.SendMessage(ctx, "", []byte(""))
 		if err != nil {
 			t.Fatalf("%v", err)
 		}
@@ -103,7 +103,7 @@ func TestSendMessageBatch(t *testing.T) {
 			mockedSendMessageBatch{Resp: test.resp},
 		}
 
-		resp, err := a.SendMessageBatch(ctx, [][]byte{}, "")
+		resp, err := a.SendMessageBatch(ctx, "", [][]byte{})
 		if err != nil {
 			t.Fatalf("%v", err)
 		}

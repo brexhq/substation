@@ -91,7 +91,7 @@ func TestPutRecordBatch(t *testing.T) {
 			mockedPutRecordBatch{Resp: test.resp},
 		}
 
-		resp, err := a.PutRecordBatch(ctx, [][]byte{}, "")
+		resp, err := a.PutRecordBatch(ctx, "", [][]byte{})
 		if err != nil {
 			t.Fatalf("%v", err)
 		}

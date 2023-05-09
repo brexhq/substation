@@ -9,6 +9,7 @@ import (
 )
 
 // transfer transforms data without modification.
+// TODO(v1.0.0): rename to noop(?)
 type tformTransfer struct{}
 
 func newTformTransfer(_ context.Context, cfg config.Config) (t tformTransfer, err error) {

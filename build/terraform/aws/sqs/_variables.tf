@@ -16,11 +16,6 @@ variable "visibility_timeout_seconds" {
   default = 300
 }
 
-variable "fifo" {
-  type    = bool
-  default = false
-}
-
 variable "tags" {
   type    = map(any)
   default = {}

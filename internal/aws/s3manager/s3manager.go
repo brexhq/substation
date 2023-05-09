@@ -66,6 +66,7 @@ func (a *DownloaderAPI) IsEnabled() bool {
 
 // Download is a convenience wrapper for downloading an object from S3.
 func (a *DownloaderAPI) Download(ctx aws.Context, bucket, key string, dst io.WriterAt) (int64, error) {
+	// TODO(v1.0.0): add ARN support
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
@@ -121,6 +122,7 @@ func (a *UploaderAPI) Upload(ctx aws.Context, bucket, key string, src io.Reader)
 	if _, err := dst.Seek(0, 0); err != nil {
 		return nil, fmt.Errorf("s3manager upload bucket %s key %s: %v", bucket, key, err)
 	}
+	// TODO(v1.0.0): add ARN support
 	input := &s3manager.UploadInput{
 		Bucket:      aws.String(bucket),
 		Key:         aws.String(key),

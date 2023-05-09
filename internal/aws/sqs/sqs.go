@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
+	"github.com/google/uuid"
 )
 
 // New creates a new session for SQS
@@ -56,7 +58,9 @@ func (a *API) Setup() {
 }
 
 // SendMessage is a convenience wrapper for sending a message to an SQS queue.
-func (a *API) SendMessage(ctx aws.Context, data []byte, queue string) (*sqs.SendMessageOutput, error) {
+func (a *API) SendMessage(ctx aws.Context, queue string, data []byte) (*sqs.SendMessageOutput, error) {
+	mgid := uuid.New().String()
+
 	url, err := a.Client.GetQueueUrlWithContext(
 		ctx,
 		&sqs.GetQueueUrlInput{
@@ -65,12 +69,17 @@ func (a *API) SendMessage(ctx aws.Context, data []byte, queue string) (*sqs.Send
 	if err != nil {
 		return nil, fmt.Errorf("sendmessagebatch queue %s: %v", queue, err)
 	}
-	resp, err := a.Client.SendMessageWithContext(
-		ctx,
-		&sqs.SendMessageInput{
-			MessageBody: aws.String(string(data)),
-			QueueUrl:    url.QueueUrl,
-		})
+
+	msg := &sqs.SendMessageInput{
+		MessageBody: aws.String(string(data)),
+		QueueUrl:    url.QueueUrl,
+	}
+
+	if strings.HasSuffix(queue, ".fifo") {
+		msg.MessageGroupId = aws.String(mgid)
+	}
+
+	resp, err := a.Client.SendMessageWithContext(ctx, msg)
 	if err != nil {
 		return nil, fmt.Errorf("sendmessage queue %s: %v", queue, err)
 	}
@@ -79,13 +88,21 @@ func (a *API) SendMessage(ctx aws.Context, data []byte, queue string) (*sqs.Send
 }
 
 // SendMessageBatch is a convenience wrapper for sending multiple messages to an SQS queue. This function becomes recursive for any messages that failed the SendMessage operation.
-func (a *API) SendMessageBatch(ctx aws.Context, data [][]byte, queue string) (*sqs.SendMessageBatchOutput, error) {
+func (a *API) SendMessageBatch(ctx aws.Context, queue string, data [][]byte) (*sqs.SendMessageBatchOutput, error) {
+	mgid := uuid.New().String()
+
 	var messages []*sqs.SendMessageBatchRequestEntry
 	for idx, d := range data {
-		messages = append(messages, &sqs.SendMessageBatchRequestEntry{
+		entry := &sqs.SendMessageBatchRequestEntry{
 			Id:          aws.String(strconv.Itoa(idx)),
 			MessageBody: aws.String(string(d)),
-		})
+		}
+
+		if strings.HasSuffix(queue, ".fifo") {
+			entry.MessageGroupId = aws.String(mgid)
+		}
+
+		messages = append(messages, entry)
 	}
 
 	url, err := a.Client.GetQueueUrlWithContext(
@@ -99,6 +116,7 @@ func (a *API) SendMessageBatch(ctx aws.Context, data [][]byte, queue string) (*s
 
 	resp, err := a.Client.SendMessageBatchWithContext(
 		ctx,
+		// TODO(v1.0.0): add ARN support
 		&sqs.SendMessageBatchInput{
 			Entries:  messages,
 			QueueUrl: url.QueueUrl,
@@ -109,18 +127,18 @@ func (a *API) SendMessageBatch(ctx aws.Context, data [][]byte, queue string) (*s
 	// original data that was in the message. this data is put in a
 	// new slice and recursively input into the function.
 	if resp.Failed != nil {
-		var retryData [][]byte
+		var retry [][]byte
 		for _, r := range resp.Failed {
 			idx, err := strconv.Atoi(aws.StringValue(r.Id))
 			if err != nil {
 				return nil, fmt.Errorf("sendmessagebatch queue %s: %v", queue, err)
 			}
 
-			retryData = append(retryData, data[idx])
+			retry = append(retry, data[idx])
 		}
 
-		if len(retryData) > 0 {
-			_, _ = a.SendMessageBatch(ctx, retryData, queue)
+		if len(retry) > 0 {
+			return a.SendMessageBatch(ctx, queue, retry)
 		}
 	}
 

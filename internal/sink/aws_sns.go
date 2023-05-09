@@ -97,7 +97,6 @@ func (s sinkAWSSNS) Send(ctx context.Context, ch *config.Channel) error {
 		).WithField(
 			"count", buffer.Count(),
 		).Debug("sent messages to SNS")
-
 	}
 
 	return nil

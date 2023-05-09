@@ -207,9 +207,10 @@ func (a *API) IsEnabled() bool {
 }
 
 // PutRecord is a convenience wrapper for putting a record into a Kinesis stream.
-func (a *API) PutRecord(ctx aws.Context, data []byte, stream, partitionKey string) (*kinesis.PutRecordOutput, error) {
+func (a *API) PutRecord(ctx aws.Context, stream, partitionKey string, data []byte) (*kinesis.PutRecordOutput, error) {
 	resp, err := a.Client.PutRecordWithContext(
 		ctx,
+		// TODO(v1.0.0): add ARN support
 		&kinesis.PutRecordInput{
 			Data:         data,
 			StreamName:   aws.String(stream),

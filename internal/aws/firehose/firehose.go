@@ -71,7 +71,7 @@ func (a *API) PutRecord(ctx aws.Context, data []byte, stream string) (*firehose.
 }
 
 // PutRecordBatch is a convenience wrapper for putting multiple records into a Kinesis Firehose stream. This function becomes recursive for any records that failed the PutRecord operation.
-func (a *API) PutRecordBatch(ctx aws.Context, data [][]byte, stream string) (*firehose.PutRecordBatchOutput, error) {
+func (a *API) PutRecordBatch(ctx aws.Context, stream string, data [][]byte) (*firehose.PutRecordBatchOutput, error) {
 	var records []*firehose.Record
 	for _, d := range data {
 		records = append(records, &firehose.Record{Data: d})
@@ -79,6 +79,7 @@ func (a *API) PutRecordBatch(ctx aws.Context, data [][]byte, stream string) (*fi
 
 	resp, err := a.Client.PutRecordBatchWithContext(
 		ctx,
+		// TODO(v1.0.0): add ARN support
 		&firehose.PutRecordBatchInput{
 			DeliveryStreamName: aws.String(stream),
 			Records:            records,
@@ -89,17 +90,17 @@ func (a *API) PutRecordBatch(ctx aws.Context, data [][]byte, stream string) (*fi
 	// if an error code exists, then data is stored in a new slice and
 	// recursively input into the function.
 	if resp.FailedPutCount != aws.Int64(0) {
-		var retryData [][]byte
+		var retry [][]byte
 		for idx, r := range resp.RequestResponses {
 			if r.ErrorCode == nil {
 				continue
 			}
 
-			retryData = append(retryData, data[idx])
+			retry = append(retry, data[idx])
 		}
 
-		if len(retryData) > 0 {
-			_, _ = a.PutRecordBatch(ctx, retryData, stream)
+		if len(retry) > 0 {
+			return a.PutRecordBatch(ctx, stream, retry)
 		}
 	}
 

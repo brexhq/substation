@@ -26,6 +26,7 @@ var errDynamoDBNonObject = fmt.Errorf("input must be object")
 // input is an array of item payloads.
 type sinkAWSDynamoDB struct {
 	// Table is the DynamoDB table that items are written to.
+	// TODO(v1.0.0): replace with ARN
 	Table string `json:"table"`
 	// Key contains the DynamoDB items map that is written to the table.
 	//
@@ -41,6 +42,10 @@ func newSinkAWSDynamoDB(_ context.Context, cfg config.Config) (s sinkAWSDynamoDB
 
 	if s.Table == "" {
 		return sinkAWSDynamoDB{}, fmt.Errorf("sink: aws_dynamodb: table: %v", errors.ErrMissingRequiredOption)
+	}
+
+	if s.Key == "" {
+		return sinkAWSDynamoDB{}, fmt.Errorf("sink: aws_dynamodb: key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return s, nil

@@ -94,6 +94,7 @@ func (a *API) Query(ctx aws.Context, table, partitionKey, sortKey, keyConditionE
 
 	resp, err = a.Client.QueryWithContext(
 		ctx,
+		// TODO(v1.0.0): add ARN support
 		&dynamodb.QueryInput{
 			TableName:                 aws.String(table),
 			KeyConditionExpression:    aws.String(keyConditionExpression),

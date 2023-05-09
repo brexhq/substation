@@ -41,7 +41,7 @@ func TestPutRecord(t *testing.T) {
 		a := API{
 			mockedReceiveMsgs{Resp: test.resp},
 		}
-		resp, err := a.PutRecord(ctx, []byte(""), "", "")
+		resp, err := a.PutRecord(ctx, "", "", []byte(""))
 		if err != nil {
 			t.Fatalf("%v", err)
 		}

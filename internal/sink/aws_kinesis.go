@@ -19,6 +19,7 @@ var kinesisAPI kinesis.API
 // More information about the KPL and its schema is available here: https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html.
 type sinkAWSKinesis struct {
 	// Stream is the Kinesis Data Stream that records are sent to.
+	// TODO(v1.0.0): replace with ARN
 	Stream string `json:"stream"`
 	// Partition is a string that is used as the partition key for each
 	// aggregated record.
@@ -96,7 +97,7 @@ func (s sinkAWSKinesis) Send(ctx context.Context, ch *config.Channel) error {
 			if !ok {
 				agg := buffer[aggregationKey].Get()
 				aggPK := buffer[aggregationKey].PartitionKey
-				_, err := kinesisAPI.PutRecord(ctx, agg, s.Stream, aggPK)
+				_, err := kinesisAPI.PutRecord(ctx, s.Stream, aggPK, agg)
 				if err != nil {
 					// PutRecord err returns metadata
 					return fmt.Errorf("sink: aws_kinesis: %v", err)
@@ -126,7 +127,7 @@ func (s sinkAWSKinesis) Send(ctx context.Context, ch *config.Channel) error {
 
 		agg := buffer[aggregationKey].Get()
 		aggPK := buffer[aggregationKey].PartitionKey
-		_, err := kinesisAPI.PutRecord(ctx, agg, s.Stream, aggPK)
+		_, err := kinesisAPI.PutRecord(ctx, s.Stream, aggPK, agg)
 		if err != nil {
 			// PutRecord err returns metadata
 			return fmt.Errorf("sink: aws_kinesis: %v", err)

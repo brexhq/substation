@@ -170,6 +170,11 @@ func (p procKVStore) Apply(ctx context.Context, capsule config.Capsule) (config.
 			if err := p.kvStore.SetWithTTL(ctx, key, capsule.Get(p.Key).String(), ttl); err != nil {
 				return capsule, fmt.Errorf("process: kv_store: %v", err)
 			}
+		} else if p.Options.TTLKey != "" {
+			ttl := capsule.Get(p.Options.TTLKey).Int()
+			if err := p.kvStore.SetWithTTL(ctx, key, capsule.Get(p.Key).String(), ttl); err != nil {
+				return capsule, fmt.Errorf("process: kv_store: %v", err)
+			}
 		} else if p.Options.OffsetTTL != 0 {
 			ttl := time.Now().Add(time.Duration(p.Options.OffsetTTL) * time.Second).Unix()
 			if err := p.kvStore.SetWithTTL(ctx, key, capsule.Get(p.Key).String(), ttl); err != nil {

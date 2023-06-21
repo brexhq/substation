@@ -113,7 +113,7 @@
         options: { query: null },
       },
       kv_store: {
-        options: { type: null, prefix: null, offset_ttl: null, kv_options: null },
+        options: { type: null, prefix: null, ttl_key: null, offset_ttl: null, kv_options: null },
       },
       math: {
         options: { operation: null },

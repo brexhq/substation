@@ -147,9 +147,9 @@ func (p procHTTP) Apply(ctx context.Context, capsule config.Capsule) (config.Cap
 	url := p.Options.URL
 	if strings.Contains(url, httpInterp) {
 		if p.Key != "" {
-			url = strings.Replace(url, httpInterp, capsule.Get(p.Key).String(), 1)
+			url = strings.ReplaceAll(url, httpInterp, capsule.Get(p.Key).String())
 		} else {
-			url = strings.Replace(url, httpInterp, string(capsule.Data()), 1)
+			url = strings.ReplaceAll(url, httpInterp, string(capsule.Data()))
 		}
 	}
 

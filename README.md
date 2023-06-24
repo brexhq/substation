@@ -11,9 +11,9 @@ Substation is a cloud-native, event-driven data pipeline and transformation tool
 
 ## Resources
 
-* Documentation: <https://substation.readme.io/docs>
-* Announcements: <https://github.com/brexhq/substation/discussions/categories/announcements>
-* Announcement Post: <https://medium.com/brexeng/announcing-substation-188d049d979b>
+* <a href="https://substation.readme.io/docs" target="_blank">Documentation</a>
+* <a href="https://github.com/brexhq/substation/discussions/categories/announcements" target="_blank">Announcements</a>
+* <a href="https://medium.com/brexeng/announcing-substation-188d049d979b" target="_blank">Announcement Post</a>
 
 ## Features
 
@@ -33,9 +33,9 @@ Substation provides three unique capabilities:
   
 ## Getting Started
 
-* [Download, build, and test Substation in under 1 minute](https://substation.readme.io/recipes/1-minute-quickstart)
-* [Deploy Substation to your AWS account](https://substation.readme.io/recipes/deploying-aws-pipelines)
-* [Learn about Substation's data transformation features in your browser](https://substation.run/)
+* <a href="https://substation.readme.io/recipes/1-minute-quickstart" target="_blank">Download, build, and test Substation in under 1 minute</a>
+* <a href="https://substation.readme.io/recipes/deploying-aws-pipelines" target="_blank">Deploy Substation to your AWS account</a>
+* <a href="https://substation.run/" target="_blank">Learn about Substation's data transformation features in your browser</a>
 
 ## Substation Explained
 

@@ -6,26 +6,40 @@ src="https://github.com/brexhq/substation/blob/main/substation_logo.png" />
 </p>
 
 <p align="center">
-Substation is a cloud native data pipeline and transformation toolkit written in Go.
+Substation is a cloud-native, event-driven data pipeline and transformation toolkit designed for security use cases.
 </p>
 
 ## Resources
 
-* Playground: <https://substation.run>
 * Documentation: <https://substation.readme.io/docs>
-* Recipes: <https://substation.readme.io/recipes>
 * Announcements: <https://github.com/brexhq/substation/discussions/categories/announcements>
 * Announcement Post: <https://medium.com/brexeng/announcing-substation-188d049d979b>
 
-## What is Substation?
+## Features
 
-Substation provides three unique data handling capabilities:
+Substation provides three unique capabilities:
 
-* Modular, cloud native data pipelines that support 100s of unique designs
-* Event-driven ingest, transform, load (ITL) applications that evaluate, process, and deliver data in real-time
-* Go packages for creating custom data processing applications
+* Deploy modular, serverless data pipelines in minutes
+  * Design pipelines based on your unique use cases and requirements
+  * Autoscale beyond 100,000 events per second with almost zero maintenance
+  * Route data to SIEMs, data lakes, and other security platforms
+* Inspect, normalize, and enrich event logs in real-time
+  * Inspect data before applying transformation functions and routing decisions
+  * Normalize data into a common schema for easy analysis and correlation
+  * Enrich data with threat, infrastructure, and business context
+* Create custom data processing applications written in Go
+  * Build Substation applications that run in any cloud environment or on-prem 
+  * Use Substation's Go packages to inspect and transform data in your own applications
+  
+## Getting Started
 
-Substation can transform logs like this ...
+* [Download, build, and test Substation in under 1 minute](https://substation.readme.io/recipes/1-minute-quickstart)
+* [Deploy Substation to your AWS account](https://substation.readme.io/recipes/deploying-aws-pipelines)
+* [Learn about Substation's data transformation features in your browser](https://substation.run/)
+
+## Substation Explained
+
+Substation transforms event logs like this ...
 
 ```json
 {

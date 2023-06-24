@@ -147,9 +147,7 @@
         <div class="top">
             <img src="substation_logo.png" height="100" class="logo">
             <div class="sub">PLAYGROUND</div>
-            <p><a href="https://substation.readme.io/" target="_blank">Substation</a> is a cloud native data pipeline
-                and transformation
-                toolkit -- now in the browser!</p>
+            <p><a href="https://substation.readme.io/" target="_blank">Substation</a> is a cloud-native, event-driven data pipeline and transformation toolkit -- now in the browser!</p>
         </div>
         <div>
             <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
@@ -175,9 +173,20 @@
     <script>
         // load the Substation configuration library
         var request = new XMLHttpRequest();
-        request.open("GET", 'https://raw.githubusercontent.com/brexhq/substation/main/build/config/substation.libsonnet', false);
+        request.open("GET", 'https://raw.githubusercontent.com/brexhq/substation/main/build/config/substation.libsonnet', true);
+        request.onload = (e) => {
+            if (request.readyState === 4) {
+                if (request.status === 200) {
+                    lib = request.responseText;
+                } else {
+                    console.error(request.statusText);
+                }
+            }
+        };
+        request.onerror = (e) => {
+            console.error(xhr.statusText);
+        };
         request.send(null);
-        lib = request.responseText;
 
         document.getElementById("config").value = `// This playground runs locally in your browser and starts with a tutorial that introduces
 // the basic concepts of data transformation in Substation using processors and conditions. 

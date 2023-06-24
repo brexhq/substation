@@ -251,3 +251,5 @@ local network = import 'network.libsonnet';
 ## Licensing
 
 Substation and its associated code is released under the terms of the [MIT License](LICENSE).
+
+<!-- Keywords: go, golang, aws, kinesis, lambda, dynamodb, kafka, siem, data lake, cribl, cribl.io, tarsal, tarsal.co, datadog, datadoghq.com, confluent, confluent.io, elastic, logstash, filebeat, elastic.co, fluent, fluentd, fluentd.org, mezmo, mezmo.com -->

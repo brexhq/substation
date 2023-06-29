@@ -5,9 +5,7 @@
 src="https://github.com/brexhq/substation/blob/main/substation_logo.png" />
 </p>
 
-<p align="center">
-Substation is a cloud-native, event-driven data pipeline and transformation toolkit designed for security use cases.
-</p>
+<p align="center">Substation is a cloud-native, event-driven data pipeline toolkit designed for security and observability teams.</p>
 
 ## Resources
 

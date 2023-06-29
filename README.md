@@ -20,13 +20,13 @@ Substation provides three unique capabilities:
 * Deploy modular, serverless data pipelines in minutes
   * Design pipelines based on your unique use cases and requirements
   * Autoscale beyond 100,000 events per second with almost zero maintenance
-  * Route data to SIEMs, data lakes, and other security platforms
+  * Route data to SIEMs, data lakes, and other log management platforms
 * Inspect, normalize, and enrich event logs in real-time
   * Inspect data before applying transformation functions and routing decisions
-  * Normalize data into a common schema for easy analysis and correlation
+  * Normalize data to a common schema for easy analysis and correlation
   * Enrich data with threat, infrastructure, and business context
 * Create custom data processing applications written in Go
-  * Build Substation applications that run in any cloud environment or on-prem 
+  * Build Substation applications that run in any cloud environment or on-prem
   * Use Substation's Go packages to inspect and transform data in your own applications
   
 ## Getting Started

@@ -27,7 +27,7 @@
         * {
             box-sizing: border-box;
         }
-
+        
         html,
         body {
             width: 100%;
@@ -39,16 +39,16 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             font-size: 17px;
         }
-
+        
         .contents {
             width: 90%;
             margin: 0 auto;
         }
-
+        
         textarea {
             tab-size: 4;
         }
-
+        
         #config {
             display: block;
             height: 100%;
@@ -68,7 +68,7 @@
             margin: 10px auto;
             word-wrap: unset;
         }
-
+        
         #data,
         #output {
             display: inline-block;
@@ -88,34 +88,34 @@
             box-shadow: 0px 15px 15px rgba(0, 0, 0, 0.3);
             resize: none;
         }
-
+        
         .top {
             display: block;
             margin: 20px auto 20px auto;
             text-align: center;
         }
-
+        
         .top .logo {
             position: relative;
             left: -2px;
             display: block;
             margin: 0 auto 5px auto;
         }
-
+        
         .top .sub {
             color: #272822;
             font-size: 32px;
             font-weight: 900;
             margin: 0 auto 0 auto;
         }
-
+        
         .bottom {
             display: block;
             text-align: center;
             max-width: 800px;
             margin: auto auto auto auto;
         }
-
+        
         .bottom pre {
             background: rgba(0, 0, 0, 0.10);
             padding: 20px;
@@ -123,22 +123,21 @@
             font-family: Hack, monospace;
             font-size: 15px;
         }
-
+        
         .bottom p {
             text-align: center;
         }
-
+        
         .bottom h3 {
             text-align: center;
             color: #272822;
         }
-
+        
         ul.li {
             margin-top: 0px;
             display: inline-block;
             text-align: left;
         }
-
     </style>
 </head>
 
@@ -147,14 +146,11 @@
         <div class="top">
             <img src="substation_logo.png" height="100" class="logo">
             <div class="sub">PLAYGROUND</div>
-            <p><a href="https://substation.readme.io/" target="_blank">Substation</a> is a cloud native data pipeline
-                and transformation
-                toolkit -- now in the browser!</p>
+            <p><a href="https://substation.readme.io/" target="_blank">Substation</a> is a cloud-native, event-driven data pipeline toolkit -- now in the browser!</p>
         </div>
         <div>
             <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-            <textarea id="config" data-gramm_editor="false" spellcheck="false" autocomplete="off"
-                class="tabSupport"></textarea>
+            <textarea id="config" data-gramm_editor="false" spellcheck="false" autocomplete="off" class="tabSupport"></textarea>
         </div>
         <div>
             <textarea id="data" data-gramm_editor="false" spellcheck="false" autocomplete="off"></textarea>
@@ -163,11 +159,11 @@
         <div class="bottom">
             <h3>References</h3>
             <p>
-            <ul class="li">
-                <li>Get the <a href="https://github.com/brexhq/substation" target="_blank">source code</a></li>
-                <li>Read the <a href="https://substation.readme.io/docs" target="_blank">documentation</a></li>
-                <li>Try some <a href="https://substation.readme.io/recipes" target="_blank">recipes</a></li>
-            </ul>
+                <ul class="li">
+                    <li>Get the <a href="https://github.com/brexhq/substation" target="_blank">source code</a></li>
+                    <li>Read the <a href="https://substation.readme.io/docs" target="_blank">documentation</a></li>
+                    <li>Try some <a href="https://substation.readme.io/recipes" target="_blank">recipes</a></li>
+                </ul>
             </p>
         </div>
     </div>
@@ -175,9 +171,20 @@
     <script>
         // load the Substation configuration library
         var request = new XMLHttpRequest();
-        request.open("GET", 'https://raw.githubusercontent.com/brexhq/substation/main/build/config/substation.libsonnet', false);
+        request.open("GET", 'https://raw.githubusercontent.com/brexhq/substation/main/build/config/substation.libsonnet', true);
+        request.onload = (e) => {
+            if (request.readyState === 4) {
+                if (request.status === 200) {
+                    lib = request.responseText;
+                } else {
+                    console.error(request.statusText);
+                }
+            }
+        };
+        request.onerror = (e) => {
+            console.error(xhr.statusText);
+        };
         request.send(null);
-        lib = request.responseText;
 
         document.getElementById("config").value = `// This playground runs locally in your browser and starts with a tutorial that introduces
 // the basic concepts of data transformation in Substation using processors and conditions. 
@@ -302,7 +309,7 @@
 
         var prev_config = null;
         var prev_data = null;
-        window.setInterval(function () {
+        window.setInterval(function() {
             if (!window.play) {
                 return;
             }
@@ -320,9 +327,9 @@
 
     <!-- tab completion for the config field, https://stackoverflow.com/a/45396754 -->
     <script>
-        $(function () {
+        $(function() {
             var enabled = true;
-            $("textarea.tabSupport").keydown(function (e) {
+            $("textarea.tabSupport").keydown(function(e) {
 
                 // Escape key toggles tab on/off
                 if (e.keyCode == 27) {

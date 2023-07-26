@@ -58,10 +58,12 @@ func (store *kvJSONFile) Get(ctx context.Context, key string) (interface{}, erro
 		res := json.Get(store.object, key)
 
 		for _, v := range res.Array() {
-			if json.Types[v.Type] != "Null" {
+			if v.Exists() {
 				return v.Value(), nil
 			}
 		}
+
+		return nil, nil
 	}
 
 	res := json.Get(store.object, key)

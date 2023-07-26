@@ -42,7 +42,7 @@
         settings: { file: null, column: null, delimiter: ',', header: null },
       },
       json_file: {
-        settings: { file: null },
+        settings: { file: null, is_lines: false },
       },
       memory: {
         settings: { capacity: 1024 },

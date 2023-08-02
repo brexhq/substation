@@ -6,16 +6,15 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	mess "github.com/brexhq/substation/message"
 )
 
 func ExampleNewInspector() {
 	// data must be gzip
 	cfg := config.Config{
-		Type: "content",
+		Type: "insp_content",
 		Settings: map[string]interface{}{
-			"options": map[string]interface{}{
-				"type": "application/x-gzip",
-			},
+			"type": "application/x-gzip",
 		},
 	}
 
@@ -32,11 +31,9 @@ func ExampleNewInspector() {
 func ExampleNewInspectors() {
 	// data must be gzip
 	cfg := config.Config{
-		Type: "content",
+		Type: "insp_content",
 		Settings: map[string]interface{}{
-			"options": map[string]interface{}{
-				"type": "application/x-gzip",
-			},
+			"type": "application/x-gzip",
 		},
 	}
 
@@ -56,11 +53,9 @@ func ExampleInspectBytes() {
 	ctx := context.TODO()
 	// data must be gzip
 	cfg := config.Config{
-		Type: "content",
+		Type: "insp_content",
 		Settings: map[string]interface{}{
-			"options": map[string]interface{}{
-				"type": "application/x-gzip",
-			},
+			"type": "application/x-gzip",
 		},
 	}
 
@@ -88,21 +83,17 @@ func ExampleNewOperator() {
 	// the substring "iz"
 	cfg := []config.Config{
 		{
-			Type: "length",
+			Type: "insp_length",
 			Settings: map[string]interface{}{
-				"options": map[string]interface{}{
-					"type":  "greater_than",
-					"value": 0,
-				},
+				"type":  "greater_than",
+				"value": 0,
 			},
 		},
 		{
-			Type: "strings",
+			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"options": map[string]interface{}{
-					"type":       "contains",
-					"expression": "iz",
-				},
+				"type":       "contains",
+				"expression": "iz",
 			},
 		},
 	}
@@ -130,21 +121,18 @@ func ExampleOperateBytes() {
 	// the substring "iz"
 	cfg := []config.Config{
 		{
-			Type: "length",
+			Type: "insp_length",
 			Settings: map[string]interface{}{
-				"options": map[string]interface{}{
-					"type":  "less_than",
-					"value": 6,
-				},
+				"type":  "less_than",
+				"value": 6,
 			},
 		},
+
 		{
-			Type: "strings",
+			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"options": map[string]interface{}{
-					"type":       "contains",
-					"expression": "iz",
-				},
+				"type":       "contains",
+				"expression": "iz",
 			},
 		},
 	}
@@ -179,11 +167,9 @@ func Example_inspect() {
 	ctx := context.TODO()
 	// data must be gzip
 	cfg := config.Config{
-		Type: "content",
+		Type: "insp_content",
 		Settings: map[string]interface{}{
-			"options": map[string]interface{}{
-				"type": "application/x-gzip",
-			},
+			"type": "application/x-gzip",
 		},
 	}
 
@@ -194,11 +180,16 @@ func Example_inspect() {
 		panic(err)
 	}
 
-	// inspector is applied to capsule
-	capsule := config.NewCapsule()
-	capsule.SetData([]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255})
+	// inspector is applied to message
+	message, err := mess.New(
+		mess.SetData([]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255}),
+	)
+	if err != nil {
+		// handle err
+		panic(err)
+	}
 
-	ok, err := inspector.Inspect(ctx, capsule)
+	ok, err := inspector.Inspect(ctx, message)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -214,21 +205,18 @@ func Example_operate() {
 	// the substring "iz"
 	cfg := []config.Config{
 		{
-			Type: "length",
+			Type: "insp_length",
 			Settings: map[string]interface{}{
-				"options": map[string]interface{}{
-					"type":  "less_than",
-					"value": 6,
-				},
+				"type":  "less_than",
+				"value": 6,
 			},
 		},
+
 		{
-			Type: "strings",
+			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"options": map[string]interface{}{
-					"type":       "contains",
-					"expression": "iz",
-				},
+				"type":       "contains",
+				"expression": "iz",
 			},
 		},
 	}
@@ -247,11 +235,16 @@ func Example_operate() {
 		panic(err)
 	}
 
-	// operator is applied to capsule
-	capsule := config.NewCapsule()
-	capsule.SetData([]byte("fizzy"))
+	// operator is applied to message
+	message, err := mess.New(
+		mess.SetData([]byte("fizzy")),
+	)
+	if err != nil {
+		// handle err
+		panic(err)
+	}
 
-	ok, err := operator.Operate(ctx, capsule)
+	ok, err := operator.Operate(ctx, message)
 	if err != nil {
 		// handle err
 		panic(err)

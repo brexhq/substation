@@ -7,63 +7,38 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
+	mess "github.com/brexhq/substation/message"
 )
 
 // errOperatorMissingInspectors is returned when an Operator that requires
 // inspectors is created with no inspectors.
 var errOperatorMissingInspectors = fmt.Errorf("missing inspectors")
 
-type condition struct {
-	// Key retrieves a value from an object for inspection.
-	//
-	// This is optional for inspectors that support inspecting non-object data.
-	Key string `json:"key"`
-	// Negate reverses the outcome of an inspection (true becomes false and false becomes true).
-	//
-	// This is optional and defaults to false.
-	Negate bool `json:"negate"`
-}
-
-func toString(i interface{}) string {
-	switch v := i.(type) {
-	case Inspector:
-		b, _ := json.Marshal(v)
-		return string(b)
-	case Operator:
-		b, _ := json.Marshal(v)
-		return string(b)
-	default:
-		return ""
-	}
-}
-
 type Inspector interface {
-	Inspect(context.Context, config.Capsule) (bool, error)
+	Inspect(context.Context, *mess.Message) (bool, error)
 }
 
 // NewInspector returns a configured Inspector from an Inspector configuration.
 func NewInspector(ctx context.Context, cfg config.Config) (Inspector, error) {
 	switch cfg.Type {
-	case "condition":
-		return newInspCondition(ctx, cfg)
-	case "content":
+	case "insp_content":
 		return newInspContent(ctx, cfg)
-	case "for_each":
-		return newInspForEach(ctx, cfg)
-	case "ip":
+	case "insp_ip":
 		return newInspIP(ctx, cfg)
-	case "json_schema":
-		return newInspJSONSchema(ctx, cfg)
-	case "json_valid":
+	case "insp_json_valid":
 		return newInspJSONValid(ctx, cfg)
-	case "length":
+	case "insp_length":
 		return newInspLength(ctx, cfg)
-	case "random":
+	case "insp_random":
 		return newInspRandom(ctx, cfg)
-	case "regexp":
+	case "insp_regexp":
 		return newInspRegExp(ctx, cfg)
-	case "strings":
+	case "insp_strings":
 		return newInspStrings(ctx, cfg)
+	case "meta_condition":
+		return newMetaInspCondition(ctx, cfg)
+	case "meta_for_each":
+		return newMetaInspForEach(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("condition: new_inspector: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
@@ -85,14 +60,18 @@ func NewInspectors(ctx context.Context, cfg ...config.Config) ([]Inspector, erro
 
 // InspectByte is a convenience function for applying an Inspector to bytes.
 func InspectBytes(ctx context.Context, data []byte, inspect Inspector) (bool, error) {
-	capsule := config.NewCapsule()
-	capsule.SetData(data)
+	message, err := mess.New(
+		mess.SetData(data),
+	)
+	if err != nil {
+		return false, err
+	}
 
-	return inspect.Inspect(ctx, capsule)
+	return inspect.Inspect(ctx, message)
 }
 
 type Operator interface {
-	Operate(context.Context, config.Capsule) (bool, error)
+	Operate(context.Context, *mess.Message) (bool, error)
 }
 
 // NewOperator returns a configured Operator from an Operator configuration.
@@ -104,40 +83,49 @@ func NewOperator(ctx context.Context, cfg Config) (Operator, error) {
 
 	switch cfg.Operator {
 	case "all":
-		return opAll{inspectors}, nil
+		return &opAll{inspectors}, nil
 	case "any":
-		return opAny{inspectors}, nil
+		return &opAny{inspectors}, nil
 	case "none":
-		return opNone{inspectors}, nil
+		return &opNone{inspectors}, nil
 	default:
-		return opEmpty{}, nil
+		return &opEmpty{}, nil
 	}
 }
 
 // OperateBytes is a convenience function for applying an Operator to bytes.
 func OperateBytes(ctx context.Context, data []byte, op Operator) (bool, error) {
-	capsule := config.NewCapsule()
-	capsule.SetData(data)
+	message, err := mess.New(
+		mess.SetData(data),
+	)
+	if err != nil {
+		return false, err
+	}
 
-	return op.Operate(ctx, capsule)
+	return op.Operate(ctx, message)
 }
 
 type opAll struct {
 	Inspectors []Inspector `json:"inspectors"`
 }
 
-func (o opAll) String() string {
-	return toString(o)
+func (o *opAll) String() string {
+	b, _ := json.Marshal(o)
+	return string(b)
 }
 
 // Operate returns true if all inspectors return true, otherwise it returns false.
-func (o opAll) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
+func (o *opAll) Operate(ctx context.Context, message *mess.Message) (bool, error) {
+	if message.IsControl() {
+		return false, nil
+	}
+
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(ctx, capsule)
+		ok, err := i.Inspect(ctx, message)
 		if err != nil {
 			return false, err
 		}
@@ -156,18 +144,23 @@ type opAny struct {
 	Inspectors []Inspector `json:"inspectors"`
 }
 
-func (o opAny) String() string {
-	return toString(o)
+func (o *opAny) String() string {
+	b, _ := json.Marshal(o)
+	return string(b)
 }
 
 // Operate returns true if any inspectors return true, otherwise it returns false.
-func (o opAny) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
+func (o *opAny) Operate(ctx context.Context, message *mess.Message) (bool, error) {
+	if message.IsControl() {
+		return false, nil
+	}
+
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(ctx, capsule)
+		ok, err := i.Inspect(ctx, message)
 		if err != nil {
 			return false, err
 		}
@@ -186,18 +179,23 @@ type opNone struct {
 	Inspectors []Inspector `json:"inspectors"`
 }
 
-func (o opNone) String() string {
-	return toString(o)
+func (o *opNone) String() string {
+	b, _ := json.Marshal(o)
+	return string(b)
 }
 
 // Operate returns true if all inspectors return false, otherwise it returns true.
-func (o opNone) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
+func (o *opNone) Operate(ctx context.Context, message *mess.Message) (bool, error) {
+	if message.IsControl() {
+		return false, nil
+	}
+
 	if len(o.Inspectors) == 0 {
 		return false, fmt.Errorf("condition: operate: inspectors %+v: %v", o, errOperatorMissingInspectors)
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(ctx, capsule)
+		ok, err := i.Inspect(ctx, message)
 		if err != nil {
 			return false, err
 		}
@@ -214,12 +212,13 @@ func (o opNone) Operate(ctx context.Context, capsule config.Capsule) (bool, erro
 
 type opEmpty struct{}
 
-func (o opEmpty) String() string {
-	return toString(o)
+func (o *opEmpty) String() string {
+	b, _ := json.Marshal(o)
+	return string(b)
 }
 
 // Operate always returns true.
-func (o opEmpty) Operate(ctx context.Context, capsule config.Capsule) (bool, error) {
+func (o *opEmpty) Operate(ctx context.Context, message *mess.Message) (bool, error) {
 	return true, nil
 }
 
@@ -227,49 +226,4 @@ func (o opEmpty) Operate(ctx context.Context, capsule config.Capsule) (bool, err
 type Config struct {
 	Operator   string          `json:"operator"`
 	Inspectors []config.Config `json:"inspectors"`
-}
-
-// condition evaluates data with a condition (operator and inspectors).
-//
-// This inspector supports the object handling patterns of the inspectors passed to the condition.
-type inspCondition struct {
-	condition
-	Options Config `json:"options"`
-
-	op Operator
-}
-
-// Creates a new condition inspector.
-func newInspCondition(ctx context.Context, cfg config.Config) (c inspCondition, err error) {
-	if err = config.Decode(cfg.Settings, &c); err != nil {
-		return inspCondition{}, err
-	}
-
-	c.op, err = NewOperator(ctx, c.Options)
-	if err != nil {
-		return inspCondition{}, err
-	}
-
-	return c, nil
-}
-
-func (c inspCondition) String() string {
-	return toString(c)
-}
-
-// Inspect evaluates encapsulated data with the condition inspector.
-func (c inspCondition) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
-	// this inspector does not directly interpret data, instead the
-	// capsule is passed through and each configured inspector
-	// applies its own data interpretation.
-	matched, err := c.op.Operate(ctx, capsule)
-	if err != nil {
-		return false, err
-	}
-
-	if c.Negate {
-		return !matched, nil
-	}
-
-	return matched, nil
 }

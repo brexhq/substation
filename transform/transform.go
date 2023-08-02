@@ -89,26 +89,26 @@ func NewTransformer(ctx context.Context, cfg config.Config) (Transformer, error)
 		return newProcSplit(ctx, cfg)
 	case "proc_time":
 		return newProcTime(ctx, cfg)
-	case "sink_aws_dynamodb":
-		return newSinkAWSDynamoDB(ctx, cfg)
-	case "sink_aws_kinesis":
-		return newSinkAWSKinesis(ctx, cfg)
-	case "sink_aws_kinesis_firehose":
-		return newSinkAWSKinesisFirehose(ctx, cfg)
-	case "sink_aws_s3":
-		return newSinkAWSS3(ctx, cfg)
-	case "sink_aws_sns":
-		return newSinkAWSSNS(ctx, cfg)
-	case "sink_aws_sqs":
-		return newSinkAWSSQS(ctx, cfg)
-	case "sink_file":
-		return newSinkFile(ctx, cfg)
-	case "sink_stdout":
-		return newProcSinkStdout(ctx, cfg)
-	case "sink_http":
-		return newSinkHTTP(ctx, cfg)
-	case "sink_sumologic":
-		return newSinkSumoLogic(ctx, cfg)
+	case "send_aws_dynamodb":
+		return newSendAWSDynamoDB(ctx, cfg)
+	case "send_aws_kinesis":
+		return newSendAWSKinesis(ctx, cfg)
+	case "send_aws_kinesis_firehose":
+		return newSendAWSKinesisFirehose(ctx, cfg)
+	case "send_aws_s3":
+		return newSendAWSS3(ctx, cfg)
+	case "send_aws_sns":
+		return newSendAWSSNS(ctx, cfg)
+	case "send_aws_sqs":
+		return newSendAWSSQS(ctx, cfg)
+	case "send_file":
+		return newSendFile(ctx, cfg)
+	case "send_stdout":
+		return newSendStdout(ctx, cfg)
+	case "send_http":
+		return newSendHTTP(ctx, cfg)
+	case "send_sumologic":
+		return newSendSumoLogic(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("process: new_transformer: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}

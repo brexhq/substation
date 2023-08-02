@@ -188,6 +188,13 @@ var setRawTests = []struct {
 		test:     []byte(`{"foo":"bar"}`),
 		expected: []byte(`{"foo":"bar","baz":{"qux":"quux"}}`),
 	},
+	{
+		name:     "JSON array",
+		key:      "baz",
+		value:    `["c","d"]`,
+		test:     []byte(`{"foo":"bar"}`),
+		expected: []byte(`{"foo":"bar","baz":["c","d"]}`),
+	},
 }
 
 func TestSetRawJson(t *testing.T) {

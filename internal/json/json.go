@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 	"unicode/utf8"
 
@@ -27,13 +26,14 @@ var Types = map[gjson.Type]string{
 	5: "JSON",
 }
 
-// Result wraps gjson.Result.
-type Result = gjson.Result
+var opts = &sjson.Options{
+	Optimistic:     true,
+	ReplaceInPlace: true,
+}
 
 // Delete wraps sjson.DeleteBytes.
 func Delete(json []byte, key string) (tmp []byte, err error) {
 	tmp, err = sjson.DeleteBytes(json, key)
-
 	if err != nil {
 		return nil, fmt.Errorf("delete key %s: %v", key, err)
 	}
@@ -42,7 +42,7 @@ func Delete(json []byte, key string) (tmp []byte, err error) {
 }
 
 // Get wraps gjson.GetBytes.
-func Get(json []byte, key string) Result {
+func Get(json []byte, key string) gjson.Result {
 	return gjson.GetBytes(json, key)
 }
 
@@ -66,14 +66,14 @@ func Set(json []byte, key string, value interface{}) (tmp []byte, err error) {
 	switch v := value.(type) {
 	case []byte:
 		if utf8.Valid(v) {
-			tmp, err = sjson.SetBytes(json, key, v)
+			tmp, err = sjson.SetBytesOptions(json, key, v, opts)
 		} else {
-			tmp, err = sjson.SetBytes(json, key, base64.Encode(v))
+			tmp, err = sjson.SetBytesOptions(json, key, base64.Encode(v), opts)
 		}
-	case Result:
-		tmp, err = sjson.SetBytes(json, key, v.Value())
+	case gjson.Result:
+		tmp, err = sjson.SetBytesOptions(json, key, v.Value(), opts)
 	default:
-		tmp, err = sjson.SetBytes(json, key, v)
+		tmp, err = sjson.SetBytesOptions(json, key, v, opts)
 	}
 
 	if err != nil {
@@ -87,17 +87,17 @@ func Set(json []byte, key string, value interface{}) (tmp []byte, err error) {
 func SetRaw(json []byte, key string, value interface{}) (tmp []byte, err error) {
 	switch v := value.(type) {
 	case []byte:
-		tmp, err = sjson.SetRawBytes(json, key, v)
+		tmp, err = sjson.SetRawBytesOptions(json, key, v, opts)
 	case string:
-		tmp, err = sjson.SetRawBytes(json, key, []byte(v))
-	case Result:
-		tmp, err = sjson.SetRawBytes(json, key, []byte(v.String()))
+		tmp, err = sjson.SetRawBytesOptions(json, key, []byte(v), opts)
+	case gjson.Result:
+		tmp, err = sjson.SetRawBytesOptions(json, key, []byte(v.String()), opts)
 	default:
-		return nil, fmt.Errorf("setraw key %s: %v", key, errSetRawInvalid)
+		return nil, fmt.Errorf("set_raw key %s: %v", key, errSetRawInvalid)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("setraw key %s: %v", key, err)
+		return nil, fmt.Errorf("set_raw key %s: %v", key, err)
 	}
 
 	return tmp, nil
@@ -118,8 +118,8 @@ func Valid(data interface{}) bool {
 		}
 
 		return json.Valid([]byte(v))
-	// a Result can have one of many underlying structs, so we need to check for multiple conditions
-	case Result:
+	// Result can have one of many underlying structs, so we need to check for multiple conditions.
+	case gjson.Result:
 		if v.IsObject() {
 			return true
 		}
@@ -133,19 +133,4 @@ func Valid(data interface{}) bool {
 	default:
 		return false
 	}
-}
-
-// DeepEquals performs a deep equals comparison between two byte arrays.
-func DeepEquals(s1, s2 []byte) (bool, error) {
-	var j1, j2 interface{}
-
-	if err := json.Unmarshal(s1, &j1); err != nil {
-		return false, err
-	}
-
-	if err := json.Unmarshal(s2, &j2); err != nil {
-		return false, err
-	}
-
-	return reflect.DeepEqual(j2, j1), nil
 }

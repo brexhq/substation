@@ -2,7 +2,7 @@
 
 <p align="center">
 <img alt="substation logo" width="200"
-src="https://github.com/brexhq/substation/blob/main/substation_logo.png" />
+src="https://github.com/brexhq/substation/blob/release/v1/.github/media/substation_logo.png" />
 </p>
 
 <p align="center">Substation is a cloud-native, event-driven data pipeline toolkit designed for security and observability teams.</p>
@@ -240,7 +240,7 @@ local send = import 'send.libsonnet';
 
 ... running in any data pipeline like these ...
 
-![alt text](substation_architecture.png)
+![alt text](.github/media/substation_architecture.png)
 
 ## Licensing
 

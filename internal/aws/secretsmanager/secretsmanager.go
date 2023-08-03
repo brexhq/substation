@@ -40,7 +40,6 @@ func (a *API) IsEnabled() bool {
 
 // GetSecret is a convenience wrapper for getting a secret from Secrets Manager.
 func (a *API) GetSecret(ctx aws.Context, secretName string) (secret string, err error) {
-	// TODO(v1.0.0): add ARN support
 	input := &secretsmanager.GetSecretValueInput{
 		SecretId:     aws.String(secretName),
 		VersionStage: aws.String("AWSCURRENT"), // VersionStage defaults to AWSCURRENT if unspecified

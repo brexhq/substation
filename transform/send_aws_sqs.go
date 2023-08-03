@@ -25,7 +25,6 @@ type sendAWSSQSConfig struct {
 	Auth    config.ConfigAWSAuth `json:"auth"`
 	Request config.ConfigRequest `json:"request"`
 	// Queue is the AWS SQS queue name that data is sent to.
-	// TODO(v1.0.0): replace with ARN
 	Queue string `json:"queue"`
 }
 

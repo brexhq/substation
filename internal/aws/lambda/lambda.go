@@ -43,7 +43,6 @@ func (a *API) IsEnabled() bool {
 func (a *API) Invoke(ctx aws.Context, function string, payload []byte) (resp *lambda.InvokeOutput, err error) {
 	resp, err = a.Client.InvokeWithContext(
 		ctx,
-		// TODO(v1.0.0): add ARN support
 		&lambda.InvokeInput{
 			FunctionName:   aws.String(function),
 			InvocationType: aws.String("RequestResponse"),

@@ -18,7 +18,6 @@ type sendAWSKinesisConfig struct {
 	Auth    config.ConfigAWSAuth `json:"auth"`
 	Request config.ConfigRequest `json:"request"`
 	// Stream is the Kinesis Data Stream that records are sent to.
-	// TODO(v1.0.0): replace with ARN
 	Stream string `json:"stream"`
 	// Partition is a string that is used as the partition key for each
 	// aggregated record.

@@ -62,7 +62,6 @@ func (a *API) PutRecordBatch(ctx aws.Context, stream string, data [][]byte) (*fi
 
 	resp, err := a.Client.PutRecordBatchWithContext(
 		ctx,
-		// TODO(v1.0.0): add ARN support
 		&firehose.PutRecordBatchInput{
 			DeliveryStreamName: aws.String(stream),
 			Records:            records,

@@ -225,8 +225,6 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 		defer ch.Close()
 
 		client := s3manager.DownloaderAPI{}
-
-		// TODO(v1.0): Add support for regions and credentials.
 		client.Setup(aws.Config{})
 
 		for _, record := range event.Records {

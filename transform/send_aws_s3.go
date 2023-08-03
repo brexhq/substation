@@ -22,7 +22,6 @@ type sendAWSS3Config struct {
 	Auth    config.ConfigAWSAuth `json:"auth"`
 	Request config.ConfigRequest `json:"request"`
 	// Bucket is the AWS S3 bucket that data is written to.
-	// TODO(v1.0.0): replace with ARN
 	Bucket string `json:"bucket"`
 	// FilePath determines how the name of the uploaded object is constructed.
 	// See filePath.New for more information.

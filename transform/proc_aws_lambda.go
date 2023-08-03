@@ -29,11 +29,10 @@ type procAWSLambdaConfig struct {
 	//
 	// This is optional for transforms that support processing non-object data.
 	SetKey string `json:"set_key"`
-	// IgnoreErrors indicates if errors returned by the AWS Lambda function should be ignored.
+	// ErrorOnFailure determines whether an error is returned during processing.
 	//
 	// This is optional and defaults to false.
-	// TODO(v1.0): Change to ErrorOnFailure.
-	IgnoreErrors bool `json:"ignore_errors"`
+	ErrorOnFailure bool `json:"error_on_failure"`
 	// FunctionName is the AWS Lambda function to synchronously invoke.
 	FunctionName string `json:"function_name"`
 }
@@ -103,7 +102,7 @@ func (t *procAWSLambda) Transform(ctx context.Context, messages ...*mess.Message
 			return nil, fmt.Errorf("transform: proc_aws_lambda: %v", err)
 		}
 
-		if resp.FunctionError != nil && !t.conf.IgnoreErrors {
+		if resp.FunctionError != nil && t.conf.ErrorOnFailure {
 			resErr := json.Get(resp.Payload, "errorMessage").String()
 			return nil, fmt.Errorf("transform: proc_aws_lambda: %v", resErr)
 		}

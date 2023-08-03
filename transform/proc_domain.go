@@ -28,6 +28,8 @@ type procDomainConfig struct {
 	// This is optional for transforms that support processing non-object data.
 	SetKey string `json:"set_key"`
 	// ErrorOnFailure determines whether an error is returned during processing.
+	//
+	// This is optional and defaults to false.
 	ErrorOnFailure bool `json:"error_on_failure"`
 	// Type is the domain function applied to the data.
 	//

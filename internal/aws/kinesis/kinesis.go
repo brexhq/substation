@@ -193,7 +193,6 @@ func (a *API) IsEnabled() bool {
 func (a *API) PutRecord(ctx aws.Context, stream, partitionKey string, data []byte) (*kinesis.PutRecordOutput, error) {
 	resp, err := a.Client.PutRecordWithContext(
 		ctx,
-		// TODO(v1.0.0): add ARN support
 		&kinesis.PutRecordInput{
 			Data:         data,
 			StreamName:   aws.String(stream),

@@ -1,16 +1,20 @@
 local sub = import '../../../../../build/config/substation.libsonnet';
 
-local const = import 'const.libsonnet';
-local dynamodb = import 'dynamodb.libsonnet';
+local ddb_payload = '!metadata ddb';
 
 {
-  sink: sub.interfaces.sink.aws_dynamodb(settings={table:'substation', key:const.ddb_payload}),
-  // use the batch transform to modify before it's written to DynamoDB.
-  transform: {
-    type: 'batch',
-    settings: {
-      processors:
-        dynamodb.processors,
-    },
-  },
+  transforms: [
+    // Copy the partition key (PK).
+    sub.interfaces.transform.proc.copy(
+      settings={key:'event.hash', set_key:sub.helpers.key.append(ddb_payload, 'PK')}
+    ),
+    // Insert extra attributes.
+    sub.interfaces.transform.proc.copy(
+      settings={key:'event.created', set_key:sub.helpers.key.append(ddb_payload, 'event_created')}
+    ),
+    // Send to DynamoDB.
+    sub.interfaces.transform.send.aws_dynamodb(
+      settings={table:'substation', key:ddb_payload}
+    )
+  ]
 }

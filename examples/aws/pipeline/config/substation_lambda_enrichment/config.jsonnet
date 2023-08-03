@@ -1,17 +1,20 @@
 local sub = import '../../../../../build/config/substation.libsonnet';
 
-local dns = import 'dns.libsonnet';
-
 {
-  // Substation microservices must use the gRPC localhost server.
-  sink: sub.interfaces.sink.grpc(settings={server:'localhost:50051'}),
-  // use the batch transform to modify data pushed to the processed Kinesis Data Stream.
-  // processors are imported and compiled from local libsonnet files.
-  transform: {
-    type: 'batch',
-    settings: {
-      processors:
-        dns.processors
-    },
-  },
+  transforms: [
+    // Performs a reverse DNS lookup on the 'addr' field if it is a public IP address.
+    sub.patterns.transform.conditional(
+      condition=sub.patterns.condition.oper.ip.public(key='addr'),
+      transform=sub.interfaces.transform.proc.dns(
+        settings={ key: 'addr', set_key: 'domain', type: 'reverse_lookup' }
+      ),
+    ),
+    // The DNS response is copied so that it is the only value returned in the object.
+    sub.interfaces.transform.proc.copy(
+      settings={ key: 'domain' }
+    ),
+    sub.interfaces.transform.proc.copy(
+      settings={ set_key: 'domain' }
+    ),
+  ]
 }

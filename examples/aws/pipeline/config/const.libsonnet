@@ -1,11 +1,11 @@
 {
-  // change uuid to match the resource created by Terraform
+  // Change uuid to match the resource created by Terraform.
   s3_bucket: 'uuid-substation',
-  // supports: json, text, data
+  // Supports: json, text, data.
   file_format: {
     type: 'json',
   },
-  // supports: gzip, snappy, zstd
+  // Supports: gzip, snappy, zstd.
   file_compression: {
     type: 'gzip',
   },

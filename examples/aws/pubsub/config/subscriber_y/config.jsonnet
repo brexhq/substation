@@ -1,8 +1,7 @@
 local sub = import '../../../../../build/config/substation.libsonnet';
 
 {
-  sink: sub.interfaces.sink.stdout,
-  transform: {
-    type: 'noop',
-  },
+  transforms: [
+    sub.interfaces.transform.send.stdout,
+  ]
 }

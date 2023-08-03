@@ -144,21 +144,12 @@ func (t *procCondense) Transform(ctx context.Context, messages ...*mess.Message)
 		_ = t.buffer[condenseKey].Add(message.Data())
 	}
 
-	// Drains items from the buffer. If a control was received, then
-	// data is emitted regardless of the buffer limits. Otherwise,
-	// data is emitted when the buffer limits are reached.
+	// If a control message was received, then items are flushed from the buffer.
+	if !control {
+		return messages, nil
+	}
+
 	for key := range t.buffer {
-		fmt.Println("k:", key)
-
-		if control {
-			goto CTRL
-		}
-
-		if t.buffer[key].Count() < t.conf.MaxCount && t.buffer[key].Size() < t.conf.MaxSize {
-			continue
-		}
-
-	CTRL:
 		data := t.buffer[key].Get()
 		msg, err := t.newMessage(data)
 		if err != nil {

@@ -8,8 +8,6 @@ import (
 	"os"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aws/appconfig"
 	"github.com/brexhq/substation/internal/file"
 )
 
@@ -25,14 +23,9 @@ var errLambdaInvalidHandler = fmt.Errorf("invalid handler")
 func getConfig(ctx context.Context) (io.Reader, error) {
 	buf := new(bytes.Buffer)
 
-	cfg := config.Get()
-	if cfg == "" {
-		// maintains backwards compatibility
-		if err := appconfig.GetPrefetch(ctx, buf); err != nil {
-			return nil, err
-		}
-
-		return buf, nil
+	cfg, found := os.LookupEnv("SUBSTATION_CONFIG")
+	if !found {
+		return nil, fmt.Errorf("no config found")
 	}
 
 	path, err := file.Get(ctx, cfg)

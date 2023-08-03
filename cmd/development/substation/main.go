@@ -3,26 +3,21 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"os"
-	"strings"
-	"sync"
 	"time"
 
-	"github.com/brexhq/substation/cmd"
-	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/internal/bufio"
+	"github.com/brexhq/substation/internal/channel"
 	"github.com/brexhq/substation/internal/file"
-	"github.com/brexhq/substation/internal/json"
+	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/transform"
 	"golang.org/x/sync/errgroup"
 )
-
-type metadata struct {
-	Name string `json:"name"`
-	Size int64  `json:"size"`
-}
 
 type options struct {
 	Input  string
@@ -72,52 +67,57 @@ func main() {
 }
 
 func run(ctx context.Context, opts options) error {
-	sub := cmd.New()
-
-	// load configuration file
 	c, err := getConfig(ctx, opts.Config)
 	if err != nil {
 		return fmt.Errorf("run: %v", err)
 	}
 
-	if err := sub.SetConfig(c); err != nil {
+	cfg := substation.Config{}
+	if err := json.NewDecoder(c).Decode(&cfg); err != nil {
+		// Handle error.
+		panic(err)
+	}
+
+	sub, err := substation.New(ctx, cfg)
+	if err != nil {
 		return fmt.Errorf("run: %v", err)
 	}
+	defer sub.Close(ctx)
 
-	if opts.ForceSink != "" {
-		c, err = sub.Config()
-		if err != nil {
-			return fmt.Errorf("run: %v", err)
-		}
-
-		newConfig, err := mutateSink(c, opts.ForceSink)
-		if err != nil {
-			return fmt.Errorf("run: %v", err)
-		}
-
-		if err := sub.SetConfig(newConfig); err != nil {
-			return fmt.Errorf("run: %v", err)
-		}
-	}
-
+	ch := channel.New[*mess.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
-	var sinkWg sync.WaitGroup
-	sinkWg.Add(1)
 	group.Go(func() error {
-		return sub.Sink(ctx, &sinkWg)
+		group, ctx := errgroup.WithContext(ctx)
+		group.SetLimit(sub.Concurrency())
+
+		for message := range ch.Recv() {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
+			message := message
+			group.Go(func() error {
+				if _, err := transform.Apply(ctx, sub.Transforms(), message); err != nil {
+					return err
+				}
+
+				return nil
+			})
+		}
+
+		if err := group.Wait(); err != nil {
+			return err
+		}
+
+		return nil
 	})
 
-	var transformWg sync.WaitGroup
-	for w := 0; w < sub.Concurrency(); w++ {
-		transformWg.Add(1)
-		group.Go(func() error {
-			return sub.Transform(ctx, &transformWg)
-		})
-	}
-
-	// ingest
 	group.Go(func() error {
+		defer ch.Close()
+
 		fi, err := file.Get(ctx, opts.Input)
 		if err != nil {
 			return err
@@ -130,19 +130,6 @@ func run(ctx context.Context, opts options) error {
 		}
 		defer f.Close()
 
-		fs, err := f.Stat()
-		if err != nil {
-			return err
-		}
-
-		capsule := config.NewCapsule()
-		if _, err = capsule.SetMetadata(metadata{
-			opts.Input,
-			fs.Size(),
-		}); err != nil {
-			return fmt.Errorf("run: %v", err)
-		}
-
 		scanner := bufio.NewScanner()
 		defer scanner.Close()
 
@@ -151,71 +138,36 @@ func run(ctx context.Context, opts options) error {
 		}
 
 		for scanner.Scan() {
-			switch scanner.Method() {
-			case "bytes":
-				capsule.SetData(scanner.Bytes())
-			case "text":
-				capsule.SetData([]byte(scanner.Text()))
-			}
-
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
-				sub.Send(capsule)
 			}
+
+			message, err := mess.New(
+				mess.SetData([]byte(scanner.Text())),
+			)
+			if err != nil {
+				return err
+			}
+
+			ch.Send(message)
 		}
 
-		sub.WaitTransform(&transformWg)
-		sub.WaitSink(&sinkWg)
+		control, err := mess.New(mess.AsControl())
+		if err != nil {
+			return err
+		}
+		ch.Send(control)
 
 		return nil
 	})
 
-	if err := sub.Block(ctx, group); err != nil {
-		return fmt.Errorf("run: %v", err)
+	// Wait for all goroutines to complete. This includes the goroutines that are
+	// executing the transform functions.
+	if err := group.Wait(); err != nil {
+		return err
 	}
 
 	return nil
-}
-
-func mutateSink(cfg io.Reader, forceSink string) (*bytes.Reader, error) {
-	oldConfig, err := io.ReadAll(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("run: %v", err)
-	}
-
-	// removes the configured sink
-	oldConfig, err = json.Delete(oldConfig, "sink")
-	if err != nil {
-		return nil, fmt.Errorf("run: %v", err)
-	}
-
-	var newSink string
-
-	switch {
-	case forceSink == "stdout" || forceSink == "file":
-		newSink = fmt.Sprintf(`{"type": "%s"}`, forceSink)
-	case strings.HasPrefix(forceSink, "file://"):
-		newSink = fmt.Sprintf(
-			`{"type": "file", "settings": {"file_path": {"suffix": "%s"}}}`,
-			strings.TrimPrefix(forceSink, "file://"),
-		)
-	case strings.HasPrefix(forceSink, "http://") || strings.HasPrefix(forceSink, "https://"):
-		newSink = fmt.Sprintf(
-			`{"type": "http", "settings": {"url": "%s"}}`,
-			forceSink,
-		)
-	case strings.HasPrefix(forceSink, "s3://"):
-		return nil, fmt.Errorf("-force-sink s3://* not yet implemented")
-	default:
-		return nil, fmt.Errorf("%q not supported for -force-sink", forceSink)
-	}
-
-	newConfig, err := json.Set(oldConfig, "sink", newSink)
-	if err != nil {
-		return nil, fmt.Errorf("run: %v", err)
-	}
-
-	return bytes.NewReader(newConfig), nil
 }

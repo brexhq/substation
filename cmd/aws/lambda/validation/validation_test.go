@@ -15,50 +15,14 @@ var testCfgs = []struct {
 	expectedErr error
 }{
 	{
-		"invalid sink",
-		[]byte(`
-		{
-			"sink": {
-			   "type": "fooer"
-			},
-			"transform": {
-			   "type": "transfer"
-			}
-		 }
-		 `),
-		errors.ErrInvalidFactoryInput,
-	},
-	{
 		"invalid transform",
 		[]byte(`
 		{
-			"sink": {
-			   "type": "stdout"
-			},
-			"transform": {
-			   "type": "fooer"
-			}
-		 }
-		 `),
-		errors.ErrInvalidFactoryInput,
-	},
-	{
-		"invalid processor",
-		[]byte(`
-		{
-			"sink": {
-				"type": "stdout"
-			},
-			"transform": {
-				"settings": {
-				   "processors": [
-					  {
-						 "type": "fooer"
-					  }
-				   ]
-				},
-				"type": "batch"
-			 }
+			"transforms": [
+				{
+				   "type": "fooer"
+				}
+			]
 		 }
 		 `),
 		errors.ErrInvalidFactoryInput,
@@ -67,25 +31,17 @@ var testCfgs = []struct {
 		"invalid processor settings",
 		[]byte(`
 		{
-			"sink": {
-			  "type": "stdout"
-			},
-			"transform": {
-			  "settings": {
-				"processors": [
-				  {
+			"transforms": [
+				{
+					"type": "hash",
 					"settings": {
-					  "options": {
-						"algorithm": "md1"
-					  }
-					},
-					"type": "hash"
-				  }
-				]
-			  },
-			  "type": "batch"
-			}
-		  }
+						"options": {
+							"algorithm": "md1"
+						}
+					}
+				}
+			]
+		}					
 		 `),
 		errors.ErrInvalidOption,
 	},
@@ -93,23 +49,15 @@ var testCfgs = []struct {
 		"valid config",
 		[]byte(`
 		{
-			"sink": {
-				"type": "stdout"
-			},
-			"transform": {
-				"settings": {
-				   "processors": [
-					{
-						"settings": {
-						   "input_key": "foo",
-						   "output_key": "baz"
-						},
-						"type": "copy"
-					 }		 
-				   ]
-				},
-				"type": "batch"
-			 }
+			"transforms": [
+				{
+					"settings": {
+					   "key": "foo",
+					   "set_key": "baz"
+					},
+					"type": "proc_copy"
+				 }
+			]
 		 }
 		 `),
 		nil,

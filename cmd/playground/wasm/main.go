@@ -10,7 +10,8 @@ import (
 	"syscall/js"
 
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/process"
+	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/transform"
 	"github.com/google/go-jsonnet"
 )
 
@@ -23,41 +24,52 @@ func main() {
 			events := args[1].String()
 			library := args[2].String()
 
-			// concatenate the library with the user's configuration
+			// Concatenate the library with the user's configuration.
 			sonnet = fmt.Sprintf("local sub = %s; \n\n%s", library, sonnet)
 			cfg, err := vm.EvaluateAnonymousSnippet("", sonnet)
 			if err != nil {
 				return js.ValueOf(fmt.Sprintf("jsonnet: %s", err.Error()))
 			}
 
-			// configuration must be an array
+			// Configuration must be an array.
 			conf := []config.Config{}
 			if err := json.Unmarshal([]byte(cfg), &conf); err != nil {
 				return js.ValueOf(fmt.Sprintf("unmarshal: %s", err.Error()))
 			}
 
-			batchers, err := process.NewBatchers(conf...)
+			tforms, err := transform.NewTransformers(context.Background(), conf...)
 			if err != nil {
 				return js.ValueOf(fmt.Sprintf("substation: %s", err.Error()))
 			}
 
 			// each line of data is treated as a separate input into the processors
-			var b [][]byte
+			var msgs []*message.Message
 			events = strings.TrimSpace(events)
 			for _, e := range strings.Split(events, "\n") {
-				b = append(b, []byte(e))
+				if e == "" {
+					continue
+				}
+
+				data, err := message.New(
+					message.SetData([]byte(e)),
+				)
+				if err != nil {
+					return js.ValueOf(fmt.Sprintf("message: %s", err.Error()))
+				}
+
+				msgs = append(msgs, data)
 			}
 
-			batch, err := process.BatchBytes(context.TODO(), b, batchers...)
+			msgs, err = transform.Apply(context.Background(), tforms, msgs...)
 			if err != nil {
-				return js.ValueOf(fmt.Sprintf("substation: %s", err.Error()))
+				return js.ValueOf(fmt.Sprintf("transform: %s", err.Error()))
 			}
 
 			// each processed output is returned on a new line
 			var s string
-			for i, b := range batch {
-				s += string(b)
-				if i < len(batch)-1 {
+			for i, msg := range msgs {
+				s += string(msg.Data())
+				if i < len(msgs)-1 {
 					s += "\n"
 				}
 			}

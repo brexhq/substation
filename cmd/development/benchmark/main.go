@@ -4,19 +4,20 @@
 package main
 
 import (
-	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"runtime/pprof"
-	"sync"
 	"time"
 
-	"github.com/brexhq/substation/cmd"
-	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/internal/bufio"
+	"github.com/brexhq/substation/internal/channel"
 	"github.com/brexhq/substation/internal/file"
+	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/transform"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -45,11 +46,8 @@ func main() {
 
 	ctx := context.Background()
 
-	var cfg []byte
-
-	// if no config file is provided, then a noop config (data transfer only)
-	// is used. benchmarking external services is possible by configuring a
-	// sink, otherwise the config should use the noop sink.
+	var conf []byte
+	// If no config file is provided, then an empty config is used.
 	if opts.ConfigFile != "" {
 		path, err := file.Get(ctx, opts.ConfigFile)
 		defer os.Remove(path)
@@ -58,30 +56,36 @@ func main() {
 			panic(err)
 		}
 
-		cfg, err = os.ReadFile(path)
+		conf, err = os.ReadFile(path)
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		cfg = []byte(`{"sink":{"type":"noop"},"transform":{"type":"noop"}}`)
+		conf = []byte(`{"transform":[]}`)
 	}
 
-	sub := cmd.New()
-	if err := sub.SetConfig(bytes.NewReader(cfg)); err != nil {
+	cfg := substation.Config{}
+	if err := json.Unmarshal(conf, &cfg); err != nil {
 		panic(err)
 	}
 
-	// collect the sample data for the benchmark
+	sub, err := substation.New(ctx, cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer sub.Close(ctx)
+
+	// Collect the sample data for the benchmark.
 	path, err := file.Get(ctx, opts.DataFile)
 	defer os.Remove(path)
 
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("file: %v", err))
 	}
 
 	f, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("file: %v", err))
 	}
 	defer f.Close()
 
@@ -101,7 +105,7 @@ func main() {
 			data = []byte(scanner.Text())
 		}
 
-		// only read the first line of the file
+		// Only read the first line of the file.
 		//nolint:staticcheck // ignore SA4004
 		break
 	}
@@ -118,46 +122,72 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	// this benchmarks a simulated application that includes:
-	// - ingesting data
-	// - transforming data
-	// - loading data
 	start := time.Now()
+	ch := channel.New[*mess.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
-	var sinkWg sync.WaitGroup
-	sinkWg.Add(1)
 	group.Go(func() error {
-		return sub.Sink(ctx, &sinkWg)
-	})
+		group, ctx := errgroup.WithContext(ctx)
+		group.SetLimit(sub.Concurrency())
 
-	var transformWg sync.WaitGroup
-	for w := 0; w < sub.Concurrency(); w++ {
-		transformWg.Add(1)
-		group.Go(func() error {
-			return sub.Transform(ctx, &transformWg)
-		})
-	}
+		for message := range ch.Recv() {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
 
-	group.Go(func() error {
-		for i := 0; i < opts.Count; i++ {
-			capsule := config.NewCapsule()
-			capsule.SetData(data)
+			message := message
+			group.Go(func() error {
+				if _, err := transform.Apply(ctx, sub.Transforms(), message); err != nil {
+					return err
+				}
 
-			sub.Send(capsule)
+				return nil
+			})
 		}
 
-		sub.WaitTransform(&transformWg)
-		sub.WaitSink(&sinkWg)
+		if err := group.Wait(); err != nil {
+			return err
+		}
 
 		return nil
 	})
 
-	if err := sub.Block(ctx, group); err != nil {
+	group.Go(func() error {
+		defer ch.Close()
+
+		for i := 0; i < opts.Count; i++ {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
+			message, err := mess.New(mess.SetData(data))
+			if err != nil {
+				return err
+			}
+
+			ch.Send(message)
+		}
+
+		control, err := mess.New(mess.AsControl())
+		if err != nil {
+			return err
+		}
+		ch.Send(control)
+
+		return nil
+	})
+
+	// Wait for all goroutines to complete. This includes the goroutines that are
+	// executing the transform functions.
+	if err := group.Wait(); err != nil {
 		panic(err)
 	}
 
-	// the benchmark reports the total time taken, the number of events sent, the
+	// The benchmark reports the total time taken, the number of events sent, the
 	// amount of data sent, and the rate of events and data sent per second.
 	elapsed := time.Since(start)
 	fmt.Printf("%d events in %s (%.2f events/sec)\n", opts.Count, elapsed, float64(opts.Count)/elapsed.Seconds())

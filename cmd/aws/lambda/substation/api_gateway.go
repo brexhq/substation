@@ -2,13 +2,18 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"sync"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/brexhq/substation/cmd"
-	"github.com/brexhq/substation/config"
-	"golang.org/x/sync/errgroup"
+	"github.com/brexhq/substation"
+	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/transform"
+)
+
+var (
+	gateway200Response = events.APIGatewayProxyResponse{StatusCode: 200}
+	gateway500Response = events.APIGatewayProxyResponse{StatusCode: 500}
 )
 
 type gatewayMetadata struct {
@@ -18,63 +23,60 @@ type gatewayMetadata struct {
 }
 
 func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	sub := cmd.New()
-
-	// retrieve and load configuration
-	cfg, err := getConfig(ctx)
+	// Retrieve and load configuration.
+	conf, err := getConfig(ctx)
 	if err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway: %v", err)
+		return gateway500Response, fmt.Errorf("gateway: %v", err)
 	}
 
-	if err := sub.SetConfig(cfg); err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway: %v", err)
+	cfg := substation.Config{}
+	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
+		return gateway500Response, fmt.Errorf("gateway: %v", err)
 	}
 
-	// maintains app state
-	group, ctx := errgroup.WithContext(ctx)
-
-	// load
-	var sinkWg sync.WaitGroup
-	sinkWg.Add(1)
-	group.Go(func() error {
-		return sub.Sink(ctx, &sinkWg)
-	})
-
-	// transform
-	var transformWg sync.WaitGroup
-	for w := 0; w < sub.Concurrency(); w++ {
-		transformWg.Add(1)
-		group.Go(func() error {
-			return sub.Transform(ctx, &transformWg)
-		})
+	sub, err := substation.New(ctx, cfg)
+	if err != nil {
+		return gateway500Response, fmt.Errorf("gateway: %v", err)
 	}
 
-	// ingest
-	group.Go(func() error {
-		if len(request.Body) != 0 {
-			capsule := config.NewCapsule()
-			capsule.SetData([]byte(request.Body))
-			if _, err := capsule.SetMetadata(gatewayMetadata{
-				request.Resource,
-				request.Path,
-				request.Headers,
-			}); err != nil {
-				return fmt.Errorf("gateway handler: %v", err)
-			}
+	defer sub.Close(ctx)
 
-			sub.Send(capsule)
-		}
-
-		sub.WaitTransform(&transformWg)
-		sub.WaitSink(&sinkWg)
-
-		return nil
-	})
-
-	// block until ITL is complete
-	if err := sub.Block(ctx, group); err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway: %v", err)
+	// Create Message metadata.
+	m := gatewayMetadata{
+		Resource: request.Resource,
+		Path:     request.Path,
+		Headers:  request.Headers,
 	}
 
-	return events.APIGatewayProxyResponse{StatusCode: 200}, nil
+	metadata, err := json.Marshal(m)
+	if err != nil {
+		return gateway500Response, fmt.Errorf("gateway: %v", err)
+	}
+
+	// Messages are sent to the transforms as a group.
+	var msgs []*message.Message
+
+	msg, err := message.New(
+		message.SetData([]byte(request.Body)),
+		message.SetMetadata(metadata),
+	)
+	if err != nil {
+		return gateway500Response, fmt.Errorf("gateway: %v", err)
+	}
+	msgs = append(msgs, msg)
+
+	ctrl, err := message.New(
+		message.AsControl(),
+	)
+	if err != nil {
+		return gateway500Response, fmt.Errorf("gateway: %v", err)
+	}
+	msgs = append(msgs, ctrl)
+
+	// Send messages through the transforms.
+	if _, err := transform.Apply(ctx, sub.Transforms(), msgs...); err != nil {
+		return gateway500Response, fmt.Errorf("gateway: %v", err)
+	}
+
+	return gateway200Response, nil
 }

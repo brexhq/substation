@@ -2,15 +2,17 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/awslabs/kinesis-aggregation/go/deaggregator"
-	"github.com/brexhq/substation/cmd"
-	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/internal/aws/kinesis"
+	"github.com/brexhq/substation/internal/channel"
+	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/transform"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -22,41 +24,63 @@ type kinesisMetadata struct {
 }
 
 func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
-	sub := cmd.New()
-
-	// retrieve and load configuration
-	cfg, err := getConfig(ctx)
+	// Retrieve and load configuration.
+	conf, err := getConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("kinesis handler: %v", err)
 	}
 
-	if err := sub.SetConfig(cfg); err != nil {
+	cfg := substation.Config{}
+	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
 		return fmt.Errorf("kinesis handler: %v", err)
 	}
 
-	// maintains app state
-	group, ctx := errgroup.WithContext(ctx)
-
-	// load
-	var sinkWg sync.WaitGroup
-	sinkWg.Add(1)
-	group.Go(func() error {
-		return sub.Sink(ctx, &sinkWg)
-	})
-
-	// transform
-	var transformWg sync.WaitGroup
-	for w := 0; w < sub.Concurrency(); w++ {
-		transformWg.Add(1)
-		group.Go(func() error {
-			return sub.Transform(ctx, &transformWg)
-		})
+	sub, err := substation.New(ctx, cfg)
+	if err != nil {
+		return fmt.Errorf("kinesis handler: %v", err)
 	}
 
-	// ingest
-	eventSourceArn := event.Records[len(event.Records)-1].EventSourceArn
+	defer sub.Close(ctx)
 
+	ch := channel.New[*mess.Message]()
+	group, ctx := errgroup.WithContext(ctx)
+
+	// Data transformation. Transforms are executed concurrently using a worker pool
+	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
+		group, ctx := errgroup.WithContext(ctx)
+		group.SetLimit(sub.Concurrency())
+
+		for message := range ch.Recv() {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
+			m := message
+			group.Go(func() error {
+				if _, err := transform.Apply(ctx, sub.Transforms(), m); err != nil {
+					return err
+				}
+
+				return nil
+			})
+		}
+
+		if err := group.Wait(); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	// Data ingest. A CTRL Message is sent to the transforms after all data has been
+	// sent to the channel.
+	group.Go(func() error {
+		defer ch.Close()
+
+		eventSourceArn := event.Records[len(event.Records)-1].EventSourceArn
 		converted := kinesis.ConvertEventsRecords(event.Records)
 		deaggregated, err := deaggregator.DeaggregateRecords(converted)
 		if err != nil {
@@ -68,30 +92,44 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
-				capsule := config.NewCapsule()
-				capsule.SetData(record.Data)
-				if _, err := capsule.SetMetadata(kinesisMetadata{
-					*record.ApproximateArrivalTimestamp,
-					eventSourceArn,
-					*record.PartitionKey,
-					*record.SequenceNumber,
-				}); err != nil {
-					return fmt.Errorf("kinesis handler: %v", err)
-				}
-
-				sub.Send(capsule)
 			}
+
+			// Create Message metadata.
+			m := kinesisMetadata{
+				*record.ApproximateArrivalTimestamp,
+				eventSourceArn,
+				*record.PartitionKey,
+				*record.SequenceNumber,
+			}
+
+			metadata, err := json.Marshal(m)
+			if err != nil {
+				return fmt.Errorf("kinesis handler: %v", err)
+			}
+
+			message, err := mess.New(
+				mess.SetData(record.Data),
+				mess.SetMetadata(metadata),
+			)
+			if err != nil {
+				return fmt.Errorf("kinesis handler: %v", err)
+			}
+			ch.Send(message)
 		}
 
-		sub.WaitTransform(&transformWg)
-		sub.WaitSink(&sinkWg)
+		ctrl, err := mess.New(mess.AsControl())
+		if err != nil {
+			return fmt.Errorf("kinesis handler: %v", err)
+		}
+		ch.Send(ctrl)
 
 		return nil
 	})
 
-	// block until ITL is complete
-	if err := sub.Block(ctx, group); err != nil {
-		return fmt.Errorf("kinesis handler: %v", err)
+	// Wait for all goroutines to complete. This includes the goroutines that are
+	// executing the transform functions.
+	if err := group.Wait(); err != nil {
+		return err
 	}
 
 	return nil

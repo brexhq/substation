@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	_aws "github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/s3manager"
 	"github.com/brexhq/substation/internal/http"
 )
@@ -85,7 +86,7 @@ func Get(ctx context.Context, location string) (string, error) {
 
 	if strings.HasPrefix(location, "s3://") {
 		if !s3downloader.IsEnabled() {
-			s3downloader.Setup()
+			s3downloader.Setup(_aws.Config{})
 		}
 
 		// "s3://bucket/key" becomes ["bucket" "key"]

@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
 	"github.com/brexhq/substation/internal/errors"
 )
@@ -152,12 +153,12 @@ func (store *kvAWSDynamoDB) Setup(ctx context.Context) error {
 		return errors.ErrMissingRequiredOption
 	}
 
-	// avoids unnecessary setup
+	// Avoids unnecessary setup.
 	if store.api.IsEnabled() {
 		return nil
 	}
 
-	store.api.Setup()
+	store.api.Setup(aws.Config{})
 
 	return nil
 }

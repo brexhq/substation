@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/config"
+	_aws "github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/secretsmanager"
 	"github.com/brexhq/substation/internal/kv"
 )
@@ -76,7 +77,7 @@ func Get(ctx context.Context, secret string) (string, error) {
 	if strings.HasPrefix(secret, "SECRETS_AWS:") {
 		// AWS SDK client are always safe for concurrent access
 		if !secretsManagerAPI.IsEnabled() {
-			secretsManagerAPI.Setup()
+			secretsManagerAPI.Setup(_aws.Config{})
 		}
 
 		r := strings.ReplaceAll(secret, "SECRETS_AWS:", "")

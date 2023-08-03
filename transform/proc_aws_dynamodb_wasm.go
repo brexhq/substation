@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/brexhq/substation/config"
+	mess "github.com/brexhq/substation/message"
 )
 
 type procAWSDynamoDB struct{}
@@ -24,6 +25,6 @@ func (*procAWSDynamoDB) Close(context.Context) error {
 	return nil
 }
 
-func (*procAWSDynamoDB) Transform(context.Context, *mess.Message) ([]*mess.Message, error) {
+func (*procAWSDynamoDB) Transform(context.Context, ...*mess.Message) ([]*mess.Message, error) {
 	return nil, fmt.Errorf("transform: proc_aws_dynamodb: %v", syscall.ENOSYS)
 }

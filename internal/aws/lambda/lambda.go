@@ -3,36 +3,20 @@ package lambda
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/lambda/lambdaiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
+	_aws "github.com/brexhq/substation/internal/aws"
 )
 
 // New returns a configured Lambda client.
-func New() *lambda.Lambda {
-	conf := aws.NewConfig()
 
-	// provides forward compatibility for the Go SDK to support env var configuration settings
-	// https://github.com/aws/aws-sdk-go/issues/4207
-	max, found := os.LookupEnv("AWS_MAX_ATTEMPTS")
-	if found {
-		m, err := strconv.Atoi(max)
-		if err != nil {
-			panic(err)
-		}
+func New(cfg _aws.Config) *lambda.Lambda {
+	conf, sess := _aws.New(cfg)
 
-		conf = conf.WithMaxRetries(m)
-	}
-
-	c := lambda.New(
-		session.Must(session.NewSession()),
-		conf,
-	)
-
+	c := lambda.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
 		xray.AWS(c.Client)
 	}
@@ -46,8 +30,8 @@ type API struct {
 }
 
 // Setup creates a new Lambda client.
-func (a *API) Setup() {
-	a.Client = New()
+func (a *API) Setup(cfg _aws.Config) {
+	a.Client = New(cfg)
 }
 
 // IsEnabled returns true if the client is enabled and ready for use.

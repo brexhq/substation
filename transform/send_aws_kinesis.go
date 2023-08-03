@@ -8,12 +8,15 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/kinesis"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 )
 
 type sendAWSKinesisConfig struct {
+	Auth    config.ConfigAWSAuth `json:"auth"`
+	Request config.ConfigRequest `json:"request"`
 	// Stream is the Kinesis Data Stream that records are sent to.
 	// TODO(v1.0.0): replace with ARN
 	Stream string `json:"stream"`
@@ -63,7 +66,13 @@ func newSendAWSKinesis(_ context.Context, cfg config.Config) (*sendAWSKinesis, e
 		conf: conf,
 	}
 
-	send.client.Setup()
+	// Setup the AWS client.
+	send.client.Setup(aws.Config{
+		Region:     conf.Auth.Region,
+		AssumeRole: conf.Auth.AssumeRole,
+		MaxRetries: conf.Request.MaxRetries,
+	})
+
 	send.mu = sync.Mutex{}
 	send.buffer = make(map[string]*kinesis.Aggregate)
 

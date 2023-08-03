@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
@@ -25,6 +26,8 @@ var errProcAWSDynamodbInputNotAnObject = fmt.Errorf("input is not an object")
 var errProcAWSDynamodbInputMissingPK = fmt.Errorf("input missing PK")
 
 type procAWSDynamoDBConfig struct {
+	Auth    config.ConfigAWSAuth `json:"auth"`
+	Request config.ConfigRequest `json:"request"`
 	// Key retrieves a value from an object for processing.
 	//
 	// This is optional for transforms that support processing non-object data.
@@ -85,9 +88,11 @@ func newProcAWSDynamoDB(ctx context.Context, cfg config.Config) (*procAWSDynamoD
 	}
 
 	// Setup the AWS client.
-	if !proc.client.IsEnabled() {
-		proc.client.Setup()
-	}
+	proc.client.Setup(aws.Config{
+		Region:     conf.Auth.Region,
+		AssumeRole: conf.Auth.AssumeRole,
+		MaxRetries: conf.Request.MaxRetries,
+	})
 
 	return &proc, nil
 }

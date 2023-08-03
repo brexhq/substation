@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
@@ -19,8 +20,9 @@ import (
 var errSendDynamoDBNonObject = fmt.Errorf("input must be object")
 
 type sendAWSDynampDBConfig struct {
+	Auth    config.ConfigAWSAuth `json:"auth"`
+	Request config.ConfigRequest `json:"request"`
 	// Table is the DynamoDB table that items are written to.
-	// TODO(v1.0.0): replace with ARN
 	Table string `json:"table"`
 	// Key contains the DynamoDB items map that is written to the table.
 	//
@@ -54,7 +56,11 @@ func newSendAWSDynamoDB(_ context.Context, cfg config.Config) (*sendAWSDynamoDB,
 		conf: conf,
 	}
 
-	send.client.Setup()
+	send.client.Setup(aws.Config{
+		Region:     conf.Auth.Region,
+		AssumeRole: conf.Auth.AssumeRole,
+		MaxRetries: conf.Request.MaxRetries,
+	})
 
 	return &send, nil
 }

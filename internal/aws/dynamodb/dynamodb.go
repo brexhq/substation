@@ -3,38 +3,21 @@ package dynamodb
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
+	_aws "github.com/brexhq/substation/internal/aws"
 )
 
 // New returns a configured DynamoDB client.
-func New() *dynamodb.DynamoDB {
-	conf := aws.NewConfig()
+func New(cfg _aws.Config) *dynamodb.DynamoDB {
+	conf, sess := _aws.New(cfg)
 
-	// provides forward compatibility for the Go SDK to support env var configuration settings
-	// https://github.com/aws/aws-sdk-go/issues/4207
-	max, found := os.LookupEnv("AWS_MAX_ATTEMPTS")
-	if found {
-		m, err := strconv.Atoi(max)
-		if err != nil {
-			panic(err)
-		}
-
-		conf = conf.WithMaxRetries(m)
-	}
-
-	c := dynamodb.New(
-		session.Must(session.NewSession()),
-		conf,
-	)
-
+	c := dynamodb.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
 		xray.AWS(c.Client)
 	}
@@ -48,8 +31,8 @@ type API struct {
 }
 
 // Setup creates a new DynamoDB client.
-func (a *API) Setup() {
-	a.Client = New()
+func (a *API) Setup(cfg _aws.Config) {
+	a.Client = New(cfg)
 }
 
 // IsEnabled returns true if the client is enabled and ready for use.
@@ -74,7 +57,7 @@ func (a *API) PutItem(ctx aws.Context, table string, item map[string]*dynamodb.A
 }
 
 /*
-Query is a convenience wrapper for querying a DynamoDB table. The paritition and sort keys are always referenced in the key condition expression as ":pk" and ":sk". Refer to the DynamoDB documentation for the Query operation's request syntax and key condition expression patterns:
+Query is a convenience wrapper for querying a DynamoDB table. The paritition and sort keys are always referenced in the key condition expression as ":PK" and ":SK". Refer to the DynamoDB documentation for the Query operation's request syntax and key condition expression patterns:
 
 - https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#API_Query_RequestSyntax
 
@@ -82,19 +65,18 @@ Query is a convenience wrapper for querying a DynamoDB table. The paritition and
 */
 func (a *API) Query(ctx aws.Context, table, partitionKey, sortKey, keyConditionExpression string, limit int64, scanIndexForward bool) (resp *dynamodb.QueryOutput, err error) {
 	expression := make(map[string]*dynamodb.AttributeValue)
-	expression[":pk"] = &dynamodb.AttributeValue{
+	expression[":PK"] = &dynamodb.AttributeValue{
 		S: aws.String(partitionKey),
 	}
 
 	if sortKey != "" {
-		expression[":sk"] = &dynamodb.AttributeValue{
+		expression[":SK"] = &dynamodb.AttributeValue{
 			S: aws.String(sortKey),
 		}
 	}
 
 	resp, err = a.Client.QueryWithContext(
 		ctx,
-		// TODO(v1.0.0): add ARN support
 		&dynamodb.QueryInput{
 			TableName:                 aws.String(table),
 			KeyConditionExpression:    aws.String(keyConditionExpression),
@@ -103,7 +85,7 @@ func (a *API) Query(ctx aws.Context, table, partitionKey, sortKey, keyConditionE
 			ScanIndexForward:          aws.Bool(scanIndexForward),
 		})
 	if err != nil {
-		return nil, fmt.Errorf("query table %s key condition expression %s: %v", table, keyConditionExpression, err)
+		return nil, fmt.Errorf("query: table %s key_condition_expression %s: %v", table, keyConditionExpression, err)
 	}
 
 	return resp, nil

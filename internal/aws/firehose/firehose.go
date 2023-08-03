@@ -3,36 +3,19 @@ package firehose
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/firehose"
 	"github.com/aws/aws-sdk-go/service/firehose/firehoseiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
+	_aws "github.com/brexhq/substation/internal/aws"
 )
 
 // New creates a new session for Kinesis Firehose
-func New() *firehose.Firehose {
-	conf := aws.NewConfig()
+func New(cfg _aws.Config) *firehose.Firehose {
+	conf, sess := _aws.New(cfg)
 
-	// provides forward compatibility for the Go SDK to support env var configuration settings
-	// https://github.com/aws/aws-sdk-go/issues/4207
-	max, found := os.LookupEnv("AWS_MAX_ATTEMPTS")
-	if found {
-		m, err := strconv.Atoi(max)
-		if err != nil {
-			panic(err)
-		}
-
-		conf = conf.WithMaxRetries(m)
-	}
-
-	c := firehose.New(
-		session.Must(session.NewSession()),
-		conf,
-	)
-
+	c := firehose.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
 		xray.AWS(c.Client)
 	}
@@ -51,8 +34,8 @@ func (a *API) IsEnabled() bool {
 }
 
 // Setup creates a Kinesis Firehose client
-func (a *API) Setup() {
-	a.Client = New()
+func (a *API) Setup(cfg _aws.Config) {
+	a.Client = New(cfg)
 }
 
 // PutRecord is a convenience wrapper for putting a record into a Kinesis Firehose stream.

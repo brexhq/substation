@@ -7,34 +7,18 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
+	_aws "github.com/brexhq/substation/internal/aws"
 	"github.com/google/uuid"
 )
 
-// New creates a new session for SQS
-func New() *sqs.SQS {
-	conf := aws.NewConfig()
+// New returns a configured SQS client.
+func New(cfg _aws.Config) *sqs.SQS {
+	conf, sess := _aws.New(cfg)
 
-	// provides forward compatibility for the Go SDK to support env var configuration settings
-	// https://github.com/aws/aws-sdk-go/issues/4207
-	max, found := os.LookupEnv("AWS_MAX_ATTEMPTS")
-	if found {
-		m, err := strconv.Atoi(max)
-		if err != nil {
-			panic(err)
-		}
-
-		conf = conf.WithMaxRetries(m)
-	}
-
-	c := sqs.New(
-		session.Must(session.NewSession()),
-		conf,
-	)
-
+	c := sqs.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
 		xray.AWS(c.Client)
 	}
@@ -42,19 +26,19 @@ func New() *sqs.SQS {
 	return c
 }
 
-// API wraps a Kinesis Firehose client interface
+// API wraps an SQS client interface.
 type API struct {
 	Client sqsiface.SQSAPI
 }
 
-// IsEnabled checks whether a new client has been set
+// IsEnabled checks whether a new client has been set.
 func (a *API) IsEnabled() bool {
 	return a.Client != nil
 }
 
-// Setup creates a Kinesis Firehose client
-func (a *API) Setup() {
-	a.Client = New()
+// Setup creates an SQS client.
+func (a *API) Setup(cfg _aws.Config) {
+	a.Client = New(cfg)
 }
 
 // SendMessage is a convenience wrapper for sending a message to an SQS queue.
@@ -67,7 +51,7 @@ func (a *API) SendMessage(ctx aws.Context, queue string, data []byte) (*sqs.Send
 			QueueName: aws.String(queue),
 		})
 	if err != nil {
-		return nil, fmt.Errorf("sendmessagebatch queue %s: %v", queue, err)
+		return nil, fmt.Errorf("send_message: queue %s: %v", queue, err)
 	}
 
 	msg := &sqs.SendMessageInput{
@@ -81,7 +65,7 @@ func (a *API) SendMessage(ctx aws.Context, queue string, data []byte) (*sqs.Send
 
 	resp, err := a.Client.SendMessageWithContext(ctx, msg)
 	if err != nil {
-		return nil, fmt.Errorf("sendmessage queue %s: %v", queue, err)
+		return nil, fmt.Errorf("send_message: queue %s: %v", queue, err)
 	}
 
 	return resp, nil
@@ -111,12 +95,11 @@ func (a *API) SendMessageBatch(ctx aws.Context, queue string, data [][]byte) (*s
 			QueueName: aws.String(queue),
 		})
 	if err != nil {
-		return nil, fmt.Errorf("sendmessagebatch queue %s: %v", queue, err)
+		return nil, fmt.Errorf("send_message_batch: queue %s: %v", queue, err)
 	}
 
 	resp, err := a.Client.SendMessageBatchWithContext(
 		ctx,
-		// TODO(v1.0.0): add ARN support
 		&sqs.SendMessageBatchInput{
 			Entries:  messages,
 			QueueUrl: url.QueueUrl,
@@ -131,7 +114,7 @@ func (a *API) SendMessageBatch(ctx aws.Context, queue string, data [][]byte) (*s
 		for _, r := range resp.Failed {
 			idx, err := strconv.Atoi(aws.StringValue(r.Id))
 			if err != nil {
-				return nil, fmt.Errorf("sendmessagebatch queue %s: %v", queue, err)
+				return nil, fmt.Errorf("send_message_batch: queue %s: %v", queue, err)
 			}
 
 			retry = append(retry, data[idx])
@@ -143,7 +126,7 @@ func (a *API) SendMessageBatch(ctx aws.Context, queue string, data [][]byte) (*s
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("sendmessagebatch queue %s: %v", queue, err)
+		return nil, fmt.Errorf("send_message_batch: queue %s: %v", queue, err)
 	}
 
 	return resp, nil

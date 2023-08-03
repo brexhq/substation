@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/sns"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
@@ -21,8 +22,10 @@ const sendSNSMessageSizeLimit = 1024 * 1024 * 256
 var errSendSNSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSNSConfig struct {
+	Auth    config.ConfigAWSAuth `json:"auth"`
+	Request config.ConfigRequest `json:"request"`
 	// ARN is the ARN of the AWS SNS topic that data is sent to.
-	ARN string `json:"arn"`
+	Topic string `json:"topic"`
 }
 
 type sendAWSSNS struct {
@@ -41,15 +44,20 @@ func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 	}
 
 	// Validate required options.
-	if conf.ARN == "" {
-		return nil, fmt.Errorf("send: aws_sns: arn: %v", errors.ErrMissingRequiredOption)
+	if conf.Topic == "" {
+		return nil, fmt.Errorf("send: aws_sns: topic: %v", errors.ErrMissingRequiredOption)
 	}
 
 	send := sendAWSSNS{
 		conf: conf,
 	}
 
-	send.client.Setup()
+	// Setup the AWS client.
+	send.client.Setup(aws.Config{
+		Region:     conf.Auth.Region,
+		AssumeRole: conf.Auth.AssumeRole,
+		MaxRetries: conf.Request.MaxRetries,
+	})
 
 	// SNS limits messages (both individual and batched)
 	// at 256 KB. This buffer will not exceed 256 KB or
@@ -80,7 +88,7 @@ func (t *sendAWSSNS) Transform(ctx context.Context, messages ...*mess.Message) (
 		ok := t.buffer.Add(message.Data())
 		if !ok {
 			items := t.buffer.Get()
-			if _, err := t.client.PublishBatch(ctx, t.conf.ARN, items); err != nil {
+			if _, err := t.client.PublishBatch(ctx, t.conf.Topic, items); err != nil {
 				return nil, fmt.Errorf("send: aws_sns: %v", err)
 			}
 
@@ -96,7 +104,7 @@ func (t *sendAWSSNS) Transform(ctx context.Context, messages ...*mess.Message) (
 
 	if t.buffer.Count() > 0 {
 		items := t.buffer.Get()
-		_, err := t.client.PublishBatch(ctx, t.conf.ARN, items)
+		_, err := t.client.PublishBatch(ctx, t.conf.Topic, items)
 		if err != nil {
 			return nil, fmt.Errorf("send: aws_sns: %v", err)
 		}

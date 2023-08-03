@@ -4,16 +4,15 @@ import (
 	"crypto/md5"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
 	"github.com/aws/aws-sdk-go/service/kinesis/kinesisiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
 	rec "github.com/awslabs/kinesis-aggregation/go/records"
+	_aws "github.com/brexhq/substation/internal/aws"
 
 	//nolint: staticcheck // not ready to switch package
 	"github.com/golang/protobuf/proto"
@@ -164,26 +163,10 @@ func ConvertEventsRecords(records []events.KinesisEventRecord) []*kinesis.Record
 }
 
 // New returns a configured Kinesis client.
-func New() *kinesis.Kinesis {
-	conf := aws.NewConfig()
+func New(cfg _aws.Config) *kinesis.Kinesis {
+	conf, sess := _aws.New(cfg)
 
-	// provides forward compatibility for the Go SDK to support env var configuration settings
-	// https://github.com/aws/aws-sdk-go/issues/4207
-	max, found := os.LookupEnv("AWS_MAX_ATTEMPTS")
-	if found {
-		m, err := strconv.Atoi(max)
-		if err != nil {
-			panic(err)
-		}
-
-		conf = conf.WithMaxRetries(m)
-	}
-
-	c := kinesis.New(
-		session.Must(session.NewSession()),
-		conf,
-	)
-
+	c := kinesis.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
 		xray.AWS(c.Client)
 	}
@@ -197,8 +180,8 @@ type API struct {
 }
 
 // Setup creates a new Kinesis client.
-func (a *API) Setup() {
-	a.Client = New()
+func (a *API) Setup(cfg _aws.Config) {
+	a.Client = New(cfg)
 }
 
 // IsEnabled returns true if the client is enabled and ready for use.

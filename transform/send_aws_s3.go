@@ -12,25 +12,18 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/s3manager"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 )
 
 type sendAWSS3Config struct {
+	Auth    config.ConfigAWSAuth `json:"auth"`
+	Request config.ConfigRequest `json:"request"`
 	// Bucket is the AWS S3 bucket that data is written to.
 	// TODO(v1.0.0): replace with ARN
 	Bucket string `json:"bucket"`
-	// Prefix is a prefix prepended to the object path.
-	//
-	// This is optional and has no default.
-	Prefix string `json:"prefix"`
-	// PrefixKey retrieves a value from an object that is used as
-	// the prefix prepended to the object path. If used, then
-	// this overrides Prefix.
-	//
-	// This is optional and has no default.
-	PrefixKey string `json:"prefix_key"`
 	// FilePath determines how the name of the uploaded object is constructed.
 	// See filePath.New for more information.
 	FilePath filePath `json:"file_path"`
@@ -114,7 +107,13 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 		send.path += send.extension
 	}
 
-	send.client.Setup()
+	// Setup the AWS client.
+	send.client.Setup(aws.Config{
+		Region:     conf.Auth.Region,
+		AssumeRole: conf.Auth.AssumeRole,
+		MaxRetries: conf.Request.MaxRetries,
+	})
+
 	send.mu = &sync.Mutex{}
 	send.buffer = make(map[string]*fw)
 

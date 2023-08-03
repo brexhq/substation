@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/sqs"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
@@ -21,6 +22,8 @@ const sendSQSMessageSizeLimit = 1024 * 1024 * 256
 var errSendSQSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSQSConfig struct {
+	Auth    config.ConfigAWSAuth `json:"auth"`
+	Request config.ConfigRequest `json:"request"`
 	// Queue is the AWS SQS queue name that data is sent to.
 	// TODO(v1.0.0): replace with ARN
 	Queue string `json:"queue"`
@@ -50,7 +53,12 @@ func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 		conf: conf,
 	}
 
-	send.client.Setup()
+	// Setup the AWS client.
+	send.client.Setup(aws.Config{
+		Region:     conf.Auth.Region,
+		AssumeRole: conf.Auth.AssumeRole,
+		MaxRetries: conf.Request.MaxRetries,
+	})
 
 	// SQS limits messages (both individual and batched)
 	// at 256 KB. This buffer will not exceed 256 KB or

@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/lambda"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
@@ -18,6 +19,8 @@ import (
 var errProcAWSLambdaInputNotAnObject = fmt.Errorf("input is not an object")
 
 type procAWSLambdaConfig struct {
+	Auth    config.ConfigAWSAuth `json:"auth"`
+	Request config.ConfigRequest `json:"request"`
 	// Key retrieves a value from an object for processing.
 	//
 	// This is optional for transforms that support processing non-object data.
@@ -62,9 +65,11 @@ func newProcAWSLambda(ctx context.Context, cfg config.Config) (*procAWSLambda, e
 	}
 
 	// Setup the AWS client.
-	if !proc.client.IsEnabled() {
-		proc.client.Setup()
-	}
+	proc.client.Setup(aws.Config{
+		Region:     conf.Auth.Region,
+		AssumeRole: conf.Auth.AssumeRole,
+		MaxRetries: conf.Request.MaxRetries,
+	})
 
 	return &proc, nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/firehose"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
@@ -21,8 +22,9 @@ const sendKinesisFirehoseMessageSizeLimit = 1024 * 1000
 var errSendFirehoseRecordSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSKinesisFirehoseConfig struct {
+	Auth    config.ConfigAWSAuth `json:"auth"`
+	Request config.ConfigRequest `json:"request"`
 	// Stream is the Kinesis Firehose Delivery Stream that data is sent to.
-	// TODO(v1.0.0): replace with ARN
 	Stream string `json:"stream"`
 }
 
@@ -56,9 +58,12 @@ func newSendAWSKinesisFirehose(_ context.Context, cfg config.Config) (*sendAWSKi
 	send.buffer = &aggregate.Bytes{}
 	send.buffer.New(500, sendKinesisFirehoseMessageSizeLimit*4*.99)
 
-	if !send.client.IsEnabled() {
-		send.client.Setup()
-	}
+	// Setup the AWS client.
+	send.client.Setup(aws.Config{
+		Region:     conf.Auth.Region,
+		AssumeRole: conf.Auth.AssumeRole,
+		MaxRetries: conf.Request.MaxRetries,
+	})
 
 	return &send, nil
 }

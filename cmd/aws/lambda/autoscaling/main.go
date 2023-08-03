@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/cloudwatch"
 	"github.com/brexhq/substation/internal/aws/kinesis"
 	"github.com/brexhq/substation/internal/json"
@@ -25,8 +26,9 @@ var (
 )
 
 func init() {
-	cloudwatchAPI.Setup()
-	kinesisAPI.Setup()
+	// These must run in the same AWS account and region as the Lambda function.
+	cloudwatchAPI.Setup(aws.Config{})
+	kinesisAPI.Setup(aws.Config{})
 }
 
 func main() {

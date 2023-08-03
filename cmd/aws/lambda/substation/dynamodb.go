@@ -25,7 +25,7 @@ type dynamodbMetadata struct {
 	StreamViewType              string    `json:"streamViewType"`
 }
 
-// nolint: gocognit, gocyclo, cyclop // Ignore cognitive and cyclomatic complexity.
+//nolint: gocognit, gocyclo, cyclop // Ignore cognitive and cyclomatic complexity.
 func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)

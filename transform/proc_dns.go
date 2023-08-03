@@ -97,7 +97,7 @@ func (*procDNS) Close(context.Context) error {
 	return nil
 }
 
-// nolint: gocognit // Ignore cognitive complexity.
+//nolint: gocognit // Ignore cognitive complexity.
 func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
 	var output []*mess.Message
 

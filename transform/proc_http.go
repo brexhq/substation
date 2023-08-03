@@ -119,7 +119,7 @@ func newProcHTTP(ctx context.Context, cfg config.Config) (*procHTTP, error) {
 	return &proc, nil
 }
 
-// nolint: gocognit // Ignore cognitive complexity.
+//nolint: gocognit // Ignore cognitive complexity.
 func (t *procHTTP) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
 	var output []*mess.Message
 

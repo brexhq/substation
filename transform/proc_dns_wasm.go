@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/brexhq/substation/config"
+	mess "github.com/brexhq/substation/message"
 )
 
 type procDNS struct{}

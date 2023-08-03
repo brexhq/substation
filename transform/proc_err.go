@@ -9,37 +9,37 @@ import (
 	mess "github.com/brexhq/substation/message"
 )
 
-type procErrorConfig struct {
+type procErrConfig struct {
 	// Error is the error message to return.
 	Error string `json:"error"`
 }
 
-type procError struct {
-	conf procErrorConfig
+type procErr struct {
+	conf procErrConfig
 }
 
-func newProcError(_ context.Context, cfg config.Config) (*procError, error) {
-	conf := procErrorConfig{}
+func newProcErr(_ context.Context, cfg config.Config) (*procErr, error) {
+	conf := procErrConfig{}
 	if err := config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 
-	proc := procError{
+	proc := procErr{
 		conf: conf,
 	}
 
 	return &proc, nil
 }
 
-func (t *procError) String() string {
+func (t *procErr) String() string {
 	b, _ := gojson.Marshal(t.conf)
 	return string(b)
 }
 
-func (*procError) Close(context.Context) error {
+func (*procErr) Close(context.Context) error {
 	return nil
 }
 
-func (t *procError) Transform(_ context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
+func (t *procErr) Transform(_ context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
 	return messages, fmt.Errorf("%s", t.conf.Error)
 }

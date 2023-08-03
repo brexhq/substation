@@ -59,8 +59,8 @@ func NewTransformer(ctx context.Context, cfg config.Config) (Transformer, error)
 		return newProcDomain(ctx, cfg)
 	case "proc_drop":
 		return newProcDrop(ctx, cfg)
-	case "proc_error":
-		return newProcError(ctx, cfg)
+	case "proc_err":
+		return newProcErr(ctx, cfg)
 	case "proc_expand":
 		return newProcExpand(ctx, cfg)
 	case "proc_flatten":

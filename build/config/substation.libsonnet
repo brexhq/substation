@@ -11,14 +11,6 @@
       // if key is foo and e is 0, then result is foo.0
       get_element(key, e=0): std.join('.', [key, if std.isNumber(e) then std.toString(e) else e]),
     },
-    inspector: {
-      // validates base settings of any inspector by checking for the
-      // existence of any fields except key and negate
-      validate(settings): std.all([
-        if !std.member(['key', 'negate'], x) then false else true
-        for x in std.objectFields(settings)
-      ]),
-    },
   },
   defaults: {
     condition: {

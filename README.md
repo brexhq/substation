@@ -226,19 +226,15 @@ local event = import 'event.libsonnet';
 local client = import 'client.libsonnet';
 local server = import 'server.libsonnet';
 local network = import 'network.libsonnet';
+local send = import 'send.libsonnet';
 
 {
-  sink: sub.interfaces.sink.stdout,
-  transform: {
-    type: 'batch',
-    settings: {
-      processors:
-        event.processors
-        + client.processors
-        + server.processors
-        + network.processors
-    },
-  },
+  transforms: 
+    event.transforms
+    + client.transforms
+    + server.transforms
+    + network.transforms
+    + send.transforms
 }
 ```
 
@@ -249,5 +245,3 @@ local network = import 'network.libsonnet';
 ## Licensing
 
 Substation and its associated code is released under the terms of the [MIT License](LICENSE).
-
-<!-- Keywords: go, golang, aws, kinesis, lambda, dynamodb, kafka, siem, data lake, cribl, cribl.io, tarsal, tarsal.co, datadog, datadoghq.com, confluent, confluent.io, elastic, logstash, filebeat, elastic.co, fluent, fluentd, fluentd.org, mezmo, mezmo.com -->

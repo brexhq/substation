@@ -115,7 +115,7 @@ Any environment variable that changes a default runtime setting should always st
 
 #### Application Variables
 
-Variable names should always follow conventions from [Effective Go](https://go.dev/doc/effective_go#names), the [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments#variable-names) and avoid [predeclared identifiers](https://go.dev/ref/spec#Predeclared_identifiers). For example `capsule` is used instead of `cap` to avoid shadowing the capacity function while modifiers and plural usage are `newCapsule` and `capsules`.
+Variable names should always follow conventions from [Effective Go](https://go.dev/doc/effective_go#names), the [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments#variable-names) and avoid [predeclared identifiers](https://go.dev/ref/spec#Predeclared_identifiers).
 
 #### Source Metadata
 

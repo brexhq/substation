@@ -10,7 +10,7 @@ import (
 
 const (
 	// metaKey is a prefix used to access the meta field in a Message.
-	metaKey = "metadata "
+	metaKey = "meta "
 )
 
 var errControlWithData = fmt.Errorf("control message cannot contain data")

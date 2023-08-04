@@ -30,12 +30,12 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 		return fmt.Errorf("kinesis handler: %v", err)
 	}
 
-	cfg := substation.Config{}
+	cfg := customConfig{}
 	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
 		return fmt.Errorf("kinesis handler: %v", err)
 	}
 
-	sub, err := substation.New(ctx, cfg)
+	sub, err := substation.New(ctx, cfg.Config)
 	if err != nil {
 		return fmt.Errorf("kinesis handler: %v", err)
 	}
@@ -49,7 +49,7 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
 		group, ctx := errgroup.WithContext(ctx)
-		group.SetLimit(sub.Concurrency())
+		group.SetLimit(cfg.Concurrency)
 
 		for message := range ch.Recv() {
 			select {

@@ -23,18 +23,20 @@ import (
 
 type options struct {
 	Count       int
+	Parallelism int
 	ConfigFile  string
 	DataFile    string
 	pprofCPU    bool
 	pprofMemory bool
 }
 
-//nolint: gocognit // Ignore cognitive complexity.
+// nolint: gocognit // Ignore cognitive complexity.
 func main() {
 	var opts options
 
 	flag.StringVar(&opts.DataFile, "input", "", "path to sample data file")
 	flag.IntVar(&opts.Count, "count", 100000, "number of events to send")
+	flag.IntVar(&opts.Parallelism, "parallelism", 1, "number of data transformation goroutines")
 	flag.StringVar(&opts.ConfigFile, "config", "", "path to configuration file (optional)")
 	flag.BoolVar(&opts.pprofCPU, "cpu", false, "enable CPU profiling (optional)")
 	flag.BoolVar(&opts.pprofMemory, "mem", false, "enable memory profiling (optional)")
@@ -129,7 +131,7 @@ func main() {
 
 	group.Go(func() error {
 		group, ctx := errgroup.WithContext(ctx)
-		group.SetLimit(sub.Concurrency())
+		group.SetLimit(opts.Parallelism)
 
 		for message := range ch.Recv() {
 			select {

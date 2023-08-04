@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/internal/file"
 )
 
@@ -18,6 +19,12 @@ var errLambdaMissingHandler = fmt.Errorf("missing SUBSTATION_HANDLER environment
 
 // errLambdaInvalidHandler is returned when the Lambda is deployed with an unsupported handler.
 var errLambdaInvalidHandler = fmt.Errorf("invalid handler")
+
+type customConfig struct {
+	substation.Config
+
+	Concurrency int `json:"concurrency"`
+}
 
 // getConfig contextually retrieves a Substation configuration.
 func getConfig(ctx context.Context) (io.Reader, error) {

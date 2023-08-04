@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/brexhq/substation"
@@ -89,7 +90,7 @@ func run(ctx context.Context, opts options) error {
 
 	group.Go(func() error {
 		group, ctx := errgroup.WithContext(ctx)
-		group.SetLimit(sub.Concurrency())
+		group.SetLimit(runtime.NumCPU())
 
 		for message := range ch.Recv() {
 			select {

@@ -33,6 +33,8 @@ func NewTransformer(ctx context.Context, cfg config.Config) (Transformer, error)
 		return newMetaForEach(ctx, cfg)
 	case "meta_pipeline":
 		return newMetaPipeline(ctx, cfg)
+	case "meta_plugin":
+		return newMetaPlugin(ctx, cfg)
 	case "meta_switch":
 		return newMetaSwitch(ctx, cfg)
 	case "proc_aws_dynamodb":

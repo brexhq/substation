@@ -18,7 +18,7 @@ import (
 
 type kinesisMetadata struct {
 	ApproximateArrivalTimestamp time.Time `json:"approximateArrivalTimestamp"`
-	EventSourceArn              string    `json:"eventSourceArn"`
+	Stream                      string    `json:"stream"`
 	PartitionKey                string    `json:"partitionKey"`
 	SequenceNumber              string    `json:"sequenceNumber"`
 }

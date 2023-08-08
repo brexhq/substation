@@ -18,9 +18,8 @@ RUN apt-get install -y protobuf-compiler && \
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest && \
 	go mod download
 
-# copy src, build proto, unit test, build app
+# copy src, unit test, build app
 COPY . /usr/local/go/src/substation/
-RUN sh /usr/local/go/src/substation/build/scripts/proto/compile.sh
 RUN go test -timeout 30s -v ./... 
 WORKDIR /usr/local/go/src/substation/cmd/aws/lambda/autoscaling
 RUN go build -o /var/task/main

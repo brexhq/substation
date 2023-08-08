@@ -79,7 +79,7 @@ func ExampleSubstation() {
 	}
 
 	// Output:
-	// {"concurrency":-1,"transforms":[{"type":"proc_copy","settings":{"key":"a","set_key":"c"}},{"type":"send_stdout","settings":null}]}
+	// {"transforms":[{"type":"proc_copy","settings":{"key":"a","set_key":"c"}},{"type":"send_stdout","settings":null}]}
 	// {"a":"b","c":"b"}
 }
 

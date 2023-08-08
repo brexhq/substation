@@ -77,6 +77,9 @@
         copy: {
           settings: { key: null, set_key: null },
         },
+        delete: {
+          settings: {},
+        },
         dns: {
           settings: { key: null, set_key: null, type: null, timeout: 1000 },
         },
@@ -111,7 +114,7 @@
           settings: { query: null },
         },
         kv_store: {
-          settings: { key: null, set_key: null, type: null, prefix: null, ttl_key: null, offset_ttl: null, kv_options: null },
+          settings: { key: null, set_key: null, type: null, prefix: null, ttl_key: null, ttl_offset: null, kv_options: null },
         },
         math: {
           settings: { key: null, set_key: null, operation: null },

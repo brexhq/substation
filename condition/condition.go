@@ -58,6 +58,8 @@ func NewInspector(ctx context.Context, cfg config.Config) (Inspector, error) {
 		return newInspJSONValid(ctx, cfg)
 	case "length":
 		return newInspLength(ctx, cfg)
+	case "number":
+		return newInspNumber(ctx, cfg)
 	case "random":
 		return newInspRandom(ctx, cfg)
 	case "regexp":

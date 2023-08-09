@@ -18,7 +18,5 @@ local copy = sub.interfaces.transform.proc.copy(
     sub.interfaces.transform.proc.insert(
       settings={ set_key: 'qux', value: 'quux' },
     ),
-    sub.interfaces.transform.send.stdout,
-
   ]
 }

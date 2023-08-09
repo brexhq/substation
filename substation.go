@@ -32,14 +32,19 @@ func New(ctx context.Context, cfg Config) (*Substation, error) {
 	}
 
 	// Create transforms from the configuration.
-	t, err := transform.NewTransformers(ctx, cfg.Transforms...)
-	if err != nil {
-		return nil, err
+	var tforms []transform.Transformer
+	for _, c := range cfg.Transforms {
+		t, err := transform.New(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+
+		tforms = append(tforms, t)
 	}
 
 	sub := Substation{
 		cfg:    cfg,
-		tforms: t,
+		tforms: tforms,
 	}
 
 	return &sub, nil

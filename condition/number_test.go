@@ -31,6 +31,22 @@ var numberTests = []struct {
 		true,
 	},
 	{
+		"!fail equals",
+		config.Config{
+			Type: "number",
+			Settings: map[string]interface{}{
+				"key":    "foo",
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":  "equals",
+					"value": 42,
+				},
+			},
+		},
+		[]byte(`{"foo":"42"}`),
+		false,
+	},
+	{
 		"pass greater_than",
 		config.Config{
 			Type: "number",
@@ -39,6 +55,22 @@ var numberTests = []struct {
 				"options": map[string]interface{}{
 					"type":  "greater_than",
 					"value": -1,
+				},
+			},
+		},
+		[]byte(`{"foo":"0"}`),
+		true,
+	},
+	{
+		"!pass greater_than",
+		config.Config{
+			Type: "number",
+			Settings: map[string]interface{}{
+				"key":    "foo",
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":  "greater_than",
+					"value": 1,
 				},
 			},
 		},
@@ -73,6 +105,20 @@ var numberTests = []struct {
 			},
 		},
 		[]byte(`{"foo":"570506001"}`),
+		true,
+	},
+	{
+		"pass data",
+		config.Config{
+			Type: "number",
+			Settings: map[string]interface{}{
+				"options": map[string]interface{}{
+					"type":  "equals",
+					"value": 1,
+				},
+			},
+		},
+		[]byte(`0001`),
 		true,
 	},
 }

@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
 	"github.com/brexhq/substation/internal/json"
@@ -28,7 +29,7 @@ type kvJSONFile struct {
 // Create a new JSON file KV store.
 func newKVJSONFile(cfg config.Config) (*kvJSONFile, error) {
 	var store kvJSONFile
-	if err := config.Decode(cfg.Settings, &store); err != nil {
+	if err := _config.Decode(cfg.Settings, &store); err != nil {
 		return nil, err
 	}
 	store.mu = new(sync.Mutex)

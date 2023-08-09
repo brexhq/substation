@@ -10,6 +10,7 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/lambda"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 	mess "github.com/brexhq/substation/message"
@@ -19,8 +20,8 @@ import (
 var errProcAWSLambdaInputNotAnObject = fmt.Errorf("input is not an object")
 
 type procAWSLambdaConfig struct {
-	Auth    config.ConfigAWSAuth `json:"auth"`
-	Request config.ConfigRequest `json:"request"`
+	Auth    _config.ConfigAWSAuth `json:"auth"`
+	Request _config.ConfigRequest `json:"request"`
 	// Key retrieves a value from an object for processing.
 	//
 	// This is optional for transforms that support processing non-object data.
@@ -46,7 +47,7 @@ type procAWSLambda struct {
 
 func newProcAWSLambda(ctx context.Context, cfg config.Config) (*procAWSLambda, error) {
 	conf := procAWSLambdaConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 )
@@ -32,7 +33,7 @@ type procSplit struct {
 
 func newProcSplit(_ context.Context, cfg config.Config) (*procSplit, error) {
 	conf := procSplitConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

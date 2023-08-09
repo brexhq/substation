@@ -10,13 +10,14 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/kinesis"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 )
 
 type sendAWSKinesisConfig struct {
-	Auth    config.ConfigAWSAuth `json:"auth"`
-	Request config.ConfigRequest `json:"request"`
+	Auth    _config.ConfigAWSAuth `json:"auth"`
+	Request _config.ConfigRequest `json:"request"`
 	// Stream is the Kinesis Data Stream that records are sent to.
 	Stream string `json:"stream"`
 	// Partition is a string that is used as the partition key for each
@@ -52,7 +53,7 @@ type sendAWSKinesis struct {
 
 func newSendAWSKinesis(_ context.Context, cfg config.Config) (*sendAWSKinesis, error) {
 	conf := sendAWSKinesisConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

@@ -9,6 +9,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 )
@@ -48,7 +49,7 @@ type inspStrings struct {
 // Creates a new strings inspector.
 func newInspStrings(_ context.Context, cfg config.Config) (*inspStrings, error) {
 	conf := inspStringsConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

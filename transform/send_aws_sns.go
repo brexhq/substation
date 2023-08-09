@@ -7,6 +7,7 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/sns"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 	"github.com/jshlbrd/go-aggregate"
@@ -22,8 +23,8 @@ const sendSNSMessageSizeLimit = 1024 * 1024 * 256
 var errSendSNSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSNSConfig struct {
-	Auth    config.ConfigAWSAuth `json:"auth"`
-	Request config.ConfigRequest `json:"request"`
+	Auth    _config.ConfigAWSAuth `json:"auth"`
+	Request _config.ConfigRequest `json:"request"`
 	// ARN is the ARN of the AWS SNS topic that data is sent to.
 	Topic string `json:"topic"`
 }
@@ -39,7 +40,7 @@ type sendAWSSNS struct {
 
 func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 	conf := sendAWSSNSConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

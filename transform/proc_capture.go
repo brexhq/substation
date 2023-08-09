@@ -9,6 +9,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 )
@@ -51,7 +52,7 @@ type procCapture struct {
 
 func newProcCapture(_ context.Context, cfg config.Config) (*procCapture, error) {
 	conf := procCaptureConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 
@@ -105,7 +106,7 @@ func (*procCapture) Close(context.Context) error {
 	return nil
 }
 
-//nolint: gocognit // Ignore cognitive complexity.
+// nolint: gocognit // Ignore cognitive complexity.
 func (t *procCapture) Transform(_ context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
 	var output []*mess.Message
 

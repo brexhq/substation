@@ -14,18 +14,20 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/s3manager"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
+	"github.com/brexhq/substation/internal/file"
 	mess "github.com/brexhq/substation/message"
 )
 
 type sendAWSS3Config struct {
-	Auth    config.ConfigAWSAuth `json:"auth"`
-	Request config.ConfigRequest `json:"request"`
+	Auth    _config.ConfigAWSAuth `json:"auth"`
+	Request _config.ConfigRequest `json:"request"`
 	// Bucket is the AWS S3 bucket that data is written to.
 	Bucket string `json:"bucket"`
 	// FilePath determines how the name of the uploaded object is constructed.
 	// See filePath.New for more information.
-	FilePath filePath `json:"file_path"`
+	FilePath file.Path `json:"file_path"`
 	// FileFormat determines the format of the file. These file formats are
 	// supported:
 	//
@@ -65,12 +67,12 @@ type sendAWSS3 struct {
 	client s3manager.UploaderAPI
 	// buffer is safe for concurrent use.
 	mu     *sync.Mutex
-	buffer map[string]*fw
+	buffer map[string]*file.Wrapper
 }
 
 func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 	conf := sendAWSS3Config{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 
@@ -92,7 +94,7 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 	}
 
 	// File extensions are dynamic and not directly configurable.
-	send.extension = NewFileExtension(conf.FileFormat, conf.FileCompression)
+	send.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
 	now := time.Now()
 
 	// Default object key is: year/month/day/uuid.extension.
@@ -114,7 +116,7 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 	})
 
 	send.mu = &sync.Mutex{}
-	send.buffer = make(map[string]*fw)
+	send.buffer = make(map[string]*file.Wrapper)
 
 	return &send, nil
 }
@@ -172,7 +174,7 @@ func (t *sendAWSS3) Transform(ctx context.Context, messages ...*mess.Message) ([
 				return nil, fmt.Errorf("transform: send_aws_s3: bucket %s object %s: %v", t.conf.Bucket, path, err)
 			}
 
-			if t.buffer[path], err = NewFileWrapper(f, t.conf.FileFormat, t.conf.FileCompression); err != nil {
+			if t.buffer[path], err = file.NewWrapper(f, t.conf.FileFormat, t.conf.FileCompression); err != nil {
 				return nil, fmt.Errorf("send: file: file_path %s: %v", path, err)
 			}
 		}

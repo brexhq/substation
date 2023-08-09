@@ -5,11 +5,12 @@ import (
 	gojson "encoding/json"
 	"fmt"
 
+	"github.com/brexhq/substation/config"
+	mess "github.com/brexhq/substation/message"
 	"golang.org/x/exp/slices"
 
-	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
-	mess "github.com/brexhq/substation/message"
 )
 
 type metaInspForEachConf struct {
@@ -39,7 +40,7 @@ type metaInspForEach struct {
 
 func newMetaInspForEach(ctx context.Context, cfg config.Config) (*metaInspForEach, error) {
 	conf := metaInspForEachConf{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

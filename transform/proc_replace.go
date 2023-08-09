@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 )
@@ -38,7 +39,7 @@ type procReplace struct {
 
 func newProcReplace(_ context.Context, cfg config.Config) (*procReplace, error) {
 	conf := procReplaceConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

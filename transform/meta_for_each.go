@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 	mess "github.com/brexhq/substation/message"
@@ -33,7 +34,7 @@ type metaForEach struct {
 
 func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error) {
 	conf := metaForEachConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 
@@ -71,7 +72,7 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 		return nil, err
 	}
 
-	t, err := NewTransformer(ctx, meta.transformCfg)
+	t, err := New(ctx, meta.transformCfg)
 	if err != nil {
 		return nil, fmt.Errorf("process: for_each: %v", err)
 	}

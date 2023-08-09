@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	mess "github.com/brexhq/substation/message"
 )
 
@@ -22,7 +23,7 @@ type inspRandom struct {
 
 func newInspRandom(_ context.Context, cfg config.Config) (*inspRandom, error) {
 	conf := inspRandomConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

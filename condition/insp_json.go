@@ -5,6 +5,7 @@ import (
 	gojson "encoding/json"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/json"
 	mess "github.com/brexhq/substation/message"
 )
@@ -20,7 +21,7 @@ type inspJSONValid struct {
 
 func newInspJSONValid(_ context.Context, cfg config.Config) (*inspJSONValid, error) {
 	conf := inspJSONValidConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

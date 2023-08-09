@@ -7,6 +7,7 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/sqs"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 	"github.com/jshlbrd/go-aggregate"
@@ -22,8 +23,8 @@ const sendSQSMessageSizeLimit = 1024 * 1024 * 256
 var errSendSQSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSQSConfig struct {
-	Auth    config.ConfigAWSAuth `json:"auth"`
-	Request config.ConfigRequest `json:"request"`
+	Auth    _config.ConfigAWSAuth `json:"auth"`
+	Request _config.ConfigRequest `json:"request"`
 	// Queue is the AWS SQS queue name that data is sent to.
 	Queue string `json:"queue"`
 }
@@ -39,7 +40,7 @@ type sendAWSSQS struct {
 
 func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 	conf := sendAWSSQSConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

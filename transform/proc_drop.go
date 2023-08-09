@@ -5,6 +5,7 @@ import (
 	gojson "encoding/json"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	mess "github.com/brexhq/substation/message"
 )
 
@@ -16,7 +17,7 @@ type procDrop struct {
 
 func newProcDrop(_ context.Context, cfg config.Config) (*procDrop, error) {
 	conf := procDropConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

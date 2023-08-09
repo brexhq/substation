@@ -7,6 +7,7 @@ import (
 	"plugin"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	mess "github.com/brexhq/substation/message"
 )
 
@@ -25,7 +26,7 @@ type metaPlugin struct {
 
 func newMetaPlugin(_ context.Context, cfg config.Config) (*metaPlugin, error) {
 	conf := metaPluginConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, fmt.Errorf("transform: meta_plugin: %v", err)
 	}
 
@@ -44,7 +45,7 @@ func newMetaPlugin(_ context.Context, cfg config.Config) (*metaPlugin, error) {
 		return nil, fmt.Errorf("transform: meta_plugin: %v", errMetaPluginInterfaceNotImplemented)
 	}
 
-	if err := config.Decode(conf.Settings, tform); err != nil {
+	if err := _config.Decode(conf.Settings, tform); err != nil {
 		return nil, err
 	}
 

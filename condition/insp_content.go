@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/media"
 	mess "github.com/brexhq/substation/message"
@@ -24,7 +25,7 @@ type inspContent struct {
 
 func newInspContent(_ context.Context, cfg config.Config) (*inspContent, error) {
 	conf := inspContentConf{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

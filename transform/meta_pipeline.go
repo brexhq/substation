@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 )
@@ -38,7 +39,7 @@ type metaPipeline struct {
 
 func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, error) {
 	conf := metaPipelineConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 
@@ -56,9 +57,14 @@ func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, err
 		isObject: conf.Key != "" && conf.SetKey != "",
 	}
 
-	tforms, err := NewTransformers(ctx, conf.Transforms...)
-	if err != nil {
-		return nil, fmt.Errorf("transform: meta_pipeline: transforms %+v: %v", conf.Transforms, err)
+	var tforms []Transformer
+	for _, c := range conf.Transforms {
+		t, err := New(ctx, c)
+		if err != nil {
+			return nil, fmt.Errorf("transform: meta_pipeline: transform %+v: %v", c, err)
+		}
+
+		tforms = append(tforms, t)
 	}
 	meta.transforms = tforms
 

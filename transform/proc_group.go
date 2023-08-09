@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/json"
 	mess "github.com/brexhq/substation/message"
 )
@@ -32,7 +33,7 @@ type procGroup struct {
 
 func newProcGroup(_ context.Context, cfg config.Config) (*procGroup, error) {
 	conf := procGroupConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

@@ -7,6 +7,7 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/firehose"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 	"github.com/jshlbrd/go-aggregate"
@@ -22,8 +23,8 @@ const sendKinesisFirehoseMessageSizeLimit = 1024 * 1000
 var errSendFirehoseRecordSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSKinesisFirehoseConfig struct {
-	Auth    config.ConfigAWSAuth `json:"auth"`
-	Request config.ConfigRequest `json:"request"`
+	Auth    _config.ConfigAWSAuth `json:"auth"`
+	Request _config.ConfigRequest `json:"request"`
 	// Stream is the Kinesis Firehose Delivery Stream that data is sent to.
 	Stream string `json:"stream"`
 }
@@ -39,7 +40,7 @@ type sendAWSKinesisFirehose struct {
 
 func newSendAWSKinesisFirehose(_ context.Context, cfg config.Config) (*sendAWSKinesisFirehose, error) {
 	conf := sendAWSKinesisFirehoseConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

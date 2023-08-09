@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
@@ -41,7 +42,7 @@ type sendHTTP struct {
 
 func newSendHTTP(_ context.Context, cfg config.Config) (*sendHTTP, error) {
 	conf := sendHTTPConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

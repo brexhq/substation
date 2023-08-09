@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 )
 
 // kvMemory is a read-write key-value store that is stored in memory.
@@ -26,7 +27,7 @@ type kvMemory struct {
 // Create a new memory KV store.
 func newKVMemory(cfg config.Config) (*kvMemory, error) {
 	var store kvMemory
-	if err := config.Decode(cfg.Settings, &store); err != nil {
+	if err := _config.Decode(cfg.Settings, &store); err != nil {
 		return nil, err
 	}
 

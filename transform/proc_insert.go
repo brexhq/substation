@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	mess "github.com/brexhq/substation/message"
 )
 
@@ -24,7 +25,7 @@ type procInsert struct {
 
 func newProcInsert(_ context.Context, cfg config.Config) (*procInsert, error) {
 	conf := procInsertConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

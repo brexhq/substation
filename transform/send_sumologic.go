@@ -11,6 +11,7 @@ import (
 	"github.com/jshlbrd/go-aggregate"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
@@ -51,7 +52,7 @@ type sendSumoLogic struct {
 
 func newSendSumoLogic(_ context.Context, cfg config.Config) (*sendSumoLogic, error) {
 	conf := sendSumoLogicConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

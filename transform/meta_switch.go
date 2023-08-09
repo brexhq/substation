@@ -7,6 +7,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
 )
@@ -29,7 +30,7 @@ type metaSwitch struct {
 
 func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) {
 	conf := metaSwitchConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 
@@ -48,7 +49,7 @@ func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) 
 			return nil, fmt.Errorf("transform: meta_switch: %v", err)
 		}
 
-		tform, err := NewTransformer(ctx, s.Transform)
+		tform, err := New(ctx, s.Transform)
 		if err != nil {
 			return nil, fmt.Errorf("transform: meta_switch: %v", err)
 		}

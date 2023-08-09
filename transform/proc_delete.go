@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	mess "github.com/brexhq/substation/message"
 )
 
@@ -20,7 +21,7 @@ type procDelete struct {
 
 func newProcDelete(_ context.Context, cfg config.Config) (*procDelete, error) {
 	conf := procDeleteConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

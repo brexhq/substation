@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
+	"github.com/brexhq/substation/internal/file"
 	mess "github.com/brexhq/substation/message"
 	"github.com/google/uuid"
 )
@@ -18,7 +20,7 @@ import (
 type sendFileConfig struct {
 	// FilePath determines how the name of the file is constructed.
 	// See filePath.New for more information.
-	FilePath filePath `json:"file_path"`
+	FilePath file.Path `json:"file_path"`
 	// FileFormat determines the format of the file. These file formats are
 	// supported:
 	//
@@ -55,12 +57,12 @@ type sendFile struct {
 	path      string
 	extension string
 	mu        *sync.Mutex
-	buffer    map[string]*fw
+	buffer    map[string]*file.Wrapper
 }
 
 func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	conf := sendFileConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 
@@ -77,7 +79,7 @@ func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	}
 
 	// File extensions are dynamic and not directly configurable.
-	send.extension = NewFileExtension(conf.FileFormat, conf.FileCompression)
+	send.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
 	now := time.Now()
 
 	// The default file path is: cwd/year/month/day/uuid.extension.
@@ -101,7 +103,7 @@ func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	send.path = filepath.FromSlash(send.path)
 
 	send.mu = &sync.Mutex{}
-	send.buffer = make(map[string]*fw)
+	send.buffer = make(map[string]*file.Wrapper)
 
 	return &send, nil
 }
@@ -163,7 +165,7 @@ func (t *sendFile) Transform(ctx context.Context, messages ...*mess.Message) ([]
 				return nil, fmt.Errorf("send: file: file_path %s: %v", path, err)
 			}
 
-			if t.buffer[path], err = NewFileWrapper(f, t.conf.FileFormat, t.conf.FileCompression); err != nil {
+			if t.buffer[path], err = file.NewWrapper(f, t.conf.FileFormat, t.conf.FileCompression); err != nil {
 				return nil, fmt.Errorf("send: file: file_path %s: %v", path, err)
 			}
 		}

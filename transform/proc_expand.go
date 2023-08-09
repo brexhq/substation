@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/json"
 	mess "github.com/brexhq/substation/message"
 	"github.com/tidwall/gjson"
@@ -28,7 +29,7 @@ type procExpand struct {
 
 func newProcExpand(_ context.Context, cfg config.Config) (*procExpand, error) {
 	conf := procExpandConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/json"
 	mess "github.com/brexhq/substation/message"
@@ -20,8 +21,8 @@ import (
 var errSendDynamoDBNonObject = fmt.Errorf("input must be object")
 
 type sendAWSDynampDBConfig struct {
-	Auth    config.ConfigAWSAuth `json:"auth"`
-	Request config.ConfigRequest `json:"request"`
+	Auth    _config.ConfigAWSAuth `json:"auth"`
+	Request _config.ConfigRequest `json:"request"`
 	// Table is the DynamoDB table that items are written to.
 	Table string `json:"table"`
 	// Key contains the DynamoDB items map that is written to the table.
@@ -39,7 +40,7 @@ type sendAWSDynamoDB struct {
 
 func newSendAWSDynamoDB(_ context.Context, cfg config.Config) (*sendAWSDynamoDB, error) {
 	conf := sendAWSDynampDBConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/json"
 	mess "github.com/brexhq/substation/message"
 	"github.com/jshlbrd/go-aggregate"
@@ -61,7 +62,7 @@ type procCondense struct {
 
 func newProcCondense(_ context.Context, cfg config.Config) (*procCondense, error) {
 	conf := procCondenseConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

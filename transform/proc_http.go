@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/secrets"
@@ -80,7 +81,7 @@ func (*procHTTP) Close(context.Context) error {
 
 func newProcHTTP(ctx context.Context, cfg config.Config) (*procHTTP, error) {
 	conf := procHTTPConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 
@@ -120,7 +121,7 @@ func newProcHTTP(ctx context.Context, cfg config.Config) (*procHTTP, error) {
 	return &proc, nil
 }
 
-//nolint: gocognit // Ignore cognitive complexity.
+// nolint: gocognit // Ignore cognitive complexity.
 func (t *procHTTP) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
 	var output []*mess.Message
 

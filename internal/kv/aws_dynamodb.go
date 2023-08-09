@@ -8,6 +8,7 @@ import (
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 )
 
@@ -44,7 +45,7 @@ type kvAWSDynamoDB struct {
 // Create a new AWS DynamoDB KV store.
 func newKVAWSDyanmoDB(cfg config.Config) (*kvAWSDynamoDB, error) {
 	var store kvAWSDynamoDB
-	if err := config.Decode(cfg.Settings, &store); err != nil {
+	if err := _config.Decode(cfg.Settings, &store); err != nil {
 		return nil, err
 	}
 

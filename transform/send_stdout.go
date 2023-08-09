@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	mess "github.com/brexhq/substation/message"
 )
 
@@ -14,10 +15,9 @@ type sendStdout struct {
 	conf sendStdoutConfig
 }
 
-// Create a new stdout send.
 func newSendStdout(_ context.Context, cfg config.Config) (*sendStdout, error) {
 	conf := sendStdoutConfig{}
-	if err := config.Decode(cfg.Settings, &conf); err != nil {
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

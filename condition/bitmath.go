@@ -20,7 +20,7 @@ type inspBitmath struct {
 }
 
 type inspBitmathOptions struct {
-	// Type is the string evaluation Type used during inspection.
+	// Type is the bitmath evaluation Type used during inspection.
 	//
 	// Must be one of:
 	//
@@ -32,7 +32,7 @@ type inspBitmathOptions struct {
 	//
 	// - xor
 	Type string `json:"type"`
-	// Value is the length that is used for comparison during inspection.
+	// Value is the number that is used for comparison during inspection.
 	Value int64 `json:"value"`
 }
 
@@ -67,7 +67,7 @@ func (c inspBitmath) Inspect(ctx context.Context, capsule config.Capsule) (outpu
 	if c.Key == "" {
 		check, err = strconv.ParseInt(string(capsule.Data()), 10, 64)
 		if err != nil {
-			return false, fmt.Errorf("condition: bitmath: invalid data processing value: %v", err)
+			return false, fmt.Errorf("condition: bitmath: invalid data: %v", err)
 		}
 	} else {
 		check = capsule.Get(c.Key).Int()

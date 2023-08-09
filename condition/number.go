@@ -2,8 +2,8 @@ package condition
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
+	"strconv"
 
 	"golang.org/x/exp/slices"
 
@@ -65,13 +65,16 @@ func (c inspNumber) String() string {
 func (c inspNumber) Inspect(ctx context.Context, capsule config.Capsule) (output bool, err error) {
 	var check int64
 	if c.Key == "" {
-		check = int64(binary.BigEndian.Uint64(capsule.Data()))
+		check, err = strconv.ParseInt(string(capsule.Data()), 10, 64)
+		if err != nil {
+			return false, fmt.Errorf("condition: number: invalid data processing value: %v", err)
+		}
 	} else {
 		check = capsule.Get(c.Key).Int()
 	}
 
 	var matched bool
-	switch s := c.Options.Type; s {
+	switch c.Options.Type {
 	case "equals":
 		if check == c.Options.Value {
 			matched = true
@@ -89,7 +92,7 @@ func (c inspNumber) Inspect(ctx context.Context, capsule config.Capsule) (output
 			matched = true
 		}
 	default:
-		return false, fmt.Errorf("condition: strings: type %s: %v", c.Options.Type, errors.ErrInvalidOption)
+		return false, fmt.Errorf("condition: number: type %s: %v", c.Options.Type, errors.ErrInvalidOption)
 	}
 
 	if c.Negate {

@@ -1,6 +1,9 @@
 {
   defaults: {
     inspector: {
+      bitmath: {
+        options: { type: null, value: null },
+      },
       content: {
         options: { type: null },
       },
@@ -15,9 +18,6 @@
       },
       length: {
         options: { type: null, value: null, measurement: 'byte' },
-      },
-      number: {
-        options: { type: null, value: null },
       },
       regexp: {
         options: { expression: null },
@@ -212,6 +212,16 @@
     },
     inspector: {
       settings: { key: null, negate: null },
+      bitmath(options=$.defaults.inspector.bitmath.options,
+             settings=$.interfaces.inspector.settings): {
+        local opt = std.mergePatch($.defaults.inspector.bitmath.options, options),
+
+        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
+        local s = std.mergePatch($.interfaces.inspector.settings, settings),
+
+        type: 'bitmath',
+        settings: std.mergePatch({ options: opt }, s),
+      },
       condition(options=null,
                 settings=$.interfaces.inspector.settings): {
         assert options != null : 'invalid inspector options',
@@ -277,16 +287,6 @@
         local s = std.mergePatch($.interfaces.inspector.settings, settings),
 
         type: 'length',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      number(options=$.defaults.inspector.number.options,
-             settings=$.interfaces.inspector.settings): {
-        local opt = std.mergePatch($.defaults.inspector.number.options, options),
-
-        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
-        local s = std.mergePatch($.interfaces.inspector.settings, settings),
-
-        type: 'number',
         settings: std.mergePatch({ options: opt }, s),
       },
       random: {

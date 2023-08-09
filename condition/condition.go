@@ -44,6 +44,8 @@ type Inspector interface {
 // NewInspector returns a configured Inspector from an Inspector configuration.
 func NewInspector(ctx context.Context, cfg config.Config) (Inspector, error) {
 	switch cfg.Type {
+	case "bitmath":
+		return newInspBitmath(ctx, cfg)
 	case "condition":
 		return newInspCondition(ctx, cfg)
 	case "content":
@@ -58,8 +60,6 @@ func NewInspector(ctx context.Context, cfg config.Config) (Inspector, error) {
 		return newInspJSONValid(ctx, cfg)
 	case "length":
 		return newInspLength(ctx, cfg)
-	case "number":
-		return newInspNumber(ctx, cfg)
 	case "random":
 		return newInspRandom(ctx, cfg)
 	case "regexp":

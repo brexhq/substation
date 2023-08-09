@@ -7,38 +7,37 @@ import (
 	"github.com/brexhq/substation/config"
 )
 
-var _ Inspector = inspNumber{}
+var _ Inspector = inspBitmath{}
 
-var numberTests = []struct {
+var bitmathTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected bool
 }{
 	{
-		"pass equals",
+		"pass xor",
 		config.Config{
-			Type: "number",
+			Type: "bitmath",
 			Settings: map[string]interface{}{
 				"key": "foo",
 				"options": map[string]interface{}{
-					"type":  "equals",
-					"value": 42,
+					"type":  "xor",
+					"value": 3,
 				},
 			},
 		},
-		[]byte(`{"foo":"42"}`),
+		[]byte(`{"foo":"0"}`),
 		true,
 	},
 	{
-		"!fail equals",
+		"fail xor",
 		config.Config{
-			Type: "number",
+			Type: "bitmath",
 			Settings: map[string]interface{}{
-				"key":    "foo",
-				"negate": true,
+				"key": "foo",
 				"options": map[string]interface{}{
-					"type":  "equals",
+					"type":  "xor",
 					"value": 42,
 				},
 			},
@@ -47,13 +46,29 @@ var numberTests = []struct {
 		false,
 	},
 	{
-		"pass greater_than",
+		"!fail xor",
 		config.Config{
-			Type: "number",
+			Type: "bitmath",
+			Settings: map[string]interface{}{
+				"key":    "foo",
+				"negate": true,
+				"options": map[string]interface{}{
+					"type":  "xor",
+					"value": 42,
+				},
+			},
+		},
+		[]byte(`{"foo":"42"}`),
+		true,
+	},
+	{
+		"pass or",
+		config.Config{
+			Type: "bitmath",
 			Settings: map[string]interface{}{
 				"key": "foo",
 				"options": map[string]interface{}{
-					"type":  "greater_than",
+					"type":  "or",
 					"value": -1,
 				},
 			},
@@ -62,44 +77,29 @@ var numberTests = []struct {
 		true,
 	},
 	{
-		"!pass greater_than",
+		"!pass or",
 		config.Config{
-			Type: "number",
+			Type: "bitmath",
 			Settings: map[string]interface{}{
 				"key":    "foo",
 				"negate": true,
 				"options": map[string]interface{}{
-					"type":  "greater_than",
+					"type":  "or",
 					"value": 1,
 				},
 			},
 		},
 		[]byte(`{"foo":"0"}`),
-		true,
+		false,
 	},
 	{
-		"pass less_than",
+		"pass and",
 		config.Config{
-			Type: "number",
+			Type: "bitmath",
 			Settings: map[string]interface{}{
 				"key": "foo",
 				"options": map[string]interface{}{
-					"type":  "less_than",
-					"value": 50,
-				},
-			},
-		},
-		[]byte(`{"foo":42}`),
-		true,
-	},
-	{
-		"pass bitwise_and",
-		config.Config{
-			Type: "number",
-			Settings: map[string]interface{}{
-				"key": "foo",
-				"options": map[string]interface{}{
-					"type":  "bitwise_and",
+					"type":  "and",
 					"value": 0x0001,
 				},
 			},
@@ -108,12 +108,27 @@ var numberTests = []struct {
 		true,
 	},
 	{
+		"fail and",
+		config.Config{
+			Type: "bitmath",
+			Settings: map[string]interface{}{
+				"key": "foo",
+				"options": map[string]interface{}{
+					"type":  "and",
+					"value": 0x0002,
+				},
+			},
+		},
+		[]byte(`{"foo":"570506001"}`),
+		false,
+	},
+	{
 		"pass data",
 		config.Config{
-			Type: "number",
+			Type: "bitmath",
 			Settings: map[string]interface{}{
 				"options": map[string]interface{}{
-					"type":  "equals",
+					"type":  "or",
 					"value": 1,
 				},
 			},
@@ -123,15 +138,15 @@ var numberTests = []struct {
 	},
 }
 
-func TestNumber(t *testing.T) {
+func TestBitmath(t *testing.T) {
 	ctx := context.TODO()
 	capsule := config.NewCapsule()
 
-	for _, test := range numberTests {
+	for _, test := range bitmathTests {
 		t.Run(test.name, func(t *testing.T) {
 			capsule.SetData(test.test)
 
-			insp, err := newInspNumber(ctx, test.cfg)
+			insp, err := newInspBitmath(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -148,17 +163,17 @@ func TestNumber(t *testing.T) {
 	}
 }
 
-func benchmarkNumberByte(b *testing.B, inspector inspNumber, capsule config.Capsule) {
+func benchmarkBitmathByte(b *testing.B, inspector inspBitmath, capsule config.Capsule) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, capsule)
 	}
 }
 
-func BenchmarkNumberByte(b *testing.B) {
+func BenchmarkBitmathByte(b *testing.B) {
 	capsule := config.NewCapsule()
-	for _, test := range numberTests {
-		insp, err := newInspNumber(context.TODO(), test.cfg)
+	for _, test := range bitmathTests {
+		insp, err := newInspBitmath(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -166,7 +181,7 @@ func BenchmarkNumberByte(b *testing.B) {
 		b.Run(test.name,
 			func(b *testing.B) {
 				capsule.SetData(test.test)
-				benchmarkNumberByte(b, insp, capsule)
+				benchmarkBitmathByte(b, insp, capsule)
 			},
 		)
 	}

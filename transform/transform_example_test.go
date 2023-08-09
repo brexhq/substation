@@ -9,29 +9,6 @@ import (
 	"github.com/brexhq/substation/transform"
 )
 
-func ExampleNewTransformer() {
-	ctx := context.TODO()
-
-	// Copies the value of key "a" into key "b".
-	cfg := config.Config{
-		Type: "proc_copy",
-		Settings: map[string]interface{}{
-			"key":     "a",
-			"set_key": "b",
-		},
-	}
-
-	// One or more transforms can be created from a config.
-	tform, err := transform.NewTransformer(ctx, cfg)
-	if err != nil {
-		// handle err
-		panic(err)
-	}
-
-	fmt.Println(tform)
-	// Output: {"key":"a","set_key":"b"}
-}
-
 func ExampleTransformer() {
 	ctx := context.TODO()
 
@@ -44,8 +21,7 @@ func ExampleTransformer() {
 		},
 	}
 
-	// One or more transforms can be created from a config.
-	tform, err := transform.NewTransformer(ctx, cfg)
+	tform, err := transform.New(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)

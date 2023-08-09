@@ -128,12 +128,12 @@ func TestTransform(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			tform, err := NewTransformers(ctx, test.conf)
+			tform, err := New(ctx, test.conf)
 			if err != nil {
 				t.Error(err)
 			}
 
-			result, err := Apply(ctx, tform, message)
+			result, err := tform.Transform(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}

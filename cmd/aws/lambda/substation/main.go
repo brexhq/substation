@@ -9,10 +9,14 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/brexhq/substation"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/file"
 )
 
-var handler string
+var (
+	handler      string
+	functionName string
+)
 
 // errLambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
 var errLambdaMissingHandler = fmt.Errorf("missing SUBSTATION_HANDLER environment variable")
@@ -23,7 +27,8 @@ var errLambdaInvalidHandler = fmt.Errorf("invalid handler")
 type customConfig struct {
 	substation.Config
 
-	Concurrency int `json:"concurrency"`
+	Concurrency int           `json:"concurrency"`
+	Metrics     config.Config `json:"metrics"`
 }
 
 // getConfig contextually retrieves a Substation configuration.
@@ -81,9 +86,11 @@ func main() {
 }
 
 func init() {
-	var found bool
-	handler, found = os.LookupEnv("SUBSTATION_HANDLER")
-	if !found {
+	var ok bool
+	handler, ok = os.LookupEnv("SUBSTATION_HANDLER")
+	if !ok {
 		panic(fmt.Errorf("init handler %s: %v", handler, errLambdaMissingHandler))
 	}
+
+	functionName, _ = os.LookupEnv("AWS_LAMBDA_FUNCTION_NAME")
 }

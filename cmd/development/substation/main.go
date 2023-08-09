@@ -23,8 +23,6 @@ import (
 type options struct {
 	Input  string
 	Config string
-
-	ForceSink string
 }
 
 // getConfig contextually retrieves a Substation configuration.
@@ -56,7 +54,6 @@ func main() {
 	timeout := flag.Duration("timeout", 10*time.Second, "timeout")
 	flag.StringVar(&opts.Input, "input", "", "file to parse")
 	flag.StringVar(&opts.Config, "config", "", "Substation configuration file")
-	flag.StringVar(&opts.ForceSink, "force-sink", "", "force sink output to value (supported: stdout)")
 	flag.Parse()
 
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)

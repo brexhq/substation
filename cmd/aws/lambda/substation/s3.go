@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -14,6 +15,7 @@ import (
 	"github.com/brexhq/substation/internal/aws/s3manager"
 	"github.com/brexhq/substation/internal/bufio"
 	"github.com/brexhq/substation/internal/channel"
+	"github.com/brexhq/substation/internal/metrics"
 	mess "github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/transform"
 	"golang.org/x/sync/errgroup"
@@ -49,6 +51,13 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	ch := channel.New[*mess.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
+	// Application metrics.
+	var msgRecv, msgTran uint32
+	metric, err := metrics.New(ctx, cfg.Metrics)
+	if err != nil {
+		return fmt.Errorf("s3 handler: %v", err)
+	}
+
 	// Data transformation. Transforms are executed concurrently using a worker pool
 	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
@@ -64,8 +73,17 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 
 			m := message
 			group.Go(func() error {
-				if _, err := transform.Apply(ctx, sub.Transforms(), m); err != nil {
+				msg, err := transform.Apply(ctx, sub.Transforms(), m)
+				if err != nil {
 					return err
+				}
+
+				for _, m := range msg {
+					if m.IsControl() {
+						continue
+					}
+
+					atomic.AddUint32(&msgTran, 1)
 				}
 
 				return nil
@@ -144,7 +162,9 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				if err != nil {
 					return fmt.Errorf("s3 handler: %v", err)
 				}
+
 				ch.Send(msg)
+				atomic.AddUint32(&msgRecv, 1)
 			}
 		}
 
@@ -160,7 +180,28 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	// Wait for all goroutines to complete. This includes the goroutines that are
 	// executing the transform functions.
 	if err := group.Wait(); err != nil {
-		return err
+		return fmt.Errorf("s3 handler: %v", err)
+	}
+
+	// Generate metrics.
+	if err := metric.Generate(ctx, metrics.Data{
+		Name:  "MessagesReceived",
+		Value: msgRecv,
+		Attributes: map[string]string{
+			"FunctionName": functionName,
+		},
+	}); err != nil {
+		return fmt.Errorf("s3 handler: %v", err)
+	}
+
+	if err := metric.Generate(ctx, metrics.Data{
+		Name:  "MessagesTransformed",
+		Value: msgTran,
+		Attributes: map[string]string{
+			"FunctionName": functionName,
+		},
+	}); err != nil {
+		return fmt.Errorf("s3 handler: %v", err)
 	}
 
 	return nil
@@ -189,6 +230,13 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	ch := channel.New[*mess.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
+	// Application metrics.
+	var msgRecv, msgTran uint32
+	metric, err := metrics.New(ctx, cfg.Metrics)
+	if err != nil {
+		return fmt.Errorf("s3 handler: %v", err)
+	}
+
 	// Data transformation. Transforms are executed concurrently using a worker pool
 	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
@@ -204,8 +252,17 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 
 			m := message
 			group.Go(func() error {
-				if _, err := transform.Apply(ctx, sub.Transforms(), m); err != nil {
+				msg, err := transform.Apply(ctx, sub.Transforms(), m)
+				if err != nil {
 					return err
+				}
+
+				for _, m := range msg {
+					if m.IsControl() {
+						continue
+					}
+
+					atomic.AddUint32(&msgTran, 1)
 				}
 
 				return nil
@@ -287,7 +344,9 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					if err != nil {
 						return fmt.Errorf("s3 handler: %v", err)
 					}
+
 					ch.Send(msg)
+					atomic.AddUint32(&msgRecv, 1)
 				}
 			}
 		}
@@ -304,7 +363,28 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	// Wait for all goroutines to complete. This includes the goroutines that are
 	// executing the transform functions.
 	if err := group.Wait(); err != nil {
-		return err
+		return fmt.Errorf("s3 handler: %v", err)
+	}
+
+	// Generate metrics.
+	if err := metric.Generate(ctx, metrics.Data{
+		Name:  "MessagesReceived",
+		Value: msgRecv,
+		Attributes: map[string]string{
+			"FunctionName": functionName,
+		},
+	}); err != nil {
+		return fmt.Errorf("s3 handler: %v", err)
+	}
+
+	if err := metric.Generate(ctx, metrics.Data{
+		Name:  "MessagesTransformed",
+		Value: msgTran,
+		Attributes: map[string]string{
+			"FunctionName": functionName,
+		},
+	}); err != nil {
+		return fmt.Errorf("s3 handler: %v", err)
 	}
 
 	return nil

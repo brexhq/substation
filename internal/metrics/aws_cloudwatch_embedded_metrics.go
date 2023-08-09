@@ -5,11 +5,28 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/json"
 )
 
-// AWSCloudWatchEmbeddedMetrics creates a metric in the AWS Embedded Metrics Format and writes it to standard output. This is the preferred method for generating metrics from AWS Lambda functions. Read more about the Embedded Metrics Format specification here: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html.
-type AWSCloudWatchEmbeddedMetrics struct{}
+type awsCloudWatchEmbeddedMetricsConfig struct{}
+
+// awsCloudWatchEmbeddedMetrics creates a metric in the AWS Embedded Metrics Format and writes it to standard output. This is the preferred method for generating metrics from AWS Lambda functions. Read more about the Embedded Metrics Format specification here: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html.
+type awsCloudWatchEmbeddedMetrics struct {
+	conf awsCloudWatchEmbeddedMetricsConfig
+}
+
+func newAWSCloudWatchEmbeddedMetrics(ctx context.Context, cfg config.Config) (*awsCloudWatchEmbeddedMetrics, error) {
+	conf := awsCloudWatchEmbeddedMetricsConfig{}
+	if err := _config.Decode(cfg.Settings, &conf); err != nil {
+		return nil, err
+	}
+
+	return &awsCloudWatchEmbeddedMetrics{
+		conf: conf,
+	}, nil
+}
 
 /*
 Generate creates a metric with the AWSCloudWatchEmbeddedMetrics metrics generator. All Attributes in the metrics.Data struct are inserted as CloudWatch Metrics dimensions; if the generator is invoked from an AWS Lambda function, then the function name is automatically added as a dimension. This method creates a JSON object with the structure shown below, where references are filled in from the metrics.Data struct:
@@ -33,7 +50,7 @@ Generate creates a metric with the AWSCloudWatchEmbeddedMetrics metrics generato
 		$data.Name: $data.Value
 	}
 */
-func (m AWSCloudWatchEmbeddedMetrics) Generate(ctx context.Context, data Data) (err error) {
+func (m *awsCloudWatchEmbeddedMetrics) Generate(ctx context.Context, data Data) (err error) {
 	emf := []byte{}
 
 	// default values for CloudWatch metrics from Substation applications
@@ -46,11 +63,6 @@ func (m AWSCloudWatchEmbeddedMetrics) Generate(ctx context.Context, data Data) (
 	emf, err = json.Set(emf, "_aws.CloudWatchMetrics.0.Namespace", metricsApplication)
 	if err != nil {
 		return fmt.Errorf("metrics log_embedded_metrics: %v", err)
-	}
-
-	if metricsAWSLambdaFunctionName != "" {
-		attr := map[string]string{"FunctionName": metricsAWSLambdaFunctionName}
-		data.AddAttributes(attr)
 	}
 
 	for key, val := range data.Attributes {

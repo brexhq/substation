@@ -86,6 +86,9 @@
         domain: {
           settings: { key: null, set_key: null, type: null },
         },
+        drop: {
+          settings: null,
+        },
         err: {
           settings: { err: null },
         },
@@ -409,34 +412,28 @@
     // Mirrors interfaces from the internal/kv_store package.
     kv_store: {
       aws_dynamodb(settings=$.defaults.kv_store.aws_dynamodb.settings): {
-        local s = std.mergePatch($.defaults.kv_store.aws_dynamodb.settings, settings),
         type: 'aws_dynamodb',
-        settings: std.mergePatch($.defaults.transform.proc_.settings, settings),
+        settings: std.mergePatch($.defaults.kv_store.aws_dynamodb.settings, settings),
       },
       csv_file(settings=$.defaults.kv_store.csv_file.settings): {
-        local s = std.mergePatch($.defaults.kv_store.csv_file.settings, settings),
         type: 'csv_file',
-        settings: std.mergePatch($.defaults.transform.proc_.settings, settings),
+        settings: std.mergePatch($.defaults.kv_store.csv_file.settings, settings),
       },
       json_file(settings=$.defaults.kv_store.json_file.settings): {
-        local s = std.mergePatch($.defaults.kv_store.json_file.settings, settings),
         type: 'json_file',
-        settings: std.mergePatch($.defaults.transform.proc_.settings, settings),
+        settings: std.mergePatch($.defaults.kv_store.json_file.settings, settings),
       },
       memory(settings=$.defaults.kv_store.memory.settings): {
-        local s = std.mergePatch($.defaults.kv_store.memory.settings, settings),
         type: 'memory',
-        settings: std.mergePatch($.defaults.transform.proc_.settings, settings),
+        settings: std.mergePatch($.defaults.kv_store.memory.settings, settings),
       },
       mmdb(settings=$.defaults.kv_store.mmdb.settings): {
-        local s = std.mergePatch($.defaults.kv_store.mmdb.settings, settings),
         type: 'mmdb',
-        settings: std.mergePatch($.defaults.transform.proc_.settings, settings),
+        settings: std.mergePatch($.defaults.kv_store.mmdb.settings, settings),
       },
       text_file(settings=$.defaults.kv_store.text_file.settings): {
-        local s = std.mergePatch($.defaults.kv_store.text_file.settings, settings),
         type: 'text_file',
-        settings: std.mergePatch($.defaults.transform.proc_.settings, settings),
+        settings: std.mergePatch($.defaults.kv_store.text_file.settings, settings),
       },
     },
   },

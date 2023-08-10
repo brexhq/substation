@@ -120,13 +120,13 @@ var metaForEachTests = []struct {
 		nil,
 	},
 	{
-		"flatten",
+		"flatten_array",
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
 				"transform": config.Config{
-					Type: "proc_flatten",
+					Type: "proc_flatten_array",
 					Settings: map[string]interface{}{
 						"key":     "flatten",
 						"set_key": "flatten",

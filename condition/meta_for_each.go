@@ -35,7 +35,7 @@ type metaInspForEachConf struct {
 type metaInspForEach struct {
 	conf metaInspForEachConf
 
-	inspector Inspector
+	inspector inspector
 }
 
 func newMetaInspForEach(ctx context.Context, cfg config.Config) (*metaInspForEach, error) {
@@ -63,7 +63,7 @@ func newMetaInspForEach(ctx context.Context, cfg config.Config) (*metaInspForEac
 		return nil, fmt.Errorf("condition: meta_for_each: type %q: %v", conf.Type, errors.ErrInvalidOption)
 	}
 
-	i, err := NewInspector(ctx, conf.Inspector)
+	i, err := newInspector(ctx, conf.Inspector)
 	if err != nil {
 		return nil, fmt.Errorf("condition: meta_for_each: %v", err)
 	}

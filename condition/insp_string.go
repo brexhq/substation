@@ -14,12 +14,12 @@ import (
 	mess "github.com/brexhq/substation/message"
 )
 
-type inspStringsConfig struct {
+type inspStringConfig struct {
 	// Key is the message key used during inspection.
 	Key string `json:"key"`
 	// Negate is a boolean that negates the inspection result.
 	Negate bool `json:"negate"`
-	// Type is the string evaluation Type used during inspection.
+	// Type determines the string evaluation method used during inspection.
 	//
 	// Must be one of:
 	//
@@ -35,27 +35,27 @@ type inspStringsConfig struct {
 	//
 	// - less_than
 	Type string `json:"type"`
-	// Expression is a substring used during inspection.
-	Expression string `json:"expression"`
+	// Value is a string used during inspection.
+	String string `json:"string"`
 }
 
-// strings evaluates data using Types from the standard library's strings package.
+// string evaluates data using Types from the standard library's string package.
 //
 // This inspector supports the data and object handling patterns.
-type inspStrings struct {
-	conf inspStringsConfig
+type inspString struct {
+	conf inspStringConfig
 }
 
-// Creates a new strings inspector.
-func newInspStrings(_ context.Context, cfg config.Config) (*inspStrings, error) {
-	conf := inspStringsConfig{}
+// Creates a new string inspector.
+func newInspString(_ context.Context, cfg config.Config) (*inspString, error) {
+	conf := inspStringConfig{}
 	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 
 	// Validate required options.
 	if conf.Type == "" {
-		return nil, fmt.Errorf("condition: insp_strings: type: %v", errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("condition: insp_string: type: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if !slices.Contains(
@@ -68,22 +68,22 @@ func newInspStrings(_ context.Context, cfg config.Config) (*inspStrings, error) 
 			"less_than",
 		},
 		conf.Type) {
-		return nil, fmt.Errorf("condition: insp_strings: type %q: %v", conf.Type, errors.ErrInvalidOption)
+		return nil, fmt.Errorf("condition: insp_string: type %q: %v", conf.Type, errors.ErrInvalidOption)
 	}
 
-	insp := inspStrings{
+	insp := inspString{
 		conf: conf,
 	}
 
 	return &insp, nil
 }
 
-func (c *inspStrings) String() string {
+func (c *inspString) String() string {
 	b, _ := json.Marshal(c.conf)
 	return string(b)
 }
 
-func (c *inspStrings) Inspect(ctx context.Context, message *mess.Message) (output bool, err error) {
+func (c *inspString) Inspect(ctx context.Context, message *mess.Message) (output bool, err error) {
 	if message.IsControl() {
 		return false, nil
 	}
@@ -96,21 +96,21 @@ func (c *inspStrings) Inspect(ctx context.Context, message *mess.Message) (outpu
 	}
 
 	var matched bool
-	switch s := c.conf.Type; s {
+	switch c.conf.Type {
 	case "equals":
-		if check == c.conf.Expression {
+		if check == c.conf.String {
 			matched = true
 		}
 	case "contains":
-		matched = strings.Contains(check, c.conf.Expression)
+		matched = strings.Contains(check, c.conf.String)
 	case "starts_with":
-		matched = strings.HasPrefix(check, c.conf.Expression)
+		matched = strings.HasPrefix(check, c.conf.String)
 	case "ends_with":
-		matched = strings.HasSuffix(check, c.conf.Expression)
+		matched = strings.HasSuffix(check, c.conf.String)
 	case "greater_than":
-		matched = strings.Compare(check, c.conf.Expression) > 0
+		matched = strings.Compare(check, c.conf.String) > 0
 	case "less_than":
-		matched = strings.Compare(check, c.conf.Expression) < 0
+		matched = strings.Compare(check, c.conf.String) < 0
 	}
 
 	if c.conf.Negate {

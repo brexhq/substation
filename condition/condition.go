@@ -14,12 +14,17 @@ import (
 // inspectors is created with no inspectors.
 var errOperatorMissingInspectors = fmt.Errorf("missing inspectors")
 
-type Inspector interface {
+type Config struct {
+	Operator   string          `json:"operator"`
+	Inspectors []config.Config `json:"inspectors"`
+}
+
+type inspector interface {
 	Inspect(context.Context, *mess.Message) (bool, error)
 }
 
-// NewInspector returns a configured Inspector from an Inspector configuration.
-func NewInspector(ctx context.Context, cfg config.Config) (Inspector, error) {
+// newInspector returns a configured Inspector from an Inspector configuration.
+func newInspector(ctx context.Context, cfg config.Config) (inspector, error) {
 	switch cfg.Type {
 	case "insp_content":
 		return newInspContent(ctx, cfg)
@@ -33,8 +38,8 @@ func NewInspector(ctx context.Context, cfg config.Config) (Inspector, error) {
 		return newInspRandom(ctx, cfg)
 	case "insp_regexp":
 		return newInspRegExp(ctx, cfg)
-	case "insp_strings":
-		return newInspStrings(ctx, cfg)
+	case "insp_string":
+		return newInspString(ctx, cfg)
 	case "meta_condition":
 		return newMetaInspCondition(ctx, cfg)
 	case "meta_for_each":
@@ -44,39 +49,25 @@ func NewInspector(ctx context.Context, cfg config.Config) (Inspector, error) {
 	}
 }
 
-// NewInspectors accepts one or more Inspector configurations and returns configured inspectors.
-func NewInspectors(ctx context.Context, cfg ...config.Config) ([]Inspector, error) {
-	var inspectors []Inspector
-	for _, c := range cfg {
-		Inspector, err := NewInspector(ctx, c)
+func newInspectors(ctx context.Context, conf ...config.Config) ([]inspector, error) {
+	var inspectors []inspector
+	for _, c := range conf {
+		insp, err := newInspector(ctx, c)
 		if err != nil {
 			return nil, err
 		}
-		inspectors = append(inspectors, Inspector)
+		inspectors = append(inspectors, insp)
 	}
-
 	return inspectors, nil
-}
-
-// InspectByte is a convenience function for applying an Inspector to bytes.
-func InspectBytes(ctx context.Context, data []byte, inspect Inspector) (bool, error) {
-	message, err := mess.New(
-		mess.SetData(data),
-	)
-	if err != nil {
-		return false, err
-	}
-
-	return inspect.Inspect(ctx, message)
 }
 
 type Operator interface {
 	Operate(context.Context, *mess.Message) (bool, error)
 }
 
-// NewOperator returns a configured Operator from an Operator configuration.
-func NewOperator(ctx context.Context, cfg Config) (Operator, error) {
-	inspectors, err := NewInspectors(ctx, cfg.Inspectors...)
+// New returns a configured Operator from an Operator configuration.
+func New(ctx context.Context, cfg Config) (Operator, error) {
+	inspectors, err := newInspectors(ctx, cfg.Inspectors...)
 	if err != nil {
 		return nil, err
 	}
@@ -93,20 +84,8 @@ func NewOperator(ctx context.Context, cfg Config) (Operator, error) {
 	}
 }
 
-// OperateBytes is a convenience function for applying an Operator to bytes.
-func OperateBytes(ctx context.Context, data []byte, op Operator) (bool, error) {
-	message, err := mess.New(
-		mess.SetData(data),
-	)
-	if err != nil {
-		return false, err
-	}
-
-	return op.Operate(ctx, message)
-}
-
 type opAll struct {
-	Inspectors []Inspector `json:"inspectors"`
+	Inspectors []inspector `json:"inspectors"`
 }
 
 func (o *opAll) String() string {
@@ -141,7 +120,7 @@ func (o *opAll) Operate(ctx context.Context, message *mess.Message) (bool, error
 }
 
 type opAny struct {
-	Inspectors []Inspector `json:"inspectors"`
+	Inspectors []inspector `json:"inspectors"`
 }
 
 func (o *opAny) String() string {
@@ -176,7 +155,7 @@ func (o *opAny) Operate(ctx context.Context, message *mess.Message) (bool, error
 }
 
 type opNone struct {
-	Inspectors []Inspector `json:"inspectors"`
+	Inspectors []inspector `json:"inspectors"`
 }
 
 func (o *opNone) String() string {
@@ -220,10 +199,4 @@ func (o *opEmpty) String() string {
 // Operate always returns true.
 func (o *opEmpty) Operate(ctx context.Context, message *mess.Message) (bool, error) {
 	return true, nil
-}
-
-// Config is used with NewOperator to produce new operators.
-type Config struct {
-	Operator   string          `json:"operator"`
-	Inspectors []config.Config `json:"inspectors"`
 }

@@ -35,7 +35,7 @@ func newMetaInspCondition(ctx context.Context, cfg config.Config) (*metaInspCond
 		return nil, fmt.Errorf("condition: meta_condition: type: %v", errors.ErrMissingRequiredOption)
 	}
 
-	op, err := NewOperator(ctx, conf.Condition)
+	op, err := New(ctx, conf.Condition)
 	if err != nil {
 		return nil, err
 	}

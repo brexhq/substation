@@ -8,7 +8,7 @@ import (
 	mess "github.com/brexhq/substation/message"
 )
 
-var _ Inspector = &inspJSONValid{}
+var _ inspector = &inspJSONValid{}
 
 var jsonValidTests = []struct {
 	name     string
@@ -18,24 +18,19 @@ var jsonValidTests = []struct {
 }{
 	{
 		"valid",
-		config.Config{
-			Type: "json_valid",
-		},
+		config.Config{},
 		[]byte(`{"hello":"world"}`),
 		true,
 	},
 	{
 		"invalid",
-		config.Config{
-			Type: "json_valid",
-		},
+		config.Config{},
 		[]byte(`{hello:"world"}`),
 		false,
 	},
 	{
 		"!invalid",
 		config.Config{
-			Type: "json_valid",
 			Settings: map[string]interface{}{
 				"negate": true,
 			},
@@ -46,7 +41,6 @@ var jsonValidTests = []struct {
 	{
 		"!valid",
 		config.Config{
-			Type: "json_valid",
 			Settings: map[string]interface{}{
 				"negate": true,
 			},

@@ -16,18 +16,17 @@ var forEachTests = []struct {
 	err      error
 }{
 	{
-		"strings starts_with all",
+		"string starts_with all",
 		config.Config{
-			Type: "meta_for_each",
 			Settings: map[string]interface{}{
 				"key":    "input",
 				"negate": false,
 				"type":   "all",
 				"inspector": map[string]interface{}{
-					"type": "insp_strings",
+					"type": "insp_string",
 					"settings": map[string]interface{}{
-						"type":       "starts_with",
-						"expression": "f",
+						"type":   "starts_with",
+						"string": "f",
 					},
 				},
 			},
@@ -39,7 +38,6 @@ var forEachTests = []struct {
 	{
 		"ip private all",
 		config.Config{
-			Type: "meta_for_each",
 			Settings: map[string]interface{}{
 				"key":    "input",
 				"negate": false,
@@ -59,7 +57,6 @@ var forEachTests = []struct {
 	{
 		"regexp any",
 		config.Config{
-			Type: "meta_for_each",
 			Settings: map[string]interface{}{
 				"key":    "input",
 				"negate": false,
@@ -79,7 +76,6 @@ var forEachTests = []struct {
 	{
 		"length none",
 		config.Config{
-			Type: "meta_for_each",
 			Settings: map[string]interface{}{
 				"key":    "input",
 				"negate": false,
@@ -87,8 +83,8 @@ var forEachTests = []struct {
 				"inspector": map[string]interface{}{
 					"type": "insp_length",
 					"settings": map[string]interface{}{
-						"type":  "greater_than",
-						"value": 7,
+						"type":   "greater_than",
+						"length": 7,
 					},
 				},
 			},
@@ -100,7 +96,6 @@ var forEachTests = []struct {
 	{
 		"length all",
 		config.Config{
-			Type: "meta_for_each",
 			Settings: map[string]interface{}{
 				"key":    "input",
 				"negate": false,
@@ -108,8 +103,8 @@ var forEachTests = []struct {
 				"inspector": map[string]interface{}{
 					"type": "insp_length",
 					"settings": map[string]interface{}{
-						"type":  "equals",
-						"value": 4,
+						"type":   "equals",
+						"length": 4,
 					},
 				},
 			},

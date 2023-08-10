@@ -8,7 +8,7 @@ import (
 	mess "github.com/brexhq/substation/message"
 )
 
-var _ Inspector = &metaInspCondition{}
+var _ inspector = &metaInspCondition{}
 
 var metaConditionTests = []struct {
 	name     string
@@ -19,7 +19,6 @@ var metaConditionTests = []struct {
 	{
 		"object",
 		config.Config{
-			Type: "meta_condition",
 			Settings: map[string]interface{}{
 				"condition": Config{
 					Operator: "all",
@@ -41,7 +40,6 @@ var metaConditionTests = []struct {
 	{
 		"data",
 		config.Config{
-			Type: "meta_condition",
 			Settings: map[string]interface{}{
 				"condition": Config{
 					Operator: "all",

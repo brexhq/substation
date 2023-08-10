@@ -19,7 +19,7 @@ type inspLengthConfig struct {
 	Key string `json:"key"`
 	// Negate is a boolean that negates the inspection result.
 	Negate bool `json:"negate"`
-	// Type determines the length evaluation Type used during inspection.
+	// Type determines the length evaluation method used during inspection.
 	//
 	// Must be one of:
 	//
@@ -29,8 +29,8 @@ type inspLengthConfig struct {
 	//
 	// - less_than
 	Type string `json:"type"`
-	// Value is the length that is used for comparison during inspection.
-	Value int `json:"value"`
+	// Length is the length that is used for comparison during inspection.
+	Length int `json:"length"`
 	// Measurement controls how the length is measured. The inspector automatically
 	// assigns measurement for objects when the key is an array.
 	//
@@ -128,15 +128,15 @@ func (c *inspLength) match(length int) (bool, error) {
 	var matched bool
 	switch c.conf.Type {
 	case "equals":
-		if length == c.conf.Value {
+		if length == c.conf.Length {
 			matched = true
 		}
 	case "greater_than":
-		if length > c.conf.Value {
+		if length > c.conf.Length {
 			matched = true
 		}
 	case "less_than":
-		if length < c.conf.Value {
+		if length < c.conf.Length {
 			matched = true
 		}
 	}

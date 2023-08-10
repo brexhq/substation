@@ -17,7 +17,6 @@ var ipTests = []struct {
 	{
 		"json",
 		config.Config{
-			Type: "insp_ip",
 			Settings: map[string]interface{}{
 				"key":  "ip_address",
 				"type": "private",
@@ -29,7 +28,6 @@ var ipTests = []struct {
 	{
 		"valid",
 		config.Config{
-			Type: "insp_ip",
 			Settings: map[string]interface{}{
 				"type": "valid",
 			},
@@ -40,7 +38,6 @@ var ipTests = []struct {
 	{
 		"invalid",
 		config.Config{
-			Type: "insp_ip",
 			Settings: map[string]interface{}{
 				"type": "valid",
 			},
@@ -51,7 +48,6 @@ var ipTests = []struct {
 	{
 		"multicast",
 		config.Config{
-			Type: "insp_ip",
 			Settings: map[string]interface{}{
 				"type": "multicast",
 			},
@@ -62,7 +58,6 @@ var ipTests = []struct {
 	{
 		"multicast_link_local",
 		config.Config{
-			Type: "insp_ip",
 			Settings: map[string]interface{}{
 				"type": "multicast_link_local",
 			},
@@ -73,7 +68,6 @@ var ipTests = []struct {
 	{
 		"unicast_global",
 		config.Config{
-			Type: "insp_ip",
 			Settings: map[string]interface{}{
 				"type": "unicast_global",
 			},
@@ -84,7 +78,6 @@ var ipTests = []struct {
 	{
 		"private",
 		config.Config{
-			Type: "insp_ip",
 			Settings: map[string]interface{}{
 				"type": "private",
 			},
@@ -95,7 +88,6 @@ var ipTests = []struct {
 	{
 		"unicast_link_local",
 		config.Config{
-			Type: "insp_ip",
 			Settings: map[string]interface{}{
 				"type": "unicast_link_local",
 			},
@@ -106,7 +98,6 @@ var ipTests = []struct {
 	{
 		"loopback",
 		config.Config{
-			Type: "insp_ip",
 			Settings: map[string]interface{}{
 				"type": "loopback",
 			},
@@ -117,7 +108,6 @@ var ipTests = []struct {
 	{
 		"unspecified",
 		config.Config{
-			Type: "insp_ip",
 			Settings: map[string]interface{}{
 				"type": "unspecified",
 			},

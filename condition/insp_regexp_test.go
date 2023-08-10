@@ -8,7 +8,7 @@ import (
 	mess "github.com/brexhq/substation/message"
 )
 
-var _ Inspector = &inspRegExp{}
+var _ inspector = &inspRegExp{}
 
 var regExpTests = []struct {
 	name     string
@@ -19,7 +19,6 @@ var regExpTests = []struct {
 	{
 		"pass",
 		config.Config{
-			Type: "insp_regexp",
 			Settings: map[string]interface{}{
 				"expression": "^Test",
 			},
@@ -30,7 +29,6 @@ var regExpTests = []struct {
 	{
 		"fail",
 		config.Config{
-			Type: "insp_regexp",
 			Settings: map[string]interface{}{
 				"expression": "^Test",
 			},
@@ -41,7 +39,6 @@ var regExpTests = []struct {
 	{
 		"!fail",
 		config.Config{
-			Type: "insp_regexp",
 			Settings: map[string]interface{}{
 				"negate":     true,
 				"expression": "^Test",
@@ -53,7 +50,6 @@ var regExpTests = []struct {
 	{
 		"!pass",
 		config.Config{
-			Type: "insp_regexp",
 			Settings: map[string]interface{}{
 				"negate":     true,
 				"expression": "ABC",

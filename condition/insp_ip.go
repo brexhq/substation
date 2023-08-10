@@ -19,7 +19,7 @@ type inspIPConf struct {
 	Key string `json:"key"`
 	// Negate is a boolean that negates the inspection result.
 	Negate bool `json:"negate"`
-	// Type is the IP address type used for comparison during inspection.
+	// Type determines the IP address evaluation method used during inspection.
 	//
 	// Must be one of:
 	//

@@ -8,9 +8,9 @@ import (
 	mess "github.com/brexhq/substation/message"
 )
 
-var _ Inspector = &inspStrings{}
+var _ inspector = &inspString{}
 
-var stringsTests = []struct {
+var stringTests = []struct {
 	name     string
 	cfg      config.Config
 	data     []byte
@@ -19,11 +19,10 @@ var stringsTests = []struct {
 	{
 		"pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"key":        "foo",
-				"type":       "starts_with",
-				"expression": "Test",
+				"key":    "foo",
+				"type":   "starts_with",
+				"string": "Test",
 			},
 		},
 		[]byte(`{"foo":"Test"}`),
@@ -32,10 +31,9 @@ var stringsTests = []struct {
 	{
 		"pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"type":       "starts_with",
-				"expression": "Test",
+				"type":   "starts_with",
+				"string": "Test",
 			},
 		},
 		[]byte("Test"),
@@ -44,10 +42,9 @@ var stringsTests = []struct {
 	{
 		"fail",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"type":       "starts_with",
-				"expression": "Test",
+				"type":   "starts_with",
+				"string": "Test",
 			},
 		},
 		[]byte("-Test"),
@@ -56,10 +53,9 @@ var stringsTests = []struct {
 	{
 		"pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"type":       "equals",
-				"expression": "Test",
+				"type":   "equals",
+				"string": "Test",
 			},
 		},
 		[]byte("Test"),
@@ -68,10 +64,9 @@ var stringsTests = []struct {
 	{
 		"fail",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"type":       "equals",
-				"expression": "Test",
+				"type":   "equals",
+				"string": "Test",
 			},
 		},
 		[]byte("-Test"),
@@ -80,10 +75,9 @@ var stringsTests = []struct {
 	{
 		"pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"type":       "contains",
-				"expression": "es",
+				"type":   "contains",
+				"string": "es",
 			},
 		},
 		[]byte("Test"),
@@ -92,10 +86,9 @@ var stringsTests = []struct {
 	{
 		"fail",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"type":       "contains",
-				"expression": "ABC",
+				"type":   "contains",
+				"string": "ABC",
 			},
 		},
 		[]byte("Test"),
@@ -104,11 +97,10 @@ var stringsTests = []struct {
 	{
 		"!fail",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"negate":     true,
-				"type":       "starts_with",
-				"expression": "XYZ",
+				"negate": true,
+				"type":   "starts_with",
+				"string": "XYZ",
 			},
 		},
 		[]byte("ABC"),
@@ -117,11 +109,10 @@ var stringsTests = []struct {
 	{
 		"!pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"negate":     true,
-				"type":       "starts_with",
-				"expression": "ABC",
+				"negate": true,
+				"type":   "starts_with",
+				"string": "ABC",
 			},
 		},
 		[]byte("ABC"),
@@ -130,11 +121,10 @@ var stringsTests = []struct {
 	{
 		"!pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"negate":     true,
-				"type":       "equals",
-				"expression": "",
+				"negate": true,
+				"type":   "equals",
+				"string": "",
 			},
 		},
 		[]byte(""),
@@ -143,11 +133,10 @@ var stringsTests = []struct {
 	{
 		"!pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"negate":     true,
-				"type":       "contains",
-				"expression": "A",
+				"negate": true,
+				"type":   "contains",
+				"string": "A",
 			},
 		},
 		[]byte("ABC"),
@@ -156,10 +145,9 @@ var stringsTests = []struct {
 	{
 		"pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"type":       "equals",
-				"expression": `""`,
+				"type":   "equals",
+				"string": `""`,
 			},
 		},
 		[]byte("\"\""),
@@ -168,11 +156,10 @@ var stringsTests = []struct {
 	{
 		"pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"key":        "foo",
-				"type":       "equals",
-				"expression": "",
+				"key":    "foo",
+				"type":   "equals",
+				"string": "",
 			},
 		},
 		[]byte(``),
@@ -181,10 +168,9 @@ var stringsTests = []struct {
 	{
 		"pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"type":       "greater_than",
-				"expression": "a",
+				"type":   "greater_than",
+				"string": "a",
 			},
 		},
 		[]byte("b"),
@@ -193,10 +179,9 @@ var stringsTests = []struct {
 	{
 		"pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"type":       "less_than",
-				"expression": "c",
+				"type":   "less_than",
+				"string": "c",
 			},
 		},
 		[]byte("b"),
@@ -205,11 +190,10 @@ var stringsTests = []struct {
 	{
 		"pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"key":        "a",
-				"type":       "greater_than",
-				"expression": "2022-01-01T00:00:00Z",
+				"key":    "a",
+				"type":   "greater_than",
+				"string": "2022-01-01T00:00:00Z",
 			},
 		},
 		[]byte(`{"a":"2023-01-01T00:00:00Z"}`),
@@ -218,11 +202,10 @@ var stringsTests = []struct {
 	{
 		"pass",
 		config.Config{
-			Type: "insp_strings",
 			Settings: map[string]interface{}{
-				"key":        "a",
-				"type":       "less_than",
-				"expression": "2024-01",
+				"key":    "a",
+				"type":   "less_than",
+				"string": "2024-01",
 			},
 		},
 		[]byte(`{"a":"2023-01-01T00:00:00Z"}`),
@@ -230,16 +213,16 @@ var stringsTests = []struct {
 	},
 }
 
-func TestStrings(t *testing.T) {
+func TestString(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range stringsTests {
+	for _, test := range stringTests {
 		t.Run(test.name, func(t *testing.T) {
 			message, _ := mess.New(
 				mess.SetData(test.data),
 			)
 
-			insp, err := newInspStrings(ctx, test.cfg)
+			insp, err := newInspString(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -256,16 +239,16 @@ func TestStrings(t *testing.T) {
 	}
 }
 
-func benchmarkStringsByte(b *testing.B, inspector *inspStrings, message *mess.Message) {
+func benchmarkStringByte(b *testing.B, inspector *inspString, message *mess.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = inspector.Inspect(ctx, message)
 	}
 }
 
-func BenchmarkStringsByte(b *testing.B) {
-	for _, test := range stringsTests {
-		insp, err := newInspStrings(context.TODO(), test.cfg)
+func BenchmarkStringByte(b *testing.B) {
+	for _, test := range stringTests {
+		insp, err := newInspString(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -275,7 +258,7 @@ func BenchmarkStringsByte(b *testing.B) {
 				message, _ := mess.New(
 					mess.SetData(test.data),
 				)
-				benchmarkStringsByte(b, insp, message)
+				benchmarkStringByte(b, insp, message)
 			},
 		)
 	}

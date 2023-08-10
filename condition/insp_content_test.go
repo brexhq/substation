@@ -8,7 +8,7 @@ import (
 	mess "github.com/brexhq/substation/message"
 )
 
-var _ Inspector = &inspContent{}
+var _ inspector = &inspContent{}
 
 var contentTests = []struct {
 	name     string
@@ -20,7 +20,6 @@ var contentTests = []struct {
 	{
 		"gzip",
 		config.Config{
-			Type: "insp_content",
 			Settings: map[string]interface{}{
 				"key":  "ip_address",
 				"type": "application/x-gzip",
@@ -33,7 +32,6 @@ var contentTests = []struct {
 	{
 		"!gzip",
 		config.Config{
-			Type: "insp_content",
 			Settings: map[string]interface{}{
 				"type": "application/x-gzip",
 			},
@@ -45,7 +43,6 @@ var contentTests = []struct {
 	{
 		"gzip",
 		config.Config{
-			Type: "insp_content",
 			Settings: map[string]interface{}{
 				"negate": true,
 				"type":   "application/x-gzip",
@@ -58,7 +55,6 @@ var contentTests = []struct {
 	{
 		"zip",
 		config.Config{
-			Type: "insp_content",
 			Settings: map[string]interface{}{
 				"type": "application/zip",
 			},
@@ -70,7 +66,6 @@ var contentTests = []struct {
 	{
 		"!zip",
 		config.Config{
-			Type: "insp_content",
 			Settings: map[string]interface{}{
 				"type": "application/zip",
 			},
@@ -87,7 +82,6 @@ var contentTests = []struct {
 		// 	},
 		// },
 		config.Config{
-			Type: "insp_content",
 			Settings: map[string]interface{}{
 				"type": "application/zip",
 			},

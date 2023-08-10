@@ -21,7 +21,6 @@ var procPrettyPrintTests = []struct {
 	{
 		"from",
 		config.Config{
-			Type: "proc_pretty_print",
 			Settings: map[string]interface{}{
 				"direction": "from",
 			},
@@ -39,7 +38,6 @@ var procPrettyPrintTests = []struct {
 	{
 		"from",
 		config.Config{
-			Type: "proc_pretty_print",
 			Settings: map[string]interface{}{
 				"direction": "from",
 			},
@@ -60,7 +58,6 @@ var procPrettyPrintTests = []struct {
 	{
 		"to",
 		config.Config{
-			Type: "proc_pretty_print",
 			Settings: map[string]interface{}{
 				"direction": "to",
 			},

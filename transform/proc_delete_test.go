@@ -21,7 +21,6 @@ var procDeleteTests = []struct {
 	{
 		"string",
 		config.Config{
-			Type: "delete",
 			Settings: map[string]interface{}{
 				"key": "baz",
 			},
@@ -35,7 +34,6 @@ var procDeleteTests = []struct {
 	{
 		"JSON",
 		config.Config{
-			Type: "delete",
 			Settings: map[string]interface{}{
 				"key": "baz",
 			},

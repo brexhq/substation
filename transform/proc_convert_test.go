@@ -21,7 +21,6 @@ var procConvertTests = []struct {
 	{
 		"bool true",
 		config.Config{
-			Type: "proc_convert",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -37,7 +36,6 @@ var procConvertTests = []struct {
 	{
 		"bool false",
 		config.Config{
-			Type: "proc_convert",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -53,7 +51,6 @@ var procConvertTests = []struct {
 	{
 		"int",
 		config.Config{
-			Type: "proc_convert",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -69,7 +66,6 @@ var procConvertTests = []struct {
 	{
 		"float",
 		config.Config{
-			Type: "proc_convert",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -85,7 +81,6 @@ var procConvertTests = []struct {
 	{
 		"uint",
 		config.Config{
-			Type: "proc_convert",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -101,7 +96,6 @@ var procConvertTests = []struct {
 	{
 		"string",
 		config.Config{
-			Type: "proc_convert",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -117,7 +111,6 @@ var procConvertTests = []struct {
 	{
 		"int",
 		config.Config{
-			Type: "proc_convert",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",

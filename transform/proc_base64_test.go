@@ -21,7 +21,6 @@ var procBase64Tests = []struct {
 	{
 		"data decode",
 		config.Config{
-			Type: "proc_base64",
 			Settings: map[string]interface{}{
 				"direction": "from",
 			},
@@ -35,7 +34,6 @@ var procBase64Tests = []struct {
 	{
 		"data encode",
 		config.Config{
-			Type: "proc_base64",
 			Settings: map[string]interface{}{
 				"direction": "to",
 			},
@@ -49,7 +47,6 @@ var procBase64Tests = []struct {
 	{
 		"JSON decode",
 		config.Config{
-			Type: "proc_base64",
 			Settings: map[string]interface{}{
 				"key":       "foo",
 				"set_key":   "foo",

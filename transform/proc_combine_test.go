@@ -10,9 +10,9 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var _ Transformer = &procCondense{}
+var _ Transformer = &procCombine{}
 
-var procCondenseDataTests = []struct {
+var procCombineDataTests = []struct {
 	name     string
 	cfg      config.Config
 	data     []string
@@ -21,7 +21,6 @@ var procCondenseDataTests = []struct {
 	{
 		"no limit",
 		config.Config{
-			Type: "condense",
 			Settings: map[string]interface{}{
 				"separator": `\n`,
 			},
@@ -38,7 +37,6 @@ var procCondenseDataTests = []struct {
 	{
 		"max_count",
 		config.Config{
-			Type: "condense",
 			Settings: map[string]interface{}{
 				"separator": `\n`,
 				"max_count": 2,
@@ -57,7 +55,6 @@ var procCondenseDataTests = []struct {
 	{
 		"max_size",
 		config.Config{
-			Type: "condense",
 			Settings: map[string]interface{}{
 				"separator": `\n`,
 				"max_size":  35,
@@ -76,7 +73,6 @@ var procCondenseDataTests = []struct {
 	{
 		"max_count and max_size",
 		config.Config{
-			Type: "condense",
 			Settings: map[string]interface{}{
 				"separator": `\n`,
 				"max_count": 2,
@@ -96,10 +92,9 @@ var procCondenseDataTests = []struct {
 	{
 		"object array",
 		config.Config{
-			Type: "condense",
 			Settings: map[string]interface{}{
 				"separator": `\n`,
-				"set_key":   "condense.-1",
+				"set_key":   "combine.-1",
 			},
 		},
 		[]string{
@@ -108,14 +103,14 @@ var procCondenseDataTests = []struct {
 			`{"quux":"corge"}`,
 		},
 		[]string{
-			`{"condense":[{"foo":"bar"},{"baz":"qux"},{"quux":"corge"}]}`,
+			`{"combine":[{"foo":"bar"},{"baz":"qux"},{"quux":"corge"}]}`,
 		},
 	},
 }
 
-func TestProcCondenseData(t *testing.T) {
+func TestProcCombineData(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procCondenseDataTests {
+	for _, test := range procCombineDataTests {
 		t.Run(test.name, func(t *testing.T) {
 			var messages []*mess.Message
 			for _, data := range test.data {
@@ -129,7 +124,7 @@ func TestProcCondenseData(t *testing.T) {
 				messages = append(messages, msg)
 			}
 
-			// procCondense relies on a control message to flush the buffer,
+			// procCombine relies on a control message to flush the buffer,
 			// so it's always added and then removed from the output.
 			ctrl, err := mess.New(
 				mess.AsControl(),
@@ -140,7 +135,7 @@ func TestProcCondenseData(t *testing.T) {
 
 			messages = append(messages, ctrl)
 
-			proc, err := newProcCondense(ctx, test.cfg)
+			proc, err := newProcCombine(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -166,7 +161,7 @@ func TestProcCondenseData(t *testing.T) {
 	}
 }
 
-func benchmarkProcCodenseData(b *testing.B, tform *procCondense, data []string) {
+func benchmarkProcCodenseData(b *testing.B, tform *procCombine, data []string) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		var messages []*mess.Message
@@ -181,9 +176,9 @@ func benchmarkProcCodenseData(b *testing.B, tform *procCondense, data []string) 
 	}
 }
 
-func BenchmarkProcCondenseData(b *testing.B) {
-	for _, test := range procCondenseDataTests {
-		proc, err := newProcCondense(context.TODO(), test.cfg)
+func BenchmarkProcCombineData(b *testing.B) {
+	for _, test := range procCombineDataTests {
+		proc, err := newProcCombine(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -196,7 +191,7 @@ func BenchmarkProcCondenseData(b *testing.B) {
 	}
 }
 
-var procCondenseObjectTests = []struct {
+var procCombineObjectTests = []struct {
 	name     string
 	cfg      config.Config
 	data     []string
@@ -205,10 +200,9 @@ var procCondenseObjectTests = []struct {
 	{
 		"no limit",
 		config.Config{
-			Type: "condense",
 			Settings: map[string]interface{}{
-				"set_key":      "condense.-1",
-				"condense_key": "foo",
+				"set_key":     "combine.-1",
+				"combine_key": "foo",
 			},
 		},
 		[]string{
@@ -219,16 +213,16 @@ var procCondenseObjectTests = []struct {
 			`{"foo":"bar"}`,
 		},
 		[]string{
-			`{"condense":[{"foo":"bar"},{"foo":"bar"},{"foo":"bar"}]}`,
-			`{"condense":[{"foo":"baz"}]}`,
-			`{"condense":[{"foo":"qux"}]}`,
+			`{"combine":[{"foo":"bar"},{"foo":"bar"},{"foo":"bar"}]}`,
+			`{"combine":[{"foo":"baz"}]}`,
+			`{"combine":[{"foo":"qux"}]}`,
 		},
 	},
 }
 
-func TestProcCondenseObject(t *testing.T) {
+func TestProcCombineObject(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procCondenseObjectTests {
+	for _, test := range procCombineObjectTests {
 		t.Run(test.name, func(t *testing.T) {
 			var messages []*mess.Message
 			for _, data := range test.data {
@@ -242,7 +236,7 @@ func TestProcCondenseObject(t *testing.T) {
 				messages = append(messages, msg)
 			}
 
-			// procCondense relies on a control message to flush the buffer,
+			// procCombine relies on a control message to flush the buffer,
 			// so it's always added and then removed from the output.
 			ctrl, err := mess.New(
 				mess.AsControl(),
@@ -253,7 +247,7 @@ func TestProcCondenseObject(t *testing.T) {
 
 			messages = append(messages, ctrl)
 
-			proc, err := newProcCondense(ctx, test.cfg)
+			proc, err := newProcCombine(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}

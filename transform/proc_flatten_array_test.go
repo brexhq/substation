@@ -9,9 +9,9 @@ import (
 	mess "github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &procFlatten{}
+var _ Transformer = &procFlattenArray{}
 
-var procFlattenTests = []struct {
+var procFlattenArrayTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -21,7 +21,6 @@ var procFlattenTests = []struct {
 	{
 		"json",
 		config.Config{
-			Type: "proc_flatten",
 			Settings: map[string]interface{}{
 				"key":     "flatten",
 				"set_key": "flatten",
@@ -36,7 +35,6 @@ var procFlattenTests = []struct {
 	{
 		"json deep flatten",
 		config.Config{
-			Type: "proc_flatten",
 			Settings: map[string]interface{}{
 				"key":     "flatten",
 				"set_key": "flatten",
@@ -53,7 +51,7 @@ var procFlattenTests = []struct {
 
 func TestProcFlatten(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procFlattenTests {
+	for _, test := range procFlattenArrayTests {
 		t.Run(test.name, func(t *testing.T) {
 			message, err := mess.New(
 				mess.SetData(test.test),
@@ -62,7 +60,7 @@ func TestProcFlatten(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			proc, err := newProcFlatten(ctx, test.cfg)
+			proc, err := newProcFlattenArray(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -84,7 +82,7 @@ func TestProcFlatten(t *testing.T) {
 	}
 }
 
-func benchmarkProcFlatten(b *testing.B, tform *procFlatten, data []byte) {
+func benchmarkProcFlatten(b *testing.B, tform *procFlattenArray, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
@@ -96,8 +94,8 @@ func benchmarkProcFlatten(b *testing.B, tform *procFlatten, data []byte) {
 }
 
 func BenchmarkProcFlatten(b *testing.B) {
-	for _, test := range procFlattenTests {
-		proc, err := newProcFlatten(context.TODO(), test.cfg)
+	for _, test := range procFlattenArrayTests {
+		proc, err := newProcFlattenArray(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

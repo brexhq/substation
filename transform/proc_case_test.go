@@ -21,7 +21,6 @@ var procCaseTests = []struct {
 	{
 		"JSON lower",
 		config.Config{
-			Type: "proc_case",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -37,7 +36,6 @@ var procCaseTests = []struct {
 	{
 		"JSON upper",
 		config.Config{
-			Type: "proc_case",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -53,7 +51,6 @@ var procCaseTests = []struct {
 	{
 		"JSON snake",
 		config.Config{
-			Type: "proc_case",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",

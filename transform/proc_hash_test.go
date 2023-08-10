@@ -21,7 +21,6 @@ var procHashTests = []struct {
 	{
 		"JSON md5",
 		config.Config{
-			Type: "proc_hash",
 			Settings: map[string]interface{}{
 				"key":       "hash",
 				"set_key":   "hash",
@@ -37,7 +36,6 @@ var procHashTests = []struct {
 	{
 		"JSON sha256",
 		config.Config{
-			Type: "proc_hash",
 			Settings: map[string]interface{}{
 				"key":       "hash",
 				"set_key":   "hash",
@@ -53,7 +51,6 @@ var procHashTests = []struct {
 	{
 		"JSON @this sha256",
 		config.Config{
-			Type: "proc_hash",
 			Settings: map[string]interface{}{
 				"key":       "@this",
 				"set_key":   "hash",
@@ -69,7 +66,6 @@ var procHashTests = []struct {
 	{
 		"data md5",
 		config.Config{
-			Type: "proc_hash",
 			Settings: map[string]interface{}{
 				"algorithm": "md5",
 			},
@@ -83,7 +79,6 @@ var procHashTests = []struct {
 	{
 		"data sha256",
 		config.Config{
-			Type: "proc_hash",
 			Settings: map[string]interface{}{
 				"algorithm": "sha256",
 			},

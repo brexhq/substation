@@ -36,7 +36,6 @@ var procAWSLambdaTests = []struct {
 	{
 		"JSON",
 		config.Config{
-			Type: "aws_lambda",
 			Settings: map[string]interface{}{
 				"key":           "foo",
 				"set_key":       "foo",

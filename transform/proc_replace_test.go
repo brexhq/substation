@@ -21,7 +21,6 @@ var procReplaceTests = []struct {
 	{
 		"json",
 		config.Config{
-			Type: "proc_replace",
 			Settings: map[string]interface{}{
 				"key":     "replace",
 				"set_key": "replace",
@@ -38,7 +37,6 @@ var procReplaceTests = []struct {
 	{
 		"json delete",
 		config.Config{
-			Type: "proc_replace",
 			Settings: map[string]interface{}{
 				"key":     "replace",
 				"set_key": "replace",
@@ -54,7 +52,6 @@ var procReplaceTests = []struct {
 	{
 		"data",
 		config.Config{
-			Type: "proc_replace",
 			Settings: map[string]interface{}{
 				"old": "r",
 				"new": "z",
@@ -69,7 +66,6 @@ var procReplaceTests = []struct {
 	{
 		"data delete",
 		config.Config{
-			Type: "proc_replace",
 			Settings: map[string]interface{}{
 				"old": "r",
 				"new": "",

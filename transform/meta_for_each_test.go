@@ -21,7 +21,6 @@ var metaForEachTests = []struct {
 	{
 		"base64",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -42,7 +41,6 @@ var metaForEachTests = []struct {
 	{
 		"capture",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -64,7 +62,6 @@ var metaForEachTests = []struct {
 	{
 		"case",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -85,7 +82,6 @@ var metaForEachTests = []struct {
 	{
 		"convert",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -106,7 +102,6 @@ var metaForEachTests = []struct {
 	{
 		"domain",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -127,7 +122,6 @@ var metaForEachTests = []struct {
 	{
 		"flatten",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -151,7 +145,6 @@ var metaForEachTests = []struct {
 	{
 		"group",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -173,7 +166,6 @@ var metaForEachTests = []struct {
 	{
 		"hash",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -194,7 +186,6 @@ var metaForEachTests = []struct {
 	{
 		"insert",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -217,7 +208,6 @@ var metaForEachTests = []struct {
 	{
 		"join",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -238,7 +228,6 @@ var metaForEachTests = []struct {
 	{
 		"math",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -259,7 +248,6 @@ var metaForEachTests = []struct {
 	{
 		"pipeline",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -293,7 +281,6 @@ var metaForEachTests = []struct {
 	{
 		"replace",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",
@@ -315,7 +302,6 @@ var metaForEachTests = []struct {
 	{
 		"time",
 		config.Config{
-			Type: "for_each",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output.-1",

@@ -36,7 +36,6 @@ var procAWSDynamoDBTests = []struct {
 	{
 		"JSON",
 		config.Config{
-			Type: "aws_dynamodb",
 			Settings: map[string]interface{}{
 				"key":                      "foo",
 				"set_key":                  "foo",

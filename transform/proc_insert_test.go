@@ -21,7 +21,6 @@ var procInsertTests = []struct {
 	{
 		"string",
 		config.Config{
-			Type: "proc_insert",
 			Settings: map[string]interface{}{
 				"set_key": "insert",
 				"value":   "foo",
@@ -36,7 +35,6 @@ var procInsertTests = []struct {
 	{
 		"int",
 		config.Config{
-			Type: "proc_insert",
 			Settings: map[string]interface{}{
 				"set_key": "insert",
 				"value":   10,
@@ -51,7 +49,6 @@ var procInsertTests = []struct {
 	{
 		"string array",
 		config.Config{
-			Type: "proc_insert",
 			Settings: map[string]interface{}{
 				"set_key": "insert",
 				"value":   []string{"bar", "baz"},
@@ -66,7 +63,6 @@ var procInsertTests = []struct {
 	{
 		"map",
 		config.Config{
-			Type: "proc_insert",
 			Settings: map[string]interface{}{
 				"set_key": "insert",
 				"value": map[string]string{
@@ -83,7 +79,6 @@ var procInsertTests = []struct {
 	{
 		"JSON",
 		config.Config{
-			Type: "proc_insert",
 			Settings: map[string]interface{}{
 				"set_key": "insert",
 				"value":   `{"bar":"baz"}`,
@@ -98,7 +93,6 @@ var procInsertTests = []struct {
 	{
 		"zlib",
 		config.Config{
-			Type: "proc_insert",
 			Settings: map[string]interface{}{
 				"set_key": "insert",
 				"value":   []byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},

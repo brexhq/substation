@@ -21,7 +21,6 @@ var procExpandTests = []struct {
 	{
 		"objects",
 		config.Config{
-			Type: "expand",
 			Settings: map[string]interface{}{
 				"key": "a",
 			},
@@ -35,7 +34,6 @@ var procExpandTests = []struct {
 	{
 		"objects with key",
 		config.Config{
-			Type: "expand",
 			Settings: map[string]interface{}{
 				"key": "a",
 			},
@@ -50,7 +48,6 @@ var procExpandTests = []struct {
 	{
 		"non-objects with key",
 		config.Config{
-			Type: "expand",
 			Settings: map[string]interface{}{
 				"key": "a",
 			},
@@ -65,7 +62,6 @@ var procExpandTests = []struct {
 	{
 		"objects with set key",
 		config.Config{
-			Type: "expand",
 			Settings: map[string]interface{}{
 				"key":     "a",
 				"set_key": "a",
@@ -81,7 +77,6 @@ var procExpandTests = []struct {
 	{
 		"strings with key",
 		config.Config{
-			Type: "expand",
 			Settings: map[string]interface{}{
 				"key":     "a",
 				"set_key": "a",
@@ -97,7 +92,6 @@ var procExpandTests = []struct {
 	{
 		"objects with deeply nested set key",
 		config.Config{
-			Type: "expand",
 			Settings: map[string]interface{}{
 				"key":     "a.b",
 				"set_key": "a.b.c.d",
@@ -113,7 +107,6 @@ var procExpandTests = []struct {
 	{
 		"objects overwriting set key",
 		config.Config{
-			Type: "expand",
 			Settings: map[string]interface{}{
 				"key":     "a.b",
 				"set_key": "a",
@@ -128,9 +121,7 @@ var procExpandTests = []struct {
 	},
 	{
 		"data array",
-		config.Config{
-			Type: "expand",
-		},
+		config.Config{},
 		[]byte(`[{"a":"b"},{"c":"d"}]`),
 		[][]byte{
 			[]byte(`{"a":"b"}`),

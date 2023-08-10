@@ -21,7 +21,6 @@ var procGzipTests = []struct {
 	{
 		"from",
 		config.Config{
-			Type: "proc_gzip",
 			Settings: map[string]interface{}{
 				"direction": "from",
 			},
@@ -35,7 +34,6 @@ var procGzipTests = []struct {
 	{
 		"to",
 		config.Config{
-			Type: "proc_gzip",
 			Settings: map[string]interface{}{
 				"direction": "to",
 			},

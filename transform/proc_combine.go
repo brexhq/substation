@@ -14,13 +14,12 @@ import (
 	"github.com/jshlbrd/go-aggregate"
 )
 
-// errProcCondenseSizeLimit is returned when the condense's buffer size
-// limit is reached. If this error occurs, then increase the size of
-// the buffer or use the procDrop transform to remove data that exceeds
-// the buffer limit.
-var errProcCondenseSizeLimit = fmt.Errorf("data exceeded size limit")
+// errProcCombineSizeLimit is returned when the buffer size limit is reached.
+// If this error occurs, then increase the size of the buffer or use the procDrop
+// transform to remove data that exceeds the buffer limit.
+var errProcCombineSizeLimit = fmt.Errorf("data exceeded size limit")
 
-type procCondenseConfig struct {
+type procCombineConfig struct {
 	// Key retrieves a value from an object for processing.
 	//
 	// This is optional for transforms that support processing non-object data.
@@ -29,39 +28,39 @@ type procCondenseConfig struct {
 	//
 	// This is optional for transforms that support processing non-object data.
 	SetKey string `json:"set_key"`
-	// CondenseKey retrieves a value from an object that is used to organize
-	// condensed objects.
+	// CombineKey retrieves a value from an object that is used to organize
+	// combined objects.
 	//
 	// This is only used when handling objects and defaults to an
 	// empty string.
-	CondenseKey string `json:"condense_key"`
-	// Separator is the string that joins condensed data.
+	CombineKey string `json:"combine_key"`
+	// Separator is the string that joins combined data.
 	//
 	// This is only used when handling data and defaults to an empty
 	// string.
 	Separator string `json:"separator"`
 	// MaxCount determines the maximum number of items stored in the
-	// buffer before emitting condensed data.
+	// buffer before emitting combined data.
 	//
 	// This is optional and defaults to 1000 items.
 	MaxCount int `json:"max_count"`
 	// MaxSize determines the maximum size (in bytes) of items stored
-	// in the buffer before emitting condensed data.
+	// in the buffer before emitting combined data.
 	//
 	// This is optional and defaults to 10000 (10KB).
 	MaxSize int `json:"max_size"`
 }
 
-type procCondense struct {
-	conf procCondenseConfig
+type procCombine struct {
+	conf procCombineConfig
 
 	// buffer is safe for concurrent access.
 	mu     sync.Mutex
 	buffer map[string]*aggregate.Bytes
 }
 
-func newProcCondense(_ context.Context, cfg config.Config) (*procCondense, error) {
-	conf := procCondenseConfig{}
+func newProcCombine(_ context.Context, cfg config.Config) (*procCombine, error) {
+	conf := procCombineConfig{}
 	if err := _config.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
@@ -74,7 +73,7 @@ func newProcCondense(_ context.Context, cfg config.Config) (*procCondense, error
 		conf.MaxSize = 10000
 	}
 
-	proc := procCondense{
+	proc := procCombine{
 		conf: conf,
 	}
 
@@ -84,16 +83,16 @@ func newProcCondense(_ context.Context, cfg config.Config) (*procCondense, error
 	return &proc, nil
 }
 
-func (t *procCondense) String() string {
+func (t *procCombine) String() string {
 	b, _ := gojson.Marshal(t.conf)
 	return string(b)
 }
 
-func (*procCondense) Close(context.Context) error {
+func (*procCombine) Close(context.Context) error {
 	return nil
 }
 
-func (t *procCondense) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
+func (t *procCombine) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
 	// Lock the transform to prevent concurrent access to the buffer.
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -112,37 +111,37 @@ func (t *procCondense) Transform(ctx context.Context, messages ...*mess.Message)
 		// fit within it.
 		length := len(message.Data())
 		if length > t.conf.MaxSize {
-			return nil, fmt.Errorf("transform: proc_condense: size %d data length %d: %v", t.conf.MaxSize, length, errProcCondenseSizeLimit)
+			return nil, fmt.Errorf("transform: proc_combine: size %d data length %d: %v", t.conf.MaxSize, length, errProcCombineSizeLimit)
 		}
 
-		var condenseKey string
-		if t.conf.CondenseKey != "" {
-			condenseKey = message.Get(t.conf.CondenseKey).String()
+		var combineKey string
+		if t.conf.CombineKey != "" {
+			combineKey = message.Get(t.conf.CombineKey).String()
 		}
 
-		if _, ok := t.buffer[condenseKey]; !ok {
-			t.buffer[condenseKey] = &aggregate.Bytes{}
-			t.buffer[condenseKey].New(t.conf.MaxCount, t.conf.MaxSize)
+		if _, ok := t.buffer[combineKey]; !ok {
+			t.buffer[combineKey] = &aggregate.Bytes{}
+			t.buffer[combineKey].New(t.conf.MaxCount, t.conf.MaxSize)
 		}
 
-		ok := t.buffer[condenseKey].Add(message.Data())
+		ok := t.buffer[combineKey].Add(message.Data())
 		// Data was successfully added to the buffer, every item after
 		// this is a failure.
 		if ok {
 			continue
 		}
 
-		data := t.buffer[condenseKey].Get()
+		data := t.buffer[combineKey].Get()
 		c, err := t.newMessage(data)
 		if err != nil {
-			return nil, fmt.Errorf("transform: proc_condense: %v", err)
+			return nil, fmt.Errorf("transform: proc_combine: %v", err)
 		}
 		output = append(output, c)
 
 		// By this point, addition of the failed data is guaranteed
 		// to succeed after the buffer is reset.
-		t.buffer[condenseKey].Reset()
-		_ = t.buffer[condenseKey].Add(message.Data())
+		t.buffer[combineKey].Reset()
+		_ = t.buffer[combineKey].Add(message.Data())
 	}
 
 	// If a control message was received, then items are flushed from the buffer.
@@ -154,7 +153,7 @@ func (t *procCondense) Transform(ctx context.Context, messages ...*mess.Message)
 		data := t.buffer[key].Get()
 		msg, err := t.newMessage(data)
 		if err != nil {
-			return nil, fmt.Errorf("transform: proc_condense: %v", err)
+			return nil, fmt.Errorf("transform: proc_combine: %v", err)
 		}
 
 		output = append(output, msg)
@@ -164,7 +163,7 @@ func (t *procCondense) Transform(ctx context.Context, messages ...*mess.Message)
 	return output, nil
 }
 
-func (t *procCondense) newMessage(data [][]byte) (*mess.Message, error) {
+func (t *procCombine) newMessage(data [][]byte) (*mess.Message, error) {
 	if t.conf.SetKey != "" {
 		var value []byte
 		for _, element := range data {

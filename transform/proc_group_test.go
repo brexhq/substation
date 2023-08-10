@@ -21,7 +21,6 @@ var procGroupTests = []struct {
 	{
 		"tuples",
 		config.Config{
-			Type: "proc_group",
 			Settings: map[string]interface{}{
 				"key":     "group",
 				"set_key": "group",
@@ -36,7 +35,6 @@ var procGroupTests = []struct {
 	{
 		"objects",
 		config.Config{
-			Type: "proc_group",
 			Settings: map[string]interface{}{
 				"key":     "group",
 				"set_key": "group",

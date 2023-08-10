@@ -21,7 +21,6 @@ var metaPipelineTests = []struct {
 	{
 		"object",
 		config.Config{
-			Type: "meta_pipeline",
 			Settings: map[string]interface{}{
 				"key":     "input",
 				"set_key": "output",
@@ -50,7 +49,6 @@ var metaPipelineTests = []struct {
 	{
 		"data",
 		config.Config{
-			Type: "meta_pipeline",
 			Settings: map[string]interface{}{
 				"transforms": []config.Config{
 					{

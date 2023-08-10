@@ -23,7 +23,6 @@ var procTimeTests = []struct {
 	{
 		"data string",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"format":     "2006-01-02T15:04:05Z",
 				"set_format": setFmt,
@@ -38,7 +37,6 @@ var procTimeTests = []struct {
 	{
 		"data unix",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"format":     "unix",
 				"set_format": setFmt,
@@ -53,7 +51,6 @@ var procTimeTests = []struct {
 	{
 		"data unix to unix_milli",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"format":     "unix",
 				"set_format": "unix_milli",
@@ -68,7 +65,6 @@ var procTimeTests = []struct {
 	{
 		"JSON",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"key":        "time",
 				"set_key":    "time",
@@ -85,7 +81,6 @@ var procTimeTests = []struct {
 	{
 		"JSON from unix",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"key":        "time",
 				"set_key":    "time",
@@ -102,7 +97,6 @@ var procTimeTests = []struct {
 	{
 		"JSON to unix",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"key":        "time",
 				"set_key":    "time",
@@ -119,7 +113,6 @@ var procTimeTests = []struct {
 	{
 		"JSON from unix_milli",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"key":        "time",
 				"set_key":    "time",
@@ -136,7 +129,6 @@ var procTimeTests = []struct {
 	{
 		"JSON to unix_milli",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"key":        "time",
 				"set_key":    "time",
@@ -153,7 +145,6 @@ var procTimeTests = []struct {
 	{
 		"JSON unix to unix_milli",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"key":        "time",
 				"set_key":    "time",
@@ -170,7 +161,6 @@ var procTimeTests = []struct {
 	{
 		"JSON offset conversion",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"key":        "time",
 				"set_key":    "time",
@@ -187,7 +177,6 @@ var procTimeTests = []struct {
 	{
 		"JSON offset to local conversion",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"key":          "time",
 				"set_key":      "time",
@@ -207,7 +196,6 @@ var procTimeTests = []struct {
 	{
 		"JSON local to local conversion",
 		config.Config{
-			Type: "proc_time",
 			Settings: map[string]interface{}{
 				"key":          "time",
 				"set_key":      "time",

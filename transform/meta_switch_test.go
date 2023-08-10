@@ -23,7 +23,6 @@ var metaSwitchTests = []struct {
 		// succeed.
 		"if",
 		config.Config{
-			Type: "meta_switch",
 			Settings: map[string]interface{}{
 				"switch": []struct {
 					Condition condition.Config `json:"condition"`
@@ -34,11 +33,11 @@ var metaSwitchTests = []struct {
 							Operator: "any",
 							Inspectors: []config.Config{
 								{
-									Type: "insp_strings",
+									Type: "insp_string",
 									Settings: map[string]interface{}{
-										"key":        "foo",
-										"type":       "contains",
-										"expression": "bar",
+										"key":    "foo",
+										"type":   "contains",
+										"string": "bar",
 									},
 								},
 							},
@@ -66,7 +65,6 @@ var metaSwitchTests = []struct {
 		// there are no conditions).
 		"if_else",
 		config.Config{
-			Type: "meta_switch",
 			Settings: map[string]interface{}{
 				"switch": []struct {
 					Condition condition.Config `json:"condition"`
@@ -77,11 +75,11 @@ var metaSwitchTests = []struct {
 							Operator: "any",
 							Inspectors: []config.Config{
 								{
-									Type: "insp_strings",
+									Type: "insp_string",
 									Settings: map[string]interface{}{
-										"key":        "foo",
-										"type":       "contains",
-										"expression": "bar",
+										"key":    "foo",
+										"type":   "contains",
+										"string": "bar",
 									},
 								},
 							},
@@ -117,7 +115,6 @@ var metaSwitchTests = []struct {
 		// fail. The data should be unchanged.
 		"if_else_if",
 		config.Config{
-			Type: "meta_switch",
 			Settings: map[string]interface{}{
 				"switch": []struct {
 					Condition condition.Config `json:"condition"`
@@ -128,11 +125,11 @@ var metaSwitchTests = []struct {
 							Operator: "any",
 							Inspectors: []config.Config{
 								{
-									Type: "insp_strings",
+									Type: "insp_string",
 									Settings: map[string]interface{}{
-										"key":        "foo",
-										"type":       "contains",
-										"expression": "bar",
+										"key":    "foo",
+										"type":   "contains",
+										"string": "bar",
 									},
 								},
 							},
@@ -150,11 +147,11 @@ var metaSwitchTests = []struct {
 							Operator: "any",
 							Inspectors: []config.Config{
 								{
-									Type: "insp_strings",
+									Type: "insp_string",
 									Settings: map[string]interface{}{
-										"key":        "foo",
-										"type":       "contains",
-										"expression": "baz",
+										"key":    "foo",
+										"type":   "contains",
+										"string": "baz",
 									},
 								},
 							},

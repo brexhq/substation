@@ -21,7 +21,6 @@ var procCaptureTests = []struct {
 	{
 		"JSON find",
 		config.Config{
-			Type: "proc_capture",
 			Settings: map[string]interface{}{
 				"key":        "foo",
 				"set_key":    "foo",
@@ -38,7 +37,6 @@ var procCaptureTests = []struct {
 	{
 		"JSON find_all",
 		config.Config{
-			Type: "proc_capture",
 			Settings: map[string]interface{}{
 				"key":        "foo",
 				"set_key":    "foo",
@@ -56,7 +54,6 @@ var procCaptureTests = []struct {
 	{
 		"data",
 		config.Config{
-			Type: "proc_capture",
 			Settings: map[string]interface{}{
 				"type":       "find",
 				"expression": "^([^@]*)@.*$",
@@ -71,7 +68,6 @@ var procCaptureTests = []struct {
 	{
 		"named_group",
 		config.Config{
-			Type: "proc_capture",
 			Settings: map[string]interface{}{
 				"type":       "named_group",
 				"expression": "(?P<foo>[a-zA-Z]+) (?P<qux>[a-zA-Z]+)",
@@ -86,7 +82,6 @@ var procCaptureTests = []struct {
 	{
 		"named_group",
 		config.Config{
-			Type: "proc_capture",
 			Settings: map[string]interface{}{
 				"key":        "capture",
 				"set_key":    "capture",

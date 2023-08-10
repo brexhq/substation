@@ -21,7 +21,6 @@ var procJQTests = []struct {
 	{
 		"access",
 		config.Config{
-			Type: "jq",
 			Settings: map[string]interface{}{
 				"query": `.a`,
 			},
@@ -35,7 +34,6 @@ var procJQTests = []struct {
 	{
 		"access",
 		config.Config{
-			Type: "jq",
 			Settings: map[string]interface{}{
 				"query": `.a, .c`,
 			},
@@ -49,7 +47,6 @@ var procJQTests = []struct {
 	{
 		"access",
 		config.Config{
-			Type: "jq",
 			Settings: map[string]interface{}{
 				"query": `.a`,
 			},
@@ -63,7 +60,6 @@ var procJQTests = []struct {
 	{
 		"array",
 		config.Config{
-			Type: "jq",
 			Settings: map[string]interface{}{
 				"query": `.a`,
 			},
@@ -77,7 +73,6 @@ var procJQTests = []struct {
 	{
 		"slice",
 		config.Config{
-			Type: "jq",
 			Settings: map[string]interface{}{
 				"query": `.a[-1:]`,
 			},
@@ -91,7 +86,6 @@ var procJQTests = []struct {
 	{
 		"recursion",
 		config.Config{
-			Type: "jq",
 			Settings: map[string]interface{}{
 				"query": `walk( if type == "object" then 
 					with_entries( select( 

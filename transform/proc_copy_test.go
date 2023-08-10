@@ -21,7 +21,6 @@ var procCopyTests = []struct {
 	{
 		"JSON",
 		config.Config{
-			Type: "proc_copy",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "baz",
@@ -36,7 +35,6 @@ var procCopyTests = []struct {
 	{
 		"JSON unescape",
 		config.Config{
-			Type: "proc_copy",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -51,7 +49,6 @@ var procCopyTests = []struct {
 	{
 		"JSON unescape",
 		config.Config{
-			Type: "proc_copy",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -66,7 +63,6 @@ var procCopyTests = []struct {
 	{
 		"from JSON",
 		config.Config{
-			Type: "proc_copy",
 			Settings: map[string]interface{}{
 				"key": "foo",
 			},
@@ -80,7 +76,6 @@ var procCopyTests = []struct {
 	{
 		"from JSON nested",
 		config.Config{
-			Type: "proc_copy",
 			Settings: map[string]interface{}{
 				"key": "foo",
 			},
@@ -94,7 +89,6 @@ var procCopyTests = []struct {
 	{
 		"to JSON utf8",
 		config.Config{
-			Type: "proc_copy",
 			Settings: map[string]interface{}{
 				"set_key": "bar",
 			},
@@ -108,7 +102,6 @@ var procCopyTests = []struct {
 	{
 		"to JSON base64",
 		config.Config{
-			Type: "proc_copy",
 			Settings: map[string]interface{}{
 				"set_key": "bar",
 			},

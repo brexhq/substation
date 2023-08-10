@@ -44,7 +44,7 @@ func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) 
 		tform Transformer
 	}
 	for _, s := range conf.Switch {
-		op, err := condition.NewOperator(ctx, s.Condition)
+		op, err := condition.New(ctx, s.Condition)
 		if err != nil {
 			return nil, fmt.Errorf("transform: meta_switch: %v", err)
 		}

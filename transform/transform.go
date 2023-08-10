@@ -38,8 +38,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newProcCapture(ctx, cfg)
 	case "proc_case":
 		return newProcCase(ctx, cfg)
-	case "proc_condense":
-		return newProcCondense(ctx, cfg)
+	case "proc_combine":
+		return newProcCombine(ctx, cfg)
 	case "proc_convert":
 		return newProcConvert(ctx, cfg)
 	case "proc_copy":
@@ -56,8 +56,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newProcErr(ctx, cfg)
 	case "proc_expand":
 		return newProcExpand(ctx, cfg)
-	case "proc_flatten":
-		return newProcFlatten(ctx, cfg)
+	case "proc_flatten_array":
+		return newProcFlattenArray(ctx, cfg)
 	case "proc_group":
 		return newProcGroup(ctx, cfg)
 	case "proc_gzip":

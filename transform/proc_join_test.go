@@ -21,7 +21,6 @@ var procJoinTests = []struct {
 	{
 		"JSON",
 		config.Config{
-			Type: "proc_join",
 			Settings: map[string]interface{}{
 				"key":       "foo",
 				"set_key":   "foo",

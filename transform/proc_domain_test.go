@@ -21,7 +21,6 @@ var procDomainTests = []struct {
 	{
 		"JSON tld",
 		config.Config{
-			Type: "domain",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -37,7 +36,6 @@ var procDomainTests = []struct {
 	{
 		"JSON domain",
 		config.Config{
-			Type: "domain",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -53,7 +51,6 @@ var procDomainTests = []struct {
 	{
 		"JSON subdomain",
 		config.Config{
-			Type: "domain",
 			Settings: map[string]interface{}{
 				"key":     "foo",
 				"set_key": "foo",
@@ -70,7 +67,6 @@ var procDomainTests = []struct {
 	{
 		"JSON subdomain",
 		config.Config{
-			Type: "domain",
 			Settings: map[string]interface{}{
 				"key":              "foo",
 				"set_key":          "foo",
@@ -87,7 +83,6 @@ var procDomainTests = []struct {
 	{
 		"data",
 		config.Config{
-			Type: "domain",
 			Settings: map[string]interface{}{
 				"type": "subdomain",
 			},

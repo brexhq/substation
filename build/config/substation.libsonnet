@@ -244,7 +244,7 @@
       },
       for_each(options=$.defaults.inspector.for_each.options,
                settings=$.interfaces.inspector.settings): {
-        local opt = std.mergePatch($.defaults.processor.inspector.for_each.options, options),
+        local opt = std.mergePatch($.defaults.inspector.for_each.options, options),
 
         assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
         local s = std.mergePatch($.interfaces.inspector.settings, settings),

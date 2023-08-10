@@ -50,7 +50,7 @@ func ExampleGet_local() {
 }
 
 func ExampleGet_http() {
-	location := "https://www.gutenberg.org/files/2701/2701-h/2701-h.htm"
+	location := "https://example.com"
 
 	// a local copy of the HTTP body is created and must be removed when it's no longer needed, regardless of errors
 	path, err := file.Get(context.TODO(), location)
@@ -75,7 +75,7 @@ func ExampleGet_http() {
 		panic(err)
 	}
 
-	prefix := strings.HasPrefix(string(buf), "<!DOCTYPE")
+	prefix := strings.HasPrefix(strings.ToUpper(string(buf)), "<!DOCTYPE")
 	fmt.Println(prefix)
 
 	// Output: true

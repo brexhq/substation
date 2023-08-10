@@ -498,7 +498,7 @@ func BenchmarkNone(b *testing.B) {
 	}
 }
 
-func TestnewInspector(t *testing.T) {
+func TestNewInspector(t *testing.T) {
 	for _, test := range allTests {
 		_, err := newInspector(context.TODO(), test.conf[0])
 		if err != nil {
@@ -513,7 +513,7 @@ func benchmarknewInspector(b *testing.B, conf config.Config) {
 	}
 }
 
-func BenchmarknewInspector(b *testing.B) {
+func BenchmarkNewInspector(b *testing.B) {
 	for _, test := range allTests {
 		b.Run(test.name,
 			func(b *testing.B) {

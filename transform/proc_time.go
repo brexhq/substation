@@ -79,21 +79,21 @@ func newProcTime(_ context.Context, cfg config.Config) (*procTime, error) {
 
 	// Validate required options.
 	if (conf.Key != "" && conf.SetKey == "") ||
-		(conf.Key == "" && conf.SetKey != "") {
-		return nil, fmt.Errorf("transform: proc_http: key %s set_key %s: %v", conf.Key, conf.SetKey, errInvalidDataPattern)
+		(conf.Key == "" && conf.SetKey != "" && conf.Format != "now") {
+		return nil, fmt.Errorf("transform: proc_time: key %s set_key %s: %v", conf.Key, conf.SetKey, errInvalidDataPattern)
 	}
 
 	if conf.Format == "" {
-		return nil, fmt.Errorf("transform: time: format: %v", errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("transform: proc_time: format: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if conf.SetFormat == "" {
-		return nil, fmt.Errorf("transform: time: set_format: %v", errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("transform: proc_time: set_format: %v", errors.ErrMissingRequiredOption)
 	}
 
 	proc := procTime{
 		conf:     conf,
-		isObject: conf.Key != "" && conf.SetKey != "",
+		isObject: conf.SetKey != "",
 	}
 
 	return &proc, nil
@@ -125,7 +125,7 @@ func (t *procTime) Transform(ctx context.Context, messages ...*mess.Message) ([]
 
 			if t.conf.SetKey != "" {
 				if err := message.Set(t.conf.SetKey, value); err != nil {
-					return nil, fmt.Errorf("transform: time: %v", err)
+					return nil, fmt.Errorf("transform: proc_time: %v", err)
 				}
 
 				output = append(output, message)
@@ -145,7 +145,7 @@ func (t *procTime) Transform(ctx context.Context, messages ...*mess.Message) ([]
 				mess.SetMetadata(message.Metadata()),
 			)
 			if err != nil {
-				return nil, fmt.Errorf("transform: time: %v", err)
+				return nil, fmt.Errorf("transform: proc_time: %v", err)
 			}
 
 			output = append(output, msg)
@@ -164,24 +164,24 @@ func (t *procTime) Transform(ctx context.Context, messages ...*mess.Message) ([]
 
 			value, err := t.process(result)
 			if err != nil {
-				return nil, fmt.Errorf("transform: time: %v", err)
+				return nil, fmt.Errorf("transform: proc_time: %v", err)
 			}
 
 			if err := message.Set(t.conf.SetKey, value); err != nil {
-				return nil, fmt.Errorf("transform: time: %v", err)
+				return nil, fmt.Errorf("transform: proc_time: %v", err)
 			}
 
 			output = append(output, message)
 		case false:
 			tmp, err := json.Set([]byte{}, "tmp", message.Data())
 			if err != nil {
-				return nil, fmt.Errorf("transform: time: %v", err)
+				return nil, fmt.Errorf("transform: proc_time: %v", err)
 			}
 
 			res := json.Get(tmp, "tmp")
 			value, err := t.process(res)
 			if err != nil {
-				return nil, fmt.Errorf("transform: time: %v", err)
+				return nil, fmt.Errorf("transform: proc_time: %v", err)
 			}
 
 			var data []byte
@@ -197,7 +197,7 @@ func (t *procTime) Transform(ctx context.Context, messages ...*mess.Message) ([]
 				mess.SetMetadata(message.Metadata()),
 			)
 			if err != nil {
-				return nil, fmt.Errorf("transform: time: %v", err)
+				return nil, fmt.Errorf("transform: proc_time: %v", err)
 			}
 
 			output = append(output, msg)
@@ -221,7 +221,7 @@ func (t *procTime) process(result gjson.Result) (interface{}, error) {
 		if t.conf.Location != "" {
 			loc, err := time.LoadLocation(t.conf.Location)
 			if err != nil {
-				return nil, fmt.Errorf("transform: time: location %s: %v", t.conf.Location, err)
+				return nil, fmt.Errorf("transform: proc_time: location %s: %v", t.conf.Location, err)
 			}
 
 			timeDate, err = time.ParseInLocation(t.conf.Format, result.String(), loc)
@@ -241,7 +241,7 @@ func (t *procTime) process(result gjson.Result) (interface{}, error) {
 	if t.conf.SetLocation != "" {
 		loc, err := time.LoadLocation(t.conf.SetLocation)
 		if err != nil {
-			return nil, fmt.Errorf("transform: time: location %s: %v", t.conf.SetLocation, err)
+			return nil, fmt.Errorf("transform: proc_time: location %s: %v", t.conf.SetLocation, err)
 		}
 
 		timeDate = timeDate.In(loc)

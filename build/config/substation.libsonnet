@@ -22,13 +22,13 @@
           settings: { key: null, negate: null, type: null },
         },
         length: {
-          settings: { key: null, negate: null, type: null, value: null, measurement: 'byte' },
+          settings: { key: null, negate: null, type: null, length: null, measurement: 'byte' },
         },
         regexp: {
           settings: { key: null, negate: null, expression: null },
         },
-        strings: {
-          settings: { key: null, negate: null, type: null, expression: null },
+        string: {
+          settings: { key: null, negate: null, type: null, string: null },
         },
       },
       meta: {
@@ -68,8 +68,8 @@
         case: {
           settings: { key: null, set_key: null, type: null },
         },
-        condense: {
-          settings: { key: null, set_key: null, condense_key: null, separator: null, max_count: 1000, max_size: 10000 },
+        combine: {
+          settings: { key: null, set_key: null, combine_key: null, separator: null, max_count: 1000, max_size: 10000 },
         },
         convert: {
           settings: { key: null, set_key: null, type: null },
@@ -89,7 +89,7 @@
         err: {
           settings: { err: null },
         },
-        flatten: {
+        flatten_array: {
           settings: { key: null, set_key: null, deep: true },
         },
         group: {
@@ -228,9 +228,9 @@
           type: 'insp_regexp',
           settings: std.mergePatch($.defaults.condition.insp.regexp.settings, settings),
         },
-        strings(settings=$.defaults.condition.insp.strings.settings): {
-          type: 'insp_strings',
-          settings: std.mergePatch($.defaults.condition.insp.strings.settings, settings),
+        string(settings=$.defaults.condition.insp.string.settings): {
+          type: 'insp_string',
+          settings: std.mergePatch($.defaults.condition.insp.string.settings, settings),
         },
       },
     },
@@ -271,9 +271,9 @@
           type: 'proc_case',
           settings: std.mergePatch($.defaults.transform.proc.case.settings, settings),
         },
-        condense(settings=$.defaults.transform.proc.condense.settings): {
-          type: 'proc_condense',
-          settings: std.mergePatch($.defaults.transform.proc.condense.settings, settings),
+        combine(settings=$.defaults.transform.proc.combine.settings): {
+          type: 'proc_combine',
+          settings: std.mergePatch($.defaults.transform.proc.combine.settings, settings),
         },
         convert(settings=$.defaults.transform.proc.convert.settings): {
           type: 'proc_convert',
@@ -307,9 +307,9 @@
           type: 'proc_expand',
           settings: std.mergePatch($.defaults.transform.proc.expand.settings, settings),
         },
-        flatten(settings=$.defaults.transform.proc.flatten.settings): {
-          type: 'proc_flatten',
-          settings: std.mergePatch($.defaults.transform.proc.flatten.settings, settings),
+        flatten_array(settings=$.defaults.transform.proc.flatten_array.settings): {
+          type: 'proc_flatten_array',
+          settings: std.mergePatch($.defaults.transform.proc.flatten_array.settings, settings),
         },
         group(settings=$.defaults.transform.proc.group.settings): {
           type: 'proc_group',
@@ -479,23 +479,23 @@
           // Use with the ANY / ALL operator to match empty data.
           // Use with the NONE operator to match non-empty data.
           eq_zero(key=null):
-            $.interfaces.condition.insp.length(settings={ key: key, type: 'equals', value: 0 }),
+            $.interfaces.condition.insp.length(settings={ key: key, type: 'equals', length: 0 }),
           // checks if data is greater than zero.
           //
           // use with the ANY / ALL operator to match non-empty data.
           // use with the NONE operator to match empty data.
           gt_zero(key=null):
-            $.interfaces.condition.insp.length(settings={ key: key, type: 'greater_than', value: 0 }),
+            $.interfaces.condition.insp.length(settings={ key: key, type: 'greater_than', length: 0 }),
         },
-        strings: {
-          contains(expression, key=null):
-            $.interfaces.condition.insp.strings(settings={ key: key, type: 'contains', expression: expression }),
-          equals(expression, key=null):
-            $.interfaces.condition.insp.strings(settings={ key: key, type: 'equals', expression: expression }),
-          starts_with(expression, key=null):
-            $.interfaces.condition.insp.strings(settings={ key: key, type: 'starts_with', expression: expression }),
-          ends_with(expression, key=null):
-            $.interfaces.condition.insp.strings(settings={ key: key, type: 'ends_with', expression: expression }),
+        string: {
+          contains(string, key=null):
+            $.interfaces.condition.insp.string(settings={ key: key, type: 'contains', string: string }),
+          equals(string, key=null):
+            $.interfaces.condition.insp.string(settings={ key: key, type: 'equals', string: string }),
+          starts_with(string, key=null):
+            $.interfaces.condition.insp.string(settings={ key: key, type: 'starts_with', string: string }),
+          ends_with(string, key=null):
+            $.interfaces.condition.insp.string(settings={ key: key, type: 'ends_with', string: string }),
         },
       },
     },

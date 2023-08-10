@@ -171,7 +171,7 @@
     <script>
         // load the Substation configuration library
         var request = new XMLHttpRequest();
-        request.open("GET", 'https://raw.githubusercontent.com/brexhq/substation/main/build/config/substation.libsonnet', true);
+        request.open("GET", 'https://raw.githubusercontent.com/brexhq/substation/release/v1/build/config/substation.libsonnet', true);
         request.onload = (e) => {
             if (request.readyState === 4) {
                 if (request.status === 200) {
@@ -211,27 +211,27 @@
 	
 	// Substation ships with a configuration library built on top of Jsonnet.
 	// This is the preferred way to write configurations as code. 
-	sub.interfaces.transform.proc_copy(
+	sub.interfaces.transform.proc.copy(
 		settings={key: 'a', set_key: 'c'}
 	),
 	
 	// Up until this point, all of the transforms in this configuration transformed data
 	// exactly the same way (copied the value from \`a\` to \`c\`). Now \`c\` is deleted so that 
 	// it can be conditionally applied in the next transform.
-	sub.interfaces.transform.proc_delete(
+	sub.interfaces.transform.proc.delete(
 		settings={key: 'c'}
 	),
 	
-	// Transforms are conditionally applied to data using the "meta_switch" transform, which
+	// Transforms are conditionally applied to data using the "meta.switch" transform, which
     // combines conditions and transforms. This transform copies the value from \`a\`
 	// to \`c\` if the value of \`a\` is greater than zero.
     sub.patterns.transform.conditional(
-        condition=sub.interfaces.condition.oper_any(
-            sub.interfaces.condition.insp_length(
+        condition=sub.interfaces.condition.oper.any(
+            sub.interfaces.condition.insp.length(
                 settings={ key: 'a', type:'greater_than', length: 0 },
             ),
         ),
-        transform=sub.interfaces.transform.proc_copy(
+        transform=sub.interfaces.transform.proc.copy(
 	    	settings={key: 'a', set_key: 'c'}
         ),
     ),
@@ -239,15 +239,15 @@
 	// Multiple conditions can be used to apply a transform. This transform
 	// copies the value of \`x\` to \`z\` if the value is greater than zero and starts with "y".
     sub.patterns.transform.conditional(
-        condition=sub.interfaces.condition.oper_all(
-            sub.interfaces.condition.insp_length(
+        condition=sub.interfaces.condition.oper.all([
+            sub.interfaces.condition.insp.length(
                 settings={ key: 'x', type:'greater_than', length: 0 },
             ),
-            sub.interfaces.condition.insp_strings(
+            sub.interfaces.condition.insp.string(
                 settings={ key: 'x', type:'starts_with', string: 'y' },
             ),
-        ),
-        transform=sub.interfaces.transform.proc_copy(
+        ]),
+        transform=sub.interfaces.transform.proc.copy(
 	    	settings={key: 'x', set_key: 'zc'}
         ),
     ),
@@ -255,9 +255,9 @@
 	// Jsonnet brings many advantages to managing complex JSON configurations. This
 	// transform atomically applies two delete transforms to the data, removing the
 	// keys \`c\` and \`z\`.
-	sub.interfaces.transform.meta_pipeline(
+	sub.interfaces.transform.meta.pipeline(
 		settings={ transforms: [
-			sub.interfaces.transform.proc_delete(
+			sub.interfaces.transform.proc.delete(
 				settings={key: k}
 			)
 			for k in ['c','z']
@@ -267,41 +267,41 @@
 	// At this point the transformed data is the same as the input data. Now we'll get
 	// rid of the second object (\`{"x":"y"}\`) by conditionally dropping it.
     sub.patterns.transform.conditional(
-        condition=sub.interfaces.condition.oper_any(
-            sub.interfaces.condition.insp_length(
+        condition=sub.interfaces.condition.oper.any(
+            sub.interfaces.condition.insp.length(
                 settings={ key: 'x', type:'greater_than', length: 0 },
             ),
         ),
-        transform=sub.interfaces.transform.proc_drop(),
+        transform=sub.interfaces.transform.proc.drop(),
     ),
 	
 	// That's all for the tutorial. Here are some randomly applied transforms to show
 	// some of Substation's data transformation features.
-    sub.interfaces.transform.proc_insert(
+    sub.interfaces.transform.proc.insert(
         settings={ set_key: 'c', value: 'd' }
     ),
-    sub.interfaces.transform.proc_join(
+    sub.interfaces.transform.proc.join(
         settings={ key: '[a,c]', set_key: 'e.f.g', separator: '.'},
     ),
-    sub.interfaces.transform.proc_insert(
+    sub.interfaces.transform.proc.insert(
         settings={ set_key: 'x', value: [1,5,7] },
     ),
-    sub.interfaces.transform.proc_math(
+    sub.interfaces.transform.proc.math(
         settings={ key: 'x', set_key: 'x', operation: 'add' },
     ),
-    sub.interfaces.transform.proc_time(
+    sub.interfaces.transform.proc.time(
         settings={ set_key: 'y', format: 'now' },
     ),
-    sub.interfaces.transform.proc_capture(
+    sub.interfaces.transform.proc.capture(
         settings={ key: 'y', set_key: 'z', type: 'named_group', expression: '(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})' },
     ),
-    sub.interfaces.transform.meta_pipeline(
+    sub.interfaces.transform.meta.pipeline(
         settings={ transforms: [
-            sub.interfaces.transform.proc_convert(settings={ key: k, set_key: k, type: 'int' }),
+            sub.interfaces.transform.proc.convert(settings={ key: k, set_key: k, type: 'int' }),
             for k in ['z.year', 'z.month', 'z.day']
         ] },
     ),
-    sub.interfaces.transform.proc_pretty_print(
+    sub.interfaces.transform.proc.pretty_print(
         settings={ direction: 'to' },
     ),
 ]`;

@@ -9,7 +9,7 @@ This app runs Substation in the browser. Some features of Substation are not sup
 ```sh
 GOOS=js GOARCH=wasm go build -ldflags="-s -w" -o build/playground/playground.wasm cmd/playground/wasm/main.go && \
 cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" build/playground && \
-cp substation_logo.png build/playground && \
+cp .github/media/substation_logo.png build/playground && \
 gzip -9 -v -c build/playground/playground.wasm > build/playground/playground.wasm.gz && \
 rm build/playground/playground.wasm
 ```

@@ -37,9 +37,16 @@ func main() {
 				return js.ValueOf(fmt.Sprintf("unmarshal: %s", err.Error()))
 			}
 
-			tforms, err := transform.NewTransformers(context.Background(), conf...)
-			if err != nil {
-				return js.ValueOf(fmt.Sprintf("substation: %s", err.Error()))
+			ctx := context.Background()
+
+			tforms := []transform.Transformer{}
+			for _, c := range conf {
+				tform, err := transform.New(ctx, c)
+				if err != nil {
+					return js.ValueOf(err.Error())
+				}
+
+				tforms = append(tforms, tform)
 			}
 
 			// each line of data is treated as a separate input into the processors

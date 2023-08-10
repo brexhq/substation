@@ -228,7 +228,7 @@
     sub.patterns.transform.conditional(
         condition=sub.interfaces.condition.oper_any(
             sub.interfaces.condition.insp_length(
-                settings={ key: 'a', type:'greater_than', value: 0 },
+                settings={ key: 'a', type:'greater_than', length: 0 },
             ),
         ),
         transform=sub.interfaces.transform.proc_copy(
@@ -241,10 +241,10 @@
     sub.patterns.transform.conditional(
         condition=sub.interfaces.condition.oper_all(
             sub.interfaces.condition.insp_length(
-                settings={ key: 'x', type:'greater_than', value: 0 },
+                settings={ key: 'x', type:'greater_than', length: 0 },
             ),
             sub.interfaces.condition.insp_strings(
-                settings={ key: 'x', type:'starts_with', expression: 'y' },
+                settings={ key: 'x', type:'starts_with', string: 'y' },
             ),
         ),
         transform=sub.interfaces.transform.proc_copy(
@@ -269,7 +269,7 @@
     sub.patterns.transform.conditional(
         condition=sub.interfaces.condition.oper_any(
             sub.interfaces.condition.insp_length(
-                settings={ key: 'x', type:'greater_than', value: 0 },
+                settings={ key: 'x', type:'greater_than', length: 0 },
             ),
         ),
         transform=sub.interfaces.transform.proc_drop(),

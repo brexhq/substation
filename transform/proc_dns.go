@@ -17,6 +17,7 @@ import (
 )
 
 type procDNSConfig struct {
+	Request _config.ConfigRequest `json:"request"`
 	// Key retrieves a value from an object for processing.
 	//
 	// This is optional for transforms that support processing non-object data.
@@ -25,10 +26,10 @@ type procDNSConfig struct {
 	//
 	// This is optional for transforms that support processing non-object data.
 	SetKey string `json:"set_key"`
-	// IgnoreErrors indicates if errors returned by the AWS Lambda function should be ignored.
+	// ErrorOnFailure determines whether an error is returned during processing.
 	//
 	// This is optional and defaults to false.
-	IgnoreErrors bool `json:"ignore_errors"`
+	ErrorOnFailure bool `json:"error_on_failure"`
 	// Type is the query type made to DNS.
 	//
 	// Must be one of:
@@ -39,11 +40,6 @@ type procDNSConfig struct {
 	//
 	// - query_txt: retrieve TXT records for a domain
 	Type string `json:"type"`
-	// Timeout is the amount of time to wait (in milliseconds) for
-	// a response.
-	//
-	// This is optional and defaults to 1000 milliseconds (1 second).
-	Timeout int `json:"timeout"`
 }
 
 type procDNS struct {
@@ -80,15 +76,20 @@ func newProcDNS(ctx context.Context, cfg config.Config) (*procDNS, error) {
 		return nil, fmt.Errorf("transform: proc_dns: type %q: %v", conf.Type, errors.ErrInvalidOption)
 	}
 
-	if conf.Timeout == 0 {
-		conf.Timeout = 1000
+	if conf.Request.Timeout == "" {
+		conf.Request.Timeout = "1s"
+	}
+
+	dur, err := time.ParseDuration(conf.Request.Timeout)
+	if err != nil {
+		return nil, fmt.Errorf("transform: proc_dns: %v", err)
 	}
 
 	proc := procDNS{
 		conf:     conf,
 		isObject: conf.Key != "" && conf.SetKey != "",
 		resolver: net.Resolver{},
-		timeout:  time.Duration(conf.Timeout) * time.Millisecond,
+		timeout:  dur,
 	}
 
 	return &proc, nil
@@ -119,7 +120,7 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 			switch t.conf.Type {
 			case "forward_lookup":
 				addrs, err := t.resolver.LookupHost(resolverCtx, result)
-				if err != nil && !t.conf.IgnoreErrors {
+				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
 				}
 
@@ -130,7 +131,7 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 				output = append(output, message)
 			case "reverse_lookup":
 				names, err := t.resolver.LookupAddr(resolverCtx, result)
-				if err != nil && !t.conf.IgnoreErrors {
+				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
 				}
 
@@ -141,7 +142,7 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 				output = append(output, message)
 			case "query_txt":
 				records, err := t.resolver.LookupTXT(resolverCtx, result)
-				if err != nil && !t.conf.IgnoreErrors {
+				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
 				}
 
@@ -158,7 +159,7 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 			switch t.conf.Type {
 			case "forward_lookup":
 				addrs, err := t.resolver.LookupHost(resolverCtx, result)
-				if err != nil && !t.conf.IgnoreErrors {
+				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
 				}
 
@@ -173,7 +174,7 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 				output = append(output, msg)
 			case "reverse_lookup":
 				names, err := t.resolver.LookupAddr(resolverCtx, result)
-				if err != nil && !t.conf.IgnoreErrors {
+				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
 				}
 
@@ -188,7 +189,7 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 				output = append(output, msg)
 			case "query_txt":
 				records, err := t.resolver.LookupTXT(resolverCtx, result)
-				if err != nil && !t.conf.IgnoreErrors {
+				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
 				}
 

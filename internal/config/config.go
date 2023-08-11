@@ -10,8 +10,11 @@ type ConfigAWSAuth struct {
 
 // ConfigRequest is used by functions that make requests over a network.
 type ConfigRequest struct {
-	Timeout    int `json:"timeout"`
 	MaxRetries int `json:"max_retries"`
+	// Timeout is the maximum amount of time a request can take. This is
+	// parsed into a duration using the standard library's time.ParseDuration()
+	// function so it supports any valid duration string.
+	Timeout string `json:"timeout"`
 }
 
 // Decode marshals and unmarshals an input interface into the output interface

@@ -159,14 +159,14 @@ func TestProcConvert(t *testing.T) {
 	}
 }
 
-func benchmarkProcConvert(b *testing.B, tform *procConvert, data []byte) {
+func benchmarkProcConvert(b *testing.B, tf *procConvert, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

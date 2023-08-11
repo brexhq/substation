@@ -83,14 +83,14 @@ func TestProcSplit(t *testing.T) {
 	}
 }
 
-func benchmarkProcSplit(b *testing.B, tform *procSplit, data []byte) {
+func benchmarkProcSplit(b *testing.B, tf *procSplit, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

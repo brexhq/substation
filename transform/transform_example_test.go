@@ -21,7 +21,7 @@ func ExampleTransformer() {
 		},
 	}
 
-	tform, err := transform.New(ctx, cfg)
+	tf, err := transform.New(ctx, cfg)
 	if err != nil {
 		// handle err
 		panic(err)
@@ -36,7 +36,7 @@ func ExampleTransformer() {
 		panic(err)
 	}
 
-	results, err := tform.Transform(ctx, message)
+	results, err := tf.Transform(ctx, message)
 	if err != nil {
 		// handle err
 		panic(err)

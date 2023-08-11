@@ -111,7 +111,7 @@ func TestProcPrettyPrint(t *testing.T) {
 	}
 }
 
-func benchmarkProcPrettyPrint(b *testing.B, tform *procPrettyPrint, data [][]byte) {
+func benchmarkProcPrettyPrint(b *testing.B, tf *procPrettyPrint, data [][]byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		var messages []*mess.Message
@@ -122,7 +122,7 @@ func benchmarkProcPrettyPrint(b *testing.B, tform *procPrettyPrint, data [][]byt
 			messages = append(messages, message)
 		}
 
-		_, _ = tform.Transform(ctx, messages...)
+		_, _ = tf.Transform(ctx, messages...)
 	}
 }
 

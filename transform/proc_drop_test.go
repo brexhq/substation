@@ -60,14 +60,14 @@ func TestProcDrop(t *testing.T) {
 	}
 }
 
-func benchmarkProcDrop(b *testing.B, tform *procDrop, data []byte) {
+func benchmarkProcDrop(b *testing.B, tf *procDrop, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

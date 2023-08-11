@@ -21,7 +21,7 @@ type metaPluginConfig struct {
 type metaPlugin struct {
 	conf metaPluginConfig
 
-	transformer Transformer
+	tf Transformer
 }
 
 func newMetaPlugin(_ context.Context, cfg config.Config) (*metaPlugin, error) {
@@ -40,18 +40,18 @@ func newMetaPlugin(_ context.Context, cfg config.Config) (*metaPlugin, error) {
 		return nil, fmt.Errorf("transform: meta_plugin: %v", err)
 	}
 
-	tform, ok := sym.(Transformer)
+	tf, ok := sym.(Transformer)
 	if !ok {
 		return nil, fmt.Errorf("transform: meta_plugin: %v", errMetaPluginInterfaceNotImplemented)
 	}
 
-	if err := _config.Decode(conf.Settings, tform); err != nil {
+	if err := _config.Decode(conf.Settings, tf); err != nil {
 		return nil, err
 	}
 
 	meta := metaPlugin{
-		conf:        conf,
-		transformer: tform,
+		conf: conf,
+		tf:   tf,
 	}
 
 	return &meta, nil
@@ -63,11 +63,11 @@ func (t *metaPlugin) String() string {
 }
 
 func (t *metaPlugin) Close(ctx context.Context) error {
-	return t.transformer.Close(ctx)
+	return t.tf.Close(ctx)
 }
 
 func (t *metaPlugin) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	msgs, err := t.transformer.Transform(ctx, messages...)
+	msgs, err := t.tf.Transform(ctx, messages...)
 	if err != nil {
 		return nil, fmt.Errorf("transform: meta_plugin: %v", err)
 	}

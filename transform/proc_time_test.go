@@ -248,14 +248,14 @@ func TestProcTime(t *testing.T) {
 	}
 }
 
-func benchmarkProcTime(b *testing.B, tform *procTime, data []byte) {
+func benchmarkProcTime(b *testing.B, tf *procTime, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

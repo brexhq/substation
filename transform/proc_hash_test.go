@@ -124,14 +124,14 @@ func TestProcHash(t *testing.T) {
 	}
 }
 
-func benchmarkProcHash(b *testing.B, tform *procHash, data []byte) {
+func benchmarkProcHash(b *testing.B, tf *procHash, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

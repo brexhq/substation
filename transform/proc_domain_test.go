@@ -128,14 +128,14 @@ func TestProcDomain(t *testing.T) {
 	}
 }
 
-func benchmarkProcDomain(b *testing.B, tform *procDomain, data []byte) {
+func benchmarkProcDomain(b *testing.B, tf *procDomain, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

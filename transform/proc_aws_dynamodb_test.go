@@ -96,14 +96,14 @@ func TestProcAWSDynamoDB(t *testing.T) {
 	}
 }
 
-func benchmarkProcAWSDynamoDB(b *testing.B, tform *procAWSDynamoDB, data []byte) {
+func benchmarkProcAWSDynamoDB(b *testing.B, tf *procAWSDynamoDB, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

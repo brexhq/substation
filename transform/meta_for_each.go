@@ -28,8 +28,8 @@ type metaForEachConfig struct {
 type metaForEach struct {
 	conf metaForEachConfig
 
-	transform    Transformer
-	transformCfg config.Config
+	tf    Transformer
+	tfCfg config.Config
 }
 
 func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error) {
@@ -47,7 +47,7 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 		return nil, fmt.Errorf("transform: meta_for_each: type: %v", errors.ErrMissingRequiredOption)
 	}
 
-	tformConf, err := gojson.Marshal(conf.Transform)
+	tfConf, err := gojson.Marshal(conf.Transform)
 	if err != nil {
 		return nil, err
 	}
@@ -56,27 +56,27 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 	if innerKey, ok := conf.Transform.Settings["key"].(string); ok && innerKey != "" {
 		inputKey = conf.Transform.Type + "." + innerKey
 	}
-	tformConf, _ = json.Set(tformConf, "settings.key", inputKey)
+	tfConf, _ = json.Set(tfConf, "settings.key", inputKey)
 
 	outputKey := conf.Transform.Type
 	if innerKey, ok := conf.Transform.Settings["set_key"].(string); ok && innerKey != "" {
 		outputKey = conf.Transform.Type + "." + innerKey
 	}
-	tformConf, _ = json.Set(tformConf, "settings.set_key", outputKey)
+	tfConf, _ = json.Set(tfConf, "settings.set_key", outputKey)
 
 	meta := metaForEach{
 		conf: conf,
 	}
 
-	if err := gojson.Unmarshal(tformConf, &meta.transformCfg); err != nil {
+	if err := gojson.Unmarshal(tfConf, &meta.tfCfg); err != nil {
 		return nil, err
 	}
 
-	t, err := New(ctx, meta.transformCfg)
+	tf, err := New(ctx, meta.tfCfg)
 	if err != nil {
 		return nil, fmt.Errorf("process: for_each: %v", err)
 	}
-	meta.transform = t
+	meta.tf = tf
 
 	return &meta, nil
 }
@@ -112,17 +112,17 @@ func (t *metaForEach) Transform(ctx context.Context, messages ...*mess.Message) 
 				return nil, fmt.Errorf("transform: meta_for_each: %v", err)
 			}
 
-			if err := msg.Set(t.transformCfg.Type, res); err != nil {
+			if err := msg.Set(t.tfCfg.Type, res); err != nil {
 				return nil, fmt.Errorf("transform: meta_for_each: %v", err)
 			}
 
-			msgs, err := t.transform.Transform(ctx, msg)
+			msgs, err := t.tf.Transform(ctx, msg)
 			if err != nil {
 				return nil, fmt.Errorf("transform: meta_for_each: %v", err)
 			}
 
 			for _, m := range msgs {
-				v := m.Get(t.transformCfg.Type)
+				v := m.Get(t.tfCfg.Type)
 				if err := message.Set(t.conf.SetKey, v); err != nil {
 					return nil, fmt.Errorf("transform: meta_for_each: %v", err)
 				}

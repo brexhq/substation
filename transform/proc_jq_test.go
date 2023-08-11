@@ -138,14 +138,14 @@ func TestProcJQ(t *testing.T) {
 	}
 }
 
-func benchmarkProcJQ(b *testing.B, tform *procJQ, data []byte) {
+func benchmarkProcJQ(b *testing.B, tf *procJQ, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

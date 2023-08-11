@@ -161,7 +161,7 @@ func TestProcCombineData(t *testing.T) {
 	}
 }
 
-func benchmarkProcCodenseData(b *testing.B, tform *procCombine, data []string) {
+func benchmarkProcCodenseData(b *testing.B, tf *procCombine, data []string) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		var messages []*mess.Message
@@ -172,7 +172,7 @@ func benchmarkProcCodenseData(b *testing.B, tform *procCombine, data []string) {
 			messages = append(messages, msg)
 		}
 
-		_, _ = tform.Transform(ctx, messages...)
+		_, _ = tf.Transform(ctx, messages...)
 	}
 }
 

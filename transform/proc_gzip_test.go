@@ -79,14 +79,14 @@ func TestProcGzip(t *testing.T) {
 	}
 }
 
-func benchmarkProcGzip(b *testing.B, tform *procGzip, data []byte) {
+func benchmarkProcGzip(b *testing.B, tf *procGzip, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

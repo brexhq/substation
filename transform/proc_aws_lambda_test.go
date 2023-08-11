@@ -89,14 +89,14 @@ func TestProcAWSLambda(t *testing.T) {
 	}
 }
 
-func benchmarkProcAWSLambda(b *testing.B, tform *procAWSLambda, data []byte) {
+func benchmarkProcAWSLambda(b *testing.B, tf *procAWSLambda, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

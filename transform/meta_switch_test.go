@@ -185,12 +185,12 @@ func TestMetaSwitch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			tform, err := newMetaSwitch(ctx, test.cfg)
+			tf, err := newMetaSwitch(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			result, err := tform.Transform(ctx, message)
+			result, err := tf.Transform(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}
@@ -207,14 +207,14 @@ func TestMetaSwitch(t *testing.T) {
 	}
 }
 
-func benchmarkMetaSwitch(b *testing.B, tform *metaSwitch, data []byte) {
+func benchmarkMetaSwitch(b *testing.B, tf *metaSwitch, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, msg)
+		_, _ = tf.Transform(ctx, msg)
 	}
 }
 

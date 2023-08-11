@@ -98,7 +98,7 @@ func TestCase(t *testing.T) {
 	}
 }
 
-func benchmarkProcCase(b *testing.B, tform *procCase, data []byte) {
+func benchmarkProcCase(b *testing.B, tf *procCase, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, err := mess.New(
@@ -108,7 +108,7 @@ func benchmarkProcCase(b *testing.B, tform *procCase, data []byte) {
 			b.Fatal(err)
 		}
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

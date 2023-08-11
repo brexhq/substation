@@ -140,7 +140,7 @@ func TestProcInsert(t *testing.T) {
 	}
 }
 
-func benchmarkProcInsert(b *testing.B, tform *procInsert, data []byte) {
+func benchmarkProcInsert(b *testing.B, tf *procInsert, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, err := mess.New(
@@ -150,7 +150,7 @@ func benchmarkProcInsert(b *testing.B, tform *procInsert, data []byte) {
 			b.Fatal(err)
 		}
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

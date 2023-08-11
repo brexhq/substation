@@ -82,14 +82,14 @@ func TestProcFlatten(t *testing.T) {
 	}
 }
 
-func benchmarkProcFlatten(b *testing.B, tform *procFlattenArray, data []byte) {
+func benchmarkProcFlatten(b *testing.B, tf *procFlattenArray, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

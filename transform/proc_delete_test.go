@@ -79,14 +79,14 @@ func TestProcDelete(t *testing.T) {
 	}
 }
 
-func benchmarkProcDelete(b *testing.B, tform *procDelete, data []byte) {
+func benchmarkProcDelete(b *testing.B, tf *procDelete, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

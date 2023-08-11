@@ -109,14 +109,14 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	}
 }
 
-func Apply(ctx context.Context, tforms []Transformer, messages ...*mess.Message) ([]*mess.Message, error) {
-	resultMsgs := make([]*mess.Message, len(messages))
-	copy(resultMsgs, messages)
+func Apply(ctx context.Context, tf []Transformer, msg ...*mess.Message) ([]*mess.Message, error) {
+	resultMsgs := make([]*mess.Message, len(msg))
+	copy(resultMsgs, msg)
 
-	for i := 0; len(resultMsgs) > 0 && i < len(tforms); i++ {
+	for i := 0; len(resultMsgs) > 0 && i < len(tf); i++ {
 		var nextResultMsgs []*mess.Message
 		for _, m := range resultMsgs {
-			rMsgs, err := tforms[i].Transform(ctx, m)
+			rMsgs, err := tf[i].Transform(ctx, m)
 			if err != nil {
 				// We immediately return if a transform hits an unrecoverable
 				// error on a message.

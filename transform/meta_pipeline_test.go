@@ -107,14 +107,14 @@ func TestMetaPipeline(t *testing.T) {
 	}
 }
 
-func benchmarkMetaPipeline(b *testing.B, tform *metaPipeline, data []byte) {
+func benchmarkMetaPipeline(b *testing.B, tf *metaPipeline, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

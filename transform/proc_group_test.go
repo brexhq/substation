@@ -82,14 +82,14 @@ func TestProcGroup(t *testing.T) {
 	}
 }
 
-func benchmarkProcGroup(b *testing.B, tform *procGroup, data []byte) {
+func benchmarkProcGroup(b *testing.B, tf *procGroup, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

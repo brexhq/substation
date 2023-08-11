@@ -68,14 +68,14 @@ func TestProcJoin(t *testing.T) {
 	}
 }
 
-func benchmarkProcJoin(b *testing.B, tform *procJoin, data []byte) {
+func benchmarkProcJoin(b *testing.B, tf *procJoin, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

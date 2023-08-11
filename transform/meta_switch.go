@@ -22,9 +22,9 @@ type metaSwitchConfig struct {
 type metaSwitch struct {
 	conf metaSwitchConfig
 
-	logic []struct {
-		op    condition.Operator
-		tform Transformer
+	conditional []struct {
+		op condition.Operator
+		tf Transformer
 	}
 }
 
@@ -39,9 +39,9 @@ func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) 
 		return nil, fmt.Errorf("transform: meta_switch: switch: %v", errors.ErrMissingRequiredOption)
 	}
 
-	var logic []struct {
-		op    condition.Operator
-		tform Transformer
+	var conditional []struct {
+		op condition.Operator
+		tf Transformer
 	}
 	for _, s := range conf.Switch {
 		op, err := condition.New(ctx, s.Condition)
@@ -49,23 +49,23 @@ func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) 
 			return nil, fmt.Errorf("transform: meta_switch: %v", err)
 		}
 
-		tform, err := New(ctx, s.Transform)
+		tf, err := New(ctx, s.Transform)
 		if err != nil {
 			return nil, fmt.Errorf("transform: meta_switch: %v", err)
 		}
 
-		logic = append(logic, struct {
-			op    condition.Operator
-			tform Transformer
+		conditional = append(conditional, struct {
+			op condition.Operator
+			tf Transformer
 		}{
-			op:    op,
-			tform: tform,
+			op: op,
+			tf: tf,
 		})
 	}
 
 	meta := metaSwitch{
-		conf:  conf,
-		logic: logic,
+		conf:        conf,
+		conditional: conditional,
 	}
 
 	return &meta, nil
@@ -91,8 +91,8 @@ func (t *metaSwitch) Transform(ctx context.Context, messages ...*mess.Message) (
 		}
 
 		matched := false
-		for _, l := range t.logic {
-			ok, err := l.op.Operate(ctx, message)
+		for _, c := range t.conditional {
+			ok, err := c.op.Operate(ctx, message)
 			if err != nil {
 				return nil, fmt.Errorf("transform: meta_switch: %v", err)
 			}
@@ -102,7 +102,7 @@ func (t *metaSwitch) Transform(ctx context.Context, messages ...*mess.Message) (
 			}
 
 			matched = true
-			messages, err := l.tform.Transform(ctx, message)
+			messages, err := c.tf.Transform(ctx, message)
 			if err != nil {
 				return nil, fmt.Errorf("transform: meta_switch: %v", err)
 			}

@@ -34,7 +34,7 @@ type metaPipeline struct {
 	conf     metaPipelineConfig
 	isObject bool
 
-	transforms []Transformer
+	tf []Transformer
 }
 
 func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, error) {
@@ -57,16 +57,16 @@ func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, err
 		isObject: conf.Key != "" && conf.SetKey != "",
 	}
 
-	var tforms []Transformer
+	var tf []Transformer
 	for _, c := range conf.Transforms {
 		t, err := New(ctx, c)
 		if err != nil {
 			return nil, fmt.Errorf("transform: meta_pipeline: transform %+v: %v", c, err)
 		}
 
-		tforms = append(tforms, t)
+		tf = append(tf, t)
 	}
-	meta.transforms = tforms
+	meta.tf = tf
 
 	return &meta, nil
 }
@@ -104,7 +104,7 @@ func (t *metaPipeline) Transform(ctx context.Context, messages ...*mess.Message)
 				return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 			}
 
-			nMessage, err := Apply(ctx, t.transforms, newMessage)
+			nMessage, err := Apply(ctx, t.tf, newMessage)
 			if err != nil {
 				return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 			}
@@ -128,7 +128,7 @@ func (t *metaPipeline) Transform(ctx context.Context, messages ...*mess.Message)
 
 			output = append(output, tmpMessages...)
 		case false:
-			msg, err := Apply(ctx, t.transforms, message)
+			msg, err := Apply(ctx, t.tf, message)
 			if err != nil {
 				return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 			}

@@ -94,14 +94,14 @@ func TestProcBase64(t *testing.T) {
 	}
 }
 
-func benchmarkProcBase64(b *testing.B, tform *procBase64, data []byte) {
+func benchmarkProcBase64(b *testing.B, tf *procBase64, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

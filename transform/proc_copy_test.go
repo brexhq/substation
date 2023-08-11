@@ -147,7 +147,7 @@ func TestProcCopy(t *testing.T) {
 	}
 }
 
-func benchmarkProcCopy(b *testing.B, tform *procCopy, data []byte) {
+func benchmarkProcCopy(b *testing.B, tf *procCopy, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, err := mess.New(
@@ -157,7 +157,7 @@ func benchmarkProcCopy(b *testing.B, tform *procCopy, data []byte) {
 			b.Fatal(err)
 		}
 
-		_, _ = tform.Transform(ctx, message)
+		_, _ = tf.Transform(ctx, message)
 	}
 }
 

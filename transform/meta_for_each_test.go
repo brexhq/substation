@@ -355,14 +355,14 @@ func TestForEach(t *testing.T) {
 	}
 }
 
-func benchmarkMetaForEach(b *testing.B, tform *metaForEach, data []byte) {
+func benchmarkMetaForEach(b *testing.B, tf *metaForEach, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg, _ := mess.New(
 			mess.SetData(data),
 		)
 
-		_, _ = tform.Transform(ctx, msg)
+		_, _ = tf.Transform(ctx, msg)
 	}
 }
 

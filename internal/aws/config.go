@@ -29,7 +29,7 @@ func New(cfg Config) (*aws.Config, *session.Session) {
 
 	if cfg.MaxRetries != 0 {
 		conf = conf.WithMaxRetries(cfg.MaxRetries)
-	} else if v, ok := os.LookupEnv("AWS_MAX_RETRIES"); ok {
+	} else if v, ok := os.LookupEnv("AWS_MAX_ATTEMPTS"); ok {
 		max, err := strconv.Atoi(v)
 		if err != nil {
 			panic(err)

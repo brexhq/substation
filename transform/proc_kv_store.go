@@ -60,7 +60,7 @@ type procKVStoreConfig struct {
 	TTLOffset int64 `json:"ttl_offset"`
 	// KVOptions determine the type of KV store used by the transform. Refer to internal/kv
 	// for more information.
-	KVOptions config.Config `json:"kv_options"`
+	KVStore config.Config `json:"kv_store"`
 }
 
 type procKVStore struct {
@@ -92,7 +92,7 @@ func newProcKVStore(ctx context.Context, cfg config.Config) (*procKVStore, error
 		return nil, fmt.Errorf("new_proc_kv_store: type %q: %v", conf.Type, errors.ErrInvalidOption)
 	}
 
-	kvStore, err := kv.Get(conf.KVOptions)
+	kvStore, err := kv.Get(conf.KVStore)
 	if err != nil {
 		return nil, fmt.Errorf("new_proc_kv_store: %v", err)
 	}

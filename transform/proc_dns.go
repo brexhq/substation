@@ -99,7 +99,7 @@ func (*procDNS) Close(context.Context) error {
 	return nil
 }
 
-//nolint: gocognit // Ignore cognitive complexity.
+//nolint: gocognit, gocyclo, cyclop // Ignore cognitive complexity.
 func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
 	var output []*mess.Message
 
@@ -120,8 +120,14 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 			switch t.conf.Type {
 			case "forward_lookup":
 				addrs, err := t.resolver.LookupHost(resolverCtx, result)
+
+				// If ErrorOnFailure is configured, then errors are returned,
+				// but otherwise the message is returned as-is.
 				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
+				} else if err != nil {
+					output = append(output, message)
+					continue
 				}
 
 				if err := message.Set(t.conf.SetKey, addrs); err != nil {
@@ -131,8 +137,14 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 				output = append(output, message)
 			case "reverse_lookup":
 				names, err := t.resolver.LookupAddr(resolverCtx, result)
+
+				// If ErrorOnFailure is configured, then errors are returned,
+				// but otherwise the message is returned as-is.
 				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
+				} else if err != nil {
+					output = append(output, message)
+					continue
 				}
 
 				if err := message.Set(t.conf.SetKey, names); err != nil {
@@ -142,8 +154,14 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 				output = append(output, message)
 			case "query_txt":
 				records, err := t.resolver.LookupTXT(resolverCtx, result)
+
+				// If ErrorOnFailure is configured, then errors are returned,
+				// but otherwise the message is returned as-is.
 				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
+				} else if err != nil {
+					output = append(output, message)
+					continue
 				}
 
 				if err := message.Set(t.conf.SetKey, records); err != nil {
@@ -159,8 +177,14 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 			switch t.conf.Type {
 			case "forward_lookup":
 				addrs, err := t.resolver.LookupHost(resolverCtx, result)
+
+				// If ErrorOnFailure is configured, then errors are returned,
+				// but otherwise the message is returned as-is.
 				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
+				} else if err != nil {
+					output = append(output, message)
+					continue
 				}
 
 				// Return the first address.
@@ -174,8 +198,14 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 				output = append(output, msg)
 			case "reverse_lookup":
 				names, err := t.resolver.LookupAddr(resolverCtx, result)
+
+				// If ErrorOnFailure is configured, then errors are returned,
+				// but otherwise the message is returned as-is.
 				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
+				} else if err != nil {
+					output = append(output, message)
+					continue
 				}
 
 				// Return the first name.
@@ -189,8 +219,14 @@ func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*
 				output = append(output, msg)
 			case "query_txt":
 				records, err := t.resolver.LookupTXT(resolverCtx, result)
+
+				// If ErrorOnFailure is configured, then errors are returned,
+				// but otherwise the message is returned as-is.
 				if err != nil && t.conf.ErrorOnFailure {
 					return nil, fmt.Errorf("transform: proc_dns: %v", err)
+				} else if err != nil {
+					output = append(output, message)
+					continue
 				}
 
 				// Return the first record.

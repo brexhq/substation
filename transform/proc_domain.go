@@ -108,8 +108,14 @@ func (t *procDomain) Transform(ctx context.Context, messages ...*mess.Message) (
 		case true:
 			result := message.Get(t.conf.Key).String()
 			value, err := t.process(result)
+
+			// If ErrorOnFailure is configured, then errors are returned,
+			// but otherwise the message is returned as-is.
 			if err != nil && t.conf.ErrorOnFailure {
 				return nil, fmt.Errorf("transform: proc_domain: %v", err)
+			} else if err != nil {
+				output = append(output, message)
+				continue
 			}
 
 			if err := message.Set(t.conf.SetKey, value); err != nil {
@@ -119,7 +125,17 @@ func (t *procDomain) Transform(ctx context.Context, messages ...*mess.Message) (
 			output = append(output, message)
 
 		case false:
-			value, _ := t.process(string(message.Data()))
+			value, err := t.process(string(message.Data()))
+
+			// If ErrorOnFailure is configured, then errors are returned,
+			// but otherwise the message is returned as-is.
+			if err != nil && t.conf.ErrorOnFailure {
+				return nil, fmt.Errorf("transform: proc_domain: %v", err)
+			} else if err != nil {
+				output = append(output, message)
+				continue
+			}
+
 			msg, err := mess.New(
 				mess.SetData([]byte(value)),
 			)
@@ -146,13 +162,13 @@ func (t *procDomain) process(s string) (string, error) {
 	case "registered_domain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("process: domain %s: %v", s, err)
+			return "", err
 		}
 		return domain, nil
 	case "subdomain":
 		domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 		if err != nil {
-			return "", fmt.Errorf("transform: proc_domain: %s: %v", s, err)
+			return "", err
 		}
 
 		// Subdomain is the input string minus the domain and a leading dot:
@@ -161,10 +177,10 @@ func (t *procDomain) process(s string) (string, error) {
 		// subdomain == "foo" ("foo.bar.com" minus ".bar.com")
 		subdomain := strings.Replace(s, "."+domain, "", 1)
 		if subdomain == domain {
-			return "", fmt.Errorf("process: domain %s: %v", s, errProcDomainNoSubdomain)
+			return "", errProcDomainNoSubdomain
 		}
 		return subdomain, nil
 	}
 
-	return "", fmt.Errorf("transform: proc_domain: %v", errors.ErrInvalidOption)
+	return "", errors.ErrInvalidOption
 }

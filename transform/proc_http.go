@@ -162,14 +162,18 @@ func (t *procHTTP) Transform(ctx context.Context, messages ...*mess.Message) ([]
 		// POST only supports the object handling pattern.
 		case gohttp.MethodPost:
 			body := message.Get(t.conf.BodyKey).String()
+
+			// resp.Body is closed by parseResponse.
 			resp, err := t.client.Post(ctx, url, body, t.headers...)
+
+			// If ErrorOnFailure is configured, then errors are returned,
+			// but otherwise the message is returned as-is.
 			if err != nil && t.conf.ErrorOnFailure {
+				return nil, fmt.Errorf("transform: proc_http: %v", err)
+			} else if err != nil {
 				output = append(output, message)
 				continue
-			} else if err != nil {
-				return nil, fmt.Errorf("transform: proc_http: %v", err)
 			}
-			defer resp.Body.Close()
 
 			res, err := parseResponse(resp)
 			if err != nil {
@@ -183,9 +187,6 @@ func (t *procHTTP) Transform(ctx context.Context, messages ...*mess.Message) ([]
 				if err := message.Set(t.conf.SetKey, res); err != nil {
 					return nil, fmt.Errorf("transform: proc_http: %v", err)
 				}
-
-				output = append(output, message)
-				continue
 			}
 
 			output = append(output, message)
@@ -194,14 +195,17 @@ func (t *procHTTP) Transform(ctx context.Context, messages ...*mess.Message) ([]
 		case gohttp.MethodGet:
 			fallthrough
 		default:
+			// resp.Body is closed by parseResponse.
 			resp, err := t.client.Get(ctx, url, t.headers...)
+
+			// If ErrorOnFailure is configured, then errors are returned,
+			// but otherwise the message is returned as-is.
 			if err != nil && t.conf.ErrorOnFailure {
+				return nil, fmt.Errorf("transform: proc_http: %v", err)
+			} else if err != nil {
 				output = append(output, message)
 				continue
-			} else if err != nil {
-				return nil, fmt.Errorf("transform: proc_http: %v", err)
 			}
-			defer resp.Body.Close()
 
 			res, err := parseResponse(resp)
 			if err != nil {
@@ -222,7 +226,7 @@ func (t *procHTTP) Transform(ctx context.Context, messages ...*mess.Message) ([]
 				mess.SetMetadata(message.Metadata()),
 			)
 			if err != nil {
-				return nil, fmt.Errorf("process: dns: %v", err)
+				return nil, fmt.Errorf("transform: proc_http: %v", err)
 			}
 
 			output = append(output, msg)
@@ -233,6 +237,8 @@ func (t *procHTTP) Transform(ctx context.Context, messages ...*mess.Message) ([]
 }
 
 func parseResponse(resp *gohttp.Response) ([]byte, error) {
+	defer resp.Body.Close()
+
 	buf, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("transform: proc_http: %v", err)

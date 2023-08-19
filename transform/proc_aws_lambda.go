@@ -103,12 +103,12 @@ func (t *procAWSLambda) Transform(ctx context.Context, messages ...*mess.Message
 			return nil, fmt.Errorf("transform: proc_aws_lambda: %v", err)
 		}
 
+		// If ErrorOnFailure is configured, then errors are returned,
+		// but otherwise the message is returned as-is.
 		if resp.FunctionError != nil && t.conf.ErrorOnFailure {
 			resErr := json.Get(resp.Payload, "errorMessage").String()
 			return nil, fmt.Errorf("transform: proc_aws_lambda: %v", resErr)
-		}
-
-		if resp.FunctionError != nil {
+		} else if resp.FunctionError != nil {
 			output = append(output, message)
 			continue
 		}

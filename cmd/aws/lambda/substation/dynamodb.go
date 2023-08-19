@@ -32,17 +32,17 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
 	if err != nil {
-		return fmt.Errorf("sqs handler: %v", err)
+		return fmt.Errorf("dynamodb handler: %v", err)
 	}
 
 	cfg := customConfig{}
 	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
-		return fmt.Errorf("sqs handler: %v", err)
+		return fmt.Errorf("dynamodb handler: %v", err)
 	}
 
 	sub, err := substation.New(ctx, cfg.Config)
 	if err != nil {
-		return fmt.Errorf("sqs handler: %v", err)
+		return fmt.Errorf("dynamodb handler: %v", err)
 	}
 
 	defer sub.Close(ctx)

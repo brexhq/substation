@@ -13,23 +13,23 @@ import (
 func lambdaHandler(ctx context.Context, event json.RawMessage) ([]json.RawMessage, error) {
 	evt, err := json.Marshal(event)
 	if err != nil {
-		return nil, fmt.Errorf("lambda: %v", err)
+		return nil, fmt.Errorf("lambda handler: %v", err)
 	}
 
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("lambda: %v", err)
+		return nil, fmt.Errorf("lambda handler: %v", err)
 	}
 
 	cfg := substation.Config{}
 	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
-		return nil, fmt.Errorf("lambda: %v", err)
+		return nil, fmt.Errorf("lambda handler: %v", err)
 	}
 
 	sub, err := substation.New(ctx, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("sqs handler: %v", err)
+		return nil, fmt.Errorf("lambda handler: %v", err)
 	}
 	defer sub.Close(ctx)
 
@@ -67,7 +67,7 @@ func lambdaHandler(ctx context.Context, event json.RawMessage) ([]json.RawMessag
 
 		var rm json.RawMessage
 		if err := json.Unmarshal(msg.Data(), &rm); err != nil {
-			return nil, fmt.Errorf("lambda sync: %v", err)
+			return nil, fmt.Errorf("lambda handler: %v", err)
 		}
 
 		output = append(output, rm)

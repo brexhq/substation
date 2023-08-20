@@ -64,7 +64,7 @@ func main() {
 			panic(err)
 		}
 	} else {
-		conf = []byte(`{"transform":[]}`)
+		conf = []byte(`{"transforms":[]}`)
 	}
 
 	cfg := substation.Config{}
@@ -154,6 +154,17 @@ func main() {
 			return err
 		}
 
+		// CTRL message is used to flush the transform functions. This must be done
+		// after all messages have been processed.
+		ctrl, err := mess.New(mess.AsControl())
+		if err != nil {
+			return err
+		}
+
+		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
+			return err
+		}
+
 		return nil
 	})
 
@@ -174,12 +185,6 @@ func main() {
 
 			ch.Send(message)
 		}
-
-		control, err := mess.New(mess.AsControl())
-		if err != nil {
-			return err
-		}
-		ch.Send(control)
 
 		return nil
 	})

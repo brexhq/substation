@@ -95,6 +95,17 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			return err
 		}
 
+		// CTRL message is used to flush the transform functions. This must be done
+		// after all messages have been processed.
+		ctrl, err := mess.New(mess.AsControl())
+		if err != nil {
+			return err
+		}
+
+		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
+			return err
+		}
+
 		return nil
 	})
 
@@ -168,12 +179,6 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				atomic.AddUint32(&msgRecv, 1)
 			}
 		}
-
-		ctrl, err := mess.New(mess.AsControl())
-		if err != nil {
-			return err
-		}
-		ch.Send(ctrl)
 
 		return nil
 	})
@@ -274,6 +279,17 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			return err
 		}
 
+		// CTRL message is used to flush the transform functions. This must be done
+		// after all messages have been processed.
+		ctrl, err := mess.New(mess.AsControl())
+		if err != nil {
+			return err
+		}
+
+		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
+			return err
+		}
+
 		return nil
 	})
 
@@ -351,12 +367,6 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 				}
 			}
 		}
-
-		ctrl, err := mess.New(mess.AsControl())
-		if err != nil {
-			return err
-		}
-		ch.Send(ctrl)
 
 		return nil
 	})

@@ -93,6 +93,17 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			return err
 		}
 
+		// CTRL message is used to flush the transform functions. This must be done
+		// after all messages have been processed.
+		ctrl, err := mess.New(mess.AsControl())
+		if err != nil {
+			return err
+		}
+
+		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
+			return err
+		}
+
 		return nil
 	})
 
@@ -236,12 +247,6 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			ch.Send(msg)
 			atomic.AddUint32(&msgRecv, 1)
 		}
-
-		ctrl, err := mess.New(mess.AsControl())
-		if err != nil {
-			return fmt.Errorf("dynamodb handler: %v", err)
-		}
-		ch.Send(ctrl)
 
 		return nil
 	})

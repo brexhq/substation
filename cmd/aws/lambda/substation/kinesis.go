@@ -89,6 +89,17 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 			return err
 		}
 
+		// CTRL message is used to flush the transform functions. This must be done
+		// after all messages have been processed.
+		ctrl, err := mess.New(mess.AsControl())
+		if err != nil {
+			return err
+		}
+
+		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
+			return err
+		}
+
 		return nil
 	})
 
@@ -135,12 +146,6 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 			ch.Send(message)
 			atomic.AddUint32(&msgRecv, 1)
 		}
-
-		ctrl, err := mess.New(mess.AsControl())
-		if err != nil {
-			return fmt.Errorf("kinesis handler: %v", err)
-		}
-		ch.Send(ctrl)
 
 		return nil
 	})

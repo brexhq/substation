@@ -146,7 +146,7 @@ func (t *procCombine) Transform(ctx context.Context, messages ...*mess.Message) 
 
 	// If a control message was received, then items are flushed from the buffer.
 	if !control {
-		return messages, nil
+		return output, nil
 	}
 
 	for key := range t.buffer {

@@ -13,7 +13,6 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.4
 	github.com/iancoleman/strcase v0.2.0
 	github.com/itchyny/gojq v0.12.13
-	github.com/jshlbrd/go-aggregate v0.1.1
 	github.com/klauspost/compress v1.16.6
 	github.com/oschwald/maxminddb-golang v1.11.0
 	github.com/sirupsen/logrus v1.9.3
@@ -35,7 +34,9 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/itchyny/timefmt-go v0.1.5 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/kr/pretty v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect

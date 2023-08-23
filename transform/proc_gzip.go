@@ -17,14 +17,6 @@ import (
 )
 
 type procGzipConfig struct {
-	// Key retrieves a value from an object for processing.
-	//
-	// This is optional for transforms that support processing non-object data.
-	Key string `json:"key"`
-	// SetKey inserts a processed value into an object.
-	//
-	// This is optional for transforms that support processing non-object data.
-	SetKey string `json:"set_key"`
 	// Direction determines whether data is compressed or decompressed.
 	//
 	// Must be one of:
@@ -44,11 +36,6 @@ func newProcGzip(_ context.Context, cfg config.Config) (*procGzip, error) {
 	}
 
 	// Validate required options.
-	if (conf.Key != "" && conf.SetKey == "") ||
-		(conf.Key == "" && conf.SetKey != "") {
-		return nil, fmt.Errorf("transform: proc_gzip: key %s set_key %s: %v", conf.Key, conf.SetKey, errInvalidDataPattern)
-	}
-
 	if conf.Direction == "" {
 		return nil, fmt.Errorf("transform: proc_gzip: type: %v", errors.ErrMissingRequiredOption)
 	}
@@ -66,8 +53,8 @@ func newProcGzip(_ context.Context, cfg config.Config) (*procGzip, error) {
 	return &proc, nil
 }
 
-func (t *procGzip) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procGzip) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -75,46 +62,39 @@ func (*procGzip) Close(context.Context) error {
 	return nil
 }
 
-func (t *procGzip) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
+func (proc *procGzip) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
+	}
 
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		var value []byte
-		switch t.conf.Direction {
-		case "from":
-			from, err := t.from(message.Data())
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_gzip: %v", err)
-			}
-
-			value = from
-		case "to":
-			to, err := t.to(message.Data())
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_gzip: %v", err)
-			}
-
-			value = to
-		}
-
-		msg, err := mess.New(
-			mess.SetData(value),
-			mess.SetMetadata(message.Metadata()),
-		)
+	var value []byte
+	switch proc.conf.Direction {
+	case "from":
+		from, err := proc.from(message.Data())
 		if err != nil {
 			return nil, fmt.Errorf("transform: proc_gzip: %v", err)
 		}
 
-		output = append(output, msg)
+		value = from
+	case "to":
+		to, err := proc.to(message.Data())
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_gzip: %v", err)
+		}
+
+		value = to
 	}
 
-	return output, nil
+	msg, err := mess.New(
+		mess.SetData(value),
+		mess.SetMetadata(message.Metadata()),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("transform: proc_gzip: %v", err)
+	}
+
+	return []*mess.Message{msg}, nil
 }
 
 func (t *procGzip) from(data []byte) ([]byte, error) {

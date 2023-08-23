@@ -68,8 +68,8 @@ func newProcPrettyPrint(_ context.Context, cfg config.Config) (*procPrettyPrint,
 	return &proc, nil
 }
 
-func (t *procPrettyPrint) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procPrettyPrint) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -77,63 +77,59 @@ func (*procPrettyPrint) Close(context.Context) error {
 	return nil
 }
 
-func (t *procPrettyPrint) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
+func (proc *procPrettyPrint) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
+	}
 
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
+	switch proc.conf.Direction {
+	case "to":
+		res := message.Get(procPPModifer).String()
+		msg, err := mess.New(
+			mess.SetData([]byte(res)),
+			mess.SetMetadata(message.Metadata()),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("process: dns: %v", err)
 		}
 
-		switch t.conf.Direction {
-		case "to":
-			res := message.Get(procPPModifer).String()
-			msg, err := mess.New(
-				mess.SetData([]byte(res)),
-				mess.SetMetadata(message.Metadata()),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("process: dns: %v", err)
+		return []*mess.Message{msg}, nil
+	case "from":
+		for _, data := range message.Data() {
+			proc.stack = append(proc.stack, data)
+
+			if data == procPPOpenCurlyBracket {
+				proc.count++
 			}
 
-			output = append(output, msg)
-		case "from":
-			for _, data := range message.Data() {
-				t.stack = append(t.stack, data)
+			if data == procPPCloseCurlyBracket {
+				proc.count--
+			}
 
-				if data == procPPOpenCurlyBracket {
-					t.count++
+			if proc.count == 0 {
+				var buf bytes.Buffer
+				if err := gojson.Compact(&buf, proc.stack); err != nil {
+					return nil, fmt.Errorf("transform: proc_pretty_print: json compact: %v", err)
 				}
 
-				if data == procPPCloseCurlyBracket {
-					t.count--
-				}
-
-				if t.count == 0 {
-					var buf bytes.Buffer
-					if err := gojson.Compact(&buf, t.stack); err != nil {
-						return nil, fmt.Errorf("transform: proc_pretty_print: json compact: %v", err)
+				proc.stack = []byte{}
+				if json.Valid(buf.Bytes()) {
+					msg, err := mess.New(
+						mess.SetData(buf.Bytes()),
+						mess.SetMetadata(message.Metadata()),
+					)
+					if err != nil {
+						return nil, fmt.Errorf("transform: proc_pretty_print: %v", err)
 					}
 
-					if json.Valid(buf.Bytes()) {
-						msg, err := mess.New(
-							mess.SetData(buf.Bytes()),
-							mess.SetMetadata(message.Metadata()),
-						)
-						if err != nil {
-							return nil, fmt.Errorf("transform: proc_pretty_print: %v", err)
-						}
-
-						output = append(output, msg)
-					}
-
-					t.stack = []byte{}
+					return []*mess.Message{msg}, nil
 				}
+
+				return nil, fmt.Errorf("transform: proc_pretty_print: invalid json")
 			}
 		}
 	}
 
-	return output, nil
+	return nil, nil
 }

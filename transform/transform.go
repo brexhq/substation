@@ -1,3 +1,4 @@
+// package transform provides capabilities for transforming data.
 package transform
 
 import (
@@ -9,15 +10,19 @@ import (
 	mess "github.com/brexhq/substation/message"
 )
 
-// errInvalidDataPattern is returned when a transform is configured with an invalid data access pattern. This is commonly caused by improperly set input and output settings.
+// errInvalidDataPattern is returned when a transform is configured
+// with an invalid data access pattern. This is commonly caused by
+// misconfigured object key options.
 var errInvalidDataPattern = fmt.Errorf("invalid data access pattern")
 
+// Transformer is the interface implemented by all transforms and
+// provides the ability to transform data.
 type Transformer interface {
-	Transform(context.Context, ...*mess.Message) ([]*mess.Message, error)
+	Transform(context.Context, *mess.Message) ([]*mess.Message, error)
 	Close(context.Context) error
 }
 
-// NewTransformer returns a configured Transformer from a transform configuration.
+// New returns a configured Transformer.
 func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
 	case "meta_for_each":
@@ -38,10 +43,10 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newProcCapture(ctx, cfg)
 	case "proc_case":
 		return newProcCase(ctx, cfg)
-	case "proc_combine":
-		return newProcCombine(ctx, cfg)
 	case "proc_convert":
 		return newProcConvert(ctx, cfg)
+	case "proc_combine":
+		return newProcCombine(ctx, cfg)
 	case "proc_copy":
 		return newProcCopy(ctx, cfg)
 	case "proc_delete":
@@ -52,8 +57,6 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newProcDomain(ctx, cfg)
 	case "proc_drop":
 		return newProcDrop(ctx, cfg)
-	case "proc_err":
-		return newProcErr(ctx, cfg)
 	case "proc_expand":
 		return newProcExpand(ctx, cfg)
 	case "proc_flatten_array":
@@ -104,6 +107,10 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newSendHTTP(ctx, cfg)
 	case "send_sumologic":
 		return newSendSumoLogic(ctx, cfg)
+	case "util_delay":
+		return newUtilDelay(ctx, cfg)
+	case "util_err":
+		return newUtilErr(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("transform: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}

@@ -41,8 +41,8 @@ func newProcInsert(_ context.Context, cfg config.Config) (*procInsert, error) {
 	return &proc, nil
 }
 
-func (t *procInsert) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procInsert) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -50,22 +50,15 @@ func (*procInsert) Close(context.Context) error {
 	return nil
 }
 
-func (t *procInsert) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		if err := message.Set(t.conf.SetKey, t.conf.Value); err != nil {
-			return nil, fmt.Errorf("transform: proc_insert: %v", err)
-		}
-
-		output = append(output, message)
+func (proc *procInsert) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	if err := message.Set(proc.conf.SetKey, proc.conf.Value); err != nil {
+		return nil, fmt.Errorf("transform: proc_insert: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

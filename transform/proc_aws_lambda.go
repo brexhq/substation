@@ -16,8 +16,8 @@ import (
 	mess "github.com/brexhq/substation/message"
 )
 
-// errProcAWSLambdaInputNotAnObject is returned when the input is not an object.
-var errProcAWSLambdaInputNotAnObject = fmt.Errorf("input is not an object")
+// errprocAWSLambdaInputNotAnObject is returned when the input is not an object.
+var errprocAWSLambdaInputNotAnObject = fmt.Errorf("input is not an object")
 
 type procAWSLambdaConfig struct {
 	Auth    _config.ConfigAWSAuth `json:"auth"`
@@ -60,22 +60,22 @@ func newProcAWSLambda(ctx context.Context, cfg config.Config) (*procAWSLambda, e
 		return nil, fmt.Errorf("transform: proc_aws_lambda: options %+v: %v", conf, errors.ErrMissingRequiredOption)
 	}
 
-	proc := procAWSLambda{
+	mod := procAWSLambda{
 		conf: conf,
 	}
 
 	// Setup the AWS client.
-	proc.client.Setup(aws.Config{
+	mod.client.Setup(aws.Config{
 		Region:     conf.Auth.Region,
 		AssumeRole: conf.Auth.AssumeRole,
 		MaxRetries: conf.Request.MaxRetries,
 	})
 
-	return &proc, nil
+	return &mod, nil
 }
 
-func (t *procAWSLambda) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (mod *procAWSLambda) String() string {
+	b, _ := gojson.Marshal(mod.conf)
 	return string(b)
 }
 
@@ -83,42 +83,34 @@ func (*procAWSLambda) Close(context.Context) error {
 	return nil
 }
 
-func (t *procAWSLambda) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		result := message.Get(t.conf.Key)
-		if !result.IsObject() {
-			return nil, fmt.Errorf("transform: proc_aws_lambda: key %s: %v", t.conf.Key, errProcAWSLambdaInputNotAnObject)
-		}
-
-		resp, err := t.client.Invoke(ctx, t.conf.FunctionName, []byte(result.Raw))
-		if err != nil {
-			return nil, fmt.Errorf("transform: proc_aws_lambda: %v", err)
-		}
-
-		// If ErrorOnFailure is configured, then errors are returned,
-		// but otherwise the message is returned as-is.
-		if resp.FunctionError != nil && t.conf.ErrorOnFailure {
-			resErr := json.Get(resp.Payload, "errorMessage").String()
-			return nil, fmt.Errorf("transform: proc_aws_lambda: %v", resErr)
-		} else if resp.FunctionError != nil {
-			output = append(output, message)
-			continue
-		}
-
-		if err := message.Set(t.conf.SetKey, resp.Payload); err != nil {
-			return nil, fmt.Errorf("transform: proc_aws_lambda: %v", err)
-		}
-
-		output = append(output, message)
+func (mod *procAWSLambda) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	result := message.Get(mod.conf.Key)
+	if !result.IsObject() {
+		return nil, fmt.Errorf("transform: proc_aws_lambda: key %s: %v", mod.conf.Key, errprocAWSLambdaInputNotAnObject)
+	}
+
+	resp, err := mod.client.Invoke(ctx, mod.conf.FunctionName, []byte(result.Raw))
+	if err != nil {
+		return nil, fmt.Errorf("transform: proc_aws_lambda: %v", err)
+	}
+
+	// If ErrorOnFailure is configured, then errors are returned,
+	// but otherwise the message is returned as-is.
+	if resp.FunctionError != nil && mod.conf.ErrorOnFailure {
+		resErr := json.Get(resp.Payload, "errorMessage").String()
+		return nil, fmt.Errorf("transform: proc_aws_lambda: %v", resErr)
+	} else if resp.FunctionError != nil {
+		return []*mess.Message{message}, nil
+	}
+
+	if err := message.Set(mod.conf.SetKey, resp.Payload); err != nil {
+		return nil, fmt.Errorf("transform: proc_aws_lambda: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

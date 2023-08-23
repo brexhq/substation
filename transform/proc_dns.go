@@ -99,148 +99,129 @@ func (*procDNS) Close(context.Context) error {
 	return nil
 }
 
-//nolint: gocognit, gocyclo, cyclop // Ignore cognitive complexity.
-func (t *procDNS) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	resolverCtx, cancel := context.WithTimeout(ctx, t.timeout)
+// nolint: gocognit, gocyclo, cyclop // Ignore cognitive complexity.
+func (proc *procDNS) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	resolverCtx, cancel := context.WithTimeout(ctx, proc.timeout)
 	defer cancel() // important to avoid a resource leak
 
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
+	}
 
-		switch t.isObject {
-		case true:
-			result := message.Get(t.conf.Key).String()
+	if !proc.isObject {
+		result := string(message.Data())
 
-			switch t.conf.Type {
-			case "forward_lookup":
-				addrs, err := t.resolver.LookupHost(resolverCtx, result)
+		switch proc.conf.Type {
+		case "forward_lookup":
+			addrs, err := proc.resolver.LookupHost(resolverCtx, result)
 
-				// If ErrorOnFailure is configured, then errors are returned,
-				// but otherwise the message is returned as-is.
-				if err != nil && t.conf.ErrorOnFailure {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				} else if err != nil {
-					output = append(output, message)
-					continue
-				}
-
-				if err := message.Set(t.conf.SetKey, addrs); err != nil {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				}
-
-				output = append(output, message)
-			case "reverse_lookup":
-				names, err := t.resolver.LookupAddr(resolverCtx, result)
-
-				// If ErrorOnFailure is configured, then errors are returned,
-				// but otherwise the message is returned as-is.
-				if err != nil && t.conf.ErrorOnFailure {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				} else if err != nil {
-					output = append(output, message)
-					continue
-				}
-
-				if err := message.Set(t.conf.SetKey, names); err != nil {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				}
-
-				output = append(output, message)
-			case "query_txt":
-				records, err := t.resolver.LookupTXT(resolverCtx, result)
-
-				// If ErrorOnFailure is configured, then errors are returned,
-				// but otherwise the message is returned as-is.
-				if err != nil && t.conf.ErrorOnFailure {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				} else if err != nil {
-					output = append(output, message)
-					continue
-				}
-
-				if err := message.Set(t.conf.SetKey, records); err != nil {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				}
-
-				output = append(output, message)
+			// If ErrorOnFailure is configured, then errors are returned,
+			// but otherwise the message is returned as-is.
+			if err != nil && proc.conf.ErrorOnFailure {
+				return nil, fmt.Errorf("transform: proc_dns: %v", err)
+			} else if err != nil {
+				return []*mess.Message{message}, nil
 			}
 
-		case false:
-			result := string(message.Data())
-
-			switch t.conf.Type {
-			case "forward_lookup":
-				addrs, err := t.resolver.LookupHost(resolverCtx, result)
-
-				// If ErrorOnFailure is configured, then errors are returned,
-				// but otherwise the message is returned as-is.
-				if err != nil && t.conf.ErrorOnFailure {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				} else if err != nil {
-					output = append(output, message)
-					continue
-				}
-
-				// Return the first address.
-				msg, err := mess.New(
-					mess.SetData([]byte(addrs[0])),
-				)
-				if err != nil {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				}
-
-				output = append(output, msg)
-			case "reverse_lookup":
-				names, err := t.resolver.LookupAddr(resolverCtx, result)
-
-				// If ErrorOnFailure is configured, then errors are returned,
-				// but otherwise the message is returned as-is.
-				if err != nil && t.conf.ErrorOnFailure {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				} else if err != nil {
-					output = append(output, message)
-					continue
-				}
-
-				// Return the first name.
-				msg, err := mess.New(
-					mess.SetData([]byte(names[0])),
-				)
-				if err != nil {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				}
-
-				output = append(output, msg)
-			case "query_txt":
-				records, err := t.resolver.LookupTXT(resolverCtx, result)
-
-				// If ErrorOnFailure is configured, then errors are returned,
-				// but otherwise the message is returned as-is.
-				if err != nil && t.conf.ErrorOnFailure {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				} else if err != nil {
-					output = append(output, message)
-					continue
-				}
-
-				// Return the first record.
-				msg, err := mess.New(
-					mess.SetData([]byte(records[0])),
-				)
-				if err != nil {
-					return nil, fmt.Errorf("transform: proc_dns: %v", err)
-				}
-
-				output = append(output, msg)
+			// Return the first address.
+			msg, err := mess.New(
+				mess.SetData([]byte(addrs[0])),
+			)
+			if err != nil {
+				return nil, fmt.Errorf("transform: proc_dns: %v", err)
 			}
+
+			return []*mess.Message{msg}, nil
+		case "reverse_lookup":
+			names, err := proc.resolver.LookupAddr(resolverCtx, result)
+
+			// If ErrorOnFailure is configured, then errors are returned,
+			// but otherwise the message is returned as-is.
+			if err != nil && proc.conf.ErrorOnFailure {
+				return nil, fmt.Errorf("transform: proc_dns: %v", err)
+			} else if err != nil {
+				return []*mess.Message{message}, nil
+			}
+
+			// Return the first name.
+			msg, err := mess.New(
+				mess.SetData([]byte(names[0])),
+			)
+			if err != nil {
+				return nil, fmt.Errorf("transform: proc_dns: %v", err)
+			}
+
+			return []*mess.Message{msg}, nil
+		case "query_txt":
+			records, err := proc.resolver.LookupTXT(resolverCtx, result)
+
+			// If ErrorOnFailure is configured, then errors are returned,
+			// but otherwise the message is returned as-is.
+			if err != nil && proc.conf.ErrorOnFailure {
+				return nil, fmt.Errorf("transform: proc_dns: %v", err)
+			} else if err != nil {
+				return []*mess.Message{message}, nil
+			}
+
+			// Return the first record.
+			msg, err := mess.New(
+				mess.SetData([]byte(records[0])),
+			)
+			if err != nil {
+				return nil, fmt.Errorf("transform: proc_dns: %v", err)
+			}
+
+			return []*mess.Message{msg}, nil
 		}
 	}
 
-	return output, nil
+	result := message.Get(proc.conf.Key).String()
+
+	switch proc.conf.Type {
+	case "forward_lookup":
+		addrs, err := proc.resolver.LookupHost(resolverCtx, result)
+
+		// If ErrorOnFailure is configured, then errors are returned,
+		// but otherwise the message is returned as-is.
+		if err != nil && proc.conf.ErrorOnFailure {
+			return nil, fmt.Errorf("transform: proc_dns: %v", err)
+		} else if err != nil {
+			return []*mess.Message{message}, nil
+		}
+
+		if err := message.Set(proc.conf.SetKey, addrs); err != nil {
+			return nil, fmt.Errorf("transform: proc_dns: %v", err)
+		}
+	case "reverse_lookup":
+		names, err := proc.resolver.LookupAddr(resolverCtx, result)
+
+		// If ErrorOnFailure is configured, then errors are returned,
+		// but otherwise the message is returned as-is.
+		if err != nil && proc.conf.ErrorOnFailure {
+			return nil, fmt.Errorf("transform: proc_dns: %v", err)
+		} else if err != nil {
+			return []*mess.Message{message}, nil
+		}
+
+		if err := message.Set(proc.conf.SetKey, names); err != nil {
+			return nil, fmt.Errorf("transform: proc_dns: %v", err)
+		}
+	case "query_txt":
+		records, err := proc.resolver.LookupTXT(resolverCtx, result)
+
+		// If ErrorOnFailure is configured, then errors are returned,
+		// but otherwise the message is returned as-is.
+		if err != nil && proc.conf.ErrorOnFailure {
+			return nil, fmt.Errorf("transform: proc_dns: %v", err)
+		} else if err != nil {
+			return []*mess.Message{message}, nil
+		}
+
+		if err := message.Set(proc.conf.SetKey, records); err != nil {
+			return nil, fmt.Errorf("transform: proc_dns: %v", err)
+		}
+	}
+
+	return []*mess.Message{message}, nil
 }

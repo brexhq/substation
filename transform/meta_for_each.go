@@ -81,8 +81,8 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 	return &meta, nil
 }
 
-func (t *metaForEach) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (meta *metaForEach) String() string {
+	b, _ := gojson.Marshal(meta.conf)
 	return string(b)
 }
 
@@ -90,47 +90,41 @@ func (*metaForEach) Close(context.Context) error {
 	return nil
 }
 
-func (t *metaForEach) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		result := message.Get(t.conf.Key)
-		if !result.IsArray() {
-			output = append(output, message)
-			continue
-		}
-
-		for _, res := range result.Array() {
-			msg, err := mess.New()
-			if err != nil {
-				return nil, fmt.Errorf("transform: meta_for_each: %v", err)
-			}
-
-			if err := msg.Set(t.tfCfg.Type, res); err != nil {
-				return nil, fmt.Errorf("transform: meta_for_each: %v", err)
-			}
-
-			msgs, err := t.tf.Transform(ctx, msg)
-			if err != nil {
-				return nil, fmt.Errorf("transform: meta_for_each: %v", err)
-			}
-
-			for _, m := range msgs {
-				v := m.Get(t.tfCfg.Type)
-				if err := message.Set(t.conf.SetKey, v); err != nil {
-					return nil, fmt.Errorf("transform: meta_for_each: %v", err)
-				}
-			}
-		}
-
-		output = append(output, message)
+func (meta *metaForEach) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	result := message.Get(meta.conf.Key)
+	if !result.IsArray() {
+		return []*mess.Message{message}, nil
+	}
+
+	var arr []interface{}
+	for _, res := range result.Array() {
+		tmpMsg, err := mess.New()
+		if err != nil {
+			return nil, fmt.Errorf("transform: meta_for_each: %v", err)
+		}
+
+		if err := tmpMsg.Set(meta.tfCfg.Type, res); err != nil {
+			return nil, fmt.Errorf("transform: meta_for_each: %v", err)
+		}
+
+		tfMsgs, err := meta.tf.Transform(ctx, tmpMsg)
+		if err != nil {
+			return nil, fmt.Errorf("transform: meta_for_each: %v", err)
+		}
+
+		for _, m := range tfMsgs {
+			v := m.Get(meta.tfCfg.Type)
+			arr = append(arr, v.Value())
+		}
+	}
+
+	if err := message.Set(meta.conf.SetKey, arr); err != nil {
+		return nil, fmt.Errorf("transform: meta_for_each: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

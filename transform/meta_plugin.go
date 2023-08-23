@@ -57,17 +57,17 @@ func newMetaPlugin(_ context.Context, cfg config.Config) (*metaPlugin, error) {
 	return &meta, nil
 }
 
-func (t *metaPlugin) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (meta *metaPlugin) String() string {
+	b, _ := gojson.Marshal(meta.conf)
 	return string(b)
 }
 
-func (t *metaPlugin) Close(ctx context.Context) error {
-	return t.tf.Close(ctx)
+func (meta *metaPlugin) Close(ctx context.Context) error {
+	return meta.tf.Close(ctx)
 }
 
-func (t *metaPlugin) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	msgs, err := t.tf.Transform(ctx, messages...)
+func (meta *metaPlugin) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	msgs, err := meta.tf.Transform(ctx, message)
 	if err != nil {
 		return nil, fmt.Errorf("transform: meta_plugin: %v", err)
 	}

@@ -121,119 +121,109 @@ func newProcHTTP(ctx context.Context, cfg config.Config) (*procHTTP, error) {
 	return &proc, nil
 }
 
-//nolint: gocognit // Ignore cognitive complexity.
-func (t *procHTTP) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
+// nolint: gocognit // Ignore cognitive complexity.
+func (proc *procHTTP) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
+	}
 
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
+	// The URL can exist in three states:
+	//
+	// - No interpolation, the URL is unchanged.
+	//
+	// - Object-based interpolation, the URL is interpolated
+	// using the object handling pattern.
+	//
+	// - Data-based interpolation, the URL is interpolated
+	// using the data handling pattern.
+	//
+	// The URL is always interpolated with the substring ${data}.
+	url := proc.conf.URL
+	if strings.Contains(url, procHTTPInterp) {
+		if proc.conf.Key != "" {
+			url = strings.ReplaceAll(url, procHTTPInterp, message.Get(proc.conf.Key).String())
+		} else {
+			url = strings.ReplaceAll(url, procHTTPInterp, string(message.Data()))
+		}
+	}
+
+	// Retrieve secret and interpolate with URL
+	url, err := secrets.Interpolate(ctx, url)
+	if err != nil {
+		return nil, fmt.Errorf("transform: proc_http: %v", err)
+	}
+
+	switch proc.conf.Method {
+	// POST only supports the object handling pattern.
+	case gohttp.MethodPost:
+		body := message.Get(proc.conf.BodyKey).String()
+
+		// resp.Body is closed by parseResponse.
+		resp, err := proc.client.Post(ctx, url, body, proc.headers...)
+
+		// If ErrorOnFailure is configured, then errors are returned,
+		// but otherwise the message is returned as-is.
+		if err != nil && proc.conf.ErrorOnFailure {
+			return nil, fmt.Errorf("transform: proc_http: %v", err)
+		} else if err != nil {
+			return []*mess.Message{message}, nil
 		}
 
-		// The URL can exist in three states:
-		//
-		// - No interpolation, the URL is unchanged.
-		//
-		// - Object-based interpolation, the URL is interpolated
-		// using the object handling pattern.
-		//
-		// - Data-based interpolation, the URL is interpolated
-		// using the data handling pattern.
-		//
-		// The URL is always interpolated with the substring ${data}.
-		url := t.conf.URL
-		if strings.Contains(url, procHTTPInterp) {
-			if t.conf.Key != "" {
-				url = strings.ReplaceAll(url, procHTTPInterp, message.Get(t.conf.Key).String())
-			} else {
-				url = strings.ReplaceAll(url, procHTTPInterp, string(message.Data()))
-			}
-		}
-
-		// Retrieve secret and interpolate with URL
-		url, err := secrets.Interpolate(ctx, url)
+		res, err := parseResponse(resp)
 		if err != nil {
 			return nil, fmt.Errorf("transform: proc_http: %v", err)
 		}
 
-		switch t.conf.Method {
-		// POST only supports the object handling pattern.
-		case gohttp.MethodPost:
-			body := message.Get(t.conf.BodyKey).String()
-
-			// resp.Body is closed by parseResponse.
-			resp, err := t.client.Post(ctx, url, body, t.headers...)
-
-			// If ErrorOnFailure is configured, then errors are returned,
-			// but otherwise the message is returned as-is.
-			if err != nil && t.conf.ErrorOnFailure {
-				return nil, fmt.Errorf("transform: proc_http: %v", err)
-			} else if err != nil {
-				output = append(output, message)
-				continue
-			}
-
-			res, err := parseResponse(resp)
-			if err != nil {
+		// If SetKey exists, then the response body is written into the message,
+		// but otherwise the response is not stored and the message is returned
+		// as-is.
+		if proc.conf.SetKey != "" {
+			if err := message.Set(proc.conf.SetKey, res); err != nil {
 				return nil, fmt.Errorf("transform: proc_http: %v", err)
 			}
-
-			// If SetKey exists, then the response body is written into the message,
-			// but otherwise the response is not stored and the message is returned
-			// as-is.
-			if t.conf.SetKey != "" {
-				if err := message.Set(t.conf.SetKey, res); err != nil {
-					return nil, fmt.Errorf("transform: proc_http: %v", err)
-				}
-			}
-
-			output = append(output, message)
-			continue
-		// GET must be the last condition and fallthrough since it is the default Method
-		case gohttp.MethodGet:
-			fallthrough
-		default:
-			// resp.Body is closed by parseResponse.
-			resp, err := t.client.Get(ctx, url, t.headers...)
-
-			// If ErrorOnFailure is configured, then errors are returned,
-			// but otherwise the message is returned as-is.
-			if err != nil && t.conf.ErrorOnFailure {
-				return nil, fmt.Errorf("transform: proc_http: %v", err)
-			} else if err != nil {
-				output = append(output, message)
-				continue
-			}
-
-			res, err := parseResponse(resp)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_http: %v", err)
-			}
-
-			if t.conf.SetKey != "" {
-				if err := message.Set(t.conf.SetKey, res); err != nil {
-					return nil, fmt.Errorf("transform: proc_http: %v", err)
-				}
-
-				output = append(output, message)
-				continue
-			}
-
-			msg, err := mess.New(
-				mess.SetData(res),
-				mess.SetMetadata(message.Metadata()),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_http: %v", err)
-			}
-
-			output = append(output, msg)
 		}
-	}
 
-	return output, nil
+		return []*mess.Message{message}, nil
+
+	// GET must be the last condition and fallthrough since it is the default Method
+	case gohttp.MethodGet:
+		fallthrough
+	default:
+		// resp.Body is closed by parseResponse.
+		resp, err := proc.client.Get(ctx, url, proc.headers...)
+
+		// If ErrorOnFailure is configured, then errors are returned,
+		// but otherwise the message is returned as-is.
+		if err != nil && proc.conf.ErrorOnFailure {
+			return nil, fmt.Errorf("transform: proc_http: %v", err)
+		} else if err != nil {
+			return []*mess.Message{message}, nil
+		}
+
+		res, err := parseResponse(resp)
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_http: %v", err)
+		}
+
+		if proc.conf.SetKey != "" {
+			if err := message.Set(proc.conf.SetKey, res); err != nil {
+				return nil, fmt.Errorf("transform: proc_http: %v", err)
+			}
+
+			return []*mess.Message{message}, nil
+		}
+
+		msg, err := mess.New(
+			mess.SetData(res),
+			mess.SetMetadata(message.Metadata()),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_http: %v", err)
+		}
+
+		return []*mess.Message{msg}, nil
+	}
 }
 
 func parseResponse(resp *gohttp.Response) ([]byte, error) {

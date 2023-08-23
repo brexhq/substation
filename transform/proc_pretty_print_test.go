@@ -96,7 +96,7 @@ func TestProcPrettyPrint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			result, err := proc.Transform(ctx, messages...)
+			result, err := Apply(ctx, []Transformer{proc}, messages...)
 			if err != nil {
 				t.Error(err)
 			}
@@ -122,7 +122,7 @@ func benchmarkProcPrettyPrint(b *testing.B, tf *procPrettyPrint, data [][]byte) 
 			messages = append(messages, message)
 		}
 
-		_, _ = tf.Transform(ctx, messages...)
+		_, _ = Apply(ctx, []Transformer{tf}, messages...)
 	}
 }
 

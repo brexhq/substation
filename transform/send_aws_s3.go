@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"sync"
-	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aggregate"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/s3manager"
 	_config "github.com/brexhq/substation/internal/config"
@@ -21,6 +19,7 @@ import (
 )
 
 type sendAWSS3Config struct {
+	Buffer  aggregate.Config      `json:"buffer"`
 	Auth    _config.ConfigAWSAuth `json:"auth"`
 	Request _config.ConfigRequest `json:"request"`
 	// Bucket is the AWS S3 bucket that data is written to.
@@ -61,13 +60,13 @@ type sendAWSS3Config struct {
 type sendAWSS3 struct {
 	conf sendAWSS3Config
 
-	path      string
 	extension string
 	// client is safe for concurrent use.
 	client s3manager.UploaderAPI
 	// buffer is safe for concurrent use.
-	mu     *sync.Mutex
-	buffer map[string]*file.Wrapper
+	mu        sync.Mutex
+	buffer    map[string]*aggregate.Aggregate
+	bufferCfg aggregate.Config
 }
 
 func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
@@ -95,17 +94,12 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 
 	// File extensions are dynamic and not directly configurable.
 	send.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
-	now := time.Now()
-
-	// Default object key is: year/month/day/uuid.extension.
-	send.path = conf.FilePath.New()
-	if send.path == "" {
-		send.path = path.Join(
-			now.Format("2006"), now.Format("01"), now.Format("02"),
-			uuid.New().String(),
-		) + send.extension
-	} else if conf.FilePath.Extension {
-		send.path += send.extension
+	send.mu = sync.Mutex{}
+	send.buffer = make(map[string]*aggregate.Aggregate)
+	send.bufferCfg = aggregate.Config{
+		Count:    conf.Buffer.Count,
+		Size:     conf.Buffer.Size,
+		Interval: conf.Buffer.Interval,
 	}
 
 	// Setup the AWS client.
@@ -115,102 +109,110 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 		MaxRetries: conf.Request.MaxRetries,
 	})
 
-	send.mu = &sync.Mutex{}
-	send.buffer = make(map[string]*file.Wrapper)
-
 	return &send, nil
 }
 
-func (t *sendAWSS3) Close(context.Context) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	for _, f := range t.buffer {
-		f.Close()
-		os.Remove(f.Name())
-	}
-
+func (*sendAWSS3) Close(context.Context) error {
 	return nil
 }
 
-func (t *sendAWSS3) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
+func (send *sendAWSS3) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
 	// Lock the transform to prevent concurrent access to the buffer.
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	send.mu.Lock()
+	defer send.mu.Unlock()
 
-	control := false
-	for _, message := range messages {
-		if message.IsControl() {
-			control = true
-			continue
-		}
-
-		// path is used so that key values can be interpolated into the path.
-		path := t.path
-
-		// If either prefix or suffix keys are set, then the object key is non-default
-		// and can be safely interpolated. If either are empty strings, then an error
-		// is returned.
-		if t.conf.FilePath.PrefixKey != "" {
-			prefix := message.Get(t.conf.FilePath.PrefixKey).String()
-			if prefix == "" {
-				return nil, fmt.Errorf("transform: send_aws_s3: bucket %s object %s: %v", t.conf.Bucket, path, fmt.Errorf("empty prefix string"))
-			}
-
-			path = strings.Replace(path, "${PATH_PREFIX}", prefix, 1)
-		}
-		if t.conf.FilePath.SuffixKey != "" {
-			suffix := message.Get(t.conf.FilePath.SuffixKey).String()
-			if suffix == "" {
-				return nil, fmt.Errorf("transform: send_aws_s3: bucket %s object %s: %v", t.conf.Bucket, path, fmt.Errorf("empty suffix string"))
-			}
-
-			path = strings.Replace(path, "${PATH_SUFFIX}", suffix, 1)
-		}
-
-		if _, ok := t.buffer[path]; !ok {
-			f, err := os.CreateTemp("", "substation")
-			if err != nil {
-				return nil, fmt.Errorf("transform: send_aws_s3: bucket %s object %s: %v", t.conf.Bucket, path, err)
-			}
-
-			if t.buffer[path], err = file.NewWrapper(f, t.conf.FileFormat, t.conf.FileCompression); err != nil {
-				return nil, fmt.Errorf("send: file: file_path %s: %v", path, err)
+	if message.IsControl() {
+		for prefixKey := range send.buffer {
+			if err := send.writeFile(ctx, prefixKey); err != nil {
+				return nil, fmt.Errorf("transform: send_file: %v", err)
 			}
 		}
 
-		if _, err := t.buffer[path].Write(message.Data()); err != nil {
-			return nil, fmt.Errorf("transform: send_aws_s3: bucket %s object %s: %v", t.conf.Bucket, path, err)
-		}
+		send.buffer = make(map[string]*aggregate.Aggregate)
+		return []*mess.Message{message}, nil
 	}
 
-	// If a control message is received, then files are closed, uploaded to S3, and
-	// removed from the buffer.
-	if !control {
-		return messages, nil
+	var prefixKey string
+	if send.conf.FilePath.PrefixKey != "" {
+		prefixKey = message.Get(send.conf.FilePath.PrefixKey).String()
 	}
 
-	for path, file := range t.buffer {
-		defer os.Remove(file.Name())
-
-		// Flushes the file before uploading to S3.
-		if err := file.Close(); err != nil {
-			return nil, fmt.Errorf("transform: send_aws_s3: bucket %s object %s: %v", t.conf.Bucket, path, err)
-		}
-
-		// s3uploader requires an open file.
-		f, err := os.Open(file.Name())
+	if _, ok := send.buffer[prefixKey]; !ok {
+		agg, err := aggregate.New(send.bufferCfg)
 		if err != nil {
-			return nil, fmt.Errorf("transform: send_aws_s3: bucket %s object %s: %v", t.conf.Bucket, path, err)
-		}
-		defer f.Close()
-
-		if _, err := t.client.Upload(ctx, t.conf.Bucket, path, f); err != nil {
-			return nil, fmt.Errorf("transform: send_aws_s3: bucket %s object %s: %v", t.conf.Bucket, path, err)
+			return nil, fmt.Errorf("transform: send_file: %v", err)
 		}
 
-		delete(t.buffer, path)
+		send.buffer[prefixKey] = agg
 	}
 
-	return messages, nil
+	// Writes data as an object to S3 only when the buffer is full.
+	if ok := send.buffer[prefixKey].Add(message.Data()); ok {
+		return []*mess.Message{message}, nil
+	}
+
+	if err := send.writeFile(ctx, prefixKey); err != nil {
+		return nil, fmt.Errorf("transform: send_file: %v", err)
+	}
+
+	// Reset the buffer and add the message data.
+	send.buffer[prefixKey].Reset()
+	_ = send.buffer[prefixKey].Add(message.Data())
+
+	return []*mess.Message{message}, nil
+}
+
+func (t *sendAWSS3) writeFile(ctx context.Context, prefix string) error {
+	// If the buffer is empty, then there is nothing to write.
+	if t.buffer[prefix].Count() == 0 {
+		return nil
+	}
+
+	fpath := t.conf.FilePath.New()
+	if fpath == "" {
+		return fmt.Errorf("file_path is empty")
+	}
+
+	if prefix != "" {
+		fpath = strings.Replace(fpath, "${PATH_PREFIX}", prefix, 1)
+	}
+
+	fpath += t.extension
+
+	// Ensures that the path is OS agnostic.
+	fpath = filepath.FromSlash(fpath)
+
+	temp, err := os.CreateTemp("", "substation")
+	if err != nil {
+		return err
+	}
+	defer temp.Close()
+
+	w, err := file.NewWrapper(temp, t.conf.FileFormat, t.conf.FileCompression)
+	if err != nil {
+		return err
+	}
+
+	for _, data := range t.buffer[prefix].Get() {
+		if _, err := w.Write(data); err != nil {
+			return err
+		}
+	}
+
+	// Flush the file before uploading to S3.
+	if err := w.Close(); err != nil {
+		return err
+	}
+
+	f, err := os.Open(temp.Name())
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if _, err := t.client.Upload(ctx, t.conf.Bucket, fpath, f); err != nil {
+		return err
+	}
+
+	return nil
 }

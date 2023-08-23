@@ -65,8 +65,8 @@ func newProcReplace(_ context.Context, cfg config.Config) (*procReplace, error) 
 	return &proc, nil
 }
 
-func (t *procReplace) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procReplace) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -74,51 +74,42 @@ func (*procReplace) Close(context.Context) error {
 	return nil
 }
 
-func (t *procReplace) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		switch t.isObject {
-		case true:
-			result := message.Get(t.conf.Key).String()
-			value := strings.Replace(
-				result,
-				t.conf.Old,
-				t.conf.New,
-				t.conf.Count,
-			)
-
-			if err := message.Set(t.conf.SetKey, value); err != nil {
-				return nil, fmt.Errorf("transform: proc_replace: %v", err)
-			}
-
-			output = append(output, message)
-
-		case false:
-			value := bytes.Replace(
-				message.Data(),
-				[]byte(t.conf.Old),
-				[]byte(t.conf.New),
-				t.conf.Count,
-			)
-
-			msg, err := mess.New(
-				mess.SetData(value),
-				mess.SetMetadata(message.Metadata()),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_replace: %v", err)
-			}
-
-			output = append(output, msg)
-		}
+func (proc *procReplace) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	if !proc.isObject {
+		value := bytes.Replace(
+			message.Data(),
+			[]byte(proc.conf.Old),
+			[]byte(proc.conf.New),
+			proc.conf.Count,
+		)
+
+		msg, err := mess.New(
+			mess.SetData(value),
+			mess.SetMetadata(message.Metadata()),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_replace: %v", err)
+		}
+
+		return []*mess.Message{msg}, nil
+	}
+
+	result := message.Get(proc.conf.Key).String()
+	value := strings.Replace(
+		result,
+		proc.conf.Old,
+		proc.conf.New,
+		proc.conf.Count,
+	)
+
+	if err := message.Set(proc.conf.SetKey, value); err != nil {
+		return nil, fmt.Errorf("transform: proc_replace: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

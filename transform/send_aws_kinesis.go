@@ -83,82 +83,70 @@ func (*sendAWSKinesis) Close(context.Context) error {
 	return nil
 }
 
-func (t *sendAWSKinesis) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
+func (send *sendAWSKinesis) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
 	// Lock the transform to prevent concurrent access to the buffer.
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	send.mu.Lock()
+	defer send.mu.Unlock()
 
-	control := false
-	for _, message := range messages {
-		if message.IsControl() {
-			control = true
-			continue
-		}
+	if message.IsControl() {
+		// Flush the buffer.
+		for aggregationKey := range send.buffer {
+			if send.buffer[aggregationKey].Count == 0 {
+				continue
+			}
 
-		var partitionKey string
-		if t.conf.Partition != "" {
-			partitionKey = t.conf.Partition
-		} else if t.conf.PartitionKey != "" {
-			partitionKey = message.Get(t.conf.PartitionKey).String()
-		}
-
-		if partitionKey == "" {
-			partitionKey = uuid.NewString()
-		}
-
-		// Enables redistribution of data across shards by aggregating partition keys into the same payload.
-		// This has the intentional side effect where data aggregation is disabled if no partition key is assigned.
-		var aggregationKey string
-		if t.conf.ShardRedistribution {
-			aggregationKey = partitionKey
-		}
-
-		if _, ok := t.buffer[aggregationKey]; !ok {
-			// Aggregate up to 1MB, the upper limit for Kinesis records.
-			t.buffer[aggregationKey] = &kinesis.Aggregate{}
-			t.buffer[aggregationKey].New()
-		}
-
-		// Add data to the buffer. If the buffer is full, then send the aggregated data.
-		ok := t.buffer[aggregationKey].Add(message.Data(), partitionKey)
-		if !ok {
-			agg := t.buffer[aggregationKey].Get()
-			aggPK := t.buffer[aggregationKey].PartitionKey
-			if _, err := t.client.PutRecord(ctx, t.conf.Stream, aggPK, agg); err != nil {
+			agg := send.buffer[aggregationKey].Get()
+			aggPK := send.buffer[aggregationKey].PartitionKey
+			if _, err := send.client.PutRecord(ctx, send.conf.Stream, aggPK, agg); err != nil {
 				// PutRecord errors return metadata.
 				return nil, fmt.Errorf("send: aws_kinesis: %v", err)
 			}
-
-			t.buffer[aggregationKey].New()
-			t.buffer[aggregationKey].Add(message.Data(), partitionKey)
-		}
-	}
-
-	// If a control wasn't received, then data stays in the buffer.
-	if !control {
-		return messages, nil
-	}
-
-	// Flush the buffer.
-	for aggregationKey := range t.buffer {
-		count := t.buffer[aggregationKey].Count
-
-		if count == 0 {
-			t.buffer[aggregationKey] = &kinesis.Aggregate{}
-			t.buffer[aggregationKey].New()
-
-			continue
 		}
 
-		agg := t.buffer[aggregationKey].Get()
-		aggPK := t.buffer[aggregationKey].PartitionKey
-		if _, err := t.client.PutRecord(ctx, t.conf.Stream, aggPK, agg); err != nil {
-			// PutRecord errors return metadata.
-			return nil, fmt.Errorf("send: aws_kinesis: %v", err)
-		}
-
-		delete(t.buffer, aggregationKey)
+		// Reset the buffer.
+		send.buffer = make(map[string]*kinesis.Aggregate)
+		return []*mess.Message{message}, nil
 	}
 
-	return messages, nil
+	var partitionKey string
+	if send.conf.Partition != "" {
+		partitionKey = send.conf.Partition
+	} else if send.conf.PartitionKey != "" {
+		partitionKey = message.Get(send.conf.PartitionKey).String()
+	}
+
+	if partitionKey == "" {
+		partitionKey = uuid.NewString()
+	}
+
+	// Enables redistribution of data across shards by aggregating partition keys into the same payload.
+	// This has the intentional side effect where data aggregation is disabled if no partition key is assigned.
+	var aggregationKey string
+	if send.conf.ShardRedistribution {
+		aggregationKey = partitionKey
+	}
+
+	if _, ok := send.buffer[aggregationKey]; !ok {
+		// Aggregate up to 1MB, the upper limit for Kinesis records.
+		send.buffer[aggregationKey] = &kinesis.Aggregate{}
+		send.buffer[aggregationKey].New()
+	}
+
+	// Add data to the buffer. If the buffer is full, then send the aggregated data.
+	if ok := send.buffer[aggregationKey].Add(message.Data(), partitionKey); ok {
+		return []*mess.Message{message}, nil
+	}
+
+	agg := send.buffer[aggregationKey].Get()
+	aggPK := send.buffer[aggregationKey].PartitionKey
+	if _, err := send.client.PutRecord(ctx, send.conf.Stream, aggPK, agg); err != nil {
+		// PutRecord errors return metadata.
+		return nil, fmt.Errorf("send: aws_kinesis: %v", err)
+	}
+
+	// Reset the buffer and add the message data.
+	send.buffer[aggregationKey].New()
+	_ = send.buffer[aggregationKey].Add(message.Data(), partitionKey)
+
+	return []*mess.Message{message}, nil
 }

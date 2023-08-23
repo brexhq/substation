@@ -71,8 +71,8 @@ func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) 
 	return &meta, nil
 }
 
-func (t *metaSwitch) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (meta *metaSwitch) String() string {
+	b, _ := gojson.Marshal(meta.conf)
 	return string(b)
 }
 
@@ -80,44 +80,30 @@ func (*metaSwitch) Close(context.Context) error {
 	return nil
 }
 
-func (t *metaSwitch) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
+func (meta *metaSwitch) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
+	}
 
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
+	for _, c := range meta.conditional {
+		ok, err := c.op.Operate(ctx, message)
+		if err != nil {
+			return nil, fmt.Errorf("transform: meta_switch: %v", err)
+		}
+
+		if !ok {
 			continue
 		}
 
-		matched := false
-		for _, c := range t.conditional {
-			ok, err := c.op.Operate(ctx, message)
-			if err != nil {
-				return nil, fmt.Errorf("transform: meta_switch: %v", err)
-			}
-
-			if !ok {
-				continue
-			}
-
-			matched = true
-			messages, err := c.tf.Transform(ctx, message)
-			if err != nil {
-				return nil, fmt.Errorf("transform: meta_switch: %v", err)
-			}
-
-			output = append(output, messages...)
-
-			// If one condition matches, then don't check any more.
-			break
+		msgs, err := c.tf.Transform(ctx, message)
+		if err != nil {
+			return nil, fmt.Errorf("transform: meta_switch: %v", err)
 		}
 
-		// If no conditions match, then add the message to the output.
-		if !matched {
-			output = append(output, message)
-		}
+		return msgs, nil
 	}
 
-	return output, nil
+	// If no conditions match, then return the original message.
+	return []*mess.Message{message}, nil
 }

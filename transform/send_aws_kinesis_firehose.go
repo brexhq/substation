@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aggregate"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/firehose"
 	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
-	"github.com/jshlbrd/go-aggregate"
 )
 
 // Records greater than 1000 KiB in size cannot be put into Kinesis Firehose.
@@ -23,6 +23,7 @@ const sendKinesisFirehoseMessageSizeLimit = 1024 * 1000
 var errSendFirehoseRecordSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSKinesisFirehoseConfig struct {
+	Buffer  aggregate.Config      `json:"buffer"`
 	Auth    _config.ConfigAWSAuth `json:"auth"`
 	Request _config.ConfigRequest `json:"request"`
 	// Stream is the Kinesis Firehose Delivery Stream that data is sent to.
@@ -35,7 +36,7 @@ type sendAWSKinesisFirehose struct {
 	// client is safe for concurrent use.
 	client firehose.API
 	// buffer is safe for concurrent use.
-	buffer *aggregate.Bytes
+	buffer *aggregate.Aggregate
 }
 
 func newSendAWSKinesisFirehose(_ context.Context, cfg config.Config) (*sendAWSKinesisFirehose, error) {
@@ -53,11 +54,19 @@ func newSendAWSKinesisFirehose(_ context.Context, cfg config.Config) (*sendAWSKi
 		conf: conf,
 	}
 
-	// Firehose limits Batch operations at up to 4 MiB and
-	// 500 records per batch. This buffer will not exceed
-	// 3.9 MiB or 500 records.
-	send.buffer = &aggregate.Bytes{}
-	send.buffer.New(500, sendKinesisFirehoseMessageSizeLimit*4*.99)
+	agg, err := aggregate.New(
+		aggregate.Config{
+			// Firehose limits batch operations to 500 records.
+			Count: 500,
+			// Firehose limits batch operations to 4 MiB.
+			Size:     sendKinesisFirehoseMessageSizeLimit * 4,
+			Interval: conf.Buffer.Interval,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	send.buffer = agg
 
 	// Setup the AWS client.
 	send.client.Setup(aws.Config{
@@ -73,44 +82,38 @@ func (*sendAWSKinesisFirehose) Close(_ context.Context) error {
 	return nil
 }
 
-func (t *sendAWSKinesisFirehose) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	control := false
-	for _, message := range messages {
-		if message.IsControl() {
-			control = true
-			continue
+func (send *sendAWSKinesisFirehose) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	if message.IsControl() {
+		if send.buffer.Count() == 0 {
+			return []*mess.Message{message}, nil
 		}
 
-		if len(message.Data()) > sendKinesisFirehoseMessageSizeLimit {
-			return nil, fmt.Errorf("send: aws_kinesis_firehose: %v", errSendFirehoseRecordSizeLimit)
-		}
-
-		ok := t.buffer.Add(message.Data())
-		if !ok {
-			items := t.buffer.Get()
-			if _, err := t.client.PutRecordBatch(ctx, t.conf.Stream, items); err != nil {
-				return nil, fmt.Errorf("send: aws_kinesis_firehose: %v", err)
-			}
-
-			t.buffer.Reset()
-			_ = t.buffer.Add(message.Data())
-		}
-	}
-
-	// If a control wasn't received, then data stays in the buffer.
-	if !control {
-		return messages, nil
-	}
-
-	// Flush the buffer.
-	if t.buffer.Count() > 0 {
-		items := t.buffer.Get()
-		if _, err := t.client.PutRecordBatch(ctx, t.conf.Stream, items); err != nil {
+		items := send.buffer.Get()
+		if _, err := send.client.PutRecordBatch(ctx, send.conf.Stream, items); err != nil {
 			return nil, fmt.Errorf("send: aws_kinesis_firehose: %v", err)
 		}
 
-		t.buffer.Reset()
+		send.buffer.Reset()
+		return []*mess.Message{message}, nil
 	}
 
-	return messages, nil
+	if len(message.Data()) > sendKinesisFirehoseMessageSizeLimit {
+		return nil, fmt.Errorf("send: aws_kinesis_firehose: %v", errSendFirehoseRecordSizeLimit)
+	}
+
+	// Send data to Kinesis Firehose only when the buffer is full.
+	if ok := send.buffer.Add(message.Data()); ok {
+		return []*mess.Message{message}, nil
+	}
+
+	items := send.buffer.Get()
+	if _, err := send.client.PutRecordBatch(ctx, send.conf.Stream, items); err != nil {
+		return nil, fmt.Errorf("send: aws_kinesis_firehose: %v", err)
+	}
+
+	// Reset the buffer and add the message data.
+	send.buffer.Reset()
+	_ = send.buffer.Add(message.Data())
+
+	return []*mess.Message{message}, nil
 }

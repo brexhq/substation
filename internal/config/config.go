@@ -1,6 +1,8 @@
 package config
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // ConfigAWSAuth is used by functions that require AWS authentication.
 type ConfigAWSAuth struct {

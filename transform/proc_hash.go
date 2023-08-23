@@ -72,8 +72,8 @@ func newProcHash(_ context.Context, cfg config.Config) (*procHash, error) {
 	return &proc, nil
 }
 
-func (t *procHash) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procHash) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -81,61 +81,53 @@ func (*procHash) Close(context.Context) error {
 	return nil
 }
 
-func (t *procHash) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		switch t.isObject {
-		case true:
-			result := message.Get(t.conf.Key).String()
-
-			var value string
-			switch t.conf.Algorithm {
-			case "md5":
-				sum := md5.Sum([]byte(result))
-				value = fmt.Sprintf("%x", sum)
-			case "sha256":
-				sum := sha256.Sum256([]byte(result))
-				value = fmt.Sprintf("%x", sum)
-			default:
-				return nil, fmt.Errorf("transform: proc_hash: algorithm %s: %v", t.conf.Algorithm, errProcHashInvalidAlgorithm)
-			}
-
-			if err := message.Set(t.conf.SetKey, value); err != nil {
-				return nil, fmt.Errorf("transform: proc_hash: %v", err)
-			}
-
-			output = append(output, message)
-		case false:
-			var value string
-			switch t.conf.Algorithm {
-			case "md5":
-				sum := md5.Sum(message.Data())
-				value = fmt.Sprintf("%x", sum)
-			case "sha256":
-				sum := sha256.Sum256(message.Data())
-				value = fmt.Sprintf("%x", sum)
-			default:
-				return nil, fmt.Errorf("transform: proc_hash: algorithm %s: %v", t.conf.Algorithm, errProcHashInvalidAlgorithm)
-			}
-
-			msg, err := mess.New(
-				mess.SetData([]byte(value)),
-				mess.SetMetadata(message.Metadata()),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_hash: %v", err)
-			}
-
-			output = append(output, msg)
-		}
+func (proc *procHash) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	if !proc.isObject {
+		var value string
+		switch proc.conf.Algorithm {
+		case "md5":
+			sum := md5.Sum(message.Data())
+			value = fmt.Sprintf("%x", sum)
+		case "sha256":
+			sum := sha256.Sum256(message.Data())
+			value = fmt.Sprintf("%x", sum)
+		default:
+			return nil, fmt.Errorf("transform: proc_hash: algorithm %s: %v", proc.conf.Algorithm, errProcHashInvalidAlgorithm)
+		}
+
+		msg, err := mess.New(
+			mess.SetData([]byte(value)),
+			mess.SetMetadata(message.Metadata()),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_hash: %v", err)
+		}
+
+		return []*mess.Message{msg}, nil
+	}
+
+	result := message.Get(proc.conf.Key).String()
+
+	var value string
+	switch proc.conf.Algorithm {
+	case "md5":
+		sum := md5.Sum([]byte(result))
+		value = fmt.Sprintf("%x", sum)
+	case "sha256":
+		sum := sha256.Sum256([]byte(result))
+		value = fmt.Sprintf("%x", sum)
+	default:
+		return nil, fmt.Errorf("transform: proc_hash: algorithm %s: %v", proc.conf.Algorithm, errProcHashInvalidAlgorithm)
+	}
+
+	if err := message.Set(proc.conf.SetKey, value); err != nil {
+		return nil, fmt.Errorf("transform: proc_hash: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

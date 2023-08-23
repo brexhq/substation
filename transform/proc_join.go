@@ -50,8 +50,8 @@ func newProcJoin(_ context.Context, cfg config.Config) (*procJoin, error) {
 	return &proc, nil
 }
 
-func (t *procJoin) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procJoin) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -59,39 +59,32 @@ func (*procJoin) Close(context.Context) error {
 	return nil
 }
 
-func (t *procJoin) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		// Data is processed by retrieving and iterating the
-		// array (Get) containing string values and joining
-		// each one with the separator string.
-		//
-		// Get value:
-		// 	{"join":["foo","bar","baz"]}
-		// Set value:
-		// 	{"join:"foo.bar.baz"}
-		var value string
-		result := message.Get(t.conf.Key)
-		for i, res := range result.Array() {
-			value += res.String()
-			if i != len(result.Array())-1 {
-				value += t.conf.Separator
-			}
-		}
-
-		if err := message.Set(t.conf.SetKey, value); err != nil {
-			return nil, fmt.Errorf("transform: proc_join: %v", err)
-		}
-
-		output = append(output, message)
+func (proc *procJoin) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	// Data is processed by retrieving and iterating the
+	// array (Get) containing string values and joining
+	// each one with the separator string.
+	//
+	// Get value:
+	// 	{"join":["foo","bar","baz"]}
+	// Set value:
+	// 	{"join:"foo.bar.baz"}
+	var value string
+	result := message.Get(proc.conf.Key)
+	for i, res := range result.Array() {
+		value += res.String()
+		if i != len(result.Array())-1 {
+			value += proc.conf.Separator
+		}
+	}
+
+	if err := message.Set(proc.conf.SetKey, value); err != nil {
+		return nil, fmt.Errorf("transform: proc_join: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

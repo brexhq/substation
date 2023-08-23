@@ -32,14 +32,11 @@ func (*sendStdout) Close(context.Context) error {
 	return nil
 }
 
-func (t *sendStdout) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	for _, message := range messages {
-		if message.IsControl() {
-			continue
-		}
-
-		fmt.Println(string(message.Data()))
+func (*sendStdout) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return messages, nil
+	fmt.Println(string(message.Data()))
+	return []*mess.Message{message}, nil
 }

@@ -59,50 +59,48 @@ func (*procCopy) Close(context.Context) error {
 	return nil
 }
 
-func (t *procCopy) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		switch {
-		case t.isObject:
-			if err := message.Set(t.conf.SetKey, message.Get(t.conf.Key)); err != nil {
-				return nil, fmt.Errorf("transform: proc_copy: %v", err)
-			}
-
-			output = append(output, message)
-		case t.isFrom:
-			res := message.Get(t.conf.Key).String()
-
-			msg, err := mess.New(
-				mess.SetData([]byte(res)),
-				mess.SetMetadata(message.Metadata()),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_copy: %v", err)
-			}
-
-			output = append(output, msg)
-		case t.isTo:
-			msg, err := mess.New(
-				mess.SetMetadata(message.Metadata()),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_copy: %v", err)
-			}
-
-			if err := msg.Set(t.conf.SetKey, message.Data()); err != nil {
-				return nil, fmt.Errorf("transform: proc_copy: %v", err)
-			}
-
-			output = append(output, msg)
-		}
+func (proc *procCopy) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	if proc.isObject {
+		if err := message.Set(proc.conf.SetKey, message.Get(proc.conf.Key)); err != nil {
+			return nil, fmt.Errorf("transform: proc_copy: %v", err)
+		}
+
+		return []*mess.Message{message}, nil
+	}
+
+	if proc.isFrom {
+		res := message.Get(proc.conf.Key).String()
+
+		msg, err := mess.New(
+			mess.SetData([]byte(res)),
+			mess.SetMetadata(message.Metadata()),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_copy: %v", err)
+		}
+
+		return []*mess.Message{msg}, nil
+	}
+
+	if proc.isTo {
+		msg, err := mess.New(
+			mess.SetMetadata(message.Metadata()),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_copy: %v", err)
+		}
+
+		if err := msg.Set(proc.conf.SetKey, message.Data()); err != nil {
+			return nil, fmt.Errorf("transform: proc_copy: %v", err)
+		}
+
+		return []*mess.Message{msg}, nil
+	}
+
+	return nil, nil
 }

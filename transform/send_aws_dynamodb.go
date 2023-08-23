@@ -70,34 +70,32 @@ func (*sendAWSDynamoDB) Close(_ context.Context) error {
 	return nil
 }
 
-func (t *sendAWSDynamoDB) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	for _, message := range messages {
-		if message.IsControl() {
-			continue
+func (send *sendAWSDynamoDB) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
+	}
+
+	if !json.Valid(message.Data()) {
+		return nil, fmt.Errorf("send: aws_dynamodb: table %s: %v", send.conf.Table, errSendDynamoDBNonObject)
+	}
+
+	items := message.Get(send.conf.Key).Array()
+	for _, item := range items {
+		cache := make(map[string]interface{})
+		for k, v := range item.Map() {
+			cache[k] = v.Value()
 		}
 
-		if !json.Valid(message.Data()) {
-			return nil, fmt.Errorf("send: aws_dynamodb: table %s: %v", t.conf.Table, errSendDynamoDBNonObject)
+		values, err := dynamodbattribute.MarshalMap(cache)
+		if err != nil {
+			return nil, fmt.Errorf("send: aws_dynamodb: table %s: %v", send.conf.Table, err)
 		}
 
-		items := message.Get(t.conf.Key).Array()
-		for _, item := range items {
-			cache := make(map[string]interface{})
-			for k, v := range item.Map() {
-				cache[k] = v.Value()
-			}
-
-			values, err := dynamodbattribute.MarshalMap(cache)
-			if err != nil {
-				return nil, fmt.Errorf("send: aws_dynamodb: table %s: %v", t.conf.Table, err)
-			}
-
-			if _, err = t.client.PutItem(ctx, t.conf.Table, values); err != nil {
-				// PutItem errors return metadata.
-				return nil, fmt.Errorf("send: aws_dynamodb: %v", err)
-			}
+		if _, err = send.client.PutItem(ctx, send.conf.Table, values); err != nil {
+			// PutItem errors return metadata.
+			return nil, fmt.Errorf("send: aws_dynamodb: %v", err)
 		}
 	}
 
-	return messages, nil
+	return []*mess.Message{message}, nil
 }

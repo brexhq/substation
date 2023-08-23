@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/transform"
 )
 
@@ -28,15 +28,15 @@ func ExampleTransformer() {
 	}
 
 	// Transformer is applied to a message.
-	message, err := mess.New(
-		mess.SetData([]byte(`{"a":1}`)),
+	msg, err := message.New(
+		message.SetData([]byte(`{"a":1}`)),
 	)
 	if err != nil {
 		// handle err
 		panic(err)
 	}
 
-	results, err := tf.Transform(ctx, message)
+	results, err := tf.Transform(ctx, msg)
 	if err != nil {
 		// handle err
 		panic(err)

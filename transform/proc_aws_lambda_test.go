@@ -57,7 +57,7 @@ var procAWSLambdaTests = []struct {
 	},
 }
 
-func TestProcAWSLambda(t *testing.T) {
+func TestprocAWSLambda(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range procAWSLambdaTests {
 		message, err := mess.New(
@@ -89,7 +89,7 @@ func TestProcAWSLambda(t *testing.T) {
 	}
 }
 
-func benchmarkProcAWSLambda(b *testing.B, tf *procAWSLambda, data []byte) {
+func benchmarkprocAWSLambda(b *testing.B, tf *procAWSLambda, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
@@ -100,7 +100,7 @@ func benchmarkProcAWSLambda(b *testing.B, tf *procAWSLambda, data []byte) {
 	}
 }
 
-func BenchmarkProcAWSLambda(b *testing.B) {
+func BenchmarkprocAWSLambda(b *testing.B) {
 	ctx := context.TODO()
 	for _, test := range procAWSLambdaTests {
 		b.Run(test.name,
@@ -110,7 +110,7 @@ func BenchmarkProcAWSLambda(b *testing.B) {
 					b.Fatal(err)
 				}
 
-				benchmarkProcAWSLambda(b, proc, test.test)
+				benchmarkprocAWSLambda(b, proc, test.test)
 			},
 		)
 	}

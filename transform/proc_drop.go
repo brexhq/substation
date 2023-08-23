@@ -37,14 +37,10 @@ func (*procDrop) Close(context.Context) error {
 	return nil
 }
 
-func (t *procDrop) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		if message.IsControl() {
-			output = append(output, message)
-		}
+func (t *procDrop) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	return nil, nil
 }

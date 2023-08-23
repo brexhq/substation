@@ -38,8 +38,10 @@ var procCombineDataTests = []struct {
 		"max_count",
 		config.Config{
 			Settings: map[string]interface{}{
+				"buffer": map[string]interface{}{
+					"count": 2,
+				},
 				"separator": `\n`,
-				"max_count": 2,
 			},
 		},
 		[]string{
@@ -56,8 +58,10 @@ var procCombineDataTests = []struct {
 		"max_size",
 		config.Config{
 			Settings: map[string]interface{}{
+				"buffer": map[string]interface{}{
+					"size": 35,
+				},
 				"separator": `\n`,
-				"max_size":  35,
 			},
 		},
 		[]string{
@@ -74,9 +78,11 @@ var procCombineDataTests = []struct {
 		"max_count and max_size",
 		config.Config{
 			Settings: map[string]interface{}{
+				"buffer": map[string]interface{}{
+					"count": 2,
+					"size":  100,
+				},
 				"separator": `\n`,
-				"max_count": 2,
-				"max_size":  100,
 			},
 		},
 		[]string{
@@ -94,7 +100,7 @@ var procCombineDataTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"separator": `\n`,
-				"set_key":   "combine.-1",
+				"set_key":   "combine",
 			},
 		},
 		[]string{
@@ -140,7 +146,7 @@ func TestProcCombineData(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			result, err := proc.Transform(ctx, messages...)
+			result, err := Apply(ctx, []Transformer{proc}, messages...)
 			if err != nil {
 				t.Error(err)
 			}
@@ -172,7 +178,7 @@ func benchmarkProcCodenseData(b *testing.B, tf *procCombine, data []string) {
 			messages = append(messages, msg)
 		}
 
-		_, _ = tf.Transform(ctx, messages...)
+		_, _ = Apply(ctx, []Transformer{tf}, messages...)
 	}
 }
 
@@ -201,7 +207,7 @@ var procCombineObjectTests = []struct {
 		"no limit",
 		config.Config{
 			Settings: map[string]interface{}{
-				"set_key":     "combine.-1",
+				"set_key":     "combine",
 				"combine_key": "foo",
 			},
 		},
@@ -252,7 +258,7 @@ func TestProcCombineObject(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			result, err := proc.Transform(ctx, messages...)
+			result, err := Apply(ctx, []Transformer{proc}, messages...)
 			if err != nil {
 				t.Error(err)
 			}

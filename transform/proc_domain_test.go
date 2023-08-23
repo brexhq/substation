@@ -76,20 +76,7 @@ var procDomainTests = []struct {
 		},
 		[]byte(`{"foo":"example.com"}`),
 		[][]byte{
-			[]byte(`{"foo":""}`),
-		},
-		nil,
-	},
-	{
-		"data",
-		config.Config{
-			Settings: map[string]interface{}{
-				"type": "subdomain",
-			},
-		},
-		[]byte(`www.bar.com`),
-		[][]byte{
-			[]byte(`www`),
+			[]byte(`{"foo":"example.com"}`),
 		},
 		nil,
 	},

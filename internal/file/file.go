@@ -223,7 +223,7 @@ type Path struct {
 }
 
 // New constructs a file path using the pattern
-// [prefix]/[time_format]/[uuid]/[suffix], where each field is optional
+// [prefix]/[prefix_key]/[time_format]/[uuid], where each field is optional
 // and builds on the previous field. The caller is responsible for
 // creating an OS agnostic file path (filepath.FromSlash is recommended).
 //
@@ -237,12 +237,12 @@ func (p Path) New() string {
 	// individual field to be used as the filename if no other fields are set.
 	arr := []string{}
 
-	// PrefixKey takes precedence over Prefix.
-	switch {
-	case p.PrefixKey != "":
-		arr = append(arr, "${PATH_PREFIX}")
-	case p.Prefix != "":
+	if p.Prefix != "" {
 		arr = append(arr, p.Prefix)
+	}
+
+	if p.PrefixKey != "" {
+		arr = append(arr, "${PATH_PREFIX}")
 	}
 
 	if p.TimeFormat != "" {
@@ -261,14 +261,6 @@ func (p Path) New() string {
 
 	if p.UUID {
 		arr = append(arr, uuid.NewString())
-	}
-
-	// SuffixKey takes precedence over Suffix.
-	switch {
-	case p.SuffixKey != "":
-		arr = append(arr, "${PATH_SUFFIX}")
-	case p.Suffix != "":
-		arr = append(arr, p.Suffix)
 	}
 
 	// if only one field is set, then this returns a filename, otherwise

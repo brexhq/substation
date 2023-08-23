@@ -71,8 +71,8 @@ func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, err
 	return &meta, nil
 }
 
-func (t *metaPipeline) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (meta *metaPipeline) String() string {
+	b, _ := gojson.Marshal(meta.conf)
 	return string(b)
 }
 
@@ -80,62 +80,54 @@ func (*metaPipeline) Close(context.Context) error {
 	return nil
 }
 
-func (t *metaPipeline) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		switch t.isObject {
-		case true:
-			result := message.Get(t.conf.Key)
-			if result.IsArray() {
-				return nil, fmt.Errorf("transform: meta_pipeline: key %s: %v", t.conf.Key, errMetaPipelineArrayInput)
-			}
-
-			newMessage, err := mess.New(
-				mess.SetData([]byte(result.String())),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
-			}
-
-			nMessage, err := Apply(ctx, t.tf, newMessage)
-			if err != nil {
-				return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
-			}
-
-			var tmpMessages []*mess.Message
-			for _, message := range nMessage {
-				msg, err := mess.New(
-					mess.SetData(message.Data()),
-					mess.SetMetadata(message.Metadata()),
-				)
-				if err != nil {
-					return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
-				}
-
-				if err := msg.Set(t.conf.SetKey, message.Data()); err != nil {
-					return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
-				}
-
-				tmpMessages = append(tmpMessages, msg)
-			}
-
-			output = append(output, tmpMessages...)
-		case false:
-			msg, err := Apply(ctx, t.tf, message)
-			if err != nil {
-				return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
-			}
-
-			output = append(output, msg...)
-		}
+func (meta *metaPipeline) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	if !meta.isObject {
+		messages, err := Apply(ctx, meta.tf, message)
+		if err != nil {
+			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+		}
+
+		return messages, nil
+	}
+
+	result := message.Get(meta.conf.Key)
+	if result.IsArray() {
+		return nil, fmt.Errorf("transform: meta_pipeline: key %s: %v", meta.conf.Key, errMetaPipelineArrayInput)
+	}
+
+	newMessage, err := mess.New(
+		mess.SetData([]byte(result.String())),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+	}
+
+	nMessage, err := Apply(ctx, meta.tf, newMessage)
+	if err != nil {
+		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+	}
+
+	var tmpMessages []*mess.Message
+	for _, message := range nMessage {
+		msg, err := mess.New(
+			mess.SetData(message.Data()),
+			mess.SetMetadata(message.Metadata()),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+		}
+
+		if err := msg.Set(meta.conf.SetKey, message.Data()); err != nil {
+			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+		}
+
+		tmpMessages = append(tmpMessages, msg)
+	}
+
+	return tmpMessages, nil
 }

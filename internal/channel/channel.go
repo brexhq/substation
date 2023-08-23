@@ -41,6 +41,10 @@ func (c *Channel[T]) Send(t T) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if c.closed {
+		return
+	}
+
 	c.c <- t
 }
 

@@ -55,8 +55,8 @@ func newProcSplit(_ context.Context, cfg config.Config) (*procSplit, error) {
 	return &proc, nil
 }
 
-func (t *procSplit) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procSplit) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -64,40 +64,36 @@ func (*procSplit) Close(context.Context) error {
 	return nil
 }
 
-func (t *procSplit) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
+func (proc *procSplit) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
+	}
 
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
+	if !proc.isObject {
+		var output []*mess.Message
 
-		switch t.isObject {
-		case true:
-			res := message.Get(t.conf.Key).String()
-			v := strings.Split(res, t.conf.Separator)
-
-			if err := message.Set(t.conf.SetKey, v); err != nil {
+		for _, x := range bytes.Split(message.Data(), []byte(proc.conf.Separator)) {
+			msg, err := mess.New(
+				mess.SetData(x),
+				mess.SetMetadata(message.Metadata()),
+			)
+			if err != nil {
 				return nil, fmt.Errorf("transform: proc_split: %v", err)
 			}
 
-			output = append(output, message)
-		case false:
-			for _, x := range bytes.Split(message.Data(), []byte(t.conf.Separator)) {
-				msg, err := mess.New(
-					mess.SetData(x),
-					mess.SetMetadata(message.Metadata()),
-				)
-				if err != nil {
-					return nil, fmt.Errorf("transform: proc_split: %v", err)
-				}
-
-				output = append(output, msg)
-			}
+			output = append(output, msg)
 		}
+
+		return output, nil
 	}
 
-	return output, nil
+	res := message.Get(proc.conf.Key).String()
+	v := strings.Split(res, proc.conf.Separator)
+
+	if err := message.Set(proc.conf.SetKey, v); err != nil {
+		return nil, fmt.Errorf("transform: proc_split: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

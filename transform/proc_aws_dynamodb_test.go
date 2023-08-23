@@ -34,7 +34,7 @@ var procAWSDynamoDBTests = []struct {
 	api      ddb.API
 }{
 	{
-		"JSON",
+		"obj",
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":                      "foo",
@@ -64,7 +64,7 @@ var procAWSDynamoDBTests = []struct {
 	},
 }
 
-func TestProcAWSDynamoDB(t *testing.T) {
+func TestprocAWSDynamoDB(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range procAWSDynamoDBTests {
 		message, err := mess.New(
@@ -96,7 +96,7 @@ func TestProcAWSDynamoDB(t *testing.T) {
 	}
 }
 
-func benchmarkProcAWSDynamoDB(b *testing.B, tf *procAWSDynamoDB, data []byte) {
+func benchmarkprocAWSDynamoDB(b *testing.B, tf *procAWSDynamoDB, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
@@ -107,7 +107,7 @@ func benchmarkProcAWSDynamoDB(b *testing.B, tf *procAWSDynamoDB, data []byte) {
 	}
 }
 
-func BenchmarkProcAWSDynamoDB(b *testing.B) {
+func BenchmarkprocAWSDynamoDB(b *testing.B) {
 	ctx := context.TODO()
 	for _, test := range procAWSDynamoDBTests {
 		b.Run(test.name,
@@ -118,7 +118,7 @@ func BenchmarkProcAWSDynamoDB(b *testing.B) {
 				}
 				proc.client = test.api
 
-				benchmarkProcAWSDynamoDB(b, proc, test.test)
+				benchmarkprocAWSDynamoDB(b, proc, test.test)
 			},
 		)
 	}

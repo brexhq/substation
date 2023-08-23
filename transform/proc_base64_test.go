@@ -61,7 +61,7 @@ var procBase64Tests = []struct {
 	},
 }
 
-func TestProcBase64(t *testing.T) {
+func TestprocBase64(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range procBase64Tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -94,7 +94,7 @@ func TestProcBase64(t *testing.T) {
 	}
 }
 
-func benchmarkProcBase64(b *testing.B, tf *procBase64, data []byte) {
+func benchmarkprocBase64(b *testing.B, tf *procBase64, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		message, _ := mess.New(
@@ -105,7 +105,7 @@ func benchmarkProcBase64(b *testing.B, tf *procBase64, data []byte) {
 	}
 }
 
-func BenchmarkProcBase64(b *testing.B) {
+func BenchmarkprocBase64(b *testing.B) {
 	for _, test := range procBase64Tests {
 		proc, err := newProcBase64(context.TODO(), test.cfg)
 		if err != nil {
@@ -114,7 +114,7 @@ func BenchmarkProcBase64(b *testing.B) {
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkProcBase64(b, proc, test.test)
+				benchmarkprocBase64(b, proc, test.test)
 			},
 		)
 	}

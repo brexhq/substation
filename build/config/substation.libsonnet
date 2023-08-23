@@ -11,13 +11,13 @@
         local default = { negate: null, condition: null },
 
         type: 'meta_condition',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       for_each(settings=null): {
         local default = { key: null, negate: null, type: null, inspector: null },
 
         type: 'meta_for_each',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
     },
     insp: {
@@ -26,43 +26,43 @@
         local default = $.condition.insp.default { type: null },
 
         type: 'insp_content',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       ip(settings=null): {
         local default = $.condition.insp.default { type: null },
 
         type: 'insp_ip',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       json_valid(settings=null): {
         local default = {},
 
         type: 'insp_json_valid',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       length(settings=null): {
         local default = $.condition.insp.default { type: null, length: null, measurement: 'byte' },
 
         type: 'insp_length',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       random(settings=null): {
         local default = {},
 
         type: 'insp_random',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       regexp(settings=null): {
         local default = $.condition.insp.default { expression: null },
 
         type: 'insp_regexp',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       string(settings=null): {
         local default = $.condition.insp.default { type: null, string: null },
 
         type: 'insp_string',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
     },
   },
@@ -78,7 +78,7 @@
         local default = $.transform.default { transform: null },
 
         type: 'meta_for_each',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       pipeline(settings=null): {
         assert settings.transforms != null : 'meta_pipeline must contain transforms',
@@ -87,7 +87,7 @@
         local default = $.transform.default { transforms: null },
 
         type: 'meta_pipeline',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       switch(settings=null): {
         assert settings.switch != null : 'meta_switch must be set',
@@ -106,7 +106,7 @@
           + { table: null, key: null, set_key: null, key_condition_expression: null, limit: 1, scan_index_forward: false },
 
         type: 'proc_aws_dynamodb',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       aws_lambda(settings=null): {
         local default =
@@ -116,7 +116,7 @@
           + { error_on_failure: false, function_name: null },
 
         type: 'proc_aws_lambda',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       base64(settings=null): {
         local default =
@@ -124,7 +124,7 @@
           { direction: null },
 
         type: 'proc_base64',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       capture(settings=null): {
         local default =
@@ -132,7 +132,7 @@
           { expression: null, type: 'find', count: -1 },
 
         type: 'proc_capture',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       case(settings=null): {
         local default =
@@ -140,7 +140,7 @@
           { type: null },
 
         type: 'proc_case',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       combine(settings=null): {
         local default =
@@ -148,7 +148,7 @@
           { combine_key: null, separator: null, max_count: 1000, max_size: 10000 },
 
         type: 'proc_combine',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       convert(settings=null): {
         local default =
@@ -156,19 +156,19 @@
           { type: null },
 
         type: 'proc_convert',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       copy(settings=null): {
         local default = $.transform.default,
 
         type: 'proc_copy',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       delete(settings=null): {
         local default = { key: null },
 
         type: 'proc_delete',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       dns(settings=null): {
         local default =
@@ -177,7 +177,7 @@
           + { type: null },
 
         type: 'proc_dns',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       domain(settings=null): {
         local default =
@@ -185,25 +185,25 @@
           { error_on_failure: false, type: null },
 
         type: 'proc_domain',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       drop(settings=null): {
         local default = {},
 
         type: 'proc_drop',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       err(settings=null): {
         local default = { err: null },
 
         type: 'proc_err',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       expand(settings=null): {
         local default = $.transform.default,
 
         type: 'proc_expand',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       flatten_array(settings=null): {
         local default =
@@ -211,7 +211,7 @@
           { deep: true },
 
         type: 'proc_flatten_array',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       group(settings=null): {
         local default =
@@ -219,7 +219,7 @@
           { keys: null },
 
         type: 'proc_group',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       gzip(settings=null): {
         local default =
@@ -227,7 +227,7 @@
           { direction: null },
 
         type: 'proc_gzip',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       hash(settings=null): {
         local default =
@@ -235,7 +235,7 @@
           { algorithm: 'sha256' },
 
         type: 'proc_hash',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       http(settings=null): {
         local default =
@@ -243,13 +243,13 @@
           { error_on_failure: false, method: 'get', url: null, headers: null, body_key: null },
 
         type: 'proc_http',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       insert(settings=null): {
         local default = { set_key: null, value: null },
 
         type: 'proc_insert',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       join(settings=null): {
         local default =
@@ -257,7 +257,7 @@
           { separator: null },
 
         type: 'proc_join',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       jq(settings=null): {
         local default =
@@ -265,7 +265,7 @@
           { query: null },
 
         type: 'proc_jq',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       kv_store(settings=null): {
         local default =
@@ -273,7 +273,7 @@
           { type: null, prefix: null, ttl_key: null, ttl_offset: null, kv_store: null },
 
         type: 'proc_kv_store',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       math(settings=null): {
         local default =
@@ -281,13 +281,13 @@
           { operation: null },
 
         type: 'proc_math',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       pretty_print(settings=null): {
         local default = { direction: null },
 
         type: 'proc_pretty_print',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       replace(settings=null): {
         local default =
@@ -295,7 +295,7 @@
           { old: null, new: null, count: -1 },
 
         type: 'proc_replace',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       split(settings=null): {
         local default =
@@ -303,7 +303,7 @@
           { separator: null },
 
         type: 'proc_split',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       time(settings=null): {
         local default =
@@ -311,7 +311,7 @@
           { format: null, location: null, set_format: '2006-01-02T15:04:05.000000Z', set_location: null },
 
         type: 'proc_time',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
     },
     send: {
@@ -322,7 +322,7 @@
           + { table: null, key: null },
 
         type: 'send_aws_dynamodb',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       aws_kinesis(settings=null): {
         local default =
@@ -331,7 +331,7 @@
           + { stream: null, partition: null, partition_key: null, shard_redistribution: false },
 
         type: 'send_aws_kinesis',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       aws_kinesis_firehose(settings=null): {
         local default =
@@ -340,7 +340,7 @@
           + { stream: null },
 
         type: 'send_aws_kinesis_firehose',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       aws_s3(settings=null): {
         local default =
@@ -349,7 +349,7 @@
           + { bucket: null, file_path: null, file_format: null, file_compression: null },
 
         type: 'send_aws_s3',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       aws_sns(settings=null): {
         local default =
@@ -358,7 +358,7 @@
           + { topic: null },
 
         type: 'send_aws_sns',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       aws_sqs(settings=null): {
         local default =
@@ -367,28 +367,36 @@
           + { queue: null },
 
         type: 'send_aws_sqs',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       file(settings=null): {
-        local default = { file_path: null, file_format: { type: 'json' }, file_compression: { type: 'gzip' } },
+        local default = { 
+          buffer: $.aggregate,
+          file_path: $.file_path,
+          file_format: { type: 'json' }, 
+          file_compression: { type: 'gzip' } 
+        },
 
         type: 'send_file',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
       http(settings=null): {
         local default = { url: null, headers: null, headers_key: null },
 
         type: 'send_http',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
-      stdout: {
+      stdout(settings=null): {
+        local default = { },
+
         type: 'send_stdout',
+        settings: std.mergePatch(settings, default),
       },
       sumologic(settings=null): {
         local default = { url: null, category: null, category_key: null },
 
         type: 'send_sumologic',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(settings, default),
       },
     },
   },
@@ -398,38 +406,51 @@
       local default = { table: null, attributes: { partition_key: null, sort_key: null, value: null, ttl: null } },
 
       type: 'aws_dynamodb',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(settings, default),
     },
     csv_file(settings=null): {
       local default = { file: null, column: null, delimiter: ',', header: null },
 
       type: 'csv_file',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(settings, default),
     },
     json_file(settings=$.defaults.kv_store.json_file.settings): {
       local default = { file: null, is_lines: false },
 
       type: 'json_file',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(settings, default),
     },
     memory(settings=null): {
       local default = { capacity: 1024 },
 
       type: 'memory',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(settings, default),
     },
     mmdb(settings=null): {
       local default = { file: null },
 
       type: 'mmdb',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(settings, default),
     },
     text_file(settings=null): {
       local default = { file: null },
 
       type: 'text_file',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(settings, default),
     },
+  },
+  // Mirrors config from the internal/aggregate package.
+  aggregate: {
+    max_count: 0,
+    max_size: 0,
+    max_interval: 0,
+  },
+  // Mirrors config from the internal/file package.
+  file_path: {
+    prefix: null,
+    prefix_key: null,
+    time_format: '2006/01/02',
+    extension: true,
   },
   helpers: {
     // If the input is not an array, then this returns it as an array.

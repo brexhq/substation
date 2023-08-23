@@ -1,12 +1,12 @@
 local sub = import '../../build/config/substation.libsonnet';
 
-local match = sub.interfaces.condition.oper.any(
-  sub.interfaces.condition.insp.strings(
+local match = sub.condition.oper.any(
+  sub.condition.insp.string(
     settings={ key: 'foo', type:'equals', expression: 'baz' },
   ),
 );
 
-local copy = sub.interfaces.transform.proc.copy(
+local copy = sub.transform.proc.copy(
   settings={ key: 'foo', set_key: 'bar' },
 );
 
@@ -15,7 +15,7 @@ local copy = sub.interfaces.transform.proc.copy(
     sub.patterns.transform.conditional(
       condition=match, transform=copy,
     ),
-    sub.interfaces.transform.proc.insert(
+    sub.transform.proc.insert(
       settings={ set_key: 'qux', value: 'quux' },
     ),
   ]

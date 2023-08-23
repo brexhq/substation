@@ -51,8 +51,8 @@ func newProcJQ(_ context.Context, cfg config.Config) (*procJQ, error) {
 	return &proc, nil
 }
 
-func (t *procJQ) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procJQ) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -60,64 +60,54 @@ func (*procJQ) Close(context.Context) error {
 	return nil
 }
 
-func (t *procJQ) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		var i interface{}
-		if err := json.Unmarshal(message.Data(), &i); err != nil {
-			return nil, fmt.Errorf("transform: proc_jq: %v", err)
-		}
-
-		var arr []interface{}
-		iter := t.query.RunWithContext(ctx, i)
-
-		for {
-			v, ok := iter.Next()
-			if !ok {
-				break
-			}
-			if err, ok := v.(error); ok {
-				return nil, fmt.Errorf("transform: proc_jq: %v", err)
-			}
-
-			arr = append(arr, v)
-		}
-
-		var err error
-		var b []byte
-		switch len(arr) {
-		case 0:
-			err = errProcJQNoOutputGenerated
-		case 1:
-			b, err = json.Marshal(arr[0])
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_jq: %v", err)
-			}
-		default:
-			b, err = json.Marshal(arr)
-		}
-
-		if err != nil {
-			return nil, fmt.Errorf("transform: proc_jq: %v", err)
-		}
-
-		msg, err := mess.New(
-			mess.SetData(b),
-			mess.SetMetadata(message.Metadata()),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("transform: proc_jq: %v", err)
-		}
-
-		output = append(output, msg)
+func (proc *procJQ) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	var i interface{}
+	if err := json.Unmarshal(message.Data(), &i); err != nil {
+		return nil, fmt.Errorf("transform: proc_jq: %v", err)
+	}
+
+	var arr []interface{}
+	iter := proc.query.RunWithContext(ctx, i)
+
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			return nil, fmt.Errorf("transform: proc_jq: %v", err)
+		}
+
+		arr = append(arr, v)
+	}
+
+	var err error
+	var b []byte
+	switch len(arr) {
+	case 0:
+		return nil, fmt.Errorf("transform: proc_jq: %v", errProcJQNoOutputGenerated)
+	case 1:
+		b, err = json.Marshal(arr[0])
+	default:
+		b, err = json.Marshal(arr)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("transform: proc_jq: %v", err)
+	}
+
+	msg, err := mess.New(
+		mess.SetData(b),
+		mess.SetMetadata(message.Metadata()),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("transform: proc_jq: %v", err)
+	}
+
+	return []*mess.Message{msg}, nil
 }

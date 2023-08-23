@@ -62,8 +62,8 @@ type procTime struct {
 	isObject bool
 }
 
-func (t *procTime) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procTime) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -99,117 +99,106 @@ func newProcTime(_ context.Context, cfg config.Config) (*procTime, error) {
 	return &proc, nil
 }
 
-func (t *procTime) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		// "now" processing, supports objects and data.
-		if t.conf.Format == "now" {
-			ts := time.Now()
-
-			var value interface{}
-			switch t.conf.SetFormat {
-			case "unix":
-				value = ts.Unix()
-			case "unix_milli":
-				value = ts.UnixMilli()
-			default:
-				value = ts.Format(t.conf.SetFormat)
-			}
-
-			if t.conf.SetKey != "" {
-				if err := message.Set(t.conf.SetKey, value); err != nil {
-					return nil, fmt.Errorf("transform: proc_time: %v", err)
-				}
-
-				output = append(output, message)
-				continue
-			}
-
-			var data []byte
-			switch v := value.(type) {
-			case int64:
-				data = []byte(strconv.FormatInt(v, 10))
-			case string:
-				data = []byte(v)
-			}
-
-			msg, err := mess.New(
-				mess.SetData(data),
-				mess.SetMetadata(message.Metadata()),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_time: %v", err)
-			}
-
-			output = append(output, msg)
-			continue
-		}
-
-		switch t.isObject {
-		case true:
-			result := message.Get(t.conf.Key)
-
-			// Return input, otherwise the time defaults to 1970.
-			if !result.Exists() {
-				output = append(output, message)
-				continue
-			}
-
-			value, err := t.process(result)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_time: %v", err)
-			}
-
-			if err := message.Set(t.conf.SetKey, value); err != nil {
-				return nil, fmt.Errorf("transform: proc_time: %v", err)
-			}
-
-			output = append(output, message)
-		case false:
-			tmp, err := json.Set([]byte{}, "tmp", message.Data())
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_time: %v", err)
-			}
-
-			res := json.Get(tmp, "tmp")
-			value, err := t.process(res)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_time: %v", err)
-			}
-
-			var data []byte
-			switch v := value.(type) {
-			case int64:
-				data = []byte(strconv.FormatInt(v, 10))
-			case string:
-				data = []byte(v)
-			}
-
-			msg, err := mess.New(
-				mess.SetData(data),
-				mess.SetMetadata(message.Metadata()),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_time: %v", err)
-			}
-
-			output = append(output, msg)
-		}
+func (proc *procTime) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	// "now" processing.
+	if proc.conf.Format == "now" {
+		ts := time.Now()
+
+		var value interface{}
+		switch proc.conf.SetFormat {
+		case "unix":
+			value = ts.Unix()
+		case "unix_milli":
+			value = ts.UnixMilli()
+		default:
+			value = ts.Format(proc.conf.SetFormat)
+		}
+
+		if proc.conf.SetKey != "" {
+			if err := message.Set(proc.conf.SetKey, value); err != nil {
+				return nil, fmt.Errorf("transform: proc_time: %v", err)
+			}
+
+			return []*mess.Message{message}, nil
+		}
+
+		var data []byte
+		switch v := value.(type) {
+		case int64:
+			data = []byte(strconv.FormatInt(v, 10))
+		case string:
+			data = []byte(v)
+		}
+
+		msg, err := mess.New(
+			mess.SetData(data),
+			mess.SetMetadata(message.Metadata()),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_time: %v", err)
+		}
+
+		return []*mess.Message{msg}, nil
+	}
+
+	if !proc.isObject {
+		tmp, err := json.Set([]byte{}, "tmp", message.Data())
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_time: %v", err)
+		}
+
+		res := json.Get(tmp, "tmp")
+		value, err := proc.process(res)
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_time: %v", err)
+		}
+
+		var data []byte
+		switch v := value.(type) {
+		case int64:
+			data = []byte(strconv.FormatInt(v, 10))
+		case string:
+			data = []byte(v)
+		}
+
+		msg, err := mess.New(
+			mess.SetData(data),
+			mess.SetMetadata(message.Metadata()),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_time: %v", err)
+		}
+
+		return []*mess.Message{msg}, nil
+	}
+
+	result := message.Get(proc.conf.Key)
+
+	// Return input, otherwise the time defaults to 1970.
+	if !result.Exists() {
+		return []*mess.Message{message}, nil
+	}
+
+	value, err := proc.process(result)
+	if err != nil {
+		return nil, fmt.Errorf("transform: proc_time: %v", err)
+	}
+
+	if err := message.Set(proc.conf.SetKey, value); err != nil {
+		return nil, fmt.Errorf("transform: proc_time: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }
 
-func (t *procTime) process(result gjson.Result) (interface{}, error) {
+func (proc *procTime) process(result gjson.Result) (interface{}, error) {
 	var timeDate time.Time
-	switch t.conf.Format {
+	switch proc.conf.Format {
 	case "unix":
 		secs := math.Floor(result.Float())
 		nanos := math.Round((result.Float() - secs) * 1000000000)
@@ -218,41 +207,41 @@ func (t *procTime) process(result gjson.Result) (interface{}, error) {
 		secs := math.Floor(result.Float())
 		timeDate = time.Unix(0, int64(secs)*1000000)
 	default:
-		if t.conf.Location != "" {
-			loc, err := time.LoadLocation(t.conf.Location)
+		if proc.conf.Location != "" {
+			loc, err := time.LoadLocation(proc.conf.Location)
 			if err != nil {
-				return nil, fmt.Errorf("transform: proc_time: location %s: %v", t.conf.Location, err)
+				return nil, fmt.Errorf("transform: proc_time: location %s: %v", proc.conf.Location, err)
 			}
 
-			timeDate, err = time.ParseInLocation(t.conf.Format, result.String(), loc)
+			timeDate, err = time.ParseInLocation(proc.conf.Format, result.String(), loc)
 			if err != nil {
-				return nil, fmt.Errorf("transform: time parse: format %s location %s: %v", t.conf.Format, t.conf.Location, err)
+				return nil, fmt.Errorf("transform: time parse: format %s location %s: %v", proc.conf.Format, proc.conf.Location, err)
 			}
 		} else {
 			var err error
-			timeDate, err = time.Parse(t.conf.Format, result.String())
+			timeDate, err = time.Parse(proc.conf.Format, result.String())
 			if err != nil {
-				return nil, fmt.Errorf("transform: time parse: format %s: %v", t.conf.Format, err)
+				return nil, fmt.Errorf("transform: time parse: format %s: %v", proc.conf.Format, err)
 			}
 		}
 	}
 
 	timeDate = timeDate.UTC()
-	if t.conf.SetLocation != "" {
-		loc, err := time.LoadLocation(t.conf.SetLocation)
+	if proc.conf.SetLocation != "" {
+		loc, err := time.LoadLocation(proc.conf.SetLocation)
 		if err != nil {
-			return nil, fmt.Errorf("transform: proc_time: location %s: %v", t.conf.SetLocation, err)
+			return nil, fmt.Errorf("transform: proc_time: location %s: %v", proc.conf.SetLocation, err)
 		}
 
 		timeDate = timeDate.In(loc)
 	}
 
-	switch t.conf.SetFormat {
+	switch proc.conf.SetFormat {
 	case "unix":
 		return timeDate.Unix(), nil
 	case "unix_milli":
 		return timeDate.UnixMilli(), nil
 	default:
-		return timeDate.Format(t.conf.SetFormat), nil
+		return timeDate.Format(proc.conf.SetFormat), nil
 	}
 }

@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aggregate"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/sqs"
 	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	mess "github.com/brexhq/substation/message"
-	"github.com/jshlbrd/go-aggregate"
 )
 
 // records greater than 256 KB in size cannot be
@@ -23,6 +23,7 @@ const sendSQSMessageSizeLimit = 1024 * 1024 * 256
 var errSendSQSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSQSConfig struct {
+	Buffer  aggregate.Config      `json:"buffer"`
 	Auth    _config.ConfigAWSAuth `json:"auth"`
 	Request _config.ConfigRequest `json:"request"`
 	// Queue is the AWS SQS queue name that data is sent to.
@@ -35,7 +36,7 @@ type sendAWSSQS struct {
 	// client is safe for concurrent use.
 	client sqs.API
 	// buffer is safe for concurrent use.
-	buffer *aggregate.Bytes
+	buffer *aggregate.Aggregate
 }
 
 func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
@@ -60,11 +61,19 @@ func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 		MaxRetries: conf.Request.MaxRetries,
 	})
 
-	// SQS limits messages (both individual and batched)
-	// at 256 KB. This buffer will not exceed 256 KB or
-	// 10 messages.
-	send.buffer = &aggregate.Bytes{}
-	send.buffer.New(10, sendSQSMessageSizeLimit)
+	agg, err := aggregate.New(
+		aggregate.Config{
+			// SQS limits batch operations to 10 messages.
+			Count: 10,
+			// SQS limits batch operations to 256 KB.
+			Size:     sendSQSMessageSizeLimit,
+			Interval: conf.Buffer.Interval,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	send.buffer = agg
 
 	return &send, nil
 }
@@ -73,43 +82,38 @@ func (*sendAWSSQS) Close(context.Context) error {
 	return nil
 }
 
-func (t *sendAWSSQS) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	control := false
-	for _, message := range messages {
-		if message.IsControl() {
-			control = true
-			continue
+func (send *sendAWSSQS) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	if message.IsControl() {
+		if send.buffer.Count() == 0 {
+			return []*mess.Message{message}, nil
 		}
 
-		if len(message.Data()) > sendSQSMessageSizeLimit {
-			return nil, fmt.Errorf("send: aws_sqs: %v", errSendSQSMessageSizeLimit)
-		}
-
-		ok := t.buffer.Add(message.Data())
-		if !ok {
-			items := t.buffer.Get()
-			if _, err := t.client.SendMessageBatch(ctx, t.conf.Queue, items); err != nil {
-				return nil, fmt.Errorf("send: aws_sqs: %v", err)
-			}
-
-			t.buffer.Reset()
-			_ = t.buffer.Add(message.Data())
-		}
-	}
-
-	// If a control message was received, then items are flushed from the buffer.
-	if !control {
-		return messages, nil
-	}
-
-	if t.buffer.Count() > 0 {
-		items := t.buffer.Get()
-		if _, err := t.client.SendMessageBatch(ctx, t.conf.Queue, items); err != nil {
+		items := send.buffer.Get()
+		if _, err := send.client.SendMessageBatch(ctx, send.conf.Queue, items); err != nil {
 			return nil, fmt.Errorf("send: aws_sqs: %v", err)
 		}
 
-		t.buffer.Reset()
+		send.buffer.Reset()
+		return []*mess.Message{message}, nil
 	}
 
-	return messages, nil
+	if len(message.Data()) > sendSQSMessageSizeLimit {
+		return nil, fmt.Errorf("send: aws_sqs: %v", errSendSQSMessageSizeLimit)
+	}
+
+	// Send data to SQS only when the buffer is full.
+	if ok := send.buffer.Add(message.Data()); ok {
+		return []*mess.Message{message}, nil
+	}
+
+	items := send.buffer.Get()
+	if _, err := send.client.SendMessageBatch(ctx, send.conf.Queue, items); err != nil {
+		return nil, fmt.Errorf("send: aws_sqs: %v", err)
+	}
+
+	// Reset the buffer and add the message data.
+	send.buffer.Reset()
+	_ = send.buffer.Add(message.Data())
+
+	return []*mess.Message{message}, nil
 }

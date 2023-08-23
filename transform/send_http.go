@@ -66,62 +66,60 @@ func (*sendHTTP) Close(context.Context) error {
 	return nil
 }
 
-func (t *sendHTTP) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	for _, message := range messages {
-		if message.IsControl() {
-			continue
-		}
-
-		var headers []http.Header
-
-		if json.Valid(message.Data()) {
-			headers = append(headers, http.Header{
-				Key:   "Content-Type",
-				Value: "application/json",
-			})
-		}
-
-		for _, hdr := range t.conf.Headers {
-			// Retrieve secret and interpolate with header value.
-			v, err := secrets.Interpolate(ctx, hdr.Value)
-			if err != nil {
-				return nil, fmt.Errorf("transform: send_http: %v", err)
-			}
-
-			headers = append(headers, http.Header{
-				Key:   hdr.Key,
-				Value: v,
-			})
-		}
-
-		if t.conf.HeadersKey != "" {
-			h := message.Get(t.conf.HeadersKey).Array()
-			for _, header := range h {
-				for k, v := range header.Map() {
-					headers = append(headers, http.Header{
-						Key:   k,
-						Value: v.String(),
-					})
-				}
-			}
-		}
-
-		// Retrieve secret and interpolate with URL.
-		url, err := secrets.Interpolate(ctx, t.conf.URL)
-		if err != nil {
-			return nil, fmt.Errorf("transform: send_http: %v", err)
-		}
-
-		resp, err := t.client.Post(ctx, url, string(message.Data()), headers...)
-		if err != nil {
-			// Post errors return metadata.
-			return nil, fmt.Errorf("transform: send_http: %v", err)
-		}
-
-		//nolint:errcheck // Response body is discarded to avoid resource leaks.
-		io.Copy(io.Discard, resp.Body)
-		resp.Body.Close()
+func (send *sendHTTP) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return messages, nil
+	var headers []http.Header
+
+	if json.Valid(message.Data()) {
+		headers = append(headers, http.Header{
+			Key:   "Content-Type",
+			Value: "application/json",
+		})
+	}
+
+	for _, hdr := range send.conf.Headers {
+		// Retrieve secret and interpolate with header value.
+		v, err := secrets.Interpolate(ctx, hdr.Value)
+		if err != nil {
+			return nil, fmt.Errorf("transform: send_http: %v", err)
+		}
+
+		headers = append(headers, http.Header{
+			Key:   hdr.Key,
+			Value: v,
+		})
+	}
+
+	if send.conf.HeadersKey != "" {
+		h := message.Get(send.conf.HeadersKey).Array()
+		for _, header := range h {
+			for k, v := range header.Map() {
+				headers = append(headers, http.Header{
+					Key:   k,
+					Value: v.String(),
+				})
+			}
+		}
+	}
+
+	// Retrieve secret and interpolate with URL.
+	url, err := secrets.Interpolate(ctx, send.conf.URL)
+	if err != nil {
+		return nil, fmt.Errorf("transform: send_http: %v", err)
+	}
+
+	resp, err := send.client.Post(ctx, url, string(message.Data()), headers...)
+	if err != nil {
+		// Post errors return metadata.
+		return nil, fmt.Errorf("transform: send_http: %v", err)
+	}
+
+	//nolint:errcheck // Response body is discarded to avoid resource leaks.
+	io.Copy(io.Discard, resp.Body)
+	resp.Body.Close()
+
+	return []*mess.Message{message}, nil
 }

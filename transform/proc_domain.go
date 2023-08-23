@@ -85,8 +85,8 @@ func newProcDomain(_ context.Context, cfg config.Config) (*procDomain, error) {
 	return &proc, nil
 }
 
-func (t *procDomain) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procDomain) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -94,64 +94,32 @@ func (*procDomain) Close(context.Context) error {
 	return nil
 }
 
-func (t *procDomain) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		switch t.isObject {
-		case true:
-			result := message.Get(t.conf.Key).String()
-			value, err := t.process(result)
-
-			// If ErrorOnFailure is configured, then errors are returned,
-			// but otherwise the message is returned as-is.
-			if err != nil && t.conf.ErrorOnFailure {
-				return nil, fmt.Errorf("transform: proc_domain: %v", err)
-			} else if err != nil {
-				output = append(output, message)
-				continue
-			}
-
-			if err := message.Set(t.conf.SetKey, value); err != nil {
-				return nil, fmt.Errorf("transform: proc_domain: %v", err)
-			}
-
-			output = append(output, message)
-
-		case false:
-			value, err := t.process(string(message.Data()))
-
-			// If ErrorOnFailure is configured, then errors are returned,
-			// but otherwise the message is returned as-is.
-			if err != nil && t.conf.ErrorOnFailure {
-				return nil, fmt.Errorf("transform: proc_domain: %v", err)
-			} else if err != nil {
-				output = append(output, message)
-				continue
-			}
-
-			msg, err := mess.New(
-				mess.SetData([]byte(value)),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_domain: %v", err)
-			}
-
-			output = append(output, msg)
-		}
+func (proc *procDomain) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	result := message.Get(proc.conf.Key).String()
+	value, err := proc.process(result)
+
+	// If ErrorOnFailure is configured, then errors are returned,
+	// but otherwise the message is returned as-is.
+	if err != nil && proc.conf.ErrorOnFailure {
+		return nil, fmt.Errorf("transform: proc_domain: %v", err)
+	} else if err != nil {
+		return []*mess.Message{message}, nil
+	}
+
+	if err := message.Set(proc.conf.SetKey, value); err != nil {
+		return nil, fmt.Errorf("transform: proc_domain: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }
 
-func (t *procDomain) process(s string) (string, error) {
-	switch t.conf.Type {
+func (proc *procDomain) process(s string) (string, error) {
+	switch proc.conf.Type {
 	case "tld":
 		fallthrough
 	case "top_level_domain":
@@ -179,6 +147,7 @@ func (t *procDomain) process(s string) (string, error) {
 		if subdomain == domain {
 			return "", errProcDomainNoSubdomain
 		}
+
 		return subdomain, nil
 	}
 

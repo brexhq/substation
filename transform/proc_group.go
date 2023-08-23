@@ -49,8 +49,8 @@ func newProcGroup(_ context.Context, cfg config.Config) (*procGroup, error) {
 	return &proc, nil
 }
 
-func (t *procGroup) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procGroup) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -58,82 +58,73 @@ func (*procGroup) Close(context.Context) error {
 	return nil
 }
 
-func (t *procGroup) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
+func (proc *procGroup) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
+	}
 
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
+	if len(proc.conf.Keys) == 0 {
+		// Elements in the values array are stored at their
+		// relative position inside the map to maintain order.
+		//
+		// input.key: [["foo","bar"],[123,456]]
+		// 	cache[0][]interface{}{"foo",123}
+		// 	cache[1][]interface{}{"bar",456}
+		cache := make(map[int][]interface{})
+		result := message.Get(proc.conf.Key)
+		for _, res := range result.Array() {
+			for i, r := range res.Array() {
+				cache[i] = append(cache[i], r.Value())
+			}
 		}
 
-		switch len(t.conf.Keys) {
-		case 0:
-			// Elements in the values array are stored at their
-			// relative position inside the map to maintain order.
-			//
-			// input.key: [["foo","bar"],[123,456]]
-			// 	cache[0][]interface{}{"foo",123}
-			// 	cache[1][]interface{}{"bar",456}
-			cache := make(map[int][]interface{})
-			result := message.Get(t.conf.Key)
-			for _, res := range result.Array() {
-				for i, r := range res.Array() {
-					cache[i] = append(cache[i], r.Value())
-				}
-			}
+		var value []interface{}
+		for i := 0; i < len(cache); i++ {
+			value = append(value, cache[i])
+		}
 
-			var value []interface{}
-			for i := 0; i < len(cache); i++ {
-				value = append(value, cache[i])
-			}
+		// [["foo",123],["bar",456]]
+		if err := message.Set(proc.conf.SetKey, value); err != nil {
+			return nil, fmt.Errorf("transform: proc_group: %v", err)
+		}
 
-			// [["foo",123],["bar",456]]
-			if err := message.Set(t.conf.SetKey, value); err != nil {
+		return []*mess.Message{message}, nil
+	}
+
+	// Elements in the values array are stored at their
+	// relative position inside the map to maintain order
+	//
+	// input.key: [["foo","bar"],[123,456]]
+	// options.keys: ["name","size"]
+	// 	cache[0][]byte(`{"name":"foo","size":123}`)
+	// 	cache[1][]byte(`{"name":"bar","size":456}`)
+	cache := make(map[int][]byte)
+
+	var err error
+	result := message.Get(proc.conf.Key)
+	for i, res := range result.Array() {
+		for j, r := range res.Array() {
+			cache[j], err = json.Set(cache[j], proc.conf.Keys[i], r)
+			if err != nil {
 				return nil, fmt.Errorf("transform: proc_group: %v", err)
 			}
-
-			output = append(output, message)
-
-		default:
-			// Elements in the values array are stored at their
-			// relative position inside the map to maintain order
-			//
-			// input.key: [["foo","bar"],[123,456]]
-			// options.keys: ["name","size"]
-			// 	cache[0][]byte(`{"name":"foo","size":123}`)
-			// 	cache[1][]byte(`{"name":"bar","size":456}`)
-			cache := make(map[int][]byte)
-
-			var err error
-			result := message.Get(t.conf.Key)
-			for i, res := range result.Array() {
-				for j, r := range res.Array() {
-					cache[j], err = json.Set(cache[j], t.conf.Keys[i], r)
-					if err != nil {
-						return nil, fmt.Errorf("transform: proc_group: %v", err)
-					}
-				}
-			}
-
-			// Inserts pre-formatted JSON into an array based
-			// on the length of the mat.
-			var value []byte
-			for i := 0; i < len(cache); i++ {
-				value, err = json.Set(value, fmt.Sprintf("%d", i), cache[i])
-				if err != nil {
-					return nil, fmt.Errorf("transform: proc_group: %v", err)
-				}
-			}
-
-			if err := message.Set(t.conf.SetKey, value); err != nil {
-				return nil, fmt.Errorf("transform: proc_group: %v", err)
-			}
-
-			output = append(output, message)
 		}
 	}
 
-	return output, nil
+	// Inserts pre-formatted JSON into an array based
+	// on the length of the mat.
+	var value []byte
+	for i := 0; i < len(cache); i++ {
+		value, err = json.Set(value, fmt.Sprintf("%d", i), cache[i])
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_group: %v", err)
+		}
+	}
+
+	if err := message.Set(proc.conf.SetKey, value); err != nil {
+		return nil, fmt.Errorf("transform: proc_group: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

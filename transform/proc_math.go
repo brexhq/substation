@@ -73,8 +73,8 @@ func newProcMath(_ context.Context, cfg config.Config) (*procMath, error) {
 	return &proc, nil
 }
 
-func (t *procMath) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procMath) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -82,42 +82,35 @@ func (*procMath) Close(context.Context) error {
 	return nil
 }
 
-func (t *procMath) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
+func (proc *procMath) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
+	}
 
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
+	var value float64
+	result := message.Get(proc.conf.Key)
+	for i, res := range result.Array() {
+		if i == 0 {
+			value = res.Float()
 			continue
 		}
 
-		var value float64
-		result := message.Get(t.conf.Key)
-		for i, res := range result.Array() {
-			if i == 0 {
-				value = res.Float()
-				continue
-			}
-
-			switch t.conf.Operation {
-			case "add":
-				value += res.Float()
-			case "subtract":
-				value -= res.Float()
-			case "multiply":
-				value *= res.Float()
-			case "divide":
-				value /= res.Float()
-			}
+		switch proc.conf.Operation {
+		case "add":
+			value += res.Float()
+		case "subtract":
+			value -= res.Float()
+		case "multiply":
+			value *= res.Float()
+		case "divide":
+			value /= res.Float()
 		}
-
-		if err := message.Set(t.conf.SetKey, value); err != nil {
-			return nil, fmt.Errorf("transform: proc_math: %v", err)
-		}
-
-		output = append(output, message)
 	}
 
-	return output, nil
+	if err := message.Set(proc.conf.SetKey, value); err != nil {
+		return nil, fmt.Errorf("transform: proc_math: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

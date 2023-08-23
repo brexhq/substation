@@ -23,7 +23,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_base64",
 					Settings: map[string]interface{}{
@@ -43,7 +43,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_capture",
 					Settings: map[string]interface{}{
@@ -64,7 +64,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_case",
 					Settings: map[string]interface{}{
@@ -84,7 +84,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_convert",
 					Settings: map[string]interface{}{
@@ -104,7 +104,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_domain",
 					Settings: map[string]interface{}{
@@ -124,7 +124,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_flatten_array",
 					Settings: map[string]interface{}{
@@ -147,7 +147,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_group",
 					Settings: map[string]interface{}{
@@ -168,7 +168,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_hash",
 					Settings: map[string]interface{}{
@@ -188,20 +188,19 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_insert",
 					Settings: map[string]interface{}{
 						"set_key": "baz",
-
-						"value": "qux",
+						"value":   "qux",
 					},
 				},
 			},
 		},
 		[]byte(`{"input":[{"foo":"bar"},{"baz":"quux"}]}`),
 		[][]byte{
-			[]byte(`{"input":[{"foo":"bar"},{"baz":"quux"}],"output":[{"foo":"bar","baz":"qux"},{"baz":"qux"}]}`),
+			[]byte(`{"input":[{"foo":"bar"},{"baz":"quux"}],"output":[{"baz":"qux","foo":"bar"},{"baz":"qux"}]}`),
 		},
 		nil,
 	},
@@ -210,7 +209,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_join",
 					Settings: map[string]interface{}{
@@ -230,7 +229,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_math",
 					Settings: map[string]interface{}{
@@ -250,7 +249,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "meta_pipeline",
 					Settings: map[string]interface{}{
@@ -283,7 +282,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_replace",
 					Settings: map[string]interface{}{
@@ -304,7 +303,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"key":     "input",
-				"set_key": "output.-1",
+				"set_key": "output",
 				"transform": config.Config{
 					Type: "proc_time",
 					Settings: map[string]interface{}{

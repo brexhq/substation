@@ -48,7 +48,7 @@ func TestProcDrop(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		result, err := proc.Transform(ctx, messages...)
+		result, err := Apply(ctx, []Transformer{proc}, messages...)
 		if err != nil {
 			t.Error(err)
 		}

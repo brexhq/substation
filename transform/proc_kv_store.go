@@ -111,8 +111,8 @@ func newProcKVStore(ctx context.Context, cfg config.Config) (*procKVStore, error
 	return &proc, nil
 }
 
-func (t *procKVStore) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procKVStore) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -130,64 +130,59 @@ func (t *procKVStore) Close(ctx context.Context) error {
 	return nil
 }
 
-func (t *procKVStore) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		switch t.conf.Type {
-		case "get":
-			key := message.Get(t.conf.Key).String()
-			if t.conf.Prefix != "" {
-				key = fmt.Sprint(t.conf.Prefix, ":", key)
-			}
-
-			v, err := t.kvStore.Get(ctx, key)
-			if err != nil {
-				return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
-			}
-
-			if err := message.Set(t.conf.SetKey, v); err != nil {
-				return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
-			}
-
-			output = append(output, message)
-		case "set":
-			key := message.Get(t.conf.SetKey).String()
-			if t.conf.Prefix != "" {
-				key = fmt.Sprint(t.conf.Prefix, ":", key)
-			}
-
-			//nolint: nestif // ignore nesting complexity
-			if t.conf.TTLKey != "" && t.conf.TTLOffset != 0 {
-				ttl := message.Get(t.conf.TTLKey).Int() + t.conf.TTLOffset
-				if err := t.kvStore.SetWithTTL(ctx, key, message.Get(t.conf.Key).String(), ttl); err != nil {
-					return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
-				}
-			} else if t.conf.TTLKey != "" {
-				ttl := message.Get(t.conf.TTLKey).Int()
-				if err := t.kvStore.SetWithTTL(ctx, key, message.Get(t.conf.Key).String(), ttl); err != nil {
-					return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
-				}
-			} else if t.conf.TTLOffset != 0 {
-				ttl := time.Now().Add(time.Duration(t.conf.TTLOffset) * time.Second).Unix()
-				if err := t.kvStore.SetWithTTL(ctx, key, message.Get(t.conf.Key).String(), ttl); err != nil {
-					return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
-				}
-			} else {
-				if err := t.kvStore.Set(ctx, key, message.Get(t.conf.Key).String()); err != nil {
-					return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
-				}
-			}
-
-			output = append(output, message)
-		}
+func (proc *procKVStore) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	switch proc.conf.Type {
+	case "get":
+		key := message.Get(proc.conf.Key).String()
+		if proc.conf.Prefix != "" {
+			key = fmt.Sprint(proc.conf.Prefix, ":", key)
+		}
+
+		v, err := proc.kvStore.Get(ctx, key)
+		if err != nil {
+			return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
+		}
+
+		if err := message.Set(proc.conf.SetKey, v); err != nil {
+			return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
+		}
+
+		return []*mess.Message{message}, nil
+	case "set":
+		key := message.Get(proc.conf.SetKey).String()
+		if proc.conf.Prefix != "" {
+			key = fmt.Sprint(proc.conf.Prefix, ":", key)
+		}
+
+		//nolint: nestif // ignore nesting complexity
+		if proc.conf.TTLKey != "" && proc.conf.TTLOffset != 0 {
+			ttl := message.Get(proc.conf.TTLKey).Int() + proc.conf.TTLOffset
+			if err := proc.kvStore.SetWithTTL(ctx, key, message.Get(proc.conf.Key).String(), ttl); err != nil {
+				return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
+			}
+		} else if proc.conf.TTLKey != "" {
+			ttl := message.Get(proc.conf.TTLKey).Int()
+			if err := proc.kvStore.SetWithTTL(ctx, key, message.Get(proc.conf.Key).String(), ttl); err != nil {
+				return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
+			}
+		} else if proc.conf.TTLOffset != 0 {
+			ttl := time.Now().Add(time.Duration(proc.conf.TTLOffset) * time.Second).Unix()
+			if err := proc.kvStore.SetWithTTL(ctx, key, message.Get(proc.conf.Key).String(), ttl); err != nil {
+				return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
+			}
+		} else {
+			if err := proc.kvStore.Set(ctx, key, message.Get(proc.conf.Key).String()); err != nil {
+				return nil, fmt.Errorf("transform: proc_kv_store: %v", err)
+			}
+		}
+
+		return []*mess.Message{message}, nil
+	}
+
+	return nil, nil
 }

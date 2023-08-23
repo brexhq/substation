@@ -71,8 +71,8 @@ func newProcConvert(_ context.Context, cfg config.Config) (*procConvert, error) 
 	return &p, nil
 }
 
-func (t *procConvert) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procConvert) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -80,38 +80,31 @@ func (*procConvert) Close(context.Context) error {
 	return nil
 }
 
-func (t *procConvert) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		result := message.Get(t.conf.Key)
-
-		var value interface{}
-		switch t.conf.Type {
-		case "bool":
-			value = result.Bool()
-		case "int":
-			value = result.Int()
-		case "float":
-			value = result.Float()
-		case "uint":
-			value = result.Uint()
-		case "string":
-			value = result.String()
-		}
-
-		if err := message.Set(t.conf.SetKey, value); err != nil {
-			return nil, fmt.Errorf("transform: proc_convert: %v", err)
-		}
-
-		output = append(output, message)
+func (proc *procConvert) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	result := message.Get(proc.conf.Key)
+
+	var value interface{}
+	switch proc.conf.Type {
+	case "bool":
+		value = result.Bool()
+	case "int":
+		value = result.Int()
+	case "float":
+		value = result.Float()
+	case "uint":
+		value = result.Uint()
+	case "string":
+		value = result.String()
+	}
+
+	if err := message.Set(proc.conf.SetKey, value); err != nil {
+		return nil, fmt.Errorf("transform: proc_convert: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

@@ -72,10 +72,12 @@ func ExampleSubstation() {
 
 	msgs = append(msgs, ctrl)
 
-	// Transform the group of messages. In this example, results are discarded.
-	if _, err := transform.Apply(ctx, sub.Transforms(), msgs...); err != nil {
-		// Handle error.
-		panic(err)
+	for _, msg := range msgs {
+		// Transform the group of messages. In this example, results are discarded.
+		if _, err := transform.Apply(ctx, sub.Transforms(), msg); err != nil {
+			// Handle error.
+			panic(err)
+		}
 	}
 
 	// Output:

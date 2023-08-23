@@ -47,8 +47,8 @@ func newProcFlattenArray(_ context.Context, cfg config.Config) (*procFlattenArra
 	return &proc, nil
 }
 
-func (t *procFlattenArray) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procFlattenArray) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -56,29 +56,22 @@ func (*procFlattenArray) Close(context.Context) error {
 	return nil
 }
 
-func (t *procFlattenArray) Transform(ctx context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		var value interface{}
-		if t.conf.Deep {
-			value = message.Get(t.conf.Key + `|@flatten:{"deep":true}`)
-		} else {
-			value = message.Get(t.conf.Key + `|@flatten`)
-		}
-
-		if err := message.Set(t.conf.SetKey, value); err != nil {
-			return nil, fmt.Errorf("transform: proc_flatten: %v", err)
-		}
-
-		output = append(output, message)
+func (proc *procFlattenArray) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	var value interface{}
+	if proc.conf.Deep {
+		value = message.Get(proc.conf.Key + `|@flatten:{"deep":true}`)
+	} else {
+		value = message.Get(proc.conf.Key + `|@flatten`)
+	}
+
+	if err := message.Set(proc.conf.SetKey, value); err != nil {
+		return nil, fmt.Errorf("transform: proc_flatten: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

@@ -36,8 +36,8 @@ func newProcDelete(_ context.Context, cfg config.Config) (*procDelete, error) {
 	return &proc, nil
 }
 
-func (t *procDelete) String() string {
-	b, _ := gojson.Marshal(t.conf)
+func (proc *procDelete) String() string {
+	b, _ := gojson.Marshal(proc.conf)
 	return string(b)
 }
 
@@ -45,22 +45,15 @@ func (*procDelete) Close(context.Context) error {
 	return nil
 }
 
-func (t *procDelete) Transform(_ context.Context, messages ...*mess.Message) ([]*mess.Message, error) {
-	var output []*mess.Message
-
-	for _, message := range messages {
-		// Skip control messages.
-		if message.IsControl() {
-			output = append(output, message)
-			continue
-		}
-
-		if err := message.Delete(t.conf.Key); err != nil {
-			return nil, fmt.Errorf("transform: proc_delete: %v", err)
-		}
-
-		output = append(output, message)
+func (proc *procDelete) Transform(_ context.Context, message *mess.Message) ([]*mess.Message, error) {
+	// Skip control messages.
+	if message.IsControl() {
+		return []*mess.Message{message}, nil
 	}
 
-	return output, nil
+	if err := message.Delete(proc.conf.Key); err != nil {
+		return nil, fmt.Errorf("transform: proc_delete: %v", err)
+	}
+
+	return []*mess.Message{message}, nil
 }

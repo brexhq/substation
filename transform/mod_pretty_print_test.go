@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &procPrettyPrint{}
+var _ Transformer = &modPrettyPrint{}
 
-var procPrettyPrintTests = []struct {
+var modPrettyPrintTests = []struct {
 	name     string
 	cfg      config.Config
 	test     [][]byte
@@ -75,28 +75,22 @@ var procPrettyPrintTests = []struct {
 	},
 }
 
-func TestProcPrettyPrint(t *testing.T) {
+func TestModPrettyPrint(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procPrettyPrintTests {
+	for _, test := range modPrettyPrintTests {
 		t.Run(test.name, func(t *testing.T) {
-			var messages []*mess.Message
-			for _, tt := range test.test {
-				message, err := mess.New(
-					mess.SetData(tt),
-				)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				messages = append(messages, message)
-			}
-
-			proc, err := newProcPrettyPrint(ctx, test.cfg)
+			tf, err := newModPrettyPrint(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			result, err := Apply(ctx, []Transformer{proc}, messages...)
+			var messages []*message.Message
+			for _, data := range test.test {
+				msg := message.New().SetData(data)
+				messages = append(messages, msg)
+			}
+
+			result, err := Apply(ctx, []Transformer{tf}, messages...)
 			if err != nil {
 				t.Error(err)
 			}
@@ -111,31 +105,29 @@ func TestProcPrettyPrint(t *testing.T) {
 	}
 }
 
-func benchmarkProcPrettyPrint(b *testing.B, tf *procPrettyPrint, data [][]byte) {
+func benchmarkModPrettyPrint(b *testing.B, tf *modPrettyPrint, data [][]byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		var messages []*mess.Message
+		var messages []*message.Message
 		for _, d := range data {
-			message, _ := mess.New(
-				mess.SetData(d),
-			)
-			messages = append(messages, message)
+			msg := message.New().SetData(d)
+			messages = append(messages, msg)
 		}
 
 		_, _ = Apply(ctx, []Transformer{tf}, messages...)
 	}
 }
 
-func BenchmarkProcPrettyPrint(b *testing.B) {
-	for _, test := range procPrettyPrintTests {
-		proc, err := newProcPrettyPrint(context.TODO(), test.cfg)
+func BenchmarkModPrettyPrint(b *testing.B) {
+	for _, test := range modPrettyPrintTests {
+		tf, err := newModPrettyPrint(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkProcPrettyPrint(b, proc, test.test)
+				benchmarkModPrettyPrint(b, tf, test.test)
 			},
 		)
 	}

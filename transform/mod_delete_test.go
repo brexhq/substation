@@ -54,7 +54,7 @@ func TestModRemove(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range modDeleteTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newModRemove(ctx, test.cfg)
+			tf, err := newModDelete(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}

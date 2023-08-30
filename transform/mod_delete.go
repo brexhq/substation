@@ -18,7 +18,7 @@ type modDelete struct {
 	conf modDeleteConfig
 }
 
-func newModRemove(_ context.Context, cfg config.Config) (*modDelete, error) {
+func newModDelete(_ context.Context, cfg config.Config) (*modDelete, error) {
 	conf := modDeleteConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
 		return nil, fmt.Errorf("transform: new_mod_delete: %v", err)

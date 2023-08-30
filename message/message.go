@@ -1,7 +1,6 @@
 package message
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/brexhq/substation/internal/json"
@@ -13,32 +12,35 @@ const (
 	metaKey = "meta "
 )
 
-var errControlWithData = fmt.Errorf("control message cannot contain data")
+// Message is the data structure that is passed between transforms and
+// interpretable by conditions.
+type Message struct {
+	// If data is JSON text, then it is accessed using the GetJSON, SetJSON,
+	// and DeleteJSON methods. The field can have its value returned
+	// directly by using the Data method.
+	data []byte
 
-func New(options ...func(*Message)) (*Message, error) {
-	m := &Message{}
-	for _, o := range options {
-		o(m)
-	}
+	// If meta is JSON text, then it is accessed using the GetJSON, SetJSON,
+	// and DeleteJSON methods using the "meta" key prefix (e.g., "meta [key]").
+	// The field can have its value returned directly by using the Meta method.
+	meta []byte
 
-	// Control messages cannot contain data.
-	if m.ctrl && (len(m.data) > 0 || len(m.meta) > 0) {
-		return m, errControlWithData
-	}
-
-	return m, nil
+	// ctrl is a flag that indicates if the message is a control message.
+	//
+	// Control messages trigger special behavior in data transforms.
+	// For example, they can be used to force a transform to emit buffered data.
+	//
+	// These messages should not contain data or metadata.
+	ctrl bool
 }
 
-func SetData(data []byte) func(*Message) {
-	return func(m *Message) {
-		m.data = data
+func New(opts ...func(*Message)) *Message {
+	msg := &Message{}
+	for _, o := range opts {
+		o(msg)
 	}
-}
 
-func SetMetadata(metadata []byte) func(*Message) {
-	return func(m *Message) {
-		m.meta = metadata
-	}
+	return msg
 }
 
 func AsControl() func(*Message) {
@@ -47,30 +49,46 @@ func AsControl() func(*Message) {
 	}
 }
 
-type Message struct {
-	// If data is an object, then it is accessed using the Get, Set,
-	// and Delete methods. The field can have its value returned
-	// directly by using the Data method.
-	data []byte
-
-	// If metadata is an object, then it is accessed using the Get, Set,
-	// and Delete methods along with the "metadata" key prefix (e.g.,
-	// "metadata [key]"). The field can have its value returned directly
-	// by using the Metadata method.
-	meta []byte
-
-	// ctrl is a flag that indicates if the message is a control message.
-	//
-	// Control messages trigger special behavior in data transforms.
-	// For example, a control message may be used by a transform to emit
-	// data that was previously buffered.
-	//
-	// Control messages cannot contain data or metadata.
-	ctrl bool
+func (m *Message) IsControl() bool {
+	return m.ctrl
 }
 
-// Delete removes a key from objects stored in the Message.
-func (m *Message) Delete(key string) (err error) {
+func (m *Message) GetObject(key string) gjson.Result {
+	if strings.HasPrefix(key, metaKey) {
+		key = strings.TrimPrefix(key, metaKey)
+		key = strings.TrimSpace(key)
+		return json.Get(m.meta, key)
+	}
+
+	key = strings.TrimSpace(key)
+	return json.Get(m.data, key)
+}
+
+func (m *Message) SetObject(key string, value interface{}) error {
+	if strings.HasPrefix(key, metaKey) {
+		key = strings.TrimPrefix(key, metaKey)
+		key = strings.TrimSpace(key)
+
+		meta, err := json.Set(m.meta, key, value)
+		if err != nil {
+			return err
+		}
+		m.meta = meta
+
+		return nil
+	}
+
+	key = strings.TrimSpace(key)
+	data, err := json.Set(m.data, key, value)
+	if err != nil {
+		return err
+	}
+	m.data = data
+
+	return nil
+}
+
+func (m *Message) DeleteObject(key string) error {
 	if strings.HasPrefix(key, metaKey) {
 		key = strings.TrimPrefix(key, metaKey)
 		key = strings.TrimSpace(key)
@@ -103,43 +121,13 @@ func (m *Message) Delete(key string) (err error) {
 	return nil
 }
 
-// Get retrieves a value from objects in the Message. Metadata is accessed using the
-// "metadata" key prefix: "metadata [key]". If the key is empty, then no value is
-// returned.
-func (m *Message) Get(key string) gjson.Result {
-	if strings.HasPrefix(key, metaKey) {
-		key = strings.TrimPrefix(key, metaKey)
-		key = strings.TrimSpace(key)
-		return json.Get(m.meta, key)
+func (m *Message) SetData(data []byte) *Message {
+	if m.ctrl {
+		return m
 	}
 
-	key = strings.TrimSpace(key)
-	return json.Get(m.data, key)
-}
-
-// Set writes a value to objects in the Message.
-func (m *Message) Set(key string, value interface{}) (err error) {
-	if strings.HasPrefix(key, metaKey) {
-		key = strings.TrimPrefix(key, metaKey)
-		key = strings.TrimSpace(key)
-
-		meta, err := json.Set(m.meta, key, value)
-		if err != nil {
-			return err
-		}
-		m.meta = meta
-
-		return nil
-	}
-
-	key = strings.TrimSpace(key)
-	data, err := json.Set(m.data, key, value)
-	if err != nil {
-		return err
-	}
 	m.data = data
-
-	return nil
+	return m
 }
 
 func (m *Message) Data() []byte {
@@ -150,14 +138,19 @@ func (m *Message) Data() []byte {
 	return m.data
 }
 
+func (m *Message) SetMetadata(metadata []byte) *Message {
+	if m.ctrl {
+		return m
+	}
+
+	m.meta = metadata
+	return m
+}
+
 func (m *Message) Metadata() []byte {
 	if m.ctrl {
 		return nil
 	}
 
 	return m.meta
-}
-
-func (m *Message) IsControl() bool {
-	return m.ctrl
 }

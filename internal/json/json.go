@@ -31,6 +31,14 @@ var opts = &sjson.Options{
 	ReplaceInPlace: true,
 }
 
+type Result struct {
+	gjson.Result
+}
+
+func (r Result) Bytes() []byte {
+	return []byte(r.String())
+}
+
 // Delete wraps sjson.DeleteBytes.
 func Delete(json []byte, key string) (tmp []byte, err error) {
 	tmp, err = sjson.DeleteBytes(json, key)
@@ -42,8 +50,8 @@ func Delete(json []byte, key string) (tmp []byte, err error) {
 }
 
 // Get wraps gjson.GetBytes.
-func Get(json []byte, key string) gjson.Result {
-	return gjson.GetBytes(json, key)
+func Get(json []byte, key string) Result {
+	return Result{gjson.GetBytes(json, key)}
 }
 
 /*

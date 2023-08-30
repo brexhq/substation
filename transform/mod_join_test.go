@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &procJoin{}
+var _ Transformer = &modJoin{}
 
-var procJoinTests = []struct {
+var modJoinTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -19,39 +19,35 @@ var procJoinTests = []struct {
 	err      error
 }{
 	{
-		"JSON",
+		"object",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":       "foo",
-				"set_key":   "foo",
+				"object": map[string]interface{}{
+					"key":     "x",
+					"set_key": "x",
+				},
 				"separator": ".",
 			},
 		},
-		[]byte(`{"foo":["bar","baz"]}`),
+		[]byte(`{"x":["a","b","c"]}`),
 		[][]byte{
-			[]byte(`{"foo":"bar.baz"}`),
+			[]byte(`{"x":"a.b.c"}`),
 		},
 		nil,
 	},
 }
 
-func TestProcJoin(t *testing.T) {
+func TestModJoin(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procJoinTests {
+	for _, test := range modJoinTests {
 		t.Run(test.name, func(t *testing.T) {
-			message, err := mess.New(
-				mess.SetData(test.test),
-			)
+			tf, err := newModJoin(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			proc, err := newProcJoin(ctx, test.cfg)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			result, err := proc.Transform(ctx, message)
+			msg := message.New().SetData(test.test)
+			result, err := tf.Transform(ctx, msg)
 			if err != nil {
 				t.Error(err)
 			}
@@ -68,27 +64,24 @@ func TestProcJoin(t *testing.T) {
 	}
 }
 
-func benchmarkProcJoin(b *testing.B, tf *procJoin, data []byte) {
+func benchmarkModJoin(b *testing.B, tf *modJoin, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		message, _ := mess.New(
-			mess.SetData(data),
-		)
-
-		_, _ = tf.Transform(ctx, message)
+		msg := message.New().SetData(data)
+		_, _ = tf.Transform(ctx, msg)
 	}
 }
 
-func BenchmarkProcJoin(b *testing.B) {
-	for _, test := range procJoinTests {
-		proc, err := newProcJoin(context.TODO(), test.cfg)
+func BenchmarkModJoin(b *testing.B) {
+	for _, test := range modJoinTests {
+		tf, err := newModJoin(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkProcJoin(b, proc, test.test)
+				benchmarkModJoin(b, tf, test.test)
 			},
 		)
 	}

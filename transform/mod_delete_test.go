@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &procDelete{}
+var _ Transformer = &modDelete{}
 
-var procDeleteTests = []struct {
+var modDeleteTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -22,7 +22,9 @@ var procDeleteTests = []struct {
 		"string",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key": "baz",
+				"object": map[string]interface{}{
+					"key": "baz",
+				},
 			},
 		},
 		[]byte(`{"foo":"bar","baz":"qux"}`),
@@ -32,10 +34,12 @@ var procDeleteTests = []struct {
 		nil,
 	},
 	{
-		"JSON",
+		"object",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key": "baz",
+				"object": map[string]interface{}{
+					"key": "baz",
+				},
 			},
 		},
 		[]byte(`{"foo":"bar","baz":{"qux":"quux"}}`),
@@ -46,23 +50,17 @@ var procDeleteTests = []struct {
 	},
 }
 
-func TestProcDelete(t *testing.T) {
+func TestModRemove(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procDeleteTests {
+	for _, test := range modDeleteTests {
 		t.Run(test.name, func(t *testing.T) {
-			message, err := mess.New(
-				mess.SetData(test.test),
-			)
+			tf, err := newModRemove(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			proc, err := newProcDelete(ctx, test.cfg)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			result, err := proc.Transform(ctx, message)
+			msg := message.New().SetData(test.test)
+			result, err := tf.Transform(ctx, msg)
 			if err != nil {
 				t.Error(err)
 			}
@@ -79,27 +77,24 @@ func TestProcDelete(t *testing.T) {
 	}
 }
 
-func benchmarkProcDelete(b *testing.B, tf *procDelete, data []byte) {
+func benchmarkModRemove(b *testing.B, tf *modDelete, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		message, _ := mess.New(
-			mess.SetData(data),
-		)
-
-		_, _ = tf.Transform(ctx, message)
+		msg := message.New().SetData(data)
+		_, _ = tf.Transform(ctx, msg)
 	}
 }
 
-func BenchmarkProcDelete(b *testing.B) {
-	for _, test := range procDeleteTests {
-		proc, err := newProcDelete(context.TODO(), test.cfg)
+func BenchmarkModRemove(b *testing.B) {
+	for _, test := range modDeleteTests {
+		tf, err := newModRemove(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkProcDelete(b, proc, test.test)
+				benchmarkModRemove(b, tf, test.test)
 			},
 		)
 	}

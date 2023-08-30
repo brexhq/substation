@@ -6,14 +6,14 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &procTime{}
+var _ Transformer = &modTime{}
 
-var setFmt = "2006-01-02T15:04:05.000000Z"
+var modTimeTestSetFmt = "2006-01-02T15:04:05.000000Z"
 
-var procTimeTests = []struct {
+var modTimeTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -21,11 +21,11 @@ var procTimeTests = []struct {
 	err      error
 }{
 	{
-		"data string",
+		"data pattern",
 		config.Config{
 			Settings: map[string]interface{}{
 				"format":     "2006-01-02T15:04:05Z",
-				"set_format": setFmt,
+				"set_format": modTimeTestSetFmt,
 			},
 		},
 		[]byte(`2021-03-06T00:02:57Z`),
@@ -39,7 +39,7 @@ var procTimeTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"format":     "unix",
-				"set_format": setFmt,
+				"set_format": modTimeTestSetFmt,
 			},
 		},
 		[]byte(`1639877490.061`),
@@ -49,7 +49,7 @@ var procTimeTests = []struct {
 		nil,
 	},
 	{
-		"data unix to unix_milli",
+		"data unix_milli",
 		config.Config{
 			Settings: map[string]interface{}{
 				"format":     "unix",
@@ -63,13 +63,15 @@ var procTimeTests = []struct {
 		nil,
 	},
 	{
-		"JSON",
+		"object pattern",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":        "time",
-				"set_key":    "time",
+				"object": map[string]interface{}{
+					"key":     "time",
+					"set_key": "time",
+				},
 				"format":     "2006-01-02T15:04:05Z",
-				"set_format": setFmt,
+				"set_format": modTimeTestSetFmt,
 			},
 		},
 		[]byte(`{"time":"2021-03-06T00:02:57Z"}`),
@@ -79,28 +81,14 @@ var procTimeTests = []struct {
 		nil,
 	},
 	{
-		"JSON from unix",
+		"object unix",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":        "time",
-				"set_key":    "time",
-				"format":     "unix",
-				"set_format": setFmt,
-			},
-		},
-		[]byte(`{"time":1639877490}`),
-		[][]byte{
-			[]byte(`{"time":"2021-12-19T01:31:30.000000Z"}`),
-		},
-		nil,
-	},
-	{
-		"JSON to unix",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":        "time",
-				"set_key":    "time",
-				"format":     setFmt,
+				"object": map[string]interface{}{
+					"key":     "time",
+					"set_key": "time",
+				},
+				"format":     modTimeTestSetFmt,
 				"set_format": "unix",
 			},
 		},
@@ -111,28 +99,14 @@ var procTimeTests = []struct {
 		nil,
 	},
 	{
-		"JSON from unix_milli",
+		"object unix_milli",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":        "time",
-				"set_key":    "time",
-				"format":     "unix_milli",
-				"set_format": setFmt,
-			},
-		},
-		[]byte(`{"time":1654459632263}`),
-		[][]byte{
-			[]byte(`{"time":"2022-06-05T20:07:12.263000Z"}`),
-		},
-		nil,
-	},
-	{
-		"JSON to unix_milli",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":        "time",
-				"set_key":    "time",
-				"format":     setFmt,
+				"object": map[string]interface{}{
+					"key":     "time",
+					"set_key": "time",
+				},
+				"format":     modTimeTestSetFmt,
 				"set_format": "unix_milli",
 			},
 		},
@@ -143,11 +117,49 @@ var procTimeTests = []struct {
 		nil,
 	},
 	{
-		"JSON unix to unix_milli",
+		"object from unix",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":        "time",
-				"set_key":    "time",
+				"object": map[string]interface{}{
+					"key":     "time",
+					"set_key": "time",
+				},
+				"format":     "unix",
+				"set_format": modTimeTestSetFmt,
+			},
+		},
+		[]byte(`{"time":1639877490}`),
+		[][]byte{
+			[]byte(`{"time":"2021-12-19T01:31:30.000000Z"}`),
+		},
+		nil,
+	},
+	{
+		"object from unix_milli",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "time",
+					"set_key": "time",
+				},
+				"format":     "unix_milli",
+				"set_format": modTimeTestSetFmt,
+			},
+		},
+		[]byte(`{"time":1654459632263}`),
+		[][]byte{
+			[]byte(`{"time":"2022-06-05T20:07:12.263000Z"}`),
+		},
+		nil,
+	},
+	{
+		"object unix to unix_milli",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "time",
+					"set_key": "time",
+				},
 				"format":     "unix",
 				"set_format": "unix_milli",
 			},
@@ -159,11 +171,13 @@ var procTimeTests = []struct {
 		nil,
 	},
 	{
-		"JSON offset conversion",
+		"object offset conversion",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":        "time",
-				"set_key":    "time",
+				"object": map[string]interface{}{
+					"key":     "time",
+					"set_key": "time",
+				},
 				"format":     "2006-Jan-02 Monday 03:04:05 -0700",
 				"set_format": "2006-Jan-02 Monday 03:04:05 -0700",
 			},
@@ -175,11 +189,13 @@ var procTimeTests = []struct {
 		nil,
 	},
 	{
-		"JSON offset to local conversion",
+		"object offset to local conversion",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":          "time",
-				"set_key":      "time",
+				"object": map[string]interface{}{
+					"key":     "time",
+					"set_key": "time",
+				},
 				"format":       "2006-Jan-02 Monday 03:04:05 -0700",
 				"set_format":   "2006-Jan-02 Monday 03:04:05 PM",
 				"set_location": "America/New_York",
@@ -194,11 +210,13 @@ var procTimeTests = []struct {
 		nil,
 	},
 	{
-		"JSON local to local conversion",
+		"object local to local conversion",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":          "time",
-				"set_key":      "time",
+				"object": map[string]interface{}{
+					"key":     "time",
+					"set_key": "time",
+				},
 				"format":       "2006-Jan-02 Monday 03:04:05",
 				"location":     "America/Los_Angeles",
 				"set_format":   "2006-Jan-02 Monday 03:04:05",
@@ -215,23 +233,17 @@ var procTimeTests = []struct {
 	},
 }
 
-func TestProcTime(t *testing.T) {
+func TestModTime(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procTimeTests {
+	for _, test := range modTimeTests {
 		t.Run(test.name, func(t *testing.T) {
-			message, err := mess.New(
-				mess.SetData(test.test),
-			)
+			tf, err := newModTime(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			proc, err := newProcTime(ctx, test.cfg)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			result, err := proc.Transform(ctx, message)
+			msg := message.New().SetData(test.test)
+			result, err := tf.Transform(ctx, msg)
 			if err != nil {
 				t.Error(err)
 			}
@@ -248,27 +260,24 @@ func TestProcTime(t *testing.T) {
 	}
 }
 
-func benchmarkProcTime(b *testing.B, tf *procTime, data []byte) {
+func benchmarkModTime(b *testing.B, tf *modTime, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		message, _ := mess.New(
-			mess.SetData(data),
-		)
-
-		_, _ = tf.Transform(ctx, message)
+		msg := message.New().SetData(data)
+		_, _ = tf.Transform(ctx, msg)
 	}
 }
 
-func BenchmarkProcTime(b *testing.B) {
-	for _, test := range procTimeTests {
-		proc, err := newProcTime(context.TODO(), test.cfg)
+func BenchmarkModTime(b *testing.B) {
+	for _, test := range modTimeTests {
+		tf, err := newModTime(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkProcTime(b, proc, test.test)
+				benchmarkModTime(b, tf, test.test)
 			},
 		)
 	}

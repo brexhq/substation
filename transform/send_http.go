@@ -7,12 +7,12 @@ import (
 	"os"
 
 	"github.com/brexhq/substation/config"
-	_config "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/secrets"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 type sendHTTPConfig struct {
@@ -42,45 +42,45 @@ type sendHTTP struct {
 
 func newSendHTTP(_ context.Context, cfg config.Config) (*sendHTTP, error) {
 	conf := sendHTTPConfig{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
-		return nil, err
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+		return nil, fmt.Errorf("transform: new_send_http: %v", err)
 	}
 
 	if conf.URL == "" {
-		return nil, fmt.Errorf("send: http: URL: %v", errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("transform: new_send_http: URL: %v", errors.ErrMissingRequiredOption)
 	}
 
-	send := sendHTTP{
+	tf := sendHTTP{
 		conf: conf,
 	}
 
-	send.client.Setup()
+	tf.client.Setup()
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
-		send.client.EnableXRay()
+		tf.client.EnableXRay()
 	}
 
-	return &send, nil
+	return &tf, nil
 }
 
 func (*sendHTTP) Close(context.Context) error {
 	return nil
 }
 
-func (send *sendHTTP) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
-	if message.IsControl() {
-		return []*mess.Message{message}, nil
+func (tf *sendHTTP) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	if msg.IsControl() {
+		return []*message.Message{msg}, nil
 	}
 
 	var headers []http.Header
 
-	if json.Valid(message.Data()) {
+	if json.Valid(msg.Data()) {
 		headers = append(headers, http.Header{
 			Key:   "Content-Type",
 			Value: "application/json",
 		})
 	}
 
-	for _, hdr := range send.conf.Headers {
+	for _, hdr := range tf.conf.Headers {
 		// Retrieve secret and interpolate with header value.
 		v, err := secrets.Interpolate(ctx, hdr.Value)
 		if err != nil {
@@ -93,8 +93,8 @@ func (send *sendHTTP) Transform(ctx context.Context, message *mess.Message) ([]*
 		})
 	}
 
-	if send.conf.HeadersKey != "" {
-		h := message.Get(send.conf.HeadersKey).Array()
+	if tf.conf.HeadersKey != "" {
+		h := msg.GetObject(tf.conf.HeadersKey).Array()
 		for _, header := range h {
 			for k, v := range header.Map() {
 				headers = append(headers, http.Header{
@@ -106,12 +106,12 @@ func (send *sendHTTP) Transform(ctx context.Context, message *mess.Message) ([]*
 	}
 
 	// Retrieve secret and interpolate with URL.
-	url, err := secrets.Interpolate(ctx, send.conf.URL)
+	url, err := secrets.Interpolate(ctx, tf.conf.URL)
 	if err != nil {
 		return nil, fmt.Errorf("transform: send_http: %v", err)
 	}
 
-	resp, err := send.client.Post(ctx, url, string(message.Data()), headers...)
+	resp, err := tf.client.Post(ctx, url, string(msg.Data()), headers...)
 	if err != nil {
 		// Post errors return metadata.
 		return nil, fmt.Errorf("transform: send_http: %v", err)
@@ -121,5 +121,5 @@ func (send *sendHTTP) Transform(ctx context.Context, message *mess.Message) ([]*
 	io.Copy(io.Discard, resp.Body)
 	resp.Body.Close()
 
-	return []*mess.Message{message}, nil
+	return []*message.Message{msg}, nil
 }

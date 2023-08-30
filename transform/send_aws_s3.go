@@ -12,16 +12,17 @@ import (
 	"github.com/brexhq/substation/internal/aggregate"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/s3manager"
-	_config "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 type sendAWSS3Config struct {
-	Buffer  aggregate.Config      `json:"buffer"`
-	Auth    _config.ConfigAWSAuth `json:"auth"`
-	Request _config.ConfigRequest `json:"request"`
+	Buffer aggregate.Config `json:"buffer"`
+	AWS    configAWS        `json:"aws"`
+	Retry  configRetry      `json:"retry"`
+
 	// Bucket is the AWS S3 bucket that data is written to.
 	Bucket string `json:"bucket"`
 	// FilePath determines how the name of the uploaded object is constructed.
@@ -71,13 +72,13 @@ type sendAWSS3 struct {
 
 func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 	conf := sendAWSS3Config{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
-		return nil, err
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+		return nil, fmt.Errorf("transform: new_send_aws_s3: %v", err)
 	}
 
 	// Validate required options.
 	if conf.Bucket == "" {
-		return nil, fmt.Errorf("transform: send_aws_s3: bucket stream: %v", errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("transform: new_send_aws_s3: bucket: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if conf.FileFormat.Type == "" {
@@ -88,78 +89,78 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 		conf.FileCompression.Type = "gzip"
 	}
 
-	send := sendAWSS3{
+	tf := sendAWSS3{
 		conf: conf,
 	}
 
 	// File extensions are dynamic and not directly configurable.
-	send.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
-	send.mu = sync.Mutex{}
-	send.buffer = make(map[string]*aggregate.Aggregate)
-	send.bufferCfg = aggregate.Config{
+	tf.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
+	tf.mu = sync.Mutex{}
+	tf.buffer = make(map[string]*aggregate.Aggregate)
+	tf.bufferCfg = aggregate.Config{
 		Count:    conf.Buffer.Count,
 		Size:     conf.Buffer.Size,
-		Interval: conf.Buffer.Interval,
+		Duration: conf.Buffer.Duration,
 	}
 
 	// Setup the AWS client.
-	send.client.Setup(aws.Config{
-		Region:     conf.Auth.Region,
-		AssumeRole: conf.Auth.AssumeRole,
-		MaxRetries: conf.Request.MaxRetries,
+	tf.client.Setup(aws.Config{
+		Region:     conf.AWS.Region,
+		AssumeRole: conf.AWS.AssumeRole,
+		MaxRetries: conf.Retry.Attempts,
 	})
 
-	return &send, nil
+	return &tf, nil
 }
 
 func (*sendAWSS3) Close(context.Context) error {
 	return nil
 }
 
-func (send *sendAWSS3) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+func (tf *sendAWSS3) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	// Lock the transform to prevent concurrent access to the buffer.
-	send.mu.Lock()
-	defer send.mu.Unlock()
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
 
-	if message.IsControl() {
-		for prefixKey := range send.buffer {
-			if err := send.writeFile(ctx, prefixKey); err != nil {
-				return nil, fmt.Errorf("transform: send_file: %v", err)
+	if msg.IsControl() {
+		for prefixKey := range tf.buffer {
+			if err := tf.writeFile(ctx, prefixKey); err != nil {
+				return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
 			}
 		}
 
-		send.buffer = make(map[string]*aggregate.Aggregate)
-		return []*mess.Message{message}, nil
+		tf.buffer = make(map[string]*aggregate.Aggregate)
+		return []*message.Message{msg}, nil
 	}
 
 	var prefixKey string
-	if send.conf.FilePath.PrefixKey != "" {
-		prefixKey = message.Get(send.conf.FilePath.PrefixKey).String()
+	if tf.conf.FilePath.PrefixKey != "" {
+		prefixKey = msg.GetObject(tf.conf.FilePath.PrefixKey).String()
 	}
 
-	if _, ok := send.buffer[prefixKey]; !ok {
-		agg, err := aggregate.New(send.bufferCfg)
+	if _, ok := tf.buffer[prefixKey]; !ok {
+		agg, err := aggregate.New(tf.bufferCfg)
 		if err != nil {
-			return nil, fmt.Errorf("transform: send_file: %v", err)
+			return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
 		}
 
-		send.buffer[prefixKey] = agg
+		tf.buffer[prefixKey] = agg
 	}
 
 	// Writes data as an object to S3 only when the buffer is full.
-	if ok := send.buffer[prefixKey].Add(message.Data()); ok {
-		return []*mess.Message{message}, nil
+	if ok := tf.buffer[prefixKey].Add(msg.Data()); ok {
+		return []*message.Message{msg}, nil
 	}
 
-	if err := send.writeFile(ctx, prefixKey); err != nil {
-		return nil, fmt.Errorf("transform: send_file: %v", err)
+	if err := tf.writeFile(ctx, prefixKey); err != nil {
+		return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
 	}
 
-	// Reset the buffer and add the message data.
-	send.buffer[prefixKey].Reset()
-	_ = send.buffer[prefixKey].Add(message.Data())
+	// Reset the buffer and add the msg data.
+	tf.buffer[prefixKey].Reset()
+	_ = tf.buffer[prefixKey].Add(msg.Data())
 
-	return []*mess.Message{message}, nil
+	return []*message.Message{msg}, nil
 }
 
 func (t *sendAWSS3) writeFile(ctx context.Context, prefix string) error {

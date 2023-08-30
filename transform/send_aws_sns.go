@@ -8,24 +8,25 @@ import (
 	"github.com/brexhq/substation/internal/aggregate"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/sns"
-	_config "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 // Records greater than 256 KB in size cannot be
 // put into an SNS topic
 const sendSNSMessageSizeLimit = 1024 * 1024 * 256
 
-// errSendSNSMessageSizeLimit is returned when data exceeds the SNS message
+// errSendSNSMessageSizeLimit is returned when data exceeds the SNS msg
 // size limit. If this error occurs, then conditions or transforms
 // should be applied to either drop or reduce the size of the data.
 var errSendSNSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSNSConfig struct {
-	Buffer  aggregate.Config      `json:"buffer"`
-	Auth    _config.ConfigAWSAuth `json:"auth"`
-	Request _config.ConfigRequest `json:"request"`
+	Buffer aggregate.Config `json:"buffer"`
+	AWS    configAWS        `json:"aws"`
+	Retry  configRetry      `json:"retry"`
+
 	// ARN is the ARN of the AWS SNS topic that data is sent to.
 	Topic string `json:"topic"`
 }
@@ -41,80 +42,80 @@ type sendAWSSNS struct {
 
 func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 	conf := sendAWSSNSConfig{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
-		return nil, err
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+		return nil, fmt.Errorf("transform: new_send_aws_sns: %v", err)
 	}
 
 	// Validate required options.
 	if conf.Topic == "" {
-		return nil, fmt.Errorf("send: aws_sns: topic: %v", errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("transform: new_send_aws_sns: topic: %v", errors.ErrMissingRequiredOption)
 	}
 
-	send := sendAWSSNS{
+	tf := sendAWSSNS{
 		conf: conf,
 	}
 
 	// Setup the AWS client.
-	send.client.Setup(aws.Config{
-		Region:     conf.Auth.Region,
-		AssumeRole: conf.Auth.AssumeRole,
-		MaxRetries: conf.Request.MaxRetries,
+	tf.client.Setup(aws.Config{
+		Region:     conf.AWS.Region,
+		AssumeRole: conf.AWS.AssumeRole,
+		MaxRetries: conf.Retry.Attempts,
 	})
 
 	agg, err := aggregate.New(
 		aggregate.Config{
-			// SNS limits batch operations to 10 messages.
+			// SNS limits batch operations to 10 msgs.
 			Count: 10,
 			// SNS limits batch operations to 256 KB.
 			Size:     sendSNSMessageSizeLimit,
-			Interval: conf.Buffer.Interval,
+			Duration: conf.Buffer.Duration,
 		})
 	if err != nil {
 		return nil, err
 	}
 
-	send.buffer = agg
+	tf.buffer = agg
 
-	return &send, nil
+	return &tf, nil
 }
 
 func (*sendAWSSNS) Close(context.Context) error {
 	return nil
 }
 
-func (send *sendAWSSNS) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
-	if message.IsControl() {
-		if send.buffer.Count() == 0 {
-			return []*mess.Message{message}, nil
+func (tf *sendAWSSNS) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	if msg.IsControl() {
+		if tf.buffer.Count() == 0 {
+			return []*message.Message{msg}, nil
 		}
 
-		items := send.buffer.Get()
-		_, err := send.client.PublishBatch(ctx, send.conf.Topic, items)
+		items := tf.buffer.Get()
+		_, err := tf.client.PublishBatch(ctx, tf.conf.Topic, items)
 		if err != nil {
 			return nil, fmt.Errorf("send: aws_sns: %v", err)
 		}
 
-		send.buffer.Reset()
-		return []*mess.Message{message}, nil
+		tf.buffer.Reset()
+		return []*message.Message{msg}, nil
 	}
 
-	if len(message.Data()) > sendSNSMessageSizeLimit {
+	if len(msg.Data()) > sendSNSMessageSizeLimit {
 		return nil, fmt.Errorf("send: aws_sns: %v", errSendSNSMessageSizeLimit)
 	}
 
 	// Send data to SNS only when the buffer is full.
-	if ok := send.buffer.Add(message.Data()); ok {
-		return []*mess.Message{message}, nil
+	if ok := tf.buffer.Add(msg.Data()); ok {
+		return []*message.Message{msg}, nil
 	}
 
-	items := send.buffer.Get()
-	if _, err := send.client.PublishBatch(ctx, send.conf.Topic, items); err != nil {
+	items := tf.buffer.Get()
+	if _, err := tf.client.PublishBatch(ctx, tf.conf.Topic, items); err != nil {
 		return nil, fmt.Errorf("send: aws_sns: %v", err)
 	}
 
-	// Reset the buffer and add the message data.
-	send.buffer.Reset()
-	_ = send.buffer.Add(message.Data())
+	// Reset the buffer and add the msg data.
+	tf.buffer.Reset()
+	_ = tf.buffer.Add(msg.Data())
 
-	return []*mess.Message{message}, nil
+	return []*message.Message{msg}, nil
 }

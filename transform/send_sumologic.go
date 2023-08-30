@@ -10,11 +10,11 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
-	_config "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/json"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 // errSendSumoLogicNonObject is returned when non-object data is sent to the transform.
@@ -25,6 +25,7 @@ var errSendSumoLogicNonObject = fmt.Errorf("input must be object")
 
 type sendSumoLogicConfig struct {
 	Buffer aggregate.Config `json:"buffer"`
+
 	// URL is the Sumo Logic HTTPS endpoint that objects are sent to.
 	URL string `json:"url"`
 	// Category is the Sumo Logic source category that overrides the
@@ -54,104 +55,104 @@ type sendSumoLogic struct {
 
 func newSendSumoLogic(_ context.Context, cfg config.Config) (*sendSumoLogic, error) {
 	conf := sendSumoLogicConfig{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
-		return nil, err
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+		return nil, fmt.Errorf("transform: new_send_sumologic: %v", err)
 	}
 
 	// Validate required options.
 	if conf.URL == "" {
-		return nil, fmt.Errorf("transform: send_sumologic: URL: %v", errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("transform: new_send_sumologic: URL: %v", errors.ErrMissingRequiredOption)
 	}
 
-	send := sendSumoLogic{
+	tf := sendSumoLogic{
 		conf: conf,
 	}
 
-	send.client.Setup()
+	tf.client.Setup()
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
-		send.client.EnableXRay()
+		tf.client.EnableXRay()
 	}
 
-	send.headers = []http.Header{
+	tf.headers = []http.Header{
 		{
 			Key:   "Content-Type",
 			Value: "application/json",
 		},
 	}
 
-	send.mu = sync.Mutex{}
-	send.buffer = make(map[string]*aggregate.Aggregate)
-	send.bufferCfg = aggregate.Config{
+	tf.mu = sync.Mutex{}
+	tf.buffer = make(map[string]*aggregate.Aggregate)
+	tf.bufferCfg = aggregate.Config{
 		// SumoLogic limits batches to 1MB.
 		Size:     1024 * 1024,
 		Count:    conf.Buffer.Count,
-		Interval: conf.Buffer.Interval,
+		Duration: conf.Buffer.Duration,
 	}
 
-	return &send, nil
+	return &tf, nil
 }
 
 func (*sendSumoLogic) Close(context.Context) error {
 	return nil
 }
 
-func (send *sendSumoLogic) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+func (tf *sendSumoLogic) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	// Lock the transform to prevent concurrent access to the buffer.
-	send.mu.Lock()
-	defer send.mu.Unlock()
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
 
-	if message.IsControl() {
-		for category := range send.buffer {
-			count := send.buffer[category].Count()
+	if msg.IsControl() {
+		for category := range tf.buffer {
+			count := tf.buffer[category].Count()
 			if count == 0 {
 				continue
 			}
 
-			if err := send.sendPayload(ctx, category); err != nil {
+			if err := tf.sendPayload(ctx, category); err != nil {
 				return nil, fmt.Errorf("transform: send_sumologic: %v", err)
 			}
 		}
 
-		send.buffer = make(map[string]*aggregate.Aggregate)
-		return []*mess.Message{message}, nil
+		tf.buffer = make(map[string]*aggregate.Aggregate)
+		return []*message.Message{msg}, nil
 	}
 
 	var category string
-	if send.conf.Category != "" {
-		category = send.conf.Category
+	if tf.conf.Category != "" {
+		category = tf.conf.Category
 	}
 
-	if !json.Valid(message.Data()) {
-		return nil, fmt.Errorf("transform: send_sumologic category %s: %v", category, errSendSumoLogicNonObject)
+	if !json.Valid(msg.Data()) {
+		return nil, fmt.Errorf("transform: send_sumologic: category %s: %v", category, errSendSumoLogicNonObject)
 	}
 
-	if send.conf.CategoryKey != "" {
-		category = message.Get(send.conf.CategoryKey).String()
+	if tf.conf.CategoryKey != "" {
+		category = msg.GetObject(tf.conf.CategoryKey).String()
 	}
 
-	if _, ok := send.buffer[category]; !ok {
-		agg, err := aggregate.New(send.bufferCfg)
+	if _, ok := tf.buffer[category]; !ok {
+		agg, err := aggregate.New(tf.bufferCfg)
 		if err != nil {
 			return nil, fmt.Errorf("transform: send_sumologic: %v", err)
 		}
 
-		send.buffer[category] = agg
+		tf.buffer[category] = agg
 	}
 
 	// Sends data to SumoLogic only when the buffer is full.
-	if ok := send.buffer[category].Add(message.Data()); ok {
-		return []*mess.Message{message}, nil
+	if ok := tf.buffer[category].Add(msg.Data()); ok {
+		return []*message.Message{msg}, nil
 	}
 
-	if err := send.sendPayload(ctx, category); err != nil {
+	if err := tf.sendPayload(ctx, category); err != nil {
 		return nil, fmt.Errorf("transform: send_sumologic: %v", err)
 	}
 
-	// Reset the buffer and add the message data.
-	send.buffer[category].Reset()
-	_ = send.buffer[category].Add(message.Data())
+	// Reset the buffer and add the msg data.
+	tf.buffer[category].Reset()
+	_ = tf.buffer[category].Add(msg.Data())
 
-	return []*mess.Message{message}, nil
+	return []*message.Message{msg}, nil
 }
 
 func (t *sendSumoLogic) sendPayload(ctx context.Context, category string) error {

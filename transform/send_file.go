@@ -10,13 +10,14 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
-	_config "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/file"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 type sendFileConfig struct {
 	Buffer aggregate.Config `json:"buffer"`
+
 	// FilePath determines how the name of the file is constructed.
 	// See filePath.New for more information.
 	FilePath file.Path `json:"file_path"`
@@ -62,76 +63,76 @@ type sendFile struct {
 
 func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	conf := sendFileConfig{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
-		return nil, err
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+		return nil, fmt.Errorf("transform: new_send_file: %v", err)
 	}
 
-	send := sendFile{
+	tf := sendFile{
 		conf: conf,
 	}
 
 	// File extensions are dynamic and not directly configurable.
-	send.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
+	tf.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
 
-	send.mu = sync.Mutex{}
-	send.buffer = make(map[string]*aggregate.Aggregate)
-	send.bufferCfg = aggregate.Config{
+	tf.mu = sync.Mutex{}
+	tf.buffer = make(map[string]*aggregate.Aggregate)
+	tf.bufferCfg = aggregate.Config{
 		Count:    conf.Buffer.Count,
 		Size:     conf.Buffer.Size,
-		Interval: conf.Buffer.Interval,
+		Duration: conf.Buffer.Duration,
 	}
 
-	return &send, nil
+	return &tf, nil
 }
 
 func (*sendFile) Close(context.Context) error {
 	return nil
 }
 
-func (send *sendFile) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
+func (tf *sendFile) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	// Lock the transform to prevent concurrent access to the buffer.
-	send.mu.Lock()
-	defer send.mu.Unlock()
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
 
-	if message.IsControl() {
-		for path := range send.buffer {
-			if err := send.writeFile(path); err != nil {
+	if msg.IsControl() {
+		for path := range tf.buffer {
+			if err := tf.writeFile(path); err != nil {
 				return nil, fmt.Errorf("transform: send_file: file_path %s: %v", path, err)
 			}
 		}
 
-		send.buffer = make(map[string]*aggregate.Aggregate)
-		return []*mess.Message{message}, nil
+		tf.buffer = make(map[string]*aggregate.Aggregate)
+		return []*message.Message{msg}, nil
 	}
 
 	var prefixKey string
-	if send.conf.FilePath.PrefixKey != "" {
-		prefixKey = message.Get(send.conf.FilePath.PrefixKey).String()
+	if tf.conf.FilePath.PrefixKey != "" {
+		prefixKey = msg.GetObject(tf.conf.FilePath.PrefixKey).String()
 	}
 
-	if _, ok := send.buffer[prefixKey]; !ok {
-		agg, err := aggregate.New(send.bufferCfg)
+	if _, ok := tf.buffer[prefixKey]; !ok {
+		agg, err := aggregate.New(tf.bufferCfg)
 		if err != nil {
 			return nil, fmt.Errorf("transform: send_file: %v", err)
 		}
 
-		send.buffer[prefixKey] = agg
+		tf.buffer[prefixKey] = agg
 	}
 
 	// Writes data as a file only when the buffer is full.
-	if ok := send.buffer[prefixKey].Add(message.Data()); ok {
-		return []*mess.Message{message}, nil
+	if ok := tf.buffer[prefixKey].Add(msg.Data()); ok {
+		return []*message.Message{msg}, nil
 	}
 
-	if err := send.writeFile(prefixKey); err != nil {
+	if err := tf.writeFile(prefixKey); err != nil {
 		return nil, fmt.Errorf("transform: send_file: %v", err)
 	}
 
-	// Reset the buffer and add the message data.
-	send.buffer[prefixKey].Reset()
-	_ = send.buffer[prefixKey].Add(message.Data())
+	// Reset the buffer and add the msg data.
+	tf.buffer[prefixKey].Reset()
+	_ = tf.buffer[prefixKey].Add(msg.Data())
 
-	return []*mess.Message{message}, nil
+	return []*message.Message{msg}, nil
 }
 
 func (t *sendFile) writeFile(prefix string) error {

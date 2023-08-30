@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
-	_config "github.com/brexhq/substation/internal/config"
-	mess "github.com/brexhq/substation/message"
+	iconfig "github.com/brexhq/substation/internal/config"
+	"github.com/brexhq/substation/message"
 )
 
 type sendStdoutConfig struct{}
@@ -17,26 +17,26 @@ type sendStdout struct {
 
 func newSendStdout(_ context.Context, cfg config.Config) (*sendStdout, error) {
 	conf := sendStdoutConfig{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
-		return nil, err
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+		return nil, fmt.Errorf("transform: new_send_stdout: %v", err)
 	}
 
-	send := sendStdout{
+	tf := sendStdout{
 		conf: conf,
 	}
 
-	return &send, nil
+	return &tf, nil
 }
 
 func (*sendStdout) Close(context.Context) error {
 	return nil
 }
 
-func (*sendStdout) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
-	if message.IsControl() {
-		return []*mess.Message{message}, nil
+func (*sendStdout) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	if msg.IsControl() {
+		return []*message.Message{msg}, nil
 	}
 
-	fmt.Println(string(message.Data()))
-	return []*mess.Message{message}, nil
+	fmt.Println(string(msg.Data()))
+	return []*message.Message{msg}, nil
 }

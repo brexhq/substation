@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &procMath{}
+var _ Transformer = &modMath{}
 
-var procMathTests = []struct {
+var modMathTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -22,9 +22,10 @@ var procMathTests = []struct {
 		"add",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":       "math",
-				"set_key":   "math",
-				"operation": "add",
+				"object": map[string]interface{}{
+					"key":     "math",
+					"set_key": "math",
+				}, "operation": "add",
 			},
 		},
 		[]byte(`{"math":[1,3]}`),
@@ -37,9 +38,10 @@ var procMathTests = []struct {
 		"subtract",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":       "math",
-				"set_key":   "math",
-				"operation": "subtract",
+				"object": map[string]interface{}{
+					"key":     "math",
+					"set_key": "math",
+				}, "operation": "subtract",
 			},
 		},
 		[]byte(`{"math":[5,2]}`),
@@ -52,9 +54,10 @@ var procMathTests = []struct {
 		"multiply",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":       "math",
-				"set_key":   "math",
-				"operation": "multiply",
+				"object": map[string]interface{}{
+					"key":     "math",
+					"set_key": "math",
+				}, "operation": "multiply",
 			},
 		},
 		[]byte(`{"math":[10,2]}`),
@@ -67,9 +70,10 @@ var procMathTests = []struct {
 		"divide",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":       "math",
-				"set_key":   "math",
-				"operation": "divide",
+				"object": map[string]interface{}{
+					"key":     "math",
+					"set_key": "math",
+				}, "operation": "divide",
 			},
 		},
 		[]byte(`{"math":[10,2]}`),
@@ -80,23 +84,17 @@ var procMathTests = []struct {
 	},
 }
 
-func TestProcMath(t *testing.T) {
+func TestModMath(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procMathTests {
+	for _, test := range modMathTests {
 		t.Run(test.name, func(t *testing.T) {
-			message, err := mess.New(
-				mess.SetData(test.test),
-			)
+			tf, err := newModMath(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			proc, err := newProcMath(ctx, test.cfg)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			result, err := proc.Transform(ctx, message)
+			msg := message.New().SetData(test.test)
+			result, err := tf.Transform(ctx, msg)
 			if err != nil {
 				t.Error(err)
 			}
@@ -113,27 +111,24 @@ func TestProcMath(t *testing.T) {
 	}
 }
 
-func benchmarkProcMath(b *testing.B, tf *procMath, data []byte) {
+func benchmarkModMath(b *testing.B, tf *modMath, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		message, _ := mess.New(
-			mess.SetData(data),
-		)
-
-		_, _ = tf.Transform(ctx, message)
+		msg := message.New().SetData(data)
+		_, _ = tf.Transform(ctx, msg)
 	}
 }
 
-func BenchmarkProcMath(b *testing.B) {
-	for _, test := range procMathTests {
-		proc, err := newProcMath(context.TODO(), test.cfg)
+func BenchmarkModMath(b *testing.B) {
+	for _, test := range modMathTests {
+		tf, err := newModMath(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkProcMath(b, proc, test.test)
+				benchmarkModMath(b, tf, test.test)
 			},
 		)
 	}

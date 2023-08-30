@@ -50,7 +50,7 @@ var modDeleteTests = []struct {
 	},
 }
 
-func TestModRemove(t *testing.T) {
+func TestModDelete(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range modDeleteTests {
 		t.Run(test.name, func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestModRemove(t *testing.T) {
 	}
 }
 
-func benchmarkModRemove(b *testing.B, tf *modDelete, data []byte) {
+func benchmarkModDelete(b *testing.B, tf *modDelete, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -85,16 +85,16 @@ func benchmarkModRemove(b *testing.B, tf *modDelete, data []byte) {
 	}
 }
 
-func BenchmarkModRemove(b *testing.B) {
+func BenchmarkModDelete(b *testing.B) {
 	for _, test := range modDeleteTests {
-		tf, err := newModRemove(context.TODO(), test.cfg)
+		tf, err := newModDelete(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkModRemove(b, tf, test.test)
+				benchmarkModDelete(b, tf, test.test)
 			},
 		)
 	}

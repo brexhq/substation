@@ -46,7 +46,7 @@ func TestGetItem(t *testing.T) {
 		}
 
 		m := make(map[string]interface{})
-		resp, err := a.GetItem(ctx, "", m)
+		resp, err := a.GetItem(ctx, "", m, false)
 		if err != nil {
 			t.Fatalf("%d, unexpected error", err)
 		}

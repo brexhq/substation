@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &procJQ{}
+var _ Transformer = &modJQ{}
 
-var procJQTests = []struct {
+var modJQTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -105,23 +105,17 @@ var procJQTests = []struct {
 	},
 }
 
-func TestProcJQ(t *testing.T) {
+func TestModJQ(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procJQTests {
+	for _, test := range modJQTests {
 		t.Run(test.name, func(t *testing.T) {
-			message, err := mess.New(
-				mess.SetData(test.test),
-			)
+			tf, err := newModJQ(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			proc, err := newProcJQ(ctx, test.cfg)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			result, err := proc.Transform(ctx, message)
+			msg := message.New().SetData(test.test)
+			result, err := tf.Transform(ctx, msg)
 			if err != nil {
 				t.Error(err)
 			}
@@ -138,27 +132,24 @@ func TestProcJQ(t *testing.T) {
 	}
 }
 
-func benchmarkProcJQ(b *testing.B, tf *procJQ, data []byte) {
+func benchmarkModJQ(b *testing.B, tf *modJQ, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		message, _ := mess.New(
-			mess.SetData(data),
-		)
-
-		_, _ = tf.Transform(ctx, message)
+		msg := message.New().SetData(data)
+		_, _ = tf.Transform(ctx, msg)
 	}
 }
 
-func BenchmarkProcJQ(b *testing.B) {
-	for _, test := range procJQTests {
-		proc, err := newProcJQ(context.TODO(), test.cfg)
+func BenchmarkModJQ(b *testing.B) {
+	for _, test := range modJQTests {
+		tf, err := newModJQ(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkProcJQ(b, proc, test.test)
+				benchmarkModJQ(b, tf, test.test)
 			},
 		)
 	}

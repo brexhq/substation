@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &procGzip{}
+var _ Transformer = &modGzip{}
 
-var procGzipTests = []struct {
+var modGzipTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -46,23 +46,18 @@ var procGzipTests = []struct {
 	},
 }
 
-func TestProcGzip(t *testing.T) {
+func TestModGzip(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procGzipTests {
+	for _, test := range modGzipTests {
 		t.Run(test.name, func(t *testing.T) {
-			message, err := mess.New(
-				mess.SetData(test.test),
-			)
+			msg := message.New().SetData(test.test)
+
+			tf, err := newModGzip(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			proc, err := newProcGzip(ctx, test.cfg)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			result, err := proc.Transform(ctx, message)
+			result, err := tf.Transform(ctx, msg)
 			if err != nil {
 				t.Error(err)
 			}
@@ -79,27 +74,24 @@ func TestProcGzip(t *testing.T) {
 	}
 }
 
-func benchmarkProcGzip(b *testing.B, tf *procGzip, data []byte) {
+func benchmarkModGzip(b *testing.B, tf *modGzip, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		message, _ := mess.New(
-			mess.SetData(data),
-		)
-
-		_, _ = tf.Transform(ctx, message)
+		msg := message.New().SetData(data)
+		_, _ = tf.Transform(ctx, msg)
 	}
 }
 
-func BenchmarkProcGzip(b *testing.B) {
-	for _, test := range procGzipTests {
-		proc, err := newProcGzip(context.TODO(), test.cfg)
+func BenchmarkModGzip(b *testing.B) {
+	for _, test := range modGzipTests {
+		tf, err := newModGzip(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkProcGzip(b, proc, test.test)
+				benchmarkModGzip(b, tf, test.test)
 			},
 		)
 	}

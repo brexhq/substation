@@ -11,10 +11,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/brexhq/substation/config"
 	ddb "github.com/brexhq/substation/internal/aws/dynamodb"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &procAWSDynamoDB{}
+var _ Transformer = &modAWSDynamoDB{}
 
 type mockedQuery struct {
 	dynamodbiface.DynamoDBAPI
@@ -25,7 +25,7 @@ func (m mockedQuery) QueryWithContext(ctx aws.Context, input *dynamodb.QueryInpu
 	return &m.Resp, nil
 }
 
-var procAWSDynamoDBTests = []struct {
+var modAWSDynamoDBTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -34,18 +34,20 @@ var procAWSDynamoDBTests = []struct {
 	api      ddb.API
 }{
 	{
-		"obj",
+		"success",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":                      "foo",
-				"set_key":                  "foo",
-				"table":                    "fooer",
-				"key_condition_expression": "barre",
+				"object": map[string]interface{}{
+					"set_key": "a",
+				},
+				"table":                    "tab",
+				"partition_key":            "PK",
+				"key_condition_expression": "kce",
 			},
 		},
-		[]byte(`{"foo":{"PK":"bar"}}`),
+		[]byte(`{"PK":"b"}`),
 		[][]byte{
-			[]byte(`{"foo":[{"baz":"qux"}]}`),
+			[]byte(`{"PK":"b","a":[{"b":"c"}]}`),
 		},
 		nil,
 		ddb.API{
@@ -53,8 +55,8 @@ var procAWSDynamoDBTests = []struct {
 				Resp: dynamodb.QueryOutput{
 					Items: []map[string]*dynamodb.AttributeValue{
 						{
-							"baz": {
-								S: aws.String("qux"),
+							"b": {
+								S: aws.String("c"),
 							},
 						},
 					},
@@ -64,23 +66,17 @@ var procAWSDynamoDBTests = []struct {
 	},
 }
 
-func TestprocAWSDynamoDB(t *testing.T) {
+func TestModAWSDynamoDB(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procAWSDynamoDBTests {
-		message, err := mess.New(
-			mess.SetData(test.test),
-		)
+	for _, test := range modAWSDynamoDBTests {
+		tf, err := newModAWSDynamoDB(ctx, test.cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
+		tf.client = test.api
 
-		proc, err := newProcAWSDynamoDB(ctx, test.cfg)
-		if err != nil {
-			t.Fatal(err)
-		}
-		proc.client = test.api
-
-		result, err := proc.Transform(ctx, message)
+		msg := message.New().SetData(test.test)
+		result, err := tf.Transform(ctx, msg)
 		if err != nil {
 			t.Error(err)
 		}
@@ -96,29 +92,26 @@ func TestprocAWSDynamoDB(t *testing.T) {
 	}
 }
 
-func benchmarkprocAWSDynamoDB(b *testing.B, tf *procAWSDynamoDB, data []byte) {
+func benchmarkModAWSDynamoDB(b *testing.B, tf *modAWSDynamoDB, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		message, _ := mess.New(
-			mess.SetData(data),
-		)
-
-		_, _ = tf.Transform(ctx, message)
+		msg := message.New().SetData(data)
+		_, _ = tf.Transform(ctx, msg)
 	}
 }
 
-func BenchmarkprocAWSDynamoDB(b *testing.B) {
+func BenchmarkModAWSDynamoDB(b *testing.B) {
 	ctx := context.TODO()
-	for _, test := range procAWSDynamoDBTests {
+	for _, test := range modAWSDynamoDBTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				proc, err := newProcAWSDynamoDB(ctx, test.cfg)
+				tf, err := newModAWSDynamoDB(ctx, test.cfg)
 				if err != nil {
 					b.Fatal(err)
 				}
-				proc.client = test.api
+				tf.client = test.api
 
-				benchmarkprocAWSDynamoDB(b, proc, test.test)
+				benchmarkModAWSDynamoDB(b, tf, test.test)
 			},
 		)
 	}

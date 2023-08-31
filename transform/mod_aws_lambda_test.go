@@ -11,10 +11,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/lambda/lambdaiface"
 	"github.com/brexhq/substation/config"
 	lamb "github.com/brexhq/substation/internal/aws/lambda"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &procAWSLambda{}
+var _ Transformer = &modAWSLambda{}
 
 type mockedInvoke struct {
 	lambdaiface.LambdaAPI
@@ -25,7 +25,7 @@ func (m mockedInvoke) InvokeWithContext(ctx aws.Context, input *lambda.InvokeInp
 	return &m.Resp, nil
 }
 
-var procAWSLambdaTests = []struct {
+var modAWSLambdaTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -34,46 +34,42 @@ var procAWSLambdaTests = []struct {
 	api      lamb.API
 }{
 	{
-		"JSON",
+		"success",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":           "foo",
-				"set_key":       "foo",
-				"function_name": "fooer",
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+				"function_name": "func",
 			},
 		},
-		[]byte(`{"foo":{"bar":"baz"}}`),
+		[]byte(`{"a":{"b":"c"}}`),
 		[][]byte{
-			[]byte(`{"foo":{"baz":"qux"}}`),
+			[]byte(`{"a":{"d":"e"}}`),
 		},
 		nil,
 		lamb.API{
 			Client: mockedInvoke{
 				Resp: lambda.InvokeOutput{
-					Payload: []byte(`{"baz":"qux"}`),
+					Payload: []byte(`{"d":"e"}`),
 				},
 			},
 		},
 	},
 }
 
-func TestprocAWSLambda(t *testing.T) {
+func TestModAWSLambda(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range procAWSLambdaTests {
-		message, err := mess.New(
-			mess.SetData(test.test),
-		)
+	for _, test := range modAWSLambdaTests {
+		tf, err := newModAWSLambda(ctx, test.cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
+		tf.client = test.api
 
-		proc, err := newProcAWSLambda(ctx, test.cfg)
-		if err != nil {
-			t.Fatal(err)
-		}
-		proc.client = test.api
-
-		result, err := proc.Transform(ctx, message)
+		msg := message.New().SetData(test.test)
+		result, err := tf.Transform(ctx, msg)
 		if err != nil {
 			t.Error(err)
 		}
@@ -89,28 +85,26 @@ func TestprocAWSLambda(t *testing.T) {
 	}
 }
 
-func benchmarkprocAWSLambda(b *testing.B, tf *procAWSLambda, data []byte) {
+func benchmarkModAWSLambda(b *testing.B, tf *modAWSLambda, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		message, _ := mess.New(
-			mess.SetData(data),
-		)
-
-		_, _ = tf.Transform(ctx, message)
+		msg := message.New().SetData(data)
+		_, _ = tf.Transform(ctx, msg)
 	}
 }
 
-func BenchmarkprocAWSLambda(b *testing.B) {
+func BenchmarkModAWSLambda(b *testing.B) {
 	ctx := context.TODO()
-	for _, test := range procAWSLambdaTests {
+	for _, test := range modAWSLambdaTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				proc, err := newProcAWSLambda(ctx, test.cfg)
+				tf, err := newModAWSLambda(ctx, test.cfg)
 				if err != nil {
 					b.Fatal(err)
 				}
+				tf.client = test.api
 
-				benchmarkprocAWSLambda(b, proc, test.test)
+				benchmarkModAWSLambda(b, tf, test.test)
 			},
 		)
 	}

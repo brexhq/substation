@@ -7,8 +7,8 @@ import (
 	"plugin"
 
 	"github.com/brexhq/substation/config"
-	_config "github.com/brexhq/substation/internal/config"
-	mess "github.com/brexhq/substation/message"
+	iconfig "github.com/brexhq/substation/internal/config"
+	"github.com/brexhq/substation/message"
 )
 
 var errMetaPluginInterfaceNotImplemented = fmt.Errorf("plugin does not implement transformer interface")
@@ -26,26 +26,26 @@ type metaPlugin struct {
 
 func newMetaPlugin(_ context.Context, cfg config.Config) (*metaPlugin, error) {
 	conf := metaPluginConfig{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: meta_plugin: %v", err)
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+		return nil, fmt.Errorf("transform: new_meta_plugin: %v", err)
 	}
 
 	plug, err := plugin.Open(conf.Plugin)
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_plugin: %v", err)
+		return nil, fmt.Errorf("transform: new_meta_plugin: %v", err)
 	}
 
 	sym, err := plug.Lookup("Transformer")
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_plugin: %v", err)
+		return nil, fmt.Errorf("transform: new_meta_plugin: %v", err)
 	}
 
 	tf, ok := sym.(Transformer)
 	if !ok {
-		return nil, fmt.Errorf("transform: meta_plugin: %v", errMetaPluginInterfaceNotImplemented)
+		return nil, fmt.Errorf("transform: new_meta_plugin: %v", errMetaPluginInterfaceNotImplemented)
 	}
 
-	if err := _config.Decode(conf.Settings, tf); err != nil {
+	if err := iconfig.Decode(conf.Settings, tf); err != nil {
 		return nil, err
 	}
 
@@ -66,8 +66,8 @@ func (meta *metaPlugin) Close(ctx context.Context) error {
 	return meta.tf.Close(ctx)
 }
 
-func (meta *metaPlugin) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
-	msgs, err := meta.tf.Transform(ctx, message)
+func (meta *metaPlugin) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	msgs, err := meta.tf.Transform(ctx, msg)
 	if err != nil {
 		return nil, fmt.Errorf("transform: meta_plugin: %v", err)
 	}

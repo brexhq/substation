@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
-	_config "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 // errMetaPipelineArrayInput is returned when the transform is configured to process
@@ -18,14 +18,8 @@ import (
 var errMetaPipelineArrayInput = fmt.Errorf("input is an array")
 
 type metaPipelineConfig struct {
-	// Key retrieves a value from an object for processing.
-	//
-	// This is optional for transforms that support processing non-object data.
-	Key string `json:"key"`
-	// SetKey inserts a processed value into an object.
-	//
-	// This is optional for transforms that support processing non-object data.
-	SetKey string `json:"set_key"`
+	Object configObject `json:"object"`
+
 	// Transforms applied in series to the data.
 	Transforms []config.Config `json:"transforms"`
 }
@@ -39,29 +33,33 @@ type metaPipeline struct {
 
 func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, error) {
 	conf := metaPipelineConfig{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
-		return nil, err
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+		return nil, fmt.Errorf("transform: new_meta_pipeline: %v", err)
 	}
 
 	// Validate required options.
-	if (conf.Key == "" && conf.SetKey != "") || (conf.Key != "" && conf.SetKey == "") {
-		return nil, fmt.Errorf("transform: meta_pipeline: key %s set_key %s: %v", conf.Key, conf.SetKey, errInvalidDataPattern)
+	if conf.Object.Key == "" && conf.Object.SetKey != "" {
+		return nil, fmt.Errorf("transform: new_meta_pipeline: object_key: %v", errors.ErrMissingRequiredOption)
+	}
+
+	if conf.Object.Key != "" && conf.Object.SetKey == "" {
+		return nil, fmt.Errorf("transform: new_meta_pipeline: object_set_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if len(conf.Transforms) == 0 {
-		return nil, fmt.Errorf("transform: meta_pipeline: transforms: %v", errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("transform: new_meta_pipeline: transforms: %v", errors.ErrMissingRequiredOption)
 	}
 
 	meta := metaPipeline{
 		conf:     conf,
-		isObject: conf.Key != "" && conf.SetKey != "",
+		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
 
 	var tf []Transformer
 	for _, c := range conf.Transforms {
 		t, err := New(ctx, c)
 		if err != nil {
-			return nil, fmt.Errorf("transform: meta_pipeline: transform %+v: %v", c, err)
+			return nil, fmt.Errorf("transform: new_meta_pipeline: transform %+v: %v", c, err)
 		}
 
 		tf = append(tf, t)
@@ -80,54 +78,40 @@ func (*metaPipeline) Close(context.Context) error {
 	return nil
 }
 
-func (meta *metaPipeline) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
-	// Skip control messages.
-	if message.IsControl() {
-		return []*mess.Message{message}, nil
+func (meta *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	// Skip interrupt messages.
+	if msg.IsControl() {
+		return []*message.Message{msg}, nil
 	}
 
 	if !meta.isObject {
-		messages, err := Apply(ctx, meta.tf, message)
+		msgs, err := Apply(ctx, meta.tf, msg)
 		if err != nil {
 			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 		}
 
-		return messages, nil
+		return msgs, nil
 	}
 
-	result := message.Get(meta.conf.Key)
+	result := msg.GetObject(meta.conf.Object.Key)
 	if result.IsArray() {
-		return nil, fmt.Errorf("transform: meta_pipeline: key %s: %v", meta.conf.Key, errMetaPipelineArrayInput)
+		return nil, fmt.Errorf("transform: meta_pipeline: key %s: %v", meta.conf.Object.Key, errMetaPipelineArrayInput)
 	}
 
-	newMessage, err := mess.New(
-		mess.SetData([]byte(result.String())),
-	)
+	newMsg := message.New().SetData(result.Bytes())
+	msgs, err := Apply(ctx, meta.tf, newMsg)
 	if err != nil {
 		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 	}
 
-	nMessage, err := Apply(ctx, meta.tf, newMessage)
-	if err != nil {
-		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
-	}
-
-	var tmpMessages []*mess.Message
-	for _, message := range nMessage {
-		msg, err := mess.New(
-			mess.SetData(message.Data()),
-			mess.SetMetadata(message.Metadata()),
-		)
-		if err != nil {
+	var newMsgs []*message.Message
+	for _, msg := range msgs {
+		if err := msg.SetObject(meta.conf.Object.SetKey, msg.Data()); err != nil {
 			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 		}
 
-		if err := msg.Set(meta.conf.SetKey, message.Data()); err != nil {
-			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
-		}
-
-		tmpMessages = append(tmpMessages, msg)
+		newMsgs = append(newMsgs, msg)
 	}
 
-	return tmpMessages, nil
+	return newMsgs, nil
 }

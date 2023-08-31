@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 var _ Transformer = &metaPipeline{}
@@ -22,17 +22,19 @@ var metaPipelineTests = []struct {
 		"object",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
 				"transforms": []config.Config{
 					{
-						Type: "proc_base64",
+						Type: "mod_base64",
 						Settings: map[string]interface{}{
 							"direction": "from",
 						},
 					},
 					{
-						Type: "proc_gzip",
+						Type: "mod_gzip",
 						Settings: map[string]interface{}{
 							"direction": "from",
 						},
@@ -40,9 +42,9 @@ var metaPipelineTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"input":"H4sIAO291GIA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"}`),
+		[]byte(`{"a":"H4sIAO291GIA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA"}`),
 		[][]byte{
-			[]byte(`{"output":"foo"}`),
+			[]byte(`{"a":"foo"}`),
 		},
 		nil,
 	},
@@ -52,13 +54,13 @@ var metaPipelineTests = []struct {
 			Settings: map[string]interface{}{
 				"transforms": []config.Config{
 					{
-						Type: "proc_base64",
+						Type: "mod_base64",
 						Settings: map[string]interface{}{
 							"direction": "from",
 						},
 					},
 					{
-						Type: "proc_gzip",
+						Type: "mod_gzip",
 						Settings: map[string]interface{}{
 							"direction": "from",
 						},
@@ -78,19 +80,13 @@ func TestMetaPipeline(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range metaPipelineTests {
 		t.Run(test.name, func(t *testing.T) {
-			message, err := mess.New(
-				mess.SetData(test.test),
-			)
+			tf, err := newMetaPipeline(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			proc, err := newMetaPipeline(ctx, test.cfg)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			result, err := proc.Transform(ctx, message)
+			msg := message.New().SetData(test.test)
+			result, err := tf.Transform(ctx, msg)
 			if err != nil {
 				t.Error(err)
 			}
@@ -110,24 +106,21 @@ func TestMetaPipeline(t *testing.T) {
 func benchmarkMetaPipeline(b *testing.B, tf *metaPipeline, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		message, _ := mess.New(
-			mess.SetData(data),
-		)
-
-		_, _ = tf.Transform(ctx, message)
+		msg := message.New().SetData(data)
+		_, _ = tf.Transform(ctx, msg)
 	}
 }
 
 func BenchmarkMetaPipeline(b *testing.B) {
 	for _, test := range metaPipelineTests {
-		proc, err := newMetaPipeline(context.TODO(), test.cfg)
+		tf, err := newMetaPipeline(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkMetaPipeline(b, proc, test.test)
+				benchmarkMetaPipeline(b, tf, test.test)
 			},
 		)
 	}

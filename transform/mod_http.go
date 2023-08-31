@@ -12,25 +12,19 @@ import (
 	"strings"
 
 	"github.com/brexhq/substation/config"
-	_config "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
 	"github.com/brexhq/substation/internal/secrets"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-// procHTTPInterp is used for interpolating data into URLs.
-const procHTTPInterp = `${data}`
+// modHTTPInterp is used for interpolating data into URLs.
+const modHTTPInterp = `${data}`
 
-type procHTTPConfig struct {
-	// Key retrieves a value from an object for processing.
-	//
-	// This is optional for transforms that support processing non-object data.
-	Key string `json:"key"`
-	// SetKey inserts a processed value into an object.
-	//
-	// This is optional for transforms that support processing non-object data.
-	SetKey string `json:"set_key"`
+type modHTTPConfig struct {
+	Object configObject `json:"object"`
+
 	// ErrorOnFailure determines whether an error is returned during processing.
 	//
 	// This is optional and defaults to false.
@@ -66,66 +60,66 @@ type procHTTPConfig struct {
 	BodyKey string `json:"body_key"`
 }
 
-type procHTTP struct {
-	conf     procHTTPConfig
-	isObject bool
+type modHTTP struct {
+	conf modHTTPConfig
 
 	// client is safe for concurrent use.
 	client  http.HTTP
 	headers []http.Header
 }
 
-func (*procHTTP) Close(context.Context) error {
-	return nil
-}
-
-func newProcHTTP(ctx context.Context, cfg config.Config) (*procHTTP, error) {
-	conf := procHTTPConfig{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
-		return nil, err
+func newModHTTP(ctx context.Context, cfg config.Config) (*modHTTP, error) {
+	conf := modHTTPConfig{}
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+		return nil, fmt.Errorf("transform: new_mod_http: %v", err)
 	}
 
 	// Validate required options.
-	if (conf.Key != "" && conf.SetKey == "") ||
-		(conf.Key == "" && conf.SetKey != "") {
-		return nil, fmt.Errorf("transform: proc_http: key %s set_key %s: %v", conf.Key, conf.SetKey, errInvalidDataPattern)
+	if conf.Object.Key == "" && conf.Object.SetKey != "" {
+		return nil, fmt.Errorf("transform: new_mod_http: object_key: %v", errors.ErrMissingRequiredOption)
+	}
+
+	if conf.Object.Key != "" && conf.Object.SetKey == "" {
+		return nil, fmt.Errorf("transform: new_mod_http: object_set_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if conf.URL == "" {
-		return nil, fmt.Errorf("transform: proc_http: url: %v", errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("transform: new_mod_http: url: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if conf.Method == "POST" && conf.BodyKey == "" {
-		return nil, fmt.Errorf("transform: proc_http: body_key: %v", errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("transform: new_mod_http: body_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	proc := procHTTP{
-		conf:     conf,
-		isObject: conf.Key != "" && conf.SetKey != "",
+	tf := modHTTP{
+		conf: conf,
 	}
 
-	proc.client.Setup()
+	tf.client.Setup()
 	for _, hdr := range conf.Headers {
 		// Retrieve secret and interpolate with header value.
 		v, err := secrets.Interpolate(ctx, hdr.Value)
 		if err != nil {
-			return nil, fmt.Errorf("transform: proc_http: %v", err)
+			return nil, fmt.Errorf("transform: new_mod_http: %v", err)
 		}
 
-		proc.headers = append(proc.headers, http.Header{
+		tf.headers = append(tf.headers, http.Header{
 			Key:   hdr.Key,
 			Value: v,
 		})
 	}
 
-	return &proc, nil
+	return &tf, nil
 }
 
-// nolint: gocognit // Ignore cognitive complexity.
-func (proc *procHTTP) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
-	// Skip control messages.
-	if message.IsControl() {
-		return []*mess.Message{message}, nil
+func (*modHTTP) Close(context.Context) error {
+	return nil
+}
+
+func (tf *modHTTP) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	// Skip interrupt messages.
+	if msg.IsControl() {
+		return []*message.Message{msg}, nil
 	}
 
 	// The URL can exist in three states:
@@ -139,106 +133,101 @@ func (proc *procHTTP) Transform(ctx context.Context, message *mess.Message) ([]*
 	// using the data handling pattern.
 	//
 	// The URL is always interpolated with the substring ${data}.
-	url := proc.conf.URL
-	if strings.Contains(url, procHTTPInterp) {
-		if proc.conf.Key != "" {
-			url = strings.ReplaceAll(url, procHTTPInterp, message.Get(proc.conf.Key).String())
+	url := tf.conf.URL
+	if strings.Contains(url, modHTTPInterp) {
+		if tf.conf.Object.Key != "" {
+			url = strings.ReplaceAll(url, modHTTPInterp, msg.GetObject(tf.conf.Object.Key).String())
 		} else {
-			url = strings.ReplaceAll(url, procHTTPInterp, string(message.Data()))
+			url = strings.ReplaceAll(url, modHTTPInterp, string(msg.Data()))
 		}
 	}
 
 	// Retrieve secret and interpolate with URL
 	url, err := secrets.Interpolate(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("transform: proc_http: %v", err)
+		return nil, fmt.Errorf("transform: mod_http: %v", err)
 	}
 
-	switch proc.conf.Method {
+	switch tf.conf.Method {
 	// POST only supports the object handling pattern.
 	case gohttp.MethodPost:
-		body := message.Get(proc.conf.BodyKey).String()
+		body := msg.GetObject(tf.conf.BodyKey).String()
 
 		// resp.Body is closed by parseResponse.
-		resp, err := proc.client.Post(ctx, url, body, proc.headers...)
+		resp, err := tf.client.Post(ctx, url, body, tf.headers...)
 
 		// If ErrorOnFailure is configured, then errors are returned,
 		// but otherwise the message is returned as-is.
-		if err != nil && proc.conf.ErrorOnFailure {
-			return nil, fmt.Errorf("transform: proc_http: %v", err)
+		if err != nil && tf.conf.ErrorOnFailure {
+			return nil, fmt.Errorf("transform: mod_http: %v", err)
 		} else if err != nil {
-			return []*mess.Message{message}, nil
+			//nolint: nilerr // err is configurable.
+			return []*message.Message{msg}, nil
 		}
 
-		res, err := parseResponse(resp)
+		res, err := tf.parseResponse(resp)
 		if err != nil {
-			return nil, fmt.Errorf("transform: proc_http: %v", err)
+			return nil, fmt.Errorf("transform: mod_http: %v", err)
 		}
 
 		// If SetKey exists, then the response body is written into the message,
 		// but otherwise the response is not stored and the message is returned
 		// as-is.
-		if proc.conf.SetKey != "" {
-			if err := message.Set(proc.conf.SetKey, res); err != nil {
-				return nil, fmt.Errorf("transform: proc_http: %v", err)
+		if tf.conf.Object.SetKey != "" {
+			if err := msg.SetObject(tf.conf.Object.SetKey, res); err != nil {
+				return nil, fmt.Errorf("transform: mod_http: %v", err)
 			}
 		}
 
-		return []*mess.Message{message}, nil
+		return []*message.Message{msg}, nil
 
 	// GET must be the last condition and fallthrough since it is the default Method
 	case gohttp.MethodGet:
 		fallthrough
 	default:
 		// resp.Body is closed by parseResponse.
-		resp, err := proc.client.Get(ctx, url, proc.headers...)
+		resp, err := tf.client.Get(ctx, url, tf.headers...)
 
 		// If ErrorOnFailure is configured, then errors are returned,
 		// but otherwise the message is returned as-is.
-		if err != nil && proc.conf.ErrorOnFailure {
-			return nil, fmt.Errorf("transform: proc_http: %v", err)
+		if err != nil && tf.conf.ErrorOnFailure {
+			return nil, fmt.Errorf("transform: mod_http: %v", err)
 		} else if err != nil {
-			return []*mess.Message{message}, nil
+			//nolint: nilerr // err is configurable.
+			return []*message.Message{msg}, nil
 		}
 
-		res, err := parseResponse(resp)
+		res, err := tf.parseResponse(resp)
 		if err != nil {
-			return nil, fmt.Errorf("transform: proc_http: %v", err)
+			return nil, fmt.Errorf("transform: mod_http: %v", err)
 		}
 
-		if proc.conf.SetKey != "" {
-			if err := message.Set(proc.conf.SetKey, res); err != nil {
-				return nil, fmt.Errorf("transform: proc_http: %v", err)
+		if tf.conf.Object.SetKey != "" {
+			if err := msg.SetObject(tf.conf.Object.SetKey, res); err != nil {
+				return nil, fmt.Errorf("transform: mod_http: %v", err)
 			}
 
-			return []*mess.Message{message}, nil
+			return []*message.Message{msg}, nil
 		}
 
-		msg, err := mess.New(
-			mess.SetData(res),
-			mess.SetMetadata(message.Metadata()),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("transform: proc_http: %v", err)
-		}
-
-		return []*mess.Message{msg}, nil
+		finMsg := message.New().SetData(res).SetMetadata(msg.Metadata())
+		return []*message.Message{finMsg}, nil
 	}
 }
 
-func parseResponse(resp *gohttp.Response) ([]byte, error) {
+func (tf *modHTTP) parseResponse(resp *gohttp.Response) ([]byte, error) {
 	defer resp.Body.Close()
 
 	buf, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("transform: proc_http: %v", err)
+		return nil, err
 	}
 
 	dst := &bytes.Buffer{}
 	if json.Valid(buf) {
 		// Compact converts a multi-line object into a single-line object.
 		if err := json.Compact(dst, buf); err != nil {
-			return nil, fmt.Errorf("transform: proc_http: %v", err)
+			return nil, err
 		}
 	} else {
 		dst = bytes.NewBuffer(buf)

@@ -7,7 +7,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 var _ Transformer = &metaSwitch{}
@@ -35,27 +35,29 @@ var metaSwitchTests = []struct {
 								{
 									Type: "insp_string",
 									Settings: map[string]interface{}{
-										"key":    "foo",
+										"key":    "a",
 										"type":   "contains",
-										"string": "bar",
+										"string": "b",
 									},
 								},
 							},
 						},
 						Transform: config.Config{
-							Type: "proc_copy",
+							Type: "mod_copy",
 							Settings: map[string]interface{}{
-								"key":     "foo",
-								"set_key": "bar",
+								"object": map[string]interface{}{
+									"key":     "a",
+									"set_key": "c",
+								},
 							},
 						},
 					},
 				},
 			},
 		},
-		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"a":"b"}`),
 		[][]byte{
-			[]byte(`{"foo":"bar","bar":"bar"}`),
+			[]byte(`{"a":"b","c":"b"}`),
 		},
 	},
 	{
@@ -77,37 +79,41 @@ var metaSwitchTests = []struct {
 								{
 									Type: "insp_string",
 									Settings: map[string]interface{}{
-										"key":    "foo",
+										"key":    "a",
 										"type":   "contains",
-										"string": "bar",
+										"string": "c",
 									},
 								},
 							},
 						},
 						Transform: config.Config{
-							Type: "proc_copy",
+							Type: "mod_copy",
 							Settings: map[string]interface{}{
-								"key":     "foo",
-								"set_key": "bar",
+								"object": map[string]interface{}{
+									"key":     "a",
+									"set_key": "c",
+								},
 							},
 						},
 					},
 					{
 						Condition: condition.Config{},
 						Transform: config.Config{
-							Type: "proc_copy",
+							Type: "mod_copy",
 							Settings: map[string]interface{}{
-								"key":     "foo",
-								"set_key": "baz",
+								"object": map[string]interface{}{
+									"key":     "a",
+									"set_key": "x",
+								},
 							},
 						},
 					},
 				},
 			},
 		},
-		[]byte(`{"foo":"baz"}`),
+		[]byte(`{"a":"b"}`),
 		[][]byte{
-			[]byte(`{"foo":"baz","baz":"baz"}`),
+			[]byte(`{"a":"b","x":"b"}`),
 		},
 	},
 	{
@@ -127,18 +133,20 @@ var metaSwitchTests = []struct {
 								{
 									Type: "insp_string",
 									Settings: map[string]interface{}{
-										"key":    "foo",
+										"key":    "a",
 										"type":   "contains",
-										"string": "bar",
+										"string": "c",
 									},
 								},
 							},
 						},
 						Transform: config.Config{
-							Type: "proc_copy",
+							Type: "mod_copy",
 							Settings: map[string]interface{}{
-								"key":     "foo",
-								"set_key": "bar",
+								"object": map[string]interface{}{
+									"key":     "a",
+									"set_key": "c",
+								},
 							},
 						},
 					},
@@ -149,27 +157,27 @@ var metaSwitchTests = []struct {
 								{
 									Type: "insp_string",
 									Settings: map[string]interface{}{
-										"key":    "foo",
+										"key":    "a",
 										"type":   "contains",
-										"string": "baz",
+										"string": "d",
 									},
 								},
 							},
 						},
 						Transform: config.Config{
-							Type: "proc_copy",
+							Type: "mod_copy",
 							Settings: map[string]interface{}{
-								"key":     "foo",
-								"set_key": "baz",
+								"key":     "a",
+								"set_key": "d",
 							},
 						},
 					},
 				},
 			},
 		},
-		[]byte(`{"foo":"qux"}`),
+		[]byte(`{"a":"b"}`),
 		[][]byte{
-			[]byte(`{"foo":"qux"}`),
+			[]byte(`{"a":"b"}`),
 		},
 	},
 }
@@ -178,19 +186,13 @@ func TestMetaSwitch(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range metaSwitchTests {
 		t.Run(test.name, func(t *testing.T) {
-			message, err := mess.New(
-				mess.SetData(test.data),
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			tf, err := newMetaSwitch(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			result, err := tf.Transform(ctx, message)
+			msg := message.New().SetData(test.data)
+			result, err := tf.Transform(ctx, msg)
 			if err != nil {
 				t.Error(err)
 			}
@@ -210,24 +212,21 @@ func TestMetaSwitch(t *testing.T) {
 func benchmarkMetaSwitch(b *testing.B, tf *metaSwitch, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		msg, _ := mess.New(
-			mess.SetData(data),
-		)
-
+		msg := message.New().SetData(data)
 		_, _ = tf.Transform(ctx, msg)
 	}
 }
 
 func BenchmarkMetaSwitch(b *testing.B) {
 	for _, test := range metaSwitchTests {
-		proc, err := newMetaSwitch(context.TODO(), test.cfg)
+		tf, err := newMetaSwitch(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkMetaSwitch(b, proc, test.data)
+				benchmarkMetaSwitch(b, tf, test.data)
 			},
 		)
 	}

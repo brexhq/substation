@@ -7,9 +7,9 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
-	_config "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 type metaSwitchConfig struct {
@@ -30,13 +30,13 @@ type metaSwitch struct {
 
 func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) {
 	conf := metaSwitchConfig{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
-		return nil, err
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+		return nil, fmt.Errorf("transform: new_meta_switch: %v", err)
 	}
 
 	// Validate required options.
 	if len(conf.Switch) == 0 {
-		return nil, fmt.Errorf("transform: meta_switch: switch: %v", errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("transform: new_meta_switch: switch: %v", errors.ErrMissingRequiredOption)
 	}
 
 	var conditional []struct {
@@ -46,12 +46,12 @@ func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) 
 	for _, s := range conf.Switch {
 		op, err := condition.New(ctx, s.Condition)
 		if err != nil {
-			return nil, fmt.Errorf("transform: meta_switch: %v", err)
+			return nil, fmt.Errorf("transform: new_meta_switch: %v", err)
 		}
 
 		tf, err := New(ctx, s.Transform)
 		if err != nil {
-			return nil, fmt.Errorf("transform: meta_switch: %v", err)
+			return nil, fmt.Errorf("transform: new_meta_switch: %v", err)
 		}
 
 		conditional = append(conditional, struct {
@@ -80,14 +80,14 @@ func (*metaSwitch) Close(context.Context) error {
 	return nil
 }
 
-func (meta *metaSwitch) Transform(ctx context.Context, message *mess.Message) ([]*mess.Message, error) {
-	// Skip control messages.
-	if message.IsControl() {
-		return []*mess.Message{message}, nil
+func (meta *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	// Skip interrupt messages.
+	if msg.IsControl() {
+		return []*message.Message{msg}, nil
 	}
 
 	for _, c := range meta.conditional {
-		ok, err := c.op.Operate(ctx, message)
+		ok, err := c.op.Operate(ctx, msg)
 		if err != nil {
 			return nil, fmt.Errorf("transform: meta_switch: %v", err)
 		}
@@ -96,7 +96,7 @@ func (meta *metaSwitch) Transform(ctx context.Context, message *mess.Message) ([
 			continue
 		}
 
-		msgs, err := c.tf.Transform(ctx, message)
+		msgs, err := c.tf.Transform(ctx, msg)
 		if err != nil {
 			return nil, fmt.Errorf("transform: meta_switch: %v", err)
 		}
@@ -105,5 +105,5 @@ func (meta *metaSwitch) Transform(ctx context.Context, message *mess.Message) ([
 	}
 
 	// If no conditions match, then return the original message.
-	return []*mess.Message{message}, nil
+	return []*message.Message{msg}, nil
 }

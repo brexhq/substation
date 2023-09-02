@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 var _ Transformer = &metaForEach{}
@@ -19,249 +19,25 @@ var metaForEachTests = []struct {
 	err      error
 }{
 	{
-		"base64",
+		"meta_pipeline",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
-				"transform": config.Config{
-					Type: "proc_base64",
-					Settings: map[string]interface{}{
-						"direction": "from",
-					},
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "b",
 				},
-			},
-		},
-		[]byte(`{"input":["Zm9v","YmFy"]}`),
-		[][]byte{
-			[]byte(`{"input":["Zm9v","YmFy"],"output":["foo","bar"]}`),
-		},
-		nil,
-	},
-	{
-		"capture",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
-				"transform": config.Config{
-					Type: "proc_capture",
-					Settings: map[string]interface{}{
-						"expression": "^([^@]*)@.*$",
-						"type":       "find",
-					},
-				},
-			},
-		},
-		[]byte(`{"input":["foo@qux.com","bar@qux.com"]}`),
-		[][]byte{
-			[]byte(`{"input":["foo@qux.com","bar@qux.com"],"output":["foo","bar"]}`),
-		},
-		nil,
-	},
-	{
-		"case",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
-				"transform": config.Config{
-					Type: "proc_case",
-					Settings: map[string]interface{}{
-						"type": "lower",
-					},
-				},
-			},
-		},
-		[]byte(`{"input":["ABC","DEF"]}`),
-		[][]byte{
-			[]byte(`{"input":["ABC","DEF"],"output":["abc","def"]}`),
-		},
-		nil,
-	},
-	{
-		"convert",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
-				"transform": config.Config{
-					Type: "proc_convert",
-					Settings: map[string]interface{}{
-						"type": "bool",
-					},
-				},
-			},
-		},
-		[]byte(`{"input":["true","false"]}`),
-		[][]byte{
-			[]byte(`{"input":["true","false"],"output":[true,false]}`),
-		},
-		nil,
-	},
-	{
-		"domain",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
-				"transform": config.Config{
-					Type: "proc_domain",
-					Settings: map[string]interface{}{
-						"type": "subdomain",
-					},
-				},
-			},
-		},
-		[]byte(`{"input":["www.example.com","mail.example.top"]}`),
-		[][]byte{
-			[]byte(`{"input":["www.example.com","mail.example.top"],"output":["www","mail"]}`),
-		},
-		nil,
-	},
-	{
-		"flatten_array",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
-				"transform": config.Config{
-					Type: "proc_flatten_array",
-					Settings: map[string]interface{}{
-						"key":     "flatten",
-						"set_key": "flatten",
-
-						"deep": true,
-					},
-				},
-			},
-		},
-		[]byte(`{"input":[{"flatten":[["foo"],[[["bar",[["baz"]]]]]]},{"flatten":[["foo"],[[["bar",[["baz"]]]]]]}]}`),
-		[][]byte{
-			[]byte(`{"input":[{"flatten":[["foo"],[[["bar",[["baz"]]]]]]},{"flatten":[["foo"],[[["bar",[["baz"]]]]]]}],"output":[{"flatten":["foo","bar","baz"]},{"flatten":["foo","bar","baz"]}]}`),
-		},
-		nil,
-	},
-	{
-		"group",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
-				"transform": config.Config{
-					Type: "proc_group",
-					Settings: map[string]interface{}{
-						"key":     "group",
-						"set_key": "group",
-					},
-				},
-			},
-		},
-		[]byte(`{"input":[{"group":[["foo","bar"],[123,456]]},{"group":[["foo","bar"],[123,456]]}]}`),
-		[][]byte{
-			[]byte(`{"input":[{"group":[["foo","bar"],[123,456]]},{"group":[["foo","bar"],[123,456]]}],"output":[{"group":[["foo",123],["bar",456]]},{"group":[["foo",123],["bar",456]]}]}`),
-		},
-		nil,
-	},
-	{
-		"hash",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
-				"transform": config.Config{
-					Type: "proc_hash",
-					Settings: map[string]interface{}{
-						"algorithm": "sha256",
-					},
-				},
-			},
-		},
-		[]byte(`{"input":["foo","bar","baz"]}`),
-		[][]byte{
-			[]byte(`{"input":["foo","bar","baz"],"output":["2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae","fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9","baa5a0964d3320fbc0c6a922140453c8513ea24ab8fd0577034804a967248096"]}`),
-		},
-		nil,
-	},
-	{
-		"insert",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
-				"transform": config.Config{
-					Type: "proc_insert",
-					Settings: map[string]interface{}{
-						"set_key": "baz",
-						"value":   "qux",
-					},
-				},
-			},
-		},
-		[]byte(`{"input":[{"foo":"bar"},{"baz":"quux"}]}`),
-		[][]byte{
-			[]byte(`{"input":[{"foo":"bar"},{"baz":"quux"}],"output":[{"baz":"qux","foo":"bar"},{"baz":"qux"}]}`),
-		},
-		nil,
-	},
-	{
-		"join",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
-				"transform": config.Config{
-					Type: "proc_join",
-					Settings: map[string]interface{}{
-						"separator": ".",
-					},
-				},
-			},
-		},
-		[]byte(`{"input":[["foo","bar"],["baz","qux"]]}`),
-		[][]byte{
-			[]byte(`{"input":[["foo","bar"],["baz","qux"]],"output":["foo.bar","baz.qux"]}`),
-		},
-		nil,
-	},
-	{
-		"math",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
-				"transform": config.Config{
-					Type: "proc_math",
-					Settings: map[string]interface{}{
-						"operation": "add",
-					},
-				},
-			},
-		},
-		[]byte(`{"input":[[2,3],[4,5]]}`),
-		[][]byte{
-			[]byte(`{"input":[[2,3],[4,5]],"output":[5,9]}`),
-		},
-		nil,
-	},
-	{
-		"pipeline",
-		config.Config{
-			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
 				"transform": config.Config{
 					Type: "meta_pipeline",
 					Settings: map[string]interface{}{
 						"transforms": []config.Config{
 							{
-								Type: "proc_base64",
+								Type: "mod_base64",
 								Settings: map[string]interface{}{
 									"direction": "from",
 								},
 							},
 							{
-								Type: "proc_gzip",
+								Type: "mod_gzip",
 								Settings: map[string]interface{}{
 									"direction": "from",
 								},
@@ -271,20 +47,158 @@ var metaForEachTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"input":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA","H4sIAI/bzmIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="]}`),
+		[]byte(`{"a":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA","H4sIAI/bzmIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="]}`),
 		[][]byte{
-			[]byte(`{"input":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA","H4sIAI/bzmIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="],"output":["foo","bar"]}`),
+			[]byte(`{"a":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA","H4sIAI/bzmIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="],"b":["foo","bar"]}`),
 		},
 		nil,
 	},
 	{
-		"replace",
+		"mod_base64",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
+				"object": map[string]interface{}{
+					"key":     "secrets",
+					"set_key": "decoded",
+				},
 				"transform": config.Config{
-					Type: "proc_replace",
+					Type: "mod_base64",
+					Settings: map[string]interface{}{
+						"direction": "from",
+					},
+				},
+			},
+		},
+		[]byte(`{"secrets":["ZHJpbms=","eW91cg==","b3ZhbHRpbmU="]}`),
+		[][]byte{
+			[]byte(`{"secrets":["ZHJpbms=","eW91cg==","b3ZhbHRpbmU="],"decoded":["drink","your","ovaltine"]}`),
+		},
+		nil,
+	},
+	{
+		"mod_capture",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "user_email",
+					"set_key": "user_name",
+				},
+				"transform": config.Config{
+					Type: "mod_capture",
+					Settings: map[string]interface{}{
+						"expression": "^([^@]*)@.*$",
+						"type":       "find",
+					},
+				},
+			},
+		},
+		[]byte(`{"user_email":["john.d@example.com","jane.d@example.com"]}`),
+		[][]byte{
+			[]byte(`{"user_email":["john.d@example.com","jane.d@example.com"],"user_name":["john.d","jane.d"]}`),
+		},
+		nil,
+	},
+	{
+		"mod_case",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "upcase",
+					"set_key": "downcase",
+				},
+				"transform": config.Config{
+					Type: "mod_case",
+					Settings: map[string]interface{}{
+						"type": "downcase",
+					},
+				},
+			},
+		},
+		[]byte(`{"upcase":["ABC","DEF"]}`),
+		[][]byte{
+			[]byte(`{"upcase":["ABC","DEF"],"downcase":["abc","def"]}`),
+		},
+		nil,
+	},
+	{
+		"mod_domain",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "domain",
+					"set_key": "subdomain",
+				},
+				"transform": config.Config{
+					Type: "mod_domain",
+					Settings: map[string]interface{}{
+						"type": "subdomain",
+					},
+				},
+			},
+		},
+		[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
+		[][]byte{
+			[]byte(`{"domain":["www.example.com","mail.example.top"],"subdomain":["www","mail"]}`),
+		},
+		nil,
+	},
+	{
+		"mod_hash",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "b",
+				},
+				"transform": config.Config{
+					Type: "mod_hash",
+					Settings: map[string]interface{}{
+						"algorithm": "SHA256",
+					},
+				},
+			},
+		},
+		[]byte(`{"a":["foo","bar","baz"]}`),
+		[][]byte{
+			[]byte(`{"a":["foo","bar","baz"],"b":["2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae","fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9","baa5a0964d3320fbc0c6a922140453c8513ea24ab8fd0577034804a967248096"]}`),
+		},
+		nil,
+	},
+	{
+		"mod_insert",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "b",
+				},
+				"transform": config.Config{
+					Type: "mod_insert",
+					Settings: map[string]interface{}{
+						"object": map[string]interface{}{
+							"set_key": "baz",
+						},
+						"value": "qux",
+					},
+				},
+			},
+		},
+		[]byte(`{"a":[{"foo":"bar"},{"baz":"quux"}]}`),
+		[][]byte{
+			[]byte(`{"a":[{"foo":"bar"},{"baz":"quux"}],"b":[{"baz":"qux","foo":"bar"},{"baz":"qux"}]}`),
+		},
+		nil,
+	},
+	{
+		"mod_replace",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "b",
+				},
+				"transform": config.Config{
+					Type: "mod_replace",
 					Settings: map[string]interface{}{
 						"old": "r",
 						"new": "z",
@@ -292,20 +206,22 @@ var metaForEachTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"input":["bar","bard"]}`),
+		[]byte(`{"a":["bar","bard"]}`),
 		[][]byte{
-			[]byte(`{"input":["bar","bard"],"output":["baz","bazd"]}`),
+			[]byte(`{"a":["bar","bard"],"b":["baz","bazd"]}`),
 		},
 		nil,
 	},
 	{
-		"time",
+		"mod_time",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":     "input",
-				"set_key": "output",
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "b",
+				},
 				"transform": config.Config{
-					Type: "proc_time",
+					Type: "mod_time",
 					Settings: map[string]interface{}{
 						"format":     "2006-01-02T15:04:05Z",
 						"set_format": "2006-01-02T15:04:05.000000Z",
@@ -313,9 +229,9 @@ var metaForEachTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"input":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"]}`),
+		[]byte(`{"a":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"]}`),
 		[][]byte{
-			[]byte(`{"input":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"],"output":["2021-03-06T00:02:57.000000Z","2021-03-06T00:03:57.000000Z","2021-03-06T00:04:57.000000Z"]}`),
+			[]byte(`{"a":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"],"b":["2021-03-06T00:02:57.000000Z","2021-03-06T00:03:57.000000Z","2021-03-06T00:04:57.000000Z"]}`),
 		},
 		nil,
 	},
@@ -325,19 +241,13 @@ func TestForEach(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range metaForEachTests {
 		t.Run(test.name, func(t *testing.T) {
-			capsule, err := mess.New(
-				mess.SetData(test.test),
-			)
+			tf, err := newMetaForEach(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			proc, err := newMetaForEach(ctx, test.cfg)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			result, err := proc.Transform(ctx, capsule)
+			msg := message.New().SetData(test.test)
+			result, err := tf.Transform(ctx, msg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -357,24 +267,21 @@ func TestForEach(t *testing.T) {
 func benchmarkMetaForEach(b *testing.B, tf *metaForEach, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		msg, _ := mess.New(
-			mess.SetData(data),
-		)
-
+		msg := message.New().SetData(data)
 		_, _ = tf.Transform(ctx, msg)
 	}
 }
 
 func BenchmarkMetaForEach(b *testing.B) {
 	for _, test := range metaForEachTests {
-		proc, err := newMetaForEach(context.TODO(), test.cfg)
+		tf, err := newMetaForEach(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkMetaForEach(b, proc, test.test)
+				benchmarkMetaForEach(b, tf, test.test)
 			},
 		)
 	}

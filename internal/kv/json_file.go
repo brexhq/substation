@@ -2,6 +2,7 @@ package kv
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
@@ -10,7 +11,7 @@ import (
 	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/tidwall/gjson"
 )
 
 // errJSONFileInvalid is returned when the file contains invalid JSON.
@@ -50,8 +51,8 @@ func (store *kvJSONFile) Get(ctx context.Context, key string) (interface{}, erro
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
-	res := json.Get(store.object, key)
-	if json.Types[res.Type] == "Null" {
+	res := gjson.GetBytes(store.object, key)
+	if !res.Exists() {
 		return nil, nil
 	}
 

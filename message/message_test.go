@@ -30,7 +30,7 @@ func TestMessageDeleteData(t *testing.T) {
 	for _, test := range messageDeleteTests {
 		msg := New().SetData(test.data)
 
-		if err := msg.DeleteObject(test.key); err != nil {
+		if err := msg.DeleteValue(test.key); err != nil {
 			t.Error(err)
 		}
 
@@ -43,7 +43,7 @@ func TestMessageDeleteData(t *testing.T) {
 func benchmarkTestMessageDeleteData(b *testing.B, key string, data []byte) {
 	for i := 0; i < b.N; i++ {
 		message := New().SetData(data)
-		_ = message.DeleteObject(key)
+		_ = message.DeleteValue(key)
 	}
 }
 
@@ -62,7 +62,7 @@ func TestMessageDeleteMetadata(t *testing.T) {
 		message := New().SetMetadata(test.data)
 
 		key := strings.Join([]string{metaKey, test.key}, " ")
-		if err := message.DeleteObject(key); err != nil {
+		if err := message.DeleteValue(key); err != nil {
 			t.Error(err)
 		}
 
@@ -76,7 +76,7 @@ func benchmarkTestMessageDeleteMetadata(b *testing.B, key string, metadata []byt
 	for i := 0; i < b.N; i++ {
 		message := New().SetMetadata(metadata)
 
-		_ = message.DeleteObject(key)
+		_ = message.DeleteValue(key)
 	}
 }
 
@@ -121,7 +121,7 @@ func TestMessageGetData(t *testing.T) {
 	for _, test := range messageGetTests {
 		msg := New().SetData(test.data)
 
-		result := msg.GetObject(test.key).String()
+		result := msg.GetValue(test.key).String()
 		if result != test.expected {
 			t.Errorf("expected %s, got %s", test.expected, result)
 		}
@@ -131,7 +131,7 @@ func TestMessageGetData(t *testing.T) {
 func benchmarkTestMessageGetData(b *testing.B, key string, data []byte) {
 	for i := 0; i < b.N; i++ {
 		msg := New().SetData(data)
-		msg.GetObject(key)
+		msg.GetValue(key)
 	}
 }
 
@@ -150,7 +150,7 @@ func TestMessageGetMetadata(t *testing.T) {
 		msg := New().SetMetadata(test.data)
 
 		key := strings.Join([]string{metaKey, test.key}, " ")
-		result := msg.GetObject(key).String()
+		result := msg.GetValue(key).String()
 		if result != test.expected {
 			t.Errorf("expected %s, got %s", test.expected, result)
 		}
@@ -160,7 +160,7 @@ func TestMessageGetMetadata(t *testing.T) {
 func benchmarkTestMessageGetMetadata(b *testing.B, key string, metadata []byte) {
 	for i := 0; i < b.N; i++ {
 		msg := New().SetMetadata(metadata)
-		msg.GetObject(key)
+		msg.GetValue(key)
 	}
 }
 
@@ -233,7 +233,7 @@ var messageSetTests = []struct {
 func TestMessageSetData(t *testing.T) {
 	for _, test := range messageSetTests {
 		msg := New().SetData(test.data)
-		if err := msg.SetObject(test.key, test.value); err != nil {
+		if err := msg.SetValue(test.key, test.value); err != nil {
 			t.Error(err)
 		}
 
@@ -246,7 +246,7 @@ func TestMessageSetData(t *testing.T) {
 func benchmarkTestMessageSetData(b *testing.B, key string, val interface{}, data []byte) {
 	for i := 0; i < b.N; i++ {
 		msg := New().SetData(data)
-		_ = msg.SetObject(key, val)
+		_ = msg.SetValue(key, val)
 	}
 }
 
@@ -265,7 +265,7 @@ func TestMessageSetMetadata(t *testing.T) {
 		msg := New().SetMetadata(test.data)
 
 		key := strings.Join([]string{metaKey, test.key}, " ")
-		if err := msg.SetObject(key, test.value); err != nil {
+		if err := msg.SetValue(key, test.value); err != nil {
 			t.Error(err)
 		}
 
@@ -278,7 +278,7 @@ func TestMessageSetMetadata(t *testing.T) {
 func benchmarkTestMessageSetMetadata(b *testing.B, key string, val interface{}, metadata []byte) {
 	for i := 0; i < b.N; i++ {
 		msg := New().SetMetadata(metadata)
-		_ = msg.SetObject(key, val)
+		_ = msg.SetValue(key, val)
 	}
 }
 

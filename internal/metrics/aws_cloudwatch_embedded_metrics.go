@@ -7,7 +7,7 @@ import (
 
 	"github.com/brexhq/substation/config"
 	_config "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/tidwall/sjson"
 )
 
 type awsCloudWatchEmbeddedMetricsConfig struct{}
@@ -35,34 +35,34 @@ func newAWSCloudWatchEmbeddedMetrics(_ context.Context, cfg config.Config) (*aws
 func (m *awsCloudWatchEmbeddedMetrics) Generate(ctx context.Context, data Data) (err error) {
 	emf := []byte{}
 
-	emf, err = json.Set(emf, "_aws.Timestamp", time.Now().UnixMilli())
+	emf, err = sjson.SetBytes(emf, "_aws.Timestamp", time.Now().UnixMilli())
 	if err != nil {
 		return fmt.Errorf("metrics log_embedded_metrics: %v", err)
 	}
 
-	emf, err = json.Set(emf, "_aws.CloudWatchMetrics.0.Namespace", metricsApplication)
+	emf, err = sjson.SetBytes(emf, "_aws.CloudWatchMetrics.0.Namespace", metricsApplication)
 	if err != nil {
 		return fmt.Errorf("metrics log_embedded_metrics: %v", err)
 	}
 
 	for key, val := range data.Attributes {
-		emf, err = json.Set(emf, "_aws.CloudWatchMetrics.0.Dimensions.-1.-1", key)
+		emf, err = sjson.SetBytes(emf, "_aws.CloudWatchMetrics.0.Dimensions.-1.-1", key)
 		if err != nil {
 			return fmt.Errorf("metrics log_embedded_metrics: %v", err)
 		}
 
-		emf, err = json.Set(emf, key, val)
+		emf, err = sjson.SetBytes(emf, key, val)
 		if err != nil {
 			return fmt.Errorf("metrics log_embedded_metrics: %v", err)
 		}
 	}
 
-	emf, err = json.Set(emf, "_aws.CloudWatchMetrics.0.Metrics.0.Name", data.Name)
+	emf, err = sjson.SetBytes(emf, "_aws.CloudWatchMetrics.0.Metrics.0.Name", data.Name)
 	if err != nil {
 		return fmt.Errorf("metrics log_embedded_metrics: %v", err)
 	}
 
-	emf, err = json.Set(emf, data.Name, data.Value)
+	emf, err = sjson.SetBytes(emf, data.Name, data.Value)
 	if err != nil {
 		return fmt.Errorf("metrics log_embedded_metrics: %v", err)
 	}

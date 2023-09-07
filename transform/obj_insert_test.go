@@ -9,48 +9,28 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &modInsert{}
-
-var modInsertTests = []struct {
+var objInsertTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
-	err      error
 }{
 	{
-		"string",
+		"object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"set_key": "a",
-				},
-				"value": "b",
-			},
-		},
-		[]byte{},
-		[][]byte{
-			[]byte(`{"a":"b"}`),
-		},
-		nil,
-	},
-	{
-		"int",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"set_key": "a",
-				}, "value": 1,
+				}, "value": `{"b":"c"}`,
 			},
 		},
 		[]byte(`{"a":"b"}`),
 		[][]byte{
-			[]byte(`{"a":1}`),
+			[]byte(`{"a":{"b":"c"}}`),
 		},
-		nil,
 	},
 	{
-		"string array",
+		"array",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -62,7 +42,6 @@ var modInsertTests = []struct {
 		[][]byte{
 			[]byte(`{"a":["b","c"]}`),
 		},
-		nil,
 	},
 	{
 		"map",
@@ -79,22 +58,35 @@ var modInsertTests = []struct {
 		[][]byte{
 			[]byte(`{"a":{"b":"c"}}`),
 		},
-		nil,
 	},
 	{
-		"object",
+		"string",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"set_key": "a",
-				}, "value": `{"b":"c"}`,
+				},
+				"value": "b",
+			},
+		},
+		[]byte{},
+		[][]byte{
+			[]byte(`{"a":"b"}`),
+		},
+	},
+	{
+		"int",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"set_key": "a",
+				}, "value": 1,
 			},
 		},
 		[]byte(`{"a":"b"}`),
 		[][]byte{
-			[]byte(`{"a":{"b":"c"}}`),
+			[]byte(`{"a":1}`),
 		},
-		nil,
 	},
 	{
 		"bytes",
@@ -110,16 +102,15 @@ var modInsertTests = []struct {
 		[][]byte{
 			[]byte(`{"a":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
 		},
-		nil,
 	},
 }
 
-func TestModInsert(t *testing.T) {
+func TestObjInsert(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range modInsertTests {
+	for _, test := range objInsertTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newModInsert(ctx, test.cfg)
+			tf, err := newObjInsert(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -142,7 +133,7 @@ func TestModInsert(t *testing.T) {
 	}
 }
 
-func benchmarkModInsert(b *testing.B, tf *modInsert, data []byte) {
+func benchmarkObjInsert(b *testing.B, tf *objInsert, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -150,16 +141,16 @@ func benchmarkModInsert(b *testing.B, tf *modInsert, data []byte) {
 	}
 }
 
-func BenchmarkModInsert(b *testing.B) {
-	for _, test := range modInsertTests {
-		tf, err := newModInsert(context.TODO(), test.cfg)
+func BenchmarkObjInsert(b *testing.B) {
+	for _, test := range objInsertTests {
+		tf, err := newObjInsert(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkModInsert(b, tf, test.test)
+				benchmarkObjInsert(b, tf, test.test)
 			},
 		)
 	}

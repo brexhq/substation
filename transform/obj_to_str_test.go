@@ -9,52 +9,65 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &modDelete{}
-
-var modDeleteTests = []struct {
+var objToStrTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
-	err      error
 }{
 	{
-		"string",
+		"bool to_str",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key": "baz",
+					"key":     "a",
+					"set_key": "a",
 				},
 			},
 		},
-		[]byte(`{"foo":"bar","baz":"qux"}`),
+		[]byte(`{"a":true}`),
 		[][]byte{
-			[]byte(`{"foo":"bar"}`),
+			[]byte(`{"a":"true"}`),
 		},
-		nil,
 	},
 	{
-		"object",
+		"float to_str",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key": "baz",
+					"key":     "a",
+					"set_key": "a",
 				},
 			},
 		},
-		[]byte(`{"foo":"bar","baz":{"qux":"quux"}}`),
+		[]byte(`{"a":1.1}`),
 		[][]byte{
-			[]byte(`{"foo":"bar"}`),
+			[]byte(`{"a":"1.1"}`),
 		},
-		nil,
+	},
+	{
+		"int to_str",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+			},
+		},
+		[]byte(`{"a":1}`),
+		[][]byte{
+			[]byte(`{"a":"1"}`),
+		},
 	},
 }
 
-func TestModDelete(t *testing.T) {
+func TestObjToStr(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range modDeleteTests {
+
+	for _, test := range objToStrTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newModDelete(ctx, test.cfg)
+			tf, err := newObjToStr(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -77,7 +90,7 @@ func TestModDelete(t *testing.T) {
 	}
 }
 
-func benchmarkModDelete(b *testing.B, tf *modDelete, data []byte) {
+func benchmarkObjToStr(b *testing.B, tf *objToStr, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -85,16 +98,16 @@ func benchmarkModDelete(b *testing.B, tf *modDelete, data []byte) {
 	}
 }
 
-func BenchmarkModDelete(b *testing.B) {
-	for _, test := range modDeleteTests {
-		tf, err := newModDelete(context.TODO(), test.cfg)
+func BenchmarkObjToStr(b *testing.B) {
+	for _, test := range objToStrTests {
+		tf, err := newObjToStr(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkModDelete(b, tf, test.test)
+				benchmarkObjToStr(b, tf, test.test)
 			},
 		)
 	}

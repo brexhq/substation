@@ -9,142 +9,134 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &modConvert{}
-
-var modConvertTests = []struct {
+var objCopyTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
-	err      error
 }{
 	{
-		"bool true",
+		"object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"key":     "a",
-					"set_key": "a",
+					"set_key": "c",
 				},
-				"type": "bool",
 			},
 		},
-		[]byte(`{"a":"true"}`),
+		[]byte(`{"a":"b"}`),
 		[][]byte{
-			[]byte(`{"a":true}`),
+			[]byte(`{"a":"b","c":"b"}`),
 		},
-		nil,
 	},
 	{
-		"bool false",
+		"unescape object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"key":     "a",
 					"set_key": "a",
 				},
-				"type": "bool",
 			},
 		},
-		[]byte(`{"a":"false"}`),
+		[]byte(`{"a":"{\"b\":\"c\"}"`),
 		[][]byte{
-			[]byte(`{"a":false}`),
+			[]byte(`{"a":{"b":"c"}`),
 		},
-		nil,
 	},
 	{
-		"int",
+		"unescape array",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"key":     "a",
 					"set_key": "a",
 				},
-				"type": "int",
 			},
 		},
-		[]byte(`{"a":"-1"}`),
+		[]byte(`{"a":"[\"b\",\"c\"]"}`),
 		[][]byte{
-			[]byte(`{"a":-1}`),
+			[]byte(`{"a":["b","c"]}`),
 		},
-		nil,
 	},
 	{
-		"float",
+		"from object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key":     "a",
-					"set_key": "a",
+					"key": "a",
 				},
-				"type": "float",
 			},
 		},
-		[]byte(`{"a":"1.2"}`),
+		[]byte(`{"a":"b"}`),
 		[][]byte{
-			[]byte(`{"a":1.2}`),
+			[]byte(`b`),
 		},
-		nil,
 	},
 	{
-		"uint",
+		"from nested object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key":     "a",
-					"set_key": "a",
+					"key": "a",
 				},
-				"type": "uint",
 			},
 		},
-		[]byte(`{"a":"1"}`),
+		[]byte(`{"a":{"b":"c"}}`),
 		[][]byte{
-			[]byte(`{"a":1}`),
+			[]byte(`{"b":"c"}`),
 		},
-		nil,
 	},
 	{
-		"string",
+		"to object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key":     "a",
 					"set_key": "a",
 				},
-				"type": "string",
 			},
 		},
-		[]byte(`{"a":1}`),
+		[]byte(`b`),
 		[][]byte{
-			[]byte(`{"a":"1"}`),
+			[]byte(`{"a":"b"}`),
 		},
-		nil,
 	},
 	{
-		"int",
+		"to nested object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key":     "a",
-					"set_key": "a",
+					"set_key": "a.b",
 				},
-				"type": "int",
 			},
 		},
-		[]byte(`{"a":1.2}`),
+		[]byte(`c`),
 		[][]byte{
-			[]byte(`{"a":1}`),
+			[]byte(`{"a":{"b":"c"}}`),
 		},
-		nil,
+	},
+	{
+		"to object base64",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"set_key": "a",
+				},
+			},
+		},
+		[]byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},
+		[][]byte{
+			[]byte(`{"a":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
+		},
 	},
 }
 
-func TestModConvert(t *testing.T) {
+func TestObjCopy(t *testing.T) {
 	ctx := context.TODO()
-
-	for _, test := range modConvertTests {
+	for _, test := range objCopyTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newModConvert(ctx, test.cfg)
+			tf, err := newObjCopy(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -155,19 +147,19 @@ func TestModConvert(t *testing.T) {
 				t.Error(err)
 			}
 
-			var data [][]byte
+			var r [][]byte
 			for _, c := range result {
-				data = append(data, c.Data())
+				r = append(r, c.Data())
 			}
 
-			if !reflect.DeepEqual(data, test.expected) {
-				t.Errorf("expected %s, got %s", test.expected, data)
+			if !reflect.DeepEqual(r, test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, r)
 			}
 		})
 	}
 }
 
-func benchmarkModConvert(b *testing.B, tf *modConvert, data []byte) {
+func benchmarkObjCopy(b *testing.B, tf *objCopy, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -175,16 +167,16 @@ func benchmarkModConvert(b *testing.B, tf *modConvert, data []byte) {
 	}
 }
 
-func BenchmarkModConvert(b *testing.B) {
-	for _, test := range modConvertTests {
-		tf, err := newModConvert(context.TODO(), test.cfg)
+func BenchmarkObjCopy(b *testing.B) {
+	for _, test := range objCopyTests {
+		tf, err := newObjCopy(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkModConvert(b, tf, test.test)
+				benchmarkObjCopy(b, tf, test.test)
 			},
 		)
 	}

@@ -9,33 +9,14 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &modCopy{}
-
-var modCopyTests = []struct {
+var objToBoolTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
-	err      error
 }{
 	{
-		"object",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"key":     "a",
-					"set_key": "c",
-				},
-			},
-		},
-		[]byte(`{"a":"b"}`),
-		[][]byte{
-			[]byte(`{"a":"b","c":"b"}`),
-		},
-		nil,
-	},
-	{
-		"unescape object",
+		"float to_bool",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -44,14 +25,13 @@ var modCopyTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":"{\"b\":\"c\"}"`),
+		[]byte(`{"a":1.0}`),
 		[][]byte{
-			[]byte(`{"a":{"b":"c"}`),
+			[]byte(`{"a":true}`),
 		},
-		nil,
 	},
 	{
-		"unescape object",
+		"float to_bool",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -60,79 +40,79 @@ var modCopyTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":"[\"b\",\"c\"]"}`),
+		[]byte(`{"a":0.0}`),
 		[][]byte{
-			[]byte(`{"a":["b","c"]}`),
+			[]byte(`{"a":false}`),
 		},
-		nil,
 	},
 	{
-		"from object",
+		"int to_bool",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key": "a",
-				},
-			},
-		},
-		[]byte(`{"a":"b"}`),
-		[][]byte{
-			[]byte(`b`),
-		},
-		nil,
-	},
-	{
-		"from nested object",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"key": "a",
-				},
-			},
-		},
-		[]byte(`{"a":{"b":"c"}}`),
-		[][]byte{
-			[]byte(`{"b":"c"}`),
-		},
-		nil,
-	},
-	{
-		"to object",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
+					"key":     "a",
 					"set_key": "a",
 				},
 			},
 		},
-		[]byte(`b`),
+		[]byte(`{"a":1}`),
 		[][]byte{
-			[]byte(`{"a":"b"}`),
+			[]byte(`{"a":true}`),
 		},
-		nil,
 	},
 	{
-		"to object base64",
+		"int to_bool",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
+					"key":     "a",
 					"set_key": "a",
 				},
 			},
 		},
-		[]byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},
+		[]byte(`{"a":0}`),
 		[][]byte{
-			[]byte(`{"a":"eJwFwDENAAAAwjCtTAL+j6YdAl0BNg=="}`),
+			[]byte(`{"a":false}`),
 		},
-		nil,
+	},
+	{
+		"str to_bool",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+			},
+		},
+		[]byte(`{"a":"true"}`),
+		[][]byte{
+			[]byte(`{"a":true}`),
+		},
+	},
+	{
+		"str to_bool",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+			},
+		},
+		[]byte(`{"a":"false"}`),
+		[][]byte{
+			[]byte(`{"a":false}`),
+		},
 	},
 }
 
-func TestModCopy(t *testing.T) {
+func TestObjToBool(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range modCopyTests {
+
+	for _, test := range objToBoolTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newModCopy(ctx, test.cfg)
+			tf, err := newObjToBool(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -143,19 +123,19 @@ func TestModCopy(t *testing.T) {
 				t.Error(err)
 			}
 
-			var r [][]byte
+			var data [][]byte
 			for _, c := range result {
-				r = append(r, c.Data())
+				data = append(data, c.Data())
 			}
 
-			if !reflect.DeepEqual(r, test.expected) {
-				t.Errorf("expected %s, got %s", test.expected, r)
+			if !reflect.DeepEqual(data, test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, data)
 			}
 		})
 	}
 }
 
-func benchmarkModCopy(b *testing.B, tf *modCopy, data []byte) {
+func benchmarkObjToBool(b *testing.B, tf *objToBool, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -163,16 +143,16 @@ func benchmarkModCopy(b *testing.B, tf *modCopy, data []byte) {
 	}
 }
 
-func BenchmarkModCopy(b *testing.B) {
-	for _, test := range modCopyTests {
-		tf, err := newModCopy(context.TODO(), test.cfg)
+func BenchmarkObjToBool(b *testing.B) {
+	for _, test := range objToBoolTests {
+		tf, err := newObjToBool(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkModCopy(b, tf, test.test)
+				benchmarkObjToBool(b, tf, test.test)
 			},
 		)
 	}

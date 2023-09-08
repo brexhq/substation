@@ -9,39 +9,44 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &modSplit{}
-
-var modSplitTests = []struct {
+var strCaseSnakeTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
-	err      error
 }{
+	// data tests
 	{
-		"split",
+		"data",
+		config.Config{},
+		[]byte(`bC`),
+		[][]byte{
+			[]byte(`b_c`),
+		},
+	},
+	// object tests
+	{
+		"object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"key":     "a",
 					"set_key": "a",
 				},
-				"separator": ".",
 			},
 		},
-		[]byte(`{"a":"b.c.d"}`),
+		[]byte(`{"a":"bC"})`),
 		[][]byte{
-			[]byte(`{"a":["b","c","d"]}`),
+			[]byte(`{"a":"b_c"})`),
 		},
-		nil,
 	},
 }
 
-func TestModSplit(t *testing.T) {
+func TestStrCaseSnake(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range modSplitTests {
+	for _, test := range strCaseSnakeTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newModSplit(ctx, test.cfg)
+			tf, err := newStrCaseSnake(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -52,19 +57,19 @@ func TestModSplit(t *testing.T) {
 				t.Error(err)
 			}
 
-			var data [][]byte
+			var r [][]byte
 			for _, c := range result {
-				data = append(data, c.Data())
+				r = append(r, c.Data())
 			}
 
-			if !reflect.DeepEqual(data, test.expected) {
-				t.Errorf("expected %s, got %s", test.expected, data)
+			if !reflect.DeepEqual(r, test.expected) {
+				t.Errorf("expected %s, got %s", test.expected, r)
 			}
 		})
 	}
 }
 
-func benchmarkModSplit(b *testing.B, tf *modSplit, data []byte) {
+func benchmarkStrCaseSnake(b *testing.B, tf *strCaseSnake, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -72,16 +77,16 @@ func benchmarkModSplit(b *testing.B, tf *modSplit, data []byte) {
 	}
 }
 
-func BenchmarkModSplit(b *testing.B) {
-	for _, test := range modSplitTests {
-		p, err := newModSplit(context.TODO(), test.cfg)
+func BenchmarkStrCaseSnake(b *testing.B) {
+	for _, test := range strCaseSnakeTests {
+		tf, err := newStrCaseSnake(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkModSplit(b, p, test.test)
+				benchmarkStrCaseSnake(b, tf, test.test)
 			},
 		)
 	}

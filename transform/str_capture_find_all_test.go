@@ -9,85 +9,51 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &modReplace{}
-
-var modReplaceTests = []struct {
+var strCaptureFindAllTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
-	err      error
 }{
+	// data tests
 	{
-		"data replace",
+		"data",
 		config.Config{
 			Settings: map[string]interface{}{
-				"old": "c",
-				"new": "b",
+				"count":      3,
+				"expression": "(.{1})",
 			},
 		},
-		[]byte(`abc`),
+		[]byte(`bcd`),
 		[][]byte{
-			[]byte(`abb`),
+			[]byte(`["b","c","d"]`),
 		},
-		nil,
 	},
+	// object tests
 	{
-		"data delete",
-		config.Config{
-			Settings: map[string]interface{}{
-				"old": "c",
-				"new": "",
-			},
-		},
-		[]byte(`abc`),
-		[][]byte{
-			[]byte(`ab`),
-		},
-		nil,
-	},
-	{
-		"object replace",
+		"object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"key":     "a",
 					"set_key": "a",
 				},
-				"old": "c",
-				"new": "b",
+				"count":      3,
+				"expression": "(.{1})",
 			},
 		},
-		[]byte(`{"a":"bc"}`),
+		[]byte(`{"a":"bcd"}`),
 		[][]byte{
-			[]byte(`{"a":"bb"}`),
+			[]byte(`{"a":["b","c","d"]}`),
 		},
-		nil,
-	},
-	{
-		"object delete",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"key":     "a",
-					"set_key": "a",
-				},
-				"old": "c",
-			},
-		},
-		[]byte(`{"a":"bc"}`),
-		[][]byte{
-			[]byte(`{"a":"b"}`),
-		},
-		nil,
 	},
 }
 
-func TestModReplace(t *testing.T) {
+func TestStrCaptureFindAll(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range modReplaceTests {
+	for _, test := range strCaptureFindAllTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newModReplace(ctx, test.cfg)
+			tf, err := newStrCaptureFindAll(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -110,7 +76,7 @@ func TestModReplace(t *testing.T) {
 	}
 }
 
-func benchmarkModReplace(b *testing.B, tf *modReplace, data []byte) {
+func benchmarkStrCaptureFindAll(b *testing.B, tf *strCaptureFindAll, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -118,16 +84,16 @@ func benchmarkModReplace(b *testing.B, tf *modReplace, data []byte) {
 	}
 }
 
-func BenchmarkModReplace(b *testing.B) {
-	for _, test := range modReplaceTests {
-		tf, err := newModReplace(context.TODO(), test.cfg)
+func BenchmarkStrCaptureFindAll(b *testing.B) {
+	for _, test := range strCaptureFindAllTests {
+		tf, err := newStrCaptureFindAll(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkModReplace(b, tf, test.test)
+				benchmarkStrCaptureFindAll(b, tf, test.test)
 			},
 		)
 	}

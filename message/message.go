@@ -213,6 +213,10 @@ func (v Value) Array() []Value {
 	return values
 }
 
+func (v Value) IsArray() bool {
+	return v.gjson.IsArray()
+}
+
 func (v Value) Map() map[string]Value {
 	values := make(map[string]Value)
 	for k, r := range v.gjson.Map() {

@@ -35,7 +35,7 @@ type objToInt struct {
 	conf objToIntConfig
 }
 
-func NewToInt(_ context.Context, cfg config.Config) (*objToInt, error) {
+func newObjToInt(_ context.Context, cfg config.Config) (*objToInt, error) {
 	conf := objToIntConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_object_to_int: %v", err)

@@ -52,7 +52,7 @@ func TestObjToInt(t *testing.T) {
 
 	for _, test := range objToIntTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := NewToInt(ctx, test.cfg)
+			tf, err := newObjToInt(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -85,7 +85,7 @@ func benchmarkObjToInt(b *testing.B, tf *objToInt, data []byte) {
 
 func BenchmarkObjToInt(b *testing.B) {
 	for _, test := range objToIntTests {
-		tf, err := NewToInt(context.TODO(), test.cfg)
+		tf, err := newObjToInt(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}

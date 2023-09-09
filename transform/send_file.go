@@ -2,11 +2,11 @@ package transform
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
@@ -51,19 +51,37 @@ type sendFileConfig struct {
 	FileCompression config.Config `json:"file_compression"`
 }
 
+func (c *sendFileConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
+}
+
+func (c *sendFileConfig) Validate() error {
+	if c.FileFormat.Type == "" {
+		c.FileFormat.Type = "json"
+	}
+
+	if c.FileCompression.Type == "" {
+		c.FileCompression.Type = "gzip"
+	}
+
+	return nil
+}
+
 type sendFile struct {
 	conf sendFileConfig
 
 	extension string
 	// buffer is safe for concurrent use.
-	mu        sync.Mutex
-	buffer    map[string]*aggregate.Aggregate
-	bufferCfg aggregate.Config
+	buffer *aggregate.Aggregate
 }
 
 func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	conf := sendFileConfig{}
-	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+	if err := conf.Decode(cfg.Settings); err != nil {
+		return nil, fmt.Errorf("transform: new_send_file: %v", err)
+	}
+
+	if err := conf.Validate(); err != nil {
 		return nil, fmt.Errorf("transform: new_send_file: %v", err)
 	}
 
@@ -74,69 +92,46 @@ func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	// File extensions are dynamic and not directly configurable.
 	tf.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
 
-	tf.mu = sync.Mutex{}
-	tf.buffer = make(map[string]*aggregate.Aggregate)
-	tf.bufferCfg = aggregate.Config{
-		Count:    conf.Buffer.Count,
-		Size:     conf.Buffer.Size,
-		Duration: conf.Buffer.Duration,
+	buffer, err := aggregate.New(conf.Buffer)
+	if err != nil {
+		return nil, fmt.Errorf("transform: new_send_file: %v", err)
 	}
+	tf.buffer = buffer
 
 	return &tf, nil
 }
 
-func (*sendFile) Close(context.Context) error {
-	return nil
-}
-
 func (tf *sendFile) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// Lock the transform to prevent concurrent access to the buffer.
-	tf.mu.Lock()
-	defer tf.mu.Unlock()
-
 	if msg.IsControl() {
-		for path := range tf.buffer {
-			if err := tf.writeFile(path); err != nil {
-				return nil, fmt.Errorf("transform: send_file: file_path %s: %v", path, err)
+		for prefix := range tf.buffer.GetAll() {
+			if err := tf.writeFile(prefix); err != nil {
+				return nil, fmt.Errorf("transform: send_file: prefix %s: %v", prefix, err)
 			}
 		}
 
-		tf.buffer = make(map[string]*aggregate.Aggregate)
+		tf.buffer.ResetAll()
 		return []*message.Message{msg}, nil
 	}
 
-	var prefixKey string
-	if tf.conf.FilePath.PrefixKey != "" {
-		prefixKey = msg.GetObject(tf.conf.FilePath.PrefixKey).String()
-	}
-
-	if _, ok := tf.buffer[prefixKey]; !ok {
-		agg, err := aggregate.New(tf.bufferCfg)
-		if err != nil {
-			return nil, fmt.Errorf("transform: send_file: %v", err)
-		}
-
-		tf.buffer[prefixKey] = agg
-	}
-
+	prefix := msg.GetValue(tf.conf.FilePath.PrefixKey).String()
 	// Writes data as a file only when the buffer is full.
-	if ok := tf.buffer[prefixKey].Add(msg.Data()); ok {
+	if ok := tf.buffer.Add(prefix, msg.Data()); ok {
 		return []*message.Message{msg}, nil
 	}
 
-	if err := tf.writeFile(prefixKey); err != nil {
+	if err := tf.writeFile(prefix); err != nil {
 		return nil, fmt.Errorf("transform: send_file: %v", err)
 	}
 
 	// Reset the buffer and add the msg data.
-	tf.buffer[prefixKey].Reset()
-	_ = tf.buffer[prefixKey].Add(msg.Data())
+	tf.buffer.Reset(prefix)
+	_ = tf.buffer.Add(prefix, msg.Data())
 
 	return []*message.Message{msg}, nil
 }
 
 func (t *sendFile) writeFile(prefix string) error {
-	if t.buffer[prefix].Count() == 0 {
+	if t.buffer.Count(prefix) == 0 {
 		return nil
 	}
 
@@ -168,7 +163,7 @@ func (t *sendFile) writeFile(prefix string) error {
 		return err
 	}
 
-	for _, rec := range t.buffer[prefix].Get() {
+	for _, rec := range t.buffer.Get(prefix) {
 		if _, err := w.Write(rec); err != nil {
 			return err
 		}
@@ -178,5 +173,15 @@ func (t *sendFile) writeFile(prefix string) error {
 		return err
 	}
 
+	return nil
+}
+
+func (tf *sendFile) String() string {
+	b, _ := json.Marshal(tf.conf)
+	return string(b)
+}
+
+
+func (*sendFile) Close(context.Context) error {
 	return nil
 }

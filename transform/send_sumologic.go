@@ -3,27 +3,26 @@ package transform
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"sync"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
 	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
-	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/message"
 )
 
-// errSendSumoLogicNonObject is returned when non-object data is sent to the transform.
+// errSendSumologicNonObject is returned when non-object data is sent to the transform.
 //
 // If this error occurs, then parse the data into an object (or drop invalid objects)
 // before attempting to send the data.
-var errSendSumoLogicNonObject = fmt.Errorf("input must be object")
+var errSendSumologicNonObject = fmt.Errorf("input must be object")
 
-type sendSumoLogicConfig struct {
+type sendSumologicConfig struct {
 	Buffer aggregate.Config `json:"buffer"`
 
 	// URL is the Sumo Logic HTTPS endpoint that objects are sent to.
@@ -31,40 +30,54 @@ type sendSumoLogicConfig struct {
 	// Category is the Sumo Logic source category that overrides the
 	// configuration for the HTTPS endpoint.
 	//
-	// This is optional and has no default.
+	// This is required if CategoryKey is not used.
 	Category string `json:"category"`
 	// CategoryKey retrieves a value from an object that is used as
 	// the Sumo Logic source category that overrides the configuration
 	// for the HTTPS endpoint. If used, then this overrides Category.
 	//
-	// This is optional and has no default.
+	// This is required if Category is not used.
 	CategoryKey string `json:"category_key"`
 }
 
-type sendSumoLogic struct {
-	conf sendSumoLogicConfig
+func (c *sendSumologicConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
+}
+
+func (c *sendSumologicConfig) Validate() error {
+	if c.URL == "" {
+		return fmt.Errorf("url: %v", errors.ErrMissingRequiredOption)
+	}
+
+	if c.Category == "" && c.CategoryKey == "" {
+		return fmt.Errorf("category: %v", errors.ErrMissingRequiredOption)
+	}
+
+	return nil
+}
+
+type sendSumologic struct {
+	conf sendSumologicConfig
 
 	// client is safe for concurrent use.
 	client  http.HTTP
 	headers []http.Header
 	// buffer is safe for concurrent use.
-	mu        sync.Mutex
-	buffer    map[string]*aggregate.Aggregate
+	buffer    *aggregate.Aggregate
 	bufferCfg aggregate.Config
 }
 
-func newSendSumoLogic(_ context.Context, cfg config.Config) (*sendSumoLogic, error) {
-	conf := sendSumoLogicConfig{}
-	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+func newSendSumologic(_ context.Context, cfg config.Config) (*sendSumologic, error) {
+	conf := sendSumologicConfig{}
+	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_send_sumologic: %v", err)
 	}
 
-	// Validate required options.
-	if conf.URL == "" {
-		return nil, fmt.Errorf("transform: new_send_sumologic: URL: %v", errors.ErrMissingRequiredOption)
+	if err := conf.Validate(); err != nil {
+		return nil, fmt.Errorf("transform: new_send_sumologic: %v", err)
 	}
 
-	tf := sendSumoLogic{
+	tf := sendSumologic{
 		conf: conf,
 	}
 
@@ -80,30 +93,24 @@ func newSendSumoLogic(_ context.Context, cfg config.Config) (*sendSumoLogic, err
 		},
 	}
 
-	tf.mu = sync.Mutex{}
-	tf.buffer = make(map[string]*aggregate.Aggregate)
-	tf.bufferCfg = aggregate.Config{
-		// SumoLogic limits batches to 1MB.
+	buffer, err := aggregate.New(aggregate.Config{
+		// Sumo Logic limits batches to 1MB.
 		Size:     1024 * 1024,
 		Count:    conf.Buffer.Count,
-		Duration: conf.Buffer.Duration,
+		Interval: conf.Buffer.Interval,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("transform: new_send_aws_s3: %v", err)
 	}
+	tf.buffer = buffer
 
 	return &tf, nil
 }
 
-func (*sendSumoLogic) Close(context.Context) error {
-	return nil
-}
-
-func (tf *sendSumoLogic) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// Lock the transform to prevent concurrent access to the buffer.
-	tf.mu.Lock()
-	defer tf.mu.Unlock()
-
+func (tf *sendSumologic) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
-		for category := range tf.buffer {
-			count := tf.buffer[category].Count()
+		for category := range tf.buffer.GetAll() {
+			count := tf.buffer.Count(category)
 			if count == 0 {
 				continue
 			}
@@ -113,34 +120,21 @@ func (tf *sendSumoLogic) Transform(ctx context.Context, msg *message.Message) ([
 			}
 		}
 
-		tf.buffer = make(map[string]*aggregate.Aggregate)
+		tf.buffer.ResetAll()
 		return []*message.Message{msg}, nil
 	}
 
-	var category string
-	if tf.conf.Category != "" {
-		category = tf.conf.Category
-	}
-
 	if !json.Valid(msg.Data()) {
-		return nil, fmt.Errorf("transform: send_sumologic: category %s: %v", category, errSendSumoLogicNonObject)
+		return nil, fmt.Errorf("transform: send_sumologic: %v", errSendSumologicNonObject)
 	}
 
+	category := tf.conf.Category
 	if tf.conf.CategoryKey != "" {
-		category = msg.GetObject(tf.conf.CategoryKey).String()
-	}
-
-	if _, ok := tf.buffer[category]; !ok {
-		agg, err := aggregate.New(tf.bufferCfg)
-		if err != nil {
-			return nil, fmt.Errorf("transform: send_sumologic: %v", err)
-		}
-
-		tf.buffer[category] = agg
+		category = msg.GetValue(tf.conf.CategoryKey).String()
 	}
 
 	// Sends data to SumoLogic only when the buffer is full.
-	if ok := tf.buffer[category].Add(msg.Data()); ok {
+	if ok := tf.buffer.Add(category, msg.Data()); ok {
 		return []*message.Message{msg}, nil
 	}
 
@@ -149,14 +143,14 @@ func (tf *sendSumoLogic) Transform(ctx context.Context, msg *message.Message) ([
 	}
 
 	// Reset the buffer and add the msg data.
-	tf.buffer[category].Reset()
-	_ = tf.buffer[category].Add(msg.Data())
+	tf.buffer.Reset(category)
+	_ = tf.buffer.Add(category, msg.Data())
 
 	return []*message.Message{msg}, nil
 }
 
-func (t *sendSumoLogic) sendPayload(ctx context.Context, category string) error {
-	if t.buffer[category].Count() == 0 {
+func (t *sendSumologic) sendPayload(ctx context.Context, category string) error {
+	if t.buffer.Count(category) == 0 {
 		return nil
 	}
 
@@ -167,7 +161,7 @@ func (t *sendSumoLogic) sendPayload(ctx context.Context, category string) error 
 	})
 
 	var buf bytes.Buffer
-	for _, i := range t.buffer[category].Get() {
+	for _, i := range t.buffer.Get(category) {
 		buf.WriteString(fmt.Sprintf("%s\n", i))
 	}
 
@@ -181,5 +175,14 @@ func (t *sendSumoLogic) sendPayload(ctx context.Context, category string) error 
 	io.Copy(io.Discard, resp.Body)
 	resp.Body.Close()
 
+	return nil
+}
+
+func (tf *sendSumologic) String() string {
+	b, _ := json.Marshal(tf.conf)
+	return string(b)
+}
+
+func (*sendSumologic) Close(context.Context) error {
 	return nil
 }

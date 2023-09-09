@@ -2,6 +2,7 @@ package transform
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -15,9 +16,9 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type sendAWSKinesisConfig struct {
-	AWS   configAWS   `json:"aws"`
-	Retry configRetry `json:"retry"`
+type sendAWSKinesisDataStreamConfig struct {
+	AWS   iconfig.AWS   `json:"aws"`
+	Retry iconfig.Retry `json:"retry"`
 
 	// Stream is the Kinesis Data Stream that records are sent to.
 	Stream string `json:"stream"`
@@ -41,8 +42,20 @@ type sendAWSKinesisConfig struct {
 	ShardRedistribution bool `json:"shard_redistribution"`
 }
 
-type sendAWSKinesis struct {
-	conf sendAWSKinesisConfig
+func (c *sendAWSKinesisDataStreamConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
+}
+
+func (c *sendAWSKinesisDataStreamConfig) Validate() error {
+	if c.Stream == "" {
+		return fmt.Errorf("stream: %v", errors.ErrMissingRequiredOption)
+	}
+
+	return nil
+}
+
+type sendAWSKinesisDataStream struct {
+	conf sendAWSKinesisDataStreamConfig
 
 	// client is safe for concurrent use.
 	client kinesis.API
@@ -52,18 +65,17 @@ type sendAWSKinesis struct {
 	buffer map[string]*kinesis.Aggregate
 }
 
-func newSendAWSKinesis(_ context.Context, cfg config.Config) (*sendAWSKinesis, error) {
-	conf := sendAWSKinesisConfig{}
-	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_kinesis: %v", err)
+func newSendAWSKinesisDataStream(_ context.Context, cfg config.Config) (*sendAWSKinesisDataStream, error) {
+	conf := sendAWSKinesisDataStreamConfig{}
+	if err := conf.Decode(cfg.Settings); err != nil {
+		return nil, fmt.Errorf("transform: new_send_aws_kinesis_data_stream: %v", err)
 	}
 
-	// Validate required options.
-	if conf.Stream == "" {
-		return nil, fmt.Errorf("transform: new_send_aws_kinesis: stream: %v", errors.ErrMissingRequiredOption)
+	if err := conf.Validate(); err != nil {
+		return nil, fmt.Errorf("transform: new_send_aws_kinesis_data_stream: %v", err)
 	}
 
-	tf := sendAWSKinesis{
+	tf := sendAWSKinesisDataStream{
 		conf: conf,
 	}
 
@@ -80,11 +92,7 @@ func newSendAWSKinesis(_ context.Context, cfg config.Config) (*sendAWSKinesis, e
 	return &tf, nil
 }
 
-func (*sendAWSKinesis) Close(context.Context) error {
-	return nil
-}
-
-func (tf *sendAWSKinesis) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *sendAWSKinesisDataStream) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	// Lock the transform to prevent concurrent access to the buffer.
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
@@ -99,8 +107,8 @@ func (tf *sendAWSKinesis) Transform(ctx context.Context, msg *message.Message) (
 			agg := tf.buffer[aggregationKey].Get()
 			aggPK := tf.buffer[aggregationKey].PartitionKey
 			if _, err := tf.client.PutRecord(ctx, tf.conf.Stream, aggPK, agg); err != nil {
-				// PutRecord errors return metadata.
-				return nil, fmt.Errorf("send: aws_kinesis: %v", err)
+				// PutRecord errors return metadata and don't require more information.
+				return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
 			}
 		}
 
@@ -113,7 +121,7 @@ func (tf *sendAWSKinesis) Transform(ctx context.Context, msg *message.Message) (
 	if tf.conf.Partition != "" {
 		partitionKey = tf.conf.Partition
 	} else if tf.conf.PartitionKey != "" {
-		partitionKey = msg.GetObject(tf.conf.PartitionKey).String()
+		partitionKey = msg.GetValue(tf.conf.PartitionKey).String()
 	}
 
 	if partitionKey == "" {
@@ -141,8 +149,8 @@ func (tf *sendAWSKinesis) Transform(ctx context.Context, msg *message.Message) (
 	agg := tf.buffer[aggregationKey].Get()
 	aggPK := tf.buffer[aggregationKey].PartitionKey
 	if _, err := tf.client.PutRecord(ctx, tf.conf.Stream, aggPK, agg); err != nil {
-		// PutRecord errors return metadata.
-		return nil, fmt.Errorf("send: aws_kinesis: %v", err)
+		// PutRecord errors return metadata and don't require more information.
+		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
 	}
 
 	// Reset the buffer and add the msg data.
@@ -150,4 +158,13 @@ func (tf *sendAWSKinesis) Transform(ctx context.Context, msg *message.Message) (
 	_ = tf.buffer[aggregationKey].Add(msg.Data(), partitionKey)
 
 	return []*message.Message{msg}, nil
+}
+
+func (tf *sendAWSKinesisDataStream) String() string {
+	b, _ := json.Marshal(tf.conf)
+	return string(b)
+}
+
+func (*sendAWSKinesisDataStream) Close(context.Context) error {
+	return nil
 }

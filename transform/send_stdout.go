@@ -2,6 +2,7 @@ package transform
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/brexhq/substation/config"
@@ -11,13 +12,17 @@ import (
 
 type sendStdoutConfig struct{}
 
+func (c *sendStdoutConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
+}
+
 type sendStdout struct {
 	conf sendStdoutConfig
 }
 
 func newSendStdout(_ context.Context, cfg config.Config) (*sendStdout, error) {
 	conf := sendStdoutConfig{}
-	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_send_stdout: %v", err)
 	}
 
@@ -28,10 +33,6 @@ func newSendStdout(_ context.Context, cfg config.Config) (*sendStdout, error) {
 	return &tf, nil
 }
 
-func (*sendStdout) Close(context.Context) error {
-	return nil
-}
-
 func (*sendStdout) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
@@ -39,4 +40,13 @@ func (*sendStdout) Transform(ctx context.Context, msg *message.Message) ([]*mess
 
 	fmt.Println(string(msg.Data()))
 	return []*message.Message{msg}, nil
+}
+
+func (tf *sendStdout) String() string {
+	b, _ := json.Marshal(tf.conf)
+	return string(b)
+}
+
+func (*sendStdout) Close(context.Context) error {
+	return nil
 }

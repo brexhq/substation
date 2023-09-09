@@ -2,6 +2,7 @@ package transform
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/brexhq/substation/config"
@@ -23,12 +24,24 @@ const sendSQSMessageSizeLimit = 1024 * 1024 * 256
 var errSendSQSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSQSConfig struct {
-	Buffer aggregate.Config `json:"buffer"`
-	AWS    configAWS        `json:"aws"`
-	Retry  configRetry      `json:"retry"`
+	Buffer iconfig.Buffer `json:"buffer"`
+	AWS    iconfig.AWS    `json:"aws"`
+	Retry  iconfig.Retry  `json:"retry"`
 
 	// Queue is the AWS SQS queue name that data is sent to.
 	Queue string `json:"queue"`
+}
+
+func (c *sendAWSSQSConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
+}
+
+func (c *sendAWSSQSConfig) Validate() error {
+	if c.Queue == "" {
+		return fmt.Errorf("queue: %v", errors.ErrMissingRequiredOption)
+	}
+
+	return nil
 }
 
 type sendAWSSQS struct {
@@ -37,18 +50,18 @@ type sendAWSSQS struct {
 	// client is safe for concurrent use.
 	client sqs.API
 	// buffer is safe for concurrent use.
-	buffer *aggregate.Aggregate
+	buffer    *aggregate.Aggregate
+	bufferKey string
 }
 
-func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
+func newAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 	conf := sendAWSSQSConfig{}
-	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_send_aws_sqs: %v", err)
 	}
 
-	// Validate required options.
-	if conf.Queue == "" {
-		return nil, fmt.Errorf("transform: new_send_aws_sqs: queue: %v", errors.ErrMissingRequiredOption)
+	if err := conf.Validate(); err != nil {
+		return nil, fmt.Errorf("transform: new_send_aws_sqs: %v", err)
 	}
 
 	tf := sendAWSSQS{
@@ -62,59 +75,64 @@ func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 		MaxRetries: conf.Retry.Attempts,
 	})
 
-	agg, err := aggregate.New(
-		aggregate.Config{
-			// SQS limits batch operations to 10 msgs.
-			Count: 10,
-			// SQS limits batch operations to 256 KB.
-			Size:     sendSQSMessageSizeLimit,
-			Duration: conf.Buffer.Duration,
-		})
+	buffer, err := aggregate.New(aggregate.Config{
+		// SQS limits batch operations to 10 msgs.
+		Count: 10,
+		// SQS limits batch operations to 256 KB.
+		Size:     sendSQSMessageSizeLimit,
+		Interval: conf.Buffer.Interval,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	tf.buffer = agg
+	tf.buffer = buffer
+	tf.bufferKey = conf.Buffer.Key
 
 	return &tf, nil
 }
 
-func (*sendAWSSQS) Close(context.Context) error {
-	return nil
-}
-
 func (tf *sendAWSSQS) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
-		if tf.buffer.Count() == 0 {
+		if tf.buffer.Count(tf.bufferKey) == 0 {
 			return []*message.Message{msg}, nil
 		}
 
-		items := tf.buffer.Get()
+		items := tf.buffer.Get(tf.bufferKey)
 		if _, err := tf.client.SendMessageBatch(ctx, tf.conf.Queue, items); err != nil {
-			return nil, fmt.Errorf("send: aws_sqs: %v", err)
+			return nil, fmt.Errorf("transform: send_aws_sqs: %v", err)
 		}
 
-		tf.buffer.Reset()
+		tf.buffer.Reset(tf.bufferKey)
 		return []*message.Message{msg}, nil
 	}
 
 	if len(msg.Data()) > sendSQSMessageSizeLimit {
-		return nil, fmt.Errorf("send: aws_sqs: %v", errSendSQSMessageSizeLimit)
+		return nil, fmt.Errorf("transform: send_aws_sqs: %v", errSendSQSMessageSizeLimit)
 	}
 
 	// Send data to SQS only when the buffer is full.
-	if ok := tf.buffer.Add(msg.Data()); ok {
+	if ok := tf.buffer.Add(tf.bufferKey, msg.Data()); ok {
 		return []*message.Message{msg}, nil
 	}
 
-	items := tf.buffer.Get()
+	items := tf.buffer.Get(tf.bufferKey)
 	if _, err := tf.client.SendMessageBatch(ctx, tf.conf.Queue, items); err != nil {
-		return nil, fmt.Errorf("send: aws_sqs: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_sqs: %v", err)
 	}
 
 	// Reset the buffer and add the msg data.
-	tf.buffer.Reset()
-	_ = tf.buffer.Add(msg.Data())
+	tf.buffer.Reset(tf.bufferKey)
+	_ = tf.buffer.Add(tf.bufferKey, msg.Data())
 
 	return []*message.Message{msg}, nil
+}
+
+func (tf *sendAWSSQS) String() string {
+	b, _ := json.Marshal(tf.conf)
+	return string(b)
+}
+
+func (*sendAWSSQS) Close(context.Context) error {
+	return nil
 }

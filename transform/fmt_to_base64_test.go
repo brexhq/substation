@@ -9,67 +9,32 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &modBase64{}
-
-var modBase64Tests = []struct {
+var fmtToBase64Tests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
 	err      error
 }{
+	// data tests
 	{
-		"data from",
-		config.Config{
-			Settings: map[string]interface{}{
-				"direction": "from",
-			},
-		},
-		[]byte(`Yg==`),
-		[][]byte{
-			[]byte(`b`),
-		},
-		nil,
-	},
-	{
-		"data to",
-		config.Config{
-			Settings: map[string]interface{}{
-				"direction": "to",
-			},
-		},
+		"data",
+		config.Config{},
 		[]byte(`b`),
 		[][]byte{
 			[]byte(`Yg==`),
 		},
 		nil,
 	},
+	// object tests
 	{
-		"object from",
+		"object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"key":     "a",
 					"set_key": "a",
 				},
-				"direction": "from",
-			},
-		},
-		[]byte(`{"a":"Yg=="}`),
-		[][]byte{
-			[]byte(`{"a":"b"}`),
-		},
-		nil,
-	},
-	{
-		"object to",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"key":     "a",
-					"set_key": "a",
-				},
-				"direction": "to",
 			},
 		},
 		[]byte(`{"a":"b"}`),
@@ -80,11 +45,11 @@ var modBase64Tests = []struct {
 	},
 }
 
-func TestModBase64(t *testing.T) {
+func TestFmtToBase64(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range modBase64Tests {
+	for _, test := range fmtToBase64Tests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newModBase64(ctx, test.cfg)
+			tf, err := newFmtToBase64(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -107,7 +72,7 @@ func TestModBase64(t *testing.T) {
 	}
 }
 
-func benchmarkmodBase64(b *testing.B, tf *modBase64, data []byte) {
+func benchmarkFmtToBase64(b *testing.B, tf *fmtToBase64, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -115,16 +80,16 @@ func benchmarkmodBase64(b *testing.B, tf *modBase64, data []byte) {
 	}
 }
 
-func BenchmarkModBase64(b *testing.B) {
-	for _, test := range modBase64Tests {
-		tf, err := newModBase64(context.TODO(), test.cfg)
+func BenchmarkFmtToBase64Encode(b *testing.B) {
+	for _, test := range fmtToBase64Tests {
+		tf, err := newFmtToBase64(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkmodBase64(b, tf, test.test)
+				benchmarkFmtToBase64(b, tf, test.test)
 			},
 		)
 	}

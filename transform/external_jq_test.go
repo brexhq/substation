@@ -9,9 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &modJQ{}
-
-var modJQTests = []struct {
+var externalJQTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -105,11 +103,11 @@ var modJQTests = []struct {
 	},
 }
 
-func TestModJQ(t *testing.T) {
+func TestExternalJQ(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range modJQTests {
+	for _, test := range externalJQTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newModJQ(ctx, test.cfg)
+			tf, err := newExternalJQ(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -132,7 +130,7 @@ func TestModJQ(t *testing.T) {
 	}
 }
 
-func benchmarkModJQ(b *testing.B, tf *modJQ, data []byte) {
+func benchmarkExternalJQ(b *testing.B, tf *externalJQ, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -140,16 +138,16 @@ func benchmarkModJQ(b *testing.B, tf *modJQ, data []byte) {
 	}
 }
 
-func BenchmarkModJQ(b *testing.B) {
-	for _, test := range modJQTests {
-		tf, err := newModJQ(context.TODO(), test.cfg)
+func BenchmarkExternalJQ(b *testing.B) {
+	for _, test := range externalJQTests {
+		tf, err := newExternalJQ(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkModJQ(b, tf, test.test)
+				benchmarkExternalJQ(b, tf, test.test)
 			},
 		)
 	}

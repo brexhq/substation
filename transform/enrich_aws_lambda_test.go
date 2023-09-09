@@ -14,18 +14,16 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &modAWSLambda{}
-
-type mockedInvoke struct {
+type enrichAWSLambdaMockedInvoke struct {
 	lambdaiface.LambdaAPI
 	Resp lambda.InvokeOutput
 }
 
-func (m mockedInvoke) InvokeWithContext(ctx aws.Context, input *lambda.InvokeInput, opts ...request.Option) (*lambda.InvokeOutput, error) {
+func (m enrichAWSLambdaMockedInvoke) InvokeWithContext(ctx aws.Context, input *lambda.InvokeInput, opts ...request.Option) (*lambda.InvokeOutput, error) {
 	return &m.Resp, nil
 }
 
-var modAWSLambdaTests = []struct {
+var enrichAWSLambdaTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -50,7 +48,7 @@ var modAWSLambdaTests = []struct {
 		},
 		nil,
 		lamb.API{
-			Client: mockedInvoke{
+			Client: enrichAWSLambdaMockedInvoke{
 				Resp: lambda.InvokeOutput{
 					Payload: []byte(`{"d":"e"}`),
 				},
@@ -59,10 +57,10 @@ var modAWSLambdaTests = []struct {
 	},
 }
 
-func TestModAWSLambda(t *testing.T) {
+func TestEnrichAWSLambda(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range modAWSLambdaTests {
-		tf, err := newModAWSLambda(ctx, test.cfg)
+	for _, test := range enrichAWSLambdaTests {
+		tf, err := newEnrichAWSLambda(ctx, test.cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -85,7 +83,7 @@ func TestModAWSLambda(t *testing.T) {
 	}
 }
 
-func benchmarkModAWSLambda(b *testing.B, tf *modAWSLambda, data []byte) {
+func benchmarkEnrichAWSLambda(b *testing.B, tf *enrichAWSLambda, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -93,18 +91,18 @@ func benchmarkModAWSLambda(b *testing.B, tf *modAWSLambda, data []byte) {
 	}
 }
 
-func BenchmarkModAWSLambda(b *testing.B) {
+func BenchmarkEnrichAWSLambda(b *testing.B) {
 	ctx := context.TODO()
-	for _, test := range modAWSLambdaTests {
+	for _, test := range enrichAWSLambdaTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				tf, err := newModAWSLambda(ctx, test.cfg)
+				tf, err := newEnrichAWSLambda(ctx, test.cfg)
 				if err != nil {
 					b.Fatal(err)
 				}
 				tf.client = test.api
 
-				benchmarkModAWSLambda(b, tf, test.test)
+				benchmarkEnrichAWSLambda(b, tf, test.test)
 			},
 		)
 	}

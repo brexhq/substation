@@ -14,18 +14,16 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &modAWSDynamoDB{}
-
-type mockedQuery struct {
+type enrichAWSDynamoDBMockedQuery struct {
 	dynamodbiface.DynamoDBAPI
 	Resp dynamodb.QueryOutput
 }
 
-func (m mockedQuery) QueryWithContext(ctx aws.Context, input *dynamodb.QueryInput, opts ...request.Option) (*dynamodb.QueryOutput, error) {
+func (m enrichAWSDynamoDBMockedQuery) QueryWithContext(ctx aws.Context, input *dynamodb.QueryInput, opts ...request.Option) (*dynamodb.QueryOutput, error) {
 	return &m.Resp, nil
 }
 
-var modAWSDynamoDBTests = []struct {
+var enrichAWSDynamoDBTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -51,7 +49,7 @@ var modAWSDynamoDBTests = []struct {
 		},
 		nil,
 		ddb.API{
-			Client: mockedQuery{
+			Client: enrichAWSDynamoDBMockedQuery{
 				Resp: dynamodb.QueryOutput{
 					Items: []map[string]*dynamodb.AttributeValue{
 						{
@@ -66,10 +64,10 @@ var modAWSDynamoDBTests = []struct {
 	},
 }
 
-func TestModAWSDynamoDB(t *testing.T) {
+func TestEnrichAWSDynamoDB(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range modAWSDynamoDBTests {
-		tf, err := newModAWSDynamoDB(ctx, test.cfg)
+	for _, test := range enrichAWSDynamoDBTests {
+		tf, err := newEnrichAWSDynamoDB(ctx, test.cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -92,7 +90,7 @@ func TestModAWSDynamoDB(t *testing.T) {
 	}
 }
 
-func benchmarkModAWSDynamoDB(b *testing.B, tf *modAWSDynamoDB, data []byte) {
+func benchmarkEnrichAWSDynamoDB(b *testing.B, tf *enrichAWSDynamoDB, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -100,18 +98,18 @@ func benchmarkModAWSDynamoDB(b *testing.B, tf *modAWSDynamoDB, data []byte) {
 	}
 }
 
-func BenchmarkModAWSDynamoDB(b *testing.B) {
+func BenchmarkEnrichAWSDynamoDB(b *testing.B) {
 	ctx := context.TODO()
-	for _, test := range modAWSDynamoDBTests {
+	for _, test := range enrichAWSDynamoDBTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				tf, err := newModAWSDynamoDB(ctx, test.cfg)
+				tf, err := newEnrichAWSDynamoDB(ctx, test.cfg)
 				if err != nil {
 					b.Fatal(err)
 				}
 				tf.client = test.api
 
-				benchmarkModAWSDynamoDB(b, tf, test.test)
+				benchmarkEnrichAWSDynamoDB(b, tf, test.test)
 			},
 		)
 	}

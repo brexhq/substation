@@ -4,7 +4,7 @@ package transform
 
 import (
 	"context"
-	gojson "encoding/json"
+	"encoding/json"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
@@ -17,10 +17,10 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type modAWSDynamoDBConfig struct {
-	Object configObject `json:"object"`
-	AWS    configAWS    `json:"aws"`
-	Retry  configRetry  `json:"retry"`
+type enrichAWSDynamoDBConfig struct {
+	Object iconfig.Object `json:"object"`
+	AWS    iconfig.AWS    `json:"aws"`
+	Retry  iconfig.Retry  `json:"retry"`
 
 	// Table is the DynamoDB table that is queried.
 	Table string `json:"table"`
@@ -45,37 +45,40 @@ type modAWSDynamoDBConfig struct {
 	ScanIndexForward bool `json:"scan_index_forward"`
 }
 
-type modAWSDynamoDB struct {
-	conf modAWSDynamoDBConfig
-
-	// client is safe for concurrent access.
-	client dynamodb.API
+func (c *enrichAWSDynamoDBConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
 }
 
-func newModAWSDynamoDB(_ context.Context, cfg config.Config) (*modAWSDynamoDB, error) {
-	conf := modAWSDynamoDBConfig{}
-	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: new_mod_aws_dynamodb: %v", err)
+func (c *enrichAWSDynamoDBConfig) Validate() error {
+	if c.Object.SetKey == "" {
+		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	// Validate required options.
-	if conf.Object.SetKey == "" {
-		return nil, fmt.Errorf("transform: new_mod_aws_dynamodb: object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.PartitionKey == "" {
+		return fmt.Errorf("partition_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if conf.PartitionKey == "" {
-		return nil, fmt.Errorf("transform: new_mod_aws_dynamodb: partition_key: %v", errors.ErrMissingRequiredOption)
+	if c.Table == "" {
+		return fmt.Errorf("table: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if conf.Table == "" {
-		return nil, fmt.Errorf("transform: new_mod_aws_dynamodb: table: %v", errors.ErrMissingRequiredOption)
+	if c.KeyConditionExpression == "" {
+		return fmt.Errorf("key_condition_expression: %v", errors.ErrMissingRequiredOption)
+	}
+	return nil
+}
+
+func newEnrichAWSDynamoDB(_ context.Context, cfg config.Config) (*enrichAWSDynamoDB, error) {
+	conf := enrichAWSDynamoDBConfig{}
+	if err := conf.Decode(cfg.Settings); err != nil {
+		return nil, fmt.Errorf("transform: new_enrich_aws_dynamodb: %v", err)
 	}
 
-	if conf.KeyConditionExpression == "" {
-		return nil, fmt.Errorf("transform: new_mod_aws_dynamodb: key_condition_expression: %v", errors.ErrMissingRequiredOption)
+	if err := conf.Validate(); err != nil {
+		return nil, fmt.Errorf("transform: new_enrich_aws_dynamodb: %v", err)
 	}
 
-	tf := modAWSDynamoDB{
+	tf := enrichAWSDynamoDB{
 		conf: conf,
 	}
 
@@ -89,27 +92,25 @@ func newModAWSDynamoDB(_ context.Context, cfg config.Config) (*modAWSDynamoDB, e
 	return &tf, nil
 }
 
-func (tf *modAWSDynamoDB) String() string {
-	b, _ := gojson.Marshal(tf.conf)
-	return string(b)
+type enrichAWSDynamoDB struct {
+	conf enrichAWSDynamoDBConfig
+
+	// client is safe for concurrent access.
+	client dynamodb.API
 }
 
-func (*modAWSDynamoDB) Close(context.Context) error {
-	return nil
-}
-
-func (tf *modAWSDynamoDB) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *enrichAWSDynamoDB) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	// Skip interrupt messages.
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
 
-	pk := msg.GetObject(tf.conf.PartitionKey).String()
-	sk := msg.GetObject(tf.conf.SortKey).String()
+	pk := msg.GetValue(tf.conf.PartitionKey).String()
+	sk := msg.GetValue(tf.conf.SortKey).String()
 
 	value, err := tf.dynamodb(ctx, pk, sk)
 	if err != nil {
-		return nil, fmt.Errorf("transform: mod_aws_dynamodb: %v", err)
+		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", err)
 	}
 
 	// No match.
@@ -117,14 +118,14 @@ func (tf *modAWSDynamoDB) Transform(ctx context.Context, msg *message.Message) (
 		return []*message.Message{msg}, nil
 	}
 
-	if err := msg.SetObject(tf.conf.Object.SetKey, value); err != nil {
-		return nil, fmt.Errorf("transform: mod_aws_dynamodb: %v", err)
+	if err := msg.SetValue(tf.conf.Object.SetKey, value); err != nil {
+		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", err)
 	}
 
 	return []*message.Message{msg}, nil
 }
 
-func (tf *modAWSDynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {
+func (tf *enrichAWSDynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {
 	resp, err := tf.client.Query(
 		ctx,
 		tf.conf.Table,
@@ -148,4 +149,13 @@ func (tf *modAWSDynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[st
 		items = append(items, item)
 	}
 	return items, nil
+}
+
+func (tf *enrichAWSDynamoDB) String() string {
+	b, _ := json.Marshal(tf.conf)
+	return string(b)
+}
+
+func (*enrichAWSDynamoDB) Close(context.Context) error {
+	return nil
 }

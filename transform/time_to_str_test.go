@@ -7,7 +7,6 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/message"
-	"github.com/brexhq/substation/transform/time"
 )
 
 var timeToStrTests = []struct {
@@ -21,7 +20,7 @@ var timeToStrTests = []struct {
 		"data",
 		config.Config{
 			Settings: map[string]interface{}{
-				"format": time.DefaultFmt,
+				"format": timeDefaultFmt,
 			},
 		},
 		[]byte(`1639877490000`),
@@ -33,7 +32,7 @@ var timeToStrTests = []struct {
 		"data with_location",
 		config.Config{
 			Settings: map[string]interface{}{
-				"format": time.DefaultFmt,
+				"format": timeDefaultFmt,
 				// Offset from UTC by -5 hours.
 				"location": "America/New_York",
 			},
@@ -52,7 +51,7 @@ var timeToStrTests = []struct {
 					"key":     "a",
 					"set_key": "a",
 				},
-				"format": time.DefaultFmt,
+				"format": timeDefaultFmt,
 			},
 		},
 		[]byte(`{"a":1639877490000}`),

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	DefaultFmt = "2006-01-02T15:04:05.000Z"
+	timeDefaultFmt = "2006-01-02T15:04:05.000Z"
 )
 
 type timeUnixConfig struct {

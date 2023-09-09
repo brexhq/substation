@@ -9,50 +9,29 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &modGzip{}
-
-var modGzipTests = []struct {
+var cmpFromGzipTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
-	err      error
 }{
 	{
-		"from",
-		config.Config{
-			Settings: map[string]interface{}{
-				"direction": "from",
-			},
-		},
+		"data",
+		config.Config{},
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0},
 		[][]byte{
 			[]byte(`foo`),
 		},
-		nil,
-	},
-	{
-		"to",
-		config.Config{
-			Settings: map[string]interface{}{
-				"direction": "to",
-			},
-		},
-		[]byte(`foo`),
-		[][]byte{
-			{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0},
-		},
-		nil,
 	},
 }
 
-func TestModGzip(t *testing.T) {
+func TestCmpFromGzip(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range modGzipTests {
+	for _, test := range cmpFromGzipTests {
 		t.Run(test.name, func(t *testing.T) {
 			msg := message.New().SetData(test.test)
 
-			tf, err := newModGzip(ctx, test.cfg)
+			tf, err := newCmpFromGzip(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -74,7 +53,7 @@ func TestModGzip(t *testing.T) {
 	}
 }
 
-func benchmarkModGzip(b *testing.B, tf *modGzip, data []byte) {
+func benchmarkCmpFromGzip(b *testing.B, tf *cmpFromGzip, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -82,16 +61,16 @@ func benchmarkModGzip(b *testing.B, tf *modGzip, data []byte) {
 	}
 }
 
-func BenchmarkModGzip(b *testing.B) {
-	for _, test := range modGzipTests {
-		tf, err := newModGzip(context.TODO(), test.cfg)
+func BenchmarkCmpFromGzip(b *testing.B) {
+	for _, test := range cmpFromGzipTests {
+		tf, err := newCmpFromGzip(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkModGzip(b, tf, test.test)
+				benchmarkCmpFromGzip(b, tf, test.test)
 			},
 		)
 	}

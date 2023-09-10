@@ -47,7 +47,6 @@ func newTimeNow(_ context.Context, cfg config.Config) (*timeNow, error) {
 }
 
 func (tf *timeNow) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// Skip interrupt messages.
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}

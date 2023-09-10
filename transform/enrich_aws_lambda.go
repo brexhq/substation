@@ -80,7 +80,6 @@ type enrichAWSLambda struct {
 }
 
 func (tf *enrichAWSLambda) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// Skip interrupt messages.
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}

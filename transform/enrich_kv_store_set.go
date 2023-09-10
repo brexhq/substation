@@ -18,7 +18,7 @@ import (
 type enrichKVStoreSetConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	// Prefix is prepended to the Key and is intended to simplify
+	// Prefix is prepended to the key and can be used to simplify
 	// data management within a KV store.
 	//
 	// This is optional and defaults to an empty string.

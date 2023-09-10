@@ -51,7 +51,6 @@ func (tf *enrichDNSFwdLookup) Transform(ctx context.Context, msg *message.Messag
 	resolverCtx, cancel := context.WithTimeout(ctx, tf.timeout)
 	defer cancel() // important to avoid a resource leak
 
-	// Skip interrupt messages.
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}

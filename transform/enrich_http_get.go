@@ -22,7 +22,7 @@ type enrichHTTPGetConfig struct {
 	// URL is the HTTP(S) endpoint that data is retrieved from.
 	//
 	// If the substring ${data} is in the URL, then the URL is interpolated with
-	// data (either the value from Key or the raw data). URLs may be optionally
+	// data (either the value from Object.Key or the raw data). URLs may be optionally
 	// interpolated with secrets (e.g., ${SECRETS_ENV:FOO}).
 	URL string `json:"url"`
 	// Headers are an array of objects that contain HTTP headers sent in the request.
@@ -95,7 +95,6 @@ type enrichHTTPGet struct {
 }
 
 func (tf *enrichHTTPGet) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// Skip interrupt messages.
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}

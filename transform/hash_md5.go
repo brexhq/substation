@@ -34,7 +34,6 @@ func newHashMD5(_ context.Context, cfg config.Config) (*hashMD5, error) {
 }
 
 func (tf *hashMD5) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// Skip interrupt messages.
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}

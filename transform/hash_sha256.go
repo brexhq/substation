@@ -34,7 +34,6 @@ func newHashSHA256(_ context.Context, cfg config.Config) (*hashSHA256, error) {
 }
 
 func (tf *hashSHA256) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// Skip interrupt messages.
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}

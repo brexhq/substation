@@ -36,7 +36,6 @@ func newTimeFromUnix(_ context.Context, cfg config.Config) (*timeFromUnix, error
 }
 
 func (tf *timeFromUnix) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// Skip interrupt messages.
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}

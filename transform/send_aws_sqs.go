@@ -54,7 +54,7 @@ type sendAWSSQS struct {
 	bufferKey string
 }
 
-func newAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
+func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 	conf := sendAWSSQSConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_send_aws_sqs: %v", err)

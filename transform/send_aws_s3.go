@@ -78,16 +78,6 @@ func (c *sendAWSS3Config) Validate() error {
 	return nil
 }
 
-type sendAWSS3 struct {
-	conf sendAWSS3Config
-
-	extension string
-	// client is safe for concurrent use.
-	client s3manager.UploaderAPI
-	// buffer is safe for concurrent use.
-	buffer *aggregate.Aggregate
-}
-
 func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 	conf := sendAWSS3Config{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -119,6 +109,16 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 	})
 
 	return &tf, nil
+}
+
+type sendAWSS3 struct {
+	conf sendAWSS3Config
+
+	extension string
+	// client is safe for concurrent use.
+	client s3manager.UploaderAPI
+	// buffer is safe for concurrent use.
+	buffer *aggregate.Aggregate
 }
 
 func (tf *sendAWSS3) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

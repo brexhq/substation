@@ -23,11 +23,6 @@ func (c *timeNowConfig) Validate() error {
 	return nil
 }
 
-type timeNow struct {
-	conf            timeNowConfig
-	hasObjectSetKey bool
-}
-
 func newTimeNow(_ context.Context, cfg config.Config) (*timeNow, error) {
 	conf := timeNowConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -44,6 +39,11 @@ func newTimeNow(_ context.Context, cfg config.Config) (*timeNow, error) {
 	}
 
 	return &tf, nil
+}
+
+type timeNow struct {
+	conf            timeNowConfig
+	hasObjectSetKey bool
 }
 
 func (tf *timeNow) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

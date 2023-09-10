@@ -54,17 +54,6 @@ func (c *sendAWSKinesisDataStreamConfig) Validate() error {
 	return nil
 }
 
-type sendAWSKinesisDataStream struct {
-	conf sendAWSKinesisDataStreamConfig
-
-	// client is safe for concurrent use.
-	client kinesis.API
-
-	// buffer is safe for concurrent use.
-	mu     sync.Mutex
-	buffer map[string]*kinesis.Aggregate
-}
-
 func newSendAWSKinesisDataStream(_ context.Context, cfg config.Config) (*sendAWSKinesisDataStream, error) {
 	conf := sendAWSKinesisDataStreamConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -90,6 +79,17 @@ func newSendAWSKinesisDataStream(_ context.Context, cfg config.Config) (*sendAWS
 	tf.buffer = make(map[string]*kinesis.Aggregate)
 
 	return &tf, nil
+}
+
+type sendAWSKinesisDataStream struct {
+	conf sendAWSKinesisDataStreamConfig
+
+	// client is safe for concurrent use.
+	client kinesis.API
+
+	// buffer is safe for concurrent use.
+	mu     sync.Mutex
+	buffer map[string]*kinesis.Aggregate
 }
 
 func (tf *sendAWSKinesisDataStream) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

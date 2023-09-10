@@ -67,14 +67,6 @@ func (c *sendFileConfig) Validate() error {
 	return nil
 }
 
-type sendFile struct {
-	conf sendFileConfig
-
-	extension string
-	// buffer is safe for concurrent use.
-	buffer *aggregate.Aggregate
-}
-
 func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	conf := sendFileConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -99,6 +91,14 @@ func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	tf.buffer = buffer
 
 	return &tf, nil
+}
+
+type sendFile struct {
+	conf sendFileConfig
+
+	extension string
+	// buffer is safe for concurrent use.
+	buffer *aggregate.Aggregate
 }
 
 func (tf *sendFile) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -180,7 +180,6 @@ func (tf *sendFile) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
 
 func (*sendFile) Close(context.Context) error {
 	return nil

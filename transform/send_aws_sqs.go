@@ -44,16 +44,6 @@ func (c *sendAWSSQSConfig) Validate() error {
 	return nil
 }
 
-type sendAWSSQS struct {
-	conf sendAWSSQSConfig
-
-	// client is safe for concurrent use.
-	client sqs.API
-	// buffer is safe for concurrent use.
-	buffer    *aggregate.Aggregate
-	bufferKey string
-}
-
 func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 	conf := sendAWSSQSConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -90,6 +80,16 @@ func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 	tf.bufferKey = conf.Buffer.Key
 
 	return &tf, nil
+}
+
+type sendAWSSQS struct {
+	conf sendAWSSQSConfig
+
+	// client is safe for concurrent use.
+	client sqs.API
+	// buffer is safe for concurrent use.
+	buffer    *aggregate.Aggregate
+	bufferKey string
 }
 
 func (tf *sendAWSSQS) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

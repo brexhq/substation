@@ -56,17 +56,6 @@ func (c *sendSumologicConfig) Validate() error {
 	return nil
 }
 
-type sendSumologic struct {
-	conf sendSumologicConfig
-
-	// client is safe for concurrent use.
-	client  http.HTTP
-	headers []http.Header
-	// buffer is safe for concurrent use.
-	buffer    *aggregate.Aggregate
-	bufferCfg aggregate.Config
-}
-
 func newSendSumologic(_ context.Context, cfg config.Config) (*sendSumologic, error) {
 	conf := sendSumologicConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -105,6 +94,16 @@ func newSendSumologic(_ context.Context, cfg config.Config) (*sendSumologic, err
 	tf.buffer = buffer
 
 	return &tf, nil
+}
+
+type sendSumologic struct {
+	conf sendSumologicConfig
+
+	// client is safe for concurrent use.
+	client  http.HTTP
+	headers []http.Header
+	// buffer is safe for concurrent use.
+	buffer *aggregate.Aggregate
 }
 
 func (tf *sendSumologic) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

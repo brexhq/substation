@@ -9,13 +9,6 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-// timeToStr is a transform that converts a Unix timestamp to a
-// pattern-based string format.
-type timeToStr struct {
-	conf     timePatternConfig
-	isObject bool
-}
-
 func newTimeToStr(_ context.Context, cfg config.Config) (*timeToStr, error) {
 	conf := timePatternConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -32,6 +25,13 @@ func newTimeToStr(_ context.Context, cfg config.Config) (*timeToStr, error) {
 	}
 
 	return &tf, nil
+}
+
+// timeToStr is a transform that converts a Unix timestamp to a
+// pattern-based string format.
+type timeToStr struct {
+	conf     timePatternConfig
+	isObject bool
 }
 
 func (tf *timeToStr) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

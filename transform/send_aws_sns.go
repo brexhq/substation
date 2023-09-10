@@ -44,16 +44,6 @@ func (c *sendAWSSNSConfig) Validate() error {
 	return nil
 }
 
-type sendAWSSNS struct {
-	conf sendAWSSNSConfig
-
-	// client is safe for concurrent use.
-	client sns.API
-	// buffer is safe for concurrent use.
-	buffer    *aggregate.Aggregate
-	bufferKey string
-}
-
 func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 	conf := sendAWSSNSConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -89,6 +79,16 @@ func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 	tf.buffer = agg
 
 	return &tf, nil
+}
+
+type sendAWSSNS struct {
+	conf sendAWSSNSConfig
+
+	// client is safe for concurrent use.
+	client sns.API
+	// buffer is safe for concurrent use.
+	buffer    *aggregate.Aggregate
+	bufferKey string
 }
 
 func (tf *sendAWSSNS) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

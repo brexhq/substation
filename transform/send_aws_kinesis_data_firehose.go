@@ -44,16 +44,6 @@ func (c *sendAWSKinesisDataFirehoseConfig) Validate() error {
 	return nil
 }
 
-type sendAWSKinesisDataFirehose struct {
-	conf sendAWSKinesisDataFirehoseConfig
-
-	// client is safe for concurrent use.
-	client firehose.API
-	// buffer is safe for concurrent use.
-	buffer    *aggregate.Aggregate
-	bufferKey string
-}
-
 func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendAWSKinesisDataFirehose, error) {
 	conf := sendAWSKinesisDataFirehoseConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -90,6 +80,16 @@ func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendA
 	})
 
 	return &tf, nil
+}
+
+type sendAWSKinesisDataFirehose struct {
+	conf sendAWSKinesisDataFirehoseConfig
+
+	// client is safe for concurrent use.
+	client firehose.API
+	// buffer is safe for concurrent use.
+	buffer    *aggregate.Aggregate
+	bufferKey string
 }
 
 func (tf *sendAWSKinesisDataFirehose) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

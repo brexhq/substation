@@ -45,13 +45,6 @@ func (c *sendHTTPConfig) Validate() error {
 	return nil
 }
 
-type sendHTTP struct {
-	conf sendHTTPConfig
-
-	// client is safe for concurrent use.
-	client http.HTTP
-}
-
 func newSendHTTP(_ context.Context, cfg config.Config) (*sendHTTP, error) {
 	conf := sendHTTPConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -72,6 +65,13 @@ func newSendHTTP(_ context.Context, cfg config.Config) (*sendHTTP, error) {
 	}
 
 	return &tf, nil
+}
+
+type sendHTTP struct {
+	conf sendHTTPConfig
+
+	// client is safe for concurrent use.
+	client http.HTTP
 }
 
 func (tf *sendHTTP) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

@@ -9,13 +9,6 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-// timeFromStr is a transform that converts a pattern-based string
-// format to a UnixMilli timestamp.
-type timeFromStr struct {
-	conf     timePatternConfig
-	isObject bool
-}
-
 func newTimeFromStr(_ context.Context, cfg config.Config) (*timeFromStr, error) {
 	conf := timePatternConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -32,6 +25,13 @@ func newTimeFromStr(_ context.Context, cfg config.Config) (*timeFromStr, error) 
 	}
 
 	return &tf, nil
+}
+
+// timeFromStr is a transform that converts a pattern-based string
+// format to a UnixMilli timestamp.
+type timeFromStr struct {
+	conf     timePatternConfig
+	isObject bool
 }
 
 func (tf *timeFromStr) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

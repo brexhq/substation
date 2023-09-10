@@ -45,13 +45,6 @@ func (c *sendAWSDynamoDBConfig) Validate() error {
 	return nil
 }
 
-type sendAWSDynamoDB struct {
-	conf sendAWSDynamoDBConfig
-
-	// client is safe for concurrent use.
-	client dynamodb.API
-}
-
 func newSendAWSDynamoDB(_ context.Context, cfg config.Config) (*sendAWSDynamoDB, error) {
 	conf := sendAWSDynamoDBConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -73,6 +66,13 @@ func newSendAWSDynamoDB(_ context.Context, cfg config.Config) (*sendAWSDynamoDB,
 	})
 
 	return &tf, nil
+}
+
+type sendAWSDynamoDB struct {
+	conf sendAWSDynamoDBConfig
+
+	// client is safe for concurrent use.
+	client dynamodb.API
 }
 
 func (tf *sendAWSDynamoDB) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

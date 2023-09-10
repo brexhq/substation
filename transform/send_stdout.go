@@ -16,10 +16,6 @@ func (c *sendStdoutConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-type sendStdout struct {
-	conf sendStdoutConfig
-}
-
 func newSendStdout(_ context.Context, cfg config.Config) (*sendStdout, error) {
 	conf := sendStdoutConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -31,6 +27,10 @@ func newSendStdout(_ context.Context, cfg config.Config) (*sendStdout, error) {
 	}
 
 	return &tf, nil
+}
+
+type sendStdout struct {
+	conf sendStdoutConfig
 }
 
 func (*sendStdout) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

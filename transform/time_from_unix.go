@@ -10,13 +10,6 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-// TimeFromUnix is a transform that converts a UnixMilli timestamp to a
-// Unix timestamp.
-type timeFromUnix struct {
-	conf     timeUnixConfig
-	isObject bool
-}
-
 func newTimeFromUnix(_ context.Context, cfg config.Config) (*timeFromUnix, error) {
 	conf := timeUnixConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -33,6 +26,13 @@ func newTimeFromUnix(_ context.Context, cfg config.Config) (*timeFromUnix, error
 	}
 
 	return &tf, nil
+}
+
+// TimeFromUnix is a transform that converts a UnixMilli timestamp to a
+// Unix timestamp.
+type timeFromUnix struct {
+	conf     timeUnixConfig
+	isObject bool
 }
 
 func (tf *timeFromUnix) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

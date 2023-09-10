@@ -18,10 +18,6 @@ func (c *utilErrConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-type utilityError struct {
-	conf utilErrConfig
-}
-
 func newUtilityError(_ context.Context, cfg config.Config) (*utilityError, error) {
 	conf := utilErrConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -33,6 +29,10 @@ func newUtilityError(_ context.Context, cfg config.Config) (*utilityError, error
 	}
 
 	return &tf, nil
+}
+
+type utilityError struct {
+	conf utilErrConfig
 }
 
 func (tf *utilityError) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {

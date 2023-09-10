@@ -10,11 +10,6 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type hashMD5 struct {
-	conf     hashConfig
-	isObject bool
-}
-
 func newHashMD5(_ context.Context, cfg config.Config) (*hashMD5, error) {
 	conf := hashConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -31,6 +26,11 @@ func newHashMD5(_ context.Context, cfg config.Config) (*hashMD5, error) {
 	}
 
 	return &tf, nil
+}
+
+type hashMD5 struct {
+	conf     hashConfig
+	isObject bool
 }
 
 func (tf *hashMD5) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

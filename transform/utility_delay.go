@@ -28,12 +28,6 @@ func (c *utilityDelayConfig) Validate() error {
 	return nil
 }
 
-type utilityDelay struct {
-	conf utilityDelayConfig
-
-	dur time.Duration
-}
-
 func newUtilityDelay(_ context.Context, cfg config.Config) (*utilityDelay, error) {
 	conf := utilityDelayConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -55,6 +49,12 @@ func newUtilityDelay(_ context.Context, cfg config.Config) (*utilityDelay, error
 	}
 
 	return &tf, nil
+}
+
+type utilityDelay struct {
+	conf utilityDelayConfig
+
+	dur time.Duration
 }
 
 func (tf *utilityDelay) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {

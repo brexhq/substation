@@ -16,10 +16,6 @@ func (c *utilityDropConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-type utilityDrop struct {
-	conf utilityDropConfig
-}
-
 func newUtilityDrop(_ context.Context, cfg config.Config) (*utilityDrop, error) {
 	conf := utilityDropConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
@@ -31,6 +27,10 @@ func newUtilityDrop(_ context.Context, cfg config.Config) (*utilityDrop, error) 
 	}
 
 	return &tf, nil
+}
+
+type utilityDrop struct {
+	conf utilityDropConfig
 }
 
 func (tf *utilityDrop) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

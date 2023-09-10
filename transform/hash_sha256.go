@@ -10,11 +10,6 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type hashSHA256 struct {
-	conf     hashConfig
-	isObject bool
-}
-
 func newHashSHA256(_ context.Context, cfg config.Config) (*hashSHA256, error) {
 	conf := hashConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -31,6 +26,11 @@ func newHashSHA256(_ context.Context, cfg config.Config) (*hashSHA256, error) {
 	}
 
 	return &tf, nil
+}
+
+type hashSHA256 struct {
+	conf     hashConfig
+	isObject bool
 }
 
 func (tf *hashSHA256) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {

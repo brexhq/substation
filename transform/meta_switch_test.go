@@ -10,8 +10,6 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &metaSwitch{}
-
 var metaSwitchTests = []struct {
 	name     string
 	cfg      config.Config
@@ -43,7 +41,7 @@ var metaSwitchTests = []struct {
 							},
 						},
 						Transform: config.Config{
-							Type: "mod_copy",
+							Type: "object_copy",
 							Settings: map[string]interface{}{
 								"object": map[string]interface{}{
 									"key":     "a",
@@ -87,7 +85,7 @@ var metaSwitchTests = []struct {
 							},
 						},
 						Transform: config.Config{
-							Type: "mod_copy",
+							Type: "object_copy",
 							Settings: map[string]interface{}{
 								"object": map[string]interface{}{
 									"key":     "a",
@@ -99,7 +97,7 @@ var metaSwitchTests = []struct {
 					{
 						Condition: condition.Config{},
 						Transform: config.Config{
-							Type: "mod_copy",
+							Type: "object_copy",
 							Settings: map[string]interface{}{
 								"object": map[string]interface{}{
 									"key":     "a",
@@ -141,7 +139,7 @@ var metaSwitchTests = []struct {
 							},
 						},
 						Transform: config.Config{
-							Type: "mod_copy",
+							Type: "object_copy",
 							Settings: map[string]interface{}{
 								"object": map[string]interface{}{
 									"key":     "a",
@@ -165,7 +163,7 @@ var metaSwitchTests = []struct {
 							},
 						},
 						Transform: config.Config{
-							Type: "mod_copy",
+							Type: "object_copy",
 							Settings: map[string]interface{}{
 								"key":     "a",
 								"set_key": "d",

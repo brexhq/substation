@@ -2,12 +2,13 @@ package transform
 
 import (
 	"context"
-	gojson "encoding/json"
+	"encoding/json"
 	"fmt"
 	"plugin"
 
 	"github.com/brexhq/substation/config"
 	iconfig "github.com/brexhq/substation/internal/config"
+	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/message"
 )
 
@@ -18,6 +19,18 @@ type metaPluginConfig struct {
 	Settings map[string]interface{} `json:"settings"`
 }
 
+func (c *metaPluginConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
+}
+
+func (c *metaPluginConfig) Validate() error {
+	if c.Plugin == "" {
+		return fmt.Errorf("plugin: %v", errors.ErrMissingRequiredOption)
+	}
+
+	return nil
+}
+
 type metaPlugin struct {
 	conf metaPluginConfig
 
@@ -26,7 +39,11 @@ type metaPlugin struct {
 
 func newMetaPlugin(_ context.Context, cfg config.Config) (*metaPlugin, error) {
 	conf := metaPluginConfig{}
-	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+	if err := conf.Decode(cfg.Settings); err != nil {
+		return nil, fmt.Errorf("transform: new_meta_plugin: %v", err)
+	}
+
+	if err := conf.Validate(); err != nil {
 		return nil, fmt.Errorf("transform: new_meta_plugin: %v", err)
 	}
 
@@ -57,15 +74,6 @@ func newMetaPlugin(_ context.Context, cfg config.Config) (*metaPlugin, error) {
 	return &meta, nil
 }
 
-func (meta *metaPlugin) String() string {
-	b, _ := gojson.Marshal(meta.conf)
-	return string(b)
-}
-
-func (meta *metaPlugin) Close(ctx context.Context) error {
-	return meta.tf.Close(ctx)
-}
-
 func (meta *metaPlugin) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	msgs, err := meta.tf.Transform(ctx, msg)
 	if err != nil {
@@ -73,4 +81,13 @@ func (meta *metaPlugin) Transform(ctx context.Context, msg *message.Message) ([]
 	}
 
 	return msgs, nil
+}
+
+func (meta *metaPlugin) String() string {
+	b, _ := json.Marshal(meta.conf)
+	return string(b)
+}
+
+func (meta *metaPlugin) Close(ctx context.Context) error {
+	return meta.tf.Close(ctx)
 }

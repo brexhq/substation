@@ -9,14 +9,11 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &metaForEach{}
-
 var metaForEachTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
-	err      error
 }{
 	{
 		"meta_pipeline",
@@ -31,16 +28,10 @@ var metaForEachTests = []struct {
 					Settings: map[string]interface{}{
 						"transforms": []config.Config{
 							{
-								Type: "mod_base64",
-								Settings: map[string]interface{}{
-									"direction": "from",
-								},
+								Type: "format_from_base64",
 							},
 							{
-								Type: "mod_gzip",
-								Settings: map[string]interface{}{
-									"direction": "from",
-								},
+								Type: "compress_from_gzip",
 							},
 						},
 					},
@@ -51,10 +42,9 @@ var metaForEachTests = []struct {
 		[][]byte{
 			[]byte(`{"a":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA","H4sIAI/bzmIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="],"b":["foo","bar"]}`),
 		},
-		nil,
 	},
 	{
-		"mod_base64",
+		"format_from_base64",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -62,10 +52,7 @@ var metaForEachTests = []struct {
 					"set_key": "decoded",
 				},
 				"transform": config.Config{
-					Type: "mod_base64",
-					Settings: map[string]interface{}{
-						"direction": "from",
-					},
+					Type: "format_from_base64",
 				},
 			},
 		},
@@ -73,10 +60,9 @@ var metaForEachTests = []struct {
 		[][]byte{
 			[]byte(`{"secrets":["ZHJpbms=","eW91cg==","b3ZhbHRpbmU="],"decoded":["drink","your","ovaltine"]}`),
 		},
-		nil,
 	},
 	{
-		"mod_capture",
+		"string_pattern_find",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -84,10 +70,9 @@ var metaForEachTests = []struct {
 					"set_key": "user_name",
 				},
 				"transform": config.Config{
-					Type: "mod_capture",
+					Type: "string_pattern_find",
 					Settings: map[string]interface{}{
 						"expression": "^([^@]*)@.*$",
-						"type":       "find",
 					},
 				},
 			},
@@ -96,10 +81,9 @@ var metaForEachTests = []struct {
 		[][]byte{
 			[]byte(`{"user_email":["john.d@example.com","jane.d@example.com"],"user_name":["john.d","jane.d"]}`),
 		},
-		nil,
 	},
 	{
-		"mod_case",
+		"string_to_lower",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -107,10 +91,7 @@ var metaForEachTests = []struct {
 					"set_key": "downcase",
 				},
 				"transform": config.Config{
-					Type: "mod_case",
-					Settings: map[string]interface{}{
-						"type": "downcase",
-					},
+					Type: "string_to_lower",
 				},
 			},
 		},
@@ -118,10 +99,9 @@ var metaForEachTests = []struct {
 		[][]byte{
 			[]byte(`{"upcase":["ABC","DEF"],"downcase":["abc","def"]}`),
 		},
-		nil,
 	},
 	{
-		"mod_domain",
+		"network_fqdn_subdomain",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -129,10 +109,7 @@ var metaForEachTests = []struct {
 					"set_key": "subdomain",
 				},
 				"transform": config.Config{
-					Type: "mod_domain",
-					Settings: map[string]interface{}{
-						"type": "subdomain",
-					},
+					Type: "network_fqdn_subdomain",
 				},
 			},
 		},
@@ -140,10 +117,9 @@ var metaForEachTests = []struct {
 		[][]byte{
 			[]byte(`{"domain":["www.example.com","mail.example.top"],"subdomain":["www","mail"]}`),
 		},
-		nil,
 	},
 	{
-		"mod_hash",
+		"hash_sha256",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -151,10 +127,7 @@ var metaForEachTests = []struct {
 					"set_key": "b",
 				},
 				"transform": config.Config{
-					Type: "mod_hash",
-					Settings: map[string]interface{}{
-						"algorithm": "SHA256",
-					},
+					Type: "hash_sha256",
 				},
 			},
 		},
@@ -162,10 +135,9 @@ var metaForEachTests = []struct {
 		[][]byte{
 			[]byte(`{"a":["foo","bar","baz"],"b":["2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae","fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9","baa5a0964d3320fbc0c6a922140453c8513ea24ab8fd0577034804a967248096"]}`),
 		},
-		nil,
 	},
 	{
-		"mod_insert",
+		"object_insert",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -173,7 +145,7 @@ var metaForEachTests = []struct {
 					"set_key": "b",
 				},
 				"transform": config.Config{
-					Type: "mod_insert",
+					Type: "object_insert",
 					Settings: map[string]interface{}{
 						"object": map[string]interface{}{
 							"set_key": "baz",
@@ -187,10 +159,9 @@ var metaForEachTests = []struct {
 		[][]byte{
 			[]byte(`{"a":[{"foo":"bar"},{"baz":"quux"}],"b":[{"baz":"qux","foo":"bar"},{"baz":"qux"}]}`),
 		},
-		nil,
 	},
 	{
-		"mod_replace",
+		"string_replace",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -198,7 +169,7 @@ var metaForEachTests = []struct {
 					"set_key": "b",
 				},
 				"transform": config.Config{
-					Type: "mod_replace",
+					Type: "string_replace",
 					Settings: map[string]interface{}{
 						"old": "r",
 						"new": "z",
@@ -210,10 +181,9 @@ var metaForEachTests = []struct {
 		[][]byte{
 			[]byte(`{"a":["bar","bard"],"b":["baz","bazd"]}`),
 		},
-		nil,
 	},
 	{
-		"mod_time",
+		"time_from_str",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -221,19 +191,17 @@ var metaForEachTests = []struct {
 					"set_key": "b",
 				},
 				"transform": config.Config{
-					Type: "mod_time",
+					Type: "time_from_str",
 					Settings: map[string]interface{}{
-						"format":     "2006-01-02T15:04:05Z",
-						"set_format": "2006-01-02T15:04:05.000000Z",
+						"format": "2006-01-02T15:04:05Z",
 					},
 				},
 			},
 		},
 		[]byte(`{"a":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"]}`),
 		[][]byte{
-			[]byte(`{"a":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"],"b":["2021-03-06T00:02:57.000000Z","2021-03-06T00:03:57.000000Z","2021-03-06T00:04:57.000000Z"]}`),
+			[]byte(`{"a":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"],"b":["1614988977000","1614989037000","1614989097000"]}`),
 		},
-		nil,
 	},
 }
 

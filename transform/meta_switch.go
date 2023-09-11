@@ -2,7 +2,7 @@ package transform
 
 import (
 	"context"
-	gojson "encoding/json"
+	"encoding/json"
 	"fmt"
 
 	"github.com/brexhq/substation/condition"
@@ -19,24 +19,26 @@ type metaSwitchConfig struct {
 	} `json:"switch"`
 }
 
-type metaSwitch struct {
-	conf metaSwitchConfig
+func (c *metaSwitchConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
+}
 
-	conditional []struct {
-		op condition.Operator
-		tf Transformer
+func (c *metaSwitchConfig) Validate() error {
+	if len(c.Switch) == 0 {
+		return fmt.Errorf("switch: %v", errors.ErrMissingRequiredOption)
 	}
+
+	return nil
 }
 
 func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) {
 	conf := metaSwitchConfig{}
-	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
+	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_meta_switch: %v", err)
 	}
 
-	// Validate required options.
-	if len(conf.Switch) == 0 {
-		return nil, fmt.Errorf("transform: new_meta_switch: switch: %v", errors.ErrMissingRequiredOption)
+	if err := conf.Validate(); err != nil {
+		return nil, fmt.Errorf("transform: new_meta_switch: %v", err)
 	}
 
 	var conditional []struct {
@@ -63,25 +65,24 @@ func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) 
 		})
 	}
 
-	meta := metaSwitch{
+	tf := metaSwitch{
 		conf:        conf,
 		conditional: conditional,
 	}
 
-	return &meta, nil
+	return &tf, nil
 }
 
-func (meta *metaSwitch) String() string {
-	b, _ := gojson.Marshal(meta.conf)
-	return string(b)
-}
+type metaSwitch struct {
+	conf metaSwitchConfig
 
-func (*metaSwitch) Close(context.Context) error {
-	return nil
+	conditional []struct {
+		op condition.Operator
+		tf Transformer
+	}
 }
 
 func (meta *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// Skip interrupt messages.
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -106,4 +107,13 @@ func (meta *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]
 
 	// If no conditions match, then return the original message.
 	return []*message.Message{msg}, nil
+}
+
+func (meta *metaSwitch) String() string {
+	b, _ := json.Marshal(meta.conf)
+	return string(b)
+}
+
+func (*metaSwitch) Close(context.Context) error {
+	return nil
 }

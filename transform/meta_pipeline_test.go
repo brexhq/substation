@@ -9,14 +9,11 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &metaPipeline{}
-
 var metaPipelineTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
-	err      error
 }{
 	{
 		"object",
@@ -28,16 +25,12 @@ var metaPipelineTests = []struct {
 				},
 				"transforms": []config.Config{
 					{
-						Type: "mod_base64",
-						Settings: map[string]interface{}{
-							"direction": "from",
-						},
+						Type:     "format_from_base64",
+						Settings: map[string]interface{}{},
 					},
 					{
-						Type: "mod_gzip",
-						Settings: map[string]interface{}{
-							"direction": "from",
-						},
+						Type:     "compress_from_gzip",
+						Settings: map[string]interface{}{},
 					},
 				},
 			},
@@ -46,7 +39,6 @@ var metaPipelineTests = []struct {
 		[][]byte{
 			[]byte(`{"a":"foo"}`),
 		},
-		nil,
 	},
 	{
 		"data",
@@ -54,16 +46,12 @@ var metaPipelineTests = []struct {
 			Settings: map[string]interface{}{
 				"transforms": []config.Config{
 					{
-						Type: "mod_base64",
-						Settings: map[string]interface{}{
-							"direction": "from",
-						},
+						Type:     "format_from_base64",
+						Settings: map[string]interface{}{},
 					},
 					{
-						Type: "mod_gzip",
-						Settings: map[string]interface{}{
-							"direction": "from",
-						},
+						Type:     "compress_from_gzip",
+						Settings: map[string]interface{}{},
 					},
 				},
 			},
@@ -72,7 +60,6 @@ var metaPipelineTests = []struct {
 		[][]byte{
 			[]byte(`foo`),
 		},
-		nil,
 	},
 }
 

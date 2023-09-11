@@ -132,7 +132,3 @@ func (tf *sendAWSSQS) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*sendAWSSQS) Close(context.Context) error {
-	return nil
-}

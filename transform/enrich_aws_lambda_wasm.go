@@ -21,10 +21,6 @@ func (*enrichAWSLambda) String() string {
 	return ""
 }
 
-func (*enrichAWSLambda) Close(context.Context) error {
-	return nil
-}
-
 func (*enrichAWSLambda) Transform(context.Context, *message.Message) ([]*message.Message, error) {
 	return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", syscall.ENOSYS)
 }

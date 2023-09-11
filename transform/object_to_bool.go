@@ -57,10 +57,6 @@ func (tf *objectToBool) String() string {
 	return string(b)
 }
 
-func (*objectToBool) Close(context.Context) error {
-	return nil
-}
-
 func (tf *objectToBool) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil

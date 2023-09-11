@@ -64,7 +64,3 @@ func (tf *objectDelete) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*objectDelete) Close(context.Context) error {
-	return nil
-}

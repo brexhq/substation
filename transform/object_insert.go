@@ -2,7 +2,7 @@ package transform
 
 import (
 	"context"
-	gojson "encoding/json"
+	"encoding/json"
 	"fmt"
 
 	"github.com/brexhq/substation/config"
@@ -68,10 +68,6 @@ func (tf *objectInsert) Transform(ctx context.Context, msg *message.Message) ([]
 }
 
 func (tf *objectInsert) String() string {
-	b, _ := gojson.Marshal(tf.conf)
+	b, _ := json.Marshal(tf.conf)
 	return string(b)
-}
-
-func (*objectInsert) Close(context.Context) error {
-	return nil
 }

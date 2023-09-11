@@ -81,7 +81,3 @@ func (tf *formatFromPrettyPrint) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*formatFromPrettyPrint) Close(context.Context) error {
-	return nil
-}

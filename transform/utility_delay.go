@@ -2,7 +2,7 @@ package transform
 
 import (
 	"context"
-	gojson "encoding/json"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -67,10 +67,6 @@ func (tf *utilityDelay) Transform(_ context.Context, msg *message.Message) ([]*m
 }
 
 func (tf *utilityDelay) String() string {
-	b, _ := gojson.Marshal(tf.conf)
+	b, _ := json.Marshal(tf.conf)
 	return string(b)
-}
-
-func (*utilityDelay) Close(context.Context) error {
-	return nil
 }

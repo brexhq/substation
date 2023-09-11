@@ -61,7 +61,3 @@ func (tf *networkFQDNTLD) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*networkFQDNTLD) Close(context.Context) error {
-	return nil
-}

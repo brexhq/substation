@@ -87,7 +87,3 @@ func (meta *metaPlugin) String() string {
 	b, _ := json.Marshal(meta.conf)
 	return string(b)
 }
-
-func (meta *metaPlugin) Close(ctx context.Context) error {
-	return meta.tf.Close(ctx)
-}

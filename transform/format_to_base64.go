@@ -59,7 +59,3 @@ func (tf *formatToBase64) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*formatToBase64) Close(context.Context) error {
-	return nil
-}

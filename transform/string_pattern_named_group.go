@@ -121,7 +121,3 @@ func (tf *stringPatternNamedGroup) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*stringPatternNamedGroup) Close(context.Context) error {
-	return nil
-}

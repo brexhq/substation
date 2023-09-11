@@ -3,7 +3,6 @@ package transform
 import (
 	"context"
 	"encoding/json"
-	gojson "encoding/json"
 	"fmt"
 
 	"github.com/brexhq/substation/config"
@@ -107,10 +106,6 @@ func (tf *externalJQ) Transform(ctx context.Context, msg *message.Message) ([]*m
 }
 
 func (tf *externalJQ) String() string {
-	b, _ := gojson.Marshal(tf.conf)
+	b, _ := json.Marshal(tf.conf)
 	return string(b)
-}
-
-func (*externalJQ) Close(context.Context) error {
-	return nil
 }

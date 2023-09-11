@@ -21,10 +21,6 @@ func (*enrichAWSDynamoDB) String() string {
 	return ""
 }
 
-func (*enrichAWSDynamoDB) Close(context.Context) error {
-	return nil
-}
-
 func (*enrichAWSDynamoDB) Transform(context.Context, *message.Message) ([]*message.Message, error) {
 	return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", syscall.ENOSYS)
 }

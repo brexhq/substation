@@ -121,7 +121,3 @@ func (meta *metaPipeline) String() string {
 	b, _ := json.Marshal(meta.conf)
 	return string(b)
 }
-
-func (*metaPipeline) Close(context.Context) error {
-	return nil
-}

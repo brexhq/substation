@@ -21,10 +21,6 @@ func (*enrichKVStoreGet) String() string {
 	return ""
 }
 
-func (*enrichKVStoreGet) Close(context.Context) error {
-	return nil
-}
-
 func (*enrichKVStoreGet) Transform(context.Context, *message.Message) ([]*message.Message, error) {
 	return nil, fmt.Errorf("transform: enrich_kv_store: %v", syscall.ENOSYS)
 }
@@ -37,10 +33,6 @@ type enrichKVStoreSet struct{}
 
 func (*enrichKVStoreSet) String() string {
 	return ""
-}
-
-func (*enrichKVStoreSet) Close(context.Context) error {
-	return nil
 }
 
 func (*enrichKVStoreSet) Transform(context.Context, *message.Message) ([]*message.Message, error) {

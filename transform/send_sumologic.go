@@ -181,7 +181,3 @@ func (tf *sendSumologic) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*sendSumologic) Close(context.Context) error {
-	return nil
-}

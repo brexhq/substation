@@ -107,7 +107,3 @@ func (tf *stringReplace) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*stringReplace) Close(context.Context) error {
-	return nil
-}

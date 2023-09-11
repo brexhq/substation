@@ -61,7 +61,3 @@ func (tf *hashSHA256) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*hashSHA256) Close(context.Context) error {
-	return nil
-}

@@ -73,10 +73,6 @@ func (tf *networkFQDNSubdomain) String() string {
 	return string(b)
 }
 
-func (*networkFQDNSubdomain) Close(context.Context) error {
-	return nil
-}
-
 func fmtParseSubdomain(s string) (string, error) {
 	domain, err := publicsuffix.EffectiveTLDPlusOne(s)
 	if err != nil {

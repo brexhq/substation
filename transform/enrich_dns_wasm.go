@@ -21,10 +21,6 @@ func (*enrichDNSFwdLookup) String() string {
 	return ""
 }
 
-func (*enrichDNSFwdLookup) Close(context.Context) error {
-	return nil
-}
-
 func (*enrichDNSFwdLookup) Transform(context.Context, *message.Message) ([]*message.Message, error) {
 	return nil, fmt.Errorf("transform: enrich_dns: %v", syscall.ENOSYS)
 }
@@ -39,10 +35,6 @@ func (*enrichDNSRevLookup) String() string {
 	return ""
 }
 
-func (*enrichDNSRevLookup) Close(context.Context) error {
-	return nil
-}
-
 func (*enrichDNSRevLookup) Transform(context.Context, *message.Message) ([]*message.Message, error) {
 	return nil, fmt.Errorf("transform: enrich_dns: %v", syscall.ENOSYS)
 }
@@ -55,10 +47,6 @@ func newEnrichDNSTxtLookup(context.Context, config.Config) (*enrichDNS, error) {
 
 func (*enrichDNSTxtLookup) String() string {
 	return ""
-}
-
-func (*enrichDNSTxtLookup) Close(context.Context) error {
-	return nil
 }
 
 func (*enrichDNSTxtLookup) Transform(context.Context, *message.Message) ([]*message.Message, error) {

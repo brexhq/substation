@@ -59,7 +59,3 @@ func (tf *stringToSnake) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*stringToSnake) Close(context.Context) error {
-	return nil
-}

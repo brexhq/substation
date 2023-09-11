@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 var transformTests = []struct {
@@ -16,39 +16,40 @@ var transformTests = []struct {
 	expected [][]byte
 }{
 	{
-		"copy",
+		"object_copy",
 		config.Config{
-			Type: "proc_copy",
+			Type: "object_copy",
 			Settings: map[string]interface{}{
-				"set_key": "foo",
+				"object": map[string]interface{}{
+					"set_key": "a",
+				},
 			},
 		},
-		[]byte(`bar`),
+		[]byte(`b`),
 		[][]byte{
-			[]byte(`{"foo":"bar"}`),
+			[]byte(`{"a":"b"}`),
 		},
 	},
 	{
-		"insert",
+		"object_insert",
 		config.Config{
-			Type: "proc_insert",
+			Type: "object_insert",
 			Settings: map[string]interface{}{
-				"set_key": "foo",
-				"value":   "bar",
+				"object": map[string]interface{}{
+					"set_key": "c",
+				},
+				"value": "d",
 			},
 		},
-		[]byte(`{"hello":"world"}`),
+		[]byte(`{"a":"b"}`),
 		[][]byte{
-			[]byte(`{"hello":"world","foo":"bar"}`),
+			[]byte(`{"a":"b","c":"d"}`),
 		},
 	},
 	{
-		"gzip",
+		"compress_from_gzip",
 		config.Config{
-			Type: "proc_gzip",
-			Settings: map[string]interface{}{
-				"direction": "from",
-			},
+			Type: "compress_from_gzip",
 		},
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 170, 86, 202, 72, 205, 201, 201, 87, 178, 82, 74, 207, 207, 79, 73, 170, 76, 85, 170, 5, 4, 0, 0, 255, 255, 214, 182, 196, 150, 19, 0, 0, 0},
 		[][]byte{
@@ -56,12 +57,9 @@ var transformTests = []struct {
 		},
 	},
 	{
-		"base64",
+		"format_from_base64",
 		config.Config{
-			Type: "proc_base64",
-			Settings: map[string]interface{}{
-				"direction": "from",
-			},
+			Type: "format_from_base64",
 		},
 		[]byte(`eyJoZWxsbyI6IndvcmxkIn0=`),
 		[][]byte{
@@ -69,50 +67,16 @@ var transformTests = []struct {
 		},
 	},
 	{
-		"split",
+		"time_to_str",
 		config.Config{
-			Type: "proc_split",
+			Type: "time_to_str",
 			Settings: map[string]interface{}{
-				"key":       "foo",
-				"set_key":   "foo",
-				"separator": ".",
+				"format": "2006-01-02T15:04:05.000000Z",
 			},
 		},
-		[]byte(`{"foo":"bar.baz"}`),
+		[]byte(`1639877490000`),
 		[][]byte{
-			[]byte(`{"foo":["bar","baz"]}`),
-		},
-	},
-	{
-		"pretty_print",
-		config.Config{
-			Type: "proc_pretty_print",
-			Settings: map[string]interface{}{
-				"direction": "to",
-			},
-		},
-		[]byte(`{"foo":"bar"}`),
-		[][]byte{
-			[]byte(`{
-  "foo": "bar"
-}
-`),
-		},
-	},
-	{
-		"time",
-		config.Config{
-			Type: "proc_time",
-			Settings: map[string]interface{}{
-				"key":        "foo",
-				"set_key":    "foo",
-				"format":     "unix",
-				"set_format": "2006-01-02T15:04:05.000000Z",
-			},
-		},
-		[]byte(`{"foo":1639877490}`),
-		[][]byte{
-			[]byte(`{"foo":"2021-12-19T01:31:30.000000Z"}`),
+			[]byte(`2021-12-19T01:31:30.000000Z`),
 		},
 	},
 }
@@ -121,19 +85,13 @@ func TestTransform(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range transformTests {
 		t.Run(test.name, func(t *testing.T) {
-			message, err := mess.New(
-				mess.SetData(test.test),
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			tf, err := New(ctx, test.conf)
 			if err != nil {
 				t.Error(err)
 			}
 
-			result, err := tf.Transform(ctx, message)
+			msg := message.New().SetData(test.test)
+			result, err := tf.Transform(ctx, msg)
 			if err != nil {
 				t.Error(err)
 			}

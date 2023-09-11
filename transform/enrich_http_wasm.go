@@ -25,10 +25,6 @@ func (*enrichHTTPGet) String() string {
 	return ""
 }
 
-func (*enrichHTTPGet) Close(context.Context) error {
-	return nil
-}
-
 func newEnrichHTTPPost(context.Context, config.Config) (*enrichHTTPPost, error) {
 	return nil, fmt.Errorf("transform: enrich_http: %v", syscall.ENOSYS)
 }
@@ -41,8 +37,4 @@ func (*enrichHTTPPost) Transform(context.Context, *message.Message) ([]*message.
 
 func (*enrichHTTPPost) String() string {
 	return ""
-}
-
-func (*enrichHTTPPost) Close(context.Context) error {
-	return nil
 }

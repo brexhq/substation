@@ -65,7 +65,3 @@ func (tf *objectToInt) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*objectToInt) Close(context.Context) error {
-	return nil
-}

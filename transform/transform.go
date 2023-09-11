@@ -7,92 +7,111 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
-
-// errInvalidDataPattern is returned when a transform is configured
-// with an invalid data access pattern. This is commonly caused by
-// misconfigured object key options.
-var errInvalidDataPattern = fmt.Errorf("invalid data access pattern")
 
 // Transformer is the interface implemented by all transforms and
 // provides the ability to transform data.
 type Transformer interface {
-	Transform(context.Context, *mess.Message) ([]*mess.Message, error)
-	Close(context.Context) error
+	Transform(context.Context, *message.Message) ([]*message.Message, error)
 }
 
 // New returns a configured Transformer.
 func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
-	case "meta_for_each":
-		return newMetaForEach(ctx, cfg)
-	case "meta_pipeline":
-		return newMetaPipeline(ctx, cfg)
-	case "meta_plugin":
-		return newMetaPlugin(ctx, cfg)
-	case "meta_switch":
-		return newMetaSwitch(ctx, cfg)
-	case "proc_aws_dynamodb":
-		return newProcAWSDynamoDB(ctx, cfg)
-	case "proc_aws_lambda":
-		return newProcAWSLambda(ctx, cfg)
-	case "proc_base64":
-		return newProcBase64(ctx, cfg)
-	case "proc_capture":
-		return newProcCapture(ctx, cfg)
-	case "proc_case":
-		return newProcCase(ctx, cfg)
-	case "proc_convert":
-		return newProcConvert(ctx, cfg)
-	case "proc_combine":
-		return newProcCombine(ctx, cfg)
-	case "proc_copy":
-		return newProcCopy(ctx, cfg)
-	case "proc_delete":
-		return newProcDelete(ctx, cfg)
-	case "proc_dns":
-		return newProcDNS(ctx, cfg)
-	case "proc_domain":
-		return newProcDomain(ctx, cfg)
-	case "proc_drop":
-		return newProcDrop(ctx, cfg)
-	case "proc_expand":
-		return newProcExpand(ctx, cfg)
-	case "proc_flatten_array":
-		return newProcFlattenArray(ctx, cfg)
-	case "proc_group":
-		return newProcGroup(ctx, cfg)
-	case "proc_gzip":
-		return newProcGzip(ctx, cfg)
-	case "proc_hash":
-		return newProcHash(ctx, cfg)
-	case "proc_http":
-		return newProcHTTP(ctx, cfg)
-	case "proc_insert":
-		return newProcInsert(ctx, cfg)
-	case "proc_join":
-		return newProcJoin(ctx, cfg)
-	case "proc_jq":
-		return newProcJQ(ctx, cfg)
-	case "proc_kv_store":
-		return newProcKVStore(ctx, cfg)
-	case "proc_math":
-		return newProcMath(ctx, cfg)
-	case "proc_pretty_print":
-		return newProcPrettyPrint(ctx, cfg)
-	case "proc_replace":
-		return newProcReplace(ctx, cfg)
-	case "proc_split":
-		return newProcSplit(ctx, cfg)
-	case "proc_time":
-		return newProcTime(ctx, cfg)
+	// Aggregation transforms.
+	case "aggregate_from_array":
+		return newAggregateFromArray(ctx, cfg)
+	case "aggregate_to_array":
+		return newAggregateToArray(ctx, cfg)
+	case "aggregate_from_str":
+		return newAggregateFromStr(ctx, cfg)
+	case "aggregate_to_str":
+		return newAggregateToStr(ctx, cfg)
+	// Array transforms.
+	case "array_group":
+		return newArrayGroup(ctx, cfg)
+	case "array_join":
+		return newArrayJoin(ctx, cfg)
+	// Compress transforms.
+	case "compress_from_gzip":
+		return newCompressFromGzip(ctx, cfg)
+	case "compress_to_gzip":
+		return newCompressToGzip(ctx, cfg)
+	// Enrichment transforms.
+	case "enrich_aws_dynamodb":
+		return newEnrichAWSDynamoDB(ctx, cfg)
+	case "enrich_aws_lambda":
+		return newEnrichAWSLambda(ctx, cfg)
+	case "enrich_dns_forward_lookup":
+		return newEnrichDNSFwdLookup(ctx, cfg)
+	case "enrich_dns_reverse_lookup":
+		return newEnrichDNSRevLookup(ctx, cfg)
+	case "enrich_dns_text_lookup":
+		return newEnrichDNSTxtLookup(ctx, cfg)
+	case "enrich_http_get":
+		return newEnrichHTTPGet(ctx, cfg)
+	case "enrich_http_post":
+		return newEnrichHTTPPost(ctx, cfg)
+	case "enrich_kv_store_get":
+		return newEnrichKVStoreGet(ctx, cfg)
+	case "enrich_kv_store_set":
+		return newEnrichKVStoreSet(ctx, cfg)
+	// External transforms.
+	case "external_jq":
+		return newExternalJQ(ctx, cfg)
+	// Format transforms.
+	case "format_from_base64":
+		return newFormatFromBase64(ctx, cfg)
+	case "format_to_base64":
+		return newFormatToBase64(ctx, cfg)
+	case "format_from_pretty_print":
+		return newFormatFromPrettyPrint(ctx, cfg)
+	// Hash transforms.
+	case "hash_md5":
+		return newHashMD5(ctx, cfg)
+	case "hash_sha256":
+		return newHashSHA256(ctx, cfg)
+	// Logic transforms.
+	case "logic_num_add":
+		return newLogicNumAdd(ctx, cfg)
+	case "logic_num_divide":
+		return newLogicNumDivide(ctx, cfg)
+	case "logic_num_multiply":
+		return newLogicNumMultiply(ctx, cfg)
+	case "logic_num_subtract":
+		return newLogicNumSubtract(ctx, cfg)
+	// Network transforms.
+	case "network_fqdn_registered_domain":
+		return newNetworkFQDNRegisteredDomain(ctx, cfg)
+	case "network_fqdn_subdomain":
+		return newNetworkFQDNSubdomain(ctx, cfg)
+	case "network_fqdn_tld":
+		return newNetworkFQDNTLD(ctx, cfg)
+	// Object transforms.
+	case "object_copy":
+		return newObjectCopy(ctx, cfg)
+	case "object_delete":
+		return newObjectDelete(ctx, cfg)
+	case "object_insert":
+		return newObjectInsert(ctx, cfg)
+	case "object_to_bool":
+		return newObjectToBool(ctx, cfg)
+	case "object_to_float":
+		return newObjectToFloat(ctx, cfg)
+	case "object_to_int":
+		return newObjectToInt(ctx, cfg)
+	case "object_to_str":
+		return newObjectToStr(ctx, cfg)
+	case "object_to_uint":
+		return newObjectToUint(ctx, cfg)
+	// Send transforms.
 	case "send_aws_dynamodb":
 		return newSendAWSDynamoDB(ctx, cfg)
-	case "send_aws_kinesis":
-		return newSendAWSKinesis(ctx, cfg)
 	case "send_aws_kinesis_firehose":
-		return newSendAWSKinesisFirehose(ctx, cfg)
+		return newSendAWSKinesisDataFirehose(ctx, cfg)
+	case "send_aws_kinesis":
+		return newSendAWSKinesisDataStream(ctx, cfg)
 	case "send_aws_s3":
 		return newSendAWSS3(ctx, cfg)
 	case "send_aws_sns":
@@ -101,27 +120,67 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newSendAWSSQS(ctx, cfg)
 	case "send_file":
 		return newSendFile(ctx, cfg)
-	case "send_stdout":
-		return newSendStdout(ctx, cfg)
 	case "send_http":
 		return newSendHTTP(ctx, cfg)
+	case "send_stdout":
+		return newSendStdout(ctx, cfg)
 	case "send_sumologic":
-		return newSendSumoLogic(ctx, cfg)
-	case "util_delay":
-		return newUtilDelay(ctx, cfg)
-	case "util_err":
-		return newUtilErr(ctx, cfg)
+		return newSendSumologic(ctx, cfg)
+	// String transforms.
+	case "string_pattern_find_all":
+		return newStringPatternFindAll(ctx, cfg)
+	case "string_pattern_find":
+		return newStringPatternFind(ctx, cfg)
+	case "string_pattern_named_group":
+		return newStringPatternNamedGroup(ctx, cfg)
+	case "string_to_lower":
+		return newStringToLower(ctx, cfg)
+	case "string_to_snake":
+		return newStringToSnake(ctx, cfg)
+	case "string_to_upper":
+		return newStringToUpper(ctx, cfg)
+	case "string_replace":
+		return newStringReplace(ctx, cfg)
+	case "string_split":
+		return newStringSplit(ctx, cfg)
+	// Time transforms.
+	case "time_from_str":
+		return newTimeFromStr(ctx, cfg)
+	case "time_from_unix":
+		return newTimeFromUnix(ctx, cfg)
+	case "time_now":
+		return newTimeNow(ctx, cfg)
+	case "time_to_str":
+		return newTimeToStr(ctx, cfg)
+	case "time_to_unix":
+		return newTimeToUnix(ctx, cfg)
+	// Utility transforms.
+	case "utility_delay":
+		return newUtilityDelay(ctx, cfg)
+	case "utility_drop":
+		return newUtilityDrop(ctx, cfg)
+	case "utility_error":
+		return newUtilityError(ctx, cfg)
+	// Meta transforms.
+	case "meta_for_each":
+		return newMetaForEach(ctx, cfg)
+	case "meta_pipeline":
+		return newMetaPipeline(ctx, cfg)
+	case "meta_plugin":
+		return newMetaPlugin(ctx, cfg)
+	case "meta_switch":
+		return newMetaSwitch(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("transform: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
 }
 
-func Apply(ctx context.Context, tf []Transformer, msg ...*mess.Message) ([]*mess.Message, error) {
-	resultMsgs := make([]*mess.Message, len(msg))
-	copy(resultMsgs, msg)
+func Apply(ctx context.Context, tf []Transformer, mess ...*message.Message) ([]*message.Message, error) {
+	resultMsgs := make([]*message.Message, len(mess))
+	copy(resultMsgs, mess)
 
 	for i := 0; len(resultMsgs) > 0 && i < len(tf); i++ {
-		var nextResultMsgs []*mess.Message
+		var nextResultMsgs []*message.Message
 		for _, m := range resultMsgs {
 			rMsgs, err := tf[i].Transform(ctx, m)
 			if err != nil {
@@ -135,4 +194,11 @@ func Apply(ctx context.Context, tf []Transformer, msg ...*mess.Message) ([]*mess
 	}
 
 	return resultMsgs, nil
+}
+
+func bytesToValue(b []byte) message.Value {
+	msg := message.New()
+	msg.SetValue("_", b)
+
+	return msg.GetValue("_")
 }

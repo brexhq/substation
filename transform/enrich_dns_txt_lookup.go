@@ -85,7 +85,3 @@ func (tf *enrichDNSTxtLookup) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*enrichDNSTxtLookup) Close(context.Context) error {
-	return nil
-}

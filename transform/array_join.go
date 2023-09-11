@@ -2,7 +2,7 @@ package transform
 
 import (
 	"context"
-	gojson "encoding/json"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -107,10 +107,6 @@ func (tf *arrayJoin) Transform(ctx context.Context, msg *message.Message) ([]*me
 }
 
 func (tf *arrayJoin) String() string {
-	b, _ := gojson.Marshal(tf.conf)
+	b, _ := json.Marshal(tf.conf)
 	return string(b)
-}
-
-func (*arrayJoin) Close(context.Context) error {
-	return nil
 }

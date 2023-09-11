@@ -132,7 +132,3 @@ func (tf *sendAWSSNS) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*sendAWSSNS) Close(context.Context) error {
-	return nil
-}

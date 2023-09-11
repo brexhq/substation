@@ -84,7 +84,3 @@ func (tf *logicNumSubtract) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*logicNumSubtract) Close(context.Context) error {
-	return nil
-}

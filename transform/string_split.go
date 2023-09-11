@@ -101,7 +101,3 @@ func (tf *stringSplit) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*stringSplit) Close(context.Context) error {
-	return nil
-}

@@ -164,7 +164,3 @@ func (tf *sendAWSKinesisDataStream) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*sendAWSKinesisDataStream) Close(context.Context) error {
-	return nil
-}

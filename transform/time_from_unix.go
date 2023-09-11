@@ -71,7 +71,3 @@ func (tf *timeFromUnix) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*timeFromUnix) Close(context.Context) error {
-	return nil
-}

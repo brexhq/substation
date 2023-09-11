@@ -65,7 +65,3 @@ func (tf *objectToStr) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*objectToStr) Close(context.Context) error {
-	return nil
-}

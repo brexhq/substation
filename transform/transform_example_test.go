@@ -14,10 +14,12 @@ func ExampleTransformer() {
 
 	// Copies the value of key "a" into key "b".
 	cfg := config.Config{
-		Type: "proc_copy",
+		Type: "object_copy",
 		Settings: map[string]interface{}{
-			"key":     "a",
-			"set_key": "b",
+			"object": map[string]interface{}{
+				"key":     "a",
+				"set_key": "b",
+			},
 		},
 	}
 
@@ -28,14 +30,7 @@ func ExampleTransformer() {
 	}
 
 	// Transformer is applied to a message.
-	msg, err := message.New(
-		message.SetData([]byte(`{"a":1}`)),
-	)
-	if err != nil {
-		// handle err
-		panic(err)
-	}
-
+	msg := message.New().SetData([]byte(`{"a":1}`))
 	results, err := tf.Transform(ctx, msg)
 	if err != nil {
 		// handle err

@@ -46,7 +46,3 @@ func (tf *compressFromGzip) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*compressFromGzip) Close(context.Context) error {
-	return nil
-}

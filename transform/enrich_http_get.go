@@ -153,7 +153,3 @@ func (tf *enrichHTTPGet) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*enrichHTTPGet) Close(context.Context) error {
-	return nil
-}

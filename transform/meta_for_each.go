@@ -112,7 +112,3 @@ func (meta *metaForEach) String() string {
 	b, _ := json.Marshal(meta.conf)
 	return string(b)
 }
-
-func (*metaForEach) Close(context.Context) error {
-	return nil
-}

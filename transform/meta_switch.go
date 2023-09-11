@@ -113,7 +113,3 @@ func (meta *metaSwitch) String() string {
 	b, _ := json.Marshal(meta.conf)
 	return string(b)
 }
-
-func (*metaSwitch) Close(context.Context) error {
-	return nil
-}

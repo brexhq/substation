@@ -46,7 +46,3 @@ func (tf *sendStdout) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*sendStdout) Close(context.Context) error {
-	return nil
-}

@@ -154,7 +154,3 @@ func (tf *enrichAWSDynamoDB) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
-
-func (*enrichAWSDynamoDB) Close(context.Context) error {
-	return nil
-}

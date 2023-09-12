@@ -1,22 +1,36 @@
+// package config provides configuration types and functions for Substation.
+//
+// Any non-backwards compatible changes to the configuration types should be
+// accompanied by a version bump and a migration path.
 package config
 
 import (
 	"encoding/json"
 )
 
-// ConfigAWSAuth is used by functions that require AWS authentication.
-type ConfigAWSAuth struct {
+type Object struct {
+	Key    string `json:"key"`
+	SetKey string `json:"set_key"`
+}
+
+type AWS struct {
 	Region     string `json:"region"`
 	AssumeRole string `json:"assume_role"`
 }
 
-// ConfigRequest is used by functions that make requests over a network.
-type ConfigRequest struct {
-	MaxRetries int `json:"max_retries"`
-	// Timeout is the maximum amount of time a request can take. This is
-	// parsed into a duration using the standard library's time.ParseDuration()
-	// function so it supports any valid duration string.
-	Timeout string `json:"timeout"`
+type Request struct {
+	Timeout string `json:"Timeout"`
+}
+
+type Retry struct {
+	Attempts int `json:"attempts"`
+}
+
+type Buffer struct {
+	Count    int    `json:"count"`
+	Size     int    `json:"size"`
+	Interval string `json:"interval"`
+	Key      string `json:"key"`
 }
 
 // Decode marshals and unmarshals an input interface into the output interface

@@ -39,6 +39,11 @@ type kvAWSDynamoDB struct {
 		// about DynamoDB's TTL implementation here: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html.
 		TTL string `json:"ttl"`
 	} `json:"attributes"`
+	// ConsistentRead specifies whether or not to use strongly consistent reads.
+	//
+	// This is optional and defaults to false (eventually consistent reads).
+	ConsistentRead bool `json:"consistent_read"`
+
 	api dynamodb.API
 }
 
@@ -75,7 +80,7 @@ func (store *kvAWSDynamoDB) Get(ctx context.Context, key string) (interface{}, e
 		m[store.Attributes.SortKey] = "substation:kv_store"
 	}
 
-	resp, err := store.api.GetItem(ctx, store.Table, m)
+	resp, err := store.api.GetItem(ctx, store.Table, m, store.ConsistentRead)
 	if err != nil {
 		return "", err
 	}

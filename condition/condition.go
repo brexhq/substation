@@ -7,7 +7,7 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 // errOperatorMissingInspectors is returned when an Operator that requires
@@ -20,30 +20,64 @@ type Config struct {
 }
 
 type inspector interface {
-	Inspect(context.Context, *mess.Message) (bool, error)
+	Inspect(context.Context, *message.Message) (bool, error)
 }
 
 // newInspector returns a configured Inspector from an Inspector configuration.
 func newInspector(ctx context.Context, cfg config.Config) (inspector, error) {
 	switch cfg.Type {
-	case "insp_content":
-		return newInspContent(ctx, cfg)
-	case "insp_ip":
-		return newInspIP(ctx, cfg)
-	case "insp_json_valid":
-		return newInspJSONValid(ctx, cfg)
-	case "insp_length":
-		return newInspLength(ctx, cfg)
-	case "insp_random":
-		return newInspRandom(ctx, cfg)
-	case "insp_regexp":
-		return newInspRegExp(ctx, cfg)
-	case "insp_string":
-		return newInspString(ctx, cfg)
+	// Format inspectors.
+	case "format_content":
+		return newFormatContent(ctx, cfg)
+	case "format_json":
+		return newFormatJSON(ctx, cfg)
+	// Logic inspectors.
+	case "logic_len_less_than":
+		return newLogicLenLessThan(ctx, cfg)
+	case "logic_len_greater_than":
+		return newLogicLenGreaterThan(ctx, cfg)
+	case "logic_len_equal_to":
+		return newLogicLenEqualTo(ctx, cfg)
+	// Meta inspectors.
 	case "meta_condition":
-		return newMetaInspCondition(ctx, cfg)
+		return newMetaCondition(ctx, cfg)
 	case "meta_for_each":
-		return newMetaInspForEach(ctx, cfg)
+		return newMetaForEach(ctx, cfg)
+	case "meta_negate":
+		return newMetaNegate(ctx, cfg)
+	// Network inspectors.
+	case "network_ip_private":
+		return newNetworkIPPrivate(ctx, cfg)
+	case "network_ip_public":
+		return newNetworkIPPublic(ctx, cfg)
+	case "network_ip_loopback":
+		return newNetworkIPLoopback(ctx, cfg)
+	case "network_ip_multicast":
+		return newNetworkIPMulticast(ctx, cfg)
+	case "network_ip_unicast":
+		return newNetworkIPUnicast(ctx, cfg)
+	case "network_ip_unspecified":
+		return newNetworkIPUnspecified(ctx, cfg)
+	case "network_ip_valid":
+		return newNetworkIPValid(ctx, cfg)
+	// String inspectors.
+	case "string_contains":
+		return newStringContains(ctx, cfg)
+	case "string_ends_with":
+		return newStringEndsWith(ctx, cfg)
+	case "string_equal_to":
+		return newStringEqualTo(ctx, cfg)
+	case "string_greater_than":
+		return newStringGreaterThan(ctx, cfg)
+	case "string_less_than":
+		return newStringLessThan(ctx, cfg)
+	case "string_starts_with":
+		return newStringStartsWith(ctx, cfg)
+	case "string_pattern":
+		return newStringPattern(ctx, cfg)
+	// Utility inspectors.
+	case "utility_random":
+		return newUtilityRandom(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("condition: new_inspector: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}
@@ -62,7 +96,7 @@ func newInspectors(ctx context.Context, conf ...config.Config) ([]inspector, err
 }
 
 type Operator interface {
-	Operate(context.Context, *mess.Message) (bool, error)
+	Operate(context.Context, *message.Message) (bool, error)
 }
 
 // New returns a configured Operator from an Operator configuration.
@@ -94,8 +128,8 @@ func (o *opAll) String() string {
 }
 
 // Operate returns true if all inspectors return true, otherwise it returns false.
-func (o *opAll) Operate(ctx context.Context, message *mess.Message) (bool, error) {
-	if message.IsControl() {
+func (o *opAll) Operate(ctx context.Context, msg *message.Message) (bool, error) {
+	if msg.IsControl() {
 		return false, nil
 	}
 
@@ -104,7 +138,7 @@ func (o *opAll) Operate(ctx context.Context, message *mess.Message) (bool, error
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(ctx, message)
+		ok, err := i.Inspect(ctx, msg)
 		if err != nil {
 			return false, err
 		}
@@ -129,8 +163,8 @@ func (o *opAny) String() string {
 }
 
 // Operate returns true if any inspectors return true, otherwise it returns false.
-func (o *opAny) Operate(ctx context.Context, message *mess.Message) (bool, error) {
-	if message.IsControl() {
+func (o *opAny) Operate(ctx context.Context, msg *message.Message) (bool, error) {
+	if msg.IsControl() {
 		return false, nil
 	}
 
@@ -139,7 +173,7 @@ func (o *opAny) Operate(ctx context.Context, message *mess.Message) (bool, error
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(ctx, message)
+		ok, err := i.Inspect(ctx, msg)
 		if err != nil {
 			return false, err
 		}
@@ -164,8 +198,8 @@ func (o *opNone) String() string {
 }
 
 // Operate returns true if all inspectors return false, otherwise it returns true.
-func (o *opNone) Operate(ctx context.Context, message *mess.Message) (bool, error) {
-	if message.IsControl() {
+func (o *opNone) Operate(ctx context.Context, msg *message.Message) (bool, error) {
+	if msg.IsControl() {
 		return false, nil
 	}
 
@@ -174,7 +208,7 @@ func (o *opNone) Operate(ctx context.Context, message *mess.Message) (bool, erro
 	}
 
 	for _, i := range o.Inspectors {
-		ok, err := i.Inspect(ctx, message)
+		ok, err := i.Inspect(ctx, msg)
 		if err != nil {
 			return false, err
 		}
@@ -197,6 +231,6 @@ func (o *opEmpty) String() string {
 }
 
 // Operate always returns true.
-func (o *opEmpty) Operate(ctx context.Context, message *mess.Message) (bool, error) {
+func (o *opEmpty) Operate(ctx context.Context, msg *message.Message) (bool, error) {
 	return true, nil
 }

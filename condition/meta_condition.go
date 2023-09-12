@@ -6,27 +6,27 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
-	_config "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-type metaInspConditionConfig struct {
-	// Negate is a boolean that negates the inspection result.
-	Negate bool `json:"negate"`
+type metaConditionConfig struct {
+	Object iconfig.Object `json:"object"`
+
 	// Operator is the operator used to inspect the message.
 	Condition Config `json:"condition"`
 }
 
-type metaInspCondition struct {
-	conf metaInspConditionConfig
+type metaCondition struct {
+	conf metaConditionConfig
 
 	operator Operator
 }
 
-func newMetaInspCondition(ctx context.Context, cfg config.Config) (*metaInspCondition, error) {
-	conf := metaInspConditionConfig{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
+func newMetaCondition(ctx context.Context, cfg config.Config) (*metaCondition, error) {
+	conf := metaConditionConfig{}
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 
@@ -40,7 +40,7 @@ func newMetaInspCondition(ctx context.Context, cfg config.Config) (*metaInspCond
 		return nil, err
 	}
 
-	meta := metaInspCondition{
+	meta := metaCondition{
 		conf:     conf,
 		operator: op,
 	}
@@ -48,27 +48,23 @@ func newMetaInspCondition(ctx context.Context, cfg config.Config) (*metaInspCond
 	return &meta, nil
 }
 
-func (c *metaInspCondition) String() string {
+func (c *metaCondition) String() string {
 	b, _ := gojson.Marshal(c.conf)
 	return string(b)
 }
 
-func (c *metaInspCondition) Inspect(ctx context.Context, message *mess.Message) (output bool, err error) {
-	if message.IsControl() {
+func (c *metaCondition) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+	if msg.IsControl() {
 		return false, nil
 	}
 
 	// This inspector does not directly interpret data, instead the
 	// message is passed through and each configured inspector
 	// applies its own data interpretation.
-	matched, err := c.operator.Operate(ctx, message)
+	match, err := c.operator.Operate(ctx, msg)
 	if err != nil {
 		return false, err
 	}
 
-	if c.conf.Negate {
-		return !matched, nil
-	}
-
-	return matched, nil
+	return match, nil
 }

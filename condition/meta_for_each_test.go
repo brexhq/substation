@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
-var forEachTests = []struct {
+var metaForEachTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -19,13 +19,14 @@ var forEachTests = []struct {
 		"string starts_with all",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":    "input",
+				"object": map[string]interface{}{
+					"key": "input",
+				},
 				"negate": false,
 				"type":   "all",
 				"inspector": map[string]interface{}{
-					"type": "insp_string",
+					"type": "string_starts_with",
 					"settings": map[string]interface{}{
-						"type":   "starts_with",
 						"string": "f",
 					},
 				},
@@ -39,14 +40,13 @@ var forEachTests = []struct {
 		"ip private all",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":    "input",
+				"object": map[string]interface{}{
+					"key": "input",
+				},
 				"negate": false,
 				"type":   "all",
 				"inspector": map[string]interface{}{
-					"type": "insp_ip",
-					"settings": map[string]interface{}{
-						"type": "private",
-					},
+					"type": "network_ip_private",
 				},
 			},
 		},
@@ -58,11 +58,13 @@ var forEachTests = []struct {
 		"regexp any",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":    "input",
+				"object": map[string]interface{}{
+					"key": "input",
+				},
 				"negate": false,
 				"type":   "any",
 				"inspector": map[string]interface{}{
-					"type": "insp_regexp",
+					"type": "string_pattern",
 					"settings": map[string]interface{}{
 						"expression": "^fizz$",
 					},
@@ -77,13 +79,14 @@ var forEachTests = []struct {
 		"length none",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":    "input",
+				"object": map[string]interface{}{
+					"key": "input",
+				},
 				"negate": false,
 				"type":   "none",
 				"inspector": map[string]interface{}{
-					"type": "insp_length",
+					"type": "logic_len_greater_than",
 					"settings": map[string]interface{}{
-						"type":   "greater_than",
 						"length": 7,
 					},
 				},
@@ -97,13 +100,14 @@ var forEachTests = []struct {
 		"length all",
 		config.Config{
 			Settings: map[string]interface{}{
-				"key":    "input",
+				"object": map[string]interface{}{
+					"key": "input",
+				},
 				"negate": false,
 				"type":   "all",
 				"inspector": map[string]interface{}{
-					"type": "insp_length",
+					"type": "logic_len_equal_to",
 					"settings": map[string]interface{}{
-						"type":   "equals",
 						"length": 4,
 					},
 				},
@@ -115,16 +119,14 @@ var forEachTests = []struct {
 	},
 }
 
-func TestForEach(t *testing.T) {
+func TestMetaForEach(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, tt := range forEachTests {
+	for _, tt := range metaForEachTests {
 		t.Run(tt.name, func(t *testing.T) {
-			message, _ := mess.New(
-				mess.SetData(tt.test),
-			)
+			message := message.New().SetData(tt.test)
 
-			insp, err := newMetaInspForEach(ctx, tt.cfg)
+			insp, err := newMetaForEach(ctx, tt.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -141,26 +143,24 @@ func TestForEach(t *testing.T) {
 	}
 }
 
-func benchmarkForEachByte(b *testing.B, inspector *metaInspForEach, message *mess.Message) {
+func benchmarkMetaForEach(b *testing.B, insp *metaForEach, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = inspector.Inspect(ctx, message)
+		_, _ = insp.Inspect(ctx, message)
 	}
 }
 
-func BenchmarkForEachByte(b *testing.B) {
-	for _, test := range forEachTests {
-		insp, err := newMetaInspForEach(context.TODO(), test.cfg)
+func BenchmarkMetaForEach(b *testing.B) {
+	for _, test := range metaForEachTests {
+		insp, err := newMetaForEach(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				message, _ := mess.New(
-					mess.SetData(test.test),
-				)
-				benchmarkForEachByte(b, insp, message)
+				message := message.New().SetData(test.test)
+				benchmarkMetaForEach(b, insp, message)
 			},
 		)
 	}

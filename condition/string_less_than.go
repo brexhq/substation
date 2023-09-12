@@ -1,0 +1,48 @@
+package condition
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+
+	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/message"
+)
+
+func newStringLessThan(_ context.Context, cfg config.Config) (*stringLessThan, error) {
+	conf := stringConfig{}
+	if err := conf.Decode(cfg.Settings); err != nil {
+		return nil, err
+	}
+
+	insp := stringLessThan{
+		conf: conf,
+		b:    []byte(conf.String),
+	}
+
+	return &insp, nil
+}
+
+type stringLessThan struct {
+	conf stringConfig
+
+	b []byte
+}
+
+func (insp *stringLessThan) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+	if msg.IsControl() {
+		return false, nil
+	}
+
+	if insp.conf.Object.Key == "" {
+		return bytes.Compare(msg.Data(), insp.b) < 0, nil
+	}
+
+	value := msg.GetValue(insp.conf.Object.Key)
+	return bytes.Compare(value.Bytes(), insp.b) < 0, nil
+}
+
+func (c *stringLessThan) String() string {
+	b, _ := json.Marshal(c.conf)
+	return string(b)
+}

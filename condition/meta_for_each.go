@@ -6,18 +6,16 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 	"golang.org/x/exp/slices"
 
-	_config "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 )
 
-type metaInspForEachConf struct {
-	// Key is the message key used during inspection.
-	Key string `json:"key"`
-	// Negate is a boolean that negates the inspection result.
-	Negate bool `json:"negate"`
+type metaForEachConfig struct {
+	Object iconfig.Object `json:"object"`
+
 	// Type determines the method of combining results from the inspector.
 	//
 	// Must be one of:
@@ -32,15 +30,15 @@ type metaInspForEachConf struct {
 	Inspector config.Config `json:"inspector"`
 }
 
-type metaInspForEach struct {
-	conf metaInspForEachConf
+type metaForEach struct {
+	conf metaForEachConfig
 
 	inspector inspector
 }
 
-func newMetaInspForEach(ctx context.Context, cfg config.Config) (*metaInspForEach, error) {
-	conf := metaInspForEachConf{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
+func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error) {
+	conf := metaForEachConfig{}
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 
@@ -68,7 +66,7 @@ func newMetaInspForEach(ctx context.Context, cfg config.Config) (*metaInspForEac
 		return nil, fmt.Errorf("condition: meta_for_each: %v", err)
 	}
 
-	meta := metaInspForEach{
+	meta := metaForEach{
 		conf:      conf,
 		inspector: i,
 	}
@@ -76,26 +74,22 @@ func newMetaInspForEach(ctx context.Context, cfg config.Config) (*metaInspForEac
 	return &meta, nil
 }
 
-func (c *metaInspForEach) String() string {
+func (c *metaForEach) String() string {
 	b, _ := gojson.Marshal(c.conf)
 	return string(b)
 }
 
-func (c *metaInspForEach) Inspect(ctx context.Context, message *mess.Message) (output bool, err error) {
-	if message.IsControl() {
+func (c *metaForEach) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+	if msg.IsControl() {
 		return false, nil
 	}
 
 	var results []bool
-	for _, res := range message.Get(c.conf.Key).Array() {
-		tmpCapule, err := mess.New(
-			mess.SetData([]byte(res.String())),
-		)
-		if err != nil {
-			return false, fmt.Errorf("condition: meta_for_each: %w", err)
-		}
+	for _, res := range msg.GetValue(c.conf.Object.Key).Array() {
+		data := []byte(res.String())
+		msg := message.New().SetData(data)
 
-		inspected, err := c.inspector.Inspect(ctx, tmpCapule)
+		inspected, err := c.inspector.Inspect(ctx, msg)
 		if err != nil {
 			return false, fmt.Errorf("condition: meta_for_each: %w", err)
 		}
@@ -112,16 +106,12 @@ func (c *metaInspForEach) Inspect(ctx context.Context, message *mess.Message) (o
 
 	switch c.conf.Type {
 	case "any":
-		output = matched > 0
+		return matched > 0, nil
 	case "all":
-		output = total == matched
+		return total == matched, nil
 	case "none":
-		output = matched == 0
+		return matched == 0, nil
 	}
 
-	if c.conf.Negate {
-		return !output, nil
-	}
-
-	return output, nil
+	return false, nil
 }

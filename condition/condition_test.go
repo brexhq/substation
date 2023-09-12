@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 var allTests = []struct {
@@ -15,12 +15,24 @@ var allTests = []struct {
 	expected bool
 }{
 	{
+		"content",
+		[]config.Config{
+			{
+				Type: "format_content",
+				Settings: map[string]interface{}{
+					"type": "application/x-gzip",
+				},
+			},
+		},
+		[]byte{80, 75, 3, 4},
+		false,
+	},
+	{
 		"string",
 		[]config.Config{
 			{
-				Type: "insp_string",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"type":   "equals",
 					"string": "foo",
 				},
 			},
@@ -32,7 +44,7 @@ var allTests = []struct {
 		"regexp",
 		[]config.Config{
 			{
-				Type: "insp_regexp",
+				Type: "string_pattern",
 				Settings: map[string]interface{}{
 					"expression": "^foo$",
 				},
@@ -45,7 +57,7 @@ var allTests = []struct {
 		"content",
 		[]config.Config{
 			{
-				Type: "insp_content",
+				Type: "format_content",
 				Settings: map[string]interface{}{
 					"type": "application/x-gzip",
 				},
@@ -58,10 +70,9 @@ var allTests = []struct {
 		"length",
 		[]config.Config{
 			{
-				Type: "insp_length",
+				Type: "logic_len_equal_to",
 				Settings: map[string]interface{}{
 					"length": 3,
-					"type":   "equals",
 				},
 			},
 		},
@@ -72,17 +83,15 @@ var allTests = []struct {
 		"string length",
 		[]config.Config{
 			{
-				Type: "insp_string",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"type":   "equals",
 					"string": "foo",
 				},
 			},
 			{
-				Type: "insp_length",
+				Type: "logic_len_equal_to",
 				Settings: map[string]interface{}{
 					"length": 3,
-					"type":   "equals",
 				},
 			},
 		},
@@ -101,17 +110,15 @@ var allTests = []struct {
 						"operator": "any",
 						"inspectors": []config.Config{
 							{
-								Type: "insp_string",
+								Type: "string_starts_with",
 								Settings: map[string]interface{}{
 									"string": "f",
-									"type":   "starts_with",
 								},
 							},
 							{
-								Type: "insp_string",
+								Type: "string_ends_with",
 								Settings: map[string]interface{}{
 									"string": "b",
-									"type":   "ends_with",
 								},
 							},
 						},
@@ -125,10 +132,9 @@ var allTests = []struct {
 						"operator": "all",
 						"inspectors": []config.Config{
 							{
-								Type: "insp_length",
+								Type: "logic_len_equal_to",
 								Settings: map[string]interface{}{
 									"length": 3,
-									"type":   "equals",
 								},
 							},
 						},
@@ -146,10 +152,7 @@ func TestAll(t *testing.T) {
 
 	for _, test := range allTests {
 		t.Run(test.name, func(t *testing.T) {
-			message, _ := mess.New(
-				mess.SetData(test.test),
-			)
-
+			message := message.New().SetData(test.test)
 			cfg := Config{
 				Operator:   "all",
 				Inspectors: test.conf,
@@ -172,7 +175,7 @@ func TestAll(t *testing.T) {
 	}
 }
 
-func benchmarkAll(b *testing.B, conf []config.Config, message *mess.Message) {
+func benchmarkAll(b *testing.B, conf []config.Config, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		inspectors, _ := newInspectors(ctx, conf...)
@@ -185,9 +188,7 @@ func BenchmarkAll(b *testing.B) {
 	for _, test := range allTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				message, _ := mess.New(
-					mess.SetData(test.test),
-				)
+				message := message.New().SetData(test.test)
 				benchmarkAll(b, test.conf, message)
 			},
 		)
@@ -204,16 +205,14 @@ var anyTests = []struct {
 		"string",
 		[]config.Config{
 			{
-				Type: "insp_string",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"type":   "equals",
 					"string": "foo",
 				},
 			},
 			{
-				Type: "insp_string",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"type":   "equals",
 					"string": "baz",
 				},
 			},
@@ -225,24 +224,21 @@ var anyTests = []struct {
 		"length",
 		[]config.Config{
 			{
-				Type: "insp_length",
+				Type: "logic_len_equal_to",
 				Settings: map[string]interface{}{
 					"length": 3,
-					"type":   "equals",
 				},
 			},
 			{
-				Type: "insp_length",
+				Type: "logic_len_equal_to",
 				Settings: map[string]interface{}{
 					"length": 4,
-					"type":   "equals",
 				},
 			},
 			{
-				Type: "insp_length",
+				Type: "logic_len_equal_to",
 				Settings: map[string]interface{}{
 					"length": 5,
-					"type":   "equals",
 				},
 			},
 		},
@@ -253,17 +249,15 @@ var anyTests = []struct {
 		"string length",
 		[]config.Config{
 			{
-				Type: "insp_string",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"type":   "equals",
 					"string": "foo",
 				},
 			},
 			{
-				Type: "insp_length",
+				Type: "logic_len_equal_to",
 				Settings: map[string]interface{}{
 					"length": 4,
-					"type":   "equals",
 				},
 			},
 		},
@@ -282,17 +276,15 @@ var anyTests = []struct {
 						"operator": "all",
 						"inspectors": []config.Config{
 							{
-								Type: "insp_length",
+								Type: "logic_len_equal_to",
 								Settings: map[string]interface{}{
 									"length": 4,
-									"type":   "equals",
 								},
 							},
 							{
-								Type: "insp_string",
+								Type: "string_starts_with",
 								Settings: map[string]interface{}{
 									"string": "f",
-									"type":   "starts_with",
 								},
 							},
 						},
@@ -306,10 +298,9 @@ var anyTests = []struct {
 						"operator": "all",
 						"inspectors": []config.Config{
 							{
-								Type: "insp_length",
+								Type: "logic_len_equal_to",
 								Settings: map[string]interface{}{
 									"length": 3,
-									"type":   "equals",
 								},
 							},
 						},
@@ -326,9 +317,7 @@ func TestAny(t *testing.T) {
 	ctx := context.TODO()
 
 	for _, test := range anyTests {
-		message, _ := mess.New(
-			mess.SetData(test.test),
-		)
+		message := message.New().SetData(test.test)
 
 		cfg := Config{
 			Operator:   "any",
@@ -351,7 +340,7 @@ func TestAny(t *testing.T) {
 	}
 }
 
-func benchmarkAny(b *testing.B, conf []config.Config, message *mess.Message) {
+func benchmarkAny(b *testing.B, conf []config.Config, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		inspectors, _ := newInspectors(ctx, conf...)
@@ -364,9 +353,7 @@ func BenchmarkAny(b *testing.B) {
 	for _, test := range anyTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				message, _ := mess.New(
-					mess.SetData(test.test),
-				)
+				message := message.New().SetData(test.test)
 				benchmarkAny(b, test.conf, message)
 			},
 		)
@@ -383,16 +370,14 @@ var noneTests = []struct {
 		"string",
 		[]config.Config{
 			{
-				Type: "insp_string",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"type":   "equals",
 					"string": "baz",
 				},
 			},
 			{
-				Type: "insp_string",
+				Type: "string_starts_with",
 				Settings: map[string]interface{}{
-					"type":   "starts_with",
 					"string": "b",
 				},
 			},
@@ -404,16 +389,14 @@ var noneTests = []struct {
 		"string",
 		[]config.Config{
 			{
-				Type: "insp_string",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"type":   "equals",
 					"string": "foo",
 				},
 			},
 			{
-				Type: "insp_string",
+				Type: "string_starts_with",
 				Settings: map[string]interface{}{
-					"type":   "starts_with",
 					"string": "b",
 				},
 			},
@@ -425,18 +408,21 @@ var noneTests = []struct {
 		"length",
 		[]config.Config{
 			{
-				Type: "insp_length",
+				Type: "logic_len_equal_to",
 				Settings: map[string]interface{}{
 					"type":   "equals",
 					"length": 0,
 				},
 			},
 			{
-				Type: "insp_string",
+				Type: "meta_negate",
 				Settings: map[string]interface{}{
-					"type":   "starts_with",
-					"string": "f",
-					"negate": true,
+					"inspector": map[string]interface{}{
+						"type": "string_starts_with",
+						"settings": map[string]interface{}{
+							"string": "f",
+						},
+					},
 				},
 			},
 		},
@@ -450,10 +436,7 @@ func TestNone(t *testing.T) {
 
 	for _, test := range noneTests {
 		t.Run(test.name, func(t *testing.T) {
-			message, _ := mess.New(
-				mess.SetData(test.test),
-			)
-
+			message := message.New().SetData(test.test)
 			cfg := Config{
 				Operator:   "none",
 				Inspectors: test.conf,
@@ -476,7 +459,7 @@ func TestNone(t *testing.T) {
 	}
 }
 
-func benchmarkNone(b *testing.B, conf []config.Config, message *mess.Message) {
+func benchmarkNone(b *testing.B, conf []config.Config, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		inspectors, _ := newInspectors(ctx, conf...)
@@ -489,9 +472,7 @@ func BenchmarkNone(b *testing.B) {
 	for _, test := range noneTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				message, _ := mess.New(
-					mess.SetData(test.test),
-				)
+				message := message.New().SetData(test.test)
 				benchmarkNone(b, test.conf, message)
 			},
 		)

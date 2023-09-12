@@ -6,7 +6,7 @@ import (
 
 	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 )
 
 func ExampleNew() {
@@ -14,17 +14,15 @@ func ExampleNew() {
 	// the substring "iz"
 	cfg := []config.Config{
 		{
-			Type: "insp_length",
+			Type: "logic_len_greater_than",
 			Settings: map[string]interface{}{
-				"type":  "greater_than",
-				"value": 0,
+				"length": 0,
 			},
 		},
 		{
-			Type: "insp_string",
+			Type: "string_contains",
 			Settings: map[string]interface{}{
-				"type":       "contains",
-				"expression": "iz",
+				"string": "iz",
 			},
 		},
 	}
@@ -52,18 +50,16 @@ func Example_operate() {
 	// the substring "iz"
 	cfg := []config.Config{
 		{
-			Type: "insp_length",
+			Type: "logic_len_less_than",
 			Settings: map[string]interface{}{
-				"type":  "less_than",
-				"value": 6,
+				"length": 6,
 			},
 		},
 
 		{
-			Type: "insp_string",
+			Type: "string_contains",
 			Settings: map[string]interface{}{
-				"type":       "contains",
-				"expression": "iz",
+				"string": "iz",
 			},
 		},
 	}
@@ -83,15 +79,13 @@ func Example_operate() {
 	}
 
 	// operator is applied to message
-	message, err := mess.New(
-		mess.SetData([]byte("fizzy")),
-	)
+	msg := message.New().SetData([]byte("fizzy"))
 	if err != nil {
 		// handle err
 		panic(err)
 	}
 
-	ok, err := operator.Operate(ctx, message)
+	ok, err := operator.Operate(ctx, msg)
 	if err != nil {
 		// handle err
 		panic(err)

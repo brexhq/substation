@@ -30,7 +30,7 @@ type options struct {
 	pprofMemory bool
 }
 
-//nolint: gocognit // Ignore cognitive complexity.
+// nolint: gocognit // Ignore cognitive complexity.
 func main() {
 	var opts options
 
@@ -76,7 +76,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer sub.Close(ctx)
 
 	// Collect the sample data for the benchmark.
 	path, err := file.Get(ctx, opts.DataFile)
@@ -154,13 +153,9 @@ func main() {
 			return err
 		}
 
-		// CTRL message is used to flush the transform functions. This must be done
+		// Control messages flush the transform functions. This must be done
 		// after all messages have been processed.
-		ctrl, err := mess.New(mess.AsControl())
-		if err != nil {
-			return err
-		}
-
+		ctrl := mess.New(mess.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
 			return err
 		}
@@ -178,12 +173,8 @@ func main() {
 			default:
 			}
 
-			message, err := mess.New(mess.SetData(data))
-			if err != nil {
-				return err
-			}
-
-			ch.Send(message)
+			msg := mess.New().SetData(data)
+			ch.Send(msg)
 		}
 
 		return nil

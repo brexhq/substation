@@ -55,7 +55,7 @@ var testCfgs = []struct {
 					   "key": "foo",
 					   "set_key": "baz"
 					},
-					"type": "proc_copy"
+					"type": "mod_copy"
 				 }
 			]
 		 }

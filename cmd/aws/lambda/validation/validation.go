@@ -37,11 +37,9 @@ func handler(ctx context.Context, event json.RawMessage) error {
 		return fmt.Errorf("validation: json: %v (%q)", err, string(conf))
 	}
 
-	sub, err := substation.New(ctx, cfg)
-	if err != nil {
+	if _, err := substation.New(ctx, cfg); err != nil {
 		return fmt.Errorf("validation: substation: %v", err)
 	}
-	defer sub.Close(ctx)
 
 	return nil
 }

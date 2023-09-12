@@ -80,7 +80,6 @@ func run(ctx context.Context, opts options) error {
 	if err != nil {
 		return fmt.Errorf("run: %v", err)
 	}
-	defer sub.Close(ctx)
 
 	ch := channel.New[*mess.Message]()
 	group, ctx := errgroup.WithContext(ctx)
@@ -110,13 +109,9 @@ func run(ctx context.Context, opts options) error {
 			return err
 		}
 
-		// CTRL message is used to flush the transform functions. This must be done
+		// Control messages flush the transform functions. This must be done
 		// after all messages have been processed.
-		ctrl, err := mess.New(mess.AsControl())
-		if err != nil {
-			return err
-		}
-
+		ctrl := mess.New(mess.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
 			return err
 		}
@@ -153,14 +148,9 @@ func run(ctx context.Context, opts options) error {
 			default:
 			}
 
-			message, err := mess.New(
-				mess.SetData([]byte(scanner.Text())),
-			)
-			if err != nil {
-				return err
-			}
-
-			ch.Send(message)
+			b := []byte(scanner.Text())
+			msg := mess.New().SetData(b)
+			ch.Send(msg)
 		}
 
 		return nil

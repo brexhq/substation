@@ -29,7 +29,7 @@ type s3Metadata struct {
 	ObjectSize int64     `json:"objectSize"`
 }
 
-//nolint: gocognit // Ignore cognitive complexity.
+// nolint: gocognit // Ignore cognitive complexity.
 func s3Handler(ctx context.Context, event events.S3Event) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
@@ -46,8 +46,6 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	if err != nil {
 		return fmt.Errorf("s3 handler: %v", err)
 	}
-
-	defer sub.Close(ctx)
 
 	ch := channel.New[*mess.Message]()
 	group, ctx := errgroup.WithContext(ctx)
@@ -95,13 +93,9 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			return err
 		}
 
-		// CTRL message is used to flush the transform functions. This must be done
+		// Control messages flush the transform functions. This must be done
 		// after all messages have been processed.
-		ctrl, err := mess.New(mess.AsControl())
-		if err != nil {
-			return err
-		}
-
+		ctrl := mess.New(mess.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
 			return err
 		}
@@ -167,13 +161,8 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				default:
 				}
 
-				msg, err := mess.New(
-					mess.SetData([]byte(scanner.Text())),
-					mess.SetMetadata(metadata),
-				)
-				if err != nil {
-					return fmt.Errorf("s3 handler: %v", err)
-				}
+				b := []byte(scanner.Text())
+				msg := mess.New().SetData(b).SetMetadata(metadata)
 
 				ch.Send(msg)
 				atomic.AddUint32(&msgRecv, 1)
@@ -231,8 +220,6 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 		return fmt.Errorf("s3 handler: %v", err)
 	}
 
-	defer sub.Close(ctx)
-
 	ch := channel.New[*mess.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
@@ -279,13 +266,9 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			return err
 		}
 
-		// CTRL message is used to flush the transform functions. This must be done
+		// Control messages flush the transform functions. This must be done
 		// after all messages have been processed.
-		ctrl, err := mess.New(mess.AsControl())
-		if err != nil {
-			return err
-		}
-
+		ctrl := mess.New(mess.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
 			return err
 		}
@@ -354,13 +337,8 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					default:
 					}
 
-					msg, err := mess.New(
-						mess.SetData([]byte(scanner.Text())),
-						mess.SetMetadata(metadata),
-					)
-					if err != nil {
-						return fmt.Errorf("s3 handler: %v", err)
-					}
+					b := []byte(scanner.Text())
+					msg := mess.New().SetData(b).SetMetadata(metadata)
 
 					ch.Send(msg)
 					atomic.AddUint32(&msgRecv, 1)

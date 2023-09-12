@@ -39,8 +39,6 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 		return gateway500Response, fmt.Errorf("gateway: %v", err)
 	}
 
-	defer sub.Close(ctx)
-
 	// Create Message metadata.
 	m := gatewayMetadata{
 		Resource: request.Resource,
@@ -56,21 +54,11 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 	// Messages are sent to the transforms as a group.
 	var msgs []*message.Message
 
-	msg, err := message.New(
-		message.SetData([]byte(request.Body)),
-		message.SetMetadata(metadata),
-	)
-	if err != nil {
-		return gateway500Response, fmt.Errorf("gateway: %v", err)
-	}
+	b := []byte(request.Body)
+	msg := message.New().SetData(b).SetMetadata(metadata)
 	msgs = append(msgs, msg)
 
-	ctrl, err := message.New(
-		message.AsControl(),
-	)
-	if err != nil {
-		return gateway500Response, fmt.Errorf("gateway: %v", err)
-	}
+	ctrl := message.New(message.AsControl())
 	msgs = append(msgs, ctrl)
 
 	// Send messages through the transforms.

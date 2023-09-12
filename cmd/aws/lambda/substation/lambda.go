@@ -31,27 +31,14 @@ func lambdaHandler(ctx context.Context, event json.RawMessage) ([]json.RawMessag
 	if err != nil {
 		return nil, fmt.Errorf("lambda handler: %v", err)
 	}
-	defer sub.Close(ctx)
 
 	// Data and control messages are sent to the transforms as a group.
 	var msgs []*message.Message
 
-	data, err := message.New(
-		message.SetData(evt),
-	)
-	if err != nil {
-		return nil, err
-	}
+	msg := message.New().SetData(evt)
+	msgs = append(msgs, msg)
 
-	msgs = append(msgs, data)
-
-	ctrl, err := message.New(
-		message.AsControl(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
+	ctrl := message.New(message.AsControl())
 	msgs = append(msgs, ctrl)
 
 	msgs, err = transform.Apply(ctx, sub.Transforms(), msgs...)

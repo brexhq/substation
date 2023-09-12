@@ -27,7 +27,7 @@ type dynamodbMetadata struct {
 	StreamViewType              string    `json:"streamViewType"`
 }
 
-//nolint: gocognit, gocyclo, cyclop // Ignore cognitive and cyclomatic complexity.
+// nolint: gocognit, gocyclo, cyclop // Ignore cognitive and cyclomatic complexity.
 func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
@@ -44,8 +44,6 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 	if err != nil {
 		return fmt.Errorf("dynamodb handler: %v", err)
 	}
-
-	defer sub.Close(ctx)
 
 	ch := channel.New[*mess.Message]()
 	group, ctx := errgroup.WithContext(ctx)
@@ -93,13 +91,9 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			return err
 		}
 
-		// CTRL message is used to flush the transform functions. This must be done
+		// Control messages flush the transform functions. This must be done
 		// after all messages have been processed.
-		ctrl, err := mess.New(mess.AsControl())
-		if err != nil {
-			return err
-		}
-
+		ctrl := mess.New(mess.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
 			return err
 		}
@@ -165,25 +159,20 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			//   "before": { ... },
 			//   "after": { ... }
 			// }
-			msg, err := mess.New(
-				mess.SetMetadata(metadata),
-			)
-			if err != nil {
-				return fmt.Errorf("dynamodb handler: %v", err)
-			}
-			if err := msg.Set("source.ts_ms", record.Change.ApproximateCreationDateTime.Time.UnixMilli()); err != nil {
+			msg := mess.New().SetMetadata(metadata)
+			if err := msg.SetValue("source.ts_ms", record.Change.ApproximateCreationDateTime.Time.UnixMilli()); err != nil {
 				return fmt.Errorf("dynamodb handler: %v", err)
 			}
 
-			if err := msg.Set("source.table", table); err != nil {
+			if err := msg.SetValue("source.table", table); err != nil {
 				return fmt.Errorf("dynamodb handler: %v", err)
 			}
 
-			if err := msg.Set("source.connector", "dynamodb"); err != nil {
+			if err := msg.SetValue("source.connector", "dynamodb"); err != nil {
 				return fmt.Errorf("dynamodb handler: %v", err)
 			}
 
-			if err := msg.Set("ts_ms", time.Now().UnixMilli()); err != nil {
+			if err := msg.SetValue("ts_ms", time.Now().UnixMilli()); err != nil {
 				return fmt.Errorf("dynamodb handler: %v", err)
 			}
 
@@ -194,22 +183,22 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			// - d: delete (REMOVE)
 			switch record.EventName {
 			case "INSERT":
-				if err := msg.Set("op", "c"); err != nil {
+				if err := msg.SetValue("op", "c"); err != nil {
 					return fmt.Errorf("dynamodb handler: %v", err)
 				}
 			case "MODIFY":
-				if err := msg.Set("op", "u"); err != nil {
+				if err := msg.SetValue("op", "u"); err != nil {
 					return fmt.Errorf("dynamodb handler: %v", err)
 				}
 			case "REMOVE":
-				if err := msg.Set("op", "d"); err != nil {
+				if err := msg.SetValue("op", "d"); err != nil {
 					return fmt.Errorf("dynamodb handler: %v", err)
 				}
 			}
 
 			// If either image is missing, then the value is set to null.
 			if record.Change.OldImage == nil {
-				if err := msg.Set("before", nil); err != nil {
+				if err := msg.SetValue("before", nil); err != nil {
 					return fmt.Errorf("dynamodb handler: %v", err)
 				}
 			} else {
@@ -221,13 +210,13 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 					return fmt.Errorf("dynamodb handler: %v", err)
 				}
 
-				if err := msg.Set("before", before); err != nil {
+				if err := msg.SetValue("before", before); err != nil {
 					return fmt.Errorf("dynamodb handler: %v", err)
 				}
 			}
 
 			if record.Change.NewImage == nil {
-				if err := msg.Set("after", nil); err != nil {
+				if err := msg.SetValue("after", nil); err != nil {
 					return fmt.Errorf("dynamodb handler: %v", err)
 				}
 			} else {
@@ -239,7 +228,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 					return fmt.Errorf("dynamodb handler: %v", err)
 				}
 
-				if err := msg.Set("after", after); err != nil {
+				if err := msg.SetValue("after", after); err != nil {
 					return fmt.Errorf("dynamodb handler: %v", err)
 				}
 			}

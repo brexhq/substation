@@ -33,12 +33,7 @@ var testCfgs = []struct {
 		{
 			"transforms": [
 				{
-					"type": "hash",
-					"settings": {
-						"options": {
-							"algorithm": "md1"
-						}
-					}
+					"type": "object_insert",
 				}
 			]
 		}					
@@ -52,10 +47,12 @@ var testCfgs = []struct {
 			"transforms": [
 				{
 					"settings": {
-					   "key": "foo",
-					   "set_key": "baz"
+						"object": {
+							"key": "foo",
+							"set_key": "baz"	 
+						}
 					},
-					"type": "mod_copy"
+					"type": "object_copy"
 				 }
 			]
 		 }

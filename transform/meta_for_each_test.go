@@ -101,7 +101,7 @@ var metaForEachTests = []struct {
 		},
 	},
 	{
-		"network_fqdn_subdomain",
+		"network_domain_subdomain",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -109,7 +109,7 @@ var metaForEachTests = []struct {
 					"set_key": "subdomain",
 				},
 				"transform": config.Config{
-					Type: "network_fqdn_subdomain",
+					Type: "network_domain_subdomain",
 				},
 			},
 		},

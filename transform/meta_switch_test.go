@@ -31,10 +31,11 @@ var metaSwitchTests = []struct {
 							Operator: "any",
 							Inspectors: []config.Config{
 								{
-									Type: "insp_string",
+									Type: "string_contains",
 									Settings: map[string]interface{}{
-										"key":    "a",
-										"type":   "contains",
+										"object": map[string]interface{}{
+											"key": "a",
+										},
 										"string": "b",
 									},
 								},
@@ -75,10 +76,11 @@ var metaSwitchTests = []struct {
 							Operator: "any",
 							Inspectors: []config.Config{
 								{
-									Type: "insp_string",
+									Type: "string_contains",
 									Settings: map[string]interface{}{
-										"key":    "a",
-										"type":   "contains",
+										"object": map[string]interface{}{
+											"key": "a",
+										},
 										"string": "c",
 									},
 								},
@@ -129,10 +131,11 @@ var metaSwitchTests = []struct {
 							Operator: "any",
 							Inspectors: []config.Config{
 								{
-									Type: "insp_string",
+									Type: "string_contains",
 									Settings: map[string]interface{}{
-										"key":    "a",
-										"type":   "contains",
+										"object": map[string]interface{}{
+											"key": "a",
+										},
 										"string": "c",
 									},
 								},
@@ -153,10 +156,11 @@ var metaSwitchTests = []struct {
 							Operator: "any",
 							Inspectors: []config.Config{
 								{
-									Type: "insp_string",
+									Type: "string_contains",
 									Settings: map[string]interface{}{
-										"key":    "a",
-										"type":   "contains",
+										"object": map[string]interface{}{
+											"key": "a",
+										},
 										"string": "d",
 									},
 								},

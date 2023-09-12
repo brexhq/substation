@@ -18,12 +18,6 @@ var messageDeleteTests = []struct {
 		[]byte(`{"c":"d"}`),
 		"a",
 	},
-	{
-		"@this",
-		[]byte(`{"a":"b","c":"d"}`),
-		[]byte{},
-		"@this",
-	},
 }
 
 func TestMessageDeleteData(t *testing.T) {

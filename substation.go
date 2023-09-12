@@ -50,17 +50,6 @@ func New(ctx context.Context, cfg Config) (*Substation, error) {
 	return &sub, nil
 }
 
-// Closes all data transforms.
-func (s *Substation) Close(ctx context.Context) error {
-	for _, t := range s.tforms {
-		if err := t.Close(ctx); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // Transforms returns the configured data transforms.
 //
 // These are safe to use concurrently.

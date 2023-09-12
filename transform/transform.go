@@ -19,6 +19,17 @@ type Transformer interface {
 // New returns a configured Transformer.
 func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
+	// Meta transforms.
+	case "meta_err":
+		return newMetaErr(ctx, cfg)
+	case "meta_for_each":
+		return newMetaForEach(ctx, cfg)
+	case "meta_pipeline":
+		return newMetaPipeline(ctx, cfg)
+	case "meta_plugin":
+		return newMetaPlugin(ctx, cfg)
+	case "meta_switch":
+		return newMetaSwitch(ctx, cfg)
 	// Aggregation transforms.
 	case "aggregate_from_array":
 		return newAggregateFromArray(ctx, cfg)
@@ -44,9 +55,9 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "enrich_aws_lambda":
 		return newEnrichAWSLambda(ctx, cfg)
 	case "enrich_dns_forward_lookup":
-		return newEnrichDNSFwdLookup(ctx, cfg)
+		return newEnrichDNSIPLookup(ctx, cfg)
 	case "enrich_dns_reverse_lookup":
-		return newEnrichDNSRevLookup(ctx, cfg)
+		return newEnrichDNSDomainLookup(ctx, cfg)
 	case "enrich_dns_text_lookup":
 		return newEnrichDNSTxtLookup(ctx, cfg)
 	case "enrich_http_get":
@@ -159,17 +170,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newUtilityDelay(ctx, cfg)
 	case "utility_drop":
 		return newUtilityDrop(ctx, cfg)
-	case "utility_error":
-		return newUtilityError(ctx, cfg)
-	// Meta transforms.
-	case "meta_for_each":
-		return newMetaForEach(ctx, cfg)
-	case "meta_pipeline":
-		return newMetaPipeline(ctx, cfg)
-	case "meta_plugin":
-		return newMetaPlugin(ctx, cfg)
-	case "meta_switch":
-		return newMetaSwitch(ctx, cfg)
+	case "utility_err":
+		return newUtilityErr(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("transform: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}

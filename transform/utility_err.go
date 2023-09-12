@@ -11,35 +11,35 @@ import (
 )
 
 type utilErrConfig struct {
-	Error string `json:"error"`
+	Message string `json:"message"`
 }
 
 func (c *utilErrConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func newUtilityError(_ context.Context, cfg config.Config) (*utilityError, error) {
+func newUtilityErr(_ context.Context, cfg config.Config) (*utilityErr, error) {
 	conf := utilErrConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_util_error: %v", err)
 	}
 
-	tf := utilityError{
+	tf := utilityErr{
 		conf: conf,
 	}
 
 	return &tf, nil
 }
 
-type utilityError struct {
+type utilityErr struct {
 	conf utilErrConfig
 }
 
-func (tf *utilityError) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
-	return []*message.Message{msg}, fmt.Errorf("%s", tf.conf.Error)
+func (tf *utilityErr) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
+	return []*message.Message{msg}, fmt.Errorf("%s", tf.conf.Message)
 }
 
-func (tf *utilityError) String() string {
+func (tf *utilityErr) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

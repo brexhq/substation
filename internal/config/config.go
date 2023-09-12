@@ -23,7 +23,7 @@ type Request struct {
 }
 
 type Retry struct {
-	Attempts int `json:"attempts"`
+	Count int `json:"count"`
 }
 
 type Buffer struct {

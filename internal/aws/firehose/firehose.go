@@ -8,12 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/firehose"
 	"github.com/aws/aws-sdk-go/service/firehose/firehoseiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
-	_aws "github.com/brexhq/substation/internal/aws"
+	iaws "github.com/brexhq/substation/internal/aws"
 )
 
 // New creates a new session for Kinesis Firehose
-func New(cfg _aws.Config) *firehose.Firehose {
-	conf, sess := _aws.New(cfg)
+func New(cfg iaws.Config) *firehose.Firehose {
+	conf, sess := iaws.New(cfg)
 
 	c := firehose.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -34,7 +34,7 @@ func (a *API) IsEnabled() bool {
 }
 
 // Setup creates a Kinesis Firehose client
-func (a *API) Setup(cfg _aws.Config) {
+func (a *API) Setup(cfg iaws.Config) {
 	a.Client = New(cfg)
 }
 

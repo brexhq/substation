@@ -10,13 +10,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
-	_aws "github.com/brexhq/substation/internal/aws"
+	iaws "github.com/brexhq/substation/internal/aws"
 	"github.com/google/uuid"
 )
 
 // New returns a configured SQS client.
-func New(cfg _aws.Config) *sqs.SQS {
-	conf, sess := _aws.New(cfg)
+func New(cfg iaws.Config) *sqs.SQS {
+	conf, sess := iaws.New(cfg)
 
 	c := sqs.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -37,7 +37,7 @@ func (a *API) IsEnabled() bool {
 }
 
 // Setup creates an SQS client.
-func (a *API) Setup(cfg _aws.Config) {
+func (a *API) Setup(cfg iaws.Config) {
 	a.Client = New(cfg)
 }
 

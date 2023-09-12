@@ -10,12 +10,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
-	_aws "github.com/brexhq/substation/internal/aws"
+	iaws "github.com/brexhq/substation/internal/aws"
 )
 
 // New returns a configured DynamoDB client.
-func New(cfg _aws.Config) *dynamodb.DynamoDB {
-	conf, sess := _aws.New(cfg)
+func New(cfg iaws.Config) *dynamodb.DynamoDB {
+	conf, sess := iaws.New(cfg)
 
 	c := dynamodb.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -31,7 +31,7 @@ type API struct {
 }
 
 // Setup creates a new DynamoDB client.
-func (a *API) Setup(cfg _aws.Config) {
+func (a *API) Setup(cfg iaws.Config) {
 	a.Client = New(cfg)
 }
 

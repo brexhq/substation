@@ -10,13 +10,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sns/snsiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
-	_aws "github.com/brexhq/substation/internal/aws"
+	iaws "github.com/brexhq/substation/internal/aws"
 	"github.com/google/uuid"
 )
 
 // New returns a configured SNS client.
-func New(cfg _aws.Config) *sns.SNS {
-	conf, sess := _aws.New(cfg)
+func New(cfg iaws.Config) *sns.SNS {
+	conf, sess := iaws.New(cfg)
 
 	c := sns.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -37,7 +37,7 @@ func (a *API) IsEnabled() bool {
 }
 
 // Setup creates an SNS client.
-func (a *API) Setup(cfg _aws.Config) {
+func (a *API) Setup(cfg iaws.Config) {
 	a.Client = New(cfg)
 }
 

@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/kinesis/kinesisiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
 	rec "github.com/awslabs/kinesis-aggregation/go/records"
-	_aws "github.com/brexhq/substation/internal/aws"
+	iaws "github.com/brexhq/substation/internal/aws"
 
 	//nolint: staticcheck // not ready to switch package
 	"github.com/golang/protobuf/proto"
@@ -163,8 +163,8 @@ func ConvertEventsRecords(records []events.KinesisEventRecord) []*kinesis.Record
 }
 
 // New returns a configured Kinesis client.
-func New(cfg _aws.Config) *kinesis.Kinesis {
-	conf, sess := _aws.New(cfg)
+func New(cfg iaws.Config) *kinesis.Kinesis {
+	conf, sess := iaws.New(cfg)
 
 	c := kinesis.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -180,7 +180,7 @@ type API struct {
 }
 
 // Setup creates a new Kinesis client.
-func (a *API) Setup(cfg _aws.Config) {
+func (a *API) Setup(cfg iaws.Config) {
 	a.Client = New(cfg)
 }
 

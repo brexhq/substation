@@ -8,13 +8,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/lambda/lambdaiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
-	_aws "github.com/brexhq/substation/internal/aws"
+	iaws "github.com/brexhq/substation/internal/aws"
 )
 
 // New returns a configured Lambda client.
 
-func New(cfg _aws.Config) *lambda.Lambda {
-	conf, sess := _aws.New(cfg)
+func New(cfg iaws.Config) *lambda.Lambda {
+	conf, sess := iaws.New(cfg)
 
 	c := lambda.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -30,7 +30,7 @@ type API struct {
 }
 
 // Setup creates a new Lambda client.
-func (a *API) Setup(cfg _aws.Config) {
+func (a *API) Setup(cfg iaws.Config) {
 	a.Client = New(cfg)
 }
 

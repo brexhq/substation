@@ -8,12 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
 	"github.com/aws/aws-xray-sdk-go/xray"
-	_aws "github.com/brexhq/substation/internal/aws"
+	iaws "github.com/brexhq/substation/internal/aws"
 )
 
 // New returns a configured Secrets Manager client.
-func New(cfg _aws.Config) *secretsmanager.SecretsManager {
-	conf, sess := _aws.New(cfg)
+func New(cfg iaws.Config) *secretsmanager.SecretsManager {
+	conf, sess := iaws.New(cfg)
 
 	c := secretsmanager.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
@@ -29,7 +29,7 @@ type API struct {
 }
 
 // Setup creates a new Secrets Manager client.
-func (a *API) Setup(cfg _aws.Config) {
+func (a *API) Setup(cfg iaws.Config) {
 	a.Client = New(cfg)
 }
 

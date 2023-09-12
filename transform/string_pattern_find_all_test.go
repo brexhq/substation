@@ -20,8 +20,8 @@ var stringPatternFindAllTests = []struct {
 		"data",
 		config.Config{
 			Settings: map[string]interface{}{
-				"count":      3,
-				"expression": "(.{1})",
+				"count":   3,
+				"pattern": "(.{1})",
 			},
 		},
 		[]byte(`bcd`),
@@ -38,8 +38,8 @@ var stringPatternFindAllTests = []struct {
 					"key":     "a",
 					"set_key": "a",
 				},
-				"count":      3,
-				"expression": "(.{1})",
+				"count":   3,
+				"pattern": "(.{1})",
 			},
 		},
 		[]byte(`{"a":"bcd"}`),

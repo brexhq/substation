@@ -20,7 +20,7 @@ var stringPatternFindTests = []struct {
 		"data",
 		config.Config{
 			Settings: map[string]interface{}{
-				"expression": "^([^@]*)@.*$",
+				"pattern": "^([^@]*)@.*$",
 			},
 		},
 		[]byte(`b@c`),
@@ -37,7 +37,7 @@ var stringPatternFindTests = []struct {
 					"key":     "a",
 					"set_key": "a",
 				},
-				"expression": "^([^@]*)@.*$",
+				"pattern": "^([^@]*)@.*$",
 			},
 		},
 		[]byte(`{"a":"b@c"}`),

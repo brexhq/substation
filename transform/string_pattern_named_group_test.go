@@ -20,7 +20,7 @@ var stringPatternNamedGroupTests = []struct {
 		"data",
 		config.Config{
 			Settings: map[string]interface{}{
-				"expression": "(?P<b>[a-zA-Z]+) (?P<d>[a-zA-Z]+)",
+				"pattern": "(?P<b>[a-zA-Z]+) (?P<d>[a-zA-Z]+)",
 			},
 		},
 		[]byte(`c e`),
@@ -37,7 +37,7 @@ var stringPatternNamedGroupTests = []struct {
 					"key":     "a",
 					"set_key": "a",
 				},
-				"expression": "(?P<b>[a-zA-Z]+) (?P<d>[a-zA-Z]+)",
+				"pattern": "(?P<b>[a-zA-Z]+) (?P<d>[a-zA-Z]+)",
 			},
 		},
 		[]byte(`{"a":"c e"}`),

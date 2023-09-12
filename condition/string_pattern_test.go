@@ -18,7 +18,7 @@ var stringPatternTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"expression": "^Test",
+				"pattern": "^Test",
 			},
 		},
 		[]byte("Test"),
@@ -28,7 +28,7 @@ var stringPatternTests = []struct {
 		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
-				"expression": "^Test",
+				"pattern": "^Test",
 			},
 		},
 		[]byte("-Test"),

@@ -15,8 +15,8 @@ import (
 type stringPatternFindAllConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	// Expression is the regular expression used to capture values.
-	Expression string `json:"expression"`
+	// Pattern is the regular expression used to capture values.
+	Pattern string `json:"pattern"`
 
 	// Count is the number of matches to capture.
 	Count int `json:"count"`
@@ -37,17 +37,17 @@ func (c *stringPatternFindAllConfig) Validate() error {
 		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Expression == "" {
-		return fmt.Errorf("expression: %v", errors.ErrMissingRequiredOption)
+	if c.Pattern == "" {
+		return fmt.Errorf("pattern: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.Count == 0 {
 		c.Count = -1
 	}
 
-	re, err := regexp.Compile(c.Expression)
+	re, err := regexp.Compile(c.Pattern)
 	if err != nil {
-		return fmt.Errorf("expression: %v", err)
+		return fmt.Errorf("pattern: %v", err)
 	}
 
 	c.re = re

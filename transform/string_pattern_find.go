@@ -15,8 +15,8 @@ import (
 type stringPatternFindConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	// Expression is the regular expression used to capture values.
-	Expression string `json:"expression"`
+	// Pattern is the regular expression used to capture values.
+	Pattern string `json:"pattern"`
 
 	re *regexp.Regexp
 }
@@ -34,13 +34,13 @@ func (c *stringPatternFindConfig) Validate() error {
 		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Expression == "" {
-		return fmt.Errorf("expression: %v", errors.ErrMissingRequiredOption)
+	if c.Pattern == "" {
+		return fmt.Errorf("pattern: %v", errors.ErrMissingRequiredOption)
 	}
 
-	re, err := regexp.Compile(c.Expression)
+	re, err := regexp.Compile(c.Pattern)
 	if err != nil {
-		return fmt.Errorf("expression: %v", err)
+		return fmt.Errorf("pattern: %v", err)
 	}
 
 	c.re = re

@@ -15,8 +15,8 @@ import (
 type stringPatternConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	// Expression is the regular expression used during inspection.
-	Expression string `json:"expression"`
+	// Pattern is the regular expression used during inspection.
+	Pattern string `json:"pattern"`
 }
 
 func (c *stringPatternConfig) Decode(in interface{}) error {
@@ -24,8 +24,8 @@ func (c *stringPatternConfig) Decode(in interface{}) error {
 }
 
 func (c *stringPatternConfig) Validate() error {
-	if c.Expression == "" {
-		return fmt.Errorf("expression: %v", errors.ErrMissingRequiredOption)
+	if c.Pattern == "" {
+		return fmt.Errorf("pattern: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -41,7 +41,7 @@ func newStringPattern(_ context.Context, cfg config.Config) (*stringPattern, err
 		return nil, err
 	}
 
-	re, err := regexp.Compile(conf.Expression)
+	re, err := regexp.Compile(conf.Pattern)
 	if err != nil {
 		return nil, fmt.Errorf("condition: insp_regexp: %v", err)
 	}

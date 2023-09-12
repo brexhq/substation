@@ -189,17 +189,6 @@ type Path struct {
 	//
 	// This is optional and has no default.
 	PrefixKey string `json:"prefix_key"`
-	// Suffix is a suffix appended to the file path and is used as
-	// the object filename.
-	//
-	// This is optional and has no default.
-	Suffix string `json:"suffix"`
-	// SuffixKey retrieves a value from an object that is used as
-	// the suffix appended to the file path. If used, then
-	// this overrides Suffix.
-	//
-	// This is optional and has no default.
-	SuffixKey string `json:"suffix_key"`
 	// TimeFormat inserts a formatted datetime string into the file path.
 	// Must be one of:
 	//

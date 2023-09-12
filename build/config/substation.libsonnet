@@ -571,7 +571,7 @@
   // Mirrors interfaces from the internal/kv_store package.
   kv_store: {
     aws_dynamodb(settings=null): {
-      local default = { table: null, attributes: { partition_key: null, sort_key: null, value: null, ttl: null } },
+      local default = { table: null, attributes: { partition_key: null, sort_key: null, value: null, ttl: null }, consistent_read: false },
 
       type: 'aws_dynamodb',
       settings: std.mergePatch(default, settings),

@@ -43,8 +43,7 @@ type kvAWSDynamoDB struct {
 	//
 	// This is optional and defaults to false (eventually consistent reads).
 	ConsistentRead bool `json:"consistent_read"`
-
-	api dynamodb.API
+	api            dynamodb.API
 }
 
 // Create a new AWS DynamoDB KV store.

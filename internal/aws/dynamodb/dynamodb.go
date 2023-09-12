@@ -92,7 +92,7 @@ func (a *API) Query(ctx aws.Context, table, partitionKey, sortKey, keyConditionE
 }
 
 // GetItem is a convenience wrapper for getting items into a DynamoDB table.
-func (a *API) GetItem(ctx aws.Context, table string, attributes map[string]interface{}, consistency bool) (resp *dynamodb.GetItemOutput, err error) {
+func (a *API) GetItem(ctx aws.Context, table string, attributes map[string]interface{}, consistentRead bool) (resp *dynamodb.GetItemOutput, err error) {
 	attr, err := dynamodbattribute.MarshalMap(attributes)
 	if err != nil {
 		return nil, fmt.Errorf("get_item: table %s: %v", table, err)
@@ -103,7 +103,7 @@ func (a *API) GetItem(ctx aws.Context, table string, attributes map[string]inter
 		&dynamodb.GetItemInput{
 			TableName:      aws.String(table),
 			Key:            attr,
-			ConsistentRead: aws.Bool(consistency),
+			ConsistentRead: aws.Bool(consistentRead),
 		},
 	)
 	if err != nil {

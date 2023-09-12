@@ -13,8 +13,6 @@ import (
 )
 
 type metaNegateConfig struct {
-	Object iconfig.Object `json:"object"`
-
 	Inspector config.Config `json:"inspector"`
 }
 
@@ -28,12 +26,6 @@ func (c *metaNegateConfig) Validate() error {
 	}
 
 	return nil
-}
-
-type metaNegate struct {
-	conf metaNegateConfig
-
-	insp inspector
 }
 
 func newMetaNegate(ctx context.Context, cfg config.Config) (*metaNegate, error) {
@@ -57,6 +49,12 @@ func newMetaNegate(ctx context.Context, cfg config.Config) (*metaNegate, error) 
 	}
 
 	return &meta, nil
+}
+
+type metaNegate struct {
+	conf metaNegateConfig
+
+	insp inspector
 }
 
 func (c *metaNegate) Inspect(ctx context.Context, msg *message.Message) (bool, error) {

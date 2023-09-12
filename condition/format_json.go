@@ -9,9 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type formatJSONConfig struct {
-	Object iconfig.Object `json:"object"`
-}
+type formatJSONConfig struct{}
 
 func (c *formatJSONConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)

@@ -30,25 +30,13 @@ type metaForEachConfig struct {
 	Inspector config.Config `json:"inspector"`
 }
 
-type metaForEach struct {
-	conf metaForEachConfig
-
-	inspector inspector
+func (c *metaForEachConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
 }
 
-func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error) {
-	conf := metaForEachConfig{}
-	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, err
-	}
-
-	// Validate required options.
-	if conf.Type == "" {
-		return nil, fmt.Errorf("condition: meta_for_each: type: %v", errors.ErrMissingRequiredOption)
-	}
-
-	if conf.Inspector.Type == "" {
-		return nil, fmt.Errorf("condition: meta_for_each: inspector: %v", errors.ErrMissingRequiredOption)
+func (c *metaForEachConfig) Validate() error {
+	if c.Type == "" {
+		return fmt.Errorf("type: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if !slices.Contains(
@@ -57,8 +45,25 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 			"any",
 			"all",
 		},
-		conf.Type) {
-		return nil, fmt.Errorf("condition: meta_for_each: type %q: %v", conf.Type, errors.ErrInvalidOption)
+		c.Type) {
+		return fmt.Errorf("type %q: %v", c.Type, errors.ErrInvalidOption)
+	}
+
+	if c.Inspector.Type == "" {
+		return fmt.Errorf("inspector: %v", errors.ErrMissingRequiredOption)
+	}
+
+	return nil
+}
+
+func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error) {
+	conf := metaForEachConfig{}
+	if err := conf.Decode(cfg.Settings); err != nil {
+		return nil, err
+	}
+
+	if err := conf.Validate(); err != nil {
+		return nil, err
 	}
 
 	i, err := newInspector(ctx, conf.Inspector)
@@ -67,16 +72,17 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 	}
 
 	meta := metaForEach{
-		conf:      conf,
-		inspector: i,
+		conf: conf,
+		insp: i,
 	}
 
 	return &meta, nil
 }
 
-func (c *metaForEach) String() string {
-	b, _ := gojson.Marshal(c.conf)
-	return string(b)
+type metaForEach struct {
+	conf metaForEachConfig
+
+	insp inspector
 }
 
 func (c *metaForEach) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
@@ -89,7 +95,7 @@ func (c *metaForEach) Inspect(ctx context.Context, msg *message.Message) (bool, 
 		data := []byte(res.String())
 		msg := message.New().SetData(data)
 
-		inspected, err := c.inspector.Inspect(ctx, msg)
+		inspected, err := c.insp.Inspect(ctx, msg)
 		if err != nil {
 			return false, fmt.Errorf("condition: meta_for_each: %w", err)
 		}
@@ -114,4 +120,9 @@ func (c *metaForEach) Inspect(ctx context.Context, msg *message.Message) (bool, 
 	}
 
 	return false, nil
+}
+
+func (c *metaForEach) String() string {
+	b, _ := gojson.Marshal(c.conf)
+	return string(b)
 }

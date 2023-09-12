@@ -11,31 +11,31 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type enrichDNSFwdLookup struct{}
+type enrichDNSIPLookup struct{}
 
-func newEnrichDNSFwdLookup(context.Context, config.Config) (*enrichDNS, error) {
+func newEnrichDNSIPLookup(context.Context, config.Config) (*enrichDNS, error) {
 	return nil, fmt.Errorf("transform: enrich_dns: %v", syscall.ENOSYS)
 }
 
-func (*enrichDNSFwdLookup) String() string {
+func (*enrichDNSIPLookup) String() string {
 	return ""
 }
 
-func (*enrichDNSFwdLookup) Transform(context.Context, *message.Message) ([]*message.Message, error) {
+func (*enrichDNSIPLookup) Transform(context.Context, *message.Message) ([]*message.Message, error) {
 	return nil, fmt.Errorf("transform: enrich_dns: %v", syscall.ENOSYS)
 }
 
-type enrichDNSRevLookup struct{}
+type enrichDNSDomainLookup struct{}
 
-func newEnrichDNSRevLookup(context.Context, config.Config) (*enrichDNS, error) {
+func newEnrichDNSDomainLookup(context.Context, config.Config) (*enrichDNS, error) {
 	return nil, fmt.Errorf("transform: enrich_dns: %v", syscall.ENOSYS)
 }
 
-func (*enrichDNSRevLookup) String() string {
+func (*enrichDNSDomainLookup) String() string {
 	return ""
 }
 
-func (*enrichDNSRevLookup) Transform(context.Context, *message.Message) ([]*message.Message, error) {
+func (*enrichDNSDomainLookup) Transform(context.Context, *message.Message) ([]*message.Message, error) {
 	return nil, fmt.Errorf("transform: enrich_dns: %v", syscall.ENOSYS)
 }
 

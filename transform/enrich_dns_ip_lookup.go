@@ -13,7 +13,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newEnrichDNSFwdLookup(_ context.Context, cfg config.Config) (*enrichDNSFwdLookup, error) {
+func newEnrichDNSIPLookup(_ context.Context, cfg config.Config) (*enrichDNSIPLookup, error) {
 	conf := enrichDNSConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_enrich_dns_fwd_lookup: %v", err)
@@ -28,7 +28,7 @@ func newEnrichDNSFwdLookup(_ context.Context, cfg config.Config) (*enrichDNSFwdL
 		return nil, fmt.Errorf("transform: new_enrich_dns_fwd_lookup: duration: %v", err)
 	}
 
-	tf := enrichDNSFwdLookup{
+	tf := enrichDNSIPLookup{
 		conf:     conf,
 		isObj:    conf.Object.Key != "" && conf.Object.SetKey != "",
 		resolver: net.Resolver{},
@@ -38,7 +38,7 @@ func newEnrichDNSFwdLookup(_ context.Context, cfg config.Config) (*enrichDNSFwdL
 	return &tf, nil
 }
 
-type enrichDNSFwdLookup struct {
+type enrichDNSIPLookup struct {
 	conf  enrichDNSConfig
 	isObj bool
 
@@ -47,7 +47,7 @@ type enrichDNSFwdLookup struct {
 }
 
 // Transform performs a DNS lookup on a message.
-func (tf *enrichDNSFwdLookup) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *enrichDNSIPLookup) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	resolverCtx, cancel := context.WithTimeout(ctx, tf.timeout)
 	defer cancel() // important to avoid a resource leak
 
@@ -81,7 +81,7 @@ func (tf *enrichDNSFwdLookup) Transform(ctx context.Context, msg *message.Messag
 	return []*message.Message{msg}, nil
 }
 
-func (tf *enrichDNSFwdLookup) String() string {
+func (tf *enrichDNSIPLookup) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

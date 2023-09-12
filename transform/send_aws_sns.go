@@ -28,7 +28,7 @@ type sendAWSSNSConfig struct {
 	AWS    iconfig.AWS      `json:"aws"`
 	Retry  iconfig.Retry    `json:"retry"`
 
-	// ARN is the ARN of the AWS SNS topic that data is sent to.
+	// Topic is the AWS SNS topic that data is sent to.
 	Topic string `json:"topic"`
 }
 
@@ -62,7 +62,7 @@ func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 	tf.client.Setup(aws.Config{
 		Region:     conf.AWS.Region,
 		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Attempts,
+		MaxRetries: conf.Retry.Count,
 	})
 
 	agg, err := aggregate.New(aggregate.Config{

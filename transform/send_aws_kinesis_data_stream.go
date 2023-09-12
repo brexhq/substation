@@ -72,7 +72,7 @@ func newSendAWSKinesisDataStream(_ context.Context, cfg config.Config) (*sendAWS
 	tf.client.Setup(aws.Config{
 		Region:     conf.AWS.Region,
 		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Attempts,
+		MaxRetries: conf.Retry.Count,
 	})
 
 	tf.mu = sync.Mutex{}

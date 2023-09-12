@@ -62,7 +62,7 @@ func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 	tf.client.Setup(aws.Config{
 		Region:     conf.AWS.Region,
 		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Attempts,
+		MaxRetries: conf.Retry.Count,
 	})
 
 	buffer, err := aggregate.New(aggregate.Config{

@@ -86,7 +86,7 @@ func newEnrichAWSDynamoDB(_ context.Context, cfg config.Config) (*enrichAWSDynam
 	tf.client.Setup(aws.Config{
 		Region:     conf.AWS.Region,
 		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Attempts,
+		MaxRetries: conf.Retry.Count,
 	})
 
 	return &tf, nil

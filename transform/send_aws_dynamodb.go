@@ -62,7 +62,7 @@ func newSendAWSDynamoDB(_ context.Context, cfg config.Config) (*sendAWSDynamoDB,
 	tf.client.Setup(aws.Config{
 		Region:     conf.AWS.Region,
 		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Attempts,
+		MaxRetries: conf.Retry.Count,
 	})
 
 	return &tf, nil

@@ -82,12 +82,12 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "logic_num_subtract":
 		return newLogicNumSubtract(ctx, cfg)
 	// Network transforms.
-	case "network_fqdn_registered_domain":
-		return newNetworkFQDNRegisteredDomain(ctx, cfg)
-	case "network_fqdn_subdomain":
-		return newNetworkFQDNSubdomain(ctx, cfg)
-	case "network_fqdn_tld":
-		return newNetworkFQDNTLD(ctx, cfg)
+	case "network_domain_registered_domain":
+		return newNetworkDomainRegisteredDomain(ctx, cfg)
+	case "network_domain_subdomain":
+		return newNetworkDomainSubdomain(ctx, cfg)
+	case "network_domain_top_level_domain":
+		return newNetworkDomainTopLevelDomain(ctx, cfg)
 	// Object transforms.
 	case "object_copy":
 		return newObjectCopy(ctx, cfg)

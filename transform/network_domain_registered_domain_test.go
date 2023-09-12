@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var networkFQDNTLDTests = []struct {
+var networkDomainRegisteredDomainTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -19,9 +19,9 @@ var networkFQDNTLDTests = []struct {
 	{
 		"data",
 		config.Config{},
-		[]byte(`b.com`),
+		[]byte(`c.b.com`),
 		[][]byte{
-			[]byte(`com`),
+			[]byte(`b.com`),
 		},
 	},
 	// object tests
@@ -35,18 +35,18 @@ var networkFQDNTLDTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":"b.com"}`),
+		[]byte(`{"a":"c.b.com"}`),
 		[][]byte{
-			[]byte(`{"a":"com"}`),
+			[]byte(`{"a":"b.com"}`),
 		},
 	},
 }
 
-func TestNetworkFQDNTLD(t *testing.T) {
+func TestNetworkDomainRegisteredDomain(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range networkFQDNTLDTests {
+	for _, test := range networkDomainRegisteredDomainTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newNetworkFQDNTLD(ctx, test.cfg)
+			tf, err := newNetworkDomainRegisteredDomain(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestNetworkFQDNTLD(t *testing.T) {
 	}
 }
 
-func benchmarkNetworkFQDNTLD(b *testing.B, tf *networkFQDNTLD, data []byte) {
+func benchmarkNetworkDomainRegisteredDomain(b *testing.B, tf *networkDomainRegisteredDomain, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +77,16 @@ func benchmarkNetworkFQDNTLD(b *testing.B, tf *networkFQDNTLD, data []byte) {
 	}
 }
 
-func BenchmarkNetworkFQDNTLD(b *testing.B) {
-	for _, test := range networkFQDNTLDTests {
-		tf, err := newNetworkFQDNTLD(context.TODO(), test.cfg)
+func BenchmarkNetworkDomainRegisteredDomain(b *testing.B) {
+	for _, test := range networkDomainRegisteredDomainTests {
+		tf, err := newNetworkDomainRegisteredDomain(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkNetworkFQDNTLD(b, tf, test.test)
+				benchmarkNetworkDomainRegisteredDomain(b, tf, test.test)
 			},
 		)
 	}

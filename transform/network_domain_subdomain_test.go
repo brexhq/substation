@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var networkFQDNSubdomainTests = []struct {
+var networkDomainSubdomainTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -42,11 +42,11 @@ var networkFQDNSubdomainTests = []struct {
 	},
 }
 
-func TestNetworkFQDNSubdomain(t *testing.T) {
+func TestNetworkDomainSubdomain(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range networkFQDNSubdomainTests {
+	for _, test := range networkDomainSubdomainTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newNetworkFQDNSubdomain(ctx, test.cfg)
+			tf, err := newNetworkDomainSubdomain(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestNetworkFQDNSubdomain(t *testing.T) {
 	}
 }
 
-func benchmarkNetworkFQDNSubdomain(b *testing.B, tf *networkFQDNSubdomain, data []byte) {
+func benchmarkNetworkDomainSubdomain(b *testing.B, tf *networkDomainSubdomain, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +77,16 @@ func benchmarkNetworkFQDNSubdomain(b *testing.B, tf *networkFQDNSubdomain, data 
 	}
 }
 
-func BenchmarkNetworkFQDNSubdomain(b *testing.B) {
-	for _, test := range networkFQDNSubdomainTests {
-		tf, err := newNetworkFQDNSubdomain(context.TODO(), test.cfg)
+func BenchmarkNetworkDomainSubdomain(b *testing.B) {
+	for _, test := range networkDomainSubdomainTests {
+		tf, err := newNetworkDomainSubdomain(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkNetworkFQDNSubdomain(b, tf, test.test)
+				benchmarkNetworkDomainSubdomain(b, tf, test.test)
 			},
 		)
 	}

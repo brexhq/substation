@@ -7,15 +7,15 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-type networkFQDNConfig struct {
+type networkDomainConfig struct {
 	Object iconfig.Object `json:"object"`
 }
 
-func (c *networkFQDNConfig) Decode(in interface{}) error {
+func (c *networkDomainConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *networkFQDNConfig) Validate() error {
+func (c *networkDomainConfig) Validate() error {
 	if c.Object.Key == "" && c.Object.SetKey != "" {
 		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
 	}

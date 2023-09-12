@@ -11,8 +11,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newNetworkFQDNTLD(_ context.Context, cfg config.Config) (*networkFQDNTLD, error) {
-	conf := networkFQDNConfig{}
+func newNetworkDomainTopLevelDomain(_ context.Context, cfg config.Config) (*networkDomainTopLevelDomain, error) {
+	conf := networkDomainConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_fmt_fqdn_tld: %v", err)
 	}
@@ -21,7 +21,7 @@ func newNetworkFQDNTLD(_ context.Context, cfg config.Config) (*networkFQDNTLD, e
 		return nil, fmt.Errorf("transform: new_fmt_fqdn_tld: %v", err)
 	}
 
-	tf := networkFQDNTLD{
+	tf := networkDomainTopLevelDomain{
 		conf:  conf,
 		isObj: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -29,12 +29,12 @@ func newNetworkFQDNTLD(_ context.Context, cfg config.Config) (*networkFQDNTLD, e
 	return &tf, nil
 }
 
-type networkFQDNTLD struct {
-	conf  networkFQDNConfig
+type networkDomainTopLevelDomain struct {
+	conf  networkDomainConfig
 	isObj bool
 }
 
-func (tf *networkFQDNTLD) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *networkDomainTopLevelDomain) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -57,7 +57,7 @@ func (tf *networkFQDNTLD) Transform(ctx context.Context, msg *message.Message) (
 	return []*message.Message{msg}, nil
 }
 
-func (tf *networkFQDNTLD) String() string {
+func (tf *networkDomainTopLevelDomain) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

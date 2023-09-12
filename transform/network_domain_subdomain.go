@@ -16,8 +16,8 @@ import (
 // processed.
 var errFmtSubdomainNoSubdomain = fmt.Errorf("no subdomain")
 
-func newNetworkFQDNSubdomain(_ context.Context, cfg config.Config) (*networkFQDNSubdomain, error) {
-	conf := networkFQDNConfig{}
+func newNetworkDomainSubdomain(_ context.Context, cfg config.Config) (*networkDomainSubdomain, error) {
+	conf := networkDomainConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_fmt_fqdn_subdomain: %v", err)
 	}
@@ -26,7 +26,7 @@ func newNetworkFQDNSubdomain(_ context.Context, cfg config.Config) (*networkFQDN
 		return nil, fmt.Errorf("transform: new_fmt_fqdn_subdomain: %v", err)
 	}
 
-	tf := networkFQDNSubdomain{
+	tf := networkDomainSubdomain{
 		conf:  conf,
 		isObj: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -34,12 +34,12 @@ func newNetworkFQDNSubdomain(_ context.Context, cfg config.Config) (*networkFQDN
 	return &tf, nil
 }
 
-type networkFQDNSubdomain struct {
-	conf  networkFQDNConfig
+type networkDomainSubdomain struct {
+	conf  networkDomainConfig
 	isObj bool
 }
 
-func (tf *networkFQDNSubdomain) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *networkDomainSubdomain) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -68,7 +68,7 @@ func (tf *networkFQDNSubdomain) Transform(ctx context.Context, msg *message.Mess
 	return []*message.Message{msg}, nil
 }
 
-func (tf *networkFQDNSubdomain) String() string {
+func (tf *networkDomainSubdomain) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

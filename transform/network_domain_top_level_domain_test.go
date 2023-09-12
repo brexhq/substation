@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var networkFQDNRegisteredDomainTests = []struct {
+var networkDomainTopLevelDomainTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -19,9 +19,9 @@ var networkFQDNRegisteredDomainTests = []struct {
 	{
 		"data",
 		config.Config{},
-		[]byte(`c.b.com`),
+		[]byte(`b.com`),
 		[][]byte{
-			[]byte(`b.com`),
+			[]byte(`com`),
 		},
 	},
 	// object tests
@@ -35,18 +35,18 @@ var networkFQDNRegisteredDomainTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":"c.b.com"}`),
+		[]byte(`{"a":"b.com"}`),
 		[][]byte{
-			[]byte(`{"a":"b.com"}`),
+			[]byte(`{"a":"com"}`),
 		},
 	},
 }
 
-func TestNetworkFQDNRegisteredDomain(t *testing.T) {
+func TestNetworkDomainTopLevelDomain(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range networkFQDNRegisteredDomainTests {
+	for _, test := range networkDomainTopLevelDomainTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newNetworkFQDNRegisteredDomain(ctx, test.cfg)
+			tf, err := newNetworkDomainTopLevelDomain(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestNetworkFQDNRegisteredDomain(t *testing.T) {
 	}
 }
 
-func benchmarkNetworkFQDNRegisteredDomain(b *testing.B, tf *networkFQDNRegisteredDomain, data []byte) {
+func benchmarkNetworkDomainTopLevelDomain(b *testing.B, tf *networkDomainTopLevelDomain, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +77,16 @@ func benchmarkNetworkFQDNRegisteredDomain(b *testing.B, tf *networkFQDNRegistere
 	}
 }
 
-func BenchmarkNetworkFQDNRegisteredDomain(b *testing.B) {
-	for _, test := range networkFQDNRegisteredDomainTests {
-		tf, err := newNetworkFQDNRegisteredDomain(context.TODO(), test.cfg)
+func BenchmarkNetworkDomainTopLevelDomain(b *testing.B) {
+	for _, test := range networkDomainTopLevelDomainTests {
+		tf, err := newNetworkDomainTopLevelDomain(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkNetworkFQDNRegisteredDomain(b, tf, test.test)
+				benchmarkNetworkDomainTopLevelDomain(b, tf, test.test)
 			},
 		)
 	}

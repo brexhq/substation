@@ -30,7 +30,6 @@ type options struct {
 	pprofMemory bool
 }
 
-// nolint: gocognit // Ignore cognitive complexity.
 func main() {
 	var opts options
 

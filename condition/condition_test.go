@@ -41,12 +41,12 @@ var allTests = []struct {
 		true,
 	},
 	{
-		"regexp",
+		"pattern",
 		[]config.Config{
 			{
 				Type: "string_pattern",
 				Settings: map[string]interface{}{
-					"expression": "^foo$",
+					"pattern": "^foo$",
 				},
 			},
 		},

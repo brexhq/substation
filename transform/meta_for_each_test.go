@@ -72,7 +72,7 @@ var metaForEachTests = []struct {
 				"transform": config.Config{
 					Type: "string_pattern_find",
 					Settings: map[string]interface{}{
-						"expression": "^([^@]*)@.*$",
+						"pattern": "^([^@]*)@.*$",
 					},
 				},
 			},
@@ -205,7 +205,7 @@ var metaForEachTests = []struct {
 	},
 }
 
-func TestForEach(t *testing.T) {
+func TestMetaForEach(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range metaForEachTests {
 		t.Run(test.name, func(t *testing.T) {

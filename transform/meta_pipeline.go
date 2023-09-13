@@ -80,13 +80,13 @@ type metaPipeline struct {
 	tf []Transformer
 }
 
-func (meta *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
 
-	if !meta.isObject {
-		msgs, err := Apply(ctx, meta.tf, msg)
+	if !tf.isObject {
+		msgs, err := Apply(ctx, tf.tf, msg)
 		if err != nil {
 			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 		}
@@ -94,20 +94,20 @@ func (meta *metaPipeline) Transform(ctx context.Context, msg *message.Message) (
 		return msgs, nil
 	}
 
-	result := msg.GetValue(meta.conf.Object.Key)
+	result := msg.GetValue(tf.conf.Object.Key)
 	if result.IsArray() {
-		return nil, fmt.Errorf("transform: meta_pipeline: key %s: %v", meta.conf.Object.Key, errMetaPipelineArrayInput)
+		return nil, fmt.Errorf("transform: meta_pipeline: key %s: %v", tf.conf.Object.Key, errMetaPipelineArrayInput)
 	}
 
 	tmpMsg := message.New().SetData(result.Bytes())
-	msgs, err := Apply(ctx, meta.tf, tmpMsg)
+	msgs, err := Apply(ctx, tf.tf, tmpMsg)
 	if err != nil {
 		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 	}
 
 	var output []*message.Message
 	for _, msg := range msgs {
-		if err := msg.SetValue(meta.conf.Object.SetKey, msg.Data()); err != nil {
+		if err := msg.SetValue(tf.conf.Object.SetKey, msg.Data()); err != nil {
 			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 		}
 
@@ -117,7 +117,7 @@ func (meta *metaPipeline) Transform(ctx context.Context, msg *message.Message) (
 	return output, nil
 }
 
-func (meta *metaPipeline) String() string {
-	b, _ := json.Marshal(meta.conf)
+func (tf *metaPipeline) String() string {
+	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

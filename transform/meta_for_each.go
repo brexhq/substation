@@ -38,13 +38,6 @@ func (c *metaForEachConfig) Validate() error {
 	return nil
 }
 
-type metaForEach struct {
-	conf metaForEachConfig
-
-	tf    Transformer
-	tfCfg config.Config
-}
-
 func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error) {
 	conf := metaForEachConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -75,6 +68,13 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 	tf.tf = tfer
 
 	return &tf, nil
+}
+
+type metaForEach struct {
+	conf metaForEachConfig
+
+	tf    Transformer
+	tfCfg config.Config
 }
 
 func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -108,7 +108,7 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 	return []*message.Message{msg}, nil
 }
 
-func (meta *metaForEach) String() string {
-	b, _ := json.Marshal(meta.conf)
+func (tf *metaForEach) String() string {
+	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

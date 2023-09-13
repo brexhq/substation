@@ -82,12 +82,12 @@ type metaSwitch struct {
 	}
 }
 
-func (meta *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
 
-	for _, c := range meta.conditional {
+	for _, c := range tf.conditional {
 		ok, err := c.op.Operate(ctx, msg)
 		if err != nil {
 			return nil, fmt.Errorf("transform: meta_switch: %v", err)
@@ -109,7 +109,7 @@ func (meta *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]
 	return []*message.Message{msg}, nil
 }
 
-func (meta *metaSwitch) String() string {
-	b, _ := json.Marshal(meta.conf)
+func (tf *metaSwitch) String() string {
+	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

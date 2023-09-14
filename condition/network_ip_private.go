@@ -35,13 +35,13 @@ func (insp *networkIPPrivate) Inspect(ctx context.Context, msg *message.Message)
 		str := string(msg.Data())
 		ip := net.ParseIP(str)
 
-		return netIPIsPrivate(ip), nil
+		return ip.IsPrivate(), nil
 	}
 
 	value := msg.GetValue(insp.conf.Object.Key)
 	ip := net.ParseIP(value.String())
 
-	return netIPIsPrivate(ip), nil
+	return ip.IsPrivate(), nil
 }
 
 func (insp *networkIPPrivate) String() string {

@@ -35,13 +35,13 @@ func (insp *networkIPUnspecified) Inspect(ctx context.Context, msg *message.Mess
 		str := string(msg.Data())
 		ip := net.ParseIP(str)
 
-		return netIPIsUnspecified(ip), nil
+		return ip.IsUnspecified(), nil
 	}
 
 	value := msg.GetValue(insp.conf.Object.Key)
 	ip := net.ParseIP(value.String())
 
-	return netIPIsUnspecified(ip), nil
+	return ip.IsUnspecified(), nil
 }
 
 func (c *networkIPUnspecified) String() string {

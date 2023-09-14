@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var networkIPUnicastTests = []struct {
+var networkIPLinkLocalUnicastTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -17,18 +17,18 @@ var networkIPUnicastTests = []struct {
 	{
 		"pass",
 		config.Config{},
-		[]byte("223.255.255.255"),
+		[]byte("169.254.255.255"),
 		true,
 	},
 }
 
-func TestNetworkIPUnicast(t *testing.T) {
+func TestNetworkIPLinkLocalUnicast(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range networkIPUnicastTests {
+	for _, test := range networkIPLinkLocalUnicastTests {
 		t.Run(test.name, func(t *testing.T) {
 			message := message.New().SetData(test.test)
-			insp, err := newNetworkIPUnicast(ctx, test.cfg)
+			insp, err := newNetworkIPLinkLocalUnicast(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -45,16 +45,16 @@ func TestNetworkIPUnicast(t *testing.T) {
 	}
 }
 
-func benchmarkNetworkIPUnicastByte(b *testing.B, insp *networkIPUnicast, message *message.Message) {
+func benchmarkNetworkIPLinkLocalUnicastByte(b *testing.B, insp *networkIPLinkLocalUnicast, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = insp.Inspect(ctx, message)
 	}
 }
 
-func BenchmarkNetworkIPUnicastByte(b *testing.B) {
-	for _, test := range networkIPUnicastTests {
-		insp, err := newNetworkIPUnicast(context.TODO(), test.cfg)
+func BenchmarkNetworkIPLinkLocalUnicastByte(b *testing.B) {
+	for _, test := range networkIPLinkLocalUnicastTests {
+		insp, err := newNetworkIPLinkLocalUnicast(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -62,7 +62,7 @@ func BenchmarkNetworkIPUnicastByte(b *testing.B) {
 		b.Run(test.name,
 			func(b *testing.B) {
 				message := message.New().SetData(test.test)
-				benchmarkNetworkIPUnicastByte(b, insp, message)
+				benchmarkNetworkIPLinkLocalUnicastByte(b, insp, message)
 			},
 		)
 	}

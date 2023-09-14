@@ -35,13 +35,13 @@ func (insp *networkIPMulticast) Inspect(ctx context.Context, msg *message.Messag
 		str := string(msg.Data())
 		ip := net.ParseIP(str)
 
-		return netIPIsMulticast(ip), nil
+		return ip.IsMulticast(), nil
 	}
 
 	value := msg.GetValue(insp.conf.Object.Key)
 	ip := net.ParseIP(value.String())
 
-	return netIPIsMulticast(ip), nil
+	return ip.IsMulticast(), nil
 }
 
 func (insp *networkIPMulticast) String() string {

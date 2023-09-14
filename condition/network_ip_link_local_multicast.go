@@ -9,24 +9,24 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newNetworkIPLoopback(_ context.Context, cfg config.Config) (*networkIPLoopback, error) {
+func newNetworkIPLinkLocalMulticast(_ context.Context, cfg config.Config) (*networkIPLinkLocalMulticast, error) {
 	conf := networkIPConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, err
 	}
 
-	insp := networkIPLoopback{
+	insp := networkIPLinkLocalMulticast{
 		conf: conf,
 	}
 
 	return &insp, nil
 }
 
-type networkIPLoopback struct {
+type networkIPLinkLocalMulticast struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPLoopback) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPLinkLocalMulticast) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}
@@ -35,16 +35,16 @@ func (insp *networkIPLoopback) Inspect(ctx context.Context, msg *message.Message
 		str := string(msg.Data())
 		ip := net.ParseIP(str)
 
-		return ip.IsLoopback(), nil
+		return ip.IsLinkLocalMulticast(), nil
 	}
 
 	value := msg.GetValue(insp.conf.Object.Key)
 	ip := net.ParseIP(value.String())
 
-	return ip.IsLoopback(), nil
+	return ip.IsLinkLocalMulticast(), nil
 }
 
-func (insp *networkIPLoopback) String() string {
+func (insp *networkIPLinkLocalMulticast) String() string {
 	b, _ := json.Marshal(insp.conf)
 	return string(b)
 }

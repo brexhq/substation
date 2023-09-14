@@ -9,24 +9,24 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newNetworkIPPublic(_ context.Context, cfg config.Config) (*networkIPPublic, error) {
+func newNetworkIPLinkLocalUnicast(_ context.Context, cfg config.Config) (*networkIPLinkLocalUnicast, error) {
 	conf := networkIPConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, err
 	}
 
-	insp := networkIPPublic{
+	insp := networkIPLinkLocalUnicast{
 		conf: conf,
 	}
 
 	return &insp, nil
 }
 
-type networkIPPublic struct {
+type networkIPLinkLocalUnicast struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPPublic) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPLinkLocalUnicast) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}
@@ -35,16 +35,16 @@ func (insp *networkIPPublic) Inspect(ctx context.Context, msg *message.Message) 
 		str := string(msg.Data())
 		ip := net.ParseIP(str)
 
-		return netIPIsPublic(ip), nil
+		return ip.IsLinkLocalUnicast(), nil
 	}
 
 	value := msg.GetValue(insp.conf.Object.Key)
 	ip := net.ParseIP(value.String())
 
-	return netIPIsPublic(ip), nil
+	return ip.IsLinkLocalUnicast(), nil
 }
 
-func (insp *networkIPPublic) String() string {
+func (insp *networkIPLinkLocalUnicast) String() string {
 	b, _ := json.Marshal(insp.conf)
 	return string(b)
 }

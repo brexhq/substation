@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var networkIPPublicTests = []struct {
+var networkIPGlobalUnicastTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -17,18 +17,18 @@ var networkIPPublicTests = []struct {
 	{
 		"pass",
 		config.Config{},
-		[]byte("127.0.0.1"),
-		false,
+		[]byte("8.8.8.8"),
+		true,
 	},
 }
 
-func TestNetworkIPPublic(t *testing.T) {
+func TestNetworkIPGlobalUnicast(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range networkIPPublicTests {
+	for _, test := range networkIPGlobalUnicastTests {
 		t.Run(test.name, func(t *testing.T) {
 			message := message.New().SetData(test.test)
-			insp, err := newNetworkIPPublic(ctx, test.cfg)
+			insp, err := newNetworkIPGlobalUnicast(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -45,16 +45,16 @@ func TestNetworkIPPublic(t *testing.T) {
 	}
 }
 
-func benchmarkNetworkIPPublicByte(b *testing.B, insp *networkIPPublic, message *message.Message) {
+func benchmarkNetworkIPGlobalUnicastByte(b *testing.B, insp *networkIPGlobalUnicast, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = insp.Inspect(ctx, message)
 	}
 }
 
-func BenchmarkNetworkIPPublicByte(b *testing.B) {
-	for _, test := range networkIPPublicTests {
-		insp, err := newNetworkIPPublic(context.TODO(), test.cfg)
+func BenchmarkNetworkIPGlobalUnicastByte(b *testing.B) {
+	for _, test := range networkIPGlobalUnicastTests {
+		insp, err := newNetworkIPGlobalUnicast(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -62,7 +62,7 @@ func BenchmarkNetworkIPPublicByte(b *testing.B) {
 		b.Run(test.name,
 			func(b *testing.B) {
 				message := message.New().SetData(test.test)
-				benchmarkNetworkIPPublicByte(b, insp, message)
+				benchmarkNetworkIPGlobalUnicastByte(b, insp, message)
 			},
 		)
 	}

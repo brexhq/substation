@@ -2,7 +2,7 @@ package condition
 
 import (
 	"context"
-	gojson "encoding/json"
+	"encoding/json"
 	"net"
 
 	"github.com/brexhq/substation/config"
@@ -35,16 +35,16 @@ func (insp *networkIPUnicast) Inspect(ctx context.Context, msg *message.Message)
 		str := string(msg.Data())
 		ip := net.ParseIP(str)
 
-		return netIPIsUnicast(ip), nil
+		return ip.IsGlobalUnicast() || ip.IsLinkLocalUnicast(), nil
 	}
 
 	value := msg.GetValue(insp.conf.Object.Key)
 	ip := net.ParseIP(value.String())
 
-	return netIPIsUnicast(ip), nil
+	return ip.IsGlobalUnicast() || ip.IsLinkLocalUnicast(), nil
 }
 
 func (insp *networkIPUnicast) String() string {
-	b, _ := gojson.Marshal(insp.conf)
+	b, _ := json.Marshal(insp.conf)
 	return string(b)
 }

@@ -1,13 +1,13 @@
 local sub = import '../../build/config/substation.libsonnet';
 
-local match = sub.condition.oper.any(
-  sub.condition.insp.string(
-    settings={ key: 'foo', type:'equals', expression: 'baz' },
+local match = sub.condition.any(
+  sub.condition.string.equal_to(
+    settings={ object: { key: 'foo' }, string: 'baz' }
   ),
 );
 
-local copy = sub.transform.proc.copy(
-  settings={ key: 'foo', set_key: 'bar' },
+local copy = sub.transform.object.copy(
+  settings={ object: { key: 'foo', set_key: 'bar' } },
 );
 
 {
@@ -15,8 +15,8 @@ local copy = sub.transform.proc.copy(
     sub.patterns.transform.conditional(
       condition=match, transform=copy,
     ),
-    sub.transform.proc.insert(
-      settings={ set_key: 'qux', value: 'quux' },
+    sub.transform.object.insert(
+      settings={ object: { set_key: 'qux' }, value: 'quux' },
     ),
-  ]
+  ],
 }

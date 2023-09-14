@@ -4,7 +4,7 @@ local event = import 'event.libsonnet';
 local send = import 'send.libsonnet';
 
 {
-  transforms: 
+  transforms:
     event.transforms
-    + send.transforms
+    + send.transforms,
 }

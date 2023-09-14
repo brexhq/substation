@@ -25,7 +25,7 @@ func newAggregateToArray(_ context.Context, cfg config.Config) (*aggregateToArra
 	buffer, err := aggregate.New(aggregate.Config{
 		Count:    conf.Buffer.Count,
 		Size:     conf.Buffer.Size,
-		Interval: conf.Buffer.Interval,
+		Duration: conf.Buffer.Duration,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("transform: new_aggregate_to_array: %v", err)

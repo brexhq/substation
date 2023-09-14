@@ -63,7 +63,7 @@ func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendA
 		Count: 500,
 		// Firehose limits batch operations to 4 MiB.
 		Size:     sendAWSKinesisDataFirehoseMessageSizeLimit * 4,
-		Interval: conf.Buffer.Interval,
+		Duration: conf.Buffer.Duration,
 	})
 	if err != nil {
 		return nil, err

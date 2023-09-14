@@ -86,7 +86,7 @@ func newSendSumologic(_ context.Context, cfg config.Config) (*sendSumologic, err
 		// Sumo Logic limits batches to 1MB.
 		Size:     1024 * 1024,
 		Count:    conf.Buffer.Count,
-		Interval: conf.Buffer.Interval,
+		Duration: conf.Buffer.Duration,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("transform: new_send_aws_s3: %v", err)

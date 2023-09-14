@@ -8,13 +8,13 @@ import (
 const (
 	defaultCount    = 1000
 	defaultSize     = 1 * 1024 * 1024 // 1MB
-	defaultInterval = "5m"
+	defaultDuration = "5m"
 )
 
 type Config struct {
 	Count    int    `json:"count"`
 	Size     int    `json:"size"`
-	Interval string `json:"interval"`
+	Duration string `json:"duration"`
 }
 
 type aggregate struct {
@@ -24,7 +24,7 @@ type aggregate struct {
 	maxSize int
 	size    int
 
-	maxInterval time.Duration
+	maxDuration time.Duration
 	now         time.Time
 
 	items [][]byte
@@ -49,7 +49,7 @@ func (a *aggregate) Add(data []byte) bool {
 		return false
 	}
 
-	if time.Since(a.now) > a.maxInterval {
+	if time.Since(a.now) > a.maxDuration {
 		return false
 	}
 
@@ -82,11 +82,11 @@ func New(cfg Config) (*Aggregate, error) {
 		cfg.Size = defaultSize
 	}
 
-	if cfg.Interval == "" {
-		cfg.Interval = defaultInterval
+	if cfg.Duration == "" {
+		cfg.Duration = defaultDuration
 	}
 
-	dur, err := time.ParseDuration(cfg.Interval)
+	dur, err := time.ParseDuration(cfg.Duration)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func New(cfg Config) (*Aggregate, error) {
 	return &Aggregate{
 		maxCount:    cfg.Count,
 		maxSize:     cfg.Size,
-		maxInterval: dur,
+		maxDuration: dur,
 		mu:          sync.Mutex{},
 		aggs:        make(map[string]*aggregate),
 	}, nil
@@ -103,7 +103,7 @@ func New(cfg Config) (*Aggregate, error) {
 type Aggregate struct {
 	maxCount    int
 	maxSize     int
-	maxInterval time.Duration
+	maxDuration time.Duration
 
 	mu   sync.Mutex
 	aggs map[string]*aggregate
@@ -118,7 +118,7 @@ func (m *Aggregate) Add(key string, data []byte) bool {
 		agg = &aggregate{
 			maxCount:    m.maxCount,
 			maxSize:     m.maxSize,
-			maxInterval: m.maxInterval,
+			maxDuration: m.maxDuration,
 		}
 
 		agg.Reset()

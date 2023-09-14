@@ -1,7 +1,7 @@
 // package config provides configuration types and functions for Substation.
 //
 // Any non-backwards compatible changes to the configuration types should be
-// accompanied by a version bump and a migration path.
+// accompanied by a version bump.
 package config
 
 import (
@@ -26,10 +26,12 @@ type Retry struct {
 	Count int `json:"count"`
 }
 
+// Buffer should be used by any transform that supports buffering data
+// with internal/aggregate.
 type Buffer struct {
 	Count    int    `json:"count"`
 	Size     int    `json:"size"`
-	Interval string `json:"interval"`
+	Duration string `json:"duration"`
 	Key      string `json:"key"`
 }
 

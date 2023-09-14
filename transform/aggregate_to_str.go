@@ -28,7 +28,7 @@ func newAggregateToStr(_ context.Context, cfg config.Config) (*aggregateToStr, e
 	buffer, err := aggregate.New(aggregate.Config{
 		Count:    conf.Buffer.Count,
 		Size:     conf.Buffer.Size,
-		Interval: conf.Buffer.Interval,
+		Duration: conf.Buffer.Duration,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("transform: new_aggregate_to_str: %v", err)

@@ -15,7 +15,7 @@ import (
 )
 
 // Records greater than 256 KB in size cannot be
-// put into an SNS topic
+// put into an SNS topic.
 const sendAWSSNSMessageSizeLimit = 1024 * 1024 * 256
 
 // errSendAWSSNSMessageSizeLimit is returned when data exceeds the SNS msg
@@ -24,9 +24,9 @@ const sendAWSSNSMessageSizeLimit = 1024 * 1024 * 256
 var errSendAWSSNSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSNSConfig struct {
-	Buffer aggregate.Config `json:"buffer"`
-	AWS    iconfig.AWS      `json:"aws"`
-	Retry  iconfig.Retry    `json:"retry"`
+	Buffer iconfig.Buffer `json:"buffer"`
+	AWS    iconfig.AWS    `json:"aws"`
+	Retry  iconfig.Retry  `json:"retry"`
 
 	// Topic is the AWS SNS topic that data is sent to.
 	Topic string `json:"topic"`
@@ -65,18 +65,19 @@ func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 		MaxRetries: conf.Retry.Count,
 	})
 
-	agg, err := aggregate.New(aggregate.Config{
+	buffer, err := aggregate.New(aggregate.Config{
 		// SNS limits batch operations to 10 msgs.
 		Count: 10,
 		// SNS limits batch operations to 256 KB.
 		Size:     sendAWSSNSMessageSizeLimit,
-		Interval: conf.Buffer.Interval,
+		Duration: conf.Buffer.Duration,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	tf.buffer = agg
+	tf.buffer = buffer
+	tf.bufferKey = conf.Buffer.Key
 
 	return &tf, nil
 }

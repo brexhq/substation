@@ -14,8 +14,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-// records greater than 256 KB in size cannot be
-// put into an SQS queue
+// Records greater than 256 KB in size cannot be
+// put into an SQS queue.
 const sendSQSMessageSizeLimit = 1024 * 1024 * 256
 
 // errSendSQSMessageSizeLimit is returned when data exceeds the SQS msg
@@ -28,7 +28,7 @@ type sendAWSSQSConfig struct {
 	AWS    iconfig.AWS    `json:"aws"`
 	Retry  iconfig.Retry  `json:"retry"`
 
-	// Queue is the AWS SQS queue name that data is sent to.
+	// Queue is the AWS SQS queue that data is sent to.
 	Queue string `json:"queue"`
 }
 
@@ -70,7 +70,7 @@ func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 		Count: 10,
 		// SQS limits batch operations to 256 KB.
 		Size:     sendSQSMessageSizeLimit,
-		Interval: conf.Buffer.Interval,
+		Duration: conf.Buffer.Duration,
 	})
 	if err != nil {
 		return nil, err

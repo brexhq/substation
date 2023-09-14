@@ -26,8 +26,6 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newMetaForEach(ctx, cfg)
 	case "meta_pipeline":
 		return newMetaPipeline(ctx, cfg)
-	case "meta_plugin":
-		return newMetaPlugin(ctx, cfg)
 	case "meta_switch":
 		return newMetaSwitch(ctx, cfg)
 	// Aggregation transforms.

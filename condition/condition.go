@@ -46,14 +46,18 @@ func newInspector(ctx context.Context, cfg config.Config) (inspector, error) {
 	case "meta_negate":
 		return newMetaNegate(ctx, cfg)
 	// Network inspectors.
-	case "network_ip_private":
-		return newNetworkIPPrivate(ctx, cfg)
-	case "network_ip_public":
-		return newNetworkIPPublic(ctx, cfg)
+	case "network_ip_global_unicast":
+		return newNetworkIPGlobalUnicast(ctx, cfg)
+	case "network_ip_link_local_multicast":
+		return newNetworkIPLinkLocalMulticast(ctx, cfg)
+	case "network_ip_link_local_unicast":
+		return newNetworkIPLinkLocalUnicast(ctx, cfg)
 	case "network_ip_loopback":
 		return newNetworkIPLoopback(ctx, cfg)
 	case "network_ip_multicast":
 		return newNetworkIPMulticast(ctx, cfg)
+	case "network_ip_private":
+		return newNetworkIPPrivate(ctx, cfg)
 	case "network_ip_unicast":
 		return newNetworkIPUnicast(ctx, cfg)
 	case "network_ip_unspecified":

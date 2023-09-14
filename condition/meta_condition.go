@@ -2,7 +2,7 @@ package condition
 
 import (
 	"context"
-	gojson "encoding/json"
+	"encoding/json"
 	"fmt"
 
 	"github.com/brexhq/substation/config"
@@ -74,6 +74,6 @@ func (c *metaCondition) Inspect(ctx context.Context, msg *message.Message) (outp
 }
 
 func (c *metaCondition) String() string {
-	b, _ := gojson.Marshal(c.conf)
+	b, _ := json.Marshal(c.conf)
 	return string(b)
 }

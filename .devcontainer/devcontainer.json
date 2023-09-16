@@ -4,15 +4,19 @@
 		"dockerfile": "Dockerfile"
 	},
 	"remoteUser": "root",
-	"extensions": [
-		"golang.go",
-		"hashicorp.terraform",
-		"zxh404.vscode-proto3",
-		"grafana.vscode-jsonnet"
-	],
 	"runArgs": [
 		"--memory=1g",
 		"--cpus=2"
 	],
-	"postCreateCommand": "bash .devcontainer/install-dev-tools.sh"
+	"postCreateCommand": "bash .devcontainer/install-dev-tools.sh",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-vscode.go",
+				"hashicorp.terraform",
+				"zxh404.vscode-proto3",
+				"grafana.vscode-jsonnet"
+			]
+		}
+	}
 }

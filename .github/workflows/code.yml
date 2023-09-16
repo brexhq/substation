@@ -55,4 +55,4 @@ jobs:
       - name: compile
         run: |
         go install github.com/google/go-jsonnet/cmd/jsonnet@latest
-        bash build/scripts/config/compile.sh
+        sh build/scripts/config/compile.sh

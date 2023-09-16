@@ -2,7 +2,7 @@ local sub = import '../../../../../build/config/substation.libsonnet';
 
 {
   transforms: [
-    sub.interfaces.transform.send.aws_kinesis(
+    sub.transform.send.aws.kinesis_data_stream(
       settings={stream:'substation_raw'},
     )
   ]

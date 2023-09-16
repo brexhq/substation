@@ -4,14 +4,14 @@ local enrich = import 'enrich.libsonnet';
 
 {
   transforms: [
-    sub.interfaces.transform.proc.hash(
-      settings={ key: '@this', set_key: 'event.hash' }
+    sub.transform.hash.sha256(
+      settings={ object: {key: '@this', set_key: 'event.hash' } }
     ),
-    sub.interfaces.transform.proc.time(
-      settings={ set_key: 'event.created', format: 'now' }
+    sub.transform.time.now(
+      settings={ set_key: 'event.created' }
     ),
 
-    sub.interfaces.transform.send.aws_kinesis(
+    sub.transform.send.aws.kinesis_data_stream(
       settings={stream:'substation_processed'},
     )
   ]

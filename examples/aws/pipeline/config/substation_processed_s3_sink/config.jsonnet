@@ -3,7 +3,7 @@ local const = import '../const.libsonnet';
 
 {
   transforms: [
-    sub.interfaces.transform.send.aws_s3(
+    sub.transform.send.aws.s3(
       settings={ 
         bucket: const.s3_bucket, 
         file_path: {

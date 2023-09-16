@@ -285,19 +285,19 @@
           request: $.config.request,
         },
         domain_lookup(settings=null): {
-          local default = $.transform.dns.default,
+          local default = $.transform.enrich.dns.default,
 
           type: 'enrich_dns_domain_lookup',
           settings: std.mergePatch(default, settings),
         },
         ip_lookup(settings=null): {
-          local default = $.transform.dns.default,
+          local default = $.transform.enrich.dns.default,
 
           type: 'enrich_dns_ip_lookup',
           settings: std.mergePatch(default, settings),
         },
         txt_lookup(settings=null): {
-          local default = $.transform.dns.default,
+          local default = $.transform.enrich.dns.default,
 
           type: 'enrich_dns_txt_lookup',
           settings: std.mergePatch(default, settings),

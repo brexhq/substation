@@ -76,10 +76,34 @@
         default: {
           object: $.config.object,
         },
-        valid(settings=null): {
+        global_unicast(settings=null): {
           local default = $.condition.network.ip.default,
 
-          type: 'network_ip_valid',
+          type: 'network_ip_global_unicast',
+          settings: std.mergePatch(default, settings),
+        },
+        link_local_multicast(settings=null): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_link_local_multicast',
+          settings: std.mergePatch(default, settings),
+        },
+        link_local_unicast(settings=null): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_link_local_unicast',
+          settings: std.mergePatch(default, settings),
+        },
+        loopback(settings=null): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_loopback',
+          settings: std.mergePatch(default, settings),
+        },
+        multicast(settings=null): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_multicast',
           settings: std.mergePatch(default, settings),
         },
         private(settings=null): {
@@ -88,10 +112,22 @@
           type: 'network_ip_private',
           settings: std.mergePatch(default, settings),
         },
-        public(settings=null): {
+        unicast(settings=null): {
           local default = $.condition.network.ip.default,
 
-          type: 'network_ip_public',
+          type: 'network_ip_unicast',
+          settings: std.mergePatch(default, settings),
+        },
+        unspecified(settings=null): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_unspecified',
+          settings: std.mergePatch(default, settings),
+        },
+        valid(settings=null): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_valid',
           settings: std.mergePatch(default, settings),
         },
       },
@@ -776,66 +812,71 @@
   // Mirrors config from the internal/file package.
   file_path: { prefix: null, prefix_key: null, time_format: '2006/01/02', extension: true },
   helpers: {
-    // If the input is not an array, then this returns it as an array.
+    // If the input is not an array, then this returns it as an array
     make_array(i): if !std.isArray(i) then [i] else i,
     key: {
-      // If key is foo and arr is bar, then result is foo.bar.
-      // If key is foo and arr is [bar, baz], then result is foo.bar.baz.
+      // If key is foo and arr is bar, then result is foo.bar
+      // If key is foo and arr is [bar, baz], then result is foo.bar.baz
       append(key, arr): std.join('.', $.helpers.make_array(key) + $.helpers.make_array(arr)),
-      // if key is foo, then result is foo.-1
+      // If key is foo, then result is foo.-1
       append_array(key): key + '.-1',
-      // if key is foo and e is 0, then result is foo.0
+      // If key is foo and e is 0, then result is foo.0
       get_element(key, e=0): std.join('.', [key, if std.isNumber(e) then std.toString(e) else e]),
     },
   },
   patterns: {
     condition: {
-      insp: {
-        // Negates any inspector.
-        negate(inspector): std.mergePatch(inspector, { settings: { negate: true } }),
+      obj(key): {
+        object: { key: key },
+      },
+      // Negates any inspector.
+      negate(inspector): $.condition.meta.negate(settings={ inspector: inspector }),
+      network: {
         ip: {
-          // Checks if an IP address is private.
+          // Checks if an IP address is internal.
           //
-          // Use with the ANY operator to match private IP addresses.
-          // Use with the NONE operator to match public IP addresses.
-          private(key=null): [
-            $.condition.insp.ip(settings={ key: key, type: 'loopback' }),
-            $.condition.insp.ip(settings={ key: key, type: 'multicast' }),
-            $.condition.insp.ip(settings={ key: key, type: 'multicast_link_local' }),
-            $.condition.insp.ip(settings={ key: key, type: 'private' }),
-            $.condition.insp.ip(settings={ key: key, type: 'unicast_link_local' }),
-            $.condition.insp.ip(settings={ key: key, type: 'unspecified' }),
+          // Use with the ANY operator to match internal IP addresses.
+          // Use with the NONE operator to match external IP addresses.
+          internal(key=null): [
+            $.condition.network.ip.link_local_multicast(settings=$.patterns.condition.obj(key)),
+            $.condition.network.ip.link_local_unicast(settings=$.patterns.condition.obj(key)),
+            $.condition.network.ip.loopback(settings=$.patterns.condition.obj(key)),
+            $.condition.network.ip.multicast(settings=$.patterns.condition.obj(key)),
+            $.condition.network.ip.private(settings=$.patterns.condition.obj(key)),
+            $.condition.network.ip.unspecified(settings=$.patterns.condition.obj(key)),
           ],
         },
-        length: {
+      },
+      logic: {
+        len: {
           // Checks if data is equal to zero.
           //
           // Use with the ANY / ALL operator to match empty data.
           // Use with the NONE operator to match non-empty data.
-          eq_zero(key=null):
-            $.condition.insp.length(settings={ key: key, type: 'equals', length: 0 }),
-          // checks if data is greater than zero.
+          eq_zero(key=null): 
+            $.condition.logic.len.equal_to(settings=$.patterns.condition.obj(key) { length: 0 }),
+          // Checks if data is greater than zero.
           //
-          // use with the ANY / ALL operator to match non-empty data.
-          // use with the NONE operator to match empty data.
+          // Use with the ANY / ALL operator to match non-empty data.
+          // Use with the NONE operator to match empty data.
           gt_zero(key=null):
-            $.condition.insp.length(settings={ key: key, type: 'greater_than', length: 0 }),
+            $.condition.logic.len.greater_than(settings=$.patterns.condition.obj(key) { length: 0 }),
         },
-        string: {
-          contains(string, key=null):
-            $.condition.insp.string(settings={ key: key, type: 'contains', string: string }),
-          equals(string, key=null):
-            $.condition.insp.string(settings={ key: key, type: 'equals', string: string }),
-          starts_with(string, key=null):
-            $.condition.insp.string(settings={ key: key, type: 'starts_with', string: string }),
-          ends_with(string, key=null):
-            $.condition.insp.string(settings={ key: key, type: 'ends_with', string: string }),
-        },
+      },
+      string: {
+        contains(string, key=null):
+          $.condition.string.contains(settings=$.patterns.condition.obj(key) { string: string }),
+        equal_to(string, key=null):
+          $.condition.string.equal_to(settings=$.patterns.condition.obj(key) { string: string }),
+        starts_with(string, key=null):
+          $.condition.string.starts_with(settings=$.patterns.condition.obj(key) { string: string }),
+        ends_with(string, key=null):
+          $.condition.string.ends_with(settings=$.patterns.condition.obj(key) { string: string }),
       },
     },
     transform: {
       // Conditional applies a transform when a single condition is met.
-      conditional(transform, condition): {
+      conditional(condition, transform): {
         type: 'meta_switch',
         settings: { switch: [{ condition: condition, transform: transform }] },
       },

@@ -1,20 +1,17 @@
-################################################
-# Lambda
-################################################
-
 module "microservice" {
   source = "../../../../build/terraform/aws/lambda"
   # These are always required for all Lambda.
-  kms   = module.kms
+  kms       = module.kms
   appconfig = aws_appconfig_application.substation
 
   config = {
-    name = "microservice"
+    name        = "microservice"
     description = "Provides a microservice interface to Substation"
-    image_uri = "${module.ecr_substation.url}:latest"
-    architectures = ["arm64"]
-    memory = 128
-    timeout     = 10
+    image_uri   = "${module.ecr_substation.url}:latest-3"
+    image_arm   = true
+
+    memory  = 128
+    timeout = 10
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/prod/configurations/microservice"
       "SUBSTATION_HANDLER" : "AWS_LAMBDA_SYNC"
@@ -22,9 +19,6 @@ module "microservice" {
     }
   }
 
-  tags = {
-    owner = "example"
-  }
 
   depends_on = [
     aws_appconfig_application.substation,

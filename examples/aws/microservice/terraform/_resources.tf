@@ -4,7 +4,7 @@ data "aws_caller_identity" "caller" {}
 module "kms" {
   source = "../../../../build/terraform/aws/kms"
   config = {
-    name = "alias/substation"
+    name   = "alias/substation"
     policy = <<POLICY
   {
     "Version": "2012-10-17",
@@ -34,21 +34,19 @@ module "kms" {
   }
 }
 
-# AppConfig application that is shared by all Substation apps
+# AppConfig application that is shared by all Substation applications.
 resource "aws_appconfig_application" "substation" {
   name        = "substation"
   description = "Stores compiled configuration files for Substation"
 }
 
-# Use the prod environment for production configuration files.
 resource "aws_appconfig_environment" "prod" {
   name           = "prod"
   description    = "Stores production Substation configuration files"
   application_id = aws_appconfig_application.substation.id
 }
 
-# AppConfig doesn't have useful support for non-linear, non-instant deployments on AWS Lambda, so this deployment strategy is used to deploy configurations as quickly as possible
-# todo: add configuration rollback via CloudWatch Lambda monitoring
+# AWS Lambda requires an instant deployment strategy.
 resource "aws_appconfig_deployment_strategy" "instant" {
   name                           = "Instant"
   description                    = "This strategy deploys the configuration to all targets immediately with zero bake time."
@@ -61,10 +59,10 @@ resource "aws_appconfig_deployment_strategy" "instant" {
 
 # Repository for the core Substation application.
 module "ecr_substation" {
-  source  = "../../../../build/terraform/aws/ecr"
-  kms = module.kms
+  source = "../../../../build/terraform/aws/ecr"
+  kms    = module.kms
 
   config = {
-    name    = "substation"
+    name = "substation"
   }
 }

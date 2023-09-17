@@ -5,11 +5,12 @@ variable "config" {
       "10.0.0.0/18" = "us-east-1a"
     })
     private_subnets = optional(map(string), {
-    "10.0.64.0/18"  = "us-east-1a"
-    "10.0.128.0/18" = "us-east-1b"
-    "10.0.192.0/18" = "us-east-1c"
+      "10.0.64.0/18"  = "us-east-1a"
+      "10.0.128.0/18" = "us-east-1b"
+      "10.0.192.0/18" = "us-east-1c"
     })
   })
+  description = "Configuration for the VPC."
 
   validation {
     condition     = length(keys(var.config.public_subnet)) == 1
@@ -23,7 +24,7 @@ variable "config" {
 }
 
 variable "tags" {
-  description = "Tags to apply to the VPC."
   type        = map(any)
   default     = {}
+  description = "Tags to apply to all resources."
 }

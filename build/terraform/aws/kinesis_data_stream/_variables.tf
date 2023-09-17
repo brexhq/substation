@@ -1,26 +1,29 @@
-variable "config" {
+variable "kms" {
   type = object({
-    name = string
-    autoscaling_topic = string
-    shards = optional(number, 2)
-    retention = optional(number, 24)
+    arn = string
+    id  = string
   })
+  description = "KMS key used to encrypt the stream."
 }
 
-variable kms {
+variable "config" {
   type = object({
-    arn    = string
-    id = string
+    name              = string
+    autoscaling_topic = string
+    shards            = optional(number, 2)
+    retention         = optional(number, 24)
   })
+  description = "Configuration for the Kinesis stream."
 }
 
 variable "tags" {
-  type    = map(any)
-  default = {}
+  type        = map(any)
+  default     = {}
+  description = "Tags to apply to all resources."
 }
 
 variable "access" {
-  type = list(string)
-  default = []
+  type        = list(string)
+  default     = []
   description = "List of IAM ARNs that are granted access to the resource."
 }

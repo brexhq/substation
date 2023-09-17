@@ -1,16 +1,18 @@
 variable "config" {
   type = object({
-    name = string
+    name        = string
     description = string
-    schedule = string
+    schedule    = string
     function = object({
-      arn = string
+      arn  = string
       name = string
     })
-  })  
+  })
+  description = "Configuration for the EventBridge Lambda rule."
 }
 
 variable "tags" {
-  type    = map(any)
-  default = {}
+  type        = map(any)
+  default     = {}
+  description = "Tags to apply to all resources."
 }

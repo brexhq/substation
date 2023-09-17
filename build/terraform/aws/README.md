@@ -51,16 +51,6 @@ This module is used to create Event Bridge rules that trigger a Lambda.
 
 Read more about Event Bridge [here](https://aws.amazon.com/eventbridge/).
 
-### IAM
-
-This module is used to provide default Identity and Access Management (IAM) policies for the most commonly used permissions. We use this naming convention: [AWS service]\_[read|write|modify]\_policy. For example, the `kinesis_read_policy` grants all the permissions required to read from a provided Kinesis stream.
-
-Read more about IAM policies [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html).
-
-### IAM Attachment
-
-This module is used to attach policies from the IAM module to resources used in a pipeline (such as Kinesis streams, KMS keys, DynamoDB tables, etc.). Separating policies and policy attachment allows for granular permission control. We recommend [granting least privilege](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege) whenever possible.
-
 ### Kinesis
 
 This module is used to create new Kinesis Data Streams (KDS) and accompanying CloudWatch alarms. The streams created by this module are intended to be used with Substation's autoscaling application -- this feature provides stream autoscaling at a significantly reduced cost compared to Kinesis Firehose.
@@ -77,14 +67,9 @@ Read more about the Key Management Service [here](https://aws.amazon.com/kms/).
 
 ### Lambda
 
-This module is used to create and manage Lambda, which is the recommended service for data processing. At release, the Lambda Substation app ( `cmd/aws/lambda/substation` ) supports these Lambda triggers:
+This module is used to create and manage Lambda, which is the recommended service for data processing. 
 
-* API Gateway
-* Kinesis Data Streams
-* SNS via S3
-* S3
-
-This module is flexible enough to deploy supporting apps (such as `cmd/aws/lambda/kinesis_autoscaling` ) and custom apps (such as apps that provide data enrichment functionality). When new Lambda are created with this module, an accompanying AppConfig configuration profile is created under the `substation` application.
+This module is flexible enough to deploy supporting apps (such as `cmd/aws/lambda/kinesis_autoscaling`) and custom apps (such as apps that provide data enrichment functionality). When new Lambda are created with this module, an accompanying AppConfig configuration profile is created under the `substation` application.
 
 Read more about AWS Lambda [here](https://aws.amazon.com/lambda/).
 

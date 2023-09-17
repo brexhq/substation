@@ -1,4 +1,4 @@
-# var.map[*] is a convenience function for handling empty maps
+# var.map[*] is a convenience function for handling empty maps.
 locals {
   env = var.config.env[*]
 }
@@ -6,23 +6,32 @@ locals {
 resource "aws_lambda_function" "lambda_function" {
   function_name = var.config.name
   description   = var.config.description
-  image_uri     = var.config.image_uri
-  package_type  = "Image"
-  architectures = var.config.architectures
-  role          = aws_iam_role.role.arn
-  timeout       = var.config.timeout
-  memory_size   = var.config.memory
 
+  # Runtime settings.
+  role        = aws_iam_role.role.arn
+  kms_key_arn = var.kms.arn
+  timeout     = var.config.timeout
+  memory_size = var.config.memory
+
+  # Architecture settings.
+  package_type  = "Image" # Only container images are supported.
+  image_uri     = var.config.image_uri
+  architectures = var.config.image_arm ? ["arm64"] : ["x86_64"]
+
+
+  # Network settings.
   vpc_config {
     subnet_ids         = var.config.vpc_config.subnet_ids
     security_group_ids = var.config.vpc_config.security_group_ids
   }
 
+  # Tracing settings.
   tracing_config {
     mode = "Active"
   }
 
-  # required for avoiding errors due to missing environment variables
+  # Environment settings.
+  # Required for avoiding errors due to missing environment variables.
   dynamic "environment" {
     for_each = local.env
     content {
@@ -30,8 +39,7 @@ resource "aws_lambda_function" "lambda_function" {
     }
   }
 
-  kms_key_arn = var.kms.arn
-  tags        = var.tags
+  tags = var.tags
 }
 
 resource "aws_iam_role" "role" {
@@ -64,7 +72,7 @@ resource "aws_appconfig_configuration_profile" "config" {
   tags = var.tags
 }
 
-# optional secret creation
+# Optional secrets creation.
 resource "aws_secretsmanager_secret" "secret" {
   count      = var.config.secret ? 1 : 0
   name       = var.config.name
@@ -103,7 +111,7 @@ resource "aws_iam_role_policy_attachment" "custom_policy_attachment" {
 
 resource "aws_iam_policy" "custom_policy" {
   name        = var.config.name
-  description = "Policy for the ${var.config.name} Lambda"
+  description = "Policy for the ${var.config.name} Lambda."
   policy      = data.aws_iam_policy_document.custom_policy_document.json
 }
 
@@ -117,7 +125,7 @@ data "aws_iam_policy_document" "custom_policy_document" {
       "appconfig:GetLatestConfiguration",
       "appconfig:StartConfigurationSession",
     ]
- 
+
     resources = [
       "${var.appconfig.arn}/*"
     ]
@@ -150,16 +158,18 @@ data "aws_iam_policy_document" "custom_policy_document" {
 }
 
 ################################################
-# Applies the policy to each role in the access list.
+# Access Policies
+################################################
+
 resource "aws_iam_role_policy_attachment" "access" {
-  for_each = toset(var.access)
-  role = each.value
+  for_each   = toset(var.access)
+  role       = each.value
   policy_arn = aws_iam_policy.access.arn
 }
 
 resource "aws_iam_policy" "access" {
-  name        = var.config.name
-  description = "Policy for the ${var.config.name} Kinesis Data Stream"
+  name        = "${var.config.name}-access"
+  description = "Policy for the ${var.config.name} Lambda."
   policy      = data.aws_iam_policy_document.access.json
 }
 
@@ -185,7 +195,6 @@ data "aws_iam_policy_document" "access" {
     actions = [
       "lambda:InvokeAsync",
       "lambda:InvokeFunction",
-
     ]
 
     resources = [

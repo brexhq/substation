@@ -7,7 +7,7 @@ module "microservice" {
   config = {
     name        = "microservice"
     description = "Provides a microservice interface to Substation"
-    image_uri   = "${module.ecr_substation.url}:latest-3"
+    image_uri   = "${module.ecr_substation.url}:latest"
     image_arm   = true
 
     memory  = 128

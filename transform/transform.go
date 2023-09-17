@@ -52,9 +52,9 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newEnrichAWSDynamoDB(ctx, cfg)
 	case "enrich_aws_lambda":
 		return newEnrichAWSLambda(ctx, cfg)
-	case "enrich_dns_forward_lookup":
+	case "enrich_dns_ip_lookup":
 		return newEnrichDNSIPLookup(ctx, cfg)
-	case "enrich_dns_reverse_lookup":
+	case "enrich_dns_domain_lookup":
 		return newEnrichDNSDomainLookup(ctx, cfg)
 	case "enrich_dns_text_lookup":
 		return newEnrichDNSTxtLookup(ctx, cfg)

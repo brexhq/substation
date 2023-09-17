@@ -1,14 +1,16 @@
 # Used for testing Substation configurations via AWS AppConfig Validation or with manual invocations.
 
-# first runs of this Terraform will fail due to an empty ECR image
 module "lambda_validator" {
   source        = "../../../../build/terraform/aws/lambda"
-  function_name = "substation_validator"
-  description   = "Validates Substation configurations via AWS AppConfig Validation or manual invocations."
-  appconfig_id  = aws_appconfig_application.substation.id
-  kms_arn       = module.kms_substation.arn
-  image_uri     = "${module.ecr_validation.repository_url}:latest"
-  architectures = ["arm64"]
+  kms = module.kms
+  appconfig = aws_appconfig_application.substation
+
+  config = {
+    name = "substation_validator"
+    description = "Validates configurations"
+    image_uri = "${module.ecr_validation.url}:latest"
+    architectures = ["arm64"]
+  }
 
   tags = {
     owner = "example"
@@ -16,8 +18,8 @@ module "lambda_validator" {
 
   depends_on = [
     aws_appconfig_application.substation,
-    module.ecr_autoscaling.repository_url,
-    module.network,
+    module.ecr_autoscaling.url,
+    module.vpc,
   ]
 }
 

@@ -5,30 +5,30 @@
 
 module "lambda_enrichment" {
   source        = "../../../../build/terraform/aws/lambda"
-  function_name = "substation_lambda_enrichment"
-  description   = "Substation Lambda that is triggered synchronously and provides enrichment as a microservice"
-  appconfig_id  = aws_appconfig_application.substation.id
-  kms_arn       = module.kms_substation.arn
-  image_uri     = "${module.ecr_substation.repository_url}:latest"
-  architectures = ["arm64"]
-  # use lower memory and timeouts for microservice deployments
-  memory_size = 128
-  timeout     = 10
+  kms = module.kms
+  appconfig = aws_appconfig_application.substation
 
-  env = {
-    "AWS_MAX_ATTEMPTS" : 10
-    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_lambda_enrichment"
-    "SUBSTATION_HANDLER" : "AWS_LAMBDA_SYNC"
-    "SUBSTATION_DEBUG" : 1
-    "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
+  config = {
+    name = "substation_lambda_enrichment"
+    description = "Provides a microservice interface to Substation"
+    image_uri = "${module.ecr_substation.url}:latest"
+    architectures = ["arm64"]
+    # Microservices require less memory and lower timeouts.
+    memory = 128
+    timeout     = 10
+    env = {
+      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/prod/configurations/substation_lambda_enrichment"
+      "SUBSTATION_HANDLER" : "AWS_LAMBDA_SYNC"
+      "SUBSTATION_DEBUG" : true
+    }
   }
+
   tags = {
     owner = "example"
   }
 
   depends_on = [
     aws_appconfig_application.substation,
-    module.ecr_autoscaling.repository_url,
-    module.network,
+    module.vpc,
   ]
 }

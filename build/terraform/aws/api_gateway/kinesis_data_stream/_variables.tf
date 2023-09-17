@@ -1,8 +1,9 @@
-variable config {
+variable "config" {
   type = object({
     name = string
-    policy = optional(string, "")
-  })
+    stream = string
+    timeout = optional(number, 1000)
+  })  
 }
 
 variable "tags" {

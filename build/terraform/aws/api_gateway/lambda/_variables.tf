@@ -1,9 +1,10 @@
-variable "name" {
-  type = string
-}
-
-variable "function_arn" {
-  type = string
+variable "config" {
+  type = object({
+    name = string
+    function = object({
+      arn = string
+    })
+  })
 }
 
 variable "tags" {

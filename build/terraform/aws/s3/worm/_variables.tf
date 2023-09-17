@@ -1,14 +1,16 @@
-variable "bucket" {
-  type = string
+variable "kms" {
+  type = object({
+    arn    = string
+    id = string
+  })
 }
 
-variable "kms_arn" {
-  type = string
-}
-
-variable "retention_days" {
-  type    = number
-  default = 365
+variable "config" {
+  type = object({
+    name = string
+    retention = number
+    force_destroy = optional(bool, false)
+  })
 }
 
 variable "tags" {
@@ -16,7 +18,8 @@ variable "tags" {
   default = {}
 }
 
-variable "force_destroy" {
-  type    = bool
-  default = false
+variable "access" {
+  type = list(string)
+  default = []
+  description = "List of IAM ARNs that are granted access to the resource."
 }

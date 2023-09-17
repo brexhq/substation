@@ -4,27 +4,29 @@
 
 module "subscriber_x" {
   source        = "../../../../build/terraform/aws/lambda"
-  function_name = "subscriber_x"
-  description   = "Substation node that is subscribed to SNS"
-  appconfig_id  = aws_appconfig_application.substation.id
-  kms_arn       = module.kms.arn
-  image_uri     = "${module.ecr_substation.repository_url}:latest3"
-  architectures = ["arm64"]
+  # These are always required for all Lambda.
+  kms   = module.kms
+  appconfig = aws_appconfig_application.substation
 
-  env = {
-    "AWS_MAX_ATTEMPTS" : 10
-    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/subscriber_x"
-    "SUBSTATION_HANDLER" : "AWS_SNS"
-    "SUBSTATION_DEBUG" : 1
-    "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
+  config = {
+    name = "subscriber_x"
+    description = "Subscribes to SNS"
+    image_uri = "${module.ecr_substation.url}:latest"
+    architectures = ["arm64"]
+    env = {
+      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/prod/configurations/subscriber_x"
+      "SUBSTATION_HANDLER" : "AWS_SNS"
+      "SUBSTATION_DEBUG" : true
+    }
   }
+
   tags = {
     owner = "example"
   }
 
   depends_on = [
     aws_appconfig_application.substation,
-    module.ecr_substation.repository_url,
+    module.ecr_substation.url,
   ]
 }
 
@@ -48,27 +50,25 @@ resource "aws_lambda_permission" "subscriber_x" {
 
 module "subscriber_y" {
   source        = "../../../../build/terraform/aws/lambda"
-  function_name = "subscriber_y"
-  description   = "Substation node that is subscribed to SNS"
-  appconfig_id  = aws_appconfig_application.substation.id
-  kms_arn       = module.kms.arn
-  image_uri     = "${module.ecr_substation.repository_url}:latest3"
-  architectures = ["arm64"]
+  # These are always required for all Lambda.
+  kms   = module.kms
+  appconfig = aws_appconfig_application.substation
 
-  env = {
-    "AWS_MAX_ATTEMPTS" : 10
-    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/subscriber_y"
-    "SUBSTATION_HANDLER" : "AWS_SNS"
-    "SUBSTATION_DEBUG" : 1
-    "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
-  }
-  tags = {
-    owner = "example"
+  config = {
+    name = "subscriber_y"
+    description = "Subscribes to SNS"
+    image_uri = "${module.ecr_substation.url}:latest"
+    architectures = ["arm64"]
+    env = {
+      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/prod/configurations/subscriber_y"
+      "SUBSTATION_HANDLER" : "AWS_SNS"
+      "SUBSTATION_DEBUG" : true
+    }
   }
 
   depends_on = [
     aws_appconfig_application.substation,
-    module.ecr_substation.repository_url,
+    module.ecr_substation.url,
   ]
 }
 
@@ -93,27 +93,29 @@ resource "aws_lambda_permission" "subscriber_y" {
 
 module "subscriber_z" {
   source        = "../../../../build/terraform/aws/lambda"
-  function_name = "subscriber_z"
-  description   = "Substation node that is subscribed to SNS"
-  appconfig_id  = aws_appconfig_application.substation.id
-  kms_arn       = module.kms.arn
-  image_uri     = "${module.ecr_substation.repository_url}:latest3"
-  architectures = ["arm64"]
+  # These are always required for all Lambda.
+  kms   = module.kms
+  appconfig = aws_appconfig_application.substation
 
-  env = {
-    "AWS_MAX_ATTEMPTS" : 10
-    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/subscriber_z"
-    "SUBSTATION_HANDLER" : "AWS_SNS"
-    "SUBSTATION_DEBUG" : 1
-    "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
+  config = {
+    name = "subscriber_z"
+    description = "Subscribes to SNS"
+    image_uri = "${module.ecr_substation.url}:latest"
+    architectures = ["arm64"]
+    env = {
+      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/prod/configurations/subscriber_z"
+      "SUBSTATION_HANDLER" : "AWS_SNS"
+      "SUBSTATION_DEBUG" : true
+    }
   }
+
   tags = {
     owner = "example"
   }
 
   depends_on = [
     aws_appconfig_application.substation,
-    module.ecr_substation.repository_url,
+    module.ecr_substation.url,
   ]
 }
 

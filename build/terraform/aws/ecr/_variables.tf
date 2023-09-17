@@ -1,9 +1,14 @@
-variable "name" {
-  type = string
+variable "config" {
+  type = object({
+    name = string
+  })  
 }
 
-variable "kms_arn" {
-  type = string
+variable "kms" {
+  type = object({
+    arn    = string
+    id = string
+  })
 }
 
 variable "tags" {

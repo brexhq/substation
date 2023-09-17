@@ -1,9 +1,15 @@
-variable "bucket" {
-  type = string
+variable "kms" {
+  type = object({
+    arn    = string
+    id = string
+  })
 }
 
-variable "kms_arn" {
-  type = string
+variable "config" {
+  type = object({
+    name = string
+    force_destroy = optional(bool, true)
+  })
 }
 
 variable "tags" {
@@ -11,7 +17,8 @@ variable "tags" {
   default = {}
 }
 
-variable "force_destroy" {
-  type    = bool
-  default = true
+variable "access" {
+  type = list(string)
+  default = []
+  description = "List of IAM ARNs that are granted access to the resource."
 }

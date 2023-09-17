@@ -1,41 +1,37 @@
-variable "function_name" {
-  type = string
+variable "appconfig" {
+  type = object({
+    arn = string
+    id = string
+  })
 }
 
-variable "description" {
-  type = string
+variable "kms" {
+  type = object({
+    arn = string
+    id = string
+  })
 }
 
-variable "image_uri" {
-  type = string
-}
-
-variable "appconfig_id" {
-  type = string
-}
-
-variable "architectures" {
-  type    = list(string)
-  default = ["x86_64"]
-}
-
-variable "timeout" {
-  type    = number
-  default = 300
-}
-
-variable "memory_size" {
-  type    = number
-  default = 1024
-}
-
-variable "env" {
-  type    = map(any)
-  default = null
-}
-
-variable "kms_arn" {
-  type = string
+variable "config" {
+  type = object({
+    name = string
+    description = string
+    image_uri = string
+    architectures = optional(list(string), ["x86_64"])
+    timeout = optional(number, 300)
+    memory = optional(number, 1024)
+    env = optional(map(any), null)
+    secret = optional(bool, false)
+    vpc_config = optional(object({
+      subnet_ids = list(string)
+      security_group_ids = list(string)
+    }), null)
+    iam_statements = optional(list(object({
+      sid = string
+      actions = list(string)
+      resources = list(string)
+    })), [])
+  })
 }
 
 variable "tags" {
@@ -43,18 +39,8 @@ variable "tags" {
   default = {}
 }
 
-variable "secret" {
-  type    = bool
-  default = false
-}
-
-variable "vpc_config" {
-  type = object({
-    subnet_ids         = list(string)
-    security_group_ids = list(string)
-  })
-  default = {
-    subnet_ids         = []
-    security_group_ids = []
-  }
+variable "access" {
+  type = list(string)
+  default = []
+  description = "List of IAM ARNs that are granted access to the resource."
 }

@@ -1,13 +1,16 @@
-variable "kms" {
-  type = object({
-    arn    = string
-    id = string
-  })
-}
-
 variable "config" {
   type = object({
     name = string
+    autoscaling_topic = string
+    shards = optional(number, 2)
+    retention = optional(number, 24)
+  })
+}
+
+variable kms {
+  type = object({
+    arn    = string
+    id = string
   })
 }
 

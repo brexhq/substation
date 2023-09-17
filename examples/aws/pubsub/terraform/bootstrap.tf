@@ -3,33 +3,36 @@ data "aws_caller_identity" "caller" {}
 # KMS encryption key that is shared by all Substation infrastructure
 module "kms" {
   source = "../../../../build/terraform/aws/kms"
-  name   = "alias/substation"
-  policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-    "Effect": "Allow",
-    "Action": [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ],
-    "Principal": {
-      "Service": "cloudwatch.amazonaws.com"
-    },
-    "Resource": "*"
-    },
-    {
-    "Effect": "Allow",
-    "Action": "kms:*",
-    "Principal": {
-      "AWS": "arn:aws:iam::${data.aws_caller_identity.caller.account_id}:root"
-    },
-    "Resource": "*"
-    }
-  ]
-}
-POLICY
+
+  config = {
+    name = "alias/substation"
+    policy = <<POLICY
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ],
+      "Principal": {
+        "Service": "cloudwatch.amazonaws.com"
+      },
+      "Resource": "*"
+      },
+      {
+      "Effect": "Allow",
+      "Action": "kms:*",
+      "Principal": {
+        "AWS": "arn:aws:iam::${data.aws_caller_identity.caller.account_id}:root"
+      },
+      "Resource": "*"
+      }
+    ]
+  }
+  POLICY
+  }
 }
 
 # AppConfig application that is shared by all Substation apps
@@ -42,13 +45,6 @@ resource "aws_appconfig_application" "substation" {
 resource "aws_appconfig_environment" "prod" {
   name           = "prod"
   description    = "Stores production Substation configuration files"
-  application_id = aws_appconfig_application.substation.id
-}
-
-# use the dev environment for development resources
-resource "aws_appconfig_environment" "dev" {
-  name           = "dev"
-  description    = "Stores development Substation configuration files"
   application_id = aws_appconfig_application.substation.id
 }
 
@@ -67,19 +63,55 @@ resource "aws_appconfig_deployment_strategy" "instant" {
 # repository for the core Substation app
 module "ecr_substation" {
   source  = "../../../../build/terraform/aws/ecr"
-  name    = "substation"
-  kms_arn = module.kms.arn
+  kms = module.kms
+
+  config = {
+    name    = "substation"
+  }
 }
 
 # repository for the validation app
 module "ecr_validation" {
   source  = "../../../../build/terraform/aws/ecr"
-  name    = "substation_validation"
-  kms_arn = module.kms.arn
+  kms = module.kms
+
+  config = {
+    name    = "substation_validation"
+  }
 }
 
 module "sns" {
   source     = "../../../../build/terraform/aws/sns"
-  kms_key_id = module.kms.key_id
-  name       = "substation_sns"
+  kms   = module.kms
+
+  config = {
+    name = "substation"
+  }
+
+  access = [
+    module.publisher.role,
+    module.subscriber_x.role,
+    module.subscriber_y.role,
+    module.subscriber_z.role,
+  ]
+}
+
+module "dynamodb" {
+  source     = "../../../../build/terraform/aws/dynamodb"
+  kms    = module.kms
+
+  config = {
+    name = "substation"
+    hash_key = "PK"
+    attributes = [
+      {
+        name = "PK"
+        type = "S"
+      }
+    ]
+  }
+
+  access = [
+    module.publisher.role,
+  ]
 }

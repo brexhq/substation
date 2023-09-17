@@ -3,7 +3,7 @@ data "aws_region" "current" {}
 data "aws_partition" "current" {}
 
 resource "aws_api_gateway_rest_api" "api" {
-  name = var.name
+  name = var.config.name
   tags = var.tags
 }
 
@@ -28,7 +28,7 @@ data "aws_iam_policy_document" "service_policy_document" {
 }
 
 resource "aws_iam_role" "role" {
-  name               = "${var.name}_role"
+  name               = "${var.config.name}_role"
   assume_role_policy = data.aws_iam_policy_document.service_policy_document.json
   tags               = var.tags
 }
@@ -39,7 +39,7 @@ resource "aws_api_gateway_integration" "gateway_integration" {
   http_method             = aws_api_gateway_method.method.http_method
   integration_http_method = "POST"
   type                    = "AWS"
-  timeout_milliseconds    = var.timeout
+  timeout_milliseconds    = var.config.timeout
   uri = format(
     "arn:%s:apigateway:%s:kinesis:action/PutRecord",
     data.aws_partition.current.partition,
@@ -52,7 +52,7 @@ resource "aws_api_gateway_integration" "gateway_integration" {
   request_templates = {
     "application/json" = <<EOF
     {
-        "StreamName": "${var.stream}",
+        "StreamName": "${var.config.stream}",
         "Data": "$util.base64Encode($input.body)",
         "PartitionKey": "$context.requestId"
     }
@@ -86,7 +86,7 @@ resource "aws_api_gateway_integration_response" "integration_response" {
 
 resource "aws_api_gateway_deployment" "deployment" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  stage_name  = var.name
+  stage_name  = var.config.name
 
   depends_on = [
     aws_api_gateway_integration.gateway_integration,

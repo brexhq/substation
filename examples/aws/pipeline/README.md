@@ -7,32 +7,29 @@ The data pipeline is visualized below:
 ```mermaid
 graph TD
     %% core infrastructure
-    dynamodb_table(Metadata DynamoDB Table)
-    gateway_kinesis(HTTPS Endpoint)
-    gateway(HTTPS Endpoint)
-    kinesis_raw(Raw Data Kinesis Stream)
-    kinesis_processed(Processed Data Kinesis Stream)
-    s3_source_bucket(S3 Data Storage)
-    s3_lake_bucket(Data Lake S3 Storage)
-    s3_warehouse_bucket(Data Warehouse S3 Storage)
+    dynamodb_table(DynamoDB Table)
+    gateway_kinesis(API Gateway)
+    kinesis_raw(Kinesis Data Stream)
+    kinesis_processed(Kinesis Data Stream)
+    s3_source_bucket(S3 Bucket)
+    s3_lake_bucket(S3 Bucket)
+    s3_bucket(S3 Bucket)
     sns_topic(SNS Topic)
     sqs_queue(SQS Queue)
 
     %% Lambda data processing
-    dynamodb_lambda[DynamoDB Sink Lambda]
-    gateway_lambda[Gateway Source Lambda]
-    kinesis_lambda[Processor Lambda]
-    enrichment_lambda[Data Enrichment Lambda]
-    s3_warehouse_sink_lambda[S3 Sink Lambda]
-    async_source_lambda[Async Source Lambda]
-    s3_source_lambda[S3 Source Lambda]
-    s3_lake_sink_lambda[S3 Sink Lambda]
-    sns_source_lambda[SNS Source Lambda]
-    sqs_source_lambda[SQS Source Lambda]
+    dynamodb_lambda[Lambda]
+    kinesis_lambda[Lambda]
+    enrichment_lambda[Lambda]
+    s3_warehouse_sink_lambda[Lambda]
+    async_source_lambda[Lambda]
+    s3_source_lambda[Lambda]
+    s3_lake_sink_lambda[Lambda]
+    sns_source_lambda[Lambda]
+    sqs_source_lambda[Lambda]
 
     %% ingest
     async_source_lambda ---|Push| kinesis_raw
-    gateway ---|Push| gateway_lambda ---|Push| kinesis_raw
     gateway_kinesis ---|Push| kinesis_raw
     s3_source_bucket ---|Pull| s3_source_lambda ---|Push| kinesis_raw
     sns_topic ---|Push| sns_source_lambda ---|Push| kinesis_raw
@@ -45,7 +42,7 @@ graph TD
     kinesis_lambda ---|Invoke| enrichment_lambda
 
     %% load
-    kinesis_processed ---|Pull| s3_warehouse_sink_lambda ---|Push| s3_warehouse_bucket
+    kinesis_processed ---|Pull| s3_warehouse_sink_lambda ---|Push| s3_bucket
     kinesis_processed ---|Pull| dynamodb_lambda ---|Push| dynamodb_table
 ```
 

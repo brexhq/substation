@@ -1,35 +1,38 @@
 data "aws_caller_identity" "caller" {}
 
 # KMS encryption key that is shared by all Substation infrastructure
-module "kms_substation" {
+module "kms" {
   source = "../../../../build/terraform/aws/kms"
-  name   = "alias/substation"
-  policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-    "Effect": "Allow",
-    "Action": [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ],
-    "Principal": {
-      "Service": "cloudwatch.amazonaws.com"
-    },
-    "Resource": "*"
-    },
-    {
-    "Effect": "Allow",
-    "Action": "kms:*",
-    "Principal": {
-      "AWS": "arn:aws:iam::${data.aws_caller_identity.caller.account_id}:root"
-    },
-    "Resource": "*"
-    }
-  ]
-}
-POLICY
+
+  config = {
+    name = "alias/substation"
+    policy = <<POLICY
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ],
+      "Principal": {
+        "Service": "cloudwatch.amazonaws.com"
+      },
+      "Resource": "*"
+      },
+      {
+      "Effect": "Allow",
+      "Action": "kms:*",
+      "Principal": {
+        "AWS": "arn:aws:iam::${data.aws_caller_identity.caller.account_id}:root"
+      },
+      "Resource": "*"
+      }
+    ]
+  }
+  POLICY
+  }
 }
 
 # AppConfig application that is shared by all Substation apps
@@ -42,13 +45,6 @@ resource "aws_appconfig_application" "substation" {
 resource "aws_appconfig_environment" "prod" {
   name           = "prod"
   description    = "Stores production Substation configuration files"
-  application_id = aws_appconfig_application.substation.id
-}
-
-# use the dev environment for development resources
-resource "aws_appconfig_environment" "dev" {
-  name           = "dev"
-  description    = "Stores development Substation configuration files"
   application_id = aws_appconfig_application.substation.id
 }
 
@@ -67,22 +63,31 @@ resource "aws_appconfig_deployment_strategy" "instant" {
 # repository for the core Substation app
 module "ecr_substation" {
   source  = "../../../../build/terraform/aws/ecr"
-  name    = "substation"
-  kms_arn = module.kms_substation.arn
+  kms = module.kms
+
+  config = {
+    name = "substation"
+  }
 }
 
 # repository for the autoscaling app
 module "ecr_autoscaling" {
   source  = "../../../../build/terraform/aws/ecr"
-  name    = "substation_autoscaling"
-  kms_arn = module.kms_substation.arn
+  kms = module.kms
+
+  config = {
+    name = "substation_autoscaling"
+  }
 }
 
 # repository for the validation app
 module "ecr_validation" {
   source  = "../../../../build/terraform/aws/ecr"
-  name    = "substation_validation"
-  kms_arn = module.kms_substation.arn
+  kms = module.kms
+
+  config = {
+    name = "substation_validation"
+  }
 }
 
 # By default this creates these resources:
@@ -91,4 +96,121 @@ module "ecr_validation" {
 # - 3 private subnets each with a NAT gateway
 module "vpc" {
   source = "../../../../build/terraform/aws/networking/vpc"
+
+  config = {}
+}
+
+module "gateway_to_kinesis" {
+  source = "../../../../build/terraform/aws/api_gateway/kinesis_data_stream"
+
+  config = {
+    name   = "substation_kinesis_gateway"
+    stream = "substation_raw"
+  }
+}
+
+module "kinesis_raw" {
+  source            = "../../../../build/terraform/aws/kinesis_data_stream"
+  kms = module.kms
+
+  config = {
+    name = "substation_raw"
+    autoscaling_topic = aws_sns_topic.autoscaling_topic.arn
+  }
+
+  tags = {
+    owner = "example"
+  }
+
+  access = [
+    module.lambda_autoscaling.role,
+    module.lambda_processor.role,
+    module.lambda_sink_s3.role,
+  ]
+}
+
+
+module "kinesis_processed" {
+  source            = "../../../../build/terraform/aws/kinesis_data_stream"
+  kms        = module.kms
+
+  config = {
+    name = "substation_processed"
+    autoscaling_topic = aws_sns_topic.autoscaling_topic.arn
+  }
+
+  tags = {
+    owner = "example"
+  }
+
+  access = [
+    module.lambda_autoscaling.role,
+    module.lambda_processor.role,
+    module.lambda_sink_s3.role,
+    module.lambda_source_sns.role,
+  ]
+}
+
+resource "random_uuid" "s3" {}
+
+module "s3" {
+  source  = "../../../../build/terraform/aws/s3"
+  kms = module.kms
+
+  config = {
+    name    = "${random_uuid.s3.result}-substation"
+  }
+
+  access = [
+    module.lambda_source_s3.role,
+    module.lambda_sink_s3.role,
+  ]
+}
+
+module "dynamodb" {
+  source     = "../../../../build/terraform/aws/dynamodb"
+  kms    = module.kms
+
+  config = {
+    name = "substation"
+    hash_key = "PK"
+    attributes = [
+      {
+        name = "PK"
+        type = "S"
+      }
+    ]
+  }
+
+  access = [
+    module.lambda_sink_dynamodb.role,
+  ]
+}
+
+module "sns" {
+  source     = "../../../../build/terraform/aws/sns"
+  kms = module.kms
+
+  config = {
+    name = "substation"
+  }
+
+  access = [
+    module.lambda_source_sns.role,
+  ]
+}
+
+module "sqs" {
+  source     = "../../../../build/terraform/aws/sqs"
+  kms = module.kms
+  
+  config = {
+    name = "substation"
+    # Timeout must match timeout on Lambda.
+    timeout = 300
+  }
+
+  access = [
+    module.lambda_source_sqs.role,
+  ]
 }

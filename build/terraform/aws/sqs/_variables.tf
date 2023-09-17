@@ -1,22 +1,25 @@
-variable "name" {
-  type = string
+variable "kms" {
+  type = object({
+    arn    = string
+    id = string
+  })
 }
 
-variable "kms_key_id" {
-  type = string
-}
-
-variable "delay_seconds" {
-  type    = number
-  default = 0
-}
-
-variable "visibility_timeout_seconds" {
-  type    = number
-  default = 300
+variable "config" {
+  type = object({
+    name = string
+    delay = optional(number, 0)
+    timeout = optional(number, 300)
+  })
 }
 
 variable "tags" {
   type    = map(any)
   default = {}
+}
+
+variable "access" {
+  type = list(string)
+  default = []
+  description = "List of IAM ARNs that are granted access to the resource."
 }

@@ -1,60 +1,50 @@
-################################################
-# Lambda
-# reads from S3 bucket, writes to raw Kinesis stream
-################################################
-
-module "lambda_s3_source" {
+module "lambda_source_s3" {
   source        = "../../../../build/terraform/aws/lambda"
-  function_name = "substation_s3_source"
-  description   = "Substation Lambda that is triggered from S3 and writes data to the raw Kinesis stream"
-  appconfig_id  = aws_appconfig_application.substation.id
-  kms_arn       = module.kms_substation.arn
-  image_uri     = "${module.ecr_substation.repository_url}:latest"
-  architectures = ["arm64"]
+  kms = module.kms
+  appconfig = aws_appconfig_application.substation
 
-  env = {
-    "AWS_MAX_ATTEMPTS" : 10
-    "AWS_APPCONFIG_EXTENSION_PREFETCH_LIST" : "/applications/substation/environments/prod/configurations/substation_s3_source"
-    "SUBSTATION_HANDLER" : "AWS_S3"
-    "SUBSTATION_DEBUG" : 1
-    "SUBSTATION_METRICS" : "AWS_CLOUDWATCH_EMBEDDED_METRICS"
+  config = {
+    name = "substation_source_s3"
+    description = "Writes to Kinesis"
+    image_uri = "${module.ecr_substation.url}:latest"
+    architectures = ["arm64"]
+
+    env = {
+      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/prod/configurations/substation_source_s3"
+      "SUBSTATION_HANDLER" : "AWS_S3"
+      "SUBSTATION_DEBUG" : true
+    }
   }
+
   tags = {
     owner = "example"
   }
 
   depends_on = [
     aws_appconfig_application.substation,
-    module.ecr_autoscaling.repository_url,
-    module.network,
+    module.ecr_autoscaling.url,
+    module.vpc,
   ]
 }
 
+resource "aws_lambda_permission" "lambda_source_s3" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = module.lambda_source_s3.name
+  principal     = "s3.amazonaws.com"
+  source_arn    = module.s3.arn
+}
 
-resource "aws_s3_bucket_notification" "lambda_notification_s3_source" {
-  bucket = module.s3_substation.id
+resource "aws_s3_bucket_notification" "lambda_source_s3" {
+  bucket = module.s3.id
 
   lambda_function {
-    lambda_function_arn = module.lambda_s3_source.arn
+    lambda_function_arn = module.lambda_source_s3.arn
     events              = ["s3:ObjectCreated:*"]
-    # enable prefix and suffix filtering based on the source service that is writing objects to the bucket
     filter_prefix = "source/"
-    # filter_suffix       = var.filter_suffix
   }
 
   depends_on = [
-    aws_lambda_permission.lambda_s3_source,
+    aws_lambda_permission.lambda_source_s3,
   ]
-}
-
-################################################
-## permissions
-################################################
-
-resource "aws_lambda_permission" "lambda_s3_source" {
-  statement_id  = "AllowExecutionFromS3Bucket"
-  action        = "lambda:InvokeFunction"
-  function_name = module.lambda_s3_source.name
-  principal     = "s3.amazonaws.com"
-  source_arn    = module.s3_substation.arn
 }

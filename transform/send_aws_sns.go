@@ -99,8 +99,7 @@ func (tf *sendAWSSNS) Transform(ctx context.Context, msg *message.Message) ([]*m
 		}
 
 		items := tf.buffer.Get(tf.bufferKey)
-		_, err := tf.client.PublishBatch(ctx, tf.conf.Topic, items)
-		if err != nil {
+		if _, err := tf.client.PublishBatch(ctx, tf.conf.Topic, items); err != nil {
 			return nil, fmt.Errorf("transform: send_aws_sns: %v", err)
 		}
 

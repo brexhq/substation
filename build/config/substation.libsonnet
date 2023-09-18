@@ -582,7 +582,7 @@
             aws: $.config.aws,
             buffer: $.config.buffer,
             retry: $.config.retry,
-            topic: null,
+            arn: null,
           },
 
           type: 'send_aws_sns',

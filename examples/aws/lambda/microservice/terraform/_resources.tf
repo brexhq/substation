@@ -2,7 +2,7 @@ data "aws_caller_identity" "caller" {}
 
 # KMS encryption key that is shared by all Substation resources.
 module "kms" {
-  source = "../../../../build/terraform/aws/kms"
+  source = "../../../../../build/terraform/aws/kms"
   config = {
     name   = "alias/substation"
     policy = <<POLICY
@@ -40,9 +40,9 @@ resource "aws_appconfig_application" "substation" {
   description = "Stores compiled configuration files for Substation"
 }
 
-resource "aws_appconfig_environment" "prod" {
-  name           = "prod"
-  description    = "Stores production Substation configuration files"
+resource "aws_appconfig_environment" "example" {
+  name           = "example"
+  description    = "Stores example Substation configuration files"
   application_id = aws_appconfig_application.substation.id
 }
 
@@ -59,7 +59,7 @@ resource "aws_appconfig_deployment_strategy" "instant" {
 
 # Repository for the core Substation application.
 module "ecr_substation" {
-  source = "../../../../build/terraform/aws/ecr"
+  source = "../../../../../build/terraform/aws/ecr"
   kms    = module.kms
 
   config = {

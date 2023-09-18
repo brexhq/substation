@@ -162,8 +162,8 @@ data "aws_iam_policy_document" "custom_policy_document" {
 ################################################
 
 resource "aws_iam_role_policy_attachment" "access" {
-  for_each   = toset(var.access)
-  role       = each.value
+  count      = length(var.access)
+  role       = var.access[count.index]
   policy_arn = aws_iam_policy.access.arn
 }
 

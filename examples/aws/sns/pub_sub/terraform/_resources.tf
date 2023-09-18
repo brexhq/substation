@@ -2,7 +2,7 @@ data "aws_caller_identity" "caller" {}
 
 # KMS encryption key that is shared by all Substation infrastructure
 module "kms" {
-  source = "../../../../build/terraform/aws/kms"
+  source = "../../../../../build/terraform/aws/kms"
 
   config = {
     name   = "alias/substation"
@@ -41,9 +41,9 @@ resource "aws_appconfig_application" "substation" {
   description = "Stores compiled configuration files for Substation"
 }
 
-resource "aws_appconfig_environment" "prod" {
-  name           = "prod"
-  description    = "Stores production Substation configuration files"
+resource "aws_appconfig_environment" "example" {
+  name           = "example"
+  description    = "Stores example Substation configuration files"
   application_id = aws_appconfig_application.substation.id
 }
 
@@ -60,7 +60,7 @@ resource "aws_appconfig_deployment_strategy" "instant" {
 
 # repository for the core Substation app
 module "ecr_substation" {
-  source = "../../../../build/terraform/aws/ecr"
+  source = "../../../../../build/terraform/aws/ecr"
   kms    = module.kms
 
   config = {
@@ -68,18 +68,8 @@ module "ecr_substation" {
   }
 }
 
-# repository for the validation app
-module "ecr_validation" {
-  source = "../../../../build/terraform/aws/ecr"
-  kms    = module.kms
-
-  config = {
-    name = "substation_validation"
-  }
-}
-
 module "sns" {
-  source = "../../../../build/terraform/aws/sns"
+  source = "../../../../../build/terraform/aws/sns"
   kms    = module.kms
 
   config = {
@@ -87,15 +77,15 @@ module "sns" {
   }
 
   access = [
-    module.publisher.role,
-    module.subscriber_x.role,
-    module.subscriber_y.role,
-    module.subscriber_z.role,
+    module.publisher.role.name,
+    module.subscriber_x.role.name,
+    module.subscriber_y.role.name,
+    module.subscriber_z.role.name,
   ]
 }
 
 module "dynamodb" {
-  source = "../../../../build/terraform/aws/dynamodb"
+  source = "../../../../../build/terraform/aws/dynamodb"
   kms    = module.kms
 
   config = {
@@ -107,13 +97,9 @@ module "dynamodb" {
         type = "S"
       }
     ]
-
-    # Uses default settings.
-    read_capacity  = {}
-    write_capacity = {}
   }
 
   access = [
-    module.publisher.role,
+    module.publisher.role.name,
   ]
 }

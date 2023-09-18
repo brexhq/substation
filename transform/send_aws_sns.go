@@ -28,8 +28,8 @@ type sendAWSSNSConfig struct {
 	AWS    iconfig.AWS    `json:"aws"`
 	Retry  iconfig.Retry  `json:"retry"`
 
-	// Topic is the AWS SNS topic that data is sent to.
-	Topic string `json:"topic"`
+	// ARN is the AWS SNS topic ARN that data is sent to.
+	ARN string `json:"arn"`
 }
 
 func (c *sendAWSSNSConfig) Decode(in interface{}) error {
@@ -37,7 +37,7 @@ func (c *sendAWSSNSConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSSNSConfig) Validate() error {
-	if c.Topic == "" {
+	if c.ARN == "" {
 		return fmt.Errorf("topic: %v", errors.ErrMissingRequiredOption)
 	}
 
@@ -99,7 +99,7 @@ func (tf *sendAWSSNS) Transform(ctx context.Context, msg *message.Message) ([]*m
 		}
 
 		items := tf.buffer.Get(tf.bufferKey)
-		if _, err := tf.client.PublishBatch(ctx, tf.conf.Topic, items); err != nil {
+		if _, err := tf.client.PublishBatch(ctx, tf.conf.ARN, items); err != nil {
 			return nil, fmt.Errorf("transform: send_aws_sns: %v", err)
 		}
 
@@ -117,7 +117,7 @@ func (tf *sendAWSSNS) Transform(ctx context.Context, msg *message.Message) ([]*m
 	}
 
 	items := tf.buffer.Get(tf.bufferKey)
-	if _, err := tf.client.PublishBatch(ctx, tf.conf.Topic, items); err != nil {
+	if _, err := tf.client.PublishBatch(ctx, tf.conf.ARN, items); err != nil {
 		return nil, fmt.Errorf("transform: send_aws_sns: %v", err)
 	}
 

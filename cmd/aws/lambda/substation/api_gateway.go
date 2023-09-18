@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/brexhq/substation"
@@ -26,17 +25,17 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
 	if err != nil {
-		return gateway500Response, fmt.Errorf("gateway: %v", err)
+		return gateway500Response, err
 	}
 
 	cfg := substation.Config{}
 	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
-		return gateway500Response, fmt.Errorf("gateway: %v", err)
+		return gateway500Response, err
 	}
 
 	sub, err := substation.New(ctx, cfg)
 	if err != nil {
-		return gateway500Response, fmt.Errorf("gateway: %v", err)
+		return gateway500Response, err
 	}
 
 	// Create Message metadata.
@@ -48,7 +47,7 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 
 	metadata, err := json.Marshal(m)
 	if err != nil {
-		return gateway500Response, fmt.Errorf("gateway: %v", err)
+		return gateway500Response, err
 	}
 
 	// Messages are sent to the transforms as a group.
@@ -63,7 +62,7 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 
 	// Send messages through the transforms.
 	if _, err := transform.Apply(ctx, sub.Transforms(), msgs...); err != nil {
-		return gateway500Response, fmt.Errorf("gateway: %v", err)
+		return gateway500Response, err
 	}
 
 	return gateway200Response, nil

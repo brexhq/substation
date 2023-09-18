@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"os"
 	"sync/atomic"
@@ -29,39 +28,39 @@ type s3Metadata struct {
 	ObjectSize int64     `json:"objectSize"`
 }
 
-//nolint: gocognit // Ignore cognitive complexity.
+// nolint: gocognit // Ignore cognitive complexity.
 func s3Handler(ctx context.Context, event events.S3Event) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
 	if err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
 
 	cfg := customConfig{}
 	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
 
 	sub, err := substation.New(ctx, cfg.Config)
 	if err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
-
-	ch := channel.New[*mess.Message]()
-	group, ctx := errgroup.WithContext(ctx)
 
 	// Application metrics.
 	var msgRecv, msgTran uint32
 	metric, err := metrics.New(ctx, cfg.Metrics)
 	if err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
+
+	ch := channel.New[*mess.Message]()
+	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
 	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
-		group, ctx := errgroup.WithContext(ctx)
-		group.SetLimit(cfg.Concurrency)
+		tfGroup, tfCtx := errgroup.WithContext(ctx)
+		tfGroup.SetLimit(cfg.Concurrency)
 
 		for message := range ch.Recv() {
 			select {
@@ -71,8 +70,8 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			}
 
 			m := message
-			group.Go(func() error {
-				msg, err := transform.Apply(ctx, sub.Transforms(), m)
+			tfGroup.Go(func() error {
+				msg, err := transform.Apply(tfCtx, sub.Transforms(), m)
 				if err != nil {
 					return err
 				}
@@ -89,7 +88,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			})
 		}
 
-		if err := group.Wait(); err != nil {
+		if err := tfGroup.Wait(); err != nil {
 			return err
 		}
 
@@ -124,7 +123,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 
 		metadata, err := json.Marshal(m)
 		if err != nil {
-			return fmt.Errorf("s3 handler: %v", err)
+			return err
 		}
 
 		for _, record := range event.Records {
@@ -133,25 +132,25 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			// https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
 			objectKey, err := url.QueryUnescape(record.S3.Object.Key)
 			if err != nil {
-				return fmt.Errorf("s3 handler: %v", err)
+				return err
 			}
 
 			dst, err := os.CreateTemp("", "substation")
 			if err != nil {
-				return fmt.Errorf("s3 handler: %v", err)
+				return err
 			}
 			defer os.Remove(dst.Name())
 			defer dst.Close()
 
 			if _, err := client.Download(ctx, record.S3.Bucket.Name, objectKey, dst); err != nil {
-				return fmt.Errorf("s3 handler: %v", err)
+				return err
 			}
 
 			scanner := bufio.NewScanner()
 			defer scanner.Close()
 
 			if err := scanner.ReadFile(dst); err != nil {
-				return fmt.Errorf("s3 handler: %v", err)
+				return err
 			}
 
 			for scanner.Scan() {
@@ -175,7 +174,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	// Wait for all goroutines to complete. This includes the goroutines that are
 	// executing the transform functions.
 	if err := group.Wait(); err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
 
 	// Generate metrics.
@@ -186,7 +185,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			"FunctionName": functionName,
 		},
 	}); err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
 
 	if err := metric.Generate(ctx, metrics.Data{
@@ -196,7 +195,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			"FunctionName": functionName,
 		},
 	}); err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
 
 	return nil
@@ -207,34 +206,34 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
 	if err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
 
 	cfg := customConfig{}
 	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
 
 	sub, err := substation.New(ctx, cfg.Config)
 	if err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
-
-	ch := channel.New[*mess.Message]()
-	group, ctx := errgroup.WithContext(ctx)
 
 	// Application metrics.
 	var msgRecv, msgTran uint32
 	metric, err := metrics.New(ctx, cfg.Metrics)
 	if err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
+
+	ch := channel.New[*mess.Message]()
+	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
 	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
-		group, ctx := errgroup.WithContext(ctx)
-		group.SetLimit(cfg.Concurrency)
+		tfGroup, tfCtx := errgroup.WithContext(ctx)
+		tfGroup.SetLimit(cfg.Concurrency)
 
 		for message := range ch.Recv() {
 			select {
@@ -244,8 +243,8 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			}
 
 			m := message
-			group.Go(func() error {
-				msg, err := transform.Apply(ctx, sub.Transforms(), m)
+			tfGroup.Go(func() error {
+				msg, err := transform.Apply(tfCtx, sub.Transforms(), m)
 				if err != nil {
 					return err
 				}
@@ -262,7 +261,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			})
 		}
 
-		if err := group.Wait(); err != nil {
+		if err := tfGroup.Wait(); err != nil {
 			return err
 		}
 
@@ -297,25 +296,25 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 				// https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
 				objectKey, err := url.QueryUnescape(record.S3.Object.Key)
 				if err != nil {
-					return fmt.Errorf("s3 handler: %v", err)
+					return err
 				}
 
 				dst, err := os.CreateTemp("", "substation")
 				if err != nil {
-					return fmt.Errorf("s3 handler: %v", err)
+					return err
 				}
 				defer os.Remove(dst.Name())
 				defer dst.Close()
 
 				if _, err := client.Download(ctx, record.S3.Bucket.Name, objectKey, dst); err != nil {
-					return fmt.Errorf("s3 handler: %v", err)
+					return err
 				}
 
 				scanner := bufio.NewScanner()
 				defer scanner.Close()
 
 				if err := scanner.ReadFile(dst); err != nil {
-					return fmt.Errorf("s3 handler: %v", err)
+					return err
 				}
 
 				m := s3Metadata{
@@ -327,7 +326,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 				}
 				metadata, err := json.Marshal(m)
 				if err != nil {
-					return fmt.Errorf("s3 handler: %v", err)
+					return err
 				}
 
 				for scanner.Scan() {
@@ -352,7 +351,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	// Wait for all goroutines to complete. This includes the goroutines that are
 	// executing the transform functions.
 	if err := group.Wait(); err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
 
 	// Generate metrics.
@@ -363,7 +362,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			"FunctionName": functionName,
 		},
 	}); err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
 
 	if err := metric.Generate(ctx, metrics.Data{
@@ -373,7 +372,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			"FunctionName": functionName,
 		},
 	}); err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
 
 	return nil

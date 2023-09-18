@@ -52,8 +52,8 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 	// Data transformation. Transforms are executed concurrently using a worker pool
 	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
-		group, ctx := errgroup.WithContext(ctx)
-		group.SetLimit(cfg.Concurrency)
+		tfGroup, tfCtx := errgroup.WithContext(ctx)
+		tfGroup.SetLimit(cfg.Concurrency)
 
 		for message := range ch.Recv() {
 			select {
@@ -63,8 +63,8 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 			}
 
 			m := message
-			group.Go(func() error {
-				msg, err := transform.Apply(ctx, sub.Transforms(), m)
+			tfGroup.Go(func() error {
+				msg, err := transform.Apply(tfCtx, sub.Transforms(), m)
 				if err != nil {
 					return err
 				}
@@ -81,7 +81,7 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 			})
 		}
 
-		if err := group.Wait(); err != nil {
+		if err := tfGroup.Wait(); err != nil {
 			return err
 		}
 

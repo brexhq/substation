@@ -40,9 +40,6 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 		return fmt.Errorf("sns handler: %v", err)
 	}
 
-	ch := channel.New[*mess.Message]()
-	group, ctx := errgroup.WithContext(ctx)
-
 	// Application metrics.
 	var msgRecv, msgTran uint32
 	metric, err := metrics.New(ctx, cfg.Metrics)
@@ -50,11 +47,14 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 		return fmt.Errorf("sns handler: %v", err)
 	}
 
+	ch := channel.New[*mess.Message]()
+	group, ctx := errgroup.WithContext(ctx)
+
 	// Data transformation. Transforms are executed concurrently using a worker pool
 	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
-		group, ctx := errgroup.WithContext(ctx)
-		group.SetLimit(cfg.Concurrency)
+		tfGroup, tfCtx := errgroup.WithContext(ctx)
+		tfGroup.SetLimit(cfg.Concurrency)
 
 		for message := range ch.Recv() {
 			select {
@@ -64,8 +64,8 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 			}
 
 			m := message
-			group.Go(func() error {
-				msg, err := transform.Apply(ctx, sub.Transforms(), m)
+			tfGroup.Go(func() error {
+				msg, err := transform.Apply(tfCtx, sub.Transforms(), m)
 				if err != nil {
 					return err
 				}
@@ -82,7 +82,7 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 			})
 		}
 
-		if err := group.Wait(); err != nil {
+		if err := tfGroup.Wait(); err != nil {
 			return err
 		}
 

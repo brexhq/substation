@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -27,39 +26,39 @@ type dynamodbMetadata struct {
 	StreamViewType              string    `json:"streamViewType"`
 }
 
-//nolint: gocognit, gocyclo, cyclop // Ignore cognitive and cyclomatic complexity.
+// nolint: gocognit, gocyclo, cyclop // Ignore cognitive and cyclomatic complexity.
 func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
 	if err != nil {
-		return fmt.Errorf("dynamodb handler: %v", err)
+		return err
 	}
 
 	cfg := customConfig{}
 	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
-		return fmt.Errorf("dynamodb handler: %v", err)
+		return err
 	}
 
 	sub, err := substation.New(ctx, cfg.Config)
 	if err != nil {
-		return fmt.Errorf("dynamodb handler: %v", err)
+		return err
 	}
-
-	ch := channel.New[*mess.Message]()
-	group, ctx := errgroup.WithContext(ctx)
 
 	// Application metrics.
 	var msgRecv, msgTran uint32
 	metric, err := metrics.New(ctx, cfg.Metrics)
 	if err != nil {
-		return fmt.Errorf("dynamodb handler: %v", err)
+		return err
 	}
+
+	ch := channel.New[*mess.Message]()
+	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
 	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
-		group, ctx := errgroup.WithContext(ctx)
-		group.SetLimit(cfg.Concurrency)
+		tfGroup, tfCtx := errgroup.WithContext(ctx)
+		tfGroup.SetLimit(cfg.Concurrency)
 
 		for message := range ch.Recv() {
 			select {
@@ -69,8 +68,8 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			}
 
 			m := message
-			group.Go(func() error {
-				msg, err := transform.Apply(ctx, sub.Transforms(), m)
+			tfGroup.Go(func() error {
+				msg, err := transform.Apply(tfCtx, sub.Transforms(), m)
 				if err != nil {
 					return err
 				}
@@ -87,7 +86,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			})
 		}
 
-		if err := group.Wait(); err != nil {
+		if err := tfGroup.Wait(); err != nil {
 			return err
 		}
 
@@ -131,7 +130,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			}
 			metadata, err := json.Marshal(m)
 			if err != nil {
-				return fmt.Errorf("dynamodb handler: %v", err)
+				return err
 			}
 
 			// DynamoDB record changes are converted to an object modeled similarly to
@@ -161,19 +160,19 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			// }
 			msg := mess.New().SetMetadata(metadata)
 			if err := msg.SetValue("source.ts_ms", record.Change.ApproximateCreationDateTime.Time.UnixMilli()); err != nil {
-				return fmt.Errorf("dynamodb handler: %v", err)
+				return err
 			}
 
 			if err := msg.SetValue("source.table", table); err != nil {
-				return fmt.Errorf("dynamodb handler: %v", err)
+				return err
 			}
 
 			if err := msg.SetValue("source.connector", "dynamodb"); err != nil {
-				return fmt.Errorf("dynamodb handler: %v", err)
+				return err
 			}
 
 			if err := msg.SetValue("ts_ms", time.Now().UnixMilli()); err != nil {
-				return fmt.Errorf("dynamodb handler: %v", err)
+				return err
 			}
 
 			// Maps the type of data modification to a Debezium operation string.
@@ -184,22 +183,22 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			switch record.EventName {
 			case "INSERT":
 				if err := msg.SetValue("op", "c"); err != nil {
-					return fmt.Errorf("dynamodb handler: %v", err)
+					return err
 				}
 			case "MODIFY":
 				if err := msg.SetValue("op", "u"); err != nil {
-					return fmt.Errorf("dynamodb handler: %v", err)
+					return err
 				}
 			case "REMOVE":
 				if err := msg.SetValue("op", "d"); err != nil {
-					return fmt.Errorf("dynamodb handler: %v", err)
+					return err
 				}
 			}
 
 			// If either image is missing, then the value is set to null.
 			if record.Change.OldImage == nil {
 				if err := msg.SetValue("before", nil); err != nil {
-					return fmt.Errorf("dynamodb handler: %v", err)
+					return err
 				}
 			} else {
 				var before map[string]interface{}
@@ -207,17 +206,17 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 					dynamodb.ConvertEventsAttributeValueMap(record.Change.OldImage),
 					&before,
 				); err != nil {
-					return fmt.Errorf("dynamodb handler: %v", err)
+					return err
 				}
 
 				if err := msg.SetValue("before", before); err != nil {
-					return fmt.Errorf("dynamodb handler: %v", err)
+					return err
 				}
 			}
 
 			if record.Change.NewImage == nil {
 				if err := msg.SetValue("after", nil); err != nil {
-					return fmt.Errorf("dynamodb handler: %v", err)
+					return err
 				}
 			} else {
 				var after map[string]interface{}
@@ -225,11 +224,11 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 					dynamodb.ConvertEventsAttributeValueMap(record.Change.NewImage),
 					&after,
 				); err != nil {
-					return fmt.Errorf("dynamodb handler: %v", err)
+					return err
 				}
 
 				if err := msg.SetValue("after", after); err != nil {
-					return fmt.Errorf("dynamodb handler: %v", err)
+					return err
 				}
 			}
 
@@ -243,7 +242,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 	// Wait for all goroutines to complete. This includes the goroutines that are
 	// executing the transform functions.
 	if err := group.Wait(); err != nil {
-		return fmt.Errorf("dynamodb handler: %v", err)
+		return err
 	}
 
 	// Generate metrics.
@@ -254,7 +253,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			"FunctionName": functionName,
 		},
 	}); err != nil {
-		return fmt.Errorf("dynamodb handler: %v", err)
+		return err
 	}
 
 	if err := metric.Generate(ctx, metrics.Data{
@@ -264,7 +263,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			"FunctionName": functionName,
 		},
 	}); err != nil {
-		return fmt.Errorf("dynamodb handler: %v", err)
+		return err
 	}
 
 	return nil

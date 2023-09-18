@@ -1,27 +1,19 @@
-################################################
-# Substation nodes that are subscribers to SNS
-################################################
-
 module "subscriber_x" {
-  source        = "../../../../build/terraform/aws/lambda"
+  source = "../../../../build/terraform/aws/lambda"
   # These are always required for all Lambda.
-  kms   = module.kms
+  kms       = module.kms
   appconfig = aws_appconfig_application.substation
 
   config = {
-    name = "subscriber_x"
+    name        = "subscriber_x"
     description = "Subscribes to SNS"
-    image_uri = "${module.ecr_substation.url}:latest"
-    architectures = ["arm64"]
+    image_uri   = "${module.ecr_substation.url}:latest"
+    image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/prod/configurations/subscriber_x"
       "SUBSTATION_HANDLER" : "AWS_SNS"
       "SUBSTATION_DEBUG" : true
     }
-  }
-
-  tags = {
-    owner = "example"
   }
 
   depends_on = [
@@ -49,16 +41,16 @@ resource "aws_lambda_permission" "subscriber_x" {
 }
 
 module "subscriber_y" {
-  source        = "../../../../build/terraform/aws/lambda"
+  source = "../../../../build/terraform/aws/lambda"
   # These are always required for all Lambda.
-  kms   = module.kms
+  kms       = module.kms
   appconfig = aws_appconfig_application.substation
 
   config = {
-    name = "subscriber_y"
+    name        = "subscriber_y"
     description = "Subscribes to SNS"
-    image_uri = "${module.ecr_substation.url}:latest"
-    architectures = ["arm64"]
+    image_uri   = "${module.ecr_substation.url}:latest"
+    image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/prod/configurations/subscriber_y"
       "SUBSTATION_HANDLER" : "AWS_SNS"
@@ -92,16 +84,16 @@ resource "aws_lambda_permission" "subscriber_y" {
 
 
 module "subscriber_z" {
-  source        = "../../../../build/terraform/aws/lambda"
+  source = "../../../../build/terraform/aws/lambda"
   # These are always required for all Lambda.
-  kms   = module.kms
+  kms       = module.kms
   appconfig = aws_appconfig_application.substation
 
   config = {
-    name = "subscriber_z"
+    name        = "subscriber_z"
     description = "Subscribes to SNS"
-    image_uri = "${module.ecr_substation.url}:latest"
-    architectures = ["arm64"]
+    image_uri   = "${module.ecr_substation.url}:latest"
+    image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/prod/configurations/subscriber_z"
       "SUBSTATION_HANDLER" : "AWS_SNS"
@@ -109,9 +101,6 @@ module "subscriber_z" {
     }
   }
 
-  tags = {
-    owner = "example"
-  }
 
   depends_on = [
     aws_appconfig_application.substation,

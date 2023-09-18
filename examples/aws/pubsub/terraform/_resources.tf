@@ -5,7 +5,7 @@ module "kms" {
   source = "../../../../build/terraform/aws/kms"
 
   config = {
-    name = "alias/substation"
+    name   = "alias/substation"
     policy = <<POLICY
   {
     "Version": "2012-10-17",
@@ -35,21 +35,19 @@ module "kms" {
   }
 }
 
-# AppConfig application that is shared by all Substation apps
+# AppConfig application that is shared by all Substation applications.
 resource "aws_appconfig_application" "substation" {
   name        = "substation"
   description = "Stores compiled configuration files for Substation"
 }
 
-# use the prod environment for production resources
 resource "aws_appconfig_environment" "prod" {
   name           = "prod"
   description    = "Stores production Substation configuration files"
   application_id = aws_appconfig_application.substation.id
 }
 
-# AppConfig doesn't have useful support for non-linear, non-instant deployments on AWS Lambda, so this deployment strategy is used to deploy configurations as quickly as possible
-# todo: add configuration rollback via CloudWatch Lambda monitoring
+# AWS Lambda requires an instant deployment strategy.
 resource "aws_appconfig_deployment_strategy" "instant" {
   name                           = "Instant"
   description                    = "This strategy deploys the configuration to all targets immediately with zero bake time."
@@ -62,27 +60,27 @@ resource "aws_appconfig_deployment_strategy" "instant" {
 
 # repository for the core Substation app
 module "ecr_substation" {
-  source  = "../../../../build/terraform/aws/ecr"
-  kms = module.kms
+  source = "../../../../build/terraform/aws/ecr"
+  kms    = module.kms
 
   config = {
-    name    = "substation"
+    name = "substation"
   }
 }
 
 # repository for the validation app
 module "ecr_validation" {
-  source  = "../../../../build/terraform/aws/ecr"
-  kms = module.kms
+  source = "../../../../build/terraform/aws/ecr"
+  kms    = module.kms
 
   config = {
-    name    = "substation_validation"
+    name = "substation_validation"
   }
 }
 
 module "sns" {
-  source     = "../../../../build/terraform/aws/sns"
-  kms   = module.kms
+  source = "../../../../build/terraform/aws/sns"
+  kms    = module.kms
 
   config = {
     name = "substation"
@@ -97,11 +95,11 @@ module "sns" {
 }
 
 module "dynamodb" {
-  source     = "../../../../build/terraform/aws/dynamodb"
+  source = "../../../../build/terraform/aws/dynamodb"
   kms    = module.kms
 
   config = {
-    name = "substation"
+    name     = "substation"
     hash_key = "PK"
     attributes = [
       {
@@ -109,6 +107,10 @@ module "dynamodb" {
         type = "S"
       }
     ]
+
+    # Uses default settings.
+    read_capacity  = {}
+    write_capacity = {}
   }
 
   access = [

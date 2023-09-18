@@ -9,8 +9,8 @@ resource "aws_sns_topic" "topic" {
 
 # Applies the policy to each role in the access list.
 resource "aws_iam_role_policy_attachment" "access" {
-  for_each   = toset(var.access)
-  role       = each.value
+  count      = length(var.access)
+  role       = var.access[count.index]
   policy_arn = aws_iam_policy.access.arn
 }
 

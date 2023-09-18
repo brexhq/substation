@@ -27,7 +27,7 @@ variable "config" {
       target = optional(number, 70)
     }))
 
-    # change data capture via Streams is enabled by default for the table
+    # Change Data Capture via Streams is enabled by default for the table.
     # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Streams.html
     stream_view_type = optional(string, "NEW_AND_OLD_IMAGES")
   })

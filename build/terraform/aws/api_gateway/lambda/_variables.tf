@@ -1,9 +1,13 @@
+variable "lambda" {
+  type = object({
+    arn = string
+  })
+  description = "Lambda invoked by the API Gateway."
+}
+
 variable "config" {
   type = object({
     name = string
-    function = object({
-      arn = string
-    })
   })
   description = "Configuration for the API Gateway Lambda integration."
 }

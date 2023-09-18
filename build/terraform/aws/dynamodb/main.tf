@@ -42,8 +42,8 @@ resource "aws_dynamodb_table" "table" {
 
 # Applies the policy to each role in the access list.
 resource "aws_iam_role_policy_attachment" "access" {
-  for_each   = toset(var.access)
-  role       = each.value
+  count      = length(var.access)
+  role       = var.access[count.index]
   policy_arn = aws_iam_policy.access.arn
 }
 
@@ -100,8 +100,8 @@ data "aws_iam_policy_document" "access" {
 
 # read autoscaling
 resource "aws_appautoscaling_target" "read_target" {
-  max_capacity       = var.config.read_capacity.max
-  min_capacity       = var.config.read_capacity.min
+  max_capacity       = var.config.read_capacity.max != null ? var.config.read_capacity.max : 1000
+  min_capacity       = var.config.read_capacity.min != null ? var.config.read_capacity.min : 5
   resource_id        = "table/${aws_dynamodb_table.table.name}"
   scalable_dimension = "dynamodb:table:ReadCapacityUnits"
   service_namespace  = "dynamodb"
@@ -119,14 +119,14 @@ resource "aws_appautoscaling_policy" "read_policy" {
       predefined_metric_type = "DynamoDBReadCapacityUtilization"
     }
 
-    target_value = var.config.read_capacity.target
+    target_value = var.config.read_capacity.target != null ? var.config.read_capacity.target : 70
   }
 }
 
 # write autoscaling
 resource "aws_appautoscaling_target" "write_target" {
-  max_capacity       = var.config.write_capacity.max
-  min_capacity       = var.config.write_capacity.min
+  max_capacity       = var.config.write_capacity.max != null ? var.config.write_capacity.max : 1000
+  min_capacity       = var.config.write_capacity.min != null ? var.config.write_capacity.min : 5
   resource_id        = "table/${aws_dynamodb_table.table.name}"
   scalable_dimension = "dynamodb:table:WriteCapacityUnits"
   service_namespace  = "dynamodb"
@@ -144,6 +144,6 @@ resource "aws_appautoscaling_policy" "write_policy" {
       predefined_metric_type = "DynamoDBWriteCapacityUtilization"
     }
 
-    target_value = var.config.write_capacity.target
+    target_value = var.config.write_capacity.target != null ? var.config.write_capacity.target : 70
   }
 }

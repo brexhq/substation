@@ -810,7 +810,7 @@
     retry: { count: 3 },
   },
   // Mirrors config from the internal/file package.
-  file_path: { prefix: null, prefix_key: null, time_format: '2006/01/02', extension: true },
+  file_path: { prefix: null, prefix_key: null, time_format: '2006/01/02', uuid: true, extension: true },
   helpers: {
     // If the input is not an array, then this returns it as an array
     make_array(i): if !std.isArray(i) then [i] else i,

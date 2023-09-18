@@ -1,27 +1,23 @@
-/*
-provides an S3 bucket with these features:
-  - private
-  - objects are encrypted
-*/
-
 resource "aws_s3_bucket" "bucket" {
   bucket        = var.config.name
   force_destroy = var.config.force_destroy
   tags          = var.tags
 }
 
-resource "aws_s3_bucket_acl" "acl" {
+resource "aws_s3_bucket_ownership_controls" "bucket" {
   bucket = aws_s3_bucket.bucket.id
-  acl    = "private"
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
 }
 
-resource "aws_s3_bucket_public_access_block" "access_block" {
+resource "aws_s3_bucket_acl" "bucket" {
   bucket = aws_s3_bucket.bucket.id
+  acl    = "private"
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+  depends_on = [
+    aws_s3_bucket_ownership_controls.bucket,
+  ]
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
@@ -37,8 +33,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
 
 # Applies the policy to each role in the access list.
 resource "aws_iam_role_policy_attachment" "access" {
-  for_each   = toset(var.access)
-  role       = each.value
+  count      = length(var.access)
+  role       = var.access[count.index]
   policy_arn = aws_iam_policy.access.arn
 }
 

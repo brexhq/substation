@@ -52,7 +52,7 @@ resource "aws_api_gateway_integration" "gateway_integration" {
   request_templates = {
     "application/json" = <<EOF
     {
-        "StreamName": "${var.config.stream}",
+        "StreamName": "${var.kinesis_data_stream.name}",
         "Data": "$util.base64Encode($input.body)",
         "PartitionKey": "$context.requestId"
     }

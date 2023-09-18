@@ -1,7 +1,13 @@
+variable "kinesis_data_stream" {
+  type = object({
+    name = string
+  })
+  description = "Kinesis Data Stream requests are sent to."
+}
+
 variable "config" {
   type = object({
     name    = string
-    stream  = string
     timeout = optional(number, 1000)
   })
   description = "Configuration for the API Gateway Kinesis Data Stream integration."

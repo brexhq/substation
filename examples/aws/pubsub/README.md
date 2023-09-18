@@ -7,7 +7,7 @@ The data pipeline is visualized below:
 
 flowchart TD
     %% core infrastructure
-    ddb[DynamoDB\nTable]
+    ddb[DynamoDB Table]
     sns[SNS Topic]
 
     %% nodes

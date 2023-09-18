@@ -52,7 +52,7 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "${var.config.name}-access"
+  name        = "sub-s3-${var.config.name}"
   description = "Policy for the ${var.config.name} S3 bucket."
   policy      = data.aws_iam_policy_document.access.json
 }

@@ -19,7 +19,7 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "${var.config.name}-access"
+  name        = "sub-kinesis-data-stream-${var.config.name}"
   description = "Policy for the ${var.config.name} Kinesis Data Stream."
   policy      = data.aws_iam_policy_document.access.json
 }

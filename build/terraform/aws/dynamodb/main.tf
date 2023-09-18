@@ -48,15 +48,13 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "${var.config.name}-access"
+  name        = "sub-dynamodb-${var.config.name}"
   description = "Policy for the ${var.config.name} DynamoDB table."
   policy      = data.aws_iam_policy_document.access.json
 }
 
 data "aws_iam_policy_document" "access" {
   statement {
-    sid = "KMS"
-
     effect = "Allow"
     actions = [
       "kms:Decrypt",
@@ -69,8 +67,6 @@ data "aws_iam_policy_document" "access" {
   }
 
   statement {
-    sid = "DynamoDB"
-
     effect = "Allow"
     actions = [
       # Read actions
@@ -87,8 +83,6 @@ data "aws_iam_policy_document" "access" {
   }
 
   statement {
-    sid = "DynamoDB Stream"
-
     effect = "Allow"
     actions = [
       # Read actions

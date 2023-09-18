@@ -43,16 +43,17 @@ func (a *API) Setup(cfg iaws.Config) {
 
 // Publish is a convenience wrapper for publishing a message to an SNS topic.
 func (a *API) Publish(ctx aws.Context, arn string, data []byte) (*sns.PublishOutput, error) {
-	mgid := uuid.New().String()
+	req := &sns.PublishInput{
+		Message:  aws.String(string(data)),
+		TopicArn: aws.String(arn),
+	}
 
-	resp, err := a.Client.PublishWithContext(
-		ctx,
-		&sns.PublishInput{
-			Message:        aws.String(string(data)),
-			MessageGroupId: aws.String(mgid),
-			TopicArn:       aws.String(arn),
-		},
-	)
+	if strings.HasSuffix(arn, ".fifo") {
+		mgid := uuid.New().String()
+		req.MessageGroupId = aws.String(mgid)
+	}
+
+	resp, err := a.Client.PublishWithContext(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("publish: topic %s: %v", arn, err)
 	}

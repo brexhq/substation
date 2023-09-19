@@ -1,3 +1,7 @@
+locals {
+
+}
+
 resource "aws_s3_bucket" "bucket" {
   bucket        = var.config.name
   force_destroy = var.config.force_destroy
@@ -46,8 +50,6 @@ resource "aws_iam_policy" "access" {
 
 data "aws_iam_policy_document" "access" {
   statement {
-    sid = "KMS"
-
     effect = "Allow"
     actions = [
       "kms:Decrypt",
@@ -60,8 +62,6 @@ data "aws_iam_policy_document" "access" {
   }
 
   statement {
-    sid = "S3"
-
     effect = "Allow"
     actions = [
       "s3:GetObject",

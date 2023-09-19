@@ -37,8 +37,6 @@ resource "aws_iam_policy" "access" {
 
 data "aws_iam_policy_document" "access" {
   statement {
-    sid = "KMS"
-
     effect = "Allow"
     actions = [
       "kms:Decrypt",
@@ -51,8 +49,6 @@ data "aws_iam_policy_document" "access" {
   }
 
   statement {
-    sid = "SQS"
-
     effect = "Allow"
     actions = concat(
       local.read_access,

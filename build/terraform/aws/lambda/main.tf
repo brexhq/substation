@@ -117,8 +117,6 @@ resource "aws_iam_policy" "custom_policy" {
 
 data "aws_iam_policy_document" "custom_policy_document" {
   statement {
-    sid = "AppConfig"
-
     effect = "Allow"
     actions = [
       "appconfig:GetConfiguration",
@@ -132,8 +130,6 @@ data "aws_iam_policy_document" "custom_policy_document" {
   }
 
   statement {
-    sid = "KMS"
-
     effect = "Allow"
     actions = [
       "kms:Decrypt",
@@ -175,8 +171,6 @@ resource "aws_iam_policy" "access" {
 
 data "aws_iam_policy_document" "access" {
   statement {
-    sid = "KMS"
-
     effect = "Allow"
     actions = [
       "kms:Decrypt",
@@ -189,8 +183,6 @@ data "aws_iam_policy_document" "access" {
   }
 
   statement {
-    sid = "Lambda"
-
     effect = "Allow"
     actions = [
       "lambda:InvokeAsync",

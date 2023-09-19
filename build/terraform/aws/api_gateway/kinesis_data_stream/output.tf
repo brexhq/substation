@@ -1,5 +1,5 @@
 output "role" {
-  value = aws_iam_role.role.name
+  value = aws_iam_role.role
 }
 
 output "url" {

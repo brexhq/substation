@@ -34,10 +34,6 @@ func (c *sendAWSDynamoDBConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSDynamoDBConfig) Validate() error {
-	if c.Object.Key == "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
-	}
-
 	if c.Table == "" {
 		return fmt.Errorf("table: %v", errors.ErrMissingRequiredOption)
 	}
@@ -53,6 +49,10 @@ func newSendAWSDynamoDB(_ context.Context, cfg config.Config) (*sendAWSDynamoDB,
 
 	if err := conf.Validate(); err != nil {
 		return nil, fmt.Errorf("transform: new_send_aws_dynamodb: %v", err)
+	}
+
+	if conf.Object.Key == "" {
+		conf.Object.Key = "@this"
 	}
 
 	tf := sendAWSDynamoDB{

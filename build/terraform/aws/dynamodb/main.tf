@@ -1,10 +1,11 @@
 locals {
-  read_capacity = var.config.read_capacity != null ? var.config.read_capacity : object({
+  read_capacity = var.config.read_capacity != null ? var.config.read_capacity : tomap({
     min    = 5
     max    = 1000
     target = 70
   })
-  write_capacity = var.config.write_capacity != null ? var.config.write_capacity : object({
+
+  write_capacity = var.config.write_capacity != null ? var.config.write_capacity : tomap({
     min    = 5
     max    = 1000
     target = 70

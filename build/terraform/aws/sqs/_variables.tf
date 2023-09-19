@@ -15,12 +15,12 @@ variable "config" {
   description = "Configuration for the SQS queue."
 
   validation {
-    condition     = var.config.delay > 900
+    condition     = var.config.delay <= 900
     error_message = "Delay must be less than 15 minutes."
   }
 
   validation {
-    condition     = var.config.timeout > 43200
+    condition     = var.config.timeout <= 43200
     error_message = "Timeout must be less than 12 hours."
   }
 }

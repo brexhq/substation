@@ -12,24 +12,32 @@ The deployment is visualized below:
 flowchart LR
     %% resources
     data[/Data/]
-    kds1([Kinesis Data Stream])
-    kds2([Kinesis Data Stream])
-
-    pubHand[[Handler]]
-    pubTform[Transforms]
-
-    subHand[[Handler]]
-    subTform[Transforms]
-
+    ddb([DynamoDB Table])
+    sns([SNS Topic])
+    ingest[[Handler]]
+    load[Transforms]
+    subHandler1[[Handler]]
+    subTransform1[Transforms]
+    subHandler2[[Handler]]
+    subTransform2[Transforms]
+    subHandler3[[Handler]]
+    subTransform3[Transforms]
     %% connections
-    data --> kds1 --> pubHand
+    data --> ddb --> ingest
     subgraph Substation Publisher Node 
-    pubHand --> pubTform
+    ingest --> load
     end
-
-    pubTform --> kds2 --> subHand
-
+    load --> sns 
+    sns --> subHandler1
+    sns --> subHandler2
+    sns --> subHandler3
     subgraph Substation Subscriber Node 
-    subHand  --> subTform
+    subHandler3 --> subTransform3
+    end
+    subgraph Substation Subscriber Node 
+    subHandler2 --> subTransform2
+    end
+    subgraph Substation Subscriber Node 
+    subHandler1 --> subTransform1
     end
 ```

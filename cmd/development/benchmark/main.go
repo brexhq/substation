@@ -128,8 +128,8 @@ func main() {
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
-		group, ctx := errgroup.WithContext(ctx)
-		group.SetLimit(opts.Concurrency)
+		tfGroup, tfCtx := errgroup.WithContext(ctx)
+		tfGroup.SetLimit(opts.Concurrency)
 
 		for message := range ch.Recv() {
 			select {
@@ -139,8 +139,8 @@ func main() {
 			}
 
 			message := message
-			group.Go(func() error {
-				if _, err := transform.Apply(ctx, sub.Transforms(), message); err != nil {
+			tfGroup.Go(func() error {
+				if _, err := transform.Apply(tfCtx, sub.Transforms(), message); err != nil {
 					return err
 				}
 
@@ -148,7 +148,7 @@ func main() {
 			})
 		}
 
-		if err := group.Wait(); err != nil {
+		if err := tfGroup.Wait(); err != nil {
 			return err
 		}
 

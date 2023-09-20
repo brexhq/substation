@@ -85,8 +85,8 @@ func run(ctx context.Context, opts options) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
-		group, ctx := errgroup.WithContext(ctx)
-		group.SetLimit(runtime.NumCPU())
+		tfGroup, tfCtx := errgroup.WithContext(ctx)
+		tfGroup.SetLimit(runtime.NumCPU())
 
 		for message := range ch.Recv() {
 			select {
@@ -96,8 +96,8 @@ func run(ctx context.Context, opts options) error {
 			}
 
 			message := message
-			group.Go(func() error {
-				if _, err := transform.Apply(ctx, sub.Transforms(), message); err != nil {
+			tfGroup.Go(func() error {
+				if _, err := transform.Apply(tfCtx, sub.Transforms(), message); err != nil {
 					return err
 				}
 
@@ -105,7 +105,7 @@ func run(ctx context.Context, opts options) error {
 			})
 		}
 
-		if err := group.Wait(); err != nil {
+		if err := tfGroup.Wait(); err != nil {
 			return err
 		}
 

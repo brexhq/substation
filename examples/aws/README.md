@@ -12,14 +12,13 @@ Deploys a data pipeline that implements a [change data capture (CDC) pattern usi
 
 flowchart LR
     %% resources
-    data[/Data/]
     ddb([DynamoDB Table])
 
     cdcHandler[[Handler]]
     cdcTransforms[Transforms]
 
     %% connections
-    data --> ddb --> cdcHandler
+    ddb --> cdcHandler
     subgraph Substation CDC Node 
     cdcHandler --> cdcTransforms
     end
@@ -35,7 +34,6 @@ Deploys a data pipeline that implements a multi-phase streaming data pattern usi
 
 flowchart LR
     %% resources
-    data[/Data/]
     gateway([API Gateway])
     kds1([Kinesis Data Stream])
     kds2([Kinesis Data Stream])
@@ -47,7 +45,7 @@ flowchart LR
     subscriberTransforms[Transforms]
 
     %% connections
-    data --> gateway --> kds1 --> publisherHandler
+    gateway --> kds1 --> publisherHandler
     subgraph Substation Publisher Node 
     publisherHandler --> publisherTransforms
     end
@@ -94,7 +92,6 @@ Deploys a data pipeline that implements a data lake by writing raw and processed
 ```mermaid
 
 flowchart LR
-    data[/Data/]
     bucket([S3 Bucket])
     handler[[Handler]]
     gateway([API Gateway])
@@ -104,7 +101,7 @@ flowchart LR
     mod[...]
 
     %% connections
-    data --> gateway --> handler
+    gateway --> handler
 
     subgraph Substation Node
     handler --> sendS3x
@@ -142,7 +139,7 @@ flowchart LR
     sub3Transforms[Transforms]
 
     %% connections
-    cliHandler --> file --> cliHandler
+    cliHandler -.- file
     subgraph Substation Client 
     cliHandler --> cliTransforms
     end

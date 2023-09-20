@@ -166,7 +166,7 @@ flowchart LR
 
 ## Microservice
 
-Deploys an asynchronous microservice that performs DNS resolution. The service can be invoked [synchronously](https://docs.aws.amazon.com/lambda/latest/dg/invocation-sync.html) or using a [Lambda URL](https://docs.aws.amazon.com/lambda/latest/dg/lambda-urls.html) and results are stored in a DynamoDB table.
+Deploys an asynchronous microservice that performs DNS resolution. The service can be invoked [synchronously](https://docs.aws.amazon.com/lambda/latest/dg/invocation-sync.html) or using a [Lambda URL](https://docs.aws.amazon.com/lambda/latest/dg/lambda-urls.html); requests to the service are assigned a UUID that can be used to retrieve the result from the DynamoDB table.
 
 ```mermaid
 
@@ -198,4 +198,5 @@ flowchart LR
     end
 
     microserviceTransforms --> ddb
+    cli --> ddb
 ```

@@ -58,7 +58,7 @@ resource "aws_appconfig_deployment_strategy" "instant" {
   replicate_to                   = "NONE"
 }
 
-# repository for the core Substation app
+# Repository for the core Substation application.
 module "ecr_substation" {
   source = "../../../../../build/terraform/aws/ecr"
   kms    = module.kms
@@ -77,29 +77,8 @@ module "sns" {
   }
 
   access = [
-    module.publisher.role.name,
     module.subscriber_x.role.name,
     module.subscriber_y.role.name,
     module.subscriber_z.role.name,
-  ]
-}
-
-module "dynamodb" {
-  source = "../../../../../build/terraform/aws/dynamodb"
-  kms    = module.kms
-
-  config = {
-    name     = "substation"
-    hash_key = "PK"
-    attributes = [
-      {
-        name = "PK"
-        type = "S"
-      }
-    ]
-  }
-
-  access = [
-    module.publisher.role.name,
   ]
 }

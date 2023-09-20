@@ -198,5 +198,4 @@ flowchart LR
     end
 
     microserviceTransforms --> ddb
-    cli --> ddb
 ```

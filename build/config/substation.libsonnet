@@ -184,7 +184,6 @@
         array(settings=null): {
           local default = {
             object: $.config.object,
-            buffer: $.config.buffer,
           },
 
           type: 'aggregate_from_array',
@@ -192,7 +191,6 @@
         },
         str(settings=null): {
           local default = {
-            object: $.config.object,
             separator: null,
           },
 
@@ -212,7 +210,7 @@
         },
         str(settings=null): {
           local default = {
-            object: $.config.object,
+            buffer: $.config.buffer,
             separator: null,
           },
 
@@ -356,20 +354,24 @@
       default: {
         object: $.config.object,
       },
-      from_base64(settings=null): {
-        local default = $.transform.format.default,
+      from: {
+        base64(settings=null): {
+          local default = $.transform.format.default,
 
-        type: 'format_from_base64',
-        settings: std.mergePatch(default, settings),
+          type: 'format_from_base64',
+          settings: std.mergePatch(default, settings),
+        },
+        pretty_print(settings=null): {
+          type: 'format_from_pretty_print',
+        },
       },
-      from_pretty_print(settings=null): {
-        type: 'format_from_pretty_print',
-      },
-      to_base64(settings=null): {
-        local default = $.transform.format.default,
+      to: {
+        base64(settings=null): {
+          local default = $.transform.format.default,
 
-        type: 'format_to_base64',
-        settings: std.mergePatch(default, settings),
+          type: 'format_to_base64',
+          settings: std.mergePatch(default, settings),
+        },
       },
     },
     hash: {
@@ -543,7 +545,7 @@
             aws: $.config.aws,
             buffer: $.config.buffer,
             retry: $.config.retry,
-            stream: null,
+            delivery_stream: null,
           },
 
           type: 'send_aws_kinesis_data_firehose',
@@ -637,6 +639,15 @@
       },
     },
     string: {
+      append(settings=null): {
+        local default = {
+          object: $.config.object,
+          string: null,
+        },
+
+        type: 'string_append',
+        settings: std.mergePatch(default, settings),
+      },
       pattern: {
         default: {
           object: $.config.object,
@@ -694,23 +705,25 @@
       },
     },
     time: {
-      from_str(settings=null): {
-        local default = {
-          object: $.config.object,
-          format: null,
-          location: null,
-        },
+      from: {
+        str(settings=null): {
+          local default = {
+            object: $.config.object,
+            format: null,
+            location: null,
+          },
 
-        type: 'time_from_str',
-        settings: std.mergePatch(default, settings),
-      },
-      from_unix(settings=null): {
-        local default = {
-          object: $.config.object,
+          type: 'time_from_str',
+          settings: std.mergePatch(default, settings),
         },
+        unix(settings=null): {
+          local default = {
+            object: $.config.object,
+          },
 
-        type: 'time_from_unix',
-        settings: std.mergePatch(default, settings),
+          type: 'time_from_unix',
+          settings: std.mergePatch(default, settings),
+        },
       },
       now(settings=null): {
         local default = {
@@ -720,17 +733,19 @@
         type: 'time_now',
         settings: std.mergePatch(default, settings),
       },
-      to_str(settings=null): {
-        local default = {
-          object: $.config.object,
-          format: null,
-          location: null,
-        },
+      to: {
+        str(settings=null): {
+          local default = {
+            object: $.config.object,
+            format: null,
+            location: null,
+          },
 
-        type: 'time_to_str',
-        settings: std.mergePatch(default, settings),
+          type: 'time_to_str',
+          settings: std.mergePatch(default, settings),
+        },
       },
-      to_unix(settings=null): {
+      unix(settings=null): {
         local default = {
           object: $.config.object,
         },
@@ -853,7 +868,7 @@
           //
           // Use with the ANY / ALL operator to match empty data.
           // Use with the NONE operator to match non-empty data.
-          eq_zero(key=null): 
+          eq_zero(key=null):
             $.condition.logic.len.equal_to(settings=$.patterns.condition.obj(key) { length: 0 }),
           // Checks if data is greater than zero.
           //

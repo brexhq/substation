@@ -185,12 +185,15 @@ data "aws_iam_policy_document" "access" {
   statement {
     effect = "Allow"
     actions = [
+      "lambda:GetFunctionConfiguration",
       "lambda:InvokeAsync",
       "lambda:InvokeFunction",
     ]
 
     resources = [
       aws_lambda_function.lambda_function.arn,
+      # This is required for data transformation support in Kinesis Data Firehose.
+      "${aws_lambda_function.lambda_function.arn}:*", # Allow access to all versions.
     ]
   }
 }

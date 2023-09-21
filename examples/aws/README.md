@@ -26,6 +26,32 @@ flowchart LR
 
 # Kinesis
 
+## Firehose
+
+Deploys a [Kinesis Data Firehose](https://aws.amazon.com/kinesis/data-firehose/) delivery stream with [data transformation](https://docs.aws.amazon.com/firehose/latest/dev/data-transformation.html) enabled.
+
+```mermaid
+
+flowchart LR
+    %% resources
+    data[/Data/]
+    firehose([Kinesis Data Firehose])
+    s3([S3 Bucket])
+
+    nodeHandler[[Handler]]
+    nodeTransforms[Transforms]
+
+    %% connections
+    data --> firehose --> nodeHandler
+
+    subgraph Substation Node
+    nodeHandler --> nodeTransforms --> nodeHandler
+    end
+
+    nodeHandler --> firehose
+    firehose --> s3
+```
+
 ## Multi-Stream
 
 Deploys a data pipeline that implements a multi-phase streaming data pattern using Kinesis Data Streams.

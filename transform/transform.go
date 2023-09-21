@@ -136,6 +136,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "send_sumologic":
 		return newSendSumologic(ctx, cfg)
 	// String transforms.
+	case "string_append":
+		return newStringAppend(ctx, cfg)
 	case "string_pattern_find_all":
 		return newStringPatternFindAll(ctx, cfg)
 	case "string_pattern_find":

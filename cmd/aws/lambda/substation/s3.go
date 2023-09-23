@@ -15,7 +15,7 @@ import (
 	"github.com/brexhq/substation/internal/bufio"
 	"github.com/brexhq/substation/internal/channel"
 	"github.com/brexhq/substation/internal/metrics"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/transform"
 	"golang.org/x/sync/errgroup"
 )
@@ -53,7 +53,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 		return err
 	}
 
-	ch := channel.New[*mess.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
@@ -94,7 +94,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 
 		// Control messages flush the transform functions. This must be done
 		// after all messages have been processed.
-		ctrl := mess.New(mess.AsControl())
+		ctrl := message.New(message.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
 			return err
 		}
@@ -161,10 +161,14 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				}
 
 				b := []byte(scanner.Text())
-				msg := mess.New().SetData(b).SetMetadata(metadata)
+				msg := message.New().SetData(b).SetMetadata(metadata)
 
 				ch.Send(msg)
 				atomic.AddUint32(&msgRecv, 1)
+			}
+
+			if err := scanner.Err(); err != nil {
+				return err
 			}
 		}
 
@@ -226,7 +230,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 		return err
 	}
 
-	ch := channel.New[*mess.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
@@ -267,7 +271,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 
 		// Control messages flush the transform functions. This must be done
 		// after all messages have been processed.
-		ctrl := mess.New(mess.AsControl())
+		ctrl := message.New(message.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
 			return err
 		}
@@ -337,10 +341,14 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					}
 
 					b := []byte(scanner.Text())
-					msg := mess.New().SetData(b).SetMetadata(metadata)
+					msg := message.New().SetData(b).SetMetadata(metadata)
 
 					ch.Send(msg)
 					atomic.AddUint32(&msgRecv, 1)
+				}
+
+				if err := scanner.Err(); err != nil {
+					return err
 				}
 			}
 		}

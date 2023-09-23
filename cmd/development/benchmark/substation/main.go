@@ -103,19 +103,15 @@ func main() {
 	var data [][]byte
 	dataBytes := 0
 	for scanner.Scan() {
-		var b []byte
-
-		switch scanner.Method() {
-		case "bytes":
-			b = scanner.Bytes()
-		case "text":
-			b = []byte(scanner.Text())
-		}
-
+		b := []byte(scanner.Text())
 		for i := 0; i < opts.Count; i++ {
 			data = append(data, b)
 			dataBytes += len(b)
 		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		panic(err)
 	}
 
 	if opts.pprofCPU {

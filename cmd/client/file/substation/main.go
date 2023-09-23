@@ -153,6 +153,10 @@ func run(ctx context.Context, opts options) error {
 			ch.Send(msg)
 		}
 
+		if err := scanner.Err(); err != nil {
+			return err
+		}
+
 		return nil
 	})
 

@@ -11,17 +11,18 @@ import (
 	"runtime"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/internal/bufio"
 	"github.com/brexhq/substation/internal/channel"
 	"github.com/brexhq/substation/internal/file"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/transform"
-	"golang.org/x/sync/errgroup"
 )
 
 type options struct {
-	Input  string
+	File   string
 	Config string
 }
 
@@ -51,8 +52,8 @@ func getConfig(ctx context.Context, cfg string) (io.Reader, error) {
 func main() {
 	var opts options
 
-	timeout := flag.Duration("timeout", 10*time.Second, "timeout")
-	flag.StringVar(&opts.Input, "input", "", "file to parse")
+	timeout := flag.Duration("timeout", 10*time.Second, "Timeout in seconds")
+	flag.StringVar(&opts.File, "file", "", "File to parse")
 	flag.StringVar(&opts.Config, "config", "", "Substation configuration file")
 	flag.Parse()
 
@@ -67,21 +68,20 @@ func main() {
 func run(ctx context.Context, opts options) error {
 	c, err := getConfig(ctx, opts.Config)
 	if err != nil {
-		return fmt.Errorf("run: %v", err)
+		return err
 	}
 
 	cfg := substation.Config{}
 	if err := json.NewDecoder(c).Decode(&cfg); err != nil {
-		// Handle error.
-		panic(err)
+		return err
 	}
 
 	sub, err := substation.New(ctx, cfg)
 	if err != nil {
-		return fmt.Errorf("run: %v", err)
+		return err
 	}
 
-	ch := channel.New[*mess.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
@@ -111,7 +111,7 @@ func run(ctx context.Context, opts options) error {
 
 		// Control messages flush the transform functions. This must be done
 		// after all messages have been processed.
-		ctrl := mess.New(mess.AsControl())
+		ctrl := message.New(message.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
 			return err
 		}
@@ -122,7 +122,7 @@ func run(ctx context.Context, opts options) error {
 	group.Go(func() error {
 		defer ch.Close()
 
-		fi, err := file.Get(ctx, opts.Input)
+		fi, err := file.Get(ctx, opts.File)
 		if err != nil {
 			return err
 		}
@@ -130,7 +130,7 @@ func run(ctx context.Context, opts options) error {
 
 		f, err := os.Open(fi)
 		if err != nil {
-			return fmt.Errorf("run: %v", err)
+			return err
 		}
 		defer f.Close()
 
@@ -138,7 +138,7 @@ func run(ctx context.Context, opts options) error {
 		defer scanner.Close()
 
 		if err := scanner.ReadFile(f); err != nil {
-			return fmt.Errorf("run: %v", err)
+			return err
 		}
 
 		for scanner.Scan() {
@@ -149,7 +149,7 @@ func run(ctx context.Context, opts options) error {
 			}
 
 			b := []byte(scanner.Text())
-			msg := mess.New().SetData(b)
+			msg := message.New().SetData(b)
 			ch.Send(msg)
 		}
 

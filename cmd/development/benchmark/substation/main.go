@@ -12,13 +12,14 @@ import (
 	"runtime/pprof"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/internal/bufio"
 	"github.com/brexhq/substation/internal/channel"
 	"github.com/brexhq/substation/internal/file"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/transform"
-	"golang.org/x/sync/errgroup"
 )
 
 type options struct {
@@ -33,21 +34,22 @@ type options struct {
 func main() {
 	var opts options
 
-	flag.StringVar(&opts.DataFile, "input", "", "path to sample data file")
-	flag.IntVar(&opts.Count, "count", 100000, "number of events to send")
-	flag.IntVar(&opts.Concurrency, "Concurrency", -1, "number of data transformation goroutines")
-	flag.StringVar(&opts.ConfigFile, "config", "", "path to configuration file (optional)")
-	flag.BoolVar(&opts.pprofCPU, "cpu", false, "enable CPU profiling (optional)")
-	flag.BoolVar(&opts.pprofMemory, "mem", false, "enable memory profiling (optional)")
+	flag.StringVar(&opts.DataFile, "file", "", "File to parse")
+	flag.IntVar(&opts.Count, "count", 100000, "Number of events to process (default: 100000)")
+	flag.IntVar(&opts.Concurrency, "concurrency", -1, "Number of concurrent data transformation functions to run (default: number of CPUs available)")
+	flag.StringVar(&opts.ConfigFile, "config", "", "Substation configuration file (default: empty config)")
+	flag.BoolVar(&opts.pprofCPU, "cpu", false, "Enable CPU profiling (default: false)")
+	flag.BoolVar(&opts.pprofMemory, "mem", false, "Enable memory profiling (default: false)")
 	flag.Parse()
 
 	if opts.DataFile == "" {
-		fmt.Println("missing required flag -input")
+		fmt.Println("missing required flag -file")
 		os.Exit(1)
 	}
 
 	ctx := context.Background()
 
+	fmt.Printf("%s: Configuring Substation\n", time.Now().Format(time.RFC3339Nano))
 	var conf []byte
 	// If no config file is provided, then an empty config is used.
 	if opts.ConfigFile != "" {
@@ -97,18 +99,23 @@ func main() {
 		panic(err)
 	}
 
-	var data []byte
+	fmt.Printf("%s: Loading data into memory\n", time.Now().Format(time.RFC3339Nano))
+	var data [][]byte
+	dataBytes := 0
 	for scanner.Scan() {
+		var b []byte
+
 		switch scanner.Method() {
 		case "bytes":
-			data = scanner.Bytes()
+			b = scanner.Bytes()
 		case "text":
-			data = []byte(scanner.Text())
+			b = []byte(scanner.Text())
 		}
 
-		// Only read the first line of the file.
-		//nolint:staticcheck // ignore SA4004
-		break
+		for i := 0; i < opts.Count; i++ {
+			data = append(data, b)
+			dataBytes += len(b)
+		}
 	}
 
 	if opts.pprofCPU {
@@ -123,8 +130,9 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+	fmt.Printf("%s: Starting benchmark\n", time.Now().Format(time.RFC3339Nano))
 	start := time.Now()
-	ch := channel.New[*mess.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
@@ -154,7 +162,7 @@ func main() {
 
 		// Control messages flush the transform functions. This must be done
 		// after all messages have been processed.
-		ctrl := mess.New(mess.AsControl())
+		ctrl := message.New(message.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
 			return err
 		}
@@ -165,14 +173,8 @@ func main() {
 	group.Go(func() error {
 		defer ch.Close()
 
-		for i := 0; i < opts.Count; i++ {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-			}
-
-			msg := mess.New().SetData(data)
+		for _, b := range data {
+			msg := message.New().SetData(b)
 			ch.Send(msg)
 		}
 
@@ -185,11 +187,16 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Printf("%s: Ending benchmark\n", time.Now().Format(time.RFC3339Nano))
+
 	// The benchmark reports the total time taken, the number of events sent, the
 	// amount of data sent, and the rate of events and data sent per second.
 	elapsed := time.Since(start)
-	fmt.Printf("%d events in %s (%.2f events/sec)\n", opts.Count, elapsed, float64(opts.Count)/elapsed.Seconds())
-	fmt.Printf("%d MB in %s (%.2f MB/sec)\n", opts.Count*len(data)/1024/1024, elapsed, float64(opts.Count*len(data))/1024/1024/elapsed.Seconds())
+	fmt.Printf("\nBenchmark results:\n")
+	fmt.Printf("- %d events in %s\n", len(data), elapsed)
+	fmt.Printf("- %.2f events per second\n", float64(len(data))/elapsed.Seconds())
+	fmt.Printf("- %d MB in %s\n", dataBytes/1000/1000, elapsed)
+	fmt.Printf("- %.2f MB per second\n", float64(dataBytes)/1000/1000/elapsed.Seconds())
 
 	if opts.pprofMemory {
 		heap, err := os.Create("./heap.prof")

@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/vscode/devcontainers/go:1.19
+FROM mcr.microsoft.com/vscode/devcontainers/go:1.20
 RUN apt-get update -y && \
     # https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
     wget -O- https://apt.releases.hashicorp.com/gpg | \
@@ -19,4 +19,4 @@ RUN apt-get update -y && \
     # Install AWS CLI
     apt-get install -y awscli && \
     # Install pip and boto3
-    apt-get install -y python3-pip && pip3 install boto3 && pip3 install black
+    apt-get install -y python3 python3-pip && pip3 install --break-system-packages boto3 black

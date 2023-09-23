@@ -1,6 +1,6 @@
 # aws
 
-Contains scripts for AWS deployments.
+This directory contains scripts that are used to manage Substation deployments in AWS.
 
 ## ecr_login.sh
 

@@ -16,10 +16,8 @@ CHANGELOG.md
 !.devcontainer/devcontainer.json
 # allow Visual Studio Code settings config file
 !.vscode/settings.json
-# allow static JSON files in the examples/ directory
-!examples/condition/data.json
-!examples/*/data.json
-!examples/quickstart/data.json
+# allow data JSON files in the examples/ directory
+!examples/**/data*.json
 # ignore playground files
 playground.wasm
 playground.wasm.gz

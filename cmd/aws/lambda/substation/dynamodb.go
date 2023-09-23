@@ -13,7 +13,7 @@ import (
 	"github.com/brexhq/substation/internal/aws/dynamodb"
 	"github.com/brexhq/substation/internal/channel"
 	"github.com/brexhq/substation/internal/metrics"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/transform"
 	"golang.org/x/sync/errgroup"
 )
@@ -51,7 +51,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 		return err
 	}
 
-	ch := channel.New[*mess.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
@@ -92,7 +92,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 
 		// Control messages flush the transform functions. This must be done
 		// after all messages have been processed.
-		ctrl := mess.New(mess.AsControl())
+		ctrl := message.New(message.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
 			return err
 		}
@@ -158,7 +158,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			//   "before": { ... },
 			//   "after": { ... }
 			// }
-			msg := mess.New().SetMetadata(metadata)
+			msg := message.New().SetMetadata(metadata)
 			if err := msg.SetValue("source.ts_ms", record.Change.ApproximateCreationDateTime.Time.UnixMilli()); err != nil {
 				return err
 			}

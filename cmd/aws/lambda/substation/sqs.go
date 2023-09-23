@@ -10,7 +10,7 @@ import (
 	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/internal/channel"
 	"github.com/brexhq/substation/internal/metrics"
-	mess "github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/transform"
 	"golang.org/x/sync/errgroup"
 )
@@ -39,7 +39,7 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 		return fmt.Errorf("sqs handler: %v", err)
 	}
 
-	ch := channel.New[*mess.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Application metrics.
@@ -87,7 +87,7 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 
 		// Control messages flush the transform functions. This must be done
 		// after all messages have been processed.
-		ctrl := mess.New(mess.AsControl())
+		ctrl := message.New(message.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 
 		for _, record := range event.Records {
 			b := []byte(record.Body)
-			msg := mess.New().SetData(b).SetMetadata(metadata)
+			msg := message.New().SetData(b).SetMetadata(metadata)
 
 			ch.Send(msg)
 			atomic.AddUint32(&msgRecv, 1)

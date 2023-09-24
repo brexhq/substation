@@ -58,6 +58,14 @@ func newInspector(ctx context.Context, cfg config.Config) (inspector, error) {
 	case "network_ip_valid":
 		return newNetworkIPValid(ctx, cfg)
 	// Number inspectors.
+	case "number_bitwise_and":
+		return newNumberBitwiseAND(ctx, cfg)
+	case "number_bitwise_or":
+		return newNumberBitwiseOR(ctx, cfg)
+	case "number_bitwise_xor":
+		return newNumberBitwiseXOR(ctx, cfg)
+	case "number_bitwise_not":
+		return newNumberBitwiseNOT(ctx, cfg)
 	case "number_length_less_than":
 		return newNumberLengthLessThan(ctx, cfg)
 	case "number_length_greater_than":

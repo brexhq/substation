@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.2](https://github.com/brexhq/substation/compare/v0.9.1...v0.9.2) (2023-08-10)
+
+
+### Features
+
+* add bitmath inspector ([#128](https://github.com/brexhq/substation/issues/128)) ([4721ffa](https://github.com/brexhq/substation/commit/4721ffaf7fa27aa5d343d33422cd56331ceb4d2f))
+* Add JSON Lines Support to KV Store ([#126](https://github.com/brexhq/substation/issues/126)) ([667ceb3](https://github.com/brexhq/substation/commit/667ceb34f845655879e07845e1304cf01cb80e57))
+* add TTLKey to KV ([#121](https://github.com/brexhq/substation/issues/121)) ([9837287](https://github.com/brexhq/substation/commit/983728745ba4366e87579a570b56c34a159009d7))
+* Allow Multiple URL Interpolations in the HTTP Processor ([#124](https://github.com/brexhq/substation/issues/124)) ([f262f79](https://github.com/brexhq/substation/commit/f262f796cbd47793a72222ddcd147ca2cea6a488))
+
+
+### Bug Fixes
+
+* KV Store Processor TTL Key ([#123](https://github.com/brexhq/substation/issues/123)) ([0ceffc1](https://github.com/brexhq/substation/commit/0ceffc10c89986c0640a8b3d28776b5bc97b4811))
+* use valid path to the for_each inspector settings ([#129](https://github.com/brexhq/substation/issues/129)) ([65d838d](https://github.com/brexhq/substation/commit/65d838d8ea3b12d1c27eb13d53c6b3ef49d16be4))
+
 ## [0.9.1](https://github.com/brexhq/substation/compare/v0.9.0...v0.9.1) (2023-05-09)
 
 

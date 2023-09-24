@@ -6,6 +6,17 @@ import (
 	iconfig "github.com/brexhq/substation/internal/config"
 )
 
+type numberBitwiseConfig struct {
+	Object iconfig.Object `json:"object"`
+
+	// Value is the number that is used for comparison during inspection.
+	Value int64 `json:"value"`
+}
+
+func (c *numberBitwiseConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
+}
+
 type numberLengthConfig struct {
 	Object iconfig.Object `json:"object"`
 

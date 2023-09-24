@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/brexhq/substation/config"
@@ -22,7 +23,11 @@ var errJSONFileInvalid = fmt.Errorf("invalid JSON")
 type kvJSONFile struct {
 	// File contains the location of the text file. This can be either a path on local
 	// disk, an HTTP(S) URL, or an AWS S3 URL.
-	File   string `json:"file"`
+	File string `json:"file"`
+	// IsLines indicates that the file is a JSON Lines file. The first non-null value
+	// is returned when a key is found.
+	IsLines bool `json:"is_lines"`
+
 	mu     *sync.Mutex
 	object []byte
 }
@@ -50,6 +55,21 @@ func (store *kvJSONFile) String() string {
 func (store *kvJSONFile) Get(ctx context.Context, key string) (interface{}, error) {
 	store.mu.Lock()
 	defer store.mu.Unlock()
+
+	// JSON Lines files are queried as an array and the first non-null value is returned.
+	// See https://github.com/tidwall/gjson#json-lines for more information.
+	if store.IsLines && !strings.HasPrefix(key, "..#.") {
+		key = "..#." + key
+		res := gjson.GetBytes(store.object, key)
+
+		for _, v := range res.Array() {
+			if v.Exists() {
+				return v.Value(), nil
+			}
+		}
+
+		return nil, nil
+	}
 
 	res := gjson.GetBytes(store.object, key)
 	if !res.Exists() {

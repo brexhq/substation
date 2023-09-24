@@ -42,11 +42,6 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newArrayGroup(ctx, cfg)
 	case "array_join":
 		return newArrayJoin(ctx, cfg)
-	// Compress transforms.
-	case "compress_from_gzip":
-		return newCompressFromGzip(ctx, cfg)
-	case "compress_to_gzip":
-		return newCompressToGzip(ctx, cfg)
 	// Enrichment transforms.
 	case "enrich_aws_dynamodb":
 		return newEnrichAWSDynamoDB(ctx, cfg)
@@ -74,6 +69,10 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newFormatFromBase64(ctx, cfg)
 	case "format_to_base64":
 		return newFormatToBase64(ctx, cfg)
+	case "format_from_gzip":
+		return newFormatFromGzip(ctx, cfg)
+	case "format_to_gzip":
+		return newFormatToGzip(ctx, cfg)
 	case "format_from_pretty_print":
 		return newFormatFromPrettyPrint(ctx, cfg)
 	// Hash transforms.
@@ -81,15 +80,15 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newHashMD5(ctx, cfg)
 	case "hash_sha256":
 		return newHashSHA256(ctx, cfg)
-	// Logic transforms.
-	case "logic_num_add":
-		return newLogicNumAdd(ctx, cfg)
-	case "logic_num_divide":
-		return newLogicNumDivide(ctx, cfg)
-	case "logic_num_multiply":
-		return newLogicNumMultiply(ctx, cfg)
-	case "logic_num_subtract":
-		return newLogicNumSubtract(ctx, cfg)
+	// Number transforms.
+	case "number_arithmetic_add":
+		return newNumberArithmeticAdd(ctx, cfg)
+	case "number_arithmetic_div":
+		return newNumberArithmeticDiv(ctx, cfg)
+	case "number_arithmetic_mult":
+		return newNumberArithmeticMult(ctx, cfg)
+	case "number_arithmetic_sub":
+		return newNumberArithmeticSub(ctx, cfg)
 	// Network transforms.
 	case "network_domain_registered_domain":
 		return newNetworkDomainRegisteredDomain(ctx, cfg)

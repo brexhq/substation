@@ -9,29 +9,31 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var compressFromGzipTests = []struct {
+var formatToGzipTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
+	err      error
 }{
 	{
 		"data",
 		config.Config{},
-		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0},
+		[]byte(`foo`),
 		[][]byte{
-			[]byte(`foo`),
+			{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0},
 		},
+		nil,
 	},
 }
 
-func TestCompressFromGzip(t *testing.T) {
+func TestFormatToGzip(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range compressFromGzipTests {
+	for _, test := range formatToGzipTests {
 		t.Run(test.name, func(t *testing.T) {
 			msg := message.New().SetData(test.test)
 
-			tf, err := newCompressFromGzip(ctx, test.cfg)
+			tf, err := newFormatToGzip(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -53,7 +55,7 @@ func TestCompressFromGzip(t *testing.T) {
 	}
 }
 
-func benchmarkCompressFromGzip(b *testing.B, tf *compressFromGzip, data []byte) {
+func benchmarkFormatToGzip(b *testing.B, tf *formatToGzip, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -61,16 +63,16 @@ func benchmarkCompressFromGzip(b *testing.B, tf *compressFromGzip, data []byte) 
 	}
 }
 
-func BenchmarkCompressFromGzip(b *testing.B) {
-	for _, test := range compressFromGzipTests {
-		tf, err := newCompressFromGzip(context.TODO(), test.cfg)
+func BenchmarkFormatToGzip(b *testing.B) {
+	for _, test := range formatToGzipTests {
+		tf, err := newFormatToGzip(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkCompressFromGzip(b, tf, test.test)
+				benchmarkFormatToGzip(b, tf, test.test)
 			},
 		)
 	}

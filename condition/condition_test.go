@@ -70,7 +70,7 @@ var allTests = []struct {
 		"length",
 		[]config.Config{
 			{
-				Type: "logic_len_equal_to",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
 					"length": 3,
 				},
@@ -89,7 +89,7 @@ var allTests = []struct {
 				},
 			},
 			{
-				Type: "logic_len_equal_to",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
 					"length": 3,
 				},
@@ -132,7 +132,7 @@ var allTests = []struct {
 						"operator": "all",
 						"inspectors": []config.Config{
 							{
-								Type: "logic_len_equal_to",
+								Type: "number_length_equal_to",
 								Settings: map[string]interface{}{
 									"length": 3,
 								},
@@ -224,19 +224,19 @@ var anyTests = []struct {
 		"length",
 		[]config.Config{
 			{
-				Type: "logic_len_equal_to",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
 					"length": 3,
 				},
 			},
 			{
-				Type: "logic_len_equal_to",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
 					"length": 4,
 				},
 			},
 			{
-				Type: "logic_len_equal_to",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
 					"length": 5,
 				},
@@ -255,7 +255,7 @@ var anyTests = []struct {
 				},
 			},
 			{
-				Type: "logic_len_equal_to",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
 					"length": 4,
 				},
@@ -276,7 +276,7 @@ var anyTests = []struct {
 						"operator": "all",
 						"inspectors": []config.Config{
 							{
-								Type: "logic_len_equal_to",
+								Type: "number_length_equal_to",
 								Settings: map[string]interface{}{
 									"length": 4,
 								},
@@ -298,7 +298,7 @@ var anyTests = []struct {
 						"operator": "all",
 						"inspectors": []config.Config{
 							{
-								Type: "logic_len_equal_to",
+								Type: "number_length_equal_to",
 								Settings: map[string]interface{}{
 									"length": 3,
 								},
@@ -408,7 +408,7 @@ var noneTests = []struct {
 		"length",
 		[]config.Config{
 			{
-				Type: "logic_len_equal_to",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
 					"type":   "equals",
 					"length": 0,

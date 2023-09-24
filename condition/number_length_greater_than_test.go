@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var logicLenGreaterThanTests = []struct {
+var numberLengthGreaterThanTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -62,13 +62,13 @@ var logicLenGreaterThanTests = []struct {
 	},
 }
 
-func TestLogicLenGreaterThan(t *testing.T) {
+func TestNumberLengthGreaterThan(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range logicLenGreaterThanTests {
+	for _, test := range numberLengthGreaterThanTests {
 		t.Run(test.name, func(t *testing.T) {
 			message := message.New().SetData(test.test)
-			insp, err := newLogicLenGreaterThan(ctx, test.cfg)
+			insp, err := newNumberLengthGreaterThan(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -87,16 +87,16 @@ func TestLogicLenGreaterThan(t *testing.T) {
 	}
 }
 
-func benchmarkLogicLenGreaterThan(b *testing.B, insp *logicLenGreaterThan, message *message.Message) {
+func benchmarkNumberLengthGreaterThan(b *testing.B, insp *numberLengthGreaterThan, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = insp.Inspect(ctx, message)
 	}
 }
 
-func BenchmarkLogicLenGreaterThan(b *testing.B) {
-	for _, test := range logicLenGreaterThanTests {
-		insp, err := newLogicLenGreaterThan(context.TODO(), test.cfg)
+func BenchmarkNumberLengthGreaterThan(b *testing.B) {
+	for _, test := range numberLengthGreaterThanTests {
+		insp, err := newNumberLengthGreaterThan(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -104,7 +104,7 @@ func BenchmarkLogicLenGreaterThan(b *testing.B) {
 		b.Run(test.name,
 			func(b *testing.B) {
 				message := message.New().SetData(test.test)
-				benchmarkLogicLenGreaterThan(b, insp, message)
+				benchmarkNumberLengthGreaterThan(b, insp, message)
 			},
 		)
 	}

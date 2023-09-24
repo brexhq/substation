@@ -6,7 +6,7 @@ import (
 	iconfig "github.com/brexhq/substation/internal/config"
 )
 
-type logicLengthConfig struct {
+type numberLengthConfig struct {
 	Object iconfig.Object `json:"object"`
 
 	// Length is the length that is used for comparison during inspection.
@@ -24,11 +24,11 @@ type logicLengthConfig struct {
 	Measurement string `json:"measurement"`
 }
 
-func (c *logicLengthConfig) Decode(in interface{}) error {
+func (c *numberLengthConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func logicLengthMeasurement(b []byte, measurement string) int {
+func numberLengthMeasurement(b []byte, measurement string) int {
 	switch measurement {
 	case "byte":
 		return len(b)

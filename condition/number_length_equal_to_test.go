@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var logicLenEqualToTests = []struct {
+var numberLengthEqualToTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -62,13 +62,13 @@ var logicLenEqualToTests = []struct {
 	},
 }
 
-func TestLogicLenEqualTo(t *testing.T) {
+func TestNumberLengthEqualTo(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range logicLenEqualToTests {
+	for _, test := range numberLengthEqualToTests {
 		t.Run(test.name, func(t *testing.T) {
 			message := message.New().SetData(test.test)
-			insp, err := newLogicLenEqualTo(ctx, test.cfg)
+			insp, err := newNumberLengthEqualTo(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -87,16 +87,16 @@ func TestLogicLenEqualTo(t *testing.T) {
 	}
 }
 
-func benchmarkLogicLenEqualTo(b *testing.B, insp *logicLenEqualTo, message *message.Message) {
+func benchmarkNumberLengthEqualTo(b *testing.B, insp *numberLengthEqualTo, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = insp.Inspect(ctx, message)
 	}
 }
 
-func BenchmarkLogicLenEqualTo(b *testing.B) {
-	for _, test := range logicLenEqualToTests {
-		insp, err := newLogicLenEqualTo(context.TODO(), test.cfg)
+func BenchmarkNumberLengthEqualTo(b *testing.B) {
+	for _, test := range numberLengthEqualToTests {
+		insp, err := newNumberLengthEqualTo(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -104,7 +104,7 @@ func BenchmarkLogicLenEqualTo(b *testing.B) {
 		b.Run(test.name,
 			func(b *testing.B) {
 				message := message.New().SetData(test.test)
-				benchmarkLogicLenEqualTo(b, insp, message)
+				benchmarkNumberLengthEqualTo(b, insp, message)
 			},
 		)
 	}

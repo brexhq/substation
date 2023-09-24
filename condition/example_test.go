@@ -14,7 +14,7 @@ func ExampleNew() {
 	// the substring "iz"
 	cfg := []config.Config{
 		{
-			Type: "logic_len_greater_than",
+			Type: "number_length_greater_than",
 			Settings: map[string]interface{}{
 				"length": 0,
 			},
@@ -50,7 +50,7 @@ func Example_operate() {
 	// the substring "iz"
 	cfg := []config.Config{
 		{
-			Type: "logic_len_less_than",
+			Type: "number_length_less_than",
 			Settings: map[string]interface{}{
 				"length": 6,
 			},

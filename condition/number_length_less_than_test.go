@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var logicLenLessThanTests = []struct {
+var numberLengthLessThanTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -62,13 +62,13 @@ var logicLenLessThanTests = []struct {
 	},
 }
 
-func TestLogicLenLessThan(t *testing.T) {
+func TestNumberLengthLessThan(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range logicLenLessThanTests {
+	for _, test := range numberLengthLessThanTests {
 		t.Run(test.name, func(t *testing.T) {
 			message := message.New().SetData(test.test)
-			insp, err := newLogicLenLessThan(ctx, test.cfg)
+			insp, err := newNumberLengthLessThan(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -87,16 +87,16 @@ func TestLogicLenLessThan(t *testing.T) {
 	}
 }
 
-func benchmarkLogicLenLessThan(b *testing.B, insp *logicLenLessThan, message *message.Message) {
+func benchmarkNumberLengthLessThan(b *testing.B, insp *numberLengthLessThan, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = insp.Inspect(ctx, message)
 	}
 }
 
-func BenchmarkLogicLenLessThan(b *testing.B) {
-	for _, test := range logicLenLessThanTests {
-		insp, err := newLogicLenLessThan(context.TODO(), test.cfg)
+func BenchmarkNumberLengthLessThan(b *testing.B) {
+	for _, test := range numberLengthLessThanTests {
+		insp, err := newNumberLengthLessThan(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -104,7 +104,7 @@ func BenchmarkLogicLenLessThan(b *testing.B) {
 		b.Run(test.name,
 			func(b *testing.B) {
 				message := message.New().SetData(test.test)
-				benchmarkLogicLenLessThan(b, insp, message)
+				benchmarkNumberLengthLessThan(b, insp, message)
 			},
 		)
 	}

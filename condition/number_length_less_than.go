@@ -8,30 +8,30 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type logicLenLessThan struct {
-	conf logicLengthConfig
+type numberLengthLessThan struct {
+	conf numberLengthConfig
 }
 
-func newLogicLenLessThan(_ context.Context, cfg config.Config) (*logicLenLessThan, error) {
-	conf := logicLengthConfig{}
+func newNumberLengthLessThan(_ context.Context, cfg config.Config) (*numberLengthLessThan, error) {
+	conf := numberLengthConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, err
 	}
 
-	insp := logicLenLessThan{
+	insp := numberLengthLessThan{
 		conf: conf,
 	}
 
 	return &insp, nil
 }
 
-func (insp *logicLenLessThan) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberLengthLessThan) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}
 
 	if insp.conf.Object.Key == "" {
-		llm := logicLengthMeasurement(msg.Data(), insp.conf.Measurement)
+		llm := numberLengthMeasurement(msg.Data(), insp.conf.Measurement)
 		return insp.match(llm), nil
 	}
 
@@ -41,15 +41,15 @@ func (insp *logicLenLessThan) Inspect(ctx context.Context, msg *message.Message)
 		return insp.match(l), nil
 	}
 
-	llm := logicLengthMeasurement(value.Bytes(), insp.conf.Measurement)
+	llm := numberLengthMeasurement(value.Bytes(), insp.conf.Measurement)
 	return insp.match(llm), nil
 }
 
-func (c *logicLenLessThan) match(length int) bool {
+func (c *numberLengthLessThan) match(length int) bool {
 	return length < c.conf.Length
 }
 
-func (c *logicLenLessThan) String() string {
+func (c *numberLengthLessThan) String() string {
 	b, _ := json.Marshal(c.conf)
 	return string(b)
 }

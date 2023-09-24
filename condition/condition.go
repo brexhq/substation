@@ -31,13 +31,6 @@ func newInspector(ctx context.Context, cfg config.Config) (inspector, error) {
 		return newFormatContent(ctx, cfg)
 	case "format_json":
 		return newFormatJSON(ctx, cfg)
-	// Logic inspectors.
-	case "logic_len_less_than":
-		return newLogicLenLessThan(ctx, cfg)
-	case "logic_len_greater_than":
-		return newLogicLenGreaterThan(ctx, cfg)
-	case "logic_len_equal_to":
-		return newLogicLenEqualTo(ctx, cfg)
 	// Meta inspectors.
 	case "meta_condition":
 		return newMetaCondition(ctx, cfg)
@@ -64,6 +57,13 @@ func newInspector(ctx context.Context, cfg config.Config) (inspector, error) {
 		return newNetworkIPUnspecified(ctx, cfg)
 	case "network_ip_valid":
 		return newNetworkIPValid(ctx, cfg)
+	// Number inspectors.
+	case "number_length_less_than":
+		return newNumberLengthLessThan(ctx, cfg)
+	case "number_length_greater_than":
+		return newNumberLengthGreaterThan(ctx, cfg)
+	case "number_length_equal_to":
+		return newNumberLengthEqualTo(ctx, cfg)
 	// String inspectors.
 	case "string_contains":
 		return newStringContains(ctx, cfg)

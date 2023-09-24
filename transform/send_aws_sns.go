@@ -28,7 +28,7 @@ type sendAWSSNSConfig struct {
 	AWS    iconfig.AWS    `json:"aws"`
 	Retry  iconfig.Retry  `json:"retry"`
 
-	// ARN is the AWS SNS topic ARN that data is sent to.
+	// ARN is the AWS SNS topic ARN that messages are sent to.
 	ARN string `json:"arn"`
 }
 
@@ -47,11 +47,11 @@ func (c *sendAWSSNSConfig) Validate() error {
 func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 	conf := sendAWSSNSConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_sns: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_sns: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_sns: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_sns: %v", err)
 	}
 
 	tf := sendAWSSNS{
@@ -60,13 +60,13 @@ func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 
 	// Setup the AWS client.
 	tf.client.Setup(aws.Config{
-		Region:     conf.AWS.Region,
-		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Count,
+		Region:        conf.AWS.Region,
+		AssumeRoleARN: conf.AWS.AssumeRoleARN,
+		MaxRetries:    conf.Retry.Count,
 	})
 
 	buffer, err := aggregate.New(aggregate.Config{
-		// SNS limits batch operations to 10 msgs.
+		// SQS limits batch operations to 10 messages.
 		Count: 10,
 		// SNS limits batch operations to 256 KB.
 		Size:     sendAWSSNSMessageSizeLimit,
@@ -87,6 +87,7 @@ type sendAWSSNS struct {
 
 	// client is safe for concurrent use.
 	client sns.API
+
 	// buffer is safe for concurrent use.
 	buffer    *aggregate.Aggregate
 	bufferKey string

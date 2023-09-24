@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
@@ -28,8 +29,8 @@ type sendAWSSQSConfig struct {
 	AWS    iconfig.AWS    `json:"aws"`
 	Retry  iconfig.Retry  `json:"retry"`
 
-	// Queue is the AWS SQS queue that data is sent to.
-	Queue string `json:"queue"`
+	// ARN is the AWS SNS topic ARN that messages are sent to.
+	ARN string `json:"arn"`
 }
 
 func (c *sendAWSSQSConfig) Decode(in interface{}) error {
@@ -37,8 +38,8 @@ func (c *sendAWSSQSConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSSQSConfig) Validate() error {
-	if c.Queue == "" {
-		return fmt.Errorf("queue: %v", errors.ErrMissingRequiredOption)
+	if c.ARN == "" {
+		return fmt.Errorf("arn: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -47,26 +48,34 @@ func (c *sendAWSSQSConfig) Validate() error {
 func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 	conf := sendAWSSQSConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_sqs: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_sqs: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_sqs: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_sqs: %v", err)
 	}
 
+	// arn:aws:sqs:region:account_id:queue_name
+	arn := strings.Split(conf.ARN, ":")
 	tf := sendAWSSQS{
 		conf: conf,
+		queueURL: fmt.Sprintf(
+			"https://sqs.%s.amazonaws.com/%s/%s",
+			arn[3],
+			arn[4],
+			arn[5],
+		),
 	}
 
 	// Setup the AWS client.
 	tf.client.Setup(aws.Config{
-		Region:     conf.AWS.Region,
-		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Count,
+		Region:        conf.AWS.Region,
+		AssumeRoleARN: conf.AWS.AssumeRoleARN,
+		MaxRetries:    conf.Retry.Count,
 	})
 
 	buffer, err := aggregate.New(aggregate.Config{
-		// SQS limits batch operations to 10 msgs.
+		// SQS limits batch operations to 10 messages.
 		Count: 10,
 		// SQS limits batch operations to 256 KB.
 		Size:     sendSQSMessageSizeLimit,
@@ -83,10 +92,12 @@ func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 }
 
 type sendAWSSQS struct {
-	conf sendAWSSQSConfig
+	conf     sendAWSSQSConfig
+	queueURL string
 
 	// client is safe for concurrent use.
 	client sqs.API
+
 	// buffer is safe for concurrent use.
 	buffer    *aggregate.Aggregate
 	bufferKey string
@@ -99,7 +110,7 @@ func (tf *sendAWSSQS) Transform(ctx context.Context, msg *message.Message) ([]*m
 		}
 
 		items := tf.buffer.Get(tf.bufferKey)
-		if _, err := tf.client.SendMessageBatch(ctx, tf.conf.Queue, items); err != nil {
+		if _, err := tf.client.SendMessageBatch(ctx, tf.queueURL, items); err != nil {
 			return nil, fmt.Errorf("transform: send_aws_sqs: %v", err)
 		}
 
@@ -117,7 +128,7 @@ func (tf *sendAWSSQS) Transform(ctx context.Context, msg *message.Message) ([]*m
 	}
 
 	items := tf.buffer.Get(tf.bufferKey)
-	if _, err := tf.client.SendMessageBatch(ctx, tf.conf.Queue, items); err != nil {
+	if _, err := tf.client.SendMessageBatch(ctx, tf.queueURL, items); err != nil {
 		return nil, fmt.Errorf("transform: send_aws_sqs: %v", err)
 	}
 

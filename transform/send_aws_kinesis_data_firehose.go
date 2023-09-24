@@ -28,8 +28,8 @@ type sendAWSKinesisDataFirehoseConfig struct {
 	AWS    iconfig.AWS    `json:"aws"`
 	Retry  iconfig.Retry  `json:"retry"`
 
-	// DeliveryStream is the Firehose Delivery Stream that data is sent to.
-	DeliveryStream string `json:"delivery_stream"`
+	// StreamName is the Firehose Delivery Stream that records are sent to.
+	StreamName string `json:"stream_name"`
 }
 
 func (c *sendAWSKinesisDataFirehoseConfig) Decode(in interface{}) error {
@@ -37,8 +37,8 @@ func (c *sendAWSKinesisDataFirehoseConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSKinesisDataFirehoseConfig) Validate() error {
-	if c.DeliveryStream == "" {
-		return fmt.Errorf("stream: %v", errors.ErrMissingRequiredOption)
+	if c.StreamName == "" {
+		return fmt.Errorf("stream_name: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -47,11 +47,11 @@ func (c *sendAWSKinesisDataFirehoseConfig) Validate() error {
 func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendAWSKinesisDataFirehose, error) {
 	conf := sendAWSKinesisDataFirehoseConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_kinesis_data_firehose: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_kinesis_data_firehose: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_kinesis_data_firehose: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_kinesis_data_firehose: %v", err)
 	}
 
 	tf := sendAWSKinesisDataFirehose{
@@ -74,9 +74,9 @@ func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendA
 
 	// Setup the AWS client.
 	tf.client.Setup(aws.Config{
-		Region:     conf.AWS.Region,
-		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Count,
+		Region:        conf.AWS.Region,
+		AssumeRoleARN: conf.AWS.AssumeRoleARN,
+		MaxRetries:    conf.Retry.Count,
 	})
 
 	return &tf, nil
@@ -99,7 +99,7 @@ func (tf *sendAWSKinesisDataFirehose) Transform(ctx context.Context, msg *messag
 		}
 
 		items := tf.buffer.Get(tf.bufferKey)
-		if _, err := tf.client.PutRecordBatch(ctx, tf.conf.DeliveryStream, items); err != nil {
+		if _, err := tf.client.PutRecordBatch(ctx, tf.conf.StreamName, items); err != nil {
 			return nil, fmt.Errorf("transform: send_aws_kinesis_data_firehose: %v", err)
 		}
 
@@ -117,7 +117,7 @@ func (tf *sendAWSKinesisDataFirehose) Transform(ctx context.Context, msg *messag
 	}
 
 	items := tf.buffer.Get(tf.bufferKey)
-	if _, err := tf.client.PutRecordBatch(ctx, tf.conf.DeliveryStream, items); err != nil {
+	if _, err := tf.client.PutRecordBatch(ctx, tf.conf.StreamName, items); err != nil {
 		return nil, fmt.Errorf("transform: send_aws_kinesis_data_firehose: %v", err)
 	}
 

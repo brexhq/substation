@@ -10,9 +10,9 @@ import (
 )
 
 type Config struct {
-	Region     string `json:"region"`
-	MaxRetries int    `json:"max_retries"`
-	AssumeRole string `json:"assume_role"`
+	Region        string `json:"region"`
+	MaxRetries    int    `json:"max_retries"`
+	AssumeRoleARN string `json:"assume_role_arn"`
 }
 
 // New returns a new AWS configuration and session.
@@ -39,8 +39,8 @@ func New(cfg Config) (*aws.Config, *session.Session) {
 	}
 
 	sess := session.Must(session.NewSession())
-	if cfg.AssumeRole != "" {
-		conf = conf.WithCredentials(stscreds.NewCredentials(sess, cfg.AssumeRole))
+	if cfg.AssumeRoleARN != "" {
+		conf = conf.WithCredentials(stscreds.NewCredentials(sess, cfg.AssumeRoleARN))
 	}
 
 	return conf, sess

@@ -1,7 +1,7 @@
 # Used for deploying and maintaining the Kinesis Data Streams autoscaling application; does not need to be used if deployments don't include Kinesis Data Streams.
 
 module "lambda_autoscaling" {
-  source = "../../../../../build/terraform/aws/lambda"
+  source = "../../../../../../build/terraform/aws/lambda"
   # These are always required for all Lambda.
   kms       = module.kms
   appconfig = aws_appconfig_application.substation

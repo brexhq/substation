@@ -45,18 +45,9 @@ func (a *API) Setup(cfg iaws.Config) {
 func (a *API) SendMessage(ctx aws.Context, queue string, data []byte) (*sqs.SendMessageOutput, error) {
 	mgid := uuid.New().String()
 
-	url, err := a.Client.GetQueueUrlWithContext(
-		ctx,
-		&sqs.GetQueueUrlInput{
-			QueueName: aws.String(queue),
-		})
-	if err != nil {
-		return nil, fmt.Errorf("send_message: queue %s: %v", queue, err)
-	}
-
 	msg := &sqs.SendMessageInput{
 		MessageBody: aws.String(string(data)),
-		QueueUrl:    url.QueueUrl,
+		QueueUrl:    aws.String(queue),
 	}
 
 	if strings.HasSuffix(queue, ".fifo") {
@@ -89,20 +80,11 @@ func (a *API) SendMessageBatch(ctx aws.Context, queue string, data [][]byte) (*s
 		messages = append(messages, entry)
 	}
 
-	url, err := a.Client.GetQueueUrlWithContext(
-		ctx,
-		&sqs.GetQueueUrlInput{
-			QueueName: aws.String(queue),
-		})
-	if err != nil {
-		return nil, fmt.Errorf("send_message_batch: queue %s: %v", queue, err)
-	}
-
 	resp, err := a.Client.SendMessageBatchWithContext(
 		ctx,
 		&sqs.SendMessageBatchInput{
 			Entries:  messages,
-			QueueUrl: url.QueueUrl,
+			QueueUrl: aws.String(queue),
 		},
 	)
 

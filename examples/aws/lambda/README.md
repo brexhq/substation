@@ -113,7 +113,7 @@ flowchart LR
 
 ## Data Lake
 
-Deploys a data pipeline that implements a data lake by writing raw and processed data to an S3 bucket.
+Deploys a data pipeline that implements a [data lake pattern using S3](https://docs.aws.amazon.com/whitepapers/latest/building-data-lakes/amazon-s3-data-lake-storage-platform.html). The S3 bucket contains two copies of the data (original and transformed).
 
 ```mermaid
 

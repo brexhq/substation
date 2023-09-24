@@ -19,12 +19,12 @@ import (
 )
 
 type sendAWSS3Config struct {
-	Buffer aggregate.Config `json:"buffer"`
-	AWS    iconfig.AWS      `json:"aws"`
-	Retry  iconfig.Retry    `json:"retry"`
+	Buffer iconfig.Buffer `json:"buffer"`
+	AWS    iconfig.AWS    `json:"aws"`
+	Retry  iconfig.Retry  `json:"retry"`
 
-	// Bucket is the AWS S3 bucket that data is written to.
-	Bucket string `json:"bucket"`
+	// BucketName is the AWS S3 bucket that data is written to.
+	BucketName string `json:"bucket_name"`
 	// FilePath determines how the name of the uploaded object is constructed.
 	// See filePath.New for more information.
 	FilePath file.Path `json:"file_path"`
@@ -63,7 +63,7 @@ func (c *sendAWSS3Config) Decode(in interface{}) error {
 }
 
 func (c *sendAWSS3Config) Validate() error {
-	if c.Bucket == "" {
+	if c.BucketName == "" {
 		return fmt.Errorf("bucket: %v", errors.ErrMissingRequiredOption)
 	}
 
@@ -81,11 +81,11 @@ func (c *sendAWSS3Config) Validate() error {
 func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 	conf := sendAWSS3Config{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_s3: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_s3: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
 	}
 
 	tf := sendAWSS3{
@@ -95,17 +95,21 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 	// File extensions are dynamic and not directly configurable.
 	tf.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
 
-	buffer, err := aggregate.New(conf.Buffer)
+	buffer, err := aggregate.New(aggregate.Config{
+		Count:    conf.Buffer.Count,
+		Size:     conf.Buffer.Size,
+		Duration: conf.Buffer.Duration,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_s3: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
 	}
 	tf.buffer = buffer
 
 	// Setup the AWS client.
 	tf.client.Setup(aws.Config{
-		Region:     conf.AWS.Region,
-		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Count,
+		Region:        conf.AWS.Region,
+		AssumeRoleARN: conf.AWS.AssumeRoleARN,
+		MaxRetries:    conf.Retry.Count,
 	})
 
 	return &tf, nil
@@ -198,7 +202,7 @@ func (t *sendAWSS3) writeFile(ctx context.Context, prefix string) error {
 	}
 	defer f.Close()
 
-	if _, err := t.client.Upload(ctx, t.conf.Bucket, fpath, f); err != nil {
+	if _, err := t.client.Upload(ctx, t.conf.BucketName, fpath, f); err != nil {
 		return err
 	}
 

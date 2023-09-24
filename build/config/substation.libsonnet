@@ -254,7 +254,7 @@
             object: $.config.object,
             aws: $.config.aws,
             retry: $.config.retry,
-            table: null,
+            table_name: null,
             partition_key: null,
             sort_key: null,
             key_condition_expression: null,
@@ -534,7 +534,7 @@
           local default = {
             aws: $.config.aws,
             retry: $.config.retry,
-            table: null,
+            table_name: null,
           },
 
           type: 'send_aws_dynamodb',
@@ -545,7 +545,7 @@
             aws: $.config.aws,
             buffer: $.config.buffer,
             retry: $.config.retry,
-            delivery_stream: null,
+            stream_name: null,
           },
 
           type: 'send_aws_kinesis_data_firehose',
@@ -556,7 +556,7 @@
             aws: $.config.aws,
             buffer: $.config.buffer,
             retry: $.config.retry,
-            stream: null,
+            stream_name: null,
             partition: null,
             partition_key: null,
             shard_redistribution: false,
@@ -570,7 +570,7 @@
             aws: $.config.aws,
             buffer: $.config.buffer,
             retry: $.config.retry,
-            bucket: null,
+            bucket_name: null,
             file_path: $.file_path,
             file_format: { type: 'json' },
             file_compression: { type: 'gzip' },
@@ -595,7 +595,7 @@
             aws: $.config.aws,
             buffer: $.config.buffer,
             retry: $.config.retry,
-            queue: null,
+            arn: null,
           },
 
           type: 'send_aws_sqs',
@@ -702,6 +702,14 @@
         snake(settings=null): {
           type: 'string_to_snake',
         },
+      },
+      uuid(settings=null): {
+        local default = {
+          object: $.config.object,
+        },
+
+        type: 'string_uuid',
+        settings: std.mergePatch(default, settings),
       },
     },
     time: {
@@ -818,7 +826,7 @@
   },
   // Mirrors structs from the internal/config package.
   config: {
-    aws: { region: null, assume_role: null },
+    aws: { region: null, assume_role_arn: null },
     buffer: { count: 1000, size: 100000, duration: '5m', key: null },
     object: { key: null, set_key: null },
     request: { timeout: '1s' },

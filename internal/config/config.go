@@ -14,8 +14,8 @@ type Object struct {
 }
 
 type AWS struct {
-	Region     string `json:"region"`
-	AssumeRole string `json:"assume_role"`
+	Region        string `json:"region"`
+	AssumeRoleARN string `json:"assume_role_arn"`
 }
 
 type Request struct {

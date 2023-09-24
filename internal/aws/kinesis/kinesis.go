@@ -205,6 +205,47 @@ func (a *API) PutRecord(ctx aws.Context, stream, partitionKey string, data []byt
 	return resp, nil
 }
 
+// PutRecords is a convenience wrapper for putting multiple records into a Kinesis stream.
+func (a *API) PutRecords(ctx aws.Context, stream, partitionKey string, data [][]byte) (*kinesis.PutRecordsOutput, error) {
+	var records []*kinesis.PutRecordsRequestEntry
+
+	for _, d := range data {
+		records = append(records, &kinesis.PutRecordsRequestEntry{
+			Data:         d,
+			PartitionKey: aws.String(partitionKey),
+		})
+	}
+
+	resp, err := a.Client.PutRecordsWithContext(
+		ctx,
+		&kinesis.PutRecordsInput{
+			Records:    records,
+			StreamName: aws.String(stream),
+		},
+	)
+
+	// If any record fails, then the record is recursively retried.
+	if resp.FailedRecordCount != nil && *resp.FailedRecordCount > 0 {
+		var retry [][]byte
+
+		for idx, r := range resp.Records {
+			if r.ErrorCode != nil {
+				retry = append(retry, data[idx])
+			}
+		}
+
+		if len(retry) > 0 {
+			return a.PutRecords(ctx, stream, partitionKey, retry)
+		}
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("put_records: stream %s: %v", stream, err)
+	}
+
+	return resp, nil
+}
+
 // ActiveShards returns the number of in-use shards for a Kinesis stream.
 func (a *API) ActiveShards(ctx aws.Context, stream string) (int64, error) {
 	var shards int64

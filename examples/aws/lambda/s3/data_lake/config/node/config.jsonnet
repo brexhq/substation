@@ -10,13 +10,13 @@ local bucket = 'd7c66938-6b96-21a3-7e59-62cb40e4627f-substation';
   },
   transforms: [
     sub.transform.send.aws.s3(
-      settings={ bucket: bucket, file_path: { prefix: 'raw' } }
+      settings={ bucket_name: bucket, file_path: { prefix: 'original' } }
     ),
     sub.transform.object.insert(
       settings={ object: { set_key: 'transformed' }, value: true }
     ),
     sub.transform.send.aws.s3(
-      settings={ bucket: bucket, file_path: { prefix: 'processed' } }
+      settings={ bucket_name: bucket, file_path: { prefix: 'transformed' } }
     ),
   ],
 }

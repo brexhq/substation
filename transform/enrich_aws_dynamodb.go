@@ -22,8 +22,8 @@ type enrichAWSDynamoDBConfig struct {
 	AWS    iconfig.AWS    `json:"aws"`
 	Retry  iconfig.Retry  `json:"retry"`
 
-	// Table is the DynamoDB table that is queried.
-	Table string `json:"table"`
+	// TableName is the DynamoDB table that is queried.
+	TableName string `json:"table"`
 	// PartitionKey is the DynamoDB partition key.
 	PartitionKey string `json:"partition_key"`
 	// SortKey is the DynamoDB sort key.
@@ -58,8 +58,8 @@ func (c *enrichAWSDynamoDBConfig) Validate() error {
 		return fmt.Errorf("partition_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Table == "" {
-		return fmt.Errorf("table: %v", errors.ErrMissingRequiredOption)
+	if c.TableName == "" {
+		return fmt.Errorf("table_name: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.KeyConditionExpression == "" {
@@ -84,9 +84,9 @@ func newEnrichAWSDynamoDB(_ context.Context, cfg config.Config) (*enrichAWSDynam
 
 	// Setup the AWS client.
 	tf.client.Setup(aws.Config{
-		Region:     conf.AWS.Region,
-		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Count,
+		Region:        conf.AWS.Region,
+		AssumeRoleARN: conf.AWS.AssumeRoleARN,
+		MaxRetries:    conf.Retry.Count,
 	})
 
 	return &tf, nil
@@ -127,7 +127,7 @@ func (tf *enrichAWSDynamoDB) Transform(ctx context.Context, msg *message.Message
 func (tf *enrichAWSDynamoDB) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {
 	resp, err := tf.client.Query(
 		ctx,
-		tf.conf.Table,
+		tf.conf.TableName,
 		pk, sk,
 		tf.conf.KeyConditionExpression,
 		tf.conf.Limit,

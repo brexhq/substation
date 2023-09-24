@@ -4,42 +4,40 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
-
-	"github.com/google/uuid"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aggregate"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/kinesis"
 	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/message"
+	"github.com/google/uuid"
 )
 
-type sendAWSKinesisDataStreamConfig struct {
-	AWS   iconfig.AWS   `json:"aws"`
-	Retry iconfig.Retry `json:"retry"`
+// Records greater than 1 MiB in size cannot be
+// put into a Kinesis Data Stream.
+const sendAWSKinesisDataStreamMessageSizeLimit = 1024 * 1024 * 1
 
-	// Stream is the Kinesis Data Stream that records are sent to.
-	Stream string `json:"stream"`
+type sendAWSKinesisDataStreamConfig struct {
+	Buffer iconfig.Buffer `json:"buffer"`
+	AWS    iconfig.AWS    `json:"aws"`
+	Retry  iconfig.Retry  `json:"retry"`
+
+	// StreamName is the Kinesis Data Stream that records are sent to.
+	StreamName string `json:"stream_name"`
 	// Partition is a string that is used as the partition key for each
-	// aggregated record.
+	// record.
 	//
 	// This is optional and defaults to a randomly generated string.
 	Partition string `json:"partition"`
-	// PartitionKey retrieves a value from an object that sorts records and
-	// is used as the partition key for each aggregated record. If used, then
-	// this overrides Partition.
+	// PartitionKey retrieves a value from an object that is used as the
+	// partition key for each record. If used, then this overrides Partition.
 	//
 	// This is optional and has no default.
 	PartitionKey string `json:"partition_key"`
-	// ShardRedistribution determines if records should be redistributed
-	// across shards based on the partition key.
-	//
-	// This is optional and defaults to false (data is randomly distributed
-	// across shards). If enabled with an empty partition key, then data
-	// aggregation is disabled.
-	ShardRedistribution bool `json:"shard_redistribution"`
+	// Aggregation determines if records should be aggregated.
+	Aggregation bool `json:"aggregation"`
 }
 
 func (c *sendAWSKinesisDataStreamConfig) Decode(in interface{}) error {
@@ -47,8 +45,8 @@ func (c *sendAWSKinesisDataStreamConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSKinesisDataStreamConfig) Validate() error {
-	if c.Stream == "" {
-		return fmt.Errorf("stream: %v", errors.ErrMissingRequiredOption)
+	if c.StreamName == "" {
+		return fmt.Errorf("stream_name: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -57,26 +55,40 @@ func (c *sendAWSKinesisDataStreamConfig) Validate() error {
 func newSendAWSKinesisDataStream(_ context.Context, cfg config.Config) (*sendAWSKinesisDataStream, error) {
 	conf := sendAWSKinesisDataStreamConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_kinesis_data_stream: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_kinesis_data_stream: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
 	}
 
 	tf := sendAWSKinesisDataStream{
 		conf: conf,
 	}
 
+	if conf.PartitionKey != "" {
+		conf.Buffer.Key = conf.PartitionKey
+	}
+
+	buffer, err := aggregate.New(aggregate.Config{
+		// Kinesis Data Streams limits batch operations to 500 records.
+		Count: 500,
+		// Kinesis Data Streams record size limit is 5MiB.
+		Size:     sendAWSKinesisDataStreamMessageSizeLimit * 5,
+		Duration: conf.Buffer.Duration,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+	}
+	tf.buffer = buffer
+	tf.bufferKey = conf.Buffer.Key
+
 	// Setup the AWS client.
 	tf.client.Setup(aws.Config{
-		Region:     conf.AWS.Region,
-		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Count,
+		Region:        conf.AWS.Region,
+		AssumeRoleARN: conf.AWS.AssumeRoleARN,
+		MaxRetries:    conf.Retry.Count,
 	})
-
-	tf.mu = sync.Mutex{}
-	tf.buffer = make(map[string]*kinesis.Aggregate)
 
 	return &tf, nil
 }
@@ -88,74 +100,68 @@ type sendAWSKinesisDataStream struct {
 	client kinesis.API
 
 	// buffer is safe for concurrent use.
-	mu     sync.Mutex
-	buffer map[string]*kinesis.Aggregate
+	buffer    *aggregate.Aggregate
+	bufferKey string
 }
 
 func (tf *sendAWSKinesisDataStream) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// Lock the transform to prevent concurrent access to the buffer.
-	tf.mu.Lock()
-	defer tf.mu.Unlock()
-
 	if msg.IsControl() {
-		// Flush the buffer.
-		for aggregationKey := range tf.buffer {
-			if tf.buffer[aggregationKey].Count == 0 {
-				continue
+		for key := range tf.buffer.GetAll() {
+			partitionKey := key
+			if partitionKey == "" {
+				partitionKey = uuid.NewString()
 			}
 
-			agg := tf.buffer[aggregationKey].Get()
-			aggPK := tf.buffer[aggregationKey].PartitionKey
-			if _, err := tf.client.PutRecord(ctx, tf.conf.Stream, aggPK, agg); err != nil {
-				// PutRecord errors return metadata and don't require more information.
-				return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+			data := tf.buffer.Get(key)
+			switch tf.conf.Aggregation {
+			case false:
+				if _, err := tf.client.PutRecords(ctx, tf.conf.StreamName, partitionKey, data); err != nil {
+					return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+				}
+			case true:
+				if err := tf.sendAggregateRecord(ctx, tf.conf.StreamName, partitionKey, data); err != nil {
+					return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+				}
 			}
 		}
 
-		// Reset the buffer.
-		tf.buffer = make(map[string]*kinesis.Aggregate)
+		tf.buffer.ResetAll()
 		return []*message.Message{msg}, nil
 	}
 
-	var partitionKey string
-	if tf.conf.Partition != "" {
-		partitionKey = tf.conf.Partition
-	} else if tf.conf.PartitionKey != "" {
-		partitionKey = msg.GetValue(tf.conf.PartitionKey).String()
+	if len(msg.Data()) > sendAWSKinesisDataStreamMessageSizeLimit {
+		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", errSendAWSSNSMessageSizeLimit)
 	}
 
+	key := tf.conf.Partition
+	if tf.conf.PartitionKey != "" {
+		key = msg.GetValue(tf.conf.PartitionKey).String()
+	}
+
+	if ok := tf.buffer.Add(key, msg.Data()); ok {
+		return []*message.Message{msg}, nil
+	}
+
+	partitionKey := key
 	if partitionKey == "" {
 		partitionKey = uuid.NewString()
 	}
 
-	// Enables redistribution of data across shards by aggregating partition keys into the same payload.
-	// This has the intentional side effect where data aggregation is disabled if no partition key is assigned.
-	var aggregationKey string
-	if tf.conf.ShardRedistribution {
-		aggregationKey = partitionKey
-	}
-
-	if _, ok := tf.buffer[aggregationKey]; !ok {
-		// Aggregate up to 1MB, the upper limit for Kinesis records.
-		tf.buffer[aggregationKey] = &kinesis.Aggregate{}
-		tf.buffer[aggregationKey].New()
-	}
-
-	// Add data to the buffer. If the buffer is full, then send the aggregated data.
-	if ok := tf.buffer[aggregationKey].Add(msg.Data(), partitionKey); ok {
-		return []*message.Message{msg}, nil
-	}
-
-	agg := tf.buffer[aggregationKey].Get()
-	aggPK := tf.buffer[aggregationKey].PartitionKey
-	if _, err := tf.client.PutRecord(ctx, tf.conf.Stream, aggPK, agg); err != nil {
-		// PutRecord errors return metadata and don't require more information.
-		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+	data := tf.buffer.Get(key)
+	switch tf.conf.Aggregation {
+	case false:
+		if _, err := tf.client.PutRecords(ctx, tf.conf.StreamName, partitionKey, data); err != nil {
+			return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+		}
+	case true:
+		if err := tf.sendAggregateRecord(ctx, tf.conf.StreamName, partitionKey, data); err != nil {
+			return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+		}
 	}
 
 	// Reset the buffer and add the msg data.
-	tf.buffer[aggregationKey].New()
-	_ = tf.buffer[aggregationKey].Add(msg.Data(), partitionKey)
+	tf.buffer.Reset(key)
+	_ = tf.buffer.Add(key, msg.Data())
 
 	return []*message.Message{msg}, nil
 }
@@ -163,4 +169,30 @@ func (tf *sendAWSKinesisDataStream) Transform(ctx context.Context, msg *message.
 func (tf *sendAWSKinesisDataStream) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
+}
+
+func (tf *sendAWSKinesisDataStream) sendAggregateRecord(ctx context.Context, stream, partitionKey string, data [][]byte) error {
+	agg := &kinesis.Aggregate{}
+	agg.New()
+
+	for _, b := range data {
+		if ok := agg.Add(b, partitionKey); ok {
+			continue
+		}
+
+		if _, err := tf.client.PutRecord(ctx, stream, partitionKey, agg.Get()); err != nil {
+			return err
+		}
+
+		agg.New()
+		_ = agg.Add(b, partitionKey)
+	}
+
+	if agg.Count > 0 {
+		if _, err := tf.client.PutRecord(ctx, stream, partitionKey, agg.Get()); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

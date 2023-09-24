@@ -13,12 +13,13 @@ local sub = import '../../../../../../../build/config/substation.libsonnet';
         ),
       ]),
     ),
-    // The SHA256 hash of the event is used as the UUID (Partition Key) for the microservice.
-    sub.transform.hash.sha256(
-      settings={ object: { key: '@this', set_key: 'PK' } },
+    // This UUID is used by the client to retrieve the processed result from DynamoDB.
+    sub.transform.string.uuid(
+      settings={ object: { set_key: 'uuid' } },
     ),
     sub.transform.send.aws.sqs(
-      settings={ queue: 'substation' }
+      // This is a placeholder that must be replaced with the SQS ARN produced by Terraform.
+      settings={ arn: 'arn:aws:sqs:us-east-1:123456789012:substation' },
     ),
   ],
 }

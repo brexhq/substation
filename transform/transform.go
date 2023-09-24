@@ -154,6 +154,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newStringReplace(ctx, cfg)
 	case "string_split":
 		return newStringSplit(ctx, cfg)
+	case "string_uuid":
+		return newStringUUID(ctx, cfg)
 	// Time transforms.
 	case "time_from_str":
 		return newTimeFromStr(ctx, cfg)

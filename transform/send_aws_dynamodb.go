@@ -25,8 +25,10 @@ type sendAWSDynamoDBConfig struct {
 	AWS    iconfig.AWS    `json:"aws"`
 	Retry  iconfig.Retry  `json:"retry"`
 
-	// Table is the DynamoDB table that items are written to.
-	Table string `json:"table"`
+	// TableName is the DynamoDB table that items are written to.
+	TableName string `json:"table_name"`
+	// PartitionKey is the name of the partition key for the table.
+	PartitionKey string `json:"partition_key"`
 }
 
 func (c *sendAWSDynamoDBConfig) Decode(in interface{}) error {
@@ -34,8 +36,8 @@ func (c *sendAWSDynamoDBConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSDynamoDBConfig) Validate() error {
-	if c.Table == "" {
-		return fmt.Errorf("table: %v", errors.ErrMissingRequiredOption)
+	if c.TableName == "" {
+		return fmt.Errorf("table_name: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -44,11 +46,11 @@ func (c *sendAWSDynamoDBConfig) Validate() error {
 func newSendAWSDynamoDB(_ context.Context, cfg config.Config) (*sendAWSDynamoDB, error) {
 	conf := sendAWSDynamoDBConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_dynamodb: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_dynamodb: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_dynamodb: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_dynamodb: %v", err)
 	}
 
 	if conf.Object.Key == "" {
@@ -60,9 +62,9 @@ func newSendAWSDynamoDB(_ context.Context, cfg config.Config) (*sendAWSDynamoDB,
 	}
 
 	tf.client.Setup(aws.Config{
-		Region:     conf.AWS.Region,
-		AssumeRole: conf.AWS.AssumeRole,
-		MaxRetries: conf.Retry.Count,
+		Region:        conf.AWS.Region,
+		AssumeRoleARN: conf.AWS.AssumeRoleARN,
+		MaxRetries:    conf.Retry.Count,
 	})
 
 	return &tf, nil
@@ -81,7 +83,7 @@ func (tf *sendAWSDynamoDB) Transform(ctx context.Context, msg *message.Message) 
 	}
 
 	if !json.Valid(msg.Data()) {
-		return nil, fmt.Errorf("transform: send_aws_dynamodb: table %s: %v", tf.conf.Table, errSendAWSDynamoDBNonObject)
+		return nil, fmt.Errorf("transform: send_aws_dynamodb: table %s: %v", tf.conf.TableName, errSendAWSDynamoDBNonObject)
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
@@ -93,10 +95,10 @@ func (tf *sendAWSDynamoDB) Transform(ctx context.Context, msg *message.Message) 
 
 		attrVals, err := dynamodbattribute.MarshalMap(cache)
 		if err != nil {
-			return nil, fmt.Errorf("transform: send_aws_dynamodb: table %s: %v", tf.conf.Table, err)
+			return nil, fmt.Errorf("transform: send_aws_dynamodb: table %s: %v", tf.conf.TableName, err)
 		}
 
-		if _, err = tf.client.PutItem(ctx, tf.conf.Table, attrVals); err != nil {
+		if _, err = tf.client.PutItem(ctx, tf.conf.TableName, attrVals); err != nil {
 			// PutItem errors return metadata and don't require more information.
 			return nil, fmt.Errorf("transform: send_aws_dynamodb: %v", err)
 		}

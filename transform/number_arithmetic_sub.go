@@ -10,8 +10,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newLogicNumSubtract(_ context.Context, cfg config.Config) (*logicNumSubtract, error) {
-	conf := logicNumConfig{}
+func newNumberArithmeticSub(_ context.Context, cfg config.Config) (*numberArithmeticSub, error) {
+	conf := numberArithmeticConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
 		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
 	}
@@ -20,7 +20,7 @@ func newLogicNumSubtract(_ context.Context, cfg config.Config) (*logicNumSubtrac
 		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
 	}
 
-	tf := logicNumSubtract{
+	tf := numberArithmeticSub{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -28,12 +28,12 @@ func newLogicNumSubtract(_ context.Context, cfg config.Config) (*logicNumSubtrac
 	return &tf, nil
 }
 
-type logicNumSubtract struct {
-	conf     logicNumConfig
+type numberArithmeticSub struct {
+	conf     numberArithmeticConfig
 	isObject bool
 }
 
-func (tf *logicNumSubtract) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *numberArithmeticSub) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -80,7 +80,7 @@ func (tf *logicNumSubtract) Transform(ctx context.Context, msg *message.Message)
 	return []*message.Message{msg}, nil
 }
 
-func (tf *logicNumSubtract) String() string {
+func (tf *numberArithmeticSub) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

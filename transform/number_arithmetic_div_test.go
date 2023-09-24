@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var logicNumMultiplyTests = []struct {
+var numberArithmeticDivTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -19,9 +19,9 @@ var logicNumMultiplyTests = []struct {
 	{
 		"data",
 		config.Config{},
-		[]byte(`[2,3]`),
+		[]byte(`[6,2]`),
 		[][]byte{
-			[]byte(`6`),
+			[]byte(`3`),
 		},
 	},
 	// object tests
@@ -35,18 +35,18 @@ var logicNumMultiplyTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":[2,3]}`),
+		[]byte(`{"a":[6,2]}`),
 		[][]byte{
-			[]byte(`{"a":6}`),
+			[]byte(`{"a":3}`),
 		},
 	},
 }
 
-func TestLogicNumMultiply(t *testing.T) {
+func TestDiv(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range logicNumMultiplyTests {
+	for _, test := range numberArithmeticDivTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newLogicNumMultiply(ctx, test.cfg)
+			tf, err := newNumberArithmeticDiv(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestLogicNumMultiply(t *testing.T) {
 	}
 }
 
-func benchmarkLogicNumMultiply(b *testing.B, tf *logicNumMultiply, data []byte) {
+func benchmarkNumberArithmeticDiv(b *testing.B, tf *numberArithmeticDiv, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +77,16 @@ func benchmarkLogicNumMultiply(b *testing.B, tf *logicNumMultiply, data []byte) 
 	}
 }
 
-func BenchmarkLogicNumMultiply(b *testing.B) {
-	for _, test := range logicNumMultiplyTests {
-		tf, err := newLogicNumMultiply(context.TODO(), test.cfg)
+func BenchmarkNumberArithmeticDiv(b *testing.B) {
+	for _, test := range numberArithmeticDivTests {
+		tf, err := newNumberArithmeticDiv(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkLogicNumMultiply(b, tf, test.test)
+				benchmarkNumberArithmeticDiv(b, tf, test.test)
 			},
 		)
 	}

@@ -7,15 +7,15 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
-type logicNumConfig struct {
+type numberArithmeticConfig struct {
 	Object iconfig.Object `json:"object"`
 }
 
-func (c *logicNumConfig) Decode(in interface{}) error {
+func (c *numberArithmeticConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *logicNumConfig) Validate() error {
+func (c *numberArithmeticConfig) Validate() error {
 	if c.Object.Key == "" && c.Object.SetKey != "" {
 		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
 	}

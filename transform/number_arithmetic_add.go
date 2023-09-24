@@ -10,17 +10,17 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newLogicNumDivide(_ context.Context, cfg config.Config) (*logicNumDivide, error) {
-	conf := logicNumConfig{}
+func newNumberArithmeticAdd(_ context.Context, cfg config.Config) (*numberArithmeticAdd, error) {
+	conf := numberArithmeticConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
+		return nil, fmt.Errorf("transform: new_number_arithmetic_add: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
+		return nil, fmt.Errorf("transform: new_number_arithmetic_add: %v", err)
 	}
 
-	tf := logicNumDivide{
+	tf := numberArithmeticAdd{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -28,12 +28,12 @@ func newLogicNumDivide(_ context.Context, cfg config.Config) (*logicNumDivide, e
 	return &tf, nil
 }
 
-type logicNumDivide struct {
-	conf     logicNumConfig
+type numberArithmeticAdd struct {
+	conf     numberArithmeticConfig
 	isObject bool
 }
 
-func (tf *logicNumDivide) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *numberArithmeticAdd) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -56,6 +56,7 @@ func (tf *logicNumDivide) Transform(ctx context.Context, msg *message.Message) (
 	if len(value.Array()) <= 1 {
 		return []*message.Message{msg}, nil
 	}
+
 	var vFloat64 float64
 	for i, val := range value.Array() {
 		if i == 0 {
@@ -63,7 +64,7 @@ func (tf *logicNumDivide) Transform(ctx context.Context, msg *message.Message) (
 			continue
 		}
 
-		vFloat64 /= val.Float()
+		vFloat64 += val.Float()
 	}
 
 	if !tf.isObject {
@@ -74,13 +75,13 @@ func (tf *logicNumDivide) Transform(ctx context.Context, msg *message.Message) (
 	}
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, vFloat64); err != nil {
-		return nil, fmt.Errorf("transform: mod_math: %v", err)
+		return nil, fmt.Errorf("transform: arithmetic_add: %v", err)
 	}
 
 	return []*message.Message{msg}, nil
 }
 
-func (tf *logicNumDivide) String() string {
+func (tf *numberArithmeticAdd) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

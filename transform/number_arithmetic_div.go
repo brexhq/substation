@@ -10,17 +10,17 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newLogicNumMultiply(_ context.Context, cfg config.Config) (*logicNumMultiply, error) {
-	conf := logicNumConfig{}
+func newNumberArithmeticDiv(_ context.Context, cfg config.Config) (*numberArithmeticDiv, error) {
+	conf := numberArithmeticConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: new_num_multiply: %v", err)
+		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_num_multiply: %v", err)
+		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
 	}
 
-	tf := logicNumMultiply{
+	tf := numberArithmeticDiv{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -28,12 +28,12 @@ func newLogicNumMultiply(_ context.Context, cfg config.Config) (*logicNumMultipl
 	return &tf, nil
 }
 
-type logicNumMultiply struct {
-	conf     logicNumConfig
+type numberArithmeticDiv struct {
+	conf     numberArithmeticConfig
 	isObject bool
 }
 
-func (tf *logicNumMultiply) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *numberArithmeticDiv) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -63,7 +63,7 @@ func (tf *logicNumMultiply) Transform(ctx context.Context, msg *message.Message)
 			continue
 		}
 
-		vFloat64 *= val.Float()
+		vFloat64 /= val.Float()
 	}
 
 	if !tf.isObject {
@@ -74,13 +74,13 @@ func (tf *logicNumMultiply) Transform(ctx context.Context, msg *message.Message)
 	}
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, vFloat64); err != nil {
-		return nil, fmt.Errorf("transform: num_multiply: %v", err)
+		return nil, fmt.Errorf("transform: mod_math: %v", err)
 	}
 
 	return []*message.Message{msg}, nil
 }
 
-func (tf *logicNumMultiply) String() string {
+func (tf *numberArithmeticDiv) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

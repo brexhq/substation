@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var logicNumSubtractTests = []struct {
+var numberArithmeticSubTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -42,11 +42,11 @@ var logicNumSubtractTests = []struct {
 	},
 }
 
-func TestLogicNumSubtract(t *testing.T) {
+func TestNumberArithmeticSub(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range logicNumSubtractTests {
+	for _, test := range numberArithmeticSubTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newLogicNumSubtract(ctx, test.cfg)
+			tf, err := newNumberArithmeticSub(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestLogicNumSubtract(t *testing.T) {
 	}
 }
 
-func benchmarkLogicNumSubtract(b *testing.B, tf *logicNumSubtract, data []byte) {
+func benchmarkNumberArithmeticSub(b *testing.B, tf *numberArithmeticSub, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +77,16 @@ func benchmarkLogicNumSubtract(b *testing.B, tf *logicNumSubtract, data []byte) 
 	}
 }
 
-func BenchmarkLogicNumSubtract(b *testing.B) {
-	for _, test := range logicNumSubtractTests {
-		tf, err := newLogicNumSubtract(context.TODO(), test.cfg)
+func BenchmarkNumberArithmeticSub(b *testing.B) {
+	for _, test := range numberArithmeticSubTests {
+		tf, err := newNumberArithmeticSub(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkLogicNumSubtract(b, tf, test.test)
+				benchmarkNumberArithmeticSub(b, tf, test.test)
 			},
 		)
 	}

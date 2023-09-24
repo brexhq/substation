@@ -47,9 +47,9 @@ var transformTests = []struct {
 		},
 	},
 	{
-		"compress_from_gzip",
+		"format_from_gzip",
 		config.Config{
-			Type: "compress_from_gzip",
+			Type: "format_from_gzip",
 		},
 		[]byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 170, 86, 202, 72, 205, 201, 201, 87, 178, 82, 74, 207, 207, 79, 73, 170, 76, 85, 170, 5, 4, 0, 0, 255, 255, 214, 182, 196, 150, 19, 0, 0, 0},
 		[][]byte{

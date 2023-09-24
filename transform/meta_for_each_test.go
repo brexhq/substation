@@ -31,7 +31,7 @@ var metaForEachTests = []struct {
 								Type: "format_from_base64",
 							},
 							{
-								Type: "compress_from_gzip",
+								Type: "format_from_gzip",
 							},
 						},
 					},

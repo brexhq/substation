@@ -29,7 +29,7 @@ var metaPipelineTests = []struct {
 						Settings: map[string]interface{}{},
 					},
 					{
-						Type:     "compress_from_gzip",
+						Type:     "format_from_gzip",
 						Settings: map[string]interface{}{},
 					},
 				},
@@ -50,7 +50,7 @@ var metaPipelineTests = []struct {
 						Settings: map[string]interface{}{},
 					},
 					{
-						Type:     "compress_from_gzip",
+						Type:     "format_from_gzip",
 						Settings: map[string]interface{}{},
 					},
 				},

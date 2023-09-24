@@ -20,29 +20,29 @@
         type: 'format_json',
       },
     },
-    logic: {
-      len: {
+    number: {
+      length: {
         default: {
           object: $.config.object,
           length: null,
           measurement: 'byte',
         },
         equal_to(settings=null): {
-          local default = $.condition.logic.len.default,
+          local default = $.condition.number.length.default,
 
-          type: 'logic_len_equal_to',
+          type: 'number_length_equal_to',
           settings: std.mergePatch(default, settings),
         },
         greater_than(settings=null): {
-          local default = $.condition.logic.len.default,
+          local default = $.condition.number.length.default,
 
-          type: 'logic_len_greater_than',
+          type: 'number_length_greater_than',
           settings: std.mergePatch(default, settings),
         },
         less_than(settings=null): {
-          local default = $.condition.logic.len.default,
+          local default = $.condition.number.length.default,
 
-          type: 'logic_len_less_than',
+          type: 'number_length_less_than',
           settings: std.mergePatch(default, settings),
         },
       },
@@ -239,14 +239,6 @@
         settings: std.mergePatch(default, settings),
       },
     },
-    compress: {
-      from_gzip(settings=null): {
-        type: 'compress_from_gzip',
-      },
-      to_gzip(settings=null): {
-        type: 'compress_to_gzip',
-      },
-    },
     enrich: {
       aws: {
         dynamodb(settings=null): {
@@ -361,6 +353,9 @@
           type: 'format_from_base64',
           settings: std.mergePatch(default, settings),
         },
+        gzip(settings=null): {
+          type: 'format_from_gzip',
+        },
         pretty_print(settings=null): {
           type: 'format_from_pretty_print',
         },
@@ -371,6 +366,9 @@
 
           type: 'format_to_base64',
           settings: std.mergePatch(default, settings),
+        },
+        gzip(settings=null): {
+          type: 'format_to_gzip',
         },
       },
     },
@@ -391,33 +389,33 @@
         settings: std.mergePatch(default, settings),
       },
     },
-    logic: {
-      num: {
+    number: {
+      arithmetic: {
         default: {
           object: $.config.object,
         },
         add(settings=null): {
           local default = $.transform.logic.num.default,
 
-          type: 'logic_num_add',
+          type: 'number_arithmetic_add',
           settings: std.mergePatch(default, settings),
         },
-        subtract(settings=null): {
+        sub(settings=null): {
           local default = $.transform.logic.num.default,
 
-          type: 'logic_num_subtract',
+          type: 'number_arithmetic_sub',
           settings: std.mergePatch(default, settings),
         },
-        multiply(settings=null): {
+        mult(settings=null): {
           local default = $.transform.logic.num.default,
 
-          type: 'logic_num_multiply',
+          type: 'number_arithmetic_mult',
           settings: std.mergePatch(default, settings),
         },
-        divide(settings=null): {
+        div(settings=null): {
           local default = $.transform.logic.num.default,
 
-          type: 'logic_num_divide',
+          type: 'number_arithmetic_div',
           settings: std.mergePatch(default, settings),
         },
       },
@@ -870,20 +868,20 @@
           ],
         },
       },
-      logic: {
-        len: {
+      number: {
+        length: {
           // Checks if data is equal to zero.
           //
           // Use with the ANY / ALL operator to match empty data.
           // Use with the NONE operator to match non-empty data.
           eq_zero(key=null):
-            $.condition.logic.len.equal_to(settings=$.patterns.condition.obj(key) { length: 0 }),
+            $.condition.number.length.equal_to(settings=$.patterns.condition.obj(key) { length: 0 }),
           // Checks if data is greater than zero.
           //
           // Use with the ANY / ALL operator to match non-empty data.
           // Use with the NONE operator to match empty data.
           gt_zero(key=null):
-            $.condition.logic.len.greater_than(settings=$.patterns.condition.obj(key) { length: 0 }),
+            $.condition.number.length.greater_than(settings=$.patterns.condition.obj(key) { length: 0 }),
         },
       },
       string: {

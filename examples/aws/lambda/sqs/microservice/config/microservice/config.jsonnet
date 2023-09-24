@@ -8,7 +8,7 @@ local sub = import '../../../../../../../build/config/substation.libsonnet';
   transforms: [
     // Remove any events that do not have a 'uuid' field.
     sub.patterns.transform.conditional(
-      condition=sub.condition.all(sub.patterns.condition.logic.len.eq_zero(key='uuid')),
+      condition=sub.condition.all(sub.patterns.condition.number.length.eq_zero(key='uuid')),
       transform=sub.transform.utility.drop(),
     ),
     // Performs a reverse DNS lookup on the 'addr' field if it is a public IP address.

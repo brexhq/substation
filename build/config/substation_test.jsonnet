@@ -26,8 +26,8 @@ local inspector = sub.condition.format.json();
       },
       logic: {
         len: {
-          eq_zero: sub.patterns.condition.logic.len.eq_zero(key),
-          gt_zero: sub.patterns.condition.logic.len.gt_zero(key),
+          eq_zero: sub.patterns.condition.number.length.eq_zero(key),
+          gt_zero: sub.patterns.condition.number.length.gt_zero(key),
         },
       },
       string: {

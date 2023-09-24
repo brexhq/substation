@@ -146,7 +146,7 @@ flowchart LR
 
 ## Pub/Sub
 
-Deploys a data pipeline that implements a [publish/subscribe (pub/sub) pattern](https://aws.amazon.com/what-is/pub-sub-messaging/). The application in `cmd/development/substation` can act as the client by reading a local file and sending its content to the SNS topic.
+Deploys a data pipeline that implements a [publish/subscribe (pub/sub) pattern](https://aws.amazon.com/what-is/pub-sub-messaging/). The `cmd/client/file` Substation application can be used to send data to the SNS topic.
 
 ```mermaid
 

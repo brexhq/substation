@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var stringPatternFindAllTests = []struct {
+var stringMatchFindAllTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -49,11 +49,11 @@ var stringPatternFindAllTests = []struct {
 	},
 }
 
-func TestStringPatternFindAll(t *testing.T) {
+func TestStringMatchFindAll(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range stringPatternFindAllTests {
+	for _, test := range stringMatchFindAllTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newStringPatternFindAll(ctx, test.cfg)
+			tf, err := newStringMatchFindAll(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -76,7 +76,7 @@ func TestStringPatternFindAll(t *testing.T) {
 	}
 }
 
-func benchmarkStringPatternFindAll(b *testing.B, tf *stringPatternFindAll, data []byte) {
+func benchmarkStringMatchFindAll(b *testing.B, tf *stringMatchFindAll, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -84,16 +84,16 @@ func benchmarkStringPatternFindAll(b *testing.B, tf *stringPatternFindAll, data 
 	}
 }
 
-func BenchmarkStringPatternFindAll(b *testing.B) {
-	for _, test := range stringPatternFindAllTests {
-		tf, err := newStringPatternFindAll(context.TODO(), test.cfg)
+func BenchmarkStringMatchFindAll(b *testing.B) {
+	for _, test := range stringMatchFindAllTests {
+		tf, err := newStringMatchFindAll(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkStringPatternFindAll(b, tf, test.test)
+				benchmarkStringMatchFindAll(b, tf, test.test)
 			},
 		)
 	}

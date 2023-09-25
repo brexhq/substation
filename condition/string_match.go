@@ -12,18 +12,18 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type stringPatternConfig struct {
+type stringMatchConfig struct {
 	Object iconfig.Object `json:"object"`
 
 	// Pattern is the regular expression used during inspection.
 	Pattern string `json:"pattern"`
 }
 
-func (c *stringPatternConfig) Decode(in interface{}) error {
+func (c *stringMatchConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *stringPatternConfig) Validate() error {
+func (c *stringMatchConfig) Validate() error {
 	if c.Pattern == "" {
 		return fmt.Errorf("pattern: %v", errors.ErrMissingRequiredOption)
 	}
@@ -31,8 +31,8 @@ func (c *stringPatternConfig) Validate() error {
 	return nil
 }
 
-func newStringPattern(_ context.Context, cfg config.Config) (*stringPattern, error) {
-	conf := stringPatternConfig{}
+func newStringMatch(_ context.Context, cfg config.Config) (*stringMatch, error) {
+	conf := stringMatchConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func newStringPattern(_ context.Context, cfg config.Config) (*stringPattern, err
 		return nil, fmt.Errorf("condition: insp_regexp: %v", err)
 	}
 
-	insp := stringPattern{
+	insp := stringMatch{
 		conf: conf,
 		re:   re,
 	}
@@ -54,13 +54,13 @@ func newStringPattern(_ context.Context, cfg config.Config) (*stringPattern, err
 	return &insp, nil
 }
 
-type stringPattern struct {
-	conf stringPatternConfig
+type stringMatch struct {
+	conf stringMatchConfig
 
 	re *regexp.Regexp
 }
 
-func (insp *stringPattern) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *stringMatch) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}
@@ -73,7 +73,7 @@ func (insp *stringPattern) Inspect(ctx context.Context, msg *message.Message) (o
 	return insp.re.MatchString(value.String()), nil
 }
 
-func (c *stringPattern) String() string {
+func (c *stringMatch) String() string {
 	b, _ := json.Marshal(c.conf)
 	return string(b)
 }

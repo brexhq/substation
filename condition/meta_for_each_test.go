@@ -55,7 +55,7 @@ var metaForEachTests = []struct {
 		nil,
 	},
 	{
-		"string_pattern",
+		"string_match",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -64,7 +64,7 @@ var metaForEachTests = []struct {
 				"negate": false,
 				"type":   "any",
 				"inspector": map[string]interface{}{
-					"type": "string_pattern",
+					"type": "string_match",
 					"settings": map[string]interface{}{
 						"pattern": "^fizz$",
 					},

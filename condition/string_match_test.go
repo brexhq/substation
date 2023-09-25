@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var stringPatternTests = []struct {
+var stringMatchTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -36,13 +36,13 @@ var stringPatternTests = []struct {
 	},
 }
 
-func TestStringPattern(t *testing.T) {
+func TestStringMatch(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range stringPatternTests {
+	for _, test := range stringMatchTests {
 		t.Run(test.name, func(t *testing.T) {
 			message := message.New().SetData(test.test)
-			insp, err := newStringPattern(ctx, test.cfg)
+			insp, err := newStringMatch(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -59,16 +59,16 @@ func TestStringPattern(t *testing.T) {
 	}
 }
 
-func benchmarkStringPatternByte(b *testing.B, insp *stringPattern, message *message.Message) {
+func benchmarkStringMatchByte(b *testing.B, insp *stringMatch, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = insp.Inspect(ctx, message)
 	}
 }
 
-func BenchmarkStringPatternByte(b *testing.B) {
-	for _, test := range stringPatternTests {
-		insp, err := newStringPattern(context.TODO(), test.cfg)
+func BenchmarkStringMatchByte(b *testing.B) {
+	for _, test := range stringMatchTests {
+		insp, err := newStringMatch(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -76,7 +76,7 @@ func BenchmarkStringPatternByte(b *testing.B) {
 		b.Run(test.name,
 			func(b *testing.B) {
 				message := message.New().SetData(test.test)
-				benchmarkStringPatternByte(b, insp, message)
+				benchmarkStringMatchByte(b, insp, message)
 			},
 		)
 	}

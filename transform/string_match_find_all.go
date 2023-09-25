@@ -12,7 +12,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type stringPatternFindAllConfig struct {
+type stringMatchFindAllConfig struct {
 	Object iconfig.Object `json:"object"`
 
 	// Pattern is the regular expression used to capture values.
@@ -24,11 +24,11 @@ type stringPatternFindAllConfig struct {
 	re *regexp.Regexp
 }
 
-func (c *stringPatternFindAllConfig) Decode(in interface{}) error {
+func (c *stringMatchFindAllConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *stringPatternFindAllConfig) Validate() error {
+func (c *stringMatchFindAllConfig) Validate() error {
 	if c.Object.Key == "" && c.Object.SetKey != "" {
 		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
 	}
@@ -55,8 +55,8 @@ func (c *stringPatternFindAllConfig) Validate() error {
 	return nil
 }
 
-func newStringPatternFindAll(_ context.Context, cfg config.Config) (*stringPatternFindAll, error) {
-	conf := stringPatternFindAllConfig{}
+func newStringMatchFindAll(_ context.Context, cfg config.Config) (*stringMatchFindAll, error) {
+	conf := stringMatchFindAllConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_str_capture_find_all: %v", err)
 	}
@@ -65,7 +65,7 @@ func newStringPatternFindAll(_ context.Context, cfg config.Config) (*stringPatte
 		return nil, fmt.Errorf("transform: new_str_capture_find_all: %v", err)
 	}
 
-	tf := stringPatternFindAll{
+	tf := stringMatchFindAll{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -73,12 +73,12 @@ func newStringPatternFindAll(_ context.Context, cfg config.Config) (*stringPatte
 	return &tf, nil
 }
 
-type stringPatternFindAll struct {
-	conf     stringPatternFindAllConfig
+type stringMatchFindAll struct {
+	conf     stringMatchFindAllConfig
 	isObject bool
 }
 
-func (tf *stringPatternFindAll) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *stringMatchFindAll) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -116,7 +116,7 @@ func (tf *stringPatternFindAll) Transform(_ context.Context, msg *message.Messag
 	return []*message.Message{msg}, nil
 }
 
-func (tf *stringPatternFindAll) String() string {
+func (tf *stringMatchFindAll) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

@@ -44,7 +44,7 @@ var allTests = []struct {
 		"pattern",
 		[]config.Config{
 			{
-				Type: "string_pattern",
+				Type: "string_match",
 				Settings: map[string]interface{}{
 					"pattern": "^foo$",
 				},

@@ -85,8 +85,8 @@ func newInspector(ctx context.Context, cfg config.Config) (inspector, error) { /
 		return newStringLessThan(ctx, cfg)
 	case "string_starts_with":
 		return newStringStartsWith(ctx, cfg)
-	case "string_pattern":
-		return newStringPattern(ctx, cfg)
+	case "string_match":
+		return newStringMatch(ctx, cfg)
 	// Utility inspectors.
 	case "utility_random":
 		return newUtilityRandom(ctx, cfg)

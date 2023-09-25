@@ -136,12 +136,12 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	// String transforms.
 	case "string_append":
 		return newStringAppend(ctx, cfg)
-	case "string_pattern_find_all":
-		return newStringPatternFindAll(ctx, cfg)
-	case "string_pattern_find":
-		return newStringPatternFind(ctx, cfg)
-	case "string_pattern_named_group":
-		return newStringPatternNamedGroup(ctx, cfg)
+	case "string_match_find_all":
+		return newStringMatchFindAll(ctx, cfg)
+	case "string_match_find":
+		return newStringMatchFind(ctx, cfg)
+	case "string_match_named_group":
+		return newStringMatchNamedGroup(ctx, cfg)
 	case "string_to_lower":
 		return newStringToLower(ctx, cfg)
 	case "string_to_snake":

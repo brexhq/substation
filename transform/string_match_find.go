@@ -12,7 +12,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type stringPatternFindConfig struct {
+type stringMatchFindConfig struct {
 	Object iconfig.Object `json:"object"`
 
 	// Pattern is the regular expression used to capture values.
@@ -21,11 +21,11 @@ type stringPatternFindConfig struct {
 	re *regexp.Regexp
 }
 
-func (c *stringPatternFindConfig) Decode(in interface{}) error {
+func (c *stringMatchFindConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *stringPatternFindConfig) Validate() error {
+func (c *stringMatchFindConfig) Validate() error {
 	if c.Object.Key == "" && c.Object.SetKey != "" {
 		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
 	}
@@ -48,8 +48,8 @@ func (c *stringPatternFindConfig) Validate() error {
 	return nil
 }
 
-func newStringPatternFind(_ context.Context, cfg config.Config) (*stringPatternFind, error) {
-	conf := stringPatternFindConfig{}
+func newStringMatchFind(_ context.Context, cfg config.Config) (*stringMatchFind, error) {
+	conf := stringMatchFindConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_str_capture_find: %v", err)
 	}
@@ -58,7 +58,7 @@ func newStringPatternFind(_ context.Context, cfg config.Config) (*stringPatternF
 		return nil, fmt.Errorf("transform: new_str_capture_find: %v", err)
 	}
 
-	tf := stringPatternFind{
+	tf := stringMatchFind{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -66,12 +66,12 @@ func newStringPatternFind(_ context.Context, cfg config.Config) (*stringPatternF
 	return &tf, nil
 }
 
-type stringPatternFind struct {
-	conf     stringPatternFindConfig
+type stringMatchFind struct {
+	conf     stringMatchFindConfig
 	isObject bool
 }
 
-func (tf *stringPatternFind) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *stringMatchFind) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -93,7 +93,7 @@ func (tf *stringPatternFind) Transform(_ context.Context, msg *message.Message) 
 	return []*message.Message{msg}, nil
 }
 
-func (tf *stringPatternFind) String() string {
+func (tf *stringMatchFind) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

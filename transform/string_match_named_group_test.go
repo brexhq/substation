@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var stringPatternNamedGroupTests = []struct {
+var stringMatchNamedGroupTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -47,11 +47,11 @@ var stringPatternNamedGroupTests = []struct {
 	},
 }
 
-func TestStringPatternNamedGroup(t *testing.T) {
+func TestStringMatchNamedGroup(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range stringPatternNamedGroupTests {
+	for _, test := range stringMatchNamedGroupTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newStringPatternNamedGroup(ctx, test.cfg)
+			tf, err := newStringMatchNamedGroup(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -74,7 +74,7 @@ func TestStringPatternNamedGroup(t *testing.T) {
 	}
 }
 
-func benchmarkStringPatternNamedGroup(b *testing.B, tf *stringPatternNamedGroup, data []byte) {
+func benchmarkStringMatchNamedGroup(b *testing.B, tf *stringMatchNamedGroup, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -82,16 +82,16 @@ func benchmarkStringPatternNamedGroup(b *testing.B, tf *stringPatternNamedGroup,
 	}
 }
 
-func BenchmarkStringPatternNamedGroup(b *testing.B) {
-	for _, test := range stringPatternNamedGroupTests {
-		tf, err := newStringPatternNamedGroup(context.TODO(), test.cfg)
+func BenchmarkStringMatchNamedGroup(b *testing.B) {
+	for _, test := range stringMatchNamedGroupTests {
+		tf, err := newStringMatchNamedGroup(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkStringPatternNamedGroup(b, tf, test.test)
+				benchmarkStringMatchNamedGroup(b, tf, test.test)
 			},
 		)
 	}

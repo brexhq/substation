@@ -7,17 +7,17 @@
     none(i): { operator: 'none', inspectors: $.helpers.make_array(i) },
     // Inspectors.
     format: {
-      content(settings=null): {
+      json(settings=null): {
+        type: 'format_json',
+      },
+      mime(settings=null): {
         local default = {
           object: $.config.object,
           type: null,
         },
 
-        type: 'format_content',
+        type: 'format_mime',
         settings: std.mergePatch(default, settings),
-      },
-      json(settings=null): {
-        type: 'format_json',
       },
     },
     number: {
@@ -198,13 +198,13 @@
         type: 'string_ends_with',
         settings: std.mergePatch(default, settings),
       },
-      pattern(settings=null): {
+      match(settings=null): {
         local default = {
           object: $.config.object,
           pattern: null,
         },
 
-        type: 'string_pattern',
+        type: 'string_match',
         settings: std.mergePatch(default, settings),
       },
     },
@@ -687,7 +687,7 @@
         type: 'string_append',
         settings: std.mergePatch(default, settings),
       },
-      pattern: {
+      match: {
         default: {
           object: $.config.object,
           pattern: null,
@@ -695,19 +695,19 @@
         find_all(settings=null): {
           local default = $.transform.string.pattern.default,
 
-          type: 'string_pattern_find_all',
+          type: 'string_match_find_all',
           settings: std.mergePatch(default, settings),
         },
         find(settings=null): {
           local default = $.transform.string.pattern.default,
 
-          type: 'string_pattern_find',
+          type: 'string_match_find',
           settings: std.mergePatch(default, settings),
         },
         named_group(settings=null): {
           local default = $.transform.string.pattern.default,
 
-          type: 'string_pattern_named_group',
+          type: 'string_match_named_group',
           settings: std.mergePatch(default, settings),
         },
       },

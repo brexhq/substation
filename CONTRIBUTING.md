@@ -59,7 +59,7 @@ Applications may implement runtime settings that are managed by environment vari
 
 #### Configurations
 
-Substation uses a single configuration pattern for all components in the system (see `Config` in [substation.go](substation.go)). This pattern is highly reusable and should be embedded to create custom configurations. Below is an example that shows how configurations should be designed:
+Substation uses a single configuration pattern for all components in the system (see `Config` in [config/config.go](/config/config.go)). This pattern is highly reusable and should be embedded to create custom configurations. Below is an example that shows how configurations should be designed:
 
 ```json
    "foo": {
@@ -83,7 +83,7 @@ Repeating this pattern allows components and applications to integrate with Subs
 
 #### Factories
 
-Substation relies on [factory methods](https://refactoring.guru/design-patterns/factory-method) to create objects that [satisfy interfaces](https://go.dev/doc/effective_go#interface_methods) across the system. Factories should be combined with the configuration design pattern to create usable components.
+Substation relies on [factory methods](https://refactoring.guru/design-patterns/factory-method) to create objects that [satisfy interfaces](https://go.dev/doc/effective_go#interface_methods) across the project. Factories should be combined with the configuration design pattern to create new components.
 
 Factories are the preferred method for allowing users to customize the system. Example factories can be seen in [condition](/condition/condition.go) and [transform](/transform/transform.go).
 

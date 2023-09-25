@@ -61,9 +61,6 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newEnrichKVStoreGet(ctx, cfg)
 	case "enrich_kv_store_set":
 		return newEnrichKVStoreSet(ctx, cfg)
-	// External transforms.
-	case "external_jq":
-		return newExternalJQ(ctx, cfg)
 	// Format transforms.
 	case "format_from_base64":
 		return newFormatFromBase64(ctx, cfg)
@@ -103,6 +100,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newObjectDelete(ctx, cfg)
 	case "object_insert":
 		return newObjectInsert(ctx, cfg)
+	case "object_jq":
+		return newObjectJQ(ctx, cfg)
 	case "object_to_bool":
 		return newObjectToBool(ctx, cfg)
 	case "object_to_float":

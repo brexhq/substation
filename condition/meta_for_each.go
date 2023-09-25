@@ -19,12 +19,9 @@ type metaForEachConfig struct {
 	// Type determines the method of combining results from the inspector.
 	//
 	// Must be one of:
-	//
-	// - none: none of the elements match the condition
-	//
-	// - any: at least one of the elements match the condition
-	//
-	// - all: all of the elements match the condition
+	//	- none: none of the elements match the condition
+	//	- any: at least one of the elements match the condition
+	//	- all: all of the elements match the condition
 	Type string `json:"type"`
 	// Inspector is the condition applied to each element.
 	Inspector config.Config `json:"inspector"`

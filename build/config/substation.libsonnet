@@ -32,7 +32,7 @@
           settings: std.mergePatch(default, settings),
         },
         not(settings=null): {
-          local default = { 
+          local default = {
             object: $.config.object,
           },
 

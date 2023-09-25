@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newTimeToStr(_ context.Context, cfg config.Config) (*timeToStr, error) {
+func newTimeToString(_ context.Context, cfg config.Config) (*timeToString, error) {
 	conf := timePatternConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_time_to_str: %v", err)
@@ -19,7 +19,7 @@ func newTimeToStr(_ context.Context, cfg config.Config) (*timeToStr, error) {
 		return nil, fmt.Errorf("transform: new_time_to_str: %v", err)
 	}
 
-	tf := timeToStr{
+	tf := timeToString{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -27,14 +27,14 @@ func newTimeToStr(_ context.Context, cfg config.Config) (*timeToStr, error) {
 	return &tf, nil
 }
 
-// timeToStr is a transform that converts a Unix timestamp to a
+// timeToString is a transform that converts a Unix timestamp to a
 // pattern-based string format.
-type timeToStr struct {
+type timeToString struct {
 	conf     timePatternConfig
 	isObject bool
 }
 
-func (tf *timeToStr) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *timeToString) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -66,7 +66,7 @@ func (tf *timeToStr) Transform(ctx context.Context, msg *message.Message) ([]*me
 	return []*message.Message{msg}, nil
 }
 
-func (tf *timeToStr) String() string {
+func (tf *timeToString) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

@@ -9,29 +9,24 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var objectToIntTests = []struct {
+var numberArithmeticDivisionTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
 }{
+	// data tests
 	{
-		"float to_int",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"key":     "a",
-					"set_key": "a",
-				},
-			},
-		},
-		[]byte(`{"a":1.1}`),
+		"data",
+		config.Config{},
+		[]byte(`[6,2]`),
 		[][]byte{
-			[]byte(`{"a":1}`),
+			[]byte(`3`),
 		},
 	},
+	// object tests
 	{
-		"str to_int",
+		"object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -40,19 +35,18 @@ var objectToIntTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":"-1"}`),
+		[]byte(`{"a":[6,2]}`),
 		[][]byte{
-			[]byte(`{"a":-1}`),
+			[]byte(`{"a":3}`),
 		},
 	},
 }
 
-func TestObjectToInt(t *testing.T) {
+func TestDiv(t *testing.T) {
 	ctx := context.TODO()
-
-	for _, test := range objectToIntTests {
+	for _, test := range numberArithmeticDivisionTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newObjectToInt(ctx, test.cfg)
+			tf, err := newNumberArithmeticDivision(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -75,7 +69,7 @@ func TestObjectToInt(t *testing.T) {
 	}
 }
 
-func benchmarkObjectToInt(b *testing.B, tf *objectToInt, data []byte) {
+func benchmarkNumberArithmeticDivision(b *testing.B, tf *numberArithmeticDivision, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -83,16 +77,16 @@ func benchmarkObjectToInt(b *testing.B, tf *objectToInt, data []byte) {
 	}
 }
 
-func BenchmarkObjectToInt(b *testing.B) {
-	for _, test := range objectToIntTests {
-		tf, err := newObjectToInt(context.TODO(), test.cfg)
+func BenchmarkNumberArithmeticDivision(b *testing.B) {
+	for _, test := range numberArithmeticDivisionTests {
+		tf, err := newNumberArithmeticDivision(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkObjectToInt(b, tf, test.test)
+				benchmarkNumberArithmeticDivision(b, tf, test.test)
 			},
 		)
 	}

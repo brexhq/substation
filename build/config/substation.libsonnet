@@ -226,12 +226,12 @@
           type: 'aggregate_from_array',
           settings: std.mergePatch(default, settings),
         },
-        str(settings=null): {
+        string(settings=null): {
           local default = {
             separator: null,
           },
 
-          type: 'aggregate_from_str',
+          type: 'aggregate_from_string',
           settings: std.mergePatch(default, settings),
         },
       },
@@ -245,13 +245,13 @@
           type: 'aggregate_to_array',
           settings: std.mergePatch(default, settings),
         },
-        str(settings=null): {
+        string(settings=null): {
           local default = {
             buffer: $.config.buffer,
             separator: null,
           },
 
-          type: 'aggregate_to_str',
+          type: 'aggregate_to_string',
           settings: std.mergePatch(default, settings),
         },
       },
@@ -423,33 +423,39 @@
         default: {
           object: $.config.object,
         },
-        add(settings=null): {
+        addition(settings=null): {
           local default = $.transform.logic.num.default,
 
-          type: 'number_arithmetic_add',
+          type: 'number_arithmetic_addition',
           settings: std.mergePatch(default, settings),
         },
-        sub(settings=null): {
+        subtraction(settings=null): {
           local default = $.transform.logic.num.default,
 
-          type: 'number_arithmetic_sub',
+          type: 'number_arithmetic_subtraction',
           settings: std.mergePatch(default, settings),
         },
-        mult(settings=null): {
+        multiplication(settings=null): {
           local default = $.transform.logic.num.default,
 
-          type: 'number_arithmetic_mult',
+          type: 'number_arithmetic_multiplication',
           settings: std.mergePatch(default, settings),
         },
-        div(settings=null): {
+        division(settings=null): {
           local default = $.transform.logic.num.default,
 
-          type: 'number_arithmetic_div',
+          type: 'number_arithmetic_division',
           settings: std.mergePatch(default, settings),
         },
       },
     },
     meta: {
+      err(settings=null): {
+        local default = { transform: null },
+
+        type: 'meta_err',
+        settings: std.mergePatch(default, settings),
+      },
       for_each(settings=null): {
         local default = {
           object: $.config.object,
@@ -529,10 +535,10 @@
         settings: std.mergePatch(default, settings),
       },
       to: {
-        bool(settings=null): {
+        boolean(settings=null): {
           local default = $.transform.object.default,
 
-          type: 'object_to_bool',
+          type: 'object_to_boolean',
           settings: std.mergePatch(default, settings),
         },
         float(settings=null): {
@@ -541,22 +547,22 @@
           type: 'object_to_float',
           settings: std.mergePatch(default, settings),
         },
-        int(settings=null): {
+        integer(settings=null): {
           local default = $.transform.object.default,
 
-          type: 'object_to_int',
+          type: 'object_to_integer',
           settings: std.mergePatch(default, settings),
         },
-        str(settings=null): {
+        string(settings=null): {
           local default = $.transform.object.default,
 
-          type: 'object_to_str',
+          type: 'object_to_string',
           settings: std.mergePatch(default, settings),
         },
-        uint(settings=null): {
+        unsigned_integer(settings=null): {
           local default = $.transform.object.default,
 
-          type: 'object_to_uint',
+          type: 'object_to_unsigned_integer',
           settings: std.mergePatch(default, settings),
         },
       },
@@ -747,14 +753,14 @@
     },
     time: {
       from: {
-        str(settings=null): {
+        string(settings=null): {
           local default = {
             object: $.config.object,
             format: null,
             location: null,
           },
 
-          type: 'time_from_str',
+          type: 'time_from_string',
           settings: std.mergePatch(default, settings),
         },
         unix(settings=null): {
@@ -775,14 +781,14 @@
         settings: std.mergePatch(default, settings),
       },
       to: {
-        str(settings=null): {
+        string(settings=null): {
           local default = {
             object: $.config.object,
             format: null,
             location: null,
           },
 
-          type: 'time_to_str',
+          type: 'time_to_string',
           settings: std.mergePatch(default, settings),
         },
       },
@@ -813,7 +819,7 @@
           message: null,
         },
 
-        type: 'utility_error',
+        type: 'utility_err',
         settings: std.mergePatch(default, settings),
       },
     },

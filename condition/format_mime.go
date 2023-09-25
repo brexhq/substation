@@ -12,18 +12,18 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type formatContentConfig struct {
+type formatMIMEConfig struct {
 	Object iconfig.Object `json:"object"`
 
 	// Type is the media type used for comparison during inspection. Media types follow this specification: https://mimesniff.spec.whatwg.org/.
 	Type string `json:"type"`
 }
 
-func (c *formatContentConfig) Decode(in interface{}) error {
+func (c *formatMIMEConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *formatContentConfig) Validate() error {
+func (c *formatMIMEConfig) Validate() error {
 	if c.Type == "" {
 		return fmt.Errorf("type: %v", errors.ErrMissingRequiredOption)
 	}
@@ -31,8 +31,8 @@ func (c *formatContentConfig) Validate() error {
 	return nil
 }
 
-func newFormatContent(_ context.Context, cfg config.Config) (*formatContent, error) {
-	conf := formatContentConfig{}
+func newFormatMIME(_ context.Context, cfg config.Config) (*formatMIME, error) {
+	conf := formatMIMEConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, err
 	}
@@ -41,18 +41,18 @@ func newFormatContent(_ context.Context, cfg config.Config) (*formatContent, err
 		return nil, err
 	}
 
-	insp := formatContent{
+	insp := formatMIME{
 		conf: conf,
 	}
 
 	return &insp, nil
 }
 
-type formatContent struct {
-	conf formatContentConfig
+type formatMIME struct {
+	conf formatMIMEConfig
 }
 
-func (c *formatContent) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (c *formatMIME) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}
@@ -65,7 +65,7 @@ func (c *formatContent) Inspect(ctx context.Context, msg *message.Message) (bool
 	return false, nil
 }
 
-func (c *formatContent) String() string {
+func (c *formatMIME) String() string {
 	b, _ := json.Marshal(c.conf)
 	return string(b)
 }

@@ -11,15 +11,15 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type objectToBoolConfig struct {
+type objectToBooleanConfig struct {
 	Object iconfig.Object `json:"object"`
 }
 
-func (c *objectToBoolConfig) Decode(in interface{}) error {
+func (c *objectToBooleanConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *objectToBoolConfig) Validate() error {
+func (c *objectToBooleanConfig) Validate() error {
 	if c.Object.Key == "" && c.Object.SetKey != "" {
 		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
 	}
@@ -31,8 +31,8 @@ func (c *objectToBoolConfig) Validate() error {
 	return nil
 }
 
-func newObjectToBool(_ context.Context, cfg config.Config) (*objectToBool, error) {
-	conf := objectToBoolConfig{}
+func newObjectToBoolean(_ context.Context, cfg config.Config) (*objectToBoolean, error) {
+	conf := objectToBooleanConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_object_to_bool: %v", err)
 	}
@@ -41,23 +41,23 @@ func newObjectToBool(_ context.Context, cfg config.Config) (*objectToBool, error
 		return nil, fmt.Errorf("transform: new_object_to_bool: %v", err)
 	}
 
-	tf := objectToBool{
+	tf := objectToBoolean{
 		conf: conf,
 	}
 
 	return &tf, nil
 }
 
-type objectToBool struct {
-	conf objectToBoolConfig
+type objectToBoolean struct {
+	conf objectToBooleanConfig
 }
 
-func (tf *objectToBool) String() string {
+func (tf *objectToBoolean) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
 
-func (tf *objectToBool) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *objectToBoolean) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}

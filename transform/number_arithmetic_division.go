@@ -10,17 +10,17 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newNumberArithmeticMult(_ context.Context, cfg config.Config) (*numberArithmeticMult, error) {
+func newNumberArithmeticDivision(_ context.Context, cfg config.Config) (*numberArithmeticDivision, error) {
 	conf := numberArithmeticConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: new_number_arithmetic_multiply: %v", err)
+		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_number_arithmetic_multiply: %v", err)
+		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
 	}
 
-	tf := numberArithmeticMult{
+	tf := numberArithmeticDivision{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -28,12 +28,12 @@ func newNumberArithmeticMult(_ context.Context, cfg config.Config) (*numberArith
 	return &tf, nil
 }
 
-type numberArithmeticMult struct {
+type numberArithmeticDivision struct {
 	conf     numberArithmeticConfig
 	isObject bool
 }
 
-func (tf *numberArithmeticMult) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *numberArithmeticDivision) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -63,7 +63,7 @@ func (tf *numberArithmeticMult) Transform(ctx context.Context, msg *message.Mess
 			continue
 		}
 
-		vFloat64 *= val.Float()
+		vFloat64 /= val.Float()
 	}
 
 	if !tf.isObject {
@@ -74,13 +74,13 @@ func (tf *numberArithmeticMult) Transform(ctx context.Context, msg *message.Mess
 	}
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, vFloat64); err != nil {
-		return nil, fmt.Errorf("transform: arithmetic_multiply: %v", err)
+		return nil, fmt.Errorf("transform: mod_math: %v", err)
 	}
 
 	return []*message.Message{msg}, nil
 }
 
-func (tf *numberArithmeticMult) String() string {
+func (tf *numberArithmeticDivision) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

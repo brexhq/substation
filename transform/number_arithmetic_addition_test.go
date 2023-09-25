@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var timeFromStrTests = []struct {
+var numberArithmeticAdditionTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -18,28 +18,10 @@ var timeFromStrTests = []struct {
 	// data tests
 	{
 		"data",
-		config.Config{
-			Settings: map[string]interface{}{
-				"format": timeDefaultFmt,
-			},
-		},
-		[]byte(`2021-12-19T01:31:30.000Z`),
+		config.Config{},
+		[]byte(`[1,3]`),
 		[][]byte{
-			[]byte(`1639877490000`),
-		},
-	},
-	{
-		"data with_location",
-		config.Config{
-			Settings: map[string]interface{}{
-				"format": timeDefaultFmt,
-				// Offset from UTC by -5 hours.
-				"location": "America/New_York",
-			},
-		},
-		[]byte(`2021-12-19T01:31:30.000Z`),
-		[][]byte{
-			[]byte(`1639895490000`),
+			[]byte(`4`),
 		},
 	},
 	// object tests
@@ -51,21 +33,20 @@ var timeFromStrTests = []struct {
 					"key":     "a",
 					"set_key": "a",
 				},
-				"format": timeDefaultFmt,
 			},
 		},
-		[]byte(`{"a":"2021-12-19T01:31:30.000Z"}`),
+		[]byte(`{"a":[1,3]}`),
 		[][]byte{
-			[]byte(`{"a":1639877490000}`),
+			[]byte(`{"a":4}`),
 		},
 	},
 }
 
-func TestTimeFromStr(t *testing.T) {
+func TestNumberArithmeticAddition(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range timeFromStrTests {
+	for _, test := range numberArithmeticAdditionTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newTimeFromStr(ctx, test.cfg)
+			tf, err := newNumberArithmeticAddition(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -88,7 +69,7 @@ func TestTimeFromStr(t *testing.T) {
 	}
 }
 
-func benchmarkTimeFromStr(b *testing.B, tf *timeFromStr, data []byte) {
+func benchmarkNumberArithmeticAddition(b *testing.B, tf *numberArithmeticAddition, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -96,16 +77,16 @@ func benchmarkTimeFromStr(b *testing.B, tf *timeFromStr, data []byte) {
 	}
 }
 
-func BenchmarkTimeFromStr(b *testing.B) {
-	for _, test := range timeFromStrTests {
-		tf, err := newTimeFromStr(context.TODO(), test.cfg)
+func BenchmarkNumberArithmeticAddition(b *testing.B) {
+	for _, test := range numberArithmeticAdditionTests {
+		tf, err := newNumberArithmeticAddition(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkTimeFromStr(b, tf, test.test)
+				benchmarkNumberArithmeticAddition(b, tf, test.test)
 			},
 		)
 	}

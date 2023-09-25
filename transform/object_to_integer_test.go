@@ -9,24 +9,14 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var numberArithmeticSubTests = []struct {
+var objectToIntegerTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
 }{
-	// data tests
 	{
-		"data",
-		config.Config{},
-		[]byte(`[3,1]`),
-		[][]byte{
-			[]byte(`2`),
-		},
-	},
-	// object tests
-	{
-		"object",
+		"float to_int",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -35,18 +25,34 @@ var numberArithmeticSubTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":[3,1]}`),
+		[]byte(`{"a":1.1}`),
 		[][]byte{
-			[]byte(`{"a":2}`),
+			[]byte(`{"a":1}`),
+		},
+	},
+	{
+		"str to_int",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+			},
+		},
+		[]byte(`{"a":"-1"}`),
+		[][]byte{
+			[]byte(`{"a":-1}`),
 		},
 	},
 }
 
-func TestNumberArithmeticSub(t *testing.T) {
+func TestObjectToInteger(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range numberArithmeticSubTests {
+
+	for _, test := range objectToIntegerTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newNumberArithmeticSub(ctx, test.cfg)
+			tf, err := newObjectToInteger(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +75,7 @@ func TestNumberArithmeticSub(t *testing.T) {
 	}
 }
 
-func benchmarkNumberArithmeticSub(b *testing.B, tf *numberArithmeticSub, data []byte) {
+func benchmarkObjectToInteger(b *testing.B, tf *objectToInteger, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +83,16 @@ func benchmarkNumberArithmeticSub(b *testing.B, tf *numberArithmeticSub, data []
 	}
 }
 
-func BenchmarkNumberArithmeticSub(b *testing.B) {
-	for _, test := range numberArithmeticSubTests {
-		tf, err := newNumberArithmeticSub(context.TODO(), test.cfg)
+func BenchmarkObjectToInteger(b *testing.B) {
+	for _, test := range objectToIntegerTests {
+		tf, err := newObjectToInteger(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkNumberArithmeticSub(b, tf, test.test)
+				benchmarkObjectToInteger(b, tf, test.test)
 			},
 		)
 	}

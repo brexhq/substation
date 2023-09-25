@@ -11,15 +11,15 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type objectToStrConfig struct {
+type objectToStringConfig struct {
 	Object iconfig.Object `json:"object"`
 }
 
-func (c *objectToStrConfig) Decode(in interface{}) error {
+func (c *objectToStringConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *objectToStrConfig) Validate() error {
+func (c *objectToStringConfig) Validate() error {
 	if c.Object.Key == "" && c.Object.SetKey != "" {
 		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
 	}
@@ -31,24 +31,24 @@ func (c *objectToStrConfig) Validate() error {
 	return nil
 }
 
-func newObjectToStr(_ context.Context, cfg config.Config) (*objectToStr, error) {
-	conf := objectToStrConfig{}
+func newObjectToString(_ context.Context, cfg config.Config) (*objectToString, error) {
+	conf := objectToStringConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_object_to_str: %v", err)
 	}
 
-	tf := objectToStr{
+	tf := objectToString{
 		conf: conf,
 	}
 
 	return &tf, nil
 }
 
-type objectToStr struct {
-	conf objectToStrConfig
+type objectToString struct {
+	conf objectToStringConfig
 }
 
-func (tf *objectToStr) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *objectToString) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -61,7 +61,7 @@ func (tf *objectToStr) Transform(ctx context.Context, msg *message.Message) ([]*
 	return []*message.Message{msg}, nil
 }
 
-func (tf *objectToStr) String() string {
+func (tf *objectToString) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

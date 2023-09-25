@@ -27,8 +27,8 @@ type inspector interface {
 func newInspector(ctx context.Context, cfg config.Config) (inspector, error) { //nolint: cyclop // ignore cyclomatic complexity
 	switch cfg.Type {
 	// Format inspectors.
-	case "format_content":
-		return newFormatContent(ctx, cfg)
+	case "format_mime":
+		return newFormatMIME(ctx, cfg)
 	case "format_json":
 		return newFormatJSON(ctx, cfg)
 	// Meta inspectors.

@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newTimeFromStr(_ context.Context, cfg config.Config) (*timeFromStr, error) {
+func newTimeFromString(_ context.Context, cfg config.Config) (*timeFromString, error) {
 	conf := timePatternConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("time: new_from_string: %v", err)
@@ -19,7 +19,7 @@ func newTimeFromStr(_ context.Context, cfg config.Config) (*timeFromStr, error) 
 		return nil, fmt.Errorf("time: new_from_string: %v", err)
 	}
 
-	tf := timeFromStr{
+	tf := timeFromString{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -27,14 +27,14 @@ func newTimeFromStr(_ context.Context, cfg config.Config) (*timeFromStr, error) 
 	return &tf, nil
 }
 
-// timeFromStr is a transform that converts a pattern-based string
+// timeFromString is a transform that converts a pattern-based string
 // format to a UnixMilli timestamp.
-type timeFromStr struct {
+type timeFromString struct {
 	conf     timePatternConfig
 	isObject bool
 }
 
-func (tf *timeFromStr) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *timeFromString) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -67,7 +67,7 @@ func (tf *timeFromStr) Transform(ctx context.Context, msg *message.Message) ([]*
 	return []*message.Message{msg}, nil
 }
 
-func (tf *timeFromStr) String() string {
+func (tf *timeFromString) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

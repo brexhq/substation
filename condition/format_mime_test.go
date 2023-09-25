@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var formatContentTests = []struct {
+var formatMIMETests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -74,13 +74,13 @@ var formatContentTests = []struct {
 	},
 }
 
-func TestFormatContent(t *testing.T) {
+func TestFormatMIME(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range formatContentTests {
+	for _, test := range formatMIMETests {
 		t.Run(test.name, func(t *testing.T) {
 			message := message.New().SetData(test.test)
-			insp, err := newFormatContent(ctx, test.cfg)
+			insp, err := newFormatMIME(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -97,16 +97,16 @@ func TestFormatContent(t *testing.T) {
 	}
 }
 
-func benchmarkFormatContent(b *testing.B, insp *formatContent, message *message.Message) {
+func benchmarkFormatMIME(b *testing.B, insp *formatMIME, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = insp.Inspect(ctx, message)
 	}
 }
 
-func BenchmarkFormatContent(b *testing.B) {
-	for _, test := range formatContentTests {
-		insp, err := newFormatContent(context.TODO(), test.cfg)
+func BenchmarkFormatMIME(b *testing.B) {
+	for _, test := range formatMIMETests {
+		insp, err := newFormatMIME(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -114,7 +114,7 @@ func BenchmarkFormatContent(b *testing.B) {
 		b.Run(test.name,
 			func(b *testing.B) {
 				message := message.New().SetData(test.test)
-				benchmarkFormatContent(b, insp, message)
+				benchmarkFormatMIME(b, insp, message)
 			},
 		)
 	}

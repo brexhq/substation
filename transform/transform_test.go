@@ -67,9 +67,9 @@ var transformTests = []struct {
 		},
 	},
 	{
-		"time_to_str",
+		"time_to_string",
 		config.Config{
-			Type: "time_to_str",
+			Type: "time_to_string",
 			Settings: map[string]interface{}{
 				"format": "2006-01-02T15:04:05.000000Z",
 			},

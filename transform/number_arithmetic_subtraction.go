@@ -10,7 +10,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newNumberArithmeticSub(_ context.Context, cfg config.Config) (*numberArithmeticSub, error) {
+func newNumberArithmeticSubtraction(_ context.Context, cfg config.Config) (*numberArithmeticSubtraction, error) {
 	conf := numberArithmeticConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
 		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
@@ -20,7 +20,7 @@ func newNumberArithmeticSub(_ context.Context, cfg config.Config) (*numberArithm
 		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
 	}
 
-	tf := numberArithmeticSub{
+	tf := numberArithmeticSubtraction{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -28,12 +28,12 @@ func newNumberArithmeticSub(_ context.Context, cfg config.Config) (*numberArithm
 	return &tf, nil
 }
 
-type numberArithmeticSub struct {
+type numberArithmeticSubtraction struct {
 	conf     numberArithmeticConfig
 	isObject bool
 }
 
-func (tf *numberArithmeticSub) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *numberArithmeticSubtraction) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -80,7 +80,7 @@ func (tf *numberArithmeticSub) Transform(ctx context.Context, msg *message.Messa
 	return []*message.Message{msg}, nil
 }
 
-func (tf *numberArithmeticSub) String() string {
+func (tf *numberArithmeticSubtraction) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

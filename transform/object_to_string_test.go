@@ -9,63 +9,65 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var timeToStrTests = []struct {
+var objectToStringTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
 }{
-	// data tests
 	{
-		"data",
-		config.Config{
-			Settings: map[string]interface{}{
-				"format": timeDefaultFmt,
-			},
-		},
-		[]byte(`1639877490000`),
-		[][]byte{
-			[]byte(`2021-12-19T01:31:30.000Z`),
-		},
-	},
-	{
-		"data with_location",
-		config.Config{
-			Settings: map[string]interface{}{
-				"format": timeDefaultFmt,
-				// Offset from UTC by -5 hours.
-				"location": "America/New_York",
-			},
-		},
-		[]byte(`1639895490000`),
-		[][]byte{
-			[]byte(`2021-12-19T01:31:30.000Z`),
-		},
-	},
-	// object tests
-	{
-		"object",
+		"bool to_str",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"key":     "a",
 					"set_key": "a",
 				},
-				"format": timeDefaultFmt,
 			},
 		},
-		[]byte(`{"a":1639877490000}`),
+		[]byte(`{"a":true}`),
 		[][]byte{
-			[]byte(`{"a":"2021-12-19T01:31:30.000Z"}`),
+			[]byte(`{"a":"true"}`),
+		},
+	},
+	{
+		"float to_str",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+			},
+		},
+		[]byte(`{"a":1.1}`),
+		[][]byte{
+			[]byte(`{"a":"1.1"}`),
+		},
+	},
+	{
+		"int to_str",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+			},
+		},
+		[]byte(`{"a":1}`),
+		[][]byte{
+			[]byte(`{"a":"1"}`),
 		},
 	},
 }
 
-func TestTimeToStr(t *testing.T) {
+func TestObjectToString(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range timeToStrTests {
+
+	for _, test := range objectToStringTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newTimeToStr(ctx, test.cfg)
+			tf, err := newObjectToString(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -88,7 +90,7 @@ func TestTimeToStr(t *testing.T) {
 	}
 }
 
-func benchmarkTimeToStr(b *testing.B, tf *timeToStr, data []byte) {
+func benchmarkObjectToString(b *testing.B, tf *objectToString, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -96,16 +98,16 @@ func benchmarkTimeToStr(b *testing.B, tf *timeToStr, data []byte) {
 	}
 }
 
-func BenchmarkTimeToStr(b *testing.B) {
-	for _, test := range timeToStrTests {
-		tf, err := newTimeToStr(context.TODO(), test.cfg)
+func BenchmarkObjectToString(b *testing.B) {
+	for _, test := range objectToStringTests {
+		tf, err := newObjectToString(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkTimeToStr(b, tf, test.test)
+				benchmarkObjectToString(b, tf, test.test)
 			},
 		)
 	}

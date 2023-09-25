@@ -183,7 +183,7 @@ var metaForEachTests = []struct {
 		},
 	},
 	{
-		"time_from_str",
+		"time_from_string",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -191,7 +191,7 @@ var metaForEachTests = []struct {
 					"set_key": "b",
 				},
 				"transform": config.Config{
-					Type: "time_from_str",
+					Type: "time_from_string",
 					Settings: map[string]interface{}{
 						"format": "2006-01-02T15:04:05Z",
 					},

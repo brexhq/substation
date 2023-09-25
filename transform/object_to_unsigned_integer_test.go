@@ -9,29 +9,14 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var objectToStrTests = []struct {
+var objectToUnsignedIntegerTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
 }{
 	{
-		"bool to_str",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"key":     "a",
-					"set_key": "a",
-				},
-			},
-		},
-		[]byte(`{"a":true}`),
-		[][]byte{
-			[]byte(`{"a":"true"}`),
-		},
-	},
-	{
-		"float to_str",
+		"float to_uint",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -42,11 +27,11 @@ var objectToStrTests = []struct {
 		},
 		[]byte(`{"a":1.1}`),
 		[][]byte{
-			[]byte(`{"a":"1.1"}`),
+			[]byte(`{"a":1}`),
 		},
 	},
 	{
-		"int to_str",
+		"str to_uint",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -55,19 +40,19 @@ var objectToStrTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":1}`),
+		[]byte(`{"a":"-1"}`),
 		[][]byte{
-			[]byte(`{"a":"1"}`),
+			[]byte(`{"a":0}`),
 		},
 	},
 }
 
-func TestObjectToStr(t *testing.T) {
+func TestObjectToUnsignedInteger(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range objectToStrTests {
+	for _, test := range objectToUnsignedIntegerTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newObjectToStr(ctx, test.cfg)
+			tf, err := newObjectToUnsignedInteger(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -90,7 +75,7 @@ func TestObjectToStr(t *testing.T) {
 	}
 }
 
-func benchmarkObjectToStr(b *testing.B, tf *objectToStr, data []byte) {
+func benchmarkObjectToUnsignedInteger(b *testing.B, tf *objectToUnsignedInteger, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -98,16 +83,16 @@ func benchmarkObjectToStr(b *testing.B, tf *objectToStr, data []byte) {
 	}
 }
 
-func BenchmarkObjectToStr(b *testing.B) {
-	for _, test := range objectToStrTests {
-		tf, err := newObjectToStr(context.TODO(), test.cfg)
+func BenchmarkObjectToUnsignedInteger(b *testing.B) {
+	for _, test := range objectToUnsignedIntegerTests {
+		tf, err := newObjectToUnsignedInteger(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkObjectToStr(b, tf, test.test)
+				benchmarkObjectToUnsignedInteger(b, tf, test.test)
 			},
 		)
 	}

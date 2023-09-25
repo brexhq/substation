@@ -11,15 +11,15 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type objectToUintConfig struct {
+type objectToUnsignedIntegerConfig struct {
 	Object iconfig.Object `json:"object"`
 }
 
-func (c *objectToUintConfig) Decode(in interface{}) error {
+func (c *objectToUnsignedIntegerConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *objectToUintConfig) Validate() error {
+func (c *objectToUnsignedIntegerConfig) Validate() error {
 	if c.Object.Key == "" && c.Object.SetKey != "" {
 		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
 	}
@@ -31,24 +31,24 @@ func (c *objectToUintConfig) Validate() error {
 	return nil
 }
 
-func newObjectToUint(_ context.Context, cfg config.Config) (*objectToUint, error) {
-	conf := objectToUintConfig{}
+func newObjectToUnsignedInteger(_ context.Context, cfg config.Config) (*objectToUnsignedInteger, error) {
+	conf := objectToUnsignedIntegerConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_object_to_uint: %v", err)
 	}
 
-	tf := objectToUint{
+	tf := objectToUnsignedInteger{
 		conf: conf,
 	}
 
 	return &tf, nil
 }
 
-type objectToUint struct {
-	conf objectToUintConfig
+type objectToUnsignedInteger struct {
+	conf objectToUnsignedIntegerConfig
 }
 
-func (tf *objectToUint) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *objectToUnsignedInteger) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -61,7 +61,7 @@ func (tf *objectToUint) Transform(ctx context.Context, msg *message.Message) ([]
 	return []*message.Message{msg}, nil
 }
 
-func (tf *objectToUint) String() string {
+func (tf *objectToUnsignedInteger) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

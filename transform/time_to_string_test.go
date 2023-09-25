@@ -9,50 +9,63 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var objectToUintTests = []struct {
+var timeToStringTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
 }{
+	// data tests
 	{
-		"float to_uint",
+		"data",
 		config.Config{
 			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"key":     "a",
-					"set_key": "a",
-				},
+				"format": timeDefaultFmt,
 			},
 		},
-		[]byte(`{"a":1.1}`),
+		[]byte(`1639877490000`),
 		[][]byte{
-			[]byte(`{"a":1}`),
+			[]byte(`2021-12-19T01:31:30.000Z`),
 		},
 	},
 	{
-		"str to_uint",
+		"data with_location",
+		config.Config{
+			Settings: map[string]interface{}{
+				"format": timeDefaultFmt,
+				// Offset from UTC by -5 hours.
+				"location": "America/New_York",
+			},
+		},
+		[]byte(`1639895490000`),
+		[][]byte{
+			[]byte(`2021-12-19T01:31:30.000Z`),
+		},
+	},
+	// object tests
+	{
+		"object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"key":     "a",
 					"set_key": "a",
 				},
+				"format": timeDefaultFmt,
 			},
 		},
-		[]byte(`{"a":"-1"}`),
+		[]byte(`{"a":1639877490000}`),
 		[][]byte{
-			[]byte(`{"a":0}`),
+			[]byte(`{"a":"2021-12-19T01:31:30.000Z"}`),
 		},
 	},
 }
 
-func TestObjectToUint(t *testing.T) {
+func TestTimeToString(t *testing.T) {
 	ctx := context.TODO()
-
-	for _, test := range objectToUintTests {
+	for _, test := range timeToStringTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newObjectToUint(ctx, test.cfg)
+			tf, err := newTimeToString(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -75,7 +88,7 @@ func TestObjectToUint(t *testing.T) {
 	}
 }
 
-func benchmarkObjectToUint(b *testing.B, tf *objectToUint, data []byte) {
+func benchmarkTimeToString(b *testing.B, tf *timeToString, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -83,16 +96,16 @@ func benchmarkObjectToUint(b *testing.B, tf *objectToUint, data []byte) {
 	}
 }
 
-func BenchmarkObjectToUint(b *testing.B) {
-	for _, test := range objectToUintTests {
-		tf, err := newObjectToUint(context.TODO(), test.cfg)
+func BenchmarkTimeToString(b *testing.B) {
+	for _, test := range timeToStringTests {
+		tf, err := newTimeToString(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkObjectToUint(b, tf, test.test)
+				benchmarkTimeToString(b, tf, test.test)
 			},
 		)
 	}

@@ -11,15 +11,15 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type objectToIntConfig struct {
+type objectToIntegerConfig struct {
 	Object iconfig.Object `json:"object"`
 }
 
-func (c *objectToIntConfig) Decode(in interface{}) error {
+func (c *objectToIntegerConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *objectToIntConfig) Validate() error {
+func (c *objectToIntegerConfig) Validate() error {
 	if c.Object.Key == "" && c.Object.SetKey != "" {
 		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
 	}
@@ -31,24 +31,24 @@ func (c *objectToIntConfig) Validate() error {
 	return nil
 }
 
-func newObjectToInt(_ context.Context, cfg config.Config) (*objectToInt, error) {
-	conf := objectToIntConfig{}
+func newObjectToInteger(_ context.Context, cfg config.Config) (*objectToInteger, error) {
+	conf := objectToIntegerConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_object_to_int: %v", err)
 	}
 
-	tf := objectToInt{
+	tf := objectToInteger{
 		conf: conf,
 	}
 
 	return &tf, nil
 }
 
-type objectToInt struct {
-	conf objectToIntConfig
+type objectToInteger struct {
+	conf objectToIntegerConfig
 }
 
-func (tf *objectToInt) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *objectToInteger) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -61,7 +61,7 @@ func (tf *objectToInt) Transform(ctx context.Context, msg *message.Message) ([]*
 	return []*message.Message{msg}, nil
 }
 
-func (tf *objectToInt) String() string {
+func (tf *objectToInteger) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

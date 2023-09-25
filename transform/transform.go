@@ -19,24 +19,15 @@ type Transformer interface {
 // New returns a configured Transformer.
 func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
-	// Meta transforms.
-	case "meta_err":
-		return newMetaErr(ctx, cfg)
-	case "meta_for_each":
-		return newMetaForEach(ctx, cfg)
-	case "meta_pipeline":
-		return newMetaPipeline(ctx, cfg)
-	case "meta_switch":
-		return newMetaSwitch(ctx, cfg)
 	// Aggregation transforms.
 	case "aggregate_from_array":
 		return newAggregateFromArray(ctx, cfg)
 	case "aggregate_to_array":
 		return newAggregateToArray(ctx, cfg)
-	case "aggregate_from_str":
-		return newAggregateFromStr(ctx, cfg)
-	case "aggregate_to_str":
-		return newAggregateToStr(ctx, cfg)
+	case "aggregate_from_string":
+		return newAggregateFromString(ctx, cfg)
+	case "aggregate_to_string":
+		return newAggregateToString(ctx, cfg)
 	// Array transforms.
 	case "array_group":
 		return newArrayGroup(ctx, cfg)
@@ -77,15 +68,24 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newHashMD5(ctx, cfg)
 	case "hash_sha256":
 		return newHashSHA256(ctx, cfg)
+	// Meta transforms.
+	case "meta_err":
+		return newMetaErr(ctx, cfg)
+	case "meta_for_each":
+		return newMetaForEach(ctx, cfg)
+	case "meta_pipeline":
+		return newMetaPipeline(ctx, cfg)
+	case "meta_switch":
+		return newMetaSwitch(ctx, cfg)
 	// Number transforms.
-	case "number_arithmetic_add":
-		return newNumberArithmeticAdd(ctx, cfg)
-	case "number_arithmetic_div":
-		return newNumberArithmeticDiv(ctx, cfg)
-	case "number_arithmetic_mult":
-		return newNumberArithmeticMult(ctx, cfg)
-	case "number_arithmetic_sub":
-		return newNumberArithmeticSub(ctx, cfg)
+	case "number_arithmetic_addition":
+		return newNumberArithmeticAddition(ctx, cfg)
+	case "number_arithmetic_division":
+		return newNumberArithmeticDivision(ctx, cfg)
+	case "number_arithmetic_multiplication":
+		return newNumberArithmeticMultiplication(ctx, cfg)
+	case "number_arithmetic_subtraction":
+		return newNumberArithmeticSubtraction(ctx, cfg)
 	// Network transforms.
 	case "network_domain_registered_domain":
 		return newNetworkDomainRegisteredDomain(ctx, cfg)
@@ -102,16 +102,16 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newObjectInsert(ctx, cfg)
 	case "object_jq":
 		return newObjectJQ(ctx, cfg)
-	case "object_to_bool":
-		return newObjectToBool(ctx, cfg)
+	case "object_to_boolean":
+		return newObjectToBoolean(ctx, cfg)
 	case "object_to_float":
 		return newObjectToFloat(ctx, cfg)
-	case "object_to_int":
-		return newObjectToInt(ctx, cfg)
-	case "object_to_str":
-		return newObjectToStr(ctx, cfg)
-	case "object_to_uint":
-		return newObjectToUint(ctx, cfg)
+	case "object_to_integer":
+		return newObjectToInteger(ctx, cfg)
+	case "object_to_string":
+		return newObjectToString(ctx, cfg)
+	case "object_to_unsigned_integer":
+		return newObjectToUnsignedInteger(ctx, cfg)
 	// Send transforms.
 	case "send_aws_dynamodb":
 		return newSendAWSDynamoDB(ctx, cfg)
@@ -155,14 +155,14 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "string_uuid":
 		return newStringUUID(ctx, cfg)
 	// Time transforms.
-	case "time_from_str":
-		return newTimeFromStr(ctx, cfg)
+	case "time_from_string":
+		return newTimeFromString(ctx, cfg)
 	case "time_from_unix":
 		return newTimeFromUnix(ctx, cfg)
 	case "time_now":
 		return newTimeNow(ctx, cfg)
-	case "time_to_str":
-		return newTimeToStr(ctx, cfg)
+	case "time_to_string":
+		return newTimeToString(ctx, cfg)
 	case "time_to_unix":
 		return newTimeToUnix(ctx, cfg)
 	// Utility transforms.

@@ -10,7 +10,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var aggregateToStrTests = []struct {
+var aggregateToStringTests = []struct {
 	name     string
 	cfg      config.Config
 	data     []string
@@ -94,9 +94,9 @@ var aggregateToStrTests = []struct {
 	},
 }
 
-func TestAggregateToStr(t *testing.T) {
+func TestAggregateToString(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range aggregateToStrTests {
+	for _, test := range aggregateToStringTests {
 		t.Run(test.name, func(t *testing.T) {
 			var messages []*message.Message
 			for _, data := range test.data {
@@ -104,12 +104,12 @@ func TestAggregateToStr(t *testing.T) {
 				messages = append(messages, msg)
 			}
 
-			// aggregateToStr relies on an interrupt message to flush the buffer,
+			// aggregateToString relies on an interrupt message to flush the buffer,
 			// so it's always added and then removed from the output.
 			ctrl := message.New(mess.AsControl())
 			messages = append(messages, ctrl)
 
-			tf, err := newAggregateToStr(ctx, test.cfg)
+			tf, err := newAggregateToString(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}

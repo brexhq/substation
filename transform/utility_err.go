@@ -10,16 +10,16 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type utilErrConfig struct {
+type utilityErrConfig struct {
 	Message string `json:"message"`
 }
 
-func (c *utilErrConfig) Decode(in interface{}) error {
+func (c *utilityErrConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
 func newUtilityErr(_ context.Context, cfg config.Config) (*utilityErr, error) {
-	conf := utilErrConfig{}
+	conf := utilityErrConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_util_error: %v", err)
 	}
@@ -32,7 +32,7 @@ func newUtilityErr(_ context.Context, cfg config.Config) (*utilityErr, error) {
 }
 
 type utilityErr struct {
-	conf utilErrConfig
+	conf utilityErrConfig
 }
 
 func (tf *utilityErr) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {

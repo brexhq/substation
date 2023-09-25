@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var numberArithmeticDivTests = []struct {
+var numberArithmeticMultiplicationTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -19,9 +19,9 @@ var numberArithmeticDivTests = []struct {
 	{
 		"data",
 		config.Config{},
-		[]byte(`[6,2]`),
+		[]byte(`[2,3]`),
 		[][]byte{
-			[]byte(`3`),
+			[]byte(`6`),
 		},
 	},
 	// object tests
@@ -35,18 +35,18 @@ var numberArithmeticDivTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":[6,2]}`),
+		[]byte(`{"a":[2,3]}`),
 		[][]byte{
-			[]byte(`{"a":3}`),
+			[]byte(`{"a":6}`),
 		},
 	},
 }
 
-func TestDiv(t *testing.T) {
+func TestNumberArithmeticMultiplication(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range numberArithmeticDivTests {
+	for _, test := range numberArithmeticMultiplicationTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newNumberArithmeticDiv(ctx, test.cfg)
+			tf, err := newNumberArithmeticMultiplication(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestDiv(t *testing.T) {
 	}
 }
 
-func benchmarkNumberArithmeticDiv(b *testing.B, tf *numberArithmeticDiv, data []byte) {
+func benchmarkNumberArithmeticMultiplication(b *testing.B, tf *numberArithmeticMultiplication, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +77,16 @@ func benchmarkNumberArithmeticDiv(b *testing.B, tf *numberArithmeticDiv, data []
 	}
 }
 
-func BenchmarkNumberArithmeticDiv(b *testing.B) {
-	for _, test := range numberArithmeticDivTests {
-		tf, err := newNumberArithmeticDiv(context.TODO(), test.cfg)
+func BenchmarkNumberArithmeticMultiplication(b *testing.B) {
+	for _, test := range numberArithmeticMultiplicationTests {
+		tf, err := newNumberArithmeticMultiplication(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkNumberArithmeticDiv(b, tf, test.test)
+				benchmarkNumberArithmeticMultiplication(b, tf, test.test)
 			},
 		)
 	}

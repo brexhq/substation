@@ -10,7 +10,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newAggregateToStr(_ context.Context, cfg config.Config) (*aggregateToStr, error) {
+func newAggregateToString(_ context.Context, cfg config.Config) (*aggregateToString, error) {
 	conf := aggregateStrConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: new_aggregate_to_str: %v", err)
@@ -20,7 +20,7 @@ func newAggregateToStr(_ context.Context, cfg config.Config) (*aggregateToStr, e
 		return nil, fmt.Errorf("transform: new_aggregate_to_str: %v", err)
 	}
 
-	tf := aggregateToStr{
+	tf := aggregateToString{
 		conf:      conf,
 		separator: []byte(conf.Separator),
 	}
@@ -40,7 +40,7 @@ func newAggregateToStr(_ context.Context, cfg config.Config) (*aggregateToStr, e
 	return &tf, nil
 }
 
-type aggregateToStr struct {
+type aggregateToString struct {
 	conf aggregateStrConfig
 
 	separator []byte
@@ -50,7 +50,7 @@ type aggregateToStr struct {
 	bufferKey string
 }
 
-func (tf *aggregateToStr) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *aggregateToString) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		var output []*message.Message
 
@@ -84,7 +84,7 @@ func (tf *aggregateToStr) Transform(ctx context.Context, msg *message.Message) (
 	return []*message.Message{outMsg}, nil
 }
 
-func (tf *aggregateToStr) String() string {
+func (tf *aggregateToString) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

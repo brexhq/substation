@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var objectToBoolTests = []struct {
+var objectToBooleanTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -107,12 +107,12 @@ var objectToBoolTests = []struct {
 	},
 }
 
-func TestObjectToBool(t *testing.T) {
+func TestObjectToBoolean(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range objectToBoolTests {
+	for _, test := range objectToBooleanTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newObjectToBool(ctx, test.cfg)
+			tf, err := newObjectToBoolean(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -135,7 +135,7 @@ func TestObjectToBool(t *testing.T) {
 	}
 }
 
-func benchmarkObjectToBool(b *testing.B, tf *objectToBool, data []byte) {
+func benchmarkObjectToBoolean(b *testing.B, tf *objectToBoolean, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -143,16 +143,16 @@ func benchmarkObjectToBool(b *testing.B, tf *objectToBool, data []byte) {
 	}
 }
 
-func BenchmarkObjectToBool(b *testing.B) {
-	for _, test := range objectToBoolTests {
-		tf, err := newObjectToBool(context.TODO(), test.cfg)
+func BenchmarkObjectToBoolean(b *testing.B) {
+	for _, test := range objectToBooleanTests {
+		tf, err := newObjectToBoolean(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkObjectToBool(b, tf, test.test)
+				benchmarkObjectToBoolean(b, tf, test.test)
 			},
 		)
 	}

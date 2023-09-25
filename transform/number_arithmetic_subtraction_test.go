@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var numberArithmeticMultTests = []struct {
+var numberArithmeticSubtractionTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -19,9 +19,9 @@ var numberArithmeticMultTests = []struct {
 	{
 		"data",
 		config.Config{},
-		[]byte(`[2,3]`),
+		[]byte(`[3,1]`),
 		[][]byte{
-			[]byte(`6`),
+			[]byte(`2`),
 		},
 	},
 	// object tests
@@ -35,18 +35,18 @@ var numberArithmeticMultTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":[2,3]}`),
+		[]byte(`{"a":[3,1]}`),
 		[][]byte{
-			[]byte(`{"a":6}`),
+			[]byte(`{"a":2}`),
 		},
 	},
 }
 
-func TestNumberArithmeticMult(t *testing.T) {
+func TestNumberArithmeticSubtraction(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range numberArithmeticMultTests {
+	for _, test := range numberArithmeticSubtractionTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newNumberArithmeticMult(ctx, test.cfg)
+			tf, err := newNumberArithmeticSubtraction(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestNumberArithmeticMult(t *testing.T) {
 	}
 }
 
-func benchmarkNumberArithmeticMult(b *testing.B, tf *numberArithmeticMult, data []byte) {
+func benchmarkNumberArithmeticSubtraction(b *testing.B, tf *numberArithmeticSubtraction, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +77,16 @@ func benchmarkNumberArithmeticMult(b *testing.B, tf *numberArithmeticMult, data 
 	}
 }
 
-func BenchmarkNumberArithmeticMult(b *testing.B) {
-	for _, test := range numberArithmeticMultTests {
-		tf, err := newNumberArithmeticMult(context.TODO(), test.cfg)
+func BenchmarkNumberArithmeticSubtraction(b *testing.B) {
+	for _, test := range numberArithmeticSubtractionTests {
+		tf, err := newNumberArithmeticSubtraction(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkNumberArithmeticMult(b, tf, test.test)
+				benchmarkNumberArithmeticSubtraction(b, tf, test.test)
 			},
 		)
 	}

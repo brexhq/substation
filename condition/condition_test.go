@@ -15,10 +15,10 @@ var allTests = []struct {
 	expected bool
 }{
 	{
-		"content",
+		"format_mime",
 		[]config.Config{
 			{
-				Type: "format_content",
+				Type: "format_mime",
 				Settings: map[string]interface{}{
 					"type": "application/x-gzip",
 				},
@@ -57,7 +57,7 @@ var allTests = []struct {
 		"content",
 		[]config.Config{
 			{
-				Type: "format_content",
+				Type: "format_mime",
 				Settings: map[string]interface{}{
 					"type": "application/x-gzip",
 				},

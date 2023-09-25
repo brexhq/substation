@@ -18,7 +18,7 @@ var numberBitwiseANDTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"value": 0x0001,
+				"operand": 0x0001,
 			},
 		},
 		[]byte(`570506001`),
@@ -28,7 +28,7 @@ var numberBitwiseANDTests = []struct {
 		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
-				"value": 0x0002,
+				"operand": 0x0002,
 			},
 		},
 		[]byte(`570506001`),

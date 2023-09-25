@@ -9,8 +9,8 @@ import (
 type numberBitwiseConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	// Value is the number that is used for comparison during inspection.
-	Value int64 `json:"value"`
+	// Operand is used for comparison during inspection.
+	Operand int64 `json:"operand"`
 }
 
 func (c *numberBitwiseConfig) Decode(in interface{}) error {
@@ -20,7 +20,7 @@ func (c *numberBitwiseConfig) Decode(in interface{}) error {
 type numberLengthConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	// Length is the length that is used for comparison during inspection.
+	// Length is used for comparison during inspection.
 	Length int `json:"length"`
 	// Measurement controls how the length is measured. The inspector automatically
 	// assigns measurement for objects when the key is an array.

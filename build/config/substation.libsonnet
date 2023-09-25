@@ -21,6 +21,43 @@
       },
     },
     number: {
+      bitwise: {
+        and(settings=null): {
+          local default = {
+            object: $.config.object,
+            operand: null,
+          },
+
+          type: 'number_bitwise_and',
+          settings: std.mergePatch(default, settings),
+        },
+        not(settings=null): {
+          local default = { 
+            object: $.config.object,
+          },
+
+          type: 'number_bitwise_not',
+          settings: std.mergePatch(default, settings),
+        },
+        or(settings=null): {
+          local default = {
+            object: $.config.object,
+            operand: null,
+          },
+
+          type: 'number_bitwise_or',
+          settings: std.mergePatch(default, settings),
+        },
+        xor(settings=null): {
+          local default = {
+            object: $.config.object,
+            operand: null,
+          },
+
+          type: 'number_bitwise_xor',
+          settings: std.mergePatch(default, settings),
+        },
+      },
       length: {
         default: {
           object: $.config.object,
@@ -334,14 +371,6 @@
         },
       },
     },
-    external: {
-      jq(settings=null): {
-        local default = { query: null },
-
-        type: 'external_jq',
-        settings: std.mergePatch(default, settings),
-      },
-    },
     format: {
       default: {
         object: $.config.object,
@@ -491,6 +520,12 @@
         local default = $.transform.object.default,
 
         type: 'object_insert',
+        settings: std.mergePatch(default, settings),
+      },
+      jq(settings=null): {
+        local default = { query: null },
+
+        type: 'object_jq',
         settings: std.mergePatch(default, settings),
       },
       to: {

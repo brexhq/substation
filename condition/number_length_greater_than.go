@@ -8,10 +8,6 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type numberLengthGreaterThan struct {
-	conf numberLengthConfig
-}
-
 func newNumberLengthGreaterThan(_ context.Context, cfg config.Config) (*numberLengthGreaterThan, error) {
 	conf := numberLengthConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -23,6 +19,10 @@ func newNumberLengthGreaterThan(_ context.Context, cfg config.Config) (*numberLe
 	}
 
 	return &insp, nil
+}
+
+type numberLengthGreaterThan struct {
+	conf numberLengthConfig
 }
 
 func (insp *numberLengthGreaterThan) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {

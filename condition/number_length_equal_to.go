@@ -8,10 +8,6 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type numberLengthEqualTo struct {
-	conf numberLengthConfig
-}
-
 func newNumberLengthEqualTo(_ context.Context, cfg config.Config) (*numberLengthEqualTo, error) {
 	conf := numberLengthConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
@@ -23,6 +19,10 @@ func newNumberLengthEqualTo(_ context.Context, cfg config.Config) (*numberLength
 	}
 
 	return &insp, nil
+}
+
+type numberLengthEqualTo struct {
+	conf numberLengthConfig
 }
 
 func (insp *numberLengthEqualTo) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {

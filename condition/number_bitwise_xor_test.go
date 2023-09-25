@@ -18,7 +18,7 @@ var numberBitwiseXORTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"value": -1,
+				"operand": -1,
 			},
 		},
 		[]byte(`0`),

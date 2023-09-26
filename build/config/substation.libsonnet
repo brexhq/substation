@@ -1,11 +1,13 @@
 {
   // Mirrors interfaces from the condition package.
+  cnd: $.condition,
   condition: {
     // Operators.
     all(i): { operator: 'all', inspectors: $.helpers.make_array(i) },
     any(i): { operator: 'any', inspectors: $.helpers.make_array(i) },
     none(i): { operator: 'none', inspectors: $.helpers.make_array(i) },
     // Inspectors.
+    fmt: $.condition.format,
     format: {
       json(settings=null): {
         type: 'format_json',
@@ -20,6 +22,7 @@
         settings: std.mergePatch(default, settings),
       },
     },
+    num: $.condition.number,
     number: {
       bitwise: {
         and(settings=null): {
@@ -58,24 +61,28 @@
           settings: std.mergePatch(default, settings),
         },
       },
+      len: $.condition.number.length,
       length: {
         default: {
           object: $.config.object,
           length: null,
           measurement: 'byte',
         },
+        eq(settings=null): $.condition.number.length.equal_to(settings=settings),
         equal_to(settings=null): {
           local default = $.condition.number.length.default,
 
           type: 'number_length_equal_to',
           settings: std.mergePatch(default, settings),
         },
+        gt(settings=null): $.condition.number.length.greater_than(settings=settings),
         greater_than(settings=null): {
           local default = $.condition.number.length.default,
 
           type: 'number_length_greater_than',
           settings: std.mergePatch(default, settings),
         },
+        lt(settings=null): $.condition.number.length.less_than(settings=settings),
         less_than(settings=null): {
           local default = $.condition.number.length.default,
 
@@ -108,6 +115,7 @@
         settings: std.mergePatch(default, settings),
       },
     },
+    net: $.condition.network,
     network: {
       ip: {
         default: {
@@ -169,6 +177,7 @@
         },
       },
     },
+    str: $.condition.string,
     string: {
       default: {
         object: $.config.object,
@@ -180,18 +189,35 @@
         type: 'string_contains',
         settings: std.mergePatch(default, settings),
       },
+      eq(settings=null): $.condition.string.equal_to(settings=settings),
       equal_to(settings=null): {
         local default = $.condition.string.default,
 
         type: 'string_equal_to',
         settings: std.mergePatch(default, settings),
       },
+      gt(settings=null): $.condition.string.greater_than(settings=settings),
+      greater_than(settings=null): {
+        local default = $.condition.string.default,
+
+        type: 'string_greater_than',
+        settings: std.mergePatch(default, settings),
+      },
+      lt(settings=null): $.condition.string.less_than(settings=settings),
+      less_than(settings=null): {
+        local default = $.condition.string.default,
+
+        type: 'string_less_than',
+        settings: std.mergePatch(default, settings),
+      },
+      prefix(settings=null): $.condition.string.starts_with(settings=settings),
       starts_with(settings=null): {
         local default = $.condition.string.default,
 
         type: 'string_starts_with',
         settings: std.mergePatch(default, settings),
       },
+      suffix(settings=null): $.condition.string.ends_with(settings=settings),
       ends_with(settings=null): {
         local default = $.condition.string.default,
 
@@ -208,6 +234,7 @@
         settings: std.mergePatch(default, settings),
       },
     },
+    util: $.transform.utility,
     utility: {
       random(settings=null): {
         type: 'utility_random',
@@ -215,7 +242,9 @@
     },
   },
   // Mirrors interfaces from the transform package.
+  tf: $.transform,
   transform: {
+    agg: $.transform.aggregate,
     aggregate: {
       from: {
         array(settings=null): {
@@ -226,6 +255,7 @@
           type: 'aggregate_from_array',
           settings: std.mergePatch(default, settings),
         },
+        str(settings=null): $.transform.aggregate.from.string(settings=settings),
         string(settings=null): {
           local default = {
             separator: null,
@@ -245,6 +275,7 @@
           type: 'aggregate_to_array',
           settings: std.mergePatch(default, settings),
         },
+        str(settings=null): $.transform.aggregate.to.string(settings=settings),
         string(settings=null): {
           local default = {
             buffer: $.config.buffer,
@@ -256,6 +287,7 @@
         },
       },
     },
+    arr: $.transform.array,
     array: {
       group(settings=null): {
         local default = {
@@ -371,17 +403,20 @@
         },
       },
     },
+    fmt: $.transform.format,
     format: {
       default: {
         object: $.config.object,
       },
       from: {
+        b64(settings=null): $.transform.format.from.base64(settings=settings),
         base64(settings=null): {
           local default = $.transform.format.default,
 
           type: 'format_from_base64',
           settings: std.mergePatch(default, settings),
         },
+        gz(settings=null): $.transform.format.from.gzip(settings=settings),
         gzip(settings=null): {
           type: 'format_from_gzip',
         },
@@ -390,12 +425,14 @@
         },
       },
       to: {
+        b64(settings=null): $.transform.format.to.base64(settings=settings),
         base64(settings=null): {
           local default = $.transform.format.default,
 
           type: 'format_to_base64',
           settings: std.mergePatch(default, settings),
         },
+        gz(settings=null): $.transform.format.to.gzip(settings=settings),
         gzip(settings=null): {
           type: 'format_to_gzip',
         },
@@ -418,33 +455,38 @@
         settings: std.mergePatch(default, settings),
       },
     },
+    num: $.transform.number,
     number: {
-      arithmetic: {
+      math: {
         default: {
           object: $.config.object,
         },
+        add(settings=null): $.transform.number.math.addition(settings=settings),
         addition(settings=null): {
-          local default = $.transform.logic.num.default,
+          local default = $.transform.number.math.default,
 
-          type: 'number_arithmetic_addition',
+          type: 'number_math_addition',
           settings: std.mergePatch(default, settings),
         },
+        sub(settings=null): $.transform.number.math.subtraction(settings=settings),
         subtraction(settings=null): {
-          local default = $.transform.logic.num.default,
+          local default = $.transform.number.math.default,
 
-          type: 'number_arithmetic_subtraction',
+          type: 'number_math_subtraction',
           settings: std.mergePatch(default, settings),
         },
+        mul(settings=null): $.transform.number.math.multiplication(settings=settings),
         multiplication(settings=null): {
-          local default = $.transform.logic.num.default,
+          local default = $.transform.number.math.default,
 
-          type: 'number_arithmetic_multiplication',
+          type: 'number_math_multiplication',
           settings: std.mergePatch(default, settings),
         },
+        div(settings=null): $.transform.number.math.division(settings=settings),
         division(settings=null): {
-          local default = $.transform.logic.num.default,
+          local default = $.transform.number.math.default,
 
-          type: 'number_arithmetic_division',
+          type: 'number_math_division',
           settings: std.mergePatch(default, settings),
         },
       },
@@ -465,6 +507,7 @@
         type: 'meta_for_each',
         settings: std.mergePatch(default, settings),
       },
+      pipe(settings=null): $.transform.meta.pipeline(settings=settings),
       pipeline(settings=null): {
         local default = {
           object: $.config.object,
@@ -481,6 +524,7 @@
         settings: settings,
       },
     },
+    net: $.transform.network,
     network: {
       domain: {
         default: {
@@ -498,6 +542,7 @@
           type: 'network_domain_subdomain',
           settings: std.mergePatch(default, settings),
         },
+        tld(settings=null): $.transform.network.domain.top_level_domain(settings=settings),
         top_level_domain(settings=null): {
           local default = $.transform.network.domain.default,
 
@@ -506,16 +551,19 @@
         },
       },
     },
+    obj: $.transform.object,
     object: {
       default: {
         object: $.config.object,
       },
+      cp(settings=null): $.transform.object.copy(settings=settings),
       copy(settings=null): {
         local default = $.transform.object.default,
 
         type: 'object_copy',
         settings: std.mergePatch(default, settings),
       },
+      del(settings=null): $.transform.object.delete(settings=settings),
       delete(settings=null): {
         local default = $.transform.object.default,
 
@@ -535,6 +583,7 @@
         settings: std.mergePatch(default, settings),
       },
       to: {
+        bool(settings=null): $.transform.object.to.boolean(settings=settings),
         boolean(settings=null): {
           local default = $.transform.object.default,
 
@@ -547,18 +596,21 @@
           type: 'object_to_float',
           settings: std.mergePatch(default, settings),
         },
+        int(settings=null): $.transform.object.to.integer(settings=settings),
         integer(settings=null): {
           local default = $.transform.object.default,
 
           type: 'object_to_integer',
           settings: std.mergePatch(default, settings),
         },
+        str(settings=null): $.transform.object.to.string(settings=settings),
         string(settings=null): {
           local default = $.transform.object.default,
 
           type: 'object_to_string',
           settings: std.mergePatch(default, settings),
         },
+        uint(settings=null): $.transform.object.to.unsigned_integer(settings=settings),
         unsigned_integer(settings=null): {
           local default = $.transform.object.default,
 
@@ -579,6 +631,7 @@
           type: 'send_aws_dynamodb',
           settings: std.mergePatch(default, settings),
         },
+        firehose(settings=null): $.transform.send.aws.kinesis_data_firehose(settings=settings),
         kinesis_data_firehose(settings=null): {
           local default = {
             aws: $.config.aws,
@@ -677,6 +730,7 @@
         settings: std.mergePatch(default, settings),
       },
     },
+    str: $.transform.string,
     string: {
       append(settings=null): {
         local default = {
@@ -753,6 +807,7 @@
     },
     time: {
       from: {
+        str(settings=null): $.transform.time.from.string(settings=settings),
         string(settings=null): {
           local default = {
             object: $.config.object,
@@ -781,6 +836,7 @@
         settings: std.mergePatch(default, settings),
       },
       to: {
+        str(settings=null): $.transform.time.to.string(settings=settings),
         string(settings=null): {
           local default = {
             object: $.config.object,
@@ -801,6 +857,7 @@
         settings: std.mergePatch(default, settings),
       },
     },
+    util: $.transform.utility,
     utility: {
       delay(settings=null): {
         local default = {
@@ -873,26 +930,16 @@
   },
   // Mirrors config from the internal/file package.
   file_path: { prefix: null, prefix_key: null, time_format: '2006/01/02', uuid: true, extension: true },
-  helpers: {
-    // If the input is not an array, then this returns it as an array
-    make_array(i): if !std.isArray(i) then [i] else i,
-    key: {
-      // If key is foo and arr is bar, then result is foo.bar
-      // If key is foo and arr is [bar, baz], then result is foo.bar.baz
-      append(key, arr): std.join('.', $.helpers.make_array(key) + $.helpers.make_array(arr)),
-      // If key is foo, then result is foo.-1
-      append_array(key): key + '.-1',
-      // If key is foo and e is 0, then result is foo.0
-      get_element(key, e=0): std.join('.', [key, if std.isNumber(e) then std.toString(e) else e]),
-    },
-  },
-  patterns: {
+  // Commonly used condition and transform patterns.
+  pattern: {
+    cnd: $.pattern.condition,
     condition: {
       obj(key): {
         object: { key: key },
       },
       // Negates any inspector.
       negate(inspector): $.condition.meta.negate(settings={ inspector: inspector }),
+      net: $.pattern.condition.network,
       network: {
         ip: {
           // Checks if an IP address is internal.
@@ -900,48 +947,59 @@
           // Use with the ANY operator to match internal IP addresses.
           // Use with the NONE operator to match external IP addresses.
           internal(key=null): [
-            $.condition.network.ip.link_local_multicast(settings=$.patterns.condition.obj(key)),
-            $.condition.network.ip.link_local_unicast(settings=$.patterns.condition.obj(key)),
-            $.condition.network.ip.loopback(settings=$.patterns.condition.obj(key)),
-            $.condition.network.ip.multicast(settings=$.patterns.condition.obj(key)),
-            $.condition.network.ip.private(settings=$.patterns.condition.obj(key)),
-            $.condition.network.ip.unspecified(settings=$.patterns.condition.obj(key)),
+            $.condition.network.ip.link_local_multicast(settings=$.pattern.condition.obj(key)),
+            $.condition.network.ip.link_local_unicast(settings=$.pattern.condition.obj(key)),
+            $.condition.network.ip.loopback(settings=$.pattern.condition.obj(key)),
+            $.condition.network.ip.multicast(settings=$.pattern.condition.obj(key)),
+            $.condition.network.ip.private(settings=$.pattern.condition.obj(key)),
+            $.condition.network.ip.unspecified(settings=$.pattern.condition.obj(key)),
           ],
         },
       },
+      num: $.pattern.condition.number,
       number: {
+        len: $.pattern.condition.number.length,
         length: {
           // Checks if data is equal to zero.
           //
           // Use with the ANY / ALL operator to match empty data.
           // Use with the NONE operator to match non-empty data.
           eq_zero(key=null):
-            $.condition.number.length.equal_to(settings=$.patterns.condition.obj(key) { length: 0 }),
+            $.condition.number.length.equal_to(settings=$.pattern.condition.obj(key) { length: 0 }),
           // Checks if data is greater than zero.
           //
           // Use with the ANY / ALL operator to match non-empty data.
           // Use with the NONE operator to match empty data.
           gt_zero(key=null):
-            $.condition.number.length.greater_than(settings=$.patterns.condition.obj(key) { length: 0 }),
+            $.condition.number.length.greater_than(settings=$.pattern.condition.obj(key) { length: 0 }),
         },
       },
-      string: {
-        contains(string, key=null):
-          $.condition.string.contains(settings=$.patterns.condition.obj(key) { string: string }),
-        equal_to(string, key=null):
-          $.condition.string.equal_to(settings=$.patterns.condition.obj(key) { string: string }),
-        starts_with(string, key=null):
-          $.condition.string.starts_with(settings=$.patterns.condition.obj(key) { string: string }),
-        ends_with(string, key=null):
-          $.condition.string.ends_with(settings=$.patterns.condition.obj(key) { string: string }),
+    },
+    tf: $.pattern.transform,
+    transform: {
+      // Conditional applies a transform when a single condition is met. If
+      // the condition does not contain a valid operator, then it is assumed
+      // to be an ANY operator.
+      conditional(condition, transform): {
+        local c = if std.objectHas(condition, 'type') then { operator: 'any', inspectors: [condition] } else condition,
+
+        type: 'meta_switch',
+        settings: { switch: [{ condition: c, transform: transform }] },
       },
     },
-    transform: {
-      // Conditional applies a transform when a single condition is met.
-      conditional(condition, transform): {
-        type: 'meta_switch',
-        settings: { switch: [{ condition: condition, transform: transform }] },
-      },
+  },
+  // Utility functions that can be used in conditions and transforms.
+  helpers: {
+    // If the input is not an array, then this returns it as an array.
+    make_array(i): if !std.isArray(i) then [i] else i,
+    key: {
+      // If key is `foo` and arr is `bar`, then the result is `foo.bar`.
+      // If key is `foo` and arr is `[bar, baz]`, then the result is `foo.bar.baz`.
+      append(key, arr): std.join('.', $.helpers.make_array(key) + $.helpers.make_array(arr)),
+      // If key is `foo`, then the result is `foo.-1`.
+      append_array(key): key + '.-1',
+      // If key is `foo` and e is `0`, then the result is `foo.0`.
+      get_element(key, e=0): std.join('.', [key, if std.isNumber(e) then std.toString(e) else e]),
     },
   },
 }

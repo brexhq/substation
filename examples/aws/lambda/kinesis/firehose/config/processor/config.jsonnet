@@ -6,11 +6,11 @@ local sub = import '../../../../../../../build/config/substation.libsonnet';
     type: 'aws_cloudwatch_embedded_metrics',
   },
   transforms: [
-    sub.transform.object.insert(
+    sub.tf.object.insert(
       settings={ object: { set_key: 'transformed' }, value: true }
     ),
     // Appending a newline is required so that the S3 object is line delimited.
-    sub.transform.string.append(
+    sub.tf.string.append(
       settings={ string: '\n' }
     ),
   ],

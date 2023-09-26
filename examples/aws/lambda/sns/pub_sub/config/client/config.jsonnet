@@ -6,7 +6,7 @@ local sub = import '../../../../../../../build/config/substation.libsonnet';
     type: 'aws_cloudwatch_embedded_metrics',
   },
   transforms: [
-    sub.transform.send.aws.sns(
+    sub.tf.send.aws.sns(
       // This is a placeholder that must be replaced with the SNS ARN produced by Terraform.
       settings={ arn: 'arn:aws:sns:us-east-1:123456789012:substation' },
     ),

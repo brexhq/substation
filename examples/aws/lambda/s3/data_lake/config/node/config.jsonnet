@@ -9,13 +9,13 @@ local bucket = 'd7c66938-6b96-21a3-7e59-62cb40e4627f-substation';
     type: 'aws_cloudwatch_embedded_metrics',
   },
   transforms: [
-    sub.transform.send.aws.s3(
+    sub.tf.send.aws.s3(
       settings={ bucket_name: bucket, file_path: { prefix: 'original' } }
     ),
-    sub.transform.object.insert(
+    sub.tf.object.insert(
       settings={ object: { set_key: 'transformed' }, value: true }
     ),
-    sub.transform.send.aws.s3(
+    sub.tf.send.aws.s3(
       settings={ bucket_name: bucket, file_path: { prefix: 'transformed' } }
     ),
   ],

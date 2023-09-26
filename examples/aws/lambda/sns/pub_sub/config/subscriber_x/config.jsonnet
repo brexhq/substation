@@ -6,6 +6,6 @@ local sub = import '../../../../../../../build/config/substation.libsonnet';
     type: 'aws_cloudwatch_embedded_metrics',
   },
   transforms: [
-    sub.transform.send.stdout(),
+    sub.tf.send.stdout(),
   ],
 }

@@ -3,7 +3,7 @@ local sub = import '../../../../../../../build/config/substation.libsonnet';
 {
   transforms: [
     // Dynamically handles input from either Lambda URL or synchronous invocation.
-    sub.patterns.transform.conditional(
+    sub.pattern.transform.conditional(
       transform=sub.transform.object.copy(
         settings={ object: { key: 'body' } }
       ),

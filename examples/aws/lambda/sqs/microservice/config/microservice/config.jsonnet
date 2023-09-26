@@ -7,13 +7,13 @@ local sub = import '../../../../../../../build/config/substation.libsonnet';
   },
   transforms: [
     // Remove any events that do not have a 'uuid' field.
-    sub.patterns.transform.conditional(
-      condition=sub.condition.all(sub.patterns.condition.number.length.eq_zero(key='uuid')),
+    sub.pattern.transform.conditional(
+      condition=sub.condition.all(sub.pattern.condition.number.length.eq_zero(key='uuid')),
       transform=sub.transform.utility.drop(),
     ),
     // Performs a reverse DNS lookup on the 'addr' field if it is a public IP address.
-    sub.patterns.transform.conditional(
-      condition=sub.condition.none(sub.patterns.condition.network.ip.internal(key='addr')),
+    sub.pattern.transform.conditional(
+      condition=sub.condition.none(sub.pattern.condition.network.ip.internal(key='addr')),
       transform=sub.transform.enrich.dns.ip_lookup(
         settings={ object: { key: 'addr', set_key: 'domain' } },
       ),

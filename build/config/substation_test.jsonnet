@@ -15,30 +15,24 @@ local inspector = sub.condition.format.json();
       get_element: sub.helpers.key.get_element(key, 1),
     },
   },
-  patterns: {
+  pattern: {
     condition: {
-      obj: sub.patterns.condition.obj(key),
-      negate: sub.patterns.condition.negate(inspector),
+      obj: sub.pattern.condition.obj(key),
+      negate: sub.pattern.condition.negate(inspector),
       network: {
         ip: {
-          internal: sub.patterns.condition.network.ip.internal(key),
+          internal: sub.pattern.condition.network.ip.internal(key),
         },
       },
       logic: {
         len: {
-          eq_zero: sub.patterns.condition.number.length.eq_zero(key),
-          gt_zero: sub.patterns.condition.number.length.gt_zero(key),
+          eq_zero: sub.pattern.condition.number.length.eq_zero(key),
+          gt_zero: sub.pattern.condition.number.length.gt_zero(key),
         },
-      },
-      string: {
-        eq: sub.patterns.condition.string.equal_to('x', key),
-        contains: sub.patterns.condition.string.contains('x', key),
-        starts_with: sub.patterns.condition.string.starts_with('x', key),
-        ends_with: sub.patterns.condition.string.ends_with('x', key),
       },
     },
     transform: {
-      conditional: sub.patterns.transform.conditional(inspector, transform),
+      conditional: sub.pattern.transform.conditional(inspector, transform),
     },
   },
 }

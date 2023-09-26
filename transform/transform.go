@@ -78,14 +78,14 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "meta_switch":
 		return newMetaSwitch(ctx, cfg)
 	// Number transforms.
-	case "number_arithmetic_addition":
-		return newNumberArithmeticAddition(ctx, cfg)
-	case "number_arithmetic_division":
-		return newNumberArithmeticDivision(ctx, cfg)
-	case "number_arithmetic_multiplication":
-		return newNumberArithmeticMultiplication(ctx, cfg)
-	case "number_arithmetic_subtraction":
-		return newNumberArithmeticSubtraction(ctx, cfg)
+	case "number_math_addition":
+		return newNumberMathAddition(ctx, cfg)
+	case "number_math_division":
+		return newNumberMathDivision(ctx, cfg)
+	case "number_math_multiplication":
+		return newNumberMathMultiplication(ctx, cfg)
+	case "number_math_subtraction":
+		return newNumberMathSubtraction(ctx, cfg)
 	// Network transforms.
 	case "network_domain_registered_domain":
 		return newNetworkDomainRegisteredDomain(ctx, cfg)

@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var numberArithmeticAdditionTests = []struct {
+var numberMathMultiplicationTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -19,9 +19,9 @@ var numberArithmeticAdditionTests = []struct {
 	{
 		"data",
 		config.Config{},
-		[]byte(`[1,3]`),
+		[]byte(`[2,3]`),
 		[][]byte{
-			[]byte(`4`),
+			[]byte(`6`),
 		},
 	},
 	// object tests
@@ -35,18 +35,18 @@ var numberArithmeticAdditionTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":[1,3]}`),
+		[]byte(`{"a":[2,3]}`),
 		[][]byte{
-			[]byte(`{"a":4}`),
+			[]byte(`{"a":6}`),
 		},
 	},
 }
 
-func TestNumberArithmeticAddition(t *testing.T) {
+func TestNumberMathMultiplication(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range numberArithmeticAdditionTests {
+	for _, test := range numberMathMultiplicationTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newNumberArithmeticAddition(ctx, test.cfg)
+			tf, err := newNumberMathMultiplication(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestNumberArithmeticAddition(t *testing.T) {
 	}
 }
 
-func benchmarkNumberArithmeticAddition(b *testing.B, tf *numberArithmeticAddition, data []byte) {
+func benchmarkNumberMathMultiplication(b *testing.B, tf *numberMathMultiplication, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +77,16 @@ func benchmarkNumberArithmeticAddition(b *testing.B, tf *numberArithmeticAdditio
 	}
 }
 
-func BenchmarkNumberArithmeticAddition(b *testing.B) {
-	for _, test := range numberArithmeticAdditionTests {
-		tf, err := newNumberArithmeticAddition(context.TODO(), test.cfg)
+func BenchmarkNumberMathMultiplication(b *testing.B) {
+	for _, test := range numberMathMultiplicationTests {
+		tf, err := newNumberMathMultiplication(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkNumberArithmeticAddition(b, tf, test.test)
+				benchmarkNumberMathMultiplication(b, tf, test.test)
 			},
 		)
 	}

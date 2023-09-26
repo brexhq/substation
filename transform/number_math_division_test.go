@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var numberArithmeticSubtractionTests = []struct {
+var numberMathDivisionTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -19,9 +19,9 @@ var numberArithmeticSubtractionTests = []struct {
 	{
 		"data",
 		config.Config{},
-		[]byte(`[3,1]`),
+		[]byte(`[6,2]`),
 		[][]byte{
-			[]byte(`2`),
+			[]byte(`3`),
 		},
 	},
 	// object tests
@@ -35,18 +35,18 @@ var numberArithmeticSubtractionTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":[3,1]}`),
+		[]byte(`{"a":[6,2]}`),
 		[][]byte{
-			[]byte(`{"a":2}`),
+			[]byte(`{"a":3}`),
 		},
 	},
 }
 
-func TestNumberArithmeticSubtraction(t *testing.T) {
+func TestDiv(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range numberArithmeticSubtractionTests {
+	for _, test := range numberMathDivisionTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newNumberArithmeticSubtraction(ctx, test.cfg)
+			tf, err := newNumberMathDivision(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestNumberArithmeticSubtraction(t *testing.T) {
 	}
 }
 
-func benchmarkNumberArithmeticSubtraction(b *testing.B, tf *numberArithmeticSubtraction, data []byte) {
+func benchmarkNumberMathDivision(b *testing.B, tf *numberMathDivision, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +77,16 @@ func benchmarkNumberArithmeticSubtraction(b *testing.B, tf *numberArithmeticSubt
 	}
 }
 
-func BenchmarkNumberArithmeticSubtraction(b *testing.B) {
-	for _, test := range numberArithmeticSubtractionTests {
-		tf, err := newNumberArithmeticSubtraction(context.TODO(), test.cfg)
+func BenchmarkNumberMathDivision(b *testing.B) {
+	for _, test := range numberMathDivisionTests {
+		tf, err := newNumberMathDivision(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkNumberArithmeticSubtraction(b, tf, test.test)
+				benchmarkNumberMathDivision(b, tf, test.test)
 			},
 		)
 	}

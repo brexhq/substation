@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var numberArithmeticDivisionTests = []struct {
+var numberMathAdditionTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -19,9 +19,9 @@ var numberArithmeticDivisionTests = []struct {
 	{
 		"data",
 		config.Config{},
-		[]byte(`[6,2]`),
+		[]byte(`[1,3]`),
 		[][]byte{
-			[]byte(`3`),
+			[]byte(`4`),
 		},
 	},
 	// object tests
@@ -35,18 +35,18 @@ var numberArithmeticDivisionTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":[6,2]}`),
+		[]byte(`{"a":[1,3]}`),
 		[][]byte{
-			[]byte(`{"a":3}`),
+			[]byte(`{"a":4}`),
 		},
 	},
 }
 
-func TestDiv(t *testing.T) {
+func TestNumberMathAddition(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range numberArithmeticDivisionTests {
+	for _, test := range numberMathAdditionTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newNumberArithmeticDivision(ctx, test.cfg)
+			tf, err := newNumberMathAddition(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestDiv(t *testing.T) {
 	}
 }
 
-func benchmarkNumberArithmeticDivision(b *testing.B, tf *numberArithmeticDivision, data []byte) {
+func benchmarkNumberMathAddition(b *testing.B, tf *numberMathAddition, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +77,16 @@ func benchmarkNumberArithmeticDivision(b *testing.B, tf *numberArithmeticDivisio
 	}
 }
 
-func BenchmarkNumberArithmeticDivision(b *testing.B) {
-	for _, test := range numberArithmeticDivisionTests {
-		tf, err := newNumberArithmeticDivision(context.TODO(), test.cfg)
+func BenchmarkNumberMathAddition(b *testing.B) {
+	for _, test := range numberMathAdditionTests {
+		tf, err := newNumberMathAddition(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkNumberArithmeticDivision(b, tf, test.test)
+				benchmarkNumberMathAddition(b, tf, test.test)
 			},
 		)
 	}

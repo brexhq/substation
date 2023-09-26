@@ -10,17 +10,17 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-func newNumberArithmeticMultiplication(_ context.Context, cfg config.Config) (*numberArithmeticMultiplication, error) {
-	conf := numberArithmeticConfig{}
+func newNumberMathAddition(_ context.Context, cfg config.Config) (*numberMathAddition, error) {
+	conf := numberMathConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: new_number_arithmetic_multiply: %v", err)
+		return nil, fmt.Errorf("transform: new_number_math_add: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_number_arithmetic_multiply: %v", err)
+		return nil, fmt.Errorf("transform: new_number_math_add: %v", err)
 	}
 
-	tf := numberArithmeticMultiplication{
+	tf := numberMathAddition{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -28,12 +28,12 @@ func newNumberArithmeticMultiplication(_ context.Context, cfg config.Config) (*n
 	return &tf, nil
 }
 
-type numberArithmeticMultiplication struct {
-	conf     numberArithmeticConfig
+type numberMathAddition struct {
+	conf     numberMathConfig
 	isObject bool
 }
 
-func (tf *numberArithmeticMultiplication) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *numberMathAddition) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -56,6 +56,7 @@ func (tf *numberArithmeticMultiplication) Transform(ctx context.Context, msg *me
 	if len(value.Array()) <= 1 {
 		return []*message.Message{msg}, nil
 	}
+
 	var vFloat64 float64
 	for i, val := range value.Array() {
 		if i == 0 {
@@ -63,7 +64,7 @@ func (tf *numberArithmeticMultiplication) Transform(ctx context.Context, msg *me
 			continue
 		}
 
-		vFloat64 *= val.Float()
+		vFloat64 += val.Float()
 	}
 
 	if !tf.isObject {
@@ -74,13 +75,13 @@ func (tf *numberArithmeticMultiplication) Transform(ctx context.Context, msg *me
 	}
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, vFloat64); err != nil {
-		return nil, fmt.Errorf("transform: arithmetic_multiply: %v", err)
+		return nil, fmt.Errorf("transform: math_add: %v", err)
 	}
 
 	return []*message.Message{msg}, nil
 }
 
-func (tf *numberArithmeticMultiplication) String() string {
+func (tf *numberMathAddition) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

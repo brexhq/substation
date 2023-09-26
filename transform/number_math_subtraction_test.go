@@ -9,7 +9,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var numberArithmeticMultiplicationTests = []struct {
+var numberMathSubtractionTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -19,9 +19,9 @@ var numberArithmeticMultiplicationTests = []struct {
 	{
 		"data",
 		config.Config{},
-		[]byte(`[2,3]`),
+		[]byte(`[3,1]`),
 		[][]byte{
-			[]byte(`6`),
+			[]byte(`2`),
 		},
 	},
 	// object tests
@@ -35,18 +35,18 @@ var numberArithmeticMultiplicationTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":[2,3]}`),
+		[]byte(`{"a":[3,1]}`),
 		[][]byte{
-			[]byte(`{"a":6}`),
+			[]byte(`{"a":2}`),
 		},
 	},
 }
 
-func TestNumberArithmeticMultiplication(t *testing.T) {
+func TestNumberMathSubtraction(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range numberArithmeticMultiplicationTests {
+	for _, test := range numberMathSubtractionTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newNumberArithmeticMultiplication(ctx, test.cfg)
+			tf, err := newNumberMathSubtraction(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestNumberArithmeticMultiplication(t *testing.T) {
 	}
 }
 
-func benchmarkNumberArithmeticMultiplication(b *testing.B, tf *numberArithmeticMultiplication, data []byte) {
+func benchmarkNumberMathSubtraction(b *testing.B, tf *numberMathSubtraction, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -77,16 +77,16 @@ func benchmarkNumberArithmeticMultiplication(b *testing.B, tf *numberArithmeticM
 	}
 }
 
-func BenchmarkNumberArithmeticMultiplication(b *testing.B) {
-	for _, test := range numberArithmeticMultiplicationTests {
-		tf, err := newNumberArithmeticMultiplication(context.TODO(), test.cfg)
+func BenchmarkNumberMathSubtraction(b *testing.B) {
+	for _, test := range numberMathSubtractionTests {
+		tf, err := newNumberMathSubtraction(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkNumberArithmeticMultiplication(b, tf, test.test)
+				benchmarkNumberMathSubtraction(b, tf, test.test)
 			},
 		)
 	}

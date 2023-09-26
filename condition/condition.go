@@ -2,7 +2,6 @@ package condition
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/brexhq/substation/config"
@@ -134,11 +133,6 @@ type opAll struct {
 	Inspectors []inspector `json:"inspectors"`
 }
 
-func (o *opAll) String() string {
-	b, _ := json.Marshal(o)
-	return string(b)
-}
-
 // Operate returns true if all inspectors return true, otherwise it returns false.
 func (o *opAll) Operate(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
@@ -167,11 +161,6 @@ func (o *opAll) Operate(ctx context.Context, msg *message.Message) (bool, error)
 
 type opAny struct {
 	Inspectors []inspector `json:"inspectors"`
-}
-
-func (o *opAny) String() string {
-	b, _ := json.Marshal(o)
-	return string(b)
 }
 
 // Operate returns true if any inspectors return true, otherwise it returns false.
@@ -204,11 +193,6 @@ type opNone struct {
 	Inspectors []inspector `json:"inspectors"`
 }
 
-func (o *opNone) String() string {
-	b, _ := json.Marshal(o)
-	return string(b)
-}
-
 // Operate returns true if all inspectors return false, otherwise it returns true.
 func (o *opNone) Operate(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
@@ -236,11 +220,6 @@ func (o *opNone) Operate(ctx context.Context, msg *message.Message) (bool, error
 }
 
 type opEmpty struct{}
-
-func (o *opEmpty) String() string {
-	b, _ := json.Marshal(o)
-	return string(b)
-}
 
 // Operate always returns true.
 func (o *opEmpty) Operate(ctx context.Context, msg *message.Message) (bool, error) {

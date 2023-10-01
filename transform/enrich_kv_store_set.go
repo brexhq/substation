@@ -114,7 +114,7 @@ func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message)
 		}
 	}
 
-	value := msg.GetValue(tf.conf.Object.SetKey)
+	value := msg.GetValue(tf.conf.Object.Key)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -127,21 +127,21 @@ func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message)
 	//nolint: nestif // ignore nesting complexity
 	if tf.conf.TTLKey != "" && tf.conf.TTLOffset != 0 {
 		ttl := msg.GetValue(tf.conf.TTLKey).Int() + tf.conf.TTLOffset
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.Key).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.SetKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store: %v", err)
 		}
 	} else if tf.conf.TTLKey != "" {
 		ttl := msg.GetValue(tf.conf.TTLKey).Int()
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.Key).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.SetKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store: %v", err)
 		}
 	} else if tf.conf.TTLOffset != 0 {
 		ttl := time.Now().Add(time.Duration(tf.conf.TTLOffset) * time.Second).Unix()
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.Key).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.SetKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store: %v", err)
 		}
 	} else {
-		if err := tf.kvStore.Set(ctx, key, msg.GetValue(tf.conf.Object.Key).String()); err != nil {
+		if err := tf.kvStore.Set(ctx, key, msg.GetValue(tf.conf.Object.SetKey).String()); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store: %v", err)
 		}
 	}

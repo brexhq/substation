@@ -370,13 +370,13 @@
           headers: null,
         },
         get(settings=null): {
-          local default = $.transform.http.default,
+          local default = $.transform.enrich.http.default,
 
           type: 'enrich_http_get',
           settings: std.mergePatch(default, settings),
         },
         post(settings=null): {
-          local default = $.transform.http.default { body_key: null },
+          local default = $.transform.enrich.http.default { body_key: null },
 
           type: 'enrich_http_post',
           settings: std.mergePatch(default, settings),
@@ -390,13 +390,13 @@
           close_kv_store: false,
         },
         get(settings=null): {
-          local default = $.transform.kv_store.default,
+          local default = $.transform.enrich.kv_store.default,
 
           type: 'enrich_kv_store_get',
           settings: std.mergePatch(default, settings),
         },
         set(settings=null): {
-          local default = $.transform.kv_store.default { ttl_key: null, ttl_offset: null },
+          local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: null },
 
           type: 'enrich_kv_store_set',
           settings: std.mergePatch(default, settings),
@@ -705,15 +705,17 @@
         type: 'send_file',
         settings: std.mergePatch(default, settings),
       },
-      http(settings=null): {
-        local default = {
-          url: null,
-          headers: null,
-          headers_key: null,
-        },
+      http: {
+        post(settings=null): {
+          local default = {
+            url: null,
+            headers: null,
+            headers_key: null,
+          },
 
-        type: 'send_http',
-        settings: std.mergePatch(default, settings),
+          type: 'send_http',
+          settings: std.mergePatch(default, settings),
+        },
       },
       stdout(settings=null): {
         type: 'send_stdout',
@@ -884,7 +886,7 @@
   // Mirrors interfaces from the internal/kv_store package.
   kv_store: {
     aws_dynamodb(settings=null): {
-      local default = { table: null, attributes: { partition_key: null, sort_key: null, value: null, ttl: null }, consistent_read: false },
+      local default = { table_name: null, attributes: { partition_key: null, sort_key: null, value: null, ttl: null }, consistent_read: false },
 
       type: 'aws_dynamodb',
       settings: std.mergePatch(default, settings),

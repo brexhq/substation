@@ -12,12 +12,15 @@ CHANGELOG.md
 
 # ignore all JSON by default
 *.json
+*.jsonl
 # allow Visual Studio Code devcontainer config file
 !.devcontainer/devcontainer.json
 # allow Visual Studio Code settings config file
 !.vscode/settings.json
-# allow data JSON files in the examples/ directory
+# allow specific JSON files in the examples/ directory
 !examples/**/data*.json
+!examples/**/data*.jsonl
+!examples/**/stdout.jsonl
 # ignore playground files
 playground.wasm
 playground.wasm.gz

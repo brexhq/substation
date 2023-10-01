@@ -127,8 +127,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newSendAWSSQS(ctx, cfg)
 	case "send_file":
 		return newSendFile(ctx, cfg)
-	case "send_http":
-		return newSendHTTP(ctx, cfg)
+	case "send_http_post":
+		return newSendHTTPPost(ctx, cfg)
 	case "send_stdout":
 		return newSendStdout(ctx, cfg)
 	case "send_sumologic":

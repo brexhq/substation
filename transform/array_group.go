@@ -15,7 +15,7 @@ import (
 type arrayGroupConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	// Keys determines where values are set in newly created objects.
+	// GroupKeys determines where values are set in newly created objects.
 	//
 	// This is optional and defaults to creating an array of tuples instead
 	// of an array of objects.
@@ -27,11 +27,11 @@ func (c *arrayGroupConfig) Decode(in interface{}) error {
 }
 
 func (c *arrayGroupConfig) Validate() error {
-	if c.Object.Key == "" && c.Object.SetKey != "" {
+	if c.Object.Key == "" {
 		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.Key != "" && c.Object.SetKey == "" {
+	if c.Object.SetKey == "" {
 		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
 	}
 

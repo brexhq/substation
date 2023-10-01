@@ -19,8 +19,8 @@ import (
 //
 // - Does not support Global Secondary Indexes
 type kvAWSDynamoDB struct {
-	// Table is the DynamoDB table that items are read and written to.
-	Table      string `json:"table"`
+	// TableName is the DynamoDB table that items are read and written to.
+	TableName  string `json:"table_name"`
 	Attributes struct {
 		// PartitionKey is the table's parition key attribute.
 		//
@@ -53,7 +53,7 @@ func newKVAWSDyanmoDB(cfg config.Config) (*kvAWSDynamoDB, error) {
 		return nil, err
 	}
 
-	if store.Table == "" {
+	if store.TableName == "" {
 		return nil, fmt.Errorf("kv: aws_dynamodb: table %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
@@ -79,7 +79,7 @@ func (store *kvAWSDynamoDB) Get(ctx context.Context, key string) (interface{}, e
 		m[store.Attributes.SortKey] = "substation:kv_store"
 	}
 
-	resp, err := store.api.GetItem(ctx, store.Table, m, store.ConsistentRead)
+	resp, err := store.api.GetItem(ctx, store.TableName, m, store.ConsistentRead)
 	if err != nil {
 		return "", err
 	}
@@ -112,7 +112,7 @@ func (store *kvAWSDynamoDB) Set(ctx context.Context, key string, val interface{}
 		return err
 	}
 
-	if _, err := store.api.PutItem(ctx, store.Table, record); err != nil {
+	if _, err := store.api.PutItem(ctx, store.TableName, record); err != nil {
 		return err
 	}
 
@@ -140,7 +140,7 @@ func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val inte
 		return err
 	}
 
-	if _, err := store.api.PutItem(ctx, store.Table, record); err != nil {
+	if _, err := store.api.PutItem(ctx, store.TableName, record); err != nil {
 		return err
 	}
 
@@ -154,7 +154,7 @@ func (store *kvAWSDynamoDB) IsEnabled() bool {
 
 // Setup creates a new DynamoDB client.
 func (store *kvAWSDynamoDB) Setup(ctx context.Context) error {
-	if store.Table == "" || store.Attributes.PartitionKey == "" {
+	if store.TableName == "" || store.Attributes.PartitionKey == "" {
 		return errors.ErrMissingRequiredOption
 	}
 

@@ -27,8 +27,6 @@ type sendAWSDynamoDBConfig struct {
 
 	// TableName is the DynamoDB table that items are written to.
 	TableName string `json:"table_name"`
-	// PartitionKey is the name of the partition key for the table.
-	PartitionKey string `json:"partition_key"`
 }
 
 func (c *sendAWSDynamoDBConfig) Decode(in interface{}) error {

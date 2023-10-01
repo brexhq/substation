@@ -19,7 +19,7 @@ var aggregateFromArrayTests = []struct {
 }{
 	// data tests
 	{
-		"data from",
+		"data",
 		config.Config{},
 		[]string{
 			`[{"a":"b"},{"c":"d"},{"e":"f"}]`,
@@ -28,6 +28,24 @@ var aggregateFromArrayTests = []struct {
 			`{"a":"b"}`,
 			`{"c":"d"}`,
 			`{"e":"f"}`,
+		},
+	},
+	{
+		"data with set_key",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"set_key": "x",
+				},
+			},
+		},
+		[]string{
+			`[{"a":"b"},{"c":"d"},{"e":"f"}]`,
+		},
+		[]string{
+			`{"x":{"a":"b"}}`,
+			`{"x":{"c":"d"}}`,
+			`{"x":{"e":"f"}}`,
 		},
 	},
 	// object tests
@@ -50,7 +68,7 @@ var aggregateFromArrayTests = []struct {
 		},
 	},
 	{
-		"object with_set_key",
+		"object with set_key",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{

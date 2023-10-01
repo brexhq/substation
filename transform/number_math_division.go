@@ -53,9 +53,6 @@ func (tf *numberMathDivision) Transform(ctx context.Context, msg *message.Messag
 		return []*message.Message{msg}, nil
 	}
 
-	if len(value.Array()) <= 1 {
-		return []*message.Message{msg}, nil
-	}
 	var vFloat64 float64
 	for i, val := range value.Array() {
 		if i == 0 {

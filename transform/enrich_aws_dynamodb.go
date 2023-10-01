@@ -21,7 +21,7 @@ type enrichAWSDynamoDBConfig struct {
 	Retry  iconfig.Retry  `json:"retry"`
 
 	// TableName is the DynamoDB table that is queried.
-	TableName string `json:"table"`
+	TableName string `json:"table_name"`
 	// PartitionKey is the DynamoDB partition key.
 	PartitionKey string `json:"partition_key"`
 	// SortKey is the DynamoDB sort key.

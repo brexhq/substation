@@ -38,7 +38,7 @@ var enrichAWSDynamoDBTests = []struct {
 				"object": map[string]interface{}{
 					"set_key": "a",
 				},
-				"table":                    "tab",
+				"table_name":               "tab",
 				"partition_key":            "PK",
 				"key_condition_expression": "kce",
 			},

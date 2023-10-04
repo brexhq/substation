@@ -7,15 +7,15 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-// Duplicate is a transform that duplicates a message.
+// Duplicates a message.
 type Duplicate struct {
 	// Count is the number of times to duplicate the message.
 	Count int `json:"count"`
 }
 
-// Transform duplicates a message based on the configuration.
+// Transforms a message based on the configuration.
 func (t *Duplicate) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// Always handle control messages.
+	// Always return control messages.
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}

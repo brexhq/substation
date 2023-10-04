@@ -9,6 +9,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &hashSHA256{}
+
 var hashSHA256Tests = []struct {
 	name     string
 	cfg      config.Config

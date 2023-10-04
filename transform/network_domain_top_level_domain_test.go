@@ -9,6 +9,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &networkDomainTopLevelDomain{}
+
 var networkDomainTopLevelDomainTests = []struct {
 	name     string
 	cfg      config.Config

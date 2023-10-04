@@ -9,6 +9,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &timeToUnix{}
+
 var timeToUnixTests = []struct {
 	name     string
 	cfg      config.Config

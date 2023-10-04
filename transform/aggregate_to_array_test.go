@@ -11,6 +11,8 @@ import (
 	mess "github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &aggregateToArray{}
+
 var aggregateToArrayTests = []struct {
 	name     string
 	cfg      config.Config

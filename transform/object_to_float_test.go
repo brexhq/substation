@@ -9,6 +9,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &objectToFloat{}
+
 var objectToFloatTests = []struct {
 	name     string
 	cfg      config.Config

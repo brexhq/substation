@@ -8,6 +8,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ inspector = &metaCondition{}
+
 var metaConditionTests = []struct {
 	name     string
 	cfg      config.Config

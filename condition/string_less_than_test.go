@@ -8,6 +8,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ inspector = &stringLessThan{}
+
 var stringLessThanTests = []struct {
 	name     string
 	cfg      config.Config

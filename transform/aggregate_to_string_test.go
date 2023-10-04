@@ -10,6 +10,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+var _ Transformer = &aggregateToString{}
+
 var aggregateToStringTests = []struct {
 	name     string
 	cfg      config.Config

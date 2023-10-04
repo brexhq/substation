@@ -9,6 +9,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &objectCopy{}
+
 var objectCopyTests = []struct {
 	name     string
 	cfg      config.Config

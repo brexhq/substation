@@ -8,6 +8,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ inspector = &networkIPLinkLocalUnicast{}
+
 var networkIPLinkLocalUnicastTests = []struct {
 	name     string
 	cfg      config.Config

@@ -8,6 +8,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ inspector = &networkIPMulticast{}
+
 var networkIPMulticastTests = []struct {
 	name     string
 	cfg      config.Config

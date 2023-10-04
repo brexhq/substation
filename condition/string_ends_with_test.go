@@ -8,6 +8,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ inspector = &stringEndsWith{}
+
 var stringEndsWithTests = []struct {
 	name     string
 	cfg      config.Config

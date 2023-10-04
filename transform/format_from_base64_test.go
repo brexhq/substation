@@ -9,6 +9,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &formatFromBase64{}
+
 var formatFromBase64Tests = []struct {
 	name     string
 	cfg      config.Config

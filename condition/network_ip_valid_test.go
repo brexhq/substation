@@ -8,6 +8,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ inspector = &networkIPValid{}
+
 var networkIPValidTests = []struct {
 	name     string
 	cfg      config.Config

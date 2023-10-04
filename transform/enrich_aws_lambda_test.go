@@ -14,6 +14,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &enrichAWSLambda{}
+
 type enrichAWSLambdaMockedInvoke struct {
 	lambdaiface.LambdaAPI
 	Resp lambda.InvokeOutput

@@ -9,6 +9,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &formatFromPrettyPrint{}
+
 var formatFromPrettyPrintTests = []struct {
 	name     string
 	cfg      config.Config

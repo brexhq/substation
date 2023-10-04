@@ -9,6 +9,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &numberMathMultiplication{}
+
 var numberMathMultiplicationTests = []struct {
 	name     string
 	cfg      config.Config

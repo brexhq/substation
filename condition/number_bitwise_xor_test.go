@@ -8,6 +8,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ inspector = &numberBitwiseXOR{}
+
 var numberBitwiseXORTests = []struct {
 	name     string
 	cfg      config.Config

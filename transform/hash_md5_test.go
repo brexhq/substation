@@ -9,6 +9,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &hashMD5{}
+
 var hashMD5Tests = []struct {
 	name     string
 	cfg      config.Config

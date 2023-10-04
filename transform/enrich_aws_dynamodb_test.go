@@ -14,6 +14,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &enrichAWSDynamoDB{}
+
 type enrichAWSDynamoDBMockedQuery struct {
 	dynamodbiface.DynamoDBAPI
 	Resp dynamodb.QueryOutput

@@ -8,6 +8,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ inspector = &numberLengthEqualTo{}
+
 var numberLengthEqualToTests = []struct {
 	name     string
 	cfg      config.Config

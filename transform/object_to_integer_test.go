@@ -9,6 +9,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var _ Transformer = &objectToInteger{}
+
 var objectToIntegerTests = []struct {
 	name     string
 	cfg      config.Config

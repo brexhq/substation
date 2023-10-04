@@ -58,6 +58,13 @@ func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendA
 		conf: conf,
 	}
 
+	// Setup the AWS client.
+	tf.client.Setup(aws.Config{
+		Region:        conf.AWS.Region,
+		AssumeRoleARN: conf.AWS.AssumeRoleARN,
+		MaxRetries:    conf.Retry.Count,
+	})
+
 	buffer, err := aggregate.New(aggregate.Config{
 		// Firehose limits batch operations to 500 records.
 		Count: 500,
@@ -69,15 +76,11 @@ func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendA
 		return nil, err
 	}
 
+	// All data is stored in a single buffer, the bufferKey
+	// only exists for forward compatibility to allow for
+	// multiple buffers.
 	tf.buffer = buffer
 	tf.bufferKey = conf.Buffer.Key
-
-	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
-		Region:        conf.AWS.Region,
-		AssumeRoleARN: conf.AWS.AssumeRoleARN,
-		MaxRetries:    conf.Retry.Count,
-	})
 
 	return &tf, nil
 }

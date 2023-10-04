@@ -85,6 +85,9 @@ func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 		return nil, err
 	}
 
+	// All data is stored in a single buffer, the bufferKey
+	// only exists for forward compatibility to allow for
+	// multiple buffers.
 	tf.buffer = buffer
 	tf.bufferKey = conf.Buffer.Key
 

@@ -18,7 +18,6 @@ func newAggregateToArray(_ context.Context, cfg config.Config) (*aggregateToArra
 
 	tf := aggregateToArray{
 		conf:         conf,
-		hasObjKey:    conf.Object.Key != "",
 		hasObjSetKey: conf.Object.SetKey != "",
 	}
 
@@ -39,7 +38,6 @@ func newAggregateToArray(_ context.Context, cfg config.Config) (*aggregateToArra
 
 type aggregateToArray struct {
 	conf         aggregateArrayConfig
-	hasObjKey    bool
 	hasObjSetKey bool
 
 	// buffer is safe for concurrent access.
@@ -76,12 +74,7 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 		return output, nil
 	}
 
-	value := msg.GetValue(tf.bufferKey)
-	if !value.Exists() {
-		return []*message.Message{msg}, nil
-	}
-
-	key := value.String()
+	key := msg.GetValue(tf.bufferKey).String()
 	if ok := tf.buffer.Add(key, msg.Data()); ok {
 		return nil, nil
 	}

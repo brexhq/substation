@@ -67,12 +67,7 @@ func (tf *aggregateToString) Transform(ctx context.Context, msg *message.Message
 		return output, nil
 	}
 
-	value := msg.GetValue(tf.bufferKey)
-	if !value.Exists() {
-		return []*message.Message{msg}, nil
-	}
-
-	key := value.String()
+	key := msg.GetValue(tf.bufferKey).String()
 	if ok := tf.buffer.Add(key, msg.Data()); ok {
 		return nil, nil
 	}

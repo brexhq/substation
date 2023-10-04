@@ -172,6 +172,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newUtilityDrop(ctx, cfg)
 	case "utility_err":
 		return newUtilityErr(ctx, cfg)
+	case "utility_secret":
+		return newUtilitySecret(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("transform: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
 	}

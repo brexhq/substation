@@ -881,6 +881,12 @@
         type: 'utility_err',
         settings: std.mergePatch(default, settings),
       },
+      secret(settings=null): {
+        local default = { secret: null },
+
+        type: 'utility_secret',
+        settings: std.mergePatch(default, settings),
+      },
     },
   },
   // Mirrors interfaces from the internal/kv_store package.
@@ -932,6 +938,28 @@
   },
   // Mirrors config from the internal/file package.
   file_path: { prefix: null, prefix_key: null, time_format: '2006/01/02', uuid: true, extension: true },
+  // Mirrors interfaces from the internal/secrets package.
+  secrets: {
+    default: { id: null, ttl: null },
+    aws_secrets_manager(settings=null): {
+      local default = {
+        id: null,
+        name: null,
+        ttl_offset: 0,
+        aws: $.config.aws,
+        retry: $.config.retry,
+      },
+
+      type: 'aws_secrets_manager',
+      settings: std.mergePatch(default, settings),
+    },
+    environment_variable(settings=null): {
+      local default = { id: null, name: null, ttl_offset: 0 },
+
+      type: 'environment_variable',
+      settings: std.mergePatch(default, settings),
+    },
+  },
   // Commonly used condition and transform patterns.
   pattern: {
     cnd: $.pattern.condition,

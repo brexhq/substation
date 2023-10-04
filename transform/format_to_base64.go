@@ -13,11 +13,11 @@ import (
 func newFormatToBase64(_ context.Context, cfg config.Config) (*formatToBase64, error) {
 	conf := formatBase64Config{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_fmt_to_base64: %v", err)
+		return nil, fmt.Errorf("transform: format_to_base64: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_fmt_to_base64: %v", err)
+		return nil, fmt.Errorf("transform: format_to_base64: %v", err)
 	}
 
 	tf := formatToBase64{
@@ -46,10 +46,14 @@ func (tf *formatToBase64) Transform(ctx context.Context, msg *message.Message) (
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	b64 := ibase64.Encode(value.Bytes())
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, b64); err != nil {
-		return nil, fmt.Errorf("transform: fmt_to_base64: %v", err)
+		return nil, fmt.Errorf("transform: format_to_base64: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

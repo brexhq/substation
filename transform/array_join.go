@@ -42,11 +42,11 @@ func (c *arrayJoinConfig) Validate() error {
 func newArrayJoin(_ context.Context, cfg config.Config) (*arrayJoin, error) {
 	conf := arrayJoinConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_array_join: %v", err)
+		return nil, fmt.Errorf("transform: array_join: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_array_join: %v", err)
+		return nil, fmt.Errorf("transform: array_join: %v", err)
 	}
 
 	tf := arrayJoin{

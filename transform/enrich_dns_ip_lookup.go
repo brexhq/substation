@@ -16,16 +16,16 @@ import (
 func newEnrichDNSIPLookup(_ context.Context, cfg config.Config) (*enrichDNSIPLookup, error) {
 	conf := enrichDNSConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_dns_ip_lookup: %v", err)
+		return nil, fmt.Errorf("transform: enrich_dns_ip_lookup: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_dns_ip_lookup: %v", err)
+		return nil, fmt.Errorf("transform: enrich_dns_ip_lookup: %v", err)
 	}
 
 	dur, err := time.ParseDuration(conf.Request.Timeout)
 	if err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_dns_ip_lookup: duration: %v", err)
+		return nil, fmt.Errorf("transform: enrich_dns_ip_lookup: duration: %v", err)
 	}
 
 	tf := enrichDNSIPLookup{
@@ -69,6 +69,10 @@ func (tf *enrichDNSIPLookup) Transform(ctx context.Context, msg *message.Message
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	addrs, err := tf.resolver.LookupAddr(resolverCtx, value.String())
 	if err != nil {
 		return nil, fmt.Errorf("transform: enrich_dns_ip_lookup: %v", err)

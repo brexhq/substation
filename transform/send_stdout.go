@@ -19,7 +19,7 @@ func (c *sendStdoutConfig) Decode(in interface{}) error {
 func newSendStdout(_ context.Context, cfg config.Config) (*sendStdout, error) {
 	conf := sendStdoutConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_send_stdout: %v", err)
+		return nil, fmt.Errorf("transform: send_stdout: %v", err)
 	}
 
 	tf := sendStdout{

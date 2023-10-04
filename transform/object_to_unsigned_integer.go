@@ -34,7 +34,7 @@ func (c *objectToUnsignedIntegerConfig) Validate() error {
 func newObjectToUnsignedInteger(_ context.Context, cfg config.Config) (*objectToUnsignedInteger, error) {
 	conf := objectToUnsignedIntegerConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_object_to_uint: %v", err)
+		return nil, fmt.Errorf("transform: object_to_unsigned_integer: %v", err)
 	}
 
 	tf := objectToUnsignedInteger{
@@ -54,8 +54,12 @@ func (tf *objectToUnsignedInteger) Transform(ctx context.Context, msg *message.M
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	if err := msg.SetValue(tf.conf.Object.SetKey, value.Uint()); err != nil {
-		return nil, fmt.Errorf("transform: object_to_uint: %v", err)
+		return nil, fmt.Errorf("transform: object_to_unsigned_integer: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

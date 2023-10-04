@@ -19,11 +19,11 @@ var errFmtSubdomainNoSubdomain = fmt.Errorf("no subdomain")
 func newNetworkDomainSubdomain(_ context.Context, cfg config.Config) (*networkDomainSubdomain, error) {
 	conf := networkDomainConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_fmt_fqdn_subdomain: %v", err)
+		return nil, fmt.Errorf("transform: network_domain_subdomain: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_fmt_fqdn_subdomain: %v", err)
+		return nil, fmt.Errorf("transform: network_domain_subdomain: %v", err)
 	}
 
 	tf := networkDomainSubdomain{
@@ -48,7 +48,7 @@ func (tf *networkDomainSubdomain) Transform(ctx context.Context, msg *message.Me
 		str := string(msg.Data())
 		domain, err := fmtParseSubdomain(str)
 		if err != nil {
-			return nil, fmt.Errorf("transform: fmt_fqdn_subdomain: %v", err)
+			return nil, fmt.Errorf("transform: network_domain_subdomain: %v", err)
 		}
 
 		msg.SetData([]byte(domain))
@@ -56,13 +56,17 @@ func (tf *networkDomainSubdomain) Transform(ctx context.Context, msg *message.Me
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	domain, err := fmtParseSubdomain(value.String())
 	if err != nil {
-		return nil, fmt.Errorf("transform: fmt_fqdn_subdomain: %v", err)
+		return nil, fmt.Errorf("transform: network_domain_subdomain: %v", err)
 	}
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, domain); err != nil {
-		return nil, fmt.Errorf("transform: fmt_fqdn_subdomain: %v", err)
+		return nil, fmt.Errorf("transform: network_domain_subdomain: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

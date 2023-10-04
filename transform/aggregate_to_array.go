@@ -13,7 +13,7 @@ import (
 func newAggregateToArray(_ context.Context, cfg config.Config) (*aggregateToArray, error) {
 	conf := aggregateArrayConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_aggregate_to_array: %v", err)
+		return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 	}
 
 	tf := aggregateToArray{
@@ -28,7 +28,7 @@ func newAggregateToArray(_ context.Context, cfg config.Config) (*aggregateToArra
 		Duration: conf.Buffer.Duration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: new_aggregate_to_array: %v", err)
+		return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 	}
 
 	tf.buffer = buffer
@@ -77,6 +77,10 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 	}
 
 	value := msg.GetValue(tf.bufferKey)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	key := value.String()
 	if ok := tf.buffer.Add(key, msg.Data()); ok {
 		return nil, nil

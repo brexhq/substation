@@ -41,11 +41,11 @@ func (c *arrayGroupConfig) Validate() error {
 func newArrayGroup(_ context.Context, cfg config.Config) (*arrayGroup, error) {
 	conf := arrayGroupConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_array_group: %v", err)
+		return nil, fmt.Errorf("transform: array_group: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_array_group: %v", err)
+		return nil, fmt.Errorf("transform: array_group: %v", err)
 	}
 
 	tf := arrayGroup{
@@ -71,8 +71,16 @@ func (tf *arrayGroup) Transform(ctx context.Context, msg *message.Message) ([]*m
 		// input.key: [["a","b"],[1,2]]
 		// 	cache[0][]interface{}{"a",1}
 		// 	cache[1][]interface{}{"b",2}
-		cache := make(map[int][]interface{})
 		value := msg.GetValue(tf.conf.Object.Key)
+		if !value.Exists() {
+			return []*message.Message{msg}, nil
+		}
+
+		if !value.IsArray() {
+			return []*message.Message{msg}, nil
+		}
+
+		cache := make(map[int][]interface{})
 		for _, val := range value.Array() {
 			for i, v := range val.Array() {
 				cache[i] = append(cache[i], v.Value())
@@ -99,10 +107,18 @@ func (tf *arrayGroup) Transform(ctx context.Context, msg *message.Message) ([]*m
 	// options.keys: ["str","int"]
 	// 	cache[0][]byte(`{"str":"a","int":1}`)
 	// 	cache[1][]byte(`{"str":"b","int":2}`)
-	cache := make(map[int][]byte)
+	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
+	if !value.IsArray() {
+		return []*message.Message{msg}, nil
+	}
 
 	var err error
-	value := msg.GetValue(tf.conf.Object.Key)
+	cache := make(map[int][]byte)
+
 	for i, val := range value.Array() {
 		for j, v := range val.Array() {
 			cache[j], err = sjson.SetBytes(cache[j], tf.conf.GroupKeys[i], v.Value())

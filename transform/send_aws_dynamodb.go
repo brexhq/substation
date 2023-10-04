@@ -85,6 +85,10 @@ func (tf *sendAWSDynamoDB) Transform(ctx context.Context, msg *message.Message) 
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	for _, item := range value.Array() {
 		cache := make(map[string]interface{})
 		for k, v := range item.Map() {

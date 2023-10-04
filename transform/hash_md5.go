@@ -13,11 +13,11 @@ import (
 func newHashMD5(_ context.Context, cfg config.Config) (*hashMD5, error) {
 	conf := hashConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_mod_hash: %v", err)
+		return nil, fmt.Errorf("transform: hash_md5: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_mod_hash: %v", err)
+		return nil, fmt.Errorf("transform: hash_md5: %v", err)
 	}
 
 	tf := hashMD5{
@@ -47,6 +47,10 @@ func (tf *hashMD5) Transform(ctx context.Context, msg *message.Message) ([]*mess
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	sum := md5.Sum(value.Bytes())
 	str := fmt.Sprintf("%x", sum)
 

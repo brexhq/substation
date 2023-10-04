@@ -30,11 +30,11 @@ func (c *objectDeleteConfig) Validate() error {
 func newObjectDelete(_ context.Context, cfg config.Config) (*objectDelete, error) {
 	conf := objectDeleteConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_object_delete: %v", err)
+		return nil, fmt.Errorf("transform: object_delete: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_object_delete: %v", err)
+		return nil, fmt.Errorf("transform: object_delete: %v", err)
 	}
 
 	proc := objectDelete{

@@ -34,7 +34,7 @@ func (c *objectToFloatConfig) Validate() error {
 func newObjectToFloat(_ context.Context, cfg config.Config) (*objectToFloat, error) {
 	conf := objectToFloatConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_object_to_float: %v", err)
+		return nil, fmt.Errorf("transform: object_to_float: %v", err)
 	}
 
 	tf := objectToFloat{
@@ -54,6 +54,10 @@ func (tf *objectToFloat) Transform(ctx context.Context, msg *message.Message) ([
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+	
 	if err := msg.SetValue(tf.conf.Object.SetKey, value.Float()); err != nil {
 		return nil, fmt.Errorf("transform: object_to_float: %v", err)
 	}

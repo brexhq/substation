@@ -16,16 +16,16 @@ import (
 func newEnrichDNSTxtLookup(_ context.Context, cfg config.Config) (*enrichDNSTxtLookup, error) {
 	conf := enrichDNSConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_dns_txt_lookup: %v", err)
+		return nil, fmt.Errorf("transform: enrich_dns_txt_lookup: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_dns_txt_lookup: %v", err)
+		return nil, fmt.Errorf("transform: enrich_dns_txt_lookup: %v", err)
 	}
 
 	dur, err := time.ParseDuration(conf.Request.Timeout)
 	if err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_dns_txt_lookup: duration: %v", err)
+		return nil, fmt.Errorf("transform: enrich_dns_txt_lookup: duration: %v", err)
 	}
 
 	tf := enrichDNSTxtLookup{
@@ -69,6 +69,10 @@ func (tf *enrichDNSTxtLookup) Transform(ctx context.Context, msg *message.Messag
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	recs, err := tf.resolver.LookupTXT(resolverCtx, value.String())
 	if err != nil {
 		return nil, fmt.Errorf("transform: enrich_dns_txt_lookup: %v", err)

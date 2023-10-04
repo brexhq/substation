@@ -53,11 +53,11 @@ func (c *stringReplaceConfig) Validate() error {
 func newStringReplace(_ context.Context, cfg config.Config) (*stringReplace, error) {
 	conf := stringReplaceConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_str_replace: %v", err)
+		return nil, fmt.Errorf("transform: string_replace: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_str_replace: %v", err)
+		return nil, fmt.Errorf("transform: string_replace: %v", err)
 	}
 
 	tf := stringReplace{
@@ -97,7 +97,7 @@ func (tf *stringReplace) Transform(ctx context.Context, msg *message.Message) ([
 
 	s := strings.Replace(value.String(), tf.conf.Old, tf.conf.New, tf.conf.Count)
 	if err := msg.SetValue(tf.conf.Object.SetKey, s); err != nil {
-		return nil, fmt.Errorf("transform: str_replace: %v", err)
+		return nil, fmt.Errorf("transform: string_replace: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

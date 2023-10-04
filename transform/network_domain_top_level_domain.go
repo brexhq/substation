@@ -14,11 +14,11 @@ import (
 func newNetworkDomainTopLevelDomain(_ context.Context, cfg config.Config) (*networkDomainTopLevelDomain, error) {
 	conf := networkDomainConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_fmt_fqdn_tld: %v", err)
+		return nil, fmt.Errorf("transform: network_domain_top_level_domain: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_fmt_fqdn_tld: %v", err)
+		return nil, fmt.Errorf("transform: network_domain_top_level_domain: %v", err)
 	}
 
 	tf := networkDomainTopLevelDomain{
@@ -48,10 +48,14 @@ func (tf *networkDomainTopLevelDomain) Transform(ctx context.Context, msg *messa
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	domain, _ := publicsuffix.PublicSuffix(value.String())
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, domain); err != nil {
-		return nil, fmt.Errorf("transform: fmt_fqdn_tld: %v", err)
+		return nil, fmt.Errorf("transform: network_domain_top_level_domain: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

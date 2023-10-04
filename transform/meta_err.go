@@ -30,16 +30,16 @@ func (c *metaErrConfig) Validate() error {
 func newMetaErr(ctx context.Context, cfg config.Config) (*metaErr, error) {
 	conf := metaErrConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_meta_err: %v", err)
+		return nil, fmt.Errorf("transform: meta_err: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_meta_err: %v", err)
+		return nil, fmt.Errorf("transform: meta_err: %v", err)
 	}
 
 	tf, err := New(ctx, conf.Transform)
 	if err != nil {
-		return nil, fmt.Errorf("transform: new_meta_err: %v", err)
+		return nil, fmt.Errorf("transform: meta_err: %v", err)
 	}
 
 	meta := metaErr{

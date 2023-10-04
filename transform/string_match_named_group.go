@@ -53,11 +53,11 @@ func (c *stringMatchNamedGroupConfig) Validate() error {
 func newStringMatchNamedGroup(_ context.Context, cfg config.Config) (*stringMatchNamedGroup, error) {
 	conf := stringMatchNamedGroupConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_capture_named_group: %v", err)
+		return nil, fmt.Errorf("transform: string_match_named_group: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_capture_named_group: %v", err)
+		return nil, fmt.Errorf("transform: string_match_named_group: %v", err)
 	}
 
 	tf := stringMatchNamedGroup{
@@ -88,15 +88,19 @@ func (tf *stringMatchNamedGroup) Transform(_ context.Context, msg *message.Messa
 			}
 
 			if err := outMsg.SetValue(tf.conf.names[i], m); err != nil {
-				return nil, fmt.Errorf("transform: capture_named_group: %v", err)
+				return nil, fmt.Errorf("transform: string_match_named_group: %v", err)
 			}
 		}
 
 		return []*message.Message{outMsg}, nil
 	}
 
-	v := msg.GetValue(tf.conf.Object.Key)
-	matches := tf.conf.re.FindStringSubmatch(v.String())
+	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
+	matches := tf.conf.re.FindStringSubmatch(value.String())
 	for i, match := range matches {
 		if i == 0 {
 			continue
@@ -110,7 +114,7 @@ func (tf *stringMatchNamedGroup) Transform(_ context.Context, msg *message.Messa
 		// {"d":"e"} then the output is {"a":{"b":"c","d":"e"}}.
 		setKey := tf.conf.Object.SetKey + "." + tf.conf.names[i]
 		if err := msg.SetValue(setKey, match); err != nil {
-			return nil, fmt.Errorf("transform: capture_named_group: %v", err)
+			return nil, fmt.Errorf("transform: string_match_named_group: %v", err)
 		}
 	}
 

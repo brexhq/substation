@@ -13,11 +13,11 @@ import (
 func newAggregateToString(_ context.Context, cfg config.Config) (*aggregateToString, error) {
 	conf := aggregateStrConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_aggregate_to_str: %v", err)
+		return nil, fmt.Errorf("transform: aggregate_to_string: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_aggregate_to_str: %v", err)
+		return nil, fmt.Errorf("transform: aggregate_to_string: %v", err)
 	}
 
 	tf := aggregateToString{
@@ -31,7 +31,7 @@ func newAggregateToString(_ context.Context, cfg config.Config) (*aggregateToStr
 		Duration: conf.Buffer.Duration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: new_aggregate_to_str: %v", err)
+		return nil, fmt.Errorf("transform: aggregate_to_string: %v", err)
 	}
 
 	tf.buffer = buffer
@@ -68,6 +68,10 @@ func (tf *aggregateToString) Transform(ctx context.Context, msg *message.Message
 	}
 
 	value := msg.GetValue(tf.bufferKey)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	key := value.String()
 	if ok := tf.buffer.Add(key, msg.Data()); ok {
 		return nil, nil

@@ -47,11 +47,11 @@ func (c *metaPipelineConfig) Validate() error {
 func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, error) {
 	conf := metaPipelineConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_meta_pipeline: %v", err)
+		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_meta_pipeline: %v", err)
+		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 	}
 
 	tf := metaPipeline{
@@ -63,7 +63,7 @@ func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, err
 	for _, c := range conf.Transforms {
 		t, err := New(ctx, c)
 		if err != nil {
-			return nil, fmt.Errorf("transform: new_meta_pipeline: transform %+v: %v", c, err)
+			return nil, fmt.Errorf("transform: meta_pipeline: transform %+v: %v", c, err)
 		}
 
 		tform = append(tform, t)
@@ -94,12 +94,16 @@ func (tf *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]
 		return msgs, nil
 	}
 
-	result := msg.GetValue(tf.conf.Object.Key)
-	if result.IsArray() {
+	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
+	if value.IsArray() {
 		return nil, fmt.Errorf("transform: meta_pipeline: key %s: %v", tf.conf.Object.Key, errMetaPipelineArrayInput)
 	}
 
-	tmpMsg := message.New().SetData(result.Bytes())
+	tmpMsg := message.New().SetData(value.Bytes())
 	msgs, err := Apply(ctx, tf.tf, tmpMsg)
 	if err != nil {
 		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)

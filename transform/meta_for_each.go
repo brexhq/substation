@@ -41,11 +41,11 @@ func (c *metaForEachConfig) Validate() error {
 func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error) {
 	conf := metaForEachConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_meta_for_each: %v", err)
+		return nil, fmt.Errorf("transform: meta_for_each: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_meta_for_each: %v", err)
+		return nil, fmt.Errorf("transform: meta_for_each: %v", err)
 	}
 
 	tf := metaForEach{
@@ -63,7 +63,7 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 
 	tfer, err := New(ctx, tf.tfCfg)
 	if err != nil {
-		return nil, fmt.Errorf("transform: new_meta_for_each: %v", err)
+		return nil, fmt.Errorf("transform: meta_for_each: %v", err)
 	}
 	tf.tf = tfer
 
@@ -82,13 +82,17 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 		return []*message.Message{msg}, nil
 	}
 
-	result := msg.GetValue(tf.conf.Object.Key)
-	if !result.IsArray() {
+	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
+	if !value.IsArray() {
 		return []*message.Message{msg}, nil
 	}
 
 	var arr []interface{}
-	for _, res := range result.Array() {
+	for _, res := range value.Array() {
 		tmpMsg := message.New().SetData(res.Bytes())
 		tfMsgs, err := tf.tf.Transform(ctx, tmpMsg)
 		if err != nil {

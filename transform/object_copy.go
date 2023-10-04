@@ -21,7 +21,7 @@ func (c *objectCopyConfig) Decode(in interface{}) error {
 func newObjectCopy(_ context.Context, cfg config.Config) (*objectCopy, error) {
 	conf := objectCopyConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_object_copy: %v", err)
+		return nil, fmt.Errorf("transform: object_copy: %v", err)
 	}
 
 	tf := objectCopy{

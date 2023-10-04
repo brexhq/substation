@@ -26,11 +26,11 @@ func (c *timeNowConfig) Validate() error {
 func newTimeNow(_ context.Context, cfg config.Config) (*timeNow, error) {
 	conf := timeNowConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("time: new_now: %v", err)
+		return nil, fmt.Errorf("transform: time_now: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("time: new_now: %v", err)
+		return nil, fmt.Errorf("transform: time_now: %v", err)
 	}
 
 	tf := timeNow{

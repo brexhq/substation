@@ -34,7 +34,7 @@ func (c *objectToIntegerConfig) Validate() error {
 func newObjectToInteger(_ context.Context, cfg config.Config) (*objectToInteger, error) {
 	conf := objectToIntegerConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_object_to_int: %v", err)
+		return nil, fmt.Errorf("transform: object_to_integer: %v", err)
 	}
 
 	tf := objectToInteger{
@@ -54,8 +54,12 @@ func (tf *objectToInteger) Transform(ctx context.Context, msg *message.Message) 
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	if err := msg.SetValue(tf.conf.Object.SetKey, value.Int()); err != nil {
-		return nil, fmt.Errorf("transform: object_to_int: %v", err)
+		return nil, fmt.Errorf("transform: object_to_integer: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

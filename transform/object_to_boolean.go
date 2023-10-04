@@ -34,11 +34,11 @@ func (c *objectToBooleanConfig) Validate() error {
 func newObjectToBoolean(_ context.Context, cfg config.Config) (*objectToBoolean, error) {
 	conf := objectToBooleanConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_object_to_bool: %v", err)
+		return nil, fmt.Errorf("transform: object_to_boolean: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_object_to_bool: %v", err)
+		return nil, fmt.Errorf("transform: object_to_boolean: %v", err)
 	}
 
 	tf := objectToBoolean{
@@ -63,8 +63,12 @@ func (tf *objectToBoolean) Transform(ctx context.Context, msg *message.Message) 
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	if err := msg.SetValue(tf.conf.Object.SetKey, value.Bool()); err != nil {
-		return nil, fmt.Errorf("transform: object_to_bool: %v", err)
+		return nil, fmt.Errorf("transform: object_to_boolean: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

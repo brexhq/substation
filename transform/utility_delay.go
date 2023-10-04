@@ -31,16 +31,16 @@ func (c *utilityDelayConfig) Validate() error {
 func newUtilityDelay(_ context.Context, cfg config.Config) (*utilityDelay, error) {
 	conf := utilityDelayConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_util_delay: %v", err)
+		return nil, fmt.Errorf("transform: utility_delay: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_util_delay: %v", err)
+		return nil, fmt.Errorf("transform: utility_delay: %v", err)
 	}
 
 	dur, err := time.ParseDuration(conf.Duration)
 	if err != nil {
-		return nil, fmt.Errorf("transform: new_util_delay: duration: %v", err)
+		return nil, fmt.Errorf("transform: utility_delay: duration: %v", err)
 	}
 
 	tf := utilityDelay{

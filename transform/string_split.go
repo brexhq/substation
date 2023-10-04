@@ -50,11 +50,11 @@ type stringSplit struct {
 func newStringSplit(_ context.Context, cfg config.Config) (*stringSplit, error) {
 	conf := stringSplitConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_str_split: %v", err)
+		return nil, fmt.Errorf("transform: string_split: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_str_split: %v", err)
+		return nil, fmt.Errorf("transform: string_split: %v", err)
 	}
 
 	tf := stringSplit{
@@ -77,7 +77,7 @@ func (tf *stringSplit) Transform(ctx context.Context, msg *message.Message) ([]*
 		b := bytes.Split(msg.Data(), tf.separator)
 		for _, v := range b {
 			if err := tmpMsg.SetValue("key.-1", v); err != nil {
-				return nil, fmt.Errorf("transform: str_split: %v", err)
+				return nil, fmt.Errorf("transform: string_split: %v", err)
 			}
 		}
 
@@ -88,10 +88,14 @@ func (tf *stringSplit) Transform(ctx context.Context, msg *message.Message) ([]*
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	str := strings.Split(value.String(), tf.conf.Separator)
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, str); err != nil {
-		return nil, fmt.Errorf("transform: str_split: %v", err)
+		return nil, fmt.Errorf("transform: string_split: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

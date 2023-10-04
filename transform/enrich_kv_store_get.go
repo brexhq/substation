@@ -53,16 +53,16 @@ func (c *enrichKVStoreGetConfig) Validate() error {
 func newEnrichKVStoreGet(_ context.Context, cfg config.Config) (*enrichKVStoreGet, error) {
 	conf := enrichKVStoreGetConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_kv_store: %v", err)
+		return nil, fmt.Errorf("transform: enrich_kv_store_get: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_kv_store: %v", err)
+		return nil, fmt.Errorf("transform: enrich_kv_store_get: %v", err)
 	}
 
 	kvStore, err := kv.Get(conf.KVStore)
 	if err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_kv_store: kv_store: %v", err)
+		return nil, fmt.Errorf("transform: enrich_kv_store_get: %v", err)
 	}
 
 	tf := enrichKVStoreGet{
@@ -85,7 +85,7 @@ func (tf *enrichKVStoreGet) Transform(ctx context.Context, msg *message.Message)
 		}
 
 		if err := tf.kvStore.Close(); err != nil {
-			return nil, fmt.Errorf("transform: enrich_kv_store: %v", err)
+			return nil, fmt.Errorf("transform: enrich_kv_store_get: %v", err)
 		}
 
 		return []*message.Message{msg}, nil
@@ -93,7 +93,7 @@ func (tf *enrichKVStoreGet) Transform(ctx context.Context, msg *message.Message)
 
 	if !tf.kvStore.IsEnabled() {
 		if err := tf.kvStore.Setup(ctx); err != nil {
-			return nil, fmt.Errorf("transform: enrich_kv_store: kv_store: %v", err)
+			return nil, fmt.Errorf("transform: enrich_kv_store_get: %v", err)
 		}
 	}
 
@@ -109,11 +109,11 @@ func (tf *enrichKVStoreGet) Transform(ctx context.Context, msg *message.Message)
 
 	v, err := tf.kvStore.Get(ctx, key)
 	if err != nil {
-		return nil, fmt.Errorf("transform: enrich_kv_store: %v", err)
+		return nil, fmt.Errorf("transform: enrich_kv_store_get: %v", err)
 	}
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, v); err != nil {
-		return nil, fmt.Errorf("transform: enrich_kv_store: %v", err)
+		return nil, fmt.Errorf("transform: enrich_kv_store_get: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

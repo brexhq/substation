@@ -14,11 +14,11 @@ import (
 func newStringToUpper(_ context.Context, cfg config.Config) (*stringToUpper, error) {
 	conf := strCaseConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("strings: new_case_up: %v", err)
+		return nil, fmt.Errorf("transform: string_to_lower: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("strings: new_case_up: %v", err)
+		return nil, fmt.Errorf("transform: string_to_lower: %v", err)
 	}
 
 	tf := stringToUpper{
@@ -46,11 +46,14 @@ func (tf *stringToUpper) Transform(ctx context.Context, msg *message.Message) ([
 		return []*message.Message{msg}, nil
 	}
 
-	v := msg.GetValue(tf.conf.Object.Key)
-	s := strings.ToUpper(v.String())
+	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
 
+	s := strings.ToUpper(value.String())
 	if err := msg.SetValue(tf.conf.Object.SetKey, s); err != nil {
-		return nil, fmt.Errorf("transform: strings_case_up: %v", err)
+		return nil, fmt.Errorf("transform: string_to_lower: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

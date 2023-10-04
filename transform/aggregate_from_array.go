@@ -13,7 +13,7 @@ import (
 func newAggregateFromArray(_ context.Context, cfg config.Config) (*aggregateFromArray, error) {
 	conf := aggregateArrayConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_aggregate_from_array: %v", err)
+		return nil, fmt.Errorf("transform: aggregate_from_array: %v", err)
 	}
 
 	tf := aggregateFromArray{
@@ -47,6 +47,10 @@ func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Messag
 		}
 	} else {
 		value = bytesToValue(msg.Data())
+	}
+
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
 	}
 
 	for _, res := range value.Array() {

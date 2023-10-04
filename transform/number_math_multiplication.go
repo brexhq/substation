@@ -13,11 +13,11 @@ import (
 func newNumberMathMultiplication(_ context.Context, cfg config.Config) (*numberMathMultiplication, error) {
 	conf := numberMathConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: new_number_math_multiply: %v", err)
+		return nil, fmt.Errorf("transform: number_math_multiplication: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_number_math_multiply: %v", err)
+		return nil, fmt.Errorf("transform: number_math_multiplication: %v", err)
 	}
 
 	tf := numberMathMultiplication{
@@ -71,7 +71,7 @@ func (tf *numberMathMultiplication) Transform(ctx context.Context, msg *message.
 	}
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, vFloat64); err != nil {
-		return nil, fmt.Errorf("transform: math_multiply: %v", err)
+		return nil, fmt.Errorf("transform: number_math_multiplication: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

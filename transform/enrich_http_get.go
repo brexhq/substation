@@ -58,11 +58,11 @@ func (c *enrichHTTPGetConfig) Validate() error {
 func newEnrichHTTPGet(ctx context.Context, cfg config.Config) (*enrichHTTPGet, error) {
 	conf := enrichHTTPGetConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_http_get: %v", err)
+		return nil, fmt.Errorf("transform: enrich_http_get: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_http_get: %v", err)
+		return nil, fmt.Errorf("transform: enrich_http_get: %v", err)
 	}
 
 	tf := enrichHTTPGet{
@@ -74,7 +74,7 @@ func newEnrichHTTPGet(ctx context.Context, cfg config.Config) (*enrichHTTPGet, e
 		// Retrieve secret and interpolate with header value.
 		v, err := secrets.Interpolate(ctx, hdr.Value)
 		if err != nil {
-			return nil, fmt.Errorf("transform: new_enrich_http_get: %v", err)
+			return nil, fmt.Errorf("transform: enrich_http_get: %v", err)
 		}
 
 		tf.headers = append(tf.headers, http.Header{
@@ -114,6 +114,10 @@ func (tf *enrichHTTPGet) Transform(ctx context.Context, msg *message.Message) ([
 	if strings.Contains(url, enrichHTTPInterp) {
 		if tf.conf.Object.Key != "" {
 			value := msg.GetValue(tf.conf.Object.Key)
+			if !value.Exists() {
+				return []*message.Message{msg}, nil
+			}
+
 			url = strings.ReplaceAll(url, enrichHTTPInterp, value.String())
 		} else {
 			url = strings.ReplaceAll(url, enrichHTTPInterp, string(msg.Data()))

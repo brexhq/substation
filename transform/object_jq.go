@@ -35,11 +35,11 @@ func (c *objectJQConfig) Validate() error {
 func newObjectJQ(_ context.Context, cfg config.Config) (*objectJQ, error) {
 	conf := objectJQConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_object_jq: %v", err)
+		return nil, fmt.Errorf("transform: object_jq: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_object_jq: %v", err)
+		return nil, fmt.Errorf("transform: object_jq: %v", err)
 	}
 
 	q, err := gojq.Parse(conf.Query)

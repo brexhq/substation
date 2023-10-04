@@ -49,11 +49,11 @@ func (c *enrichAWSLambdaConfig) Validate() error {
 func newEnrichAWSLambda(_ context.Context, cfg config.Config) (*enrichAWSLambda, error) {
 	conf := enrichAWSLambdaConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_aws_lambda: %v", err)
+		return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_aws_lambda: %v", err)
+		return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", err)
 	}
 
 	tf := enrichAWSLambda{
@@ -83,6 +83,10 @@ func (tf *enrichAWSLambda) Transform(ctx context.Context, msg *message.Message) 
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	if !json.Valid(value.Bytes()) {
 		return nil, fmt.Errorf("transform: enrich_aws_lambda: key %s: %v", tf.conf.Object.Key, errEnrichAWSLambdaInputNotAnObject)
 	}

@@ -51,11 +51,11 @@ func (c *stringMatchFindConfig) Validate() error {
 func newStringMatchFind(_ context.Context, cfg config.Config) (*stringMatchFind, error) {
 	conf := stringMatchFindConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_str_capture_find: %v", err)
+		return nil, fmt.Errorf("transform: string_match_find: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_str_capture_find: %v", err)
+		return nil, fmt.Errorf("transform: string_match_find: %v", err)
 	}
 
 	tf := stringMatchFind{
@@ -83,11 +83,15 @@ func (tf *stringMatchFind) Transform(_ context.Context, msg *message.Message) ([
 		return []*message.Message{msg}, nil
 	}
 
-	v := msg.GetValue(tf.conf.Object.Key)
-	matches := tf.conf.re.FindStringSubmatch(v.String())
+	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
+	matches := tf.conf.re.FindStringSubmatch(value.String())
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, strCaptureGetStringMatch(matches)); err != nil {
-		return nil, fmt.Errorf("transform: str_capture_find: %v", err)
+		return nil, fmt.Errorf("transform: string_match_find: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

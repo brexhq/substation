@@ -34,7 +34,7 @@ func (c *objectToStringConfig) Validate() error {
 func newObjectToString(_ context.Context, cfg config.Config) (*objectToString, error) {
 	conf := objectToStringConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_object_to_str: %v", err)
+		return nil, fmt.Errorf("transform: object_to_string: %v", err)
 	}
 
 	tf := objectToString{
@@ -54,8 +54,12 @@ func (tf *objectToString) Transform(ctx context.Context, msg *message.Message) (
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	if err := msg.SetValue(tf.conf.Object.SetKey, value.String()); err != nil {
-		return nil, fmt.Errorf("transform: object_to_str: %v", err)
+		return nil, fmt.Errorf("transform: object_to_string: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

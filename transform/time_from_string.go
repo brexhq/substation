@@ -12,11 +12,11 @@ import (
 func newTimeFromString(_ context.Context, cfg config.Config) (*timeFromString, error) {
 	conf := timePatternConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("time: new_from_string: %v", err)
+		return nil, fmt.Errorf("transform: time_from_stringing: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("time: new_from_string: %v", err)
+		return nil, fmt.Errorf("transform: time_from_stringing: %v", err)
 	}
 
 	tf := timeFromString{
@@ -52,12 +52,12 @@ func (tf *timeFromString) Transform(ctx context.Context, msg *message.Message) (
 
 	date, err := timeStrToUnix(value.String(), tf.conf.Format, tf.conf.Location)
 	if err != nil {
-		return nil, fmt.Errorf("transform: time_from_str: %v", err)
+		return nil, fmt.Errorf("transform: time_from_string: %v", err)
 	}
 
 	if tf.isObject {
 		if err := msg.SetValue(tf.conf.Object.SetKey, date.UnixMilli()); err != nil {
-			return nil, fmt.Errorf("transform: time_from_str: %v", err)
+			return nil, fmt.Errorf("transform: time_from_string: %v", err)
 		}
 	} else {
 		value := timeUnixToBytes(date)

@@ -34,11 +34,11 @@ func (c *metaSwitchConfig) Validate() error {
 func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) {
 	conf := metaSwitchConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_meta_switch: %v", err)
+		return nil, fmt.Errorf("transform: meta_switch: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_meta_switch: %v", err)
+		return nil, fmt.Errorf("transform: meta_switch: %v", err)
 	}
 
 	var conditional []struct {
@@ -48,12 +48,12 @@ func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) 
 	for _, s := range conf.Switch {
 		op, err := condition.New(ctx, s.Condition)
 		if err != nil {
-			return nil, fmt.Errorf("transform: new_meta_switch: %v", err)
+			return nil, fmt.Errorf("transform: meta_switch: %v", err)
 		}
 
 		tf, err := New(ctx, s.Transform)
 		if err != nil {
-			return nil, fmt.Errorf("transform: new_meta_switch: %v", err)
+			return nil, fmt.Errorf("transform: meta_switch: %v", err)
 		}
 
 		conditional = append(conditional, struct {

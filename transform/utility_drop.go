@@ -19,7 +19,7 @@ func (c *utilityDropConfig) Decode(in interface{}) error {
 func newUtilityDrop(_ context.Context, cfg config.Config) (*utilityDrop, error) {
 	conf := utilityDropConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: new_util_drop: %v", err)
+		return nil, fmt.Errorf("transform: utility_drop: %v", err)
 	}
 
 	tf := utilityDrop{

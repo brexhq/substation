@@ -19,11 +19,11 @@ var errFormatFromBase64DecodeBinary = fmt.Errorf("cannot write binary as object"
 func newFormatFromBase64(_ context.Context, cfg config.Config) (*formatFromBase64, error) {
 	conf := formatBase64Config{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_caseDown: %v", err)
+		return nil, fmt.Errorf("transform: format_from_base64: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_caseDown: %v", err)
+		return nil, fmt.Errorf("transform: format_from_base64: %v", err)
 	}
 
 	tf := formatFromBase64{
@@ -47,25 +47,29 @@ func (tf *formatFromBase64) Transform(ctx context.Context, msg *message.Message)
 	if !tf.isObject {
 		decoded, err := ibase64.Decode(msg.Data())
 		if err != nil {
-			return nil, fmt.Errorf("transform: decode_base64: %v", err)
+			return nil, fmt.Errorf("transform: format_from_base64: %v", err)
 		}
 
 		msg.SetData(decoded)
 		return []*message.Message{msg}, nil
 	}
 
-	result := msg.GetValue(tf.conf.Object.Key)
-	decoded, err := ibase64.Decode(result.Bytes())
-	if err != nil {
-		return nil, fmt.Errorf("transform: decode_base64: %v", err)
+	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
 	}
 
-	if !utf8.Valid(decoded) {
+	b64, err := ibase64.Decode(value.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("transform: format_from_base64: %v", err)
+	}
+
+	if !utf8.Valid(b64) {
 		return nil, errFormatFromBase64DecodeBinary
 	}
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, decoded); err != nil {
-		return nil, fmt.Errorf("transform: decode_base64: %v", err)
+	if err := msg.SetValue(tf.conf.Object.SetKey, b64); err != nil {
+		return nil, fmt.Errorf("transform: format_from_base64: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

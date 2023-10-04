@@ -21,7 +21,7 @@ func (c *utilityErrConfig) Decode(in interface{}) error {
 func newUtilityErr(_ context.Context, cfg config.Config) (*utilityErr, error) {
 	conf := utilityErrConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_util_error: %v", err)
+		return nil, fmt.Errorf("transform: utility_err: %v", err)
 	}
 
 	tf := utilityErr{

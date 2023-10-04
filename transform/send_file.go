@@ -70,11 +70,11 @@ func (c *sendFileConfig) Validate() error {
 func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	conf := sendFileConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_send_file: %v", err)
+		return nil, fmt.Errorf("transform: send_file: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_send_file: %v", err)
+		return nil, fmt.Errorf("transform: send_file: %v", err)
 	}
 
 	tf := sendFile{
@@ -86,7 +86,7 @@ func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 
 	buffer, err := aggregate.New(conf.Buffer)
 	if err != nil {
-		return nil, fmt.Errorf("transform: new_send_file: %v", err)
+		return nil, fmt.Errorf("transform: send_file: %v", err)
 	}
 	tf.buffer = buffer
 

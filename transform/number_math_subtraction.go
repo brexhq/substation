@@ -13,11 +13,11 @@ import (
 func newNumberMathSubtraction(_ context.Context, cfg config.Config) (*numberMathSubtraction, error) {
 	conf := numberMathConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
+		return nil, fmt.Errorf("transform: number_math_subtraction: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_mod_math: %v", err)
+		return nil, fmt.Errorf("transform: number_math_subtraction: %v", err)
 	}
 
 	tf := numberMathSubtraction{
@@ -71,7 +71,7 @@ func (tf *numberMathSubtraction) Transform(ctx context.Context, msg *message.Mes
 	}
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, vFloat64); err != nil {
-		return nil, fmt.Errorf("transform: mod_math: %v", err)
+		return nil, fmt.Errorf("transform: number_math_subtraction: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

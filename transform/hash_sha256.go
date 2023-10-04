@@ -13,11 +13,11 @@ import (
 func newHashSHA256(_ context.Context, cfg config.Config) (*hashSHA256, error) {
 	conf := hashConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_mod_hash: %v", err)
+		return nil, fmt.Errorf("transform: hash_sha256: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_mod_hash: %v", err)
+		return nil, fmt.Errorf("transform: hash_sha256: %v", err)
 	}
 
 	tf := hashSHA256{
@@ -47,6 +47,10 @@ func (tf *hashSHA256) Transform(ctx context.Context, msg *message.Message) ([]*m
 	}
 
 	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
 	sum := sha256.Sum256(value.Bytes())
 	str := fmt.Sprintf("%x", sum)
 

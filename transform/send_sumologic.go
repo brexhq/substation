@@ -59,11 +59,11 @@ func (c *sendSumologicConfig) Validate() error {
 func newSendSumologic(_ context.Context, cfg config.Config) (*sendSumologic, error) {
 	conf := sendSumologicConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_send_sumologic: %v", err)
+		return nil, fmt.Errorf("transform: send_sumologic: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_send_sumologic: %v", err)
+		return nil, fmt.Errorf("transform: send_sumologic: %v", err)
 	}
 
 	tf := sendSumologic{
@@ -89,7 +89,7 @@ func newSendSumologic(_ context.Context, cfg config.Config) (*sendSumologic, err
 		Duration: conf.Buffer.Duration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: new_send_aws_s3: %v", err)
+		return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
 	}
 	tf.buffer = buffer
 

@@ -13,11 +13,11 @@ import (
 func newTimeToUnix(_ context.Context, cfg config.Config) (*timeToUnix, error) {
 	conf := timeUnixConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("time: new_to_unix: %v", err)
+		return nil, fmt.Errorf("transform: time_to_unix: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("time: new_to_unix: %v", err)
+		return nil, fmt.Errorf("transform: time_to_unix: %v", err)
 	}
 
 	tf := timeToUnix{

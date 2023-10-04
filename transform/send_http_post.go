@@ -48,11 +48,11 @@ func (c *sendHTTPPostConfig) Validate() error {
 func newSendHTTPPost(_ context.Context, cfg config.Config) (*sendHTTPPost, error) {
 	conf := sendHTTPPostConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_send_http: %v", err)
+		return nil, fmt.Errorf("transform: send_http_post: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_send_http: %v", err)
+		return nil, fmt.Errorf("transform: send_http_post: %v", err)
 	}
 
 	tf := sendHTTPPost{
@@ -92,7 +92,7 @@ func (tf *sendHTTPPost) Transform(ctx context.Context, msg *message.Message) ([]
 		// Retrieve secret and interpolate with header value.
 		v, err := secrets.Interpolate(ctx, hdr.Value)
 		if err != nil {
-			return nil, fmt.Errorf("transform: send_http: %v", err)
+			return nil, fmt.Errorf("transform: send_http_post: %v", err)
 		}
 
 		headers = append(headers, http.Header{
@@ -116,13 +116,13 @@ func (tf *sendHTTPPost) Transform(ctx context.Context, msg *message.Message) ([]
 	// Retrieve secret and interpolate with URL.
 	url, err := secrets.Interpolate(ctx, tf.conf.URL)
 	if err != nil {
-		return nil, fmt.Errorf("transform: send_http: %v", err)
+		return nil, fmt.Errorf("transform: send_http_post: %v", err)
 	}
 
 	resp, err := tf.client.Post(ctx, url, string(msg.Data()), headers...)
 	if err != nil {
 		// Post errors return metadata.
-		return nil, fmt.Errorf("transform: send_http: %v", err)
+		return nil, fmt.Errorf("transform: send_http_post: %v", err)
 	}
 
 	//nolint:errcheck // Response body is discarded to avoid resource leaks.

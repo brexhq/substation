@@ -58,11 +58,11 @@ func (c *stringMatchFindAllConfig) Validate() error {
 func newStringMatchFindAll(_ context.Context, cfg config.Config) (*stringMatchFindAll, error) {
 	conf := stringMatchFindAllConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_str_capture_find_all: %v", err)
+		return nil, fmt.Errorf("transform: string_match_find_all: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_str_capture_find_all: %v", err)
+		return nil, fmt.Errorf("transform: string_match_find_all: %v", err)
 	}
 
 	tf := stringMatchFindAll{
@@ -90,7 +90,7 @@ func (tf *stringMatchFindAll) Transform(_ context.Context, msg *message.Message)
 		for _, s := range subs {
 			m := strCaptureGetBytesMatch(s)
 			if err := tmpMsg.SetValue("key.-1", m); err != nil {
-				return nil, fmt.Errorf("transform: str_capture_find_all: %v", err)
+				return nil, fmt.Errorf("transform: string_match_find_all: %v", err)
 			}
 		}
 
@@ -100,8 +100,12 @@ func (tf *stringMatchFindAll) Transform(_ context.Context, msg *message.Message)
 		return []*message.Message{msg}, nil
 	}
 
-	v := msg.GetValue(tf.conf.Object.Key)
-	subs := tf.conf.re.FindAllStringSubmatch(v.String(), tf.conf.Count)
+	value := msg.GetValue(tf.conf.Object.Key)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
+	subs := tf.conf.re.FindAllStringSubmatch(value.String(), tf.conf.Count)
 
 	var matches []string
 	for _, s := range subs {
@@ -110,7 +114,7 @@ func (tf *stringMatchFindAll) Transform(_ context.Context, msg *message.Message)
 	}
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, matches); err != nil {
-		return nil, fmt.Errorf("transform: str_capture_find_all: %v", err)
+		return nil, fmt.Errorf("transform: string_match_find_all: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

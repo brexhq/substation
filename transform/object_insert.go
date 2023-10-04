@@ -37,11 +37,11 @@ func (c *objectInsertConfig) Validate() error {
 func newObjectInsert(_ context.Context, cfg config.Config) (*objectInsert, error) {
 	conf := objectInsertConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_object_insert: %v", err)
+		return nil, fmt.Errorf("transform: object_insert: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_object_insert: %v", err)
+		return nil, fmt.Errorf("transform: object_insert: %v", err)
 	}
 
 	tf := objectInsert{

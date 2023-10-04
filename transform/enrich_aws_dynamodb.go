@@ -69,11 +69,11 @@ func (c *enrichAWSDynamoDBConfig) Validate() error {
 func newEnrichAWSDynamoDB(_ context.Context, cfg config.Config) (*enrichAWSDynamoDB, error) {
 	conf := enrichAWSDynamoDBConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_aws_dynamodb: %v", err)
+		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", err)
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: new_enrich_aws_dynamodb: %v", err)
+		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", err)
 	}
 
 	tf := enrichAWSDynamoDB{
@@ -102,10 +102,14 @@ func (tf *enrichAWSDynamoDB) Transform(ctx context.Context, msg *message.Message
 		return []*message.Message{msg}, nil
 	}
 
-	pk := msg.GetValue(tf.conf.PartitionKey).String()
-	sk := msg.GetValue(tf.conf.SortKey).String()
+	pk := msg.GetValue(tf.conf.PartitionKey)
+	if !pk.Exists() {
+		return []*message.Message{msg}, nil
+	}
 
-	value, err := tf.dynamodb(ctx, pk, sk)
+	sk := msg.GetValue(tf.conf.SortKey)
+
+	value, err := tf.dynamodb(ctx, pk.String(), sk.String())
 	if err != nil {
 		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", err)
 	}

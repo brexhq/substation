@@ -61,7 +61,7 @@ func Get(cfg config.Config) (Storer, error) {
 func New(cfg config.Config) (Storer, error) {
 	switch t := cfg.Type; t {
 	case "aws_dynamodb":
-		return newKVAWSDyanmoDB(cfg)
+		return newKVAWSDynamoDB(cfg)
 	case "csv_file":
 		return newKVCSVFile(cfg)
 	case "json_file":

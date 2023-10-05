@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/brexhq/substation/config"
@@ -25,20 +26,21 @@ type enrichKVStoreSetConfig struct {
 	Prefix string `json:"prefix"`
 	// TTLKey retrieves a value from an object that is used as the time-to-live (TTL)
 	// of the item set into the KV store. This value must be an integer that represents
-	// the epoch time (in seconds) when the item will be evicted from the store.
+	// the Unix time when the item will be evicted from the store. Any precision greater
+	// than seconds (e.g., milliseconds, nanoseconds) is truncated to seconds.
 	//
 	// This is optional and defaults to using no TTL when setting items into the store.
 	TTLKey string `json:"ttl_key"`
-	// TTLOffset is an offset (in seconds) used to determine the time-to-live (TTL)
-	// of the item set into the KV store. If TTLKey is configured, then this value is
-	// added to the TTL value retrieved from the object. If TTLKey is not used, then this
-	// value is added to the current time.
+	// TTLOffset is an offset used to determine the time-to-live (TTL) of the item set
+	// into the KV store. If TTLKey is configured, then this value is added to the TTL
+	// value retrieved from the object. If TTLKey is not used, then this value is added
+	// to the current time.
 	//
-	// For example, if TTLKey is not set and the offset is 86400 (1 day), then the value
-	// will be evicted from the store if more than 1 day has elapsed.
+	// For example, if TTLKey is not set and the offset is "1d", then the value
+	// will be evicted from the store when more than 1 day has passed.
 	//
 	// This is optional and defaults to using no TTL when setting values into the store.
-	TTLOffset int64 `json:"ttl_offset"`
+	TTLOffset string `json:"ttl_offset"`
 	// KVStore determine the type of KV store used by the transform. Refer to internal/kv
 	// for more information.
 	KVStore config.Config `json:"kv_store"`
@@ -82,9 +84,15 @@ func newEnrichKVStoreSet(_ context.Context, cfg config.Config) (*enrichKVStoreSe
 		return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 	}
 
+	dur, err := time.ParseDuration(conf.TTLOffset)
+	if err != nil {
+		return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
+	}
+
 	tf := enrichKVStoreSet{
 		conf:    conf,
 		kvStore: kvStore,
+		ttl:     int64(dur.Seconds()),
 	}
 
 	return &tf, nil
@@ -93,6 +101,7 @@ func newEnrichKVStoreSet(_ context.Context, cfg config.Config) (*enrichKVStoreSe
 type enrichKVStoreSet struct {
 	conf    enrichKVStoreSetConfig
 	kvStore kv.Storer
+	ttl     int64
 }
 
 func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -125,18 +134,23 @@ func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message)
 	}
 
 	//nolint: nestif // ignore nesting complexity
-	if tf.conf.TTLKey != "" && tf.conf.TTLOffset != 0 {
-		ttl := msg.GetValue(tf.conf.TTLKey).Int() + tf.conf.TTLOffset
+	if tf.conf.TTLKey != "" && tf.ttl != 0 {
+		value := msg.GetValue(tf.conf.TTLKey)
+		ttl := tf.truncateTTL(value) + tf.ttl
+
 		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.SetKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
 	} else if tf.conf.TTLKey != "" {
-		ttl := msg.GetValue(tf.conf.TTLKey).Int()
+		value := msg.GetValue(tf.conf.TTLKey)
+		ttl := tf.truncateTTL(value)
+
 		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.SetKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
-	} else if tf.conf.TTLOffset != 0 {
-		ttl := time.Now().Add(time.Duration(tf.conf.TTLOffset) * time.Second).Unix()
+	} else if tf.ttl != 0 {
+		ttl := time.Now().Add(time.Duration(tf.ttl) * time.Second).Unix()
+
 		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.SetKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
@@ -152,4 +166,19 @@ func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message)
 func (tf *enrichKVStoreSet) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
+}
+
+// truncateTTL truncates the time-to-live (TTL) value from any precision greater
+// than seconds (e.g., milliseconds, nanoseconds) to seconds.
+//
+// For example:
+//   - 1696482368492 -> 1696482368
+//   - 1696482368492290 -> 1696482368
+func (tf *enrichKVStoreSet) truncateTTL(v message.Value) int64 {
+	if len(v.String()) <= 10 {
+		return v.Int()
+	}
+
+	l := len(v.String()) - 10
+	return v.Int() / int64(math.Pow10(l))
 }

@@ -1,3 +1,4 @@
+// Package message provides functions for managing data used by conditions and transforms.
 package message
 
 import (

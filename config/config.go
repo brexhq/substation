@@ -1,4 +1,4 @@
-// package config provides capabilities for building configurations.
+// Package config provides structures for building configurations.
 package config
 
 // Config is a template used by Substation interface factories to produce new

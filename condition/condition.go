@@ -1,3 +1,4 @@
+// Package condition provides functions for evaluating data.
 package condition
 
 import (

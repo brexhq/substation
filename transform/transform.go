@@ -1,4 +1,4 @@
-// package transform provides capabilities for transforming data.
+// Package transform provides functions for transforming data.
 package transform
 
 import (

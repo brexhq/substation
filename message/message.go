@@ -27,8 +27,8 @@ var (
 	}
 )
 
-// Message is the data structure that is passed between transforms and
-// interpreted by conditions.
+// Message is the data structure that is handled by transforms and interpreted by
+// conditions.
 //
 // Data in each message may be JSON text or binary data:
 //   - JSON text is accessed using the GetValue, SetValue, and DeleteValue methods.
@@ -39,7 +39,7 @@ var (
 // GetValue, SetValue, and DeleteValue methods with a key prefixed with "meta ". Binary
 // metadata is accessed using the Metadata and SetMetadata methods.
 //
-// Messages can also be marked as "control messages." Control messages are used for flow
+// Messages can also be configured as "control messages." Control messages are used for flow
 // control in Substation functions and applications, but can be used for any purpose depending
 // on the needs of a transform or condition. These messages should not contain data or metadata.
 type Message struct {

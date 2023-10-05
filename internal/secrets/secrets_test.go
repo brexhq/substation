@@ -20,13 +20,13 @@ func TestCollect(t *testing.T) {
 		},
 	}
 
-	collector, err := New(ctx, cfg)
+	ret, err := New(ctx, cfg)
 	if err != nil {
 		// handle error
 		panic(err)
 	}
 
-	if err := collector.Collect(ctx); err != nil {
+	if err := ret.Retrieve(ctx); err != nil {
 		// handle error
 		panic(err)
 	}

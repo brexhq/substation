@@ -15,7 +15,7 @@ import (
 type awsSecretsManagerConfig struct {
 	ID        string        `json:"id"`
 	Name      string        `json:"name"`
-	TTLOffset int64         `json:"ttl_offset"`
+	TTLOffset string        `json:"ttl_offset"`
 	AWS       iconfig.AWS   `json:"aws"`
 	Retry     iconfig.Retry `json:"retry"`
 }
@@ -55,13 +55,18 @@ func newAWSSecretsManager(_ context.Context, cfg config.Config) (*awsSecretsMana
 	}
 
 	ttl := conf.TTLOffset
-	if ttl == 0 {
+	if ttl == "" {
 		ttl = defaultTTL
+	}
+
+	dur, err := time.ParseDuration(ttl)
+	if err != nil {
+		return nil, fmt.Errorf("secrets: environment_variable: %v", err)
 	}
 
 	c := &awsSecretsManager{
 		conf: conf,
-		ttl:  time.Now().Add(time.Duration(ttl) * time.Second).Unix(),
+		ttl:  time.Now().Add(dur).Unix(),
 	}
 
 	c.client.Setup(aws.Config{
@@ -73,7 +78,7 @@ func newAWSSecretsManager(_ context.Context, cfg config.Config) (*awsSecretsMana
 	return c, nil
 }
 
-func (c *awsSecretsManager) Collect(ctx context.Context) error {
+func (c *awsSecretsManager) Retrieve(ctx context.Context) error {
 	v, err := c.client.GetSecret(ctx, c.conf.Name)
 	if err != nil {
 		return fmt.Errorf("secrets: environment_variable: name %s: %v", c.conf.Name, err)

@@ -14,7 +14,7 @@ import (
 type environmentVariableConfig struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
-	TTLOffset int64  `json:"ttl_offset"`
+	TTLOffset string `json:"ttl_offset"`
 }
 
 func (c *environmentVariableConfig) Decode(in interface{}) error {
@@ -50,17 +50,22 @@ func newEnvironmentVariable(_ context.Context, cfg config.Config) (*env, error) 
 	}
 
 	ttl := conf.TTLOffset
-	if ttl == 0 {
+	if ttl == "" {
 		ttl = defaultTTL
+	}
+
+	dur, err := time.ParseDuration(ttl)
+	if err != nil {
+		return nil, fmt.Errorf("secrets: environment_variable: %v", err)
 	}
 
 	return &env{
 		conf: conf,
-		ttl:  time.Now().Add(time.Duration(ttl) * time.Second).Unix(),
+		ttl:  time.Now().Add(dur).Unix(),
 	}, nil
 }
 
-func (c *env) Collect(ctx context.Context) error {
+func (c *env) Retrieve(ctx context.Context) error {
 	if v, ok := os.LookupEnv(c.conf.Name); ok {
 		// SetWithTTL isn't used here because the TTL is managed by
 		// transform/utility_secret.go.

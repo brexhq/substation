@@ -21,14 +21,14 @@ var (
 )
 
 // defaultTTL enforces a 15 minute rotation for all secrets stored in memory.
-const defaultTTL = 15 * 60 * 10
+const defaultTTL = "15m"
 
-type Collector interface {
-	Collect(context.Context) error
+type Retriever interface {
+	Retrieve(context.Context) error
 	Expired() bool
 }
 
-func New(ctx context.Context, cfg config.Config) (Collector, error) {
+func New(ctx context.Context, cfg config.Config) (Retriever, error) {
 	switch cfg.Type {
 	case "aws_secrets_manager":
 		return newAWSSecretsManager(ctx, cfg)

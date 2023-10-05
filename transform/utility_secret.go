@@ -26,17 +26,17 @@ func newUtilitySecret(ctx context.Context, cfg config.Config) (*utilitySecret, e
 		return nil, fmt.Errorf("transform: utility_secret: %v", err)
 	}
 
-	c, err := secrets.New(ctx, conf.Secret)
+	ret, err := secrets.New(ctx, conf.Secret)
 	if err != nil {
 		return nil, fmt.Errorf("transform: utility_secret: %v", err)
 	}
 
 	tf := utilitySecret{
 		conf:   conf,
-		secret: c,
+		secret: ret,
 	}
 
-	if err := tf.secret.Collect(ctx); err != nil {
+	if err := tf.secret.Retrieve(ctx); err != nil {
 		return nil, fmt.Errorf("transform: utility_secret: %v", err)
 	}
 
@@ -47,12 +47,12 @@ type utilitySecret struct {
 	conf utilitySecretConfig
 
 	// secret is safe for concurrent access.
-	secret secrets.Collector
+	secret secrets.Retriever
 }
 
 func (tf *utilitySecret) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if tf.secret.Expired() {
-		if err := tf.secret.Collect(ctx); err != nil {
+		if err := tf.secret.Retrieve(ctx); err != nil {
 			return nil, fmt.Errorf("transform: utility_secret: %v", err)
 		}
 	}

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"sync/atomic"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -11,7 +10,6 @@ import (
 	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/internal/aws/kinesis"
 	"github.com/brexhq/substation/internal/channel"
-	"github.com/brexhq/substation/internal/metrics"
 	"github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/transform"
 	"golang.org/x/sync/errgroup"
@@ -37,13 +35,6 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 	}
 
 	sub, err := substation.New(ctx, cfg.Config)
-	if err != nil {
-		return err
-	}
-
-	// Application metrics.
-	var msgRecv, msgTran uint32
-	metric, err := metrics.New(ctx, cfg.Metrics)
 	if err != nil {
 		return err
 	}
@@ -75,8 +66,6 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 					if m.IsControl() {
 						continue
 					}
-
-					atomic.AddUint32(&msgTran, 1)
 				}
 
 				return nil
@@ -132,7 +121,6 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 			msg := message.New().SetData(record.Data).SetMetadata(metadata)
 
 			ch.Send(msg)
-			atomic.AddUint32(&msgRecv, 1)
 		}
 
 		return nil
@@ -141,27 +129,6 @@ func kinesisHandler(ctx context.Context, event events.KinesisEvent) error {
 	// Wait for all goroutines to complete. This includes the goroutines that are
 	// executing the transform functions.
 	if err := group.Wait(); err != nil {
-		return err
-	}
-
-	// Generate metrics.
-	if err := metric.Generate(ctx, metrics.Data{
-		Name:  "MessagesReceived",
-		Value: msgRecv,
-		Attributes: map[string]string{
-			"FunctionName": functionName,
-		},
-	}); err != nil {
-		return err
-	}
-
-	if err := metric.Generate(ctx, metrics.Data{
-		Name:  "MessagesTransformed",
-		Value: msgTran,
-		Attributes: map[string]string{
-			"FunctionName": functionName,
-		},
-	}); err != nil {
 		return err
 	}
 

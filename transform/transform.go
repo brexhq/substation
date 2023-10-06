@@ -73,6 +73,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newMetaErr(ctx, cfg)
 	case "meta_for_each":
 		return newMetaForEach(ctx, cfg)
+	case "meta_metrics_duration":
+		return newMetaMetricsDuration(ctx, cfg)
 	case "meta_pipeline":
 		return newMetaPipeline(ctx, cfg)
 	case "meta_switch":
@@ -172,6 +174,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newUtilityDrop(ctx, cfg)
 	case "utility_err":
 		return newUtilityErr(ctx, cfg)
+	case "utility_metrics_count":
+		return newUtilityMetricsCount(ctx, cfg)
 	case "utility_secret":
 		return newUtilitySecret(ctx, cfg)
 	default:

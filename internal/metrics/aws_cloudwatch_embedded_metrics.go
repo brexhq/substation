@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/config"
-	_config "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/tidwall/sjson"
 )
 
@@ -23,7 +23,7 @@ type awsCloudWatchEmbeddedMetrics struct {
 
 func newAWSCloudWatchEmbeddedMetrics(_ context.Context, cfg config.Config) (*awsCloudWatchEmbeddedMetrics, error) {
 	conf := awsCloudWatchEmbeddedMetricsConfig{}
-	if err := _config.Decode(cfg.Settings, &conf); err != nil {
+	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
 		return nil, err
 	}
 

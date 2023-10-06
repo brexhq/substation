@@ -2,9 +2,6 @@ local sub = import '../../../../../../../build/config/substation.libsonnet';
 
 {
   concurrency: 1,
-  metrics: {
-    type: 'aws_cloudwatch_embedded_metrics',
-  },
   transforms: [
     // Remove any events that do not have a 'uuid' field.
     sub.pattern.transform.conditional(

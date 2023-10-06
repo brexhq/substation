@@ -5,9 +5,6 @@ local bucket = 'd7c66938-6b96-21a3-7e59-62cb40e4627f-substation';
 
 {
   concurrency: 1,
-  metrics: {
-    type: 'aws_cloudwatch_embedded_metrics',
-  },
   transforms: [
     sub.tf.send.aws.s3(
       settings={ bucket_name: bucket, file_path: { prefix: 'original' } }

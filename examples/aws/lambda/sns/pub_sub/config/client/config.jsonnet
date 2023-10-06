@@ -2,9 +2,6 @@ local sub = import '../../../../../../../build/config/substation.libsonnet';
 
 {
   concurrency: 1,
-  metrics: {
-    type: 'aws_cloudwatch_embedded_metrics',
-  },
   transforms: [
     sub.tf.send.aws.sns(
       // This is a placeholder that must be replaced with the SNS ARN produced by Terraform.

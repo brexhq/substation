@@ -507,6 +507,19 @@
         type: 'meta_for_each',
         settings: std.mergePatch(default, settings),
       },
+      metrics: {
+        duration(settings=null): {
+          local default = {
+            name: null,
+            attributes: null,
+            destination: null,
+            transform: null,
+          },
+
+          type: 'meta_metrics_duration',
+          settings: std.mergePatch(default, settings),
+        },
+      },
       pipe(settings=null): $.transform.meta.pipeline(settings=settings),
       pipeline(settings=null): {
         local default = {
@@ -880,6 +893,18 @@
 
         type: 'utility_err',
         settings: std.mergePatch(default, settings),
+      },
+      metrics: {
+        count(settings=null): {
+          local default = {
+            name: null,
+            attributes: null,
+            destination: null,
+          },
+
+          type: 'utility_metrics_count',
+          settings: std.mergePatch(default, settings),
+        },
       },
       secret(settings=null): {
         local default = { secret: null },

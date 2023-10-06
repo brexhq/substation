@@ -9,7 +9,6 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/brexhq/substation"
-	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/file"
 )
 
@@ -27,8 +26,7 @@ var errLambdaInvalidHandler = fmt.Errorf("invalid handler")
 type customConfig struct {
 	substation.Config
 
-	Concurrency int           `json:"concurrency"`
-	Metrics     config.Config `json:"metrics"`
+	Concurrency int `json:"concurrency"`
 }
 
 // getConfig contextually retrieves a Substation configuration.

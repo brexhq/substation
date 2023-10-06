@@ -35,11 +35,11 @@ func (d *Data) AddAttributes(attr map[string]string) {
 	}
 }
 
-type generator interface {
+type Generator interface {
 	Generate(context.Context, Data) error
 }
 
-func New(ctx context.Context, cfg config.Config) (generator, error) {
+func New(ctx context.Context, cfg config.Config) (Generator, error) {
 	switch cfg.Type {
 	case "aws_cloudwatch_embedded_metrics":
 		return newAWSCloudWatchEmbeddedMetrics(ctx, cfg)

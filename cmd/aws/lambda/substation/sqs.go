@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync/atomic"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/internal/channel"
-	"github.com/brexhq/substation/internal/metrics"
 	"github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/transform"
 	"golang.org/x/sync/errgroup"
@@ -42,13 +40,6 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
-	// Application metrics.
-	var msgRecv, msgTran uint32
-	metric, err := metrics.New(ctx, cfg.Metrics)
-	if err != nil {
-		return fmt.Errorf("sqs handler: %v", err)
-	}
-
 	// Data transformation. Transforms are executed concurrently using a worker pool
 	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
@@ -73,8 +64,6 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 					if m.IsControl() {
 						continue
 					}
-
-					atomic.AddUint32(&msgTran, 1)
 				}
 
 				return nil
@@ -118,7 +107,6 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 			msg := message.New().SetData(b).SetMetadata(metadata)
 
 			ch.Send(msg)
-			atomic.AddUint32(&msgRecv, 1)
 		}
 
 		return nil
@@ -127,27 +115,6 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 	// Wait for all goroutines to complete. This includes the goroutines that are
 	// executing the transform functions.
 	if err := group.Wait(); err != nil {
-		return fmt.Errorf("sqs handler: %v", err)
-	}
-
-	// Generate metrics.
-	if err := metric.Generate(ctx, metrics.Data{
-		Name:  "MessagesReceived",
-		Value: msgRecv,
-		Attributes: map[string]string{
-			"FunctionName": functionName,
-		},
-	}); err != nil {
-		return fmt.Errorf("sqs handler: %v", err)
-	}
-
-	if err := metric.Generate(ctx, metrics.Data{
-		Name:  "MessagesTransformed",
-		Value: msgTran,
-		Attributes: map[string]string{
-			"FunctionName": functionName,
-		},
-	}); err != nil {
 		return fmt.Errorf("sqs handler: %v", err)
 	}
 

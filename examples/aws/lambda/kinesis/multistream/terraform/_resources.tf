@@ -65,6 +65,7 @@ module "ecr_substation" {
 
   config = {
     name = "substation"
+    force_delete = true
   }
 }
 
@@ -75,6 +76,7 @@ module "ecr_autoscaling" {
 
   config = {
     name = "autoscaler"
+    force_delete = true
   }
 }
 

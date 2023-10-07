@@ -6,7 +6,7 @@ module "microservice" {
 
   config = {
     name        = "microservice"
-    description = "Provides a microservice interface to Substation"
+    description = "Substation node that acts as a synchronous microservice"
     image_uri   = "${module.ecr_substation.url}:latest"
     image_arm   = true
 
@@ -14,7 +14,7 @@ module "microservice" {
     timeout = 10
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/microservice"
-      "SUBSTATION_HANDLER" : "AWS_LAMBDA_SYNC"
+      "SUBSTATION_HANDLER" : "AWS_LAMBDA"
       "SUBSTATION_DEBUG" : true
     }
   }

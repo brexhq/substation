@@ -1,5 +1,5 @@
 module "frontend" {
-  source = "../../../../../../../build/terraform/aws/lambda"
+  source = "../../../../../../build/terraform/aws/lambda"
   # These are always required for all Lambda.
   kms       = module.kms
   appconfig = aws_appconfig_application.substation
@@ -11,7 +11,7 @@ module "frontend" {
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/frontend"
-      "SUBSTATION_HANDLER" : "AWS_LAMBDA_SYNC"
+      "SUBSTATION_HANDLER" : "AWS_LAMBDA"
       "SUBSTATION_DEBUG" : true
     }
   }

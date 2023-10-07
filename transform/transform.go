@@ -206,7 +206,7 @@ func Apply(ctx context.Context, tf []Transformer, mess ...*message.Message) ([]*
 
 func bytesToValue(b []byte) message.Value {
 	msg := message.New()
-	msg.SetValue("_", b)
+	_ = msg.SetValue("_", b)
 
 	return msg.GetValue("_")
 }

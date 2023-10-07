@@ -1,4 +1,4 @@
-// This example shows how to use the `meta_metrics_duration` transform to
+// This example shows how to use the `meta_metric_duration` transform to
 // measure the execution time of other transforms.
 local sub = import '../../../../../build/config/substation.libsonnet';
 
@@ -7,13 +7,11 @@ local dest = { type: 'aws_cloudwatch_embedded_metrics' };
 
 {
   transforms: [
-    // The `meta_metrics_duration` transform measures the execution time of
+    // The `meta_metric_duration` transform measures the execution time of
     // the transform that it wraps.
-    sub.transform.meta.metrics.duration(
+    sub.transform.meta.metric.duration(
       settings={
-        name: 'ObjectCopyDuration',
-        attributes: attr,
-        destination: dest,
+        metric: { name: 'ObjectCopyDuration', attributes: attr, destination: dest },
         transform: sub.transform.object.copy(
           settings={ object: { key: 'foo', set_key: 'baz' } },
         ),
@@ -22,11 +20,9 @@ local dest = { type: 'aws_cloudwatch_embedded_metrics' };
     // This can be useful for measuring the execution time of transforms that
     // may take a long time to execute. In this example, the `utility_delay`
     // transform is used to simulate a long-running transform.
-    sub.transform.meta.metrics.duration(
+    sub.transform.meta.metric.duration(
       settings={
-        name: 'UtilityDelayDuration',
-        attributes: attr,
-        destination: dest,
+        metric: { name: 'UtilityDelayDuration', attributes: attr, destination: dest },
         transform: sub.transform.utility.delay(
           settings={ duration: '100ms' },
         ),
@@ -34,11 +30,9 @@ local dest = { type: 'aws_cloudwatch_embedded_metrics' };
     ),
     // Multiple transforms can be measured at once by wrapping them in a
     // `meta_pipeline` transform.
-    sub.transform.meta.metrics.duration(
+    sub.transform.meta.metric.duration(
       settings={
-        name: 'UtilityMultiDuration',
-        attributes: attr,
-        destination: dest,
+        metric: { name: 'UtilityMultiDuration', attributes: attr, destination: dest },
         transform: sub.transform.meta.pipeline(
           settings={ transforms: [
             sub.transform.utility.delay(

@@ -13,25 +13,23 @@ import (
 )
 
 type utilityMetricsCountConfig struct {
-	Name        string            `json:"name"`
-	Attributes  map[string]string `json:"attributes"`
-	Destination config.Config     `json:"destination"`
+	Metric iconfig.Metric `json:"metric"`
 }
 
 func (c *utilityMetricsCountConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func newUtilityMetricsCount(ctx context.Context, cfg config.Config) (*utilityMetricsCount, error) {
+func newUtilityMetricCount(ctx context.Context, cfg config.Config) (*utilityMetricsCount, error) {
 	// conf gets validated when calling metrics.New.
 	conf := utilityMetricsCountConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: utility_metrics_count: %v", err)
+		return nil, fmt.Errorf("transform: utility_metric_count: %v", err)
 	}
 
-	m, err := metrics.New(ctx, conf.Destination)
+	m, err := metrics.New(ctx, conf.Metric.Destination)
 	if err != nil {
-		return nil, fmt.Errorf("transform: utility_metrics_count: %v", err)
+		return nil, fmt.Errorf("transform: utility_metric_count: %v", err)
 	}
 
 	tf := utilityMetricsCount{
@@ -52,11 +50,11 @@ type utilityMetricsCount struct {
 func (tf *utilityMetricsCount) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		if err := tf.metric.Generate(ctx, metrics.Data{
-			Name:       tf.conf.Name,
+			Name:       tf.conf.Metric.Name,
 			Value:      tf.count,
-			Attributes: tf.conf.Attributes,
+			Attributes: tf.conf.Metric.Attributes,
 		}); err != nil {
-			return nil, fmt.Errorf("transform: utility_metrics_count: %v", err)
+			return nil, fmt.Errorf("transform: utility_metric_count: %v", err)
 		}
 
 		atomic.StoreUint32(&tf.count, 0)

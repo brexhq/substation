@@ -507,16 +507,14 @@
         type: 'meta_for_each',
         settings: std.mergePatch(default, settings),
       },
-      metrics: {
+      metric: {
         duration(settings=null): {
           local default = {
-            name: null,
-            attributes: null,
-            destination: null,
+            metric: $.config.metric,
             transform: null,
           },
 
-          type: 'meta_metrics_duration',
+          type: 'meta_metric_duration',
           settings: std.mergePatch(default, settings),
         },
       },
@@ -894,15 +892,13 @@
         type: 'utility_err',
         settings: std.mergePatch(default, settings),
       },
-      metrics: {
+      metric: {
         count(settings=null): {
           local default = {
-            name: null,
-            attributes: null,
-            destination: null,
+            metric: $.config.metric,
           },
 
-          type: 'utility_metrics_count',
+          type: 'utility_metric_count',
           settings: std.mergePatch(default, settings),
         },
       },
@@ -963,6 +959,7 @@
   config: {
     aws: { region: null, assume_role_arn: null },
     buffer: { count: 1000, size: 100000, duration: '5m', key: null },
+    metric: { name: null, attributes: null, destination: null },
     object: { key: null, set_key: null },
     request: { timeout: '1s' },
     retry: { count: 3 },

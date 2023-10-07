@@ -6,6 +6,8 @@ package config
 
 import (
 	"encoding/json"
+
+	"github.com/brexhq/substation/config"
 )
 
 type Object struct {
@@ -16,6 +18,12 @@ type Object struct {
 type AWS struct {
 	Region        string `json:"region"`
 	AssumeRoleARN string `json:"assume_role_arn"`
+}
+
+type Metric struct {
+	Name        string            `json:"name"`
+	Attributes  map[string]string `json:"attributes"`
+	Destination config.Config     `json:"destination"`
 }
 
 type Request struct {

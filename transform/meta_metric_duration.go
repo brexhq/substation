@@ -12,30 +12,28 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type metaMetricsDurationConfig struct {
-	Name        string            `json:"name"`
-	Attributes  map[string]string `json:"attributes"`
-	Destination config.Config     `json:"destination"`
-	Transform   config.Config     `json:"transform"`
+type metaMetricDurationConfig struct {
+	Metric    iconfig.Metric `json:"metric"`
+	Transform config.Config  `json:"transform"`
 }
 
-func (c *metaMetricsDurationConfig) Decode(in interface{}) error {
+func (c *metaMetricDurationConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func newMetaMetricsDuration(ctx context.Context, cfg config.Config) (*metaMetricsDuration, error) {
+func newMetaMetricsDuration(ctx context.Context, cfg config.Config) (*metaMetricDuration, error) {
 	// conf gets validated when calling metrics.New.
-	conf := metaMetricsDurationConfig{}
+	conf := metaMetricDurationConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: meta_metrics_duration: %v", err)
+		return nil, fmt.Errorf("transform: meta_metric_duration: %v", err)
 	}
 
-	m, err := metrics.New(ctx, conf.Destination)
+	m, err := metrics.New(ctx, conf.Metric.Destination)
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_metrics_duration: %v", err)
+		return nil, fmt.Errorf("transform: meta_metric_duration: %v", err)
 	}
 
-	tf := metaMetricsDuration{
+	tf := metaMetricDuration{
 		conf:   conf,
 		metric: m,
 	}
@@ -52,15 +50,15 @@ func newMetaMetricsDuration(ctx context.Context, cfg config.Config) (*metaMetric
 
 	tfer, err := New(ctx, tfCfg)
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_metrics_duration: %v", err)
+		return nil, fmt.Errorf("transform: meta_metric_duration: %v", err)
 	}
 	tf.tf = tfer
 
 	return &tf, nil
 }
 
-type metaMetricsDuration struct {
-	conf metaMetricsDurationConfig
+type metaMetricDuration struct {
+	conf metaMetricDurationConfig
 
 	tf Transformer
 
@@ -69,14 +67,14 @@ type metaMetricsDuration struct {
 	duration time.Duration
 }
 
-func (tf *metaMetricsDuration) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *metaMetricDuration) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		if err := tf.metric.Generate(ctx, metrics.Data{
-			Name:       tf.conf.Name,
+			Name:       tf.conf.Metric.Name,
 			Value:      tf.duration,
-			Attributes: tf.conf.Attributes,
+			Attributes: tf.conf.Metric.Attributes,
 		}); err != nil {
-			return nil, fmt.Errorf("transform: meta_metrics_duration: %v", err)
+			return nil, fmt.Errorf("transform: meta_metric_duration: %v", err)
 		}
 
 		return []*message.Message{msg}, nil
@@ -90,7 +88,7 @@ func (tf *metaMetricsDuration) Transform(ctx context.Context, msg *message.Messa
 	return tf.tf.Transform(ctx, msg)
 }
 
-func (tf *metaMetricsDuration) String() string {
+func (tf *metaMetricDuration) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

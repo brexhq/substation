@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/message"
@@ -13,23 +12,23 @@ import (
 func lambdaHandler(ctx context.Context, event json.RawMessage) ([]json.RawMessage, error) {
 	evt, err := json.Marshal(event)
 	if err != nil {
-		return nil, fmt.Errorf("lambda handler: %v", err)
+		return nil, err
 	}
 
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("lambda handler: %v", err)
+		return nil, err
 	}
 
 	cfg := substation.Config{}
 	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
-		return nil, fmt.Errorf("lambda handler: %v", err)
+		return nil, err
 	}
 
 	sub, err := substation.New(ctx, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("lambda handler: %v", err)
+		return nil, err
 	}
 
 	// Data and control messages are sent to the transforms as a group.
@@ -46,41 +45,24 @@ func lambdaHandler(ctx context.Context, event json.RawMessage) ([]json.RawMessag
 		return nil, err
 	}
 
+	// Convert transformed Messages to a JSON array.
 	var output []json.RawMessage
 	for _, msg := range msgs {
 		if msg.IsControl() {
 			continue
 		}
 
+		if !json.Valid(msg.Data()) {
+			return nil, errLambdaInvalidJSON
+		}
+
 		var rm json.RawMessage
 		if err := json.Unmarshal(msg.Data(), &rm); err != nil {
-			return nil, fmt.Errorf("lambda handler: %v", err)
+			return nil, err
 		}
 
 		output = append(output, rm)
 	}
 
 	return output, nil
-}
-
-// lambdaAsyncHandler is triggered by an asynchronous invocation of the Lambda. Read
-// more about synchronous invocation here:
-// https://docs.aws.amazon.com/lambda/latest/dg/invocation-async.html.
-//
-// This implementation of Substation only supports the object handing pattern.
-func lambdaAsyncHandler(ctx context.Context, event json.RawMessage) error {
-	if _, err := lambdaHandler(ctx, event); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// lambdaSyncHandler implements a request-reply service that is triggered by synchronous
-// invocation of the Lambda. Read more about synchronous invocation here:
-// https://docs.aws.amazon.com/lambda/latest/dg/invocation-sync.html.
-//
-// This implementation of Substation only supports the object handing pattern.
-func lambdaSyncHandler(ctx context.Context, event json.RawMessage) ([]json.RawMessage, error) {
-	return lambdaHandler(ctx, event)
 }

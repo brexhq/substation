@@ -13,15 +13,17 @@ import (
 )
 
 var (
-	handler      string
-	functionName string
+	handler string
+
+	// errLambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
+	errLambdaMissingHandler = fmt.Errorf("SUBSTATION_HANDLER environment variable is missing")
+
+	// errLambdaInvalidHandler is returned when the Lambda is deployed with an unsupported handler.
+	errLambdaInvalidHandler = fmt.Errorf("SUBSTATION_HANDLER environment variable is invalid")
+
+	// errLambdaInvalidJSON is returned when the Lambda is deployed with a transform that produces invalid JSON.
+	errLambdaInvalidJSON = fmt.Errorf("transformed data is invalid JSON and cannot be returned")
 )
-
-// errLambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
-var errLambdaMissingHandler = fmt.Errorf("missing SUBSTATION_HANDLER environment variable")
-
-// errLambdaInvalidHandler is returned when the Lambda is deployed with an unsupported handler.
-var errLambdaInvalidHandler = fmt.Errorf("invalid handler")
 
 type customConfig struct {
 	substation.Config
@@ -60,18 +62,16 @@ func getConfig(ctx context.Context) (io.Reader, error) {
 
 func main() {
 	switch h := handler; h {
-	case "AWS_API_GATEWAY_ASYNC", "AWS_API_GATEWAY": // AWS_API_GATEWAY is deprecated
+	case "AWS_API_GATEWAY":
 		lambda.Start(gatewayHandler)
 	case "AWS_DYNAMODB_STREAM", "AWS_DYNAMODB": // AWS_DYNAMODB is deprecated
 		lambda.Start(dynamodbHandler)
 	case "AWS_KINESIS_DATA_FIREHOSE":
 		lambda.Start(firehoseHandler)
 	case "AWS_KINESIS_DATA_STREAM", "AWS_KINESIS": // AWS_KINESIS is deprecated
-		lambda.Start(kinesisHandler)
-	case "AWS_LAMBDA_ASYNC":
-		lambda.Start(lambdaAsyncHandler)
-	case "AWS_LAMBDA_SYNC":
-		lambda.Start(lambdaSyncHandler)
+		lambda.Start(kinesisStreamHandler)
+	case "AWS_LAMBDA":
+		lambda.Start(lambdaHandler)
 	case "AWS_S3":
 		lambda.Start(s3Handler)
 	case "AWS_S3_SNS":
@@ -91,6 +91,4 @@ func init() {
 	if !ok {
 		panic(fmt.Errorf("init handler %s: %v", handler, errLambdaMissingHandler))
 	}
-
-	functionName, _ = os.LookupEnv("AWS_LAMBDA_FUNCTION_NAME")
 }

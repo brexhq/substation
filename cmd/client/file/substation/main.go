@@ -109,7 +109,7 @@ func run(ctx context.Context, opts options) error {
 			return err
 		}
 
-		// Control messages flush the transform functions. This must be done
+		// CTRL Messages flush the transform functions. This must be done
 		// after all messages have been processed.
 		ctrl := message.New(message.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
@@ -150,6 +150,7 @@ func run(ctx context.Context, opts options) error {
 
 			b := []byte(scanner.Text())
 			msg := message.New().SetData(b)
+
 			ch.Send(msg)
 		}
 

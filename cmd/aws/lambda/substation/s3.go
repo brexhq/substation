@@ -48,7 +48,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
-	// managed by an errgroup. Each message is processed in a separate goroutine.
+	// managed by an errgroup. Each Message is processed in a separate goroutine.
 	group.Go(func() error {
 		tfGroup, tfCtx := errgroup.WithContext(ctx)
 		tfGroup.SetLimit(cfg.Concurrency)
@@ -81,7 +81,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			return err
 		}
 
-		// Control messages flush the transform functions. This must be done
+		// CTRL Messages flush the transform functions. This must be done
 		// after all messages have been processed.
 		ctrl := message.New(message.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
@@ -97,8 +97,6 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 		defer ch.Close()
 
 		client := s3manager.DownloaderAPI{}
-
-		// TODO: Add support for regions and credentials.
 		client.Setup(aws.Config{})
 
 		// Create Message metadata.
@@ -194,7 +192,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
-	// managed by an errgroup. Each message is processed in a separate goroutine.
+	// managed by an errgroup. Each Message is processed in a separate goroutine.
 	group.Go(func() error {
 		tfGroup, tfCtx := errgroup.WithContext(ctx)
 		tfGroup.SetLimit(cfg.Concurrency)
@@ -227,7 +225,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			return err
 		}
 
-		// Control messages flush the transform functions. This must be done
+		// CTRL Messages flush the transform functions. This must be done
 		// after all messages have been processed.
 		ctrl := message.New(message.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {

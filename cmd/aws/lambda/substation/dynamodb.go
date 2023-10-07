@@ -46,7 +46,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
-	// managed by an errgroup. Each message is processed in a separate goroutine.
+	// managed by an errgroup. Each Message is processed in a separate goroutine.
 	group.Go(func() error {
 		tfGroup, tfCtx := errgroup.WithContext(ctx)
 		tfGroup.SetLimit(cfg.Concurrency)
@@ -79,7 +79,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			return err
 		}
 
-		// Control messages flush the transform functions. This must be done
+		// CTRL Messages flush the transform functions. This must be done
 		// after all messages have been processed.
 		ctrl := message.New(message.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {

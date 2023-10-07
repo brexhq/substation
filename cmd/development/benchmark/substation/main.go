@@ -156,7 +156,7 @@ func main() {
 			return err
 		}
 
-		// Control messages flush the transform functions. This must be done
+		// CTRL Messages flush the transform functions. This must be done
 		// after all messages have been processed.
 		ctrl := message.New(message.AsControl())
 		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {

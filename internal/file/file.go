@@ -166,7 +166,7 @@ func NewWrapper(f *os.File, format config.Config, compression config.Config) (*W
 	case "snappy":
 		return &Wrapper{f, snappy.NewBufferedWriter(f), newline}, nil
 	case "zstd":
-		// TODO: add settings support
+		// TODO: Add settings support.
 		z, err := zstd.NewWriter(f)
 		if err != nil {
 			return nil, err

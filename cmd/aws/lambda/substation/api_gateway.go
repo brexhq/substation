@@ -10,10 +10,7 @@ import (
 	"github.com/brexhq/substation/transform"
 )
 
-var (
-	gateway200Response = events.APIGatewayProxyResponse{StatusCode: 200}
-	gateway500Response = events.APIGatewayProxyResponse{StatusCode: 500}
-)
+var gateway500Response = events.APIGatewayProxyResponse{StatusCode: 500}
 
 type gatewayMetadata struct {
 	Resource string            `json:"resource"`
@@ -65,5 +62,33 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 		return gateway500Response, err
 	}
 
-	return gateway200Response, nil
+	// Convert transformed Messages to a JSON array.
+	var output []json.RawMessage
+	for _, msg := range msgs {
+		if msg.IsControl() {
+			continue
+		}
+
+		if !json.Valid(msg.Data()) {
+			return gateway500Response, errLambdaInvalidJSON
+		}
+
+		var rm json.RawMessage
+		if err := json.Unmarshal(msg.Data(), &rm); err != nil {
+			return gateway500Response, err
+		}
+
+		output = append(output, rm)
+	}
+
+	body, err := json.Marshal(output)
+	if err != nil {
+		return gateway500Response, err
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers:    map[string]string{"Content-Type": "application/json"},
+		Body:       string(body),
+	}, nil
 }

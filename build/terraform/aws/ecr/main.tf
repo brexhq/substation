@@ -1,5 +1,7 @@
 resource "aws_ecr_repository" "repository" {
   name                 = var.config.name
+  force_delete = var.config.force_delete
+
   image_tag_mutability = "IMMUTABLE"
   image_scanning_configuration {
     scan_on_push = true

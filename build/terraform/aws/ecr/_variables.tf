@@ -9,6 +9,7 @@ variable "kms" {
 variable "config" {
   type = object({
     name = string
+    force_delete = optional(bool, false)
   })
   description = "Configuration for the ECR repository."
 }

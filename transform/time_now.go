@@ -54,7 +54,7 @@ func (tf *timeNow) Transform(ctx context.Context, msg *message.Message) ([]*mess
 	date := time.Now()
 
 	if tf.hasObjectSetKey {
-		if err := msg.SetValue(tf.conf.Object.SetKey, date.UnixMilli()); err != nil {
+		if err := msg.SetValue(tf.conf.Object.SetKey, date.UnixNano()); err != nil {
 			return nil, fmt.Errorf("time: now: %v", err)
 		}
 

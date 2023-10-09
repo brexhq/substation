@@ -25,7 +25,7 @@ var timeToStringTests = []struct {
 				"format": timeDefaultFmt,
 			},
 		},
-		[]byte(`1639877490000`),
+		[]byte(`1639877490000000000`),
 		[][]byte{
 			[]byte(`2021-12-19T01:31:30.000Z`),
 		},
@@ -39,7 +39,7 @@ var timeToStringTests = []struct {
 				"location": "America/New_York",
 			},
 		},
-		[]byte(`1639895490000`),
+		[]byte(`1639895490000000000`),
 		[][]byte{
 			[]byte(`2021-12-19T01:31:30.000Z`),
 		},
@@ -56,7 +56,7 @@ var timeToStringTests = []struct {
 				"format": timeDefaultFmt,
 			},
 		},
-		[]byte(`{"a":1639877490000}`),
+		[]byte(`{"a":1639877490000000000}`),
 		[][]byte{
 			[]byte(`{"a":"2021-12-19T01:31:30.000Z"}`),
 		},

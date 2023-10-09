@@ -27,7 +27,7 @@ var timeFromStringTests = []struct {
 		},
 		[]byte(`2021-12-19T01:31:30.000Z`),
 		[][]byte{
-			[]byte(`1639877490000`),
+			[]byte(`1639877490000000000`),
 		},
 	},
 	{
@@ -41,7 +41,7 @@ var timeFromStringTests = []struct {
 		},
 		[]byte(`2021-12-19T01:31:30.000Z`),
 		[][]byte{
-			[]byte(`1639895490000`),
+			[]byte(`1639895490000000000`),
 		},
 	},
 	// object tests
@@ -58,7 +58,7 @@ var timeFromStringTests = []struct {
 		},
 		[]byte(`{"a":"2021-12-19T01:31:30.000Z"}`),
 		[][]byte{
-			[]byte(`{"a":1639877490000}`),
+			[]byte(`{"a":1639877490000000000}`),
 		},
 	},
 }

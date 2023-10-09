@@ -28,8 +28,6 @@ func newTimeFromUnix(_ context.Context, cfg config.Config) (*timeFromUnix, error
 	return &tf, nil
 }
 
-// TimeFromUnix is a transform that converts a UnixMilli timestamp to a
-// Unix timestamp.
 type timeFromUnix struct {
 	conf     timeUnixConfig
 	isObject bool
@@ -51,16 +49,16 @@ func (tf *timeFromUnix) Transform(ctx context.Context, msg *message.Message) ([]
 		return []*message.Message{msg}, nil
 	}
 
-	// Convert Unix to UnixMilli.
+	// Convert Unix to UnixNano.
 	date := time.Unix(value.Int(), 0)
-	milli := date.UnixMilli()
+	ns := date.UnixNano()
 
 	if tf.isObject {
-		if err := msg.SetValue(tf.conf.Object.SetKey, milli); err != nil {
+		if err := msg.SetValue(tf.conf.Object.SetKey, ns); err != nil {
 			return nil, fmt.Errorf("transform: time_from_unix: %v", err)
 		}
 	} else {
-		value := []byte(fmt.Sprintf("%d", milli))
+		value := []byte(fmt.Sprintf("%d", ns))
 		msg.SetData(value)
 	}
 

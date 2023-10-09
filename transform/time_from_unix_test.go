@@ -26,7 +26,7 @@ var timeUnixFromTests = []struct {
 		},
 		[]byte(`1639895490`),
 		[][]byte{
-			[]byte(`1639895490000`),
+			[]byte(`1639895490000000000`),
 		},
 		nil,
 	},
@@ -43,7 +43,7 @@ var timeUnixFromTests = []struct {
 		},
 		[]byte(`{"a":1639877490}`),
 		[][]byte{
-			[]byte(`{"a":1639877490000}`),
+			[]byte(`{"a":1639877490000000000}`),
 		},
 		nil,
 	},

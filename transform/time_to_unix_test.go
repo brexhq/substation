@@ -23,7 +23,7 @@ var timeToUnixTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{},
 		},
-		[]byte(`1639895490000`),
+		[]byte(`1639895490000000000`),
 		[][]byte{
 			[]byte(`1639895490`),
 		},
@@ -39,7 +39,7 @@ var timeToUnixTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":1639877490000}`),
+		[]byte(`{"a":1639877490000000000}`),
 		[][]byte{
 			[]byte(`{"a":1639877490}`),
 		},

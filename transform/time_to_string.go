@@ -27,8 +27,6 @@ func newTimeToString(_ context.Context, cfg config.Config) (*timeToString, error
 	return &tf, nil
 }
 
-// timeToString is a transform that converts a Unix timestamp to a
-// pattern-based string format.
 type timeToString struct {
 	conf     timePatternConfig
 	isObject bool

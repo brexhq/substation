@@ -27,8 +27,6 @@ func newTimeFromString(_ context.Context, cfg config.Config) (*timeFromString, e
 	return &tf, nil
 }
 
-// timeFromString is a transform that converts a pattern-based string
-// format to a UnixMilli timestamp.
 type timeFromString struct {
 	conf     timePatternConfig
 	isObject bool
@@ -56,7 +54,7 @@ func (tf *timeFromString) Transform(ctx context.Context, msg *message.Message) (
 	}
 
 	if tf.isObject {
-		if err := msg.SetValue(tf.conf.Object.SetKey, date.UnixMilli()); err != nil {
+		if err := msg.SetValue(tf.conf.Object.SetKey, date.UnixNano()); err != nil {
 			return nil, fmt.Errorf("transform: time_from_string: %v", err)
 		}
 	} else {

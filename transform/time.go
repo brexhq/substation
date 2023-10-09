@@ -60,12 +60,12 @@ func (c *timePatternConfig) Validate() error {
 }
 
 func timeUnixToBytes(t time.Time) []byte {
-	return []byte(fmt.Sprintf("%d", t.UnixMilli()))
+	return []byte(fmt.Sprintf("%d", t.UnixNano()))
 }
 
-// timeUnixToStr converts a UnixMilli timestamp to a string.
-func timeUnixToStr(timeInt64 int64, timeFmt string, loc string) (string, error) {
-	timeDate := time.UnixMilli(timeInt64)
+// timeUnixToStr converts a UnixNano timestamp to a string.
+func timeUnixToStr(ts int64, timeFmt string, loc string) (string, error) {
+	timeDate := time.Unix(0, ts)
 
 	if loc != "" {
 		ll, err := time.LoadLocation(loc)

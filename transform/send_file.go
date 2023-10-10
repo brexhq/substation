@@ -16,7 +16,7 @@ import (
 )
 
 type sendFileConfig struct {
-	Buffer aggregate.Config `json:"buffer"`
+	Buffer iconfig.Buffer `json:"buffer"`
 
 	// FilePath determines how the name of the file is constructed.
 	// See filePath.New for more information.
@@ -84,7 +84,11 @@ func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	// File extensions are dynamic and not directly configurable.
 	tf.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
 
-	buffer, err := aggregate.New(conf.Buffer)
+	buffer, err := aggregate.New(aggregate.Config{
+		Count:    conf.Buffer.Count,
+		Size:     conf.Buffer.Size,
+		Duration: conf.Buffer.Duration,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("transform: send_file: %v", err)
 	}

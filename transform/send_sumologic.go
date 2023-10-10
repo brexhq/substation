@@ -23,7 +23,7 @@ import (
 var errSendSumologicNonObject = fmt.Errorf("input must be object")
 
 type sendSumologicConfig struct {
-	Buffer aggregate.Config `json:"buffer"`
+	Buffer iconfig.Buffer `json:"buffer"`
 
 	// URL is the Sumo Logic HTTPS endpoint that objects are sent to.
 	URL string `json:"url"`

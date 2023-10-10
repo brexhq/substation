@@ -19,7 +19,7 @@ RUN go mod download
 COPY . /usr/local/go/src/substation/
 RUN go test -timeout 30s -v ./... 
 WORKDIR /usr/local/go/src/substation/cmd/aws/lambda/autoscaling
-RUN go build -o /var/task/main
+RUN go build -ldflags "-w -s" -o /var/task/main
 
 FROM public.ecr.aws/lambda/provided:al2-$AWS_ARCHITECTURE
 COPY --from=build /opt /opt

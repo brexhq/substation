@@ -19,7 +19,7 @@
         },
 
         type: 'format_mime',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
     },
     num: $.condition.number,
@@ -32,7 +32,7 @@
           },
 
           type: 'number_bitwise_and',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         not(settings=null): {
           local default = {
@@ -40,7 +40,7 @@
           },
 
           type: 'number_bitwise_not',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         or(settings=null): {
           local default = {
@@ -49,7 +49,7 @@
           },
 
           type: 'number_bitwise_or',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         xor(settings=null): {
           local default = {
@@ -58,7 +58,7 @@
           },
 
           type: 'number_bitwise_xor',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       len: $.condition.number.length,
@@ -73,21 +73,21 @@
           local default = $.condition.number.length.default,
 
           type: 'number_length_equal_to',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         gt(settings=null): $.condition.number.length.greater_than(settings=settings),
         greater_than(settings=null): {
           local default = $.condition.number.length.default,
 
           type: 'number_length_greater_than',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         lt(settings=null): $.condition.number.length.less_than(settings=settings),
         less_than(settings=null): {
           local default = $.condition.number.length.default,
 
           type: 'number_length_less_than',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
     },
@@ -96,7 +96,7 @@
         local default = { condition: null },
 
         type: 'meta_condition',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       for_each(settings=null): {
         local default = {
@@ -106,13 +106,13 @@
         },
 
         type: 'meta_for_each',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       negate(settings=null): {
         local default = { inspector: null },
 
         type: 'meta_negate',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
     },
     net: $.condition.network,
@@ -125,55 +125,55 @@
           local default = $.condition.network.ip.default,
 
           type: 'network_ip_global_unicast',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         link_local_multicast(settings=null): {
           local default = $.condition.network.ip.default,
 
           type: 'network_ip_link_local_multicast',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         link_local_unicast(settings=null): {
           local default = $.condition.network.ip.default,
 
           type: 'network_ip_link_local_unicast',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         loopback(settings=null): {
           local default = $.condition.network.ip.default,
 
           type: 'network_ip_loopback',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         multicast(settings=null): {
           local default = $.condition.network.ip.default,
 
           type: 'network_ip_multicast',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         private(settings=null): {
           local default = $.condition.network.ip.default,
 
           type: 'network_ip_private',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         unicast(settings=null): {
           local default = $.condition.network.ip.default,
 
           type: 'network_ip_unicast',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         unspecified(settings=null): {
           local default = $.condition.network.ip.default,
 
           type: 'network_ip_unspecified',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         valid(settings=null): {
           local default = $.condition.network.ip.default,
 
           type: 'network_ip_valid',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
     },
@@ -183,46 +183,47 @@
         object: $.config.object,
         string: null,
       },
+      has(settings=null): $.condition.string.contains(settings=settings),
       contains(settings=null): {
         local default = $.condition.string.default,
 
         type: 'string_contains',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       eq(settings=null): $.condition.string.equal_to(settings=settings),
       equal_to(settings=null): {
         local default = $.condition.string.default,
 
         type: 'string_equal_to',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       gt(settings=null): $.condition.string.greater_than(settings=settings),
       greater_than(settings=null): {
         local default = $.condition.string.default,
 
         type: 'string_greater_than',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       lt(settings=null): $.condition.string.less_than(settings=settings),
       less_than(settings=null): {
         local default = $.condition.string.default,
 
         type: 'string_less_than',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       prefix(settings=null): $.condition.string.starts_with(settings=settings),
       starts_with(settings=null): {
         local default = $.condition.string.default,
 
         type: 'string_starts_with',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       suffix(settings=null): $.condition.string.ends_with(settings=settings),
       ends_with(settings=null): {
         local default = $.condition.string.default,
 
         type: 'string_ends_with',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       match(settings=null): {
         local default = {
@@ -231,7 +232,7 @@
         },
 
         type: 'string_match',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
     },
     util: $.transform.utility,
@@ -247,13 +248,14 @@
     agg: $.transform.aggregate,
     aggregate: {
       from: {
+        arr(settings=null): $.transform.aggregate.from.array(settings=settings),
         array(settings=null): {
           local default = {
             object: $.config.object,
           },
 
           type: 'aggregate_from_array',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         str(settings=null): $.transform.aggregate.from.string(settings=settings),
         string(settings=null): {
@@ -262,10 +264,11 @@
           },
 
           type: 'aggregate_from_string',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       to: {
+        arr(settings=null): $.transform.aggregate.to.array(settings=settings),
         array(settings=null): {
           local default = {
             object: $.config.object,
@@ -273,7 +276,7 @@
           },
 
           type: 'aggregate_to_array',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         str(settings=null): $.transform.aggregate.to.string(settings=settings),
         string(settings=null): {
@@ -283,7 +286,7 @@
           },
 
           type: 'aggregate_to_string',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
     },
@@ -296,7 +299,7 @@
         },
 
         type: 'array_group',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       join(settings=null): {
         local default = {
@@ -305,7 +308,7 @@
         },
 
         type: 'array_join',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
     },
     enrich: {
@@ -324,7 +327,7 @@
           },
 
           type: 'enrich_aws_dynamodb',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         lambda(settings=null): {
           local default = {
@@ -335,7 +338,7 @@
           },
 
           type: 'enrich_aws_lambda',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       dns: {
@@ -347,19 +350,19 @@
           local default = $.transform.enrich.dns.default,
 
           type: 'enrich_dns_domain_lookup',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         ip_lookup(settings=null): {
           local default = $.transform.enrich.dns.default,
 
           type: 'enrich_dns_ip_lookup',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         txt_lookup(settings=null): {
           local default = $.transform.enrich.dns.default,
 
           type: 'enrich_dns_txt_lookup',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       http: {
@@ -373,13 +376,13 @@
           local default = $.transform.enrich.http.default,
 
           type: 'enrich_http_get',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         post(settings=null): {
           local default = $.transform.enrich.http.default { body_key: null },
 
           type: 'enrich_http_post',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       kv_store: {
@@ -393,13 +396,13 @@
           local default = $.transform.enrich.kv_store.default,
 
           type: 'enrich_kv_store_get',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         set(settings=null): {
           local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: null },
 
           type: 'enrich_kv_store_set',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
     },
@@ -414,7 +417,7 @@
           local default = $.transform.format.default,
 
           type: 'format_from_base64',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         gz(settings=null): $.transform.format.from.gzip(settings=settings),
         gzip(settings=null): {
@@ -430,7 +433,7 @@
           local default = $.transform.format.default,
 
           type: 'format_to_base64',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         gz(settings=null): $.transform.format.to.gzip(settings=settings),
         gzip(settings=null): {
@@ -446,13 +449,13 @@
         local default = $.transform.hash.default,
 
         type: 'hash_md5',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       sha256(settings=null): {
         local default = $.transform.hash.default,
 
         type: 'hash_sha256',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
     },
     num: $.transform.number,
@@ -466,28 +469,28 @@
           local default = $.transform.number.math.default,
 
           type: 'number_math_addition',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         sub(settings=null): $.transform.number.math.subtraction(settings=settings),
         subtraction(settings=null): {
           local default = $.transform.number.math.default,
 
           type: 'number_math_subtraction',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         mul(settings=null): $.transform.number.math.multiplication(settings=settings),
         multiplication(settings=null): {
           local default = $.transform.number.math.default,
 
           type: 'number_math_multiplication',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         div(settings=null): $.transform.number.math.division(settings=settings),
         division(settings=null): {
           local default = $.transform.number.math.default,
 
           type: 'number_math_division',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
     },
@@ -496,7 +499,7 @@
         local default = { transform: null },
 
         type: 'meta_err',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       for_each(settings=null): {
         local default = {
@@ -505,7 +508,7 @@
         },
 
         type: 'meta_for_each',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       metric: {
         duration(settings=null): {
@@ -515,7 +518,7 @@
           },
 
           type: 'meta_metric_duration',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       pipe(settings=null): $.transform.meta.pipeline(settings=settings),
@@ -526,7 +529,7 @@
         },
 
         type: 'meta_pipeline',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       switch(settings=null): {
         local default = { switch: null },
@@ -545,20 +548,20 @@
           local default = $.transform.network.domain.default,
 
           type: 'network_domain_registered_domain',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         subdomain(settings=null): {
           local default = $.transform.network.domain.default,
 
           type: 'network_domain_subdomain',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         tld(settings=null): $.transform.network.domain.top_level_domain(settings=settings),
         top_level_domain(settings=null): {
           local default = $.transform.network.domain.default,
 
           type: 'network_domain_top_level_domain',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
     },
@@ -572,26 +575,26 @@
         local default = $.transform.object.default,
 
         type: 'object_copy',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       del(settings=null): $.transform.object.delete(settings=settings),
       delete(settings=null): {
         local default = $.transform.object.default,
 
         type: 'object_delete',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       insert(settings=null): {
         local default = $.transform.object.default,
 
         type: 'object_insert',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       jq(settings=null): {
         local default = { query: null },
 
         type: 'object_jq',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       to: {
         bool(settings=null): $.transform.object.to.boolean(settings=settings),
@@ -599,34 +602,34 @@
           local default = $.transform.object.default,
 
           type: 'object_to_boolean',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         float(settings=null): {
           local default = $.transform.object.default,
 
           type: 'object_to_float',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         int(settings=null): $.transform.object.to.integer(settings=settings),
         integer(settings=null): {
           local default = $.transform.object.default,
 
           type: 'object_to_integer',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         str(settings=null): $.transform.object.to.string(settings=settings),
         string(settings=null): {
           local default = $.transform.object.default,
 
           type: 'object_to_string',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         uint(settings=null): $.transform.object.to.unsigned_integer(settings=settings),
         unsigned_integer(settings=null): {
           local default = $.transform.object.default,
 
           type: 'object_to_unsigned_integer',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
     },
@@ -640,7 +643,7 @@
           },
 
           type: 'send_aws_dynamodb',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         firehose(settings=null): $.transform.send.aws.kinesis_data_firehose(settings=settings),
         kinesis_data_firehose(settings=null): {
@@ -652,7 +655,7 @@
           },
 
           type: 'send_aws_kinesis_data_firehose',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         kinesis_data_stream(settings=null): {
           local default = {
@@ -662,11 +665,11 @@
             stream_name: null,
             partition: null,
             partition_key: null,
-            shard_redistribution: false,
+            aggregation: false,
           },
 
           type: 'send_aws_kinesis_data_stream',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         s3(settings=null): {
           local default = {
@@ -680,7 +683,7 @@
           },
 
           type: 'send_aws_s3',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         sns(settings=null): {
           local default = {
@@ -691,7 +694,7 @@
           },
 
           type: 'send_aws_sns',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         sqs(settings=null): {
           local default = {
@@ -702,7 +705,7 @@
           },
 
           type: 'send_aws_sqs',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       file(settings=null): {
@@ -714,7 +717,7 @@
         },
 
         type: 'send_file',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       http: {
         post(settings=null): {
@@ -725,7 +728,7 @@
           },
 
           type: 'send_http',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       stdout(settings=null): {
@@ -740,7 +743,7 @@
         },
 
         type: 'send_sumologic',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
     },
     str: $.transform.string,
@@ -752,7 +755,7 @@
         },
 
         type: 'string_append',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       match: {
         default: {
@@ -763,19 +766,19 @@
           local default = $.transform.string.pattern.default,
 
           type: 'string_match_find_all',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         find(settings=null): {
           local default = $.transform.string.pattern.default,
 
           type: 'string_match_find',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         named_group(settings=null): {
           local default = $.transform.string.pattern.default,
 
           type: 'string_match_named_group',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       replace(settings=null): {
@@ -787,7 +790,7 @@
         },
 
         type: 'string_replace',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       split(settings=null): {
         local default = {
@@ -796,7 +799,7 @@
         },
 
         type: 'string_split',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       to: {
         lower(settings=null): {
@@ -815,7 +818,7 @@
         },
 
         type: 'string_uuid',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
     },
     time: {
@@ -829,7 +832,7 @@
           },
 
           type: 'time_from_string',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         unix(settings=null): {
           local default = {
@@ -837,7 +840,7 @@
           },
 
           type: 'time_from_unix',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       now(settings=null): {
@@ -846,7 +849,7 @@
         },
 
         type: 'time_now',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       to: {
         str(settings=null): $.transform.time.to.string(settings=settings),
@@ -858,7 +861,7 @@
           },
 
           type: 'time_to_string',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       unix(settings=null): {
@@ -867,7 +870,7 @@
         },
 
         type: 'time_to_unix',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
     },
     util: $.transform.utility,
@@ -878,7 +881,7 @@
         },
 
         type: 'utility_delay',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       drop(settings=null): {
         type: 'utility_drop',
@@ -890,7 +893,7 @@
         },
 
         type: 'utility_err',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       metric: {
         count(settings=null): {
@@ -899,14 +902,14 @@
           },
 
           type: 'utility_metric_count',
-          settings: std.mergePatch(default, settings),
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       secret(settings=null): {
         local default = { secret: null },
 
         type: 'utility_secret',
-        settings: std.mergePatch(default, settings),
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
     },
   },
@@ -922,37 +925,37 @@
       },
 
       type: 'aws_dynamodb',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(default, $.helpers.abbv(settings)),
     },
     csv_file(settings=null): {
       local default = { file: null, column: null, delimiter: ',', header: null },
 
       type: 'csv_file',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(default, $.helpers.abbv(settings)),
     },
     json_file(settings=$.defaults.kv_store.json_file.settings): {
       local default = { file: null, is_lines: false },
 
       type: 'json_file',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(default, $.helpers.abbv(settings)),
     },
     memory(settings=null): {
       local default = { capacity: 1024 },
 
       type: 'memory',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(default, $.helpers.abbv(settings)),
     },
     mmdb(settings=null): {
       local default = { file: null },
 
       type: 'mmdb',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(default, $.helpers.abbv(settings)),
     },
     text_file(settings=null): {
       local default = { file: null },
 
       type: 'text_file',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(default, $.helpers.abbv(settings)),
     },
   },
   // Mirrors structs from the internal/config package.
@@ -973,19 +976,19 @@
       local default = {
         id: null,
         name: null,
-        ttl_offset: 0,
+        ttl_offset: null,
         aws: $.config.aws,
         retry: $.config.retry,
       },
 
       type: 'aws_secrets_manager',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(default, $.helpers.abbv(settings)),
     },
     environment_variable(settings=null): {
-      local default = { id: null, name: null, ttl_offset: 0 },
+      local default = { id: null, name: null, ttl_offset: null },
 
       type: 'environment_variable',
-      settings: std.mergePatch(default, settings),
+      settings: std.mergePatch(default, $.helpers.abbv(settings)),
     },
   },
   // Commonly used condition and transform patterns.
@@ -1059,5 +1062,9 @@
       // If key is `foo` and e is `0`, then the result is `foo.0`.
       get_element(key, e=0): std.join('.', [key, if std.isNumber(e) then std.toString(e) else e]),
     },
+    abbv(settings): std.mergePatch(settings, {
+      object: if std.objectHas(settings, 'obj') then settings.obj else if std.objectHas(settings, 'object') then settings.object else null,
+      obj: null,
+    }),
   },
 }

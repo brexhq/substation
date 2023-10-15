@@ -3,7 +3,7 @@ local sub = import 'substation.libsonnet';
 local key = 'a';
 local set_key = 'b';
 
-local transform = sub.transform.object.copy(settings={ key: key, set_key: set_key });
+local transform = sub.transform.object.copy(settings={ obj: { key: key, set_key: set_key } });
 local inspector = sub.condition.format.json();
 
 {

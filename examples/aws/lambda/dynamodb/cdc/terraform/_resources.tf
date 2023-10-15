@@ -64,7 +64,7 @@ module "ecr_substation" {
   kms    = module.kms
 
   config = {
-    name = "substation"
+    name         = "substation"
     force_delete = true
   }
 }

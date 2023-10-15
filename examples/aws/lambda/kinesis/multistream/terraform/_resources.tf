@@ -64,7 +64,7 @@ module "ecr_substation" {
   kms    = module.kms
 
   config = {
-    name = "substation"
+    name         = "substation"
     force_delete = true
   }
 }
@@ -75,7 +75,7 @@ module "ecr_autoscaling" {
   kms    = module.kms
 
   config = {
-    name = "autoscaler"
+    name         = "autoscaler"
     force_delete = true
   }
 }

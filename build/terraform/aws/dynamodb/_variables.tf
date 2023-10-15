@@ -16,6 +16,7 @@ variable "config" {
     }))
 
     range_key = optional(string, null)
+    ttl_key   = optional(string, null)
     read_capacity = optional(object({
       min    = optional(number, 5)
       max    = optional(number, 1000)

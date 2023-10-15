@@ -20,11 +20,10 @@ resource "aws_dynamodb_table" "table" {
   hash_key       = var.config.hash_key
   range_key      = var.config.range_key
 
-  # Services can opt in to use TTL functionality at runtime:
   # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html.
   ttl {
-    attribute_name = "TTL"
-    enabled        = true
+    attribute_name = var.config.ttl_key
+    enabled        = var.config.ttl_key != null ? true : false
   }
   point_in_time_recovery {
     enabled = true
@@ -39,7 +38,7 @@ resource "aws_dynamodb_table" "table" {
 
   # Streams are only charged for read operations and reads from AWS Lambda are free:
   # https://aws.amazon.com/dynamodb/pricing/.
-  stream_enabled   = true
+  stream_enabled   = var.config.stream_view_type != null ? true : false
   stream_view_type = var.config.stream_view_type
 
   dynamic "attribute" {

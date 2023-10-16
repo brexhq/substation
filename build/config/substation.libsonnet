@@ -763,19 +763,19 @@
           pattern: null,
         },
         find_all(settings=null): {
-          local default = $.transform.string.pattern.default,
+          local default = $.transform.string.match.default,
 
           type: 'string_match_find_all',
           settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         find(settings=null): {
-          local default = $.transform.string.pattern.default,
+          local default = $.transform.string.match.default,
 
           type: 'string_match_find',
           settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         named_group(settings=null): {
-          local default = $.transform.string.pattern.default,
+          local default = $.transform.string.match.default,
 
           type: 'string_match_named_group',
           settings: std.mergePatch(default, $.helpers.abbv(settings)),
@@ -802,14 +802,26 @@
         settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       to: {
+        default: {
+          object: $.config.object,
+        },
         lower(settings=null): {
+          local default = $.transform.string.to.default,
+
           type: 'string_to_lower',
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         upper(settings=null): {
+          local default = $.transform.string.to.default,
+
           type: 'string_to_upper',
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
         snake(settings=null): {
+          local default = $.transform.string.to.default,
+
           type: 'string_to_snake',
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
       },
       uuid(settings=null): {

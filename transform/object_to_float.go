@@ -57,7 +57,7 @@ func (tf *objectToFloat) Transform(ctx context.Context, msg *message.Message) ([
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
-	
+
 	if err := msg.SetValue(tf.conf.Object.SetKey, value.Float()); err != nil {
 		return nil, fmt.Errorf("transform: object_to_float: %v", err)
 	}

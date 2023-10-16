@@ -102,12 +102,24 @@ func (tf *enrichAWSDynamoDB) Transform(ctx context.Context, msg *message.Message
 		return []*message.Message{msg}, nil
 	}
 
-	pk := msg.GetValue(tf.conf.PartitionKey)
+	var tmp *message.Message
+	if tf.conf.Object.Key != "" {
+		value := msg.GetValue(tf.conf.Object.Key)
+		tmp = message.New().SetData(value.Bytes())
+	} else {
+		tmp = msg
+	}
+
+	if !json.Valid(tmp.Data()) {
+		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", errMsgInvalidObject)
+	}
+
+	pk := tmp.GetValue(tf.conf.PartitionKey)
 	if !pk.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
-	sk := msg.GetValue(tf.conf.SortKey)
+	sk := tmp.GetValue(tf.conf.SortKey)
 
 	value, err := tf.dynamodb(ctx, pk.String(), sk.String())
 	if err != nil {

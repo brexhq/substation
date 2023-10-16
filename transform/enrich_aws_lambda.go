@@ -14,9 +14,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// errEnrichAWSLambdaInputNotAnObject is returned when the input is not an object.
-var errEnrichAWSLambdaInputNotAnObject = fmt.Errorf("input is not an object")
-
 type enrichAWSLambdaConfig struct {
 	Object iconfig.Object `json:"object"`
 	AWS    iconfig.AWS    `json:"aws"`
@@ -88,7 +85,7 @@ func (tf *enrichAWSLambda) Transform(ctx context.Context, msg *message.Message) 
 	}
 
 	if !json.Valid(value.Bytes()) {
-		return nil, fmt.Errorf("transform: enrich_aws_lambda: key %s: %v", tf.conf.Object.Key, errEnrichAWSLambdaInputNotAnObject)
+		return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", errMsgInvalidObject)
 	}
 
 	resp, err := tf.client.Invoke(ctx, tf.conf.FunctionName, value.Bytes())

@@ -10,6 +10,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+var errMsgInvalidObject = fmt.Errorf("message must be JSON object")
+
 // Transformer is the interface implemented by all transforms and
 // provides the ability to transform data.
 type Transformer interface {

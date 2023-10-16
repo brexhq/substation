@@ -16,12 +16,6 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-// errSendSumologicNonObject is returned when non-object data is sent to the transform.
-//
-// If this error occurs, then parse the data into an object (or drop invalid objects)
-// before attempting to send the data.
-var errSendSumologicNonObject = fmt.Errorf("input must be object")
-
 type sendSumologicConfig struct {
 	Buffer iconfig.Buffer `json:"buffer"`
 
@@ -124,7 +118,7 @@ func (tf *sendSumologic) Transform(ctx context.Context, msg *message.Message) ([
 	}
 
 	if !json.Valid(msg.Data()) {
-		return nil, fmt.Errorf("transform: send_sumologic: %v", errSendSumologicNonObject)
+		return nil, fmt.Errorf("transform: send_sumologic: %v", errMsgInvalidObject)
 	}
 
 	category := tf.conf.Category

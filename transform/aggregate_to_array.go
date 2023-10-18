@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
@@ -30,7 +31,7 @@ func newAggregateToArray(_ context.Context, cfg config.Config) (*aggregateToArra
 		return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 	}
 
-	tf.buffer = buffer
+	tf.buffer = *buffer
 	tf.bufferKey = conf.Buffer.Key
 
 	return &tf, nil
@@ -40,12 +41,15 @@ type aggregateToArray struct {
 	conf         aggregateArrayConfig
 	hasObjSetKey bool
 
-	// buffer is safe for concurrent access.
-	buffer    *aggregate.Aggregate
+	mu        sync.Mutex
+	buffer    aggregate.Aggregate
 	bufferKey string
 }
 
 func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
+
 	//nolint: nestif // ignore nesting complexity
 	if msg.IsControl() {
 		var output []*message.Message

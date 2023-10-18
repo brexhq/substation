@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
@@ -101,11 +102,15 @@ type sendFile struct {
 	conf sendFileConfig
 
 	extension string
-	// buffer is safe for concurrent use.
+
+	mu     sync.Mutex
 	buffer *aggregate.Aggregate
 }
 
 func (tf *sendFile) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
+
 	if msg.IsControl() {
 		for prefix := range tf.buffer.GetAll() {
 			if err := tf.writeFile(prefix); err != nil {

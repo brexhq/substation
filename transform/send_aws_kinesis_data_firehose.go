@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
@@ -90,12 +91,16 @@ type sendAWSKinesisDataFirehose struct {
 
 	// client is safe for concurrent use.
 	client firehose.API
-	// buffer is safe for concurrent use.
+
+	mu        sync.Mutex
 	buffer    *aggregate.Aggregate
 	bufferKey string
 }
 
 func (tf *sendAWSKinesisDataFirehose) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
+
 	if msg.IsControl() {
 		if tf.buffer.Count(tf.bufferKey) == 0 {
 			return []*message.Message{msg}, nil

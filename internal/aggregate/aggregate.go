@@ -1,7 +1,6 @@
 package aggregate
 
 import (
-	"sync"
 	"time"
 )
 
@@ -95,7 +94,6 @@ func New(cfg Config) (*Aggregate, error) {
 		maxCount:    cfg.Count,
 		maxSize:     cfg.Size,
 		maxDuration: dur,
-		mu:          sync.Mutex{},
 		aggs:        make(map[string]*aggregate),
 	}, nil
 }
@@ -105,14 +103,10 @@ type Aggregate struct {
 	maxSize     int
 	maxDuration time.Duration
 
-	mu   sync.Mutex
 	aggs map[string]*aggregate
 }
 
 func (m *Aggregate) Add(key string, data []byte) bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	agg, ok := m.aggs[key]
 	if !ok {
 		agg = &aggregate{
@@ -129,9 +123,6 @@ func (m *Aggregate) Add(key string, data []byte) bool {
 }
 
 func (m *Aggregate) Count(key string) int {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	agg, ok := m.aggs[key]
 	if !ok {
 		return 0
@@ -141,9 +132,6 @@ func (m *Aggregate) Count(key string) int {
 }
 
 func (m *Aggregate) Get(key string) [][]byte {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	agg, ok := m.aggs[key]
 	if !ok {
 		return nil
@@ -153,16 +141,10 @@ func (m *Aggregate) Get(key string) [][]byte {
 }
 
 func (m *Aggregate) GetAll() map[string]*aggregate {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	return m.aggs
 }
 
 func (m *Aggregate) Reset(key string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	agg, ok := m.aggs[key]
 	if !ok {
 		return
@@ -172,9 +154,6 @@ func (m *Aggregate) Reset(key string) {
 }
 
 func (m *Aggregate) ResetAll() {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	for _, agg := range m.aggs {
 		agg.Reset()
 	}

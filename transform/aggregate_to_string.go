@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
@@ -45,12 +46,15 @@ type aggregateToString struct {
 
 	separator []byte
 
-	// buffer is safe for concurrent access.
+	mu        sync.Mutex
 	buffer    *aggregate.Aggregate
 	bufferKey string
 }
 
 func (tf *aggregateToString) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
+
 	if msg.IsControl() {
 		var output []*message.Message
 

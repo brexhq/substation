@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
@@ -101,12 +102,15 @@ type sendAWSSQS struct {
 	// client is safe for concurrent use.
 	client sqs.API
 
-	// buffer is safe for concurrent use.
+	mu        sync.Mutex
 	buffer    *aggregate.Aggregate
 	bufferKey string
 }
 
 func (tf *sendAWSSQS) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
+
 	if msg.IsControl() {
 		if tf.buffer.Count(tf.bufferKey) == 0 {
 			return []*message.Message{msg}, nil

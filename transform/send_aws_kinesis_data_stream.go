@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
@@ -99,12 +100,15 @@ type sendAWSKinesisDataStream struct {
 	// client is safe for concurrent use.
 	client kinesis.API
 
-	// buffer is safe for concurrent use.
+	mu        sync.Mutex
 	buffer    *aggregate.Aggregate
 	bufferKey string
 }
 
 func (tf *sendAWSKinesisDataStream) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
+
 	if msg.IsControl() {
 		for key := range tf.buffer.GetAll() {
 			partitionKey := key

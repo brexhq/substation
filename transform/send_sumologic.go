@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
@@ -96,11 +97,15 @@ type sendSumologic struct {
 	// client is safe for concurrent use.
 	client  http.HTTP
 	headers []http.Header
-	// buffer is safe for concurrent use.
+
+	mu     sync.Mutex
 	buffer *aggregate.Aggregate
 }
 
 func (tf *sendSumologic) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
+
 	if msg.IsControl() {
 		for category := range tf.buffer.GetAll() {
 			count := tf.buffer.Count(category)

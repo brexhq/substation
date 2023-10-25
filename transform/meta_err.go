@@ -57,7 +57,12 @@ type metaErr struct {
 }
 
 func (tf *metaErr) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	msgs, _ := tf.tf.Transform(ctx, msg)
+	msgs, err := tf.tf.Transform(ctx, msg)
+	if err != nil {
+		//nolint: nilerr // ignore non-nil error
+		return []*message.Message{msg}, nil
+	}
+
 	return msgs, nil
 }
 

@@ -74,8 +74,8 @@ resource "aws_appconfig_configuration_profile" "config" {
 
 # Optional secrets creation.
 resource "aws_secretsmanager_secret" "secret" {
-  count      = var.config.secret ? 1 : 0
-  name       = var.config.name
+  count      = var.config.secret.name != null ? 1 : 0
+  name       = var.config.secret.name
   kms_key_id = var.kms.id
   tags       = var.tags
 }
@@ -140,6 +140,23 @@ data "aws_iam_policy_document" "custom_policy_document" {
     resources = [
       var.kms.arn,
     ]
+  }
+
+  // If the secret was created, then allow the Lambda function
+  // to read it.
+  dynamic "statement" {
+    for_each = var.config.secret.name != null ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "secretsmanager:GetSecretValue",
+      ]
+      
+      resources = [
+        aws_secretsmanager_secret.secret.arn,
+      ]
+    }
   }
 
   // Add additional statements provided as a variable.

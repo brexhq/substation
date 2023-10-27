@@ -108,6 +108,30 @@ flowchart LR
     end
 ```
 
+## VPC
+
+Deploys a synchronous microservice in a VPC that returns the public IP address of the Lambda function. The Lambda can be invoked [synchronously](https://docs.aws.amazon.com/lambda/latest/dg/invocation-sync.html) or using a [Lambda URL](https://docs.aws.amazon.com/lambda/latest/dg/lambda-urls.html). This example can be used to validate how Substation transforms behave inside a VPC.
+
+```mermaid
+
+flowchart LR
+    %% resources
+    gateway[HTTPS Endpoint]
+    cli[AWS CLI]
+
+    nodeHandler[[Handler]]
+    nodeTransforms[Transforms]
+
+    %% connections
+    gateway <--> nodeHandler
+    cli <--> nodeHandler
+
+    subgraph VPC Network
+    subgraph Substation Node
+    nodeHandler --> nodeTransforms --> nodeHandler
+    end
+    end
+```
 
 # S3
 

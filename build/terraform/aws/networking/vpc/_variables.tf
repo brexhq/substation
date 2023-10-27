@@ -10,6 +10,17 @@ variable "config" {
       "10.0.192.0/18" = "us-east-1c"
     })
   })
+  default = {
+    cidr_block = "10.0.0.0/16"
+    public_subnet = {
+      "10.0.0.0/18" = "us-east-1a"
+    }
+    private_subnets = {
+      "10.0.64.0/18"  = "us-east-1a"
+      "10.0.128.0/18" = "us-east-1b"
+      "10.0.192.0/18" = "us-east-1c"
+    }
+  }
   description = "Configuration for the VPC."
 
   validation {

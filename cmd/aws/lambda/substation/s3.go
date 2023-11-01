@@ -62,15 +62,10 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 
 			m := message
 			tfGroup.Go(func() error {
-				msg, err := transform.Apply(tfCtx, sub.Transforms(), m)
-				if err != nil {
+				// Transformed messages are never returned to the caller because
+				// invocation is asynchronous.
+				if _, err := transform.Apply(tfCtx, sub.Transforms(), m); err != nil {
 					return err
-				}
-
-				for _, m := range msg {
-					if m.IsControl() {
-						continue
-					}
 				}
 
 				return nil
@@ -206,15 +201,10 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 
 			m := message
 			tfGroup.Go(func() error {
-				msg, err := transform.Apply(tfCtx, sub.Transforms(), m)
-				if err != nil {
+				// Transformed messages are never returned to the caller because
+				// invocation is asynchronous.
+				if _, err := transform.Apply(tfCtx, sub.Transforms(), m); err != nil {
 					return err
-				}
-
-				for _, m := range msg {
-					if m.IsControl() {
-						continue
-					}
 				}
 
 				return nil

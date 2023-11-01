@@ -18,15 +18,8 @@ const (
 	metaKey = "meta "
 )
 
-var (
-	// errSetRawInvalidValue is returned when setRaw receives an invalid interface type.
-	errSetRawInvalidValue = fmt.Errorf("invalid value type")
-
-	sjsonOpts = &sjson.Options{
-		Optimistic:     true,
-		ReplaceInPlace: true,
-	}
-)
+// errSetRawInvalidValue is returned when setRaw receives an invalid interface type.
+var errSetRawInvalidValue = fmt.Errorf("invalid value type")
 
 // Message is the data structure that is handled by transforms and interpreted by
 // conditions.
@@ -240,7 +233,10 @@ func deleteValue(json []byte, key string) ([]byte, error) {
 	return b, nil
 }
 
-func setValue(json []byte, key string, value interface{}) (b []byte, err error) {
+// sjson.SetBytesOptions is not used because transform benchmarks perform better with
+// sjson.SetBytes (allocating a new byte slice). This may change if transforms are
+// refactored.
+func setValue(json []byte, key string, value interface{}) ([]byte, error) {
 	if validJSON(value) {
 		return setRaw(json, key, value)
 	}
@@ -248,40 +244,31 @@ func setValue(json []byte, key string, value interface{}) (b []byte, err error) 
 	switch v := value.(type) {
 	case []byte:
 		if utf8.Valid(v) {
-			b, err = sjson.SetBytesOptions(json, key, v, sjsonOpts)
+			return sjson.SetBytes(json, key, v)
 		} else {
-			b, err = sjson.SetBytesOptions(json, key, base64.Encode(v), sjsonOpts)
+			return sjson.SetBytes(json, key, base64.Encode(v))
 		}
 	case Value:
-		b, err = sjson.SetBytesOptions(json, key, v.Value(), sjsonOpts)
+		return sjson.SetBytes(json, key, v.Value())
 	default:
-		b, err = sjson.SetBytesOptions(json, key, v, sjsonOpts)
+		return sjson.SetBytes(json, key, v)
 	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
 }
 
-func setRaw(json []byte, key string, value interface{}) (b []byte, err error) {
+// sjson.SetRawBytesOptions is not used because transform benchmarks perform better with
+// sjson.SetRawBytes (allocating a new byte slice). This may change if transforms are
+// refactored.
+func setRaw(json []byte, key string, value interface{}) ([]byte, error) {
 	switch v := value.(type) {
 	case []byte:
-		b, err = sjson.SetRawBytesOptions(json, key, v, sjsonOpts)
+		return sjson.SetRawBytes(json, key, v)
 	case string:
-		b, err = sjson.SetRawBytesOptions(json, key, []byte(v), sjsonOpts)
+		return sjson.SetRawBytes(json, key, []byte(v))
 	case Value:
-		b, err = sjson.SetRawBytesOptions(json, key, v.Bytes(), sjsonOpts)
+		return sjson.SetRawBytes(json, key, v.Bytes())
 	default:
 		return nil, errSetRawInvalidValue
 	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
 }
 
 func validJSON(data interface{}) bool {

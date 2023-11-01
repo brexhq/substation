@@ -26,7 +26,6 @@ type s3Metadata struct {
 	ObjectSize int64     `json:"objectSize"`
 }
 
-//nolint:gocognit // Ignore cognitive complexity.
 func s3Handler(ctx context.Context, event events.S3Event) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)

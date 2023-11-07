@@ -3,10 +3,10 @@
 // validate or summarize values in an array.
 local sub = import '../../../../../build/config/substation.libsonnet';
 
-local any_gt_zero = sub.cnd.all(
+local domain_match = sub.cnd.all(
   // After running the example, try changing this to "any" or "none" and see
   // what happens.
-  sub.cnd.meta.for_each(settings={ type: 'none', inspector: sub.cnd.str.ends_with(settings={ string: '@brex.com' }) }),
+  sub.cnd.meta.for_each(settings={ type: 'all', inspector: sub.cnd.str.ends_with(settings={ string: '@brex.com' }) }),
 );
 
 {
@@ -19,7 +19,7 @@ local any_gt_zero = sub.cnd.all(
     sub.tf.meta.switch(
       settings={ switch: [
         {
-          condition: any_gt_zero,
+          condition: domain_match,
           transform: sub.tf.obj.insert(settings={ object: { set_key: 'meta result' }, value: true }),
         },
         {

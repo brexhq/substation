@@ -24,8 +24,7 @@ var metaForEachTests = []struct {
 				"object": map[string]interface{}{
 					"key": "input",
 				},
-				"negate": false,
-				"type":   "all",
+				"type": "all",
 				"inspector": map[string]interface{}{
 					"type": "string_starts_with",
 					"settings": map[string]interface{}{
@@ -45,8 +44,7 @@ var metaForEachTests = []struct {
 				"object": map[string]interface{}{
 					"key": "input",
 				},
-				"negate": false,
-				"type":   "all",
+				"type": "all",
 				"inspector": map[string]interface{}{
 					"type": "network_ip_private",
 				},
@@ -63,8 +61,7 @@ var metaForEachTests = []struct {
 				"object": map[string]interface{}{
 					"key": "input",
 				},
-				"negate": false,
-				"type":   "any",
+				"type": "any",
 				"inspector": map[string]interface{}{
 					"type": "string_match",
 					"settings": map[string]interface{}{
@@ -78,14 +75,30 @@ var metaForEachTests = []struct {
 		nil,
 	},
 	{
+		"string greater_than",
+		config.Config{
+			Settings: map[string]interface{}{
+				"type": "any",
+				"inspector": map[string]interface{}{
+					"type": "string_greater_than",
+					"settings": map[string]interface{}{
+						"string": "0",
+					},
+				},
+			},
+		},
+		[]byte(`[0,1,2]`),
+		true,
+		nil,
+	},
+	{
 		"length none",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"key": "input",
 				},
-				"negate": false,
-				"type":   "none",
+				"type": "none",
 				"inspector": map[string]interface{}{
 					"type": "number_length_greater_than",
 					"settings": map[string]interface{}{
@@ -105,8 +118,7 @@ var metaForEachTests = []struct {
 				"object": map[string]interface{}{
 					"key": "input",
 				},
-				"negate": false,
-				"type":   "all",
+				"type": "all",
 				"inspector": map[string]interface{}{
 					"type": "number_length_equal_to",
 					"settings": map[string]interface{}{

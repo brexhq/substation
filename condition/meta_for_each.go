@@ -87,14 +87,26 @@ func (c *metaForEach) Inspect(ctx context.Context, msg *message.Message) (bool, 
 		return false, nil
 	}
 
+	// This is required to support JSON arrays and objects.
+	var value message.Value
+	if c.conf.Object.Key == "" {
+		value = msg.GetValue("@this")
+	} else {
+		value = msg.GetValue(c.conf.Object.Key)
+	}
+
+	if !value.IsArray() {
+		return false, fmt.Errorf("condition: meta_for_each: %v", "input must be an array")
+	}
+
 	var results []bool
-	for _, res := range msg.GetValue(c.conf.Object.Key).Array() {
+	for _, res := range value.Array() {
 		data := []byte(res.String())
 		msg := message.New().SetData(data)
 
 		inspected, err := c.insp.Inspect(ctx, msg)
 		if err != nil {
-			return false, fmt.Errorf("condition: meta_for_each: %w", err)
+			return false, fmt.Errorf("condition: meta_for_each: %v", err)
 		}
 		results = append(results, inspected)
 	}

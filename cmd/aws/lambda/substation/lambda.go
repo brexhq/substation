@@ -6,7 +6,6 @@ import (
 
 	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/message"
-	"github.com/brexhq/substation/transform"
 )
 
 func lambdaHandler(ctx context.Context, event json.RawMessage) ([]json.RawMessage, error) {
@@ -31,23 +30,20 @@ func lambdaHandler(ctx context.Context, event json.RawMessage) ([]json.RawMessag
 		return nil, err
 	}
 
-	// Data and control messages are sent to the transforms as a group.
-	var msgs []*message.Message
+	// Data and ctrl messages are sent as a group.
+	msg := []*message.Message{
+		message.New().SetData(evt),
+		message.New(message.AsControl()),
+	}
 
-	msg := message.New().SetData(evt)
-	msgs = append(msgs, msg)
-
-	ctrl := message.New(message.AsControl())
-	msgs = append(msgs, ctrl)
-
-	msgs, err = transform.Apply(ctx, sub.Transforms(), msgs...)
+	res, err := sub.Transform(ctx, msg...)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert transformed Messages to a JSON array.
+	// Convert transformed messages to a JSON array.
 	var output []json.RawMessage
-	for _, msg := range msgs {
+	for _, msg := range res {
 		if msg.IsControl() {
 			continue
 		}

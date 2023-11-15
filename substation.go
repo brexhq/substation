@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/transform"
 )
 
@@ -50,11 +51,12 @@ func New(ctx context.Context, cfg Config) (*Substation, error) {
 	return &sub, nil
 }
 
-// Transforms returns the configured data transforms.
+// Transform runs the configured data transformation functions on the
+// provided messages.
 //
-// These are safe to use concurrently.
-func (s *Substation) Transforms() []transform.Transformer {
-	return s.tforms
+// This is safe to use concurrently.
+func (s *Substation) Transform(ctx context.Context, msg ...*message.Message) ([]*message.Message, error) {
+	return transform.Apply(ctx, s.tforms, msg...)
 }
 
 // String returns a JSON representation of the configuration.

@@ -14,7 +14,6 @@ import (
 	"github.com/brexhq/substation/internal/bufio"
 	"github.com/brexhq/substation/internal/channel"
 	"github.com/brexhq/substation/message"
-	"github.com/brexhq/substation/transform"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -47,7 +46,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
-	// managed by an errgroup. Each Message is processed in a separate goroutine.
+	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
 		tfGroup, tfCtx := errgroup.WithContext(ctx)
 		tfGroup.SetLimit(cfg.Concurrency)
@@ -59,11 +58,11 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			default:
 			}
 
-			m := message
+			msg := message
 			tfGroup.Go(func() error {
 				// Transformed messages are never returned to the caller because
 				// invocation is asynchronous.
-				if _, err := transform.Apply(tfCtx, sub.Transforms(), m); err != nil {
+				if _, err := sub.Transform(tfCtx, msg); err != nil {
 					return err
 				}
 
@@ -75,18 +74,17 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			return err
 		}
 
-		// CTRL Messages flush the transform functions. This must be done
+		// CTRL messages flush the pipeline. This must be done
 		// after all messages have been processed.
 		ctrl := message.New(message.AsControl())
-		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
+		if _, err := sub.Transform(tfCtx, ctrl); err != nil {
 			return err
 		}
 
 		return nil
 	})
 
-	// Data ingest. A CTRL Message is sent to the transforms after all data has been
-	// sent to the channel.
+	// Data ingest
 	group.Go(func() error {
 		defer ch.Close()
 
@@ -198,11 +196,11 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			default:
 			}
 
-			m := message
+			msg := message
 			tfGroup.Go(func() error {
 				// Transformed messages are never returned to the caller because
 				// invocation is asynchronous.
-				if _, err := transform.Apply(tfCtx, sub.Transforms(), m); err != nil {
+				if _, err := sub.Transform(tfCtx, msg); err != nil {
 					return err
 				}
 
@@ -214,18 +212,17 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			return err
 		}
 
-		// CTRL Messages flush the transform functions. This must be done
+		// CTRL messages flush the pipeline. This must be done
 		// after all messages have been processed.
 		ctrl := message.New(message.AsControl())
-		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
+		if _, err := sub.Transform(tfCtx, ctrl); err != nil {
 			return err
 		}
 
 		return nil
 	})
 
-	// Data ingest. A CTRL Message is sent to the transforms after all data has been
-	// sent to the channel.
+	// Data ingest.
 	group.Go(func() error {
 		defer ch.Close()
 

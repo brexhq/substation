@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/message"
-	"github.com/brexhq/substation/transform"
 )
 
 var gateway500Response = events.APIGatewayProxyResponse{StatusCode: 500}
@@ -35,7 +34,7 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 		return gateway500Response, err
 	}
 
-	// Create Message metadata.
+	// Create metadata.
 	m := gatewayMetadata{
 		Resource: request.Resource,
 		Path:     request.Path,
@@ -47,24 +46,20 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 		return gateway500Response, err
 	}
 
-	// Messages are sent to the transforms as a group.
-	var msgs []*message.Message
-
 	b := []byte(request.Body)
-	msg := message.New().SetData(b).SetMetadata(metadata)
-	msgs = append(msgs, msg)
+	msg := []*message.Message{
+		message.New().SetData(b).SetMetadata(metadata),
+		message.New(message.AsControl()),
+	}
 
-	ctrl := message.New(message.AsControl())
-	msgs = append(msgs, ctrl)
-
-	// Send messages through the transforms.
-	if _, err := transform.Apply(ctx, sub.Transforms(), msgs...); err != nil {
+	res, err := sub.Transform(ctx, msg...)
+	if err != nil {
 		return gateway500Response, err
 	}
 
-	// Convert transformed Messages to a JSON array.
+	// Convert transformed messages to a JSON array.
 	var output []json.RawMessage
-	for _, msg := range msgs {
+	for _, msg := range res {
 		if msg.IsControl() {
 			continue
 		}

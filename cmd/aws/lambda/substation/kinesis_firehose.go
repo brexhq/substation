@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/message"
-	"github.com/brexhq/substation/transform"
 )
 
 type firehoseMetadata struct {
@@ -49,12 +48,12 @@ func firehoseHandler(ctx context.Context, event events.KinesisFirehoseEvent) (ev
 		}
 
 		msg := message.New().SetData(record.Data).SetMetadata(metadata)
-		msgs, err := transform.Apply(ctx, sub.Transforms(), msg)
+		res, err := sub.Transform(ctx, msg)
 		if err != nil {
 			return resp, err
 		}
 
-		if len(msgs) == 0 {
+		if len(res) == 0 {
 			resp.Records = append(resp.Records, events.KinesisFirehoseResponseRecord{
 				RecordID: record.RecordID,
 				Result:   events.KinesisFirehoseTransformedStateDropped,
@@ -63,7 +62,7 @@ func firehoseHandler(ctx context.Context, event events.KinesisFirehoseEvent) (ev
 			resp.Records = append(resp.Records, events.KinesisFirehoseResponseRecord{
 				RecordID: record.RecordID,
 				Result:   events.KinesisFirehoseTransformedStateOk,
-				Data:     msgs[0].Data(),
+				Data:     res[0].Data(),
 			})
 		}
 	}

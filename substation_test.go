@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	sub "github.com/brexhq/substation"
+	"github.com/brexhq/substation"
 	"github.com/brexhq/substation/message"
-	"github.com/brexhq/substation/transform"
 )
 
 func ExampleSubstation() {
@@ -26,43 +25,35 @@ func ExampleSubstation() {
 		}
 	`)
 
-	cfg := sub.Config{}
+	cfg := substation.Config{}
 	if err := json.Unmarshal(conf, &cfg); err != nil {
 		// Handle error.
 		panic(err)
 	}
 
 	// Create a new Substation instance.
-	station, err := sub.New(ctx, cfg)
+	sub, err := substation.New(ctx, cfg)
 	if err != nil {
 		// Handle error.
 		panic(err)
 	}
 
 	// Print the Substation configuration.
-	fmt.Println(station)
+	fmt.Println(sub)
 
 	// Substation instances process data defined as a Message. Messages can be processed
 	// individually or in groups. This example processes multiple messages as a group.
-	var msgs []*message.Message
+	msg := []*message.Message{
+		// The first message is a data message. Only data messages are transformed.
+		message.New().SetData([]byte(`{"a":"b"}`)),
+		// The second message is a ctrl message. ctrl messages flush the pipeline.
+		message.New(message.AsControl()),
+	}
 
-	// Create a data Message and add it to the group.
-	b := []byte(`{"a":"b"}`)
-	data := message.New().SetData(b)
-	msgs = append(msgs, data)
-
-	// Create a control Message and add it to the group. Control messages trigger
-	// special behavior in transforms. For example, a control message may be used
-	// to flush buffered data or write a file to disk.
-	ctrl := message.New(message.AsControl())
-	msgs = append(msgs, ctrl)
-
-	for _, msg := range msgs {
-		// Transform the group of messages. In this example, results are discarded.
-		if _, err := transform.Apply(ctx, station.Transforms(), msg); err != nil {
-			// Handle error.
-			panic(err)
-		}
+	// Transform the group of messages. In this example, results are not used.
+	if _, err := sub.Transform(ctx, msg...); err != nil {
+		// Handle error.
+		panic(err)
 	}
 
 	// Output:
@@ -73,7 +64,7 @@ func ExampleSubstation() {
 // Custom applications should embed the Substation configuration and
 // add additional configuration options.
 type customConfig struct {
-	sub.Config
+	substation.Config
 
 	Auth struct {
 		Username string `json:"username"`
@@ -113,7 +104,7 @@ func Example_customSubstation() {
 	}
 
 	// Create a new Substation instance from the embedded configuration.
-	sub, err := sub.New(ctx, cfg.Config)
+	sub, err := substation.New(ctx, cfg.Config)
 	if err != nil {
 		// Handle error.
 		panic(err)

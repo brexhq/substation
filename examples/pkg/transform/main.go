@@ -38,14 +38,14 @@ func main() {
 
 	// Run the transform.
 	ctx := context.Background()
-	msgs, err := tf.Transform(ctx, msg)
+	res, err := tf.Transform(ctx, msg)
 	if err != nil {
 		// Handle error.
 		panic(err)
 	}
 
 	// Print the output.
-	for _, m := range msgs {
-		fmt.Println(string(m.Data()))
+	for _, msg := range res {
+		fmt.Println(string(msg.Data()))
 	}
 }

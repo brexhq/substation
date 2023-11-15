@@ -18,7 +18,6 @@ import (
 	"github.com/brexhq/substation/internal/channel"
 	"github.com/brexhq/substation/internal/file"
 	"github.com/brexhq/substation/message"
-	"github.com/brexhq/substation/transform"
 )
 
 type options struct {
@@ -95,9 +94,9 @@ func run(ctx context.Context, opts options) error {
 			default:
 			}
 
-			message := message
+			msg := message
 			tfGroup.Go(func() error {
-				if _, err := transform.Apply(tfCtx, sub.Transforms(), message); err != nil {
+				if _, err := sub.Transform(tfCtx, msg); err != nil {
 					return err
 				}
 
@@ -109,16 +108,17 @@ func run(ctx context.Context, opts options) error {
 			return err
 		}
 
-		// CTRL Messages flush the transform functions. This must be done
+		// CTRL messages flush the pipeline. This must be done
 		// after all messages have been processed.
 		ctrl := message.New(message.AsControl())
-		if _, err := transform.Apply(ctx, sub.Transforms(), ctrl); err != nil {
+		if _, err := sub.Transform(tfCtx, ctrl); err != nil {
 			return err
 		}
 
 		return nil
 	})
 
+	// Data ingest.
 	group.Go(func() error {
 		defer ch.Close()
 

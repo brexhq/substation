@@ -286,12 +286,7 @@ func validJSON(data interface{}) bool {
 
 		return json.Valid([]byte(v))
 	case Value:
-		s := v.String()
-		if !strings.HasPrefix(s, `{`) && !strings.HasPrefix(s, `[`) {
-			return false
-		}
-
-		return json.Valid([]byte(s))
+		return validJSON(v.String())
 	default:
 		return false
 	}

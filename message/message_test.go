@@ -6,6 +6,49 @@ import (
 	"testing"
 )
 
+var messageNewTests = []struct {
+	name     string
+	data     []byte
+	expected []byte
+}{
+	{
+		"empty",
+		[]byte{},
+		[]byte{},
+	},
+	{
+		"data",
+		[]byte(`{"a":"b","c":"d"}`),
+		[]byte(`{"a":"b","c":"d"}`),
+	},
+}
+
+func TestMessageNew(t *testing.T) {
+	for _, test := range messageNewTests {
+		msg := New().SetData(test.data)
+
+		if !bytes.Equal(msg.Data(), test.expected) {
+			t.Errorf("expected %s, got %s", test.expected, msg.Data())
+		}
+	}
+}
+
+func benchmarkTestMessageNew(b *testing.B, data []byte) {
+	for i := 0; i < b.N; i++ {
+		_ = New().SetData(data)
+	}
+}
+
+func BenchmarkTestMessageNew(b *testing.B) {
+	for _, test := range messageNewTests {
+		b.Run(test.name,
+			func(b *testing.B) {
+				benchmarkTestMessageNew(b, test.data)
+			},
+		)
+	}
+}
+
 var messageDeleteTests = []struct {
 	name     string
 	data     []byte
@@ -35,9 +78,11 @@ func TestMessageDeleteData(t *testing.T) {
 }
 
 func benchmarkTestMessageDeleteData(b *testing.B, key string, data []byte) {
+	msg := New().SetData(data)
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		message := New().SetData(data)
-		_ = message.DeleteValue(key)
+		_ = msg.DeleteValue(key)
 	}
 }
 
@@ -66,19 +111,21 @@ func TestMessageDeleteMetadata(t *testing.T) {
 	}
 }
 
-func benchmarkTestMessageDeleteMetadata(b *testing.B, key string, metadata []byte) {
-	for i := 0; i < b.N; i++ {
-		message := New().SetMetadata(metadata)
+func benchmarkTestMessageDeleteMetadata(b *testing.B, key string, data []byte) {
+	msg := New().SetMetadata(data)
+	b.ResetTimer()
 
-		_ = message.DeleteValue(key)
+	for i := 0; i < b.N; i++ {
+		_ = msg.DeleteValue(key)
 	}
 }
 
 func BenchmarkTestMessageDeleteMetadata(b *testing.B) {
 	for _, test := range messageDeleteTests {
+		key := strings.Join([]string{metaKey, test.key}, " ")
+
 		b.Run(test.name,
 			func(b *testing.B) {
-				key := strings.Join([]string{metaKey, test.key}, " ")
 				benchmarkTestMessageDeleteMetadata(b, key, test.data)
 			},
 		)
@@ -123,9 +170,11 @@ func TestMessageGetData(t *testing.T) {
 }
 
 func benchmarkTestMessageGetData(b *testing.B, key string, data []byte) {
+	msg := New().SetData(data)
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		msg := New().SetData(data)
-		msg.GetValue(key)
+		_ = msg.GetValue(key)
 	}
 }
 
@@ -151,10 +200,12 @@ func TestMessageGetMetadata(t *testing.T) {
 	}
 }
 
-func benchmarkTestMessageGetMetadata(b *testing.B, key string, metadata []byte) {
+func benchmarkTestMessageGetMetadata(b *testing.B, key string, data []byte) {
+	msg := New().SetMetadata(data)
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		msg := New().SetMetadata(metadata)
-		msg.GetValue(key)
+		_ = msg.GetValue(key)
 	}
 }
 
@@ -238,8 +289,10 @@ func TestMessageSetData(t *testing.T) {
 }
 
 func benchmarkTestMessageSetData(b *testing.B, key string, val interface{}, data []byte) {
+	msg := New().SetData(data)
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		msg := New().SetData(data)
 		_ = msg.SetValue(key, val)
 	}
 }
@@ -269,9 +322,11 @@ func TestMessageSetMetadata(t *testing.T) {
 	}
 }
 
-func benchmarkTestMessageSetMetadata(b *testing.B, key string, val interface{}, metadata []byte) {
+func benchmarkTestMessageSetMetadata(b *testing.B, key string, val interface{}, data []byte) {
+	msg := New().SetMetadata(data)
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		msg := New().SetMetadata(metadata)
 		_ = msg.SetValue(key, val)
 	}
 }

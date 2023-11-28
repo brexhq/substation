@@ -9,7 +9,7 @@ src="https://github.com/brexhq/substation/blob/release/v1/.github/media/substati
 
 <div align="center">
 
-[Releases][release]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation][wiki]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Pull Requests][pr]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Issues][issues]
+[Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Docs][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Quickstart][quickstart]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement Post (2022)][announcement]
 
 </div>
 

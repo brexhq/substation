@@ -7,11 +7,11 @@ src="https://github.com/brexhq/substation/blob/release/v1/.github/media/substati
 
 <p align="center">Substation is a cloud-native, event-driven data pipeline toolkit designed for security teams.</p>
 
-
 <div align="center">
-[Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Docs][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Quickstart][quickstart]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement Post (2022)][announcement]
-</div>
 
+[Releases][release]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation][wiki]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Pull Requests][pr]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Issues][issues]
+
+</div>
 
 ## At a Glance
 

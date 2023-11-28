@@ -5,61 +5,52 @@
 src="https://github.com/brexhq/substation/blob/release/v1/.github/media/substation_logo.png" />
 </p>
 
-<p align="center">Substation is a cloud-native, event-driven data pipeline toolkit designed for security and observability teams.</p>
+<p align="center">Substation is a cloud-native, event-driven data pipeline toolkit designed for security teams.</p>
 
-## Resources
 
-* [Documentation](https://substation.readme.io/docs)
-* [Announcements](https://github.com/brexhq/substation/discussions/categories/announcements)
-* [Announcement Post](https://medium.com/brexeng/announcing-substation-188d049d979b)
+<div align="center">
+[Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Docs][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Quickstart][quickstart]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement Post (2022)][announcement]
+</div>
 
-## Features
 
-Substation provides three unique capabilities:
+## At a Glance
 
-* Deploy modular, serverless data pipelines in minutes
-  * Design pipelines based on your unique use cases and requirements
-  * Autoscale beyond 100,000 events per second with almost zero maintenance
-  * Route data to SIEMs, data lakes, and other log management platforms
-* Inspect, normalize, and enrich event logs in real-time
-  * Inspect data before applying transformation functions and routing decisions
-  * Normalize data to a common schema for easy analysis and correlation
-  * Enrich data with threat, infrastructure, and business context
-* Create custom data processing applications written in Go
-  * Build Substation applications that run in any cloud environment or on-prem
-  * Use Substation's Go packages to inspect and transform data in your own applications
-  
+Substation is inspired by data pipeline systems such as Logstash and Fluentd, but is built for modern security teams:
+
+- **Extensible Data Processing**: Build custom data processing pipeline systems and microservices using out-of-the-box applications and 100+ data transformation functions, or create your own written in Go.
+- **Bring Your Own Schema**: Format, normalize, and enrich event logs to comply with the Elastic Common Schema (ECS), Open Cybersecurity Schema Framework (OCSF), or any other schema. Don't need a schema? Substation is also a fast, simple log router.
+- **Unlimited Data Enrichment**: Integrate external APIs and data that enrich event logs affordably and at scale with threat intelligence, infrastructure metadata, and system or user information, or build a microservice that reduces spend in costly security APIs.
+- **No Servers, No Maintenance**: Deploys as a serverless application in your AWS account, launches in minutes using Terraform, and requires no maintenance after deployment.
+- **Runs Almost Anywhere**: Create applications that share a common configuration and run on most platforms supported by Go; data transform behavior is identical across laptops, servers, containers, and serverless cloud functions.
+- **High Performance, Low Cost**: Transform more than 100,000 events per second while keeping all-in cloud costs as low as a few cents per gigabyte of data processed. Vendor solutions, like [Cribl](https://cribl.io/cribl-pricing/) and [Datadog](https://www.datadoghq.com/pricing/?product=observability-pipelines#products), can cost up to 10x more.
+
+All of these data pipeline and microservice systems, and many more, can be built with Substation:
+
+![Example Substation architectures](.github/media/substation_architecture.png)
+
 ## Getting Started
 
-* [Download, build, and test Substation in under 1 minute](https://substation.readme.io/recipes/1-minute-quickstart)
-* [Deploy Substation to your AWS account](https://substation.readme.io/recipes/deploying-aws-pipelines)
-* [Learn about Substation's data transformation features in your browser](https://substation.run/)
+You can run Substation on these platforms:
 
-## Substation Explained
+- [Docker](https://substation.readme.io/v1.0.0/docs/try-substation-on-docker)
+- [macOS / Linux](https://substation.readme.io/v1.0.0/docs/try-substation-on-macos-linux)
+- [AWS](https://substation.readme.io/v1.0.0/docs/try-substation-on-aws)
 
-Substation transforms event logs like this ...
+When you're ready to deploy Substation in production, use the [AWS Lambda examples](examples/aws/lambda) as a starting point. These examples include common deployment patterns and demonstrate best practices for managing the system using Terraform and Jsonnet.
+
+## Transforming Event Logs
+
+Substation excels at formatting, normalizing, and enriching event logs. For example, Zeek connection logs can be transformed to comply with the Elastic Common Schema:
+
+<table>
+<tr>
+<th><code>Pre-Transform</code></th>
+<th><code>Post-Transform</code></th>
+</tr>
+<tr>
+<td>
 
 ```json
-{
-  "ts": 1591367999.305988,
-  "uid": "CMdzit1AMNsmfAIiQc",
-  "id.orig_h": "192.168.4.76",
-  "id.orig_p": 36844,
-  "id.resp_h": "192.168.4.1",
-  "id.resp_p": 53,
-  "proto": "udp",
-  "service": "dns",
-  "duration": 0.06685185432434082,
-  "orig_bytes": 62,
-  "resp_bytes": 141,
-  "conn_state": "SF",
-  "missed_bytes": 0,
-  "history": "Dd",
-  "orig_pkts": 2,
-  "orig_ip_bytes": 118,
-  "resp_pkts": 2,
-  "resp_ip_bytes": 197
-}
 {
   "ts": 1591367999.430166,
   "uid": "C5bLoe2Mvxqhawzqqd",
@@ -81,65 +72,10 @@ Substation transforms event logs like this ...
   "resp_ip_bytes": 511
 }
 ```
-
-... into this ...
+</td>
+<td>
 
 ```json
-{
-  "event": {
-    "original": {
-      "ts": 1591367999.305988,
-      "uid": "CMdzit1AMNsmfAIiQc",
-      "id.orig_h": "192.168.4.76",
-      "id.orig_p": 36844,
-      "id.resp_h": "192.168.4.1",
-      "id.resp_p": 53,
-      "proto": "udp",
-      "service": "dns",
-      "duration": 0.06685185432434082,
-      "orig_bytes": 62,
-      "resp_bytes": 141,
-      "conn_state": "SF",
-      "missed_bytes": 0,
-      "history": "Dd",
-      "orig_pkts": 2,
-      "orig_ip_bytes": 118,
-      "resp_pkts": 2,
-      "resp_ip_bytes": 197
-    },
-    "hash": "7ed38f773271e700e2d55984a2ba7902be9ec8c2922e52fc7558aeade425c3de",
-    "created": "2022-12-30T17:20:41.027457Z",
-    "id": "CMdzit1AMNsmfAIiQc",
-    "kind": "event",
-    "category": [
-      "network"
-    ],
-    "action": "network-connection",
-    "outcome": "success",
-    "duration": 66851854.32434082
-  },
-  "@timestamp": "2020-06-05T14:39:59.305988Z",
-  "client": {
-    "address": "192.168.4.76",
-    "ip": "192.168.4.76",
-    "port": 36844,
-    "packets": 2,
-    "bytes": 62
-  },
-  "server": {
-    "address": "192.168.4.1",
-    "ip": "192.168.4.1",
-    "port": 53,
-    "packets": 2,
-    "bytes": 141
-  },
-  "network": {
-    "protocol": "udp",
-    "bytes": 203,
-    "packets": 4,
-    "direction": "internal"
-  }
-}
 {
   "event": {
     "original": {
@@ -171,7 +107,7 @@ Substation transforms event logs like this ...
     ],
     "action": "network-connection",
     "outcome": "success",
-    "duration": 254115104.67529297
+    "duration": 254115104.675293
   },
   "@timestamp": "2020-06-05T14:39:59.430166Z",
   "client": {
@@ -216,32 +152,312 @@ Substation transforms event logs like this ...
   }
 }
 ```
+</td>
+</tr>
+</table>
 
-... using this ...
+## Routing Data
+
+Substation can route data to several destinations from a single process and, unlike most other data pipeline systems,
+data transformation and routing are functionally equivalent -- this means that data can be transformed or routed in any order.
+
+Below is an example where:
+
+- Data (JSON array) is backed up to AWS S3
+- Events from the array are extracted into individual events and printed to stdout
+- Events are conditionally removed from the pipeline based on the value of a field
+- All remaining events are sent to an HTTPS endpoint
+
+```jsonnet
+// The input is a JSON array of objects, such as:
+// [
+//   { "field1": "a", "field2": 1, "field3": true },
+//   { "field1": "b", "field2": 2, "field3": false },
+//   ...
+// ]
+local sub = import 'substation.libsonnet';
+
+// This filters events based on the value of field3.
+local is_false = sub.cnd.str.eq(settings={ obj: { key: 'field3' }, string: 'false' });
+
+{
+  transforms: [
+    // Pre-transformed data is backed up to S3.
+    sub.tf.send.aws.s3(settings={ bucket_name: 'example-bucket-name' }),
+    // The JSON array is split into individual events that are processed
+    // individually by the remaining transforms. Each event is printed
+    // to stdout.
+    sub.tf.agg.from.array(),
+    sub.tf.send.stdout(),
+    // Events where field3 is false are removed from the pipeline.
+    sub.pattern.tf.conditional(condition=is_false, transform=sub.tf.util.drop()),
+    // The remaining events are sent to an HTTPS endpoint.
+    sub.tf.send.http.post(settings={ url: 'https://example-http-endpoint.com' }),
+  ],
+}
+```
+
+Alternatively, the data can be conditionally routed to different destinations:
 
 ```jsonnet
 local sub = import 'substation.libsonnet';
 
-local event = import 'event.libsonnet';
-local client = import 'client.libsonnet';
-local server = import 'server.libsonnet';
-local network = import 'network.libsonnet';
-local send = import 'send.libsonnet';
-
 {
-  transforms: 
-    event.transforms
-    + client.transforms
-    + server.transforms
-    + network.transforms
-    + send.transforms
+  transforms: [
+    // If field3 is false, then the event is sent to an HTTPS endpoint; otherwise,
+    // the event is written to an object in AWS S3.
+    sub.tf.meta.switch(settings={ switch: [
+      {
+        condition: sub.cnd.any(sub.cnd.str.eq(settings={ object: { key: 'field3' }, string: 'false' })),
+        transform: sub.tf.send.http.post(settings={ url: 'https://example-http-endpoint.com' }),
+      },
+      {
+        transform: sub.tf.send.aws.s3(settings={ bucket_name: 'example-bucket-name' }),
+      },
+    ] }),
+    // The event is always available to any remaining transforms.
+    sub.tf.send.stdout(),
+  ],
 }
 ```
 
-... running in any data pipeline like these ...
+## Configuring Applications
 
-![alt text](.github/media/substation_architecture.png)
+Substation applications share a common configuration profile and all transform functions behave identically whether they are run from a laptop, server, container, or AWS Lambda. This makes it easy to develop configuration changes locally, validate them in a build (CI/CD) pipeline, and run integration tests in a staging environment before deploying to production.
+
+Configurations are written in Jsonnet and can be expressed as functional code; this simplifies version control and lets you build reusable data processing libraries. Compare the configuration below to similar configurations from Logstash and Fluentd:
+
+<table>
+<tr>
+<th><code>Substation</code></th>
+<th><code>Logstash</code></th>
+<th><code>Fluentd</code></th>
+</tr>
+<tr>
+<td>
+
+```jsonnet
+local sub = import 'substation.libsonnet';
+
+{
+  transforms: [
+    sub.tf.obj.cp(settings={ obj: { key: 'src_field_1', set_key: 'dest_field_1' } }),
+    sub.tf.obj.cp(settings={ obj: { key: 'src_field_2', set_key: 'dest_field_2' } }),
+    sub.tf.send.stdout(),
+    sub.tf.send.http.post(settings={ url: 'https://example-http-endpoint.com' }),
+  ],
+}
+```
+</td>
+<td>
+
+```ruby
+input {
+  file {
+    path => "/path/to/your/file.log"
+    start_position => "beginning"
+    sincedb_path => "/dev/null"
+    codec => "json"
+  }
+}
+
+filter {
+  json {
+    source => "message"
+  }
+
+  mutate {
+    copy => { "src_field_1" => "dest_field_1" }
+    copy => { "src_field_2" => "dest_field_2" }
+  }
+}
+
+output {
+  stdout {
+    codec => rubydebug
+  }
+
+  http {
+    url => "https://example-http-endpoint.com"
+    http_method => "post"
+    format => "json"
+  }
+}
+```
+</td>
+<td>
+
+```xml
+<source>
+  @type tail
+  path /path/to/your/file.log
+  pos_file /dev/null
+  tag file.log
+  format json
+</source>
+
+<filter file.log>
+  @type record_transformer
+  enable_ruby
+  <record>
+    dest_field_1 ${record['src_field_1']}
+    dest_field_2 ${record['src_field_2']}
+  </record>
+</filter>
+
+<match file.log>
+  @type copy
+  <store>
+    @type stdout
+  </store>
+  <store>
+    @type http
+    url https://example-http-endpoint.com
+    http_method post
+    <format>
+      @type json
+    </format>
+  </store>
+</match>
+```
+</td>
+</tr>
+</table>
+
+## Deploying to AWS
+
+Substation includes Terraform modules for securely deploying data pipelines and microservices in AWS. These modules are designed for ease of use, but are also flexible enough to support managing complex systems. This configuration deploys a data pipeline that is capable of receiving data from API Gateway and storing it in an S3 bucket:
+
+<table>
+<tr>
+<th><code>resources.tf</code></th>
+<th><code>node.tf</code></th>
+</tr>
+<tr>
+<td>
+
+```tcl
+# These resources are deployed once and are used by all Substation infrastructure.
+
+module "kms" {
+  source = "../../../../../../build/terraform/aws/kms"
+
+  config = {
+    name   = "alias/substation"
+  }
+}
+
+resource "aws_appconfig_application" "substation" {
+  name        = "substation"
+  description = "Stores compiled configuration files for Substation"
+}
+
+resource "aws_appconfig_environment" "example" {
+  name           = "example"
+  description    = "Stores example Substation configuration files"
+  application_id = aws_appconfig_application.substation.id
+}
+
+# AWS Lambda requires an instant deployment strategy.
+resource "aws_appconfig_deployment_strategy" "instant" {
+  name                           = "Instant"
+  description                    = "This strategy deploys the configuration
+  to all targets immediately with zero bake time."
+  deployment_duration_in_minutes = 0
+  final_bake_time_in_minutes     = 0
+  growth_factor                  = 100
+  growth_type                    = "LINEAR"
+  replicate_to                   = "NONE"
+}
+
+module "ecr_substation" {
+  source = "../../../../../../build/terraform/aws/ecr"
+  kms    = module.kms
+
+  config = {
+    name         = "substation"
+    force_delete = true
+  }
+}
+
+resource "random_uuid" "s3" {}
+
+module "s3" {
+  source = "../../../../../../build/terraform/aws/s3"
+  kms    = module.kms
+
+  config = {
+    # Bucket name is randomized to avoid collisions.
+    name = "${random_uuid.s3.result}-substation"
+  }
+
+  # Access is granted by providing the role name of a
+  # resource. This access applies least privilege.
+  access = [
+    # Lambda functions create unique roles that are
+    # used to access to resources.
+    module.node.role.name,
+  ]
+}
+```
+</td>
+<td>
+
+```tcl
+# Deploys an unauthenticated API Gateway that forwards data to the node.
+module "node_gateway" {
+  source = "../../../../../../build/terraform/aws/api_gateway/lambda"
+  lambda = module.node
+
+  config = {
+    name = "node_gateway"
+  }
+
+  depends_on = [
+    module.node
+  ]
+}
+
+module "node" {
+  source = "../../../../../../build/terraform/aws/lambda"
+  # These are always required for all Lambda.
+  kms       = module.kms
+  appconfig = aws_appconfig_application.substation
+
+  config = {
+    name        = "node"
+    description = "Substation node that writes data to S3"
+    image_uri   = "${module.ecr_substation.url}:latest"
+    image_arm   = true
+
+    env = {
+      # Each Lambda includes an AppConfig layer that hosts configuration files locally.
+      # Alternatively, configuration files can be loaded from AWS S3 using an S3 URI.
+      "SUBSTATION_CONFIG" : "https://localhost:2772/applications/substation/environments/example/configurations/node"
+      # This Substation node will ingest data from API Gateway. More nodes can be 
+      # deployed to ingest data from other sources, such as Kinesis or SQS.
+      "SUBSTATION_HANDLER" : "AWS_API_GATEWAY"
+      "SUBSTATION_DEBUG" : true
+    }
+  }
+
+  depends_on = [
+    aws_appconfig_application.substation,
+    module.ecr_substation.url,
+  ]
+}
+```
+</td>
+</tr>
+</table>
+
 
 ## Licensing
 
 Substation and its associated code is released under the terms of the [MIT License](LICENSE).
+
+<!--Links-->
+[releases]:https://github.com/brexhq/substation/releases "Substation Releases"
+[docs]:https://substation.readme.io/docs "Substation Documentation"
+[quickstart]:https://substation.readme.io/recipes/1-minute-quickstart "Substation Quickstart"
+[announcement]:https://medium.com/brexeng/announcing-substation-188d049d979b "Substation Announcement Post"

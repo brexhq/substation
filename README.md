@@ -18,11 +18,12 @@ src="https://github.com/brexhq/substation/blob/release/v1/.github/media/substati
 Substation is inspired by data pipeline systems such as Logstash and Fluentd, but is built for modern security teams:
 
 - **Extensible Data Processing**: Build custom data processing pipeline systems and microservices using out-of-the-box applications and 100+ data transformation functions, or create your own written in Go.
-- **Bring Your Own Schema**: Format, normalize, and enrich event logs to comply with the Elastic Common Schema (ECS), Open Cybersecurity Schema Framework (OCSF), or any other schema. Don't need a schema? Substation is also a fast, simple log router.
-- **Unlimited Data Enrichment**: Integrate external APIs and data that enrich event logs affordably and at scale with threat intelligence, infrastructure metadata, and system or user information, or build a microservice that reduces spend in costly security APIs.
+- **Route Data Across the Enterprise**: Conditionally route data to, from, and between AWS cloud services, including S3, Kinesis, SQS, and Lambda, or to any HTTP endpoint.
+- **Bring Your Own Schema**: Format, normalize, and enrich event logs to comply with the Elastic Common Schema (ECS), Open Cybersecurity Schema Framework (OCSF), or any other schema.
+- **Unlimited Data Enrichment**: Use external APIs to enrich event logs affordably and at scale with enterprise and threat intelligence, or build a microservice that reduces spend in expensive security APIs.
 - **No Servers, No Maintenance**: Deploys as a serverless application in your AWS account, launches in minutes using Terraform, and requires no maintenance after deployment.
-- **Runs Almost Anywhere**: Create applications that share a common configuration and run on most platforms supported by Go; data transform behavior is identical across laptops, servers, containers, and serverless cloud functions.
-- **High Performance, Low Cost**: Transform more than 100,000 events per second while keeping all-in cloud costs as low as a few cents per gigabyte of data processed. Vendor solutions, like [Cribl](https://cribl.io/cribl-pricing/) and [Datadog](https://www.datadoghq.com/pricing/?product=observability-pipelines#products), can cost up to 10x more.
+- **Runs Almost Anywhere**: Create applications that run on most platforms supported by Go and transform data consistently across laptops, servers, containers, and serverless cloud functions.
+- **High Performance, Low Cost**: Transform 100,000+ events per second while keeping cloud costs as low as a few cents per GB of data processed. Vendor solutions, like [Cribl](https://cribl.io/cribl-pricing/) and [Datadog](https://www.datadoghq.com/pricing/?product=observability-pipelines#products), can cost up to 10x more.
 
 All of these data pipeline and microservice systems, and many more, can be built with Substation:
 

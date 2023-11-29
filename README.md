@@ -242,10 +242,16 @@ local sub = import 'substation.libsonnet';
 
 {
   transforms: [
-    sub.tf.obj.cp(settings={ obj: { key: 'src_field_1', set_key: 'dest_field_1' } }),
-    sub.tf.obj.cp(settings={ obj: { key: 'src_field_2', set_key: 'dest_field_2' } }),
+    sub.tf.obj.cp(
+      settings={ obj: { key: 'src_field_1', set_key: 'dest_field_1' } }
+    ),
+    sub.tf.obj.cp(
+      settings={ obj: { key: 'src_field_2', set_key: 'dest_field_2' } }
+    ),
     sub.tf.send.stdout(),
-    sub.tf.send.http.post(settings={ url: 'https://example-http-endpoint.com' }),
+    sub.tf.send.http.post(
+      settings={ url: 'https://example-http-endpoint.com' }
+    ),
   ],
 }
 ```

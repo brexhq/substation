@@ -26,6 +26,14 @@ var numberMathDivisionTests = []struct {
 			[]byte(`3`),
 		},
 	},
+	{
+		"data",
+		config.Config{},
+		[]byte(`[0.123456789,10]`),
+		[][]byte{
+			[]byte(`0.0123456789`),
+		},
+	},
 	// object tests
 	{
 		"object",
@@ -40,6 +48,21 @@ var numberMathDivisionTests = []struct {
 		[]byte(`{"a":[6,2]}`),
 		[][]byte{
 			[]byte(`{"a":3}`),
+		},
+	},
+	{
+		"object",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+			},
+		},
+		[]byte(`{"a":[0.123456789,10]}`),
+		[][]byte{
+			[]byte(`{"a":0.0123456789}`),
 		},
 	},
 }

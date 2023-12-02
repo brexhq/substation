@@ -26,6 +26,14 @@ var numberMathMultiplicationTests = []struct {
 			[]byte(`6`),
 		},
 	},
+	{
+		"data",
+		config.Config{},
+		[]byte(`[0.123456789,10]`),
+		[][]byte{
+			[]byte(`1.23456789`),
+		},
+	},
 	// object tests
 	{
 		"object",
@@ -40,6 +48,21 @@ var numberMathMultiplicationTests = []struct {
 		[]byte(`{"a":[2,3]}`),
 		[][]byte{
 			[]byte(`{"a":6}`),
+		},
+	},
+	{
+		"object",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+			},
+		},
+		[]byte(`{"a":[0.123456789,10]}`),
+		[][]byte{
+			[]byte(`{"a":1.23456789}`),
 		},
 	},
 }
@@ -73,8 +96,10 @@ func TestNumberMathMultiplication(t *testing.T) {
 
 func benchmarkNumberMathMultiplication(b *testing.B, tf *numberMathMultiplication, data []byte) {
 	ctx := context.TODO()
+	msg := message.New().SetData(data)
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		msg := message.New().SetData(data)
 		_, _ = tf.Transform(ctx, msg)
 	}
 }

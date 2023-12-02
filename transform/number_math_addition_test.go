@@ -21,9 +21,17 @@ var numberMathAdditionTests = []struct {
 	{
 		"data",
 		config.Config{},
-		[]byte(`[1,3]`),
+		[]byte(`[6,2]`),
 		[][]byte{
-			[]byte(`4`),
+			[]byte(`8`),
+		},
+	},
+	{
+		"data",
+		config.Config{},
+		[]byte(`[0.123456789,10]`),
+		[][]byte{
+			[]byte(`10.123456789`),
 		},
 	},
 	// object tests
@@ -37,9 +45,24 @@ var numberMathAdditionTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":[1,3]}`),
+		[]byte(`{"a":[6,2]}`),
 		[][]byte{
-			[]byte(`{"a":4}`),
+			[]byte(`{"a":8}`),
+		},
+	},
+	{
+		"object",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+			},
+		},
+		[]byte(`{"a":[0.123456789,10]}`),
+		[][]byte{
+			[]byte(`{"a":10.123456789}`),
 		},
 	},
 }

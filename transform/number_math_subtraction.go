@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/brexhq/substation/config"
 	iconfig "github.com/brexhq/substation/internal/config"
@@ -63,14 +64,19 @@ func (tf *numberMathSubtraction) Transform(ctx context.Context, msg *message.Mes
 		vFloat64 -= val.Float()
 	}
 
+	strFloat64 := numberFloat64ToString(vFloat64)
 	if !tf.isObject {
-		b := []byte(fmt.Sprintf("%v", vFloat64))
-		msg.SetData(b)
+		msg.SetData([]byte(strFloat64))
 
 		return []*message.Message{msg}, nil
 	}
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, vFloat64); err != nil {
+	f, err := strconv.ParseFloat(strFloat64, 64)
+	if err != nil {
+		return nil, fmt.Errorf("transform: number_math_subtraction: %v", err)
+	}
+
+	if err := msg.SetValue(tf.conf.Object.SetKey, f); err != nil {
 		return nil, fmt.Errorf("transform: number_math_subtraction: %v", err)
 	}
 

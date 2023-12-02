@@ -21,9 +21,17 @@ var numberMathSubtractionTests = []struct {
 	{
 		"data",
 		config.Config{},
-		[]byte(`[3,1]`),
+		[]byte(`[6,2]`),
 		[][]byte{
-			[]byte(`2`),
+			[]byte(`4`),
+		},
+	},
+	{
+		"data",
+		config.Config{},
+		[]byte(`[0.123456789,10]`),
+		[][]byte{
+			[]byte(`-9.876543211`),
 		},
 	},
 	// object tests
@@ -37,9 +45,24 @@ var numberMathSubtractionTests = []struct {
 				},
 			},
 		},
-		[]byte(`{"a":[3,1]}`),
+		[]byte(`{"a":[6,2]}`),
 		[][]byte{
-			[]byte(`{"a":2}`),
+			[]byte(`{"a":4}`),
+		},
+	},
+	{
+		"object",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+			},
+		},
+		[]byte(`{"a":[0.123456789,10]}`),
+		[][]byte{
+			[]byte(`{"a":-9.876543211}`),
 		},
 	},
 }
@@ -73,8 +96,10 @@ func TestNumberMathSubtraction(t *testing.T) {
 
 func benchmarkNumberMathSubtraction(b *testing.B, tf *numberMathSubtraction, data []byte) {
 	ctx := context.TODO()
+	msg := message.New().SetData(data)
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		msg := message.New().SetData(data)
 		_, _ = tf.Transform(ctx, msg)
 	}
 }

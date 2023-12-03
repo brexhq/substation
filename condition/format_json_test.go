@@ -23,9 +23,21 @@ var jsonValidTests = []struct {
 		true,
 	},
 	{
+		"pass",
+		config.Config{},
+		[]byte(`["a","b","c"]`),
+		true,
+	},
+	{
 		"fail",
 		config.Config{},
 		[]byte(`{hello:"world"}`),
+		false,
+	},
+	{
+		"fail",
+		config.Config{},
+		[]byte(`a`),
 		false,
 	},
 }

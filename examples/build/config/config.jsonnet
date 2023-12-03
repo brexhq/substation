@@ -1,4 +1,4 @@
-local sub = import '../../build/config/substation.libsonnet';
+local sub = import '../../../build/config/substation.libsonnet';
 
 {
   // Substation application configs always contain an array named `transforms`.

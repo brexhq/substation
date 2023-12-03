@@ -1,7 +1,7 @@
 // This example reduces data by summarizing multiple network events into a single event,
 // simulating the behavior of flow records. This technique can be used to reduce
 // any JSON data that contains common fields, not just network events.
-local sub = import '../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../../build/config/substation.libsonnet';
 
 {
   transforms: [

@@ -1,6 +1,6 @@
 // This example shows how to use the `utility_metric_rate` transform to
 // measure the rate of messages processed by Substation.
-local sub = import '../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../../build/config/substation.libsonnet';
 
 local attr = { AppName: 'example' };
 local dest = { type: 'aws_cloudwatch_embedded_metrics' };

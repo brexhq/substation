@@ -1,6 +1,6 @@
 // This example shows how to use the `utility_metric_count` transform to
 // count the number of messages received and transformed by Substation.
-local sub = import '../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../../build/config/substation.libsonnet';
 
 local attr = { AppName: 'example' };
 local dest = { type: 'aws_cloudwatch_embedded_metrics' };

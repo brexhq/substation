@@ -1,4 +1,4 @@
-local sub = import '../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../../build/config/substation.libsonnet';
 
 local city = sub.kv_store.mmdb(
   settings={ file: 'path/to/GeoLite2-City.mmdb' }

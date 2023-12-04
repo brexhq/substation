@@ -55,3 +55,19 @@ func (a *API) Invoke(ctx aws.Context, function string, payload []byte) (resp *la
 
 	return resp, nil
 }
+
+func (a *API) InvokeAsync(ctx aws.Context, function string, payload []byte) (resp *lambda.InvokeOutput, err error) {
+	resp, err = a.Client.InvokeWithContext(
+		ctx,
+		&lambda.InvokeInput{
+			FunctionName:   aws.String(function),
+			InvocationType: aws.String("Event"),
+			Payload:        payload,
+		})
+
+	if err != nil {
+		return nil, fmt.Errorf("invoke_async function %s: %v", function, err)
+	}
+
+	return resp, nil
+}

@@ -1,7 +1,6 @@
 package lambda
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
@@ -20,16 +19,16 @@ func (m mockedInvoke) InvokeWithContext(ctx aws.Context, input *lambda.InvokeInp
 	return &m.Resp, nil
 }
 
-func TestPutItem(t *testing.T) {
+func TestInvoke(t *testing.T) {
 	tests := []struct {
 		resp     lambda.InvokeOutput
-		expected []byte
+		expected int64
 	}{
 		{
 			resp: lambda.InvokeOutput{
-				Payload: []byte("foo"),
+				StatusCode: aws.Int64(200),
 			},
-			expected: []byte("foo"),
+			expected: 200,
 		},
 	}
 
@@ -45,8 +44,39 @@ func TestPutItem(t *testing.T) {
 			t.Fatalf("%d, unexpected error", err)
 		}
 
-		if c := bytes.Compare(resp.Payload, test.expected); c != 0 {
-			t.Errorf("expected %+v, got %s", resp.Payload, test.expected)
+		if *resp.StatusCode != test.expected {
+			t.Errorf("expected %+v, got %d", resp.Payload, test.expected)
+		}
+	}
+}
+
+func TestInvokeAsync(t *testing.T) {
+	tests := []struct {
+		resp     lambda.InvokeOutput
+		expected int64
+	}{
+		{
+			resp: lambda.InvokeOutput{
+				StatusCode: aws.Int64(202),
+			},
+			expected: 202,
+		},
+	}
+
+	ctx := context.TODO()
+
+	for _, test := range tests {
+		a := API{
+			mockedInvoke{Resp: test.resp},
+		}
+
+		resp, err := a.Invoke(ctx, "", nil)
+		if err != nil {
+			t.Fatalf("%d, unexpected error", err)
+		}
+
+		if *resp.StatusCode != test.expected {
+			t.Errorf("expected %+v, got %d", resp.Payload, test.expected)
 		}
 	}
 }

@@ -152,7 +152,7 @@ data "aws_iam_policy_document" "custom_policy_document" {
       actions = [
         "secretsmanager:GetSecretValue",
       ]
-      
+
       resources = [
         aws_secretsmanager_secret.secret.arn,
       ]

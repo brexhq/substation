@@ -671,6 +671,16 @@
           type: 'send_aws_kinesis_data_stream',
           settings: std.mergePatch(default, $.helpers.abbv(settings)),
         },
+        lambda(settings={}): {
+          local default = {
+            aws: $.config.aws,
+            retry: $.config.retry,
+            function_name: null,
+          },
+
+          type: 'send_aws_lambda',
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
+        },
         s3(settings={}): {
           local default = {
             aws: $.config.aws,

@@ -166,11 +166,32 @@ flowchart LR
     sendS3y --> bucket
 ```
 
+## SNS
+
+Deploys a data pipeline that reads data from an S3 bucket via an SNS topic.
+
+```mermaid
+
+flowchart LR
+    %% resources
+    bucket([S3 Bucket])
+    sns([SNS Topic])
+
+    handler[[Handler]]
+    transforms[Transforms]
+
+    %% connections
+    bucket --> sns --> handler
+    subgraph Substation Node 
+    handler --> transforms
+    end
+```
+
 # SNS
 
 ## Pub/Sub
 
-Deploys a data pipeline that implements a [publish/subscribe (pub/sub) pattern](https://aws.amazon.com/what-is/pub-sub-messaging/). The `cmd/client/file` Substation application can be used to send data to the SNS topic.
+Deploys a data pipeline that implements a [publish/subscribe (pub/sub) pattern](https://aws.amazon.com/what-is/pub-sub-messaging/). The `examples/cmd/client/file` application can be used to send data to the SNS topic.
 
 ```mermaid
 

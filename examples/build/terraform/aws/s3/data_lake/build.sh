@@ -23,7 +23,7 @@ then
 fi
 
 export AWS_DEFAULT_REGION=$AWS_REGION
-BUILD_DIR=$SUBSTATION_ROOT/examples/aws/lambda/s3/data_lake
+BUILD_DIR=$SUBSTATION_ROOT/examples/build/terraform/aws/s3/data_lake
 
 echo "> Deploying infrastructure in AWS with Terraform" && \
 cd $BUILD_DIR/terraform && \

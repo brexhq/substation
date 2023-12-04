@@ -1,5 +1,5 @@
 export AWS_DEFAULT_REGION=$AWS_REGION
-BUILD_DIR=$SUBSTATION_ROOT/examples/aws/lambda/sns/pub_sub
+BUILD_DIR=$SUBSTATION_ROOT/examples/build/terraform/aws/sns/pub_sub
 
 echo "> Removing Substation configurations from AWS AppConfig" && \
 cd $SUBSTATION_ROOT && \

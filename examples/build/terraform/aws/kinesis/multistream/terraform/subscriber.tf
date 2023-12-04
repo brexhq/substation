@@ -1,5 +1,5 @@
 module "lambda_subscriber" {
-  source = "../../../../../../build/terraform/aws/lambda"
+  source = "../../../../../../../build/terraform/aws/lambda"
   # These are always required for all Lambda.
   kms       = module.kms
   appconfig = aws_appconfig_application.substation

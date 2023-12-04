@@ -23,7 +23,7 @@ then
 fi
 
 export AWS_DEFAULT_REGION=$AWS_REGION
-BUILD_DIR=$SUBSTATION_ROOT/examples/aws/lambda/sqs/microservice
+BUILD_DIR=$SUBSTATION_ROOT/examples/build/terraform/aws/sqs/microservice
 
 echo "> Deploying infrastructure in AWS with Terraform" && \
 cd $BUILD_DIR/terraform && \

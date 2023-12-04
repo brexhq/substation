@@ -6,7 +6,7 @@ data "aws_caller_identity" "caller" {}
 
 # KMS encryption key that is shared by all Substation infrastructure
 module "kms" {
-  source = "../../../../../../build/terraform/aws/kms"
+  source = "../../../../../../../build/terraform/aws/kms"
 
   config = {
     name   = "alias/substation"
@@ -64,7 +64,7 @@ resource "aws_appconfig_deployment_strategy" "instant" {
 
 # Repository for the core Substation application.
 module "ecr_substation" {
-  source = "../../../../../../build/terraform/aws/ecr"
+  source = "../../../../../../../build/terraform/aws/ecr"
   kms    = module.kms
 
   config = {
@@ -205,7 +205,7 @@ resource "aws_kinesis_firehose_delivery_stream" "firehose" {
 }
 
 module "processor" {
-  source = "../../../../../../build/terraform/aws/lambda"
+  source = "../../../../../../../build/terraform/aws/lambda"
   # These are always required for all Lambda.
   kms       = module.kms
   appconfig = aws_appconfig_application.substation

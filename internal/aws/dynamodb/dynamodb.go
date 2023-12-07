@@ -41,16 +41,50 @@ func (a *API) IsEnabled() bool {
 }
 
 // PutItem is a convenience wrapper for putting items into a DynamoDB table.
-func (a *API) PutItem(ctx aws.Context, table string, item map[string]*dynamodb.AttributeValue) (resp *dynamodb.PutItemOutput, err error) {
-	resp, err = a.Client.PutItemWithContext(
-		ctx,
-		&dynamodb.PutItemInput{
-			TableName: aws.String(table),
-			Item:      item,
-		})
+func (a *API) PutItem(ctx aws.Context, table string, item map[string]interface{}) (resp *dynamodb.PutItemOutput, err error) {
+	input := &dynamodb.PutItemInput{
+		TableName: aws.String(table),
+	}
 
+	attr, err := dynamodbattribute.MarshalMap(item)
 	if err != nil {
-		return nil, fmt.Errorf("putitem table %s: %v", table, err)
+		return nil, err
+	}
+
+	input.Item = attr
+
+	resp, err = a.Client.PutItemWithContext(ctx, input)
+	if err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func (a *API) PutItemWithCondition(ctx aws.Context, table string, item map[string]interface{}, conditionExpression string, expressionAttributeNames map[string]*string, expressionAttributeValues map[string]interface{}) (resp *dynamodb.PutItemOutput, err error) {
+	input := &dynamodb.PutItemInput{
+		TableName:                aws.String(table),
+		ConditionExpression:      aws.String(conditionExpression),
+		ExpressionAttributeNames: expressionAttributeNames,
+	}
+
+	attr, err := dynamodbattribute.MarshalMap(item)
+	if err != nil {
+		return nil, err
+	}
+
+	input.Item = attr
+
+	expAttr, err := dynamodbattribute.MarshalMap(expressionAttributeValues)
+	if err != nil {
+		return nil, err
+	}
+
+	input.ExpressionAttributeValues = expAttr
+
+	resp, err = a.Client.PutItemWithContext(ctx, input)
+	if err != nil {
+		return resp, err
 	}
 
 	return resp, nil

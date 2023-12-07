@@ -3,7 +3,9 @@ package kv
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
@@ -50,20 +52,56 @@ type kvAWSDynamoDB struct {
 
 // Create a new AWS DynamoDB KV store.
 func newKVAWSDynamoDB(cfg config.Config) (*kvAWSDynamoDB, error) {
-	var store kvAWSDynamoDB
-	if err := iconfig.Decode(cfg.Settings, &store); err != nil {
+	var kv kvAWSDynamoDB
+	if err := iconfig.Decode(cfg.Settings, &kv); err != nil {
 		return nil, err
 	}
 
-	if store.TableName == "" {
-		return nil, fmt.Errorf("kv: aws_dynamodb: table %+v: %v", &store, errors.ErrMissingRequiredOption)
+	if kv.TableName == "" {
+		return nil, fmt.Errorf("kv: aws_dynamodb: table %+v: %v", &kv, errors.ErrMissingRequiredOption)
 	}
 
-	return &store, nil
+	return &kv, nil
 }
 
-func (store *kvAWSDynamoDB) String() string {
-	return toString(store)
+func (kv *kvAWSDynamoDB) String() string {
+	return toString(kv)
+}
+
+// Lock adds an item to the DynamoDB table with a conditional check.
+func (kv *kvAWSDynamoDB) Lock(ctx context.Context, key string, ttl int64) error {
+	attr := map[string]interface{}{
+		kv.Attributes.PartitionKey: key,
+		kv.Attributes.TTL:          ttl,
+	}
+
+	if kv.Attributes.SortKey != "" {
+		attr[kv.Attributes.SortKey] = "substation:kv_store"
+	}
+
+	// Since the sort key is optional and static, it is not included in the check.
+	exp := "attribute_not_exists(#pk) OR #ttl <= :now"
+	expAttrNames := map[string]*string{
+		"#pk":  &kv.Attributes.PartitionKey,
+		"#ttl": &kv.Attributes.TTL,
+	}
+	expAttrVals := map[string]interface{}{
+		":now": time.Now().Unix(),
+	}
+
+	// If the item already exists and the TTL has not expired, then this returns ErrLocked. The
+	// caller is expected to handle this error and retry the call if necessary.
+	if _, err := kv.client.PutItemWithCondition(ctx, kv.TableName, attr, exp, expAttrNames, expAttrVals); err != nil {
+		if awsErr, ok := err.(awserr.Error); ok {
+			if awsErr.Code() == "ConditionalCheckFailedException" {
+				return ErrNoLock
+			}
+		} else {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Get retrieves an item from the DynamoDB table. If the item had a time-to-live (TTL)
@@ -72,21 +110,21 @@ func (store *kvAWSDynamoDB) String() string {
 // This method uses the GetItem API call, which retrieves a single item from the table.
 // Learn more about the differences between GetItem and other item retrieval API calls here:
 // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/SQLtoNoSQL.ReadData.html.
-func (store *kvAWSDynamoDB) Get(ctx context.Context, key string) (interface{}, error) {
-	m := map[string]interface{}{
-		store.Attributes.PartitionKey: key,
+func (kv *kvAWSDynamoDB) Get(ctx context.Context, key string) (interface{}, error) {
+	item := map[string]interface{}{
+		kv.Attributes.PartitionKey: key,
 	}
 
-	if store.Attributes.SortKey != "" {
-		m[store.Attributes.SortKey] = "substation:kv_store"
+	if kv.Attributes.SortKey != "" {
+		item[kv.Attributes.SortKey] = "substation:kv_store"
 	}
 
-	resp, err := store.client.GetItem(ctx, store.TableName, m, store.ConsistentRead)
+	resp, err := kv.client.GetItem(ctx, kv.TableName, item, kv.ConsistentRead)
 	if err != nil {
 		return "", err
 	}
 
-	if val, found := resp.Item[store.Attributes.Value]; found {
+	if val, found := resp.Item[kv.Attributes.Value]; found {
 		var i interface{}
 		if err := dynamodbattribute.Unmarshal(val, &i); err != nil {
 			return nil, err
@@ -99,22 +137,17 @@ func (store *kvAWSDynamoDB) Get(ctx context.Context, key string) (interface{}, e
 }
 
 // SetWithTTL adds an item to the DynamoDB table.
-func (store *kvAWSDynamoDB) Set(ctx context.Context, key string, val interface{}) error {
-	m := map[string]interface{}{
-		store.Attributes.PartitionKey: key,
-		store.Attributes.Value:        val,
+func (kv *kvAWSDynamoDB) Set(ctx context.Context, key string, val interface{}) error {
+	attr := map[string]interface{}{
+		kv.Attributes.PartitionKey: key,
+		kv.Attributes.Value:        val,
 	}
 
-	if store.Attributes.SortKey != "" {
-		m[store.Attributes.SortKey] = "substation:kv_store"
+	if kv.Attributes.SortKey != "" {
+		attr[kv.Attributes.SortKey] = "substation:kv_store"
 	}
 
-	record, err := dynamodbattribute.MarshalMap(m)
-	if err != nil {
-		return err
-	}
-
-	if _, err := store.client.PutItem(ctx, store.TableName, record); err != nil {
+	if _, err := kv.client.PutItem(ctx, kv.TableName, attr); err != nil {
 		return err
 	}
 
@@ -122,27 +155,22 @@ func (store *kvAWSDynamoDB) Set(ctx context.Context, key string, val interface{}
 }
 
 // SetWithTTL adds an item to the DynamoDB table with a time-to-live (TTL) attribute.
-func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
-	if store.Attributes.TTL == "" {
+func (kv *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
+	if kv.Attributes.TTL == "" {
 		return errors.ErrMissingRequiredOption
 	}
 
-	m := map[string]interface{}{
-		store.Attributes.PartitionKey: key,
-		store.Attributes.Value:        val,
-		store.Attributes.TTL:          ttl,
+	attr := map[string]interface{}{
+		kv.Attributes.PartitionKey: key,
+		kv.Attributes.Value:        val,
+		kv.Attributes.TTL:          ttl,
 	}
 
-	if store.Attributes.SortKey != "" {
-		m[store.Attributes.SortKey] = "substation:kv_store"
+	if kv.Attributes.SortKey != "" {
+		attr[kv.Attributes.SortKey] = "substation:kv_store"
 	}
 
-	record, err := dynamodbattribute.MarshalMap(m)
-	if err != nil {
-		return err
-	}
-
-	if _, err := store.client.PutItem(ctx, store.TableName, record); err != nil {
+	if _, err := kv.client.PutItem(ctx, kv.TableName, attr); err != nil {
 		return err
 	}
 
@@ -150,31 +178,31 @@ func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val inte
 }
 
 // IsEnabled returns true if the DynamoDB client is ready for use.
-func (store *kvAWSDynamoDB) IsEnabled() bool {
-	return store.client.IsEnabled()
+func (kv *kvAWSDynamoDB) IsEnabled() bool {
+	return kv.client.IsEnabled()
 }
 
 // Setup creates a new DynamoDB client.
-func (store *kvAWSDynamoDB) Setup(ctx context.Context) error {
-	if store.TableName == "" || store.Attributes.PartitionKey == "" {
+func (kv *kvAWSDynamoDB) Setup(ctx context.Context) error {
+	if kv.TableName == "" || kv.Attributes.PartitionKey == "" {
 		return errors.ErrMissingRequiredOption
 	}
 
 	// Avoids unnecessary setup.
-	if store.client.IsEnabled() {
+	if kv.client.IsEnabled() {
 		return nil
 	}
 
-	store.client.Setup(aws.Config{
-		Region:        store.AWS.Region,
-		AssumeRoleARN: store.AWS.AssumeRoleARN,
-		MaxRetries:    store.Retry.Count,
+	kv.client.Setup(aws.Config{
+		Region:        kv.AWS.Region,
+		AssumeRoleARN: kv.AWS.AssumeRoleARN,
+		MaxRetries:    kv.Retry.Count,
 	})
 
 	return nil
 }
 
 // Close is unused since connections to DynamoDB are not stateful.
-func (store *kvAWSDynamoDB) Close() error {
+func (*kvAWSDynamoDB) Close() error {
 	return nil
 }

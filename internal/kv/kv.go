@@ -15,7 +15,23 @@ var (
 	m  map[string]Storer
 	// errSetNotSupported is returned when the KV set action is not supported.
 	errSetNotSupported = fmt.Errorf("set not supported")
+	ErrNoLock          = fmt.Errorf("unable to acquire lock")
 )
+
+type Locker interface {
+	Lock(context.Context, string, int64) error
+	Setup(context.Context) error
+	IsEnabled() bool
+}
+
+func NewLocker(cfg config.Config) (Locker, error) {
+	switch t := cfg.Type; t {
+	case "aws_dynamodb":
+		return newKVAWSDynamoDB(cfg)
+	default:
+		return nil, fmt.Errorf("kv_store locker: %s: %v", t, errors.ErrInvalidFactoryInput)
+	}
+}
 
 // Storer provides tools for getting values from and putting values into key-value stores.
 type Storer interface {

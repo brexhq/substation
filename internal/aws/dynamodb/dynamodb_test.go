@@ -98,7 +98,50 @@ func TestPutItem(t *testing.T) {
 			mockedPutItem{Resp: test.resp},
 		}
 
-		resp, err := a.PutItem(ctx, "", map[string]*dynamodb.AttributeValue{})
+		resp, err := a.PutItem(ctx, "", map[string]interface{}{})
+		if err != nil {
+			t.Fatalf("%d, unexpected error", err)
+		}
+
+		var item map[string]interface{}
+		err = dynamodbattribute.UnmarshalMap(resp.Attributes, &item)
+		if err != nil {
+			t.Fatalf("%d, unexpected error", err)
+		}
+
+		if item["foo"] != test.expected {
+			t.Errorf("expected %+v, got %s", item["foo"], test.expected)
+		}
+	}
+}
+
+func TestPutItemWithCondition(t *testing.T) {
+	tests := []struct {
+		resp     dynamodb.PutItemOutput
+		expected string
+	}{
+		{
+			resp: dynamodb.PutItemOutput{
+				Attributes: map[string]*dynamodb.AttributeValue{
+					"foo": {
+						S: aws.String("bar"),
+					},
+				},
+				ConsumedCapacity:      &dynamodb.ConsumedCapacity{},
+				ItemCollectionMetrics: &dynamodb.ItemCollectionMetrics{},
+			},
+			expected: "bar",
+		},
+	}
+
+	ctx := context.TODO()
+
+	for _, test := range tests {
+		a := API{
+			mockedPutItem{Resp: test.resp},
+		}
+
+		resp, err := a.PutItemWithCondition(ctx, "", map[string]interface{}{}, "", map[string]*string{}, map[string]interface{}{})
 		if err != nil {
 			t.Fatalf("%d, unexpected error", err)
 		}

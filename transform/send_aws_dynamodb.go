@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
@@ -90,17 +89,12 @@ func (tf *sendAWSDynamoDB) Transform(ctx context.Context, msg *message.Message) 
 	}
 
 	for _, item := range value.Array() {
-		cache := make(map[string]interface{})
+		attr := make(map[string]interface{})
 		for k, v := range item.Map() {
-			cache[k] = v.Value()
+			attr[k] = v.Value()
 		}
 
-		attrVals, err := dynamodbattribute.MarshalMap(cache)
-		if err != nil {
-			return nil, fmt.Errorf("transform: send_aws_dynamodb: table %s: %v", tf.conf.TableName, err)
-		}
-
-		if _, err = tf.client.PutItem(ctx, tf.conf.TableName, attrVals); err != nil {
+		if _, err := tf.client.PutItem(ctx, tf.conf.TableName, attr); err != nil {
 			// PutItem errors return metadata and don't require more information.
 			return nil, fmt.Errorf("transform: send_aws_dynamodb: %v", err)
 		}

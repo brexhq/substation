@@ -510,6 +510,21 @@
         type: 'meta_for_each',
         settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
+      kv_store: {
+        lock(settings={}): {
+          local default = {
+            transform: null,
+            lock_key: null,
+            prefix: null,
+            ttl_key: null, 
+            ttl_offset: null,
+            kv_store: null,
+          },
+
+          type: 'meta_kv_store_lock',
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
+        },
+      },
       metric: {
         duration(settings={}): {
           local default = {

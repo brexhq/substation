@@ -19,7 +19,7 @@ local cnd = sub.cnd.all([
 local retries = ['0s', '1s', '2s', '4s'];
 {
   transforms:
-    // The retry with backoff behavior is implemented by pipelining a delay transform 
+    // The retry with backoff behavior is implemented by pipelining a delay transform
     // with another transform and validating the Message before each retry. The delay
     // duration is increased with each attempt.
     [
@@ -38,7 +38,7 @@ local retries = ['0s', '1s', '2s', '4s'];
       for r in retries
     ] + [
       // If there is no output after all retry attempts, then an error is thrown to crash the program.
-      // This is the same pattern from the build/config/transform/meta/crash_program example.
+      // This is the same technique from the build/config/transform/meta/crash_program example.
       sub.tf.meta.switch(settings={ switch: [
         {
           condition: sub.cnd.any(key_is_empty),

@@ -1,4 +1,4 @@
-// This example shows how to intentionally crash a program if a trasnform
+// This example shows how to intentionally crash a program if a transform
 // does not produce an output. This technique can be used to provide strict
 // guarantees about the result of data transformations.
 local sub = import '../../../../../../build/config/substation.libsonnet';

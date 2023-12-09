@@ -13,9 +13,9 @@ local domain_match = sub.cnd.all(
   concurrency: 1,
   transforms: [
     sub.tf.send.stdout(),
-    // In real-world scenarios, the match decision is typically used to
-    // summarize an array of values. For this example, the decision is
-    // represented as a boolean value and sent to stdout.
+    // In real-world deployments, the match decision is typically used 
+    // to summarize an array of values. For this example, the decision 
+    // is represented as a boolean value and printed to stdout.
     sub.tf.meta.switch(
       settings={ switch: [
         {

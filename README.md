@@ -5,7 +5,7 @@
 src="https://github.com/brexhq/substation/blob/release/v1/.github/media/substation_logo.png" />
 </p>
 
-<p align="center">Substation is a cloud-native, event-driven data pipeline toolkit designed for security teams.</p>
+<p align="center">Substation is a cloud-native, event-driven data pipeline toolkit built for security teams.</p>
 
 <div align="center">
 
@@ -17,13 +17,13 @@ src="https://github.com/brexhq/substation/blob/release/v1/.github/media/substati
 
 Substation is inspired by data pipeline systems such as Logstash and Fluentd, but is built for modern security teams:
 
-- **Extensible Data Processing**: Build custom data processing pipeline systems and microservices using out-of-the-box applications and 100+ data transformation functions, or create your own written in Go.
+- **Extensible Data Processing**: Build data processing pipeline systems and microservices using out-of-the-box applications and 100+ data transformation functions, or create your own written in Go.
 - **Route Data Across the Enterprise**: Conditionally route data to, from, and between AWS cloud services, including S3, Kinesis, SQS, and Lambda, or to any HTTP endpoint.
 - **Bring Your Own Schema**: Format, normalize, and enrich event logs to comply with the Elastic Common Schema (ECS), Open Cybersecurity Schema Framework (OCSF), or any other schema.
 - **Unlimited Data Enrichment**: Use external APIs to enrich event logs affordably and at scale with enterprise and threat intelligence, or build a microservice that reduces spend in expensive security APIs.
 - **No Servers, No Maintenance**: Deploys as a serverless application in your AWS account, launches in minutes using Terraform, and requires no maintenance after deployment.
 - **Runs Almost Anywhere**: Create applications that run on most platforms supported by Go and transform data consistently across laptops, servers, containers, and serverless cloud functions.
-- **High Performance, Low Cost**: Transform 100,000+ events per second while keeping cloud costs as low as a few cents per GB of data processed. Vendor solutions, like [Cribl](https://cribl.io/cribl-pricing/) and [Datadog](https://www.datadoghq.com/pricing/?product=observability-pipelines#products), can cost up to 10x more.
+- **High Performance, Low Cost**: Transform 100,000+ events per second while keeping cloud costs as low as a few cents per GB. Vendor solutions, like [Cribl](https://cribl.io/cribl-pricing/) and [Datadog](https://www.datadoghq.com/pricing/?product=observability-pipelines#products), can cost up to 10x more.
 
 All of these data pipeline and microservice systems, and many more, can be built with Substation:
 
@@ -37,7 +37,7 @@ You can run Substation on these platforms:
 - [macOS / Linux](https://substation.readme.io/v1.0.0/docs/try-substation-on-macos-linux)
 - [AWS](https://substation.readme.io/v1.0.0/docs/try-substation-on-aws)
 
-When you're ready to deploy Substation in production, use the [AWS Lambda examples](examples/aws/lambda) as a starting point. These examples include common deployment patterns and demonstrate best practices for managing the system using Terraform and Jsonnet.
+When you're ready to deploy Substation in production, use the [AWS examples](examples/build/terraform/aws) as a starting point. These examples include common deployment patterns and demonstrate best practices for managing the system using Terraform and Jsonnet.
 
 ## Transforming Event Logs
 
@@ -162,12 +162,12 @@ Substation excels at formatting, normalizing, and enriching event logs. For exam
 Substation can route data to several destinations from a single process and, unlike most other data pipeline systems,
 data transformation and routing are functionally equivalent -- this means that data can be transformed or routed in any order.
 
-Below is an example where:
+In this configuration, data is: 
 
-- Data (JSON array) is backed up to AWS S3
-- Events from the array are extracted into individual events and printed to stdout
-- Events are conditionally removed from the pipeline based on the value of a field
-- All remaining events are sent to an HTTPS endpoint
+- Written to AWS S3
+- Printed to stdout
+- Conditionally dropped (filtered, removed)
+- Sent to an HTTPS endpoint
 
 ```jsonnet
 // The input is a JSON array of objects, such as:
@@ -183,11 +183,10 @@ local is_false = sub.cnd.str.eq(settings={ obj: { key: 'field3' }, string: 'fals
 
 {
   transforms: [
-    // Pre-transformed data is backed up to S3.
+    // Pre-transformed data is written to an object in AWS S3 for long-term storage.
     sub.tf.send.aws.s3(settings={ bucket_name: 'example-bucket-name' }),
-    // The JSON array is split into individual events that are processed
-    // individually by the remaining transforms. Each event is printed
-    // to stdout.
+    // The JSON array is split into individual events that go through 
+    // the remaining transforms. Each event is printed to stdout.
     sub.tf.agg.from.array(),
     sub.tf.send.stdout(),
     // Events where field3 is false are removed from the pipeline.
@@ -224,9 +223,9 @@ local sub = import 'substation.libsonnet';
 
 ## Configuring Applications
 
-Substation applications share a common configuration profile and all transform functions behave identically whether they are run from a laptop, server, container, or AWS Lambda. This makes it easy to develop configuration changes locally, validate them in a build (CI/CD) pipeline, and run integration tests in a staging environment before deploying to production.
+Substation applications share configurations and all transform functions behave identically whether they are run from a laptop, server, container, or AWS Lambda. This makes it easy to develop configuration changes locally, validate them in a build (CI/CD) pipeline, and run integration tests in a staging environment before deploying to production.
 
-Configurations are written in Jsonnet and can be expressed as functional code; this simplifies version control and lets you build reusable data processing libraries. Compare the configuration below to similar configurations from Logstash and Fluentd:
+Configurations are written in Jsonnet and can be expressed as functional code; this makes management in version control easier and lets you build reusable data processing libraries. Compare the configuration below to similar configurations for Logstash and Fluentd:
 
 <table>
 <tr>

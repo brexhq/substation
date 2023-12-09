@@ -19,8 +19,8 @@ local cnd = sub.cnd.all([
 local retries = ['0s', '1s', '2s', '4s'];
 {
   transforms:
-    // The wait behavior is implemented by pipelining a delay transform with the
-    // another transform and validating the Message before each retry. The delay
+    // The retry with backoff behavior is implemented by pipelining a delay transform 
+    // with another transform and validating the Message before each retry. The delay
     // duration is increased with each attempt.
     [
       sub.pattern.tf.conditional(

@@ -88,7 +88,7 @@ resource "aws_sns_topic" "autoscaling_topic" {
 
 # API Gateway that sends data to Kinesis.
 module "gateway_to_kinesis" {
-  source = "../../../../../../../build/terraform/aws/lambdaapi_gateway/kinesis_data_stream"
+  source = "../../../../../../../build/terraform/aws/api_gateway/kinesis_data_stream"
   # Always required for the Kinisis Data Stream integration.
   kinesis_data_stream = module.kds_src
 

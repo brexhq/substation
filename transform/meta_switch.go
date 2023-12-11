@@ -13,7 +13,7 @@ import (
 )
 
 type metaSwitchConfig struct {
-	Switch []struct {
+	Cases []struct {
 		Condition condition.Config `json:"condition"`
 		Transform config.Config    `json:"transform"`
 	} `json:"switch"`
@@ -24,7 +24,7 @@ func (c *metaSwitchConfig) Decode(in interface{}) error {
 }
 
 func (c *metaSwitchConfig) Validate() error {
-	if len(c.Switch) == 0 {
+	if len(c.Cases) == 0 {
 		return fmt.Errorf("switch: %v", errors.ErrMissingRequiredOption)
 	}
 
@@ -45,7 +45,7 @@ func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) 
 		op condition.Operator
 		tf Transformer
 	}
-	for _, s := range conf.Switch {
+	for _, s := range conf.Cases {
 		op, err := condition.New(ctx, s.Condition)
 		if err != nil {
 			return nil, fmt.Errorf("transform: meta_switch: %v", err)

@@ -532,7 +532,7 @@
         settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       switch(settings={}): {
-        local default = { switch: null },
+        local default = { cases: null },
 
         type: 'meta_switch',
         settings: settings,

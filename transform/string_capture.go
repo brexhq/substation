@@ -17,14 +17,13 @@ type stringCaptureConfig struct {
 
 	// Pattern is the regular expression used to capture values.
 	Pattern string `json:"pattern"`
+	re      *regexp.Regexp
 
-	// Count is the number of matches to capture.
+	// Count is the number of captures to make.
 	//
 	// This is optional and defaults to 0, which means that a single
 	// capture is made.
 	Count int `json:"count"`
-
-	re *regexp.Regexp
 }
 
 func (c *stringCaptureConfig) Decode(in interface{}) error {

@@ -173,8 +173,8 @@ var metaForEachTests = []struct {
 				"transform": config.Config{
 					Type: "string_replace",
 					Settings: map[string]interface{}{
-						"old": "r",
-						"new": "z",
+						"pattern":     "r",
+						"replacement": "z",
 					},
 				},
 			},

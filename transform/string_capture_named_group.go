@@ -17,9 +17,8 @@ type stringCaptureNamedGroupConfig struct {
 
 	// Pattern is the regular expression used to capture values.
 	Pattern string `json:"pattern"`
-
-	re    *regexp.Regexp
-	names []string
+	re      *regexp.Regexp
+	names   []string
 }
 
 func (c *stringCaptureNamedGroupConfig) Decode(in interface{}) error {

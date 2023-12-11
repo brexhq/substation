@@ -22,8 +22,8 @@ var stringReplaceTests = []struct {
 		"data replace",
 		config.Config{
 			Settings: map[string]interface{}{
-				"old": "c",
-				"new": "b",
+				"pattern":     "c",
+				"replacement": "b",
 			},
 		},
 		[]byte(`abc`),
@@ -35,8 +35,8 @@ var stringReplaceTests = []struct {
 		"data remove",
 		config.Config{
 			Settings: map[string]interface{}{
-				"old": "c",
-				"new": "",
+				"pattern":     "c",
+				"replacement": "",
 			},
 		},
 		[]byte(`abc`),
@@ -53,8 +53,8 @@ var stringReplaceTests = []struct {
 					"key":     "a",
 					"set_key": "a",
 				},
-				"old": "c",
-				"new": "b",
+				"pattern":     "c",
+				"replacement": "b",
 			},
 		},
 		[]byte(`{"a":"bc"}`),
@@ -70,7 +70,7 @@ var stringReplaceTests = []struct {
 					"key":     "a",
 					"set_key": "a",
 				},
-				"old": "c",
+				"pattern": "c",
 			},
 		},
 		[]byte(`{"a":"bc"}`),

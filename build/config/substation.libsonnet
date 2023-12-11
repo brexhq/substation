@@ -757,36 +757,29 @@
         type: 'string_append',
         settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
-      match: {
-        default: {
+      capture(settings={}): {
+        local default = {
           object: $.config.object,
           pattern: null,
         },
-        find_all(settings={}): {
-          local default = $.transform.string.match.default,
 
-          type: 'string_match_find_all',
-          settings: std.mergePatch(default, $.helpers.abbv(settings)),
+        type: 'string_capture',
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
+      },
+      capture_named_group(settings={}): {
+        local default = {
+          object: $.config.object,
+          pattern: null,
         },
-        find(settings={}): {
-          local default = $.transform.string.match.default,
 
-          type: 'string_match_find',
-          settings: std.mergePatch(default, $.helpers.abbv(settings)),
-        },
-        named_group(settings={}): {
-          local default = $.transform.string.match.default,
-
-          type: 'string_match_named_group',
-          settings: std.mergePatch(default, $.helpers.abbv(settings)),
-        },
+        type: 'string_capture_named_group',
+        settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       replace(settings={}): {
         local default = {
           object: $.config.object,
-          old: null,
-          new: null,
-          count: -1,
+          pattern: null,
+          replacement: null,
         },
 
         type: 'string_replace',

@@ -9,9 +9,9 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &stringMatchFind{}
+var _ Transformer = &stringCapture{}
 
-var stringMatchFindTests = []struct {
+var stringCaptureTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -28,6 +28,19 @@ var stringMatchFindTests = []struct {
 		[]byte(`b@c`),
 		[][]byte{
 			[]byte(`b`),
+		},
+	},
+	{
+		"data",
+		config.Config{
+			Settings: map[string]interface{}{
+				"count":   3,
+				"pattern": "(.{1})",
+			},
+		},
+		[]byte(`bcd`),
+		[][]byte{
+			[]byte(`["b","c","d"]`),
 		},
 	},
 	// object tests
@@ -47,13 +60,30 @@ var stringMatchFindTests = []struct {
 			[]byte(`{"a":"b"}`),
 		},
 	},
+	{
+		"object",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"key":     "a",
+					"set_key": "a",
+				},
+				"count":   3,
+				"pattern": "(.{1})",
+			},
+		},
+		[]byte(`{"a":"bcd"}`),
+		[][]byte{
+			[]byte(`{"a":["b","c","d"]}`),
+		},
+	},
 }
 
-func TestStringMatchFind(t *testing.T) {
+func TestStringCapture(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range stringMatchFindTests {
+	for _, test := range stringCaptureTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newStringMatchFind(ctx, test.cfg)
+			tf, err := newStringCapture(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -76,7 +106,7 @@ func TestStringMatchFind(t *testing.T) {
 	}
 }
 
-func benchmarkStringMatchFind(b *testing.B, tf *stringMatchFind, data []byte) {
+func benchmarkStringCapture(b *testing.B, tf *stringCapture, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -84,16 +114,16 @@ func benchmarkStringMatchFind(b *testing.B, tf *stringMatchFind, data []byte) {
 	}
 }
 
-func BenchmarkStringMatchFind(b *testing.B) {
-	for _, test := range stringMatchFindTests {
-		tf, err := newStringMatchFind(context.TODO(), test.cfg)
+func BenchmarkStringCapture(b *testing.B) {
+	for _, test := range stringCaptureTests {
+		tf, err := newStringCapture(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkStringMatchFind(b, tf, test.test)
+				benchmarkStringCapture(b, tf, test.test)
 			},
 		)
 	}

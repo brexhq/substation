@@ -64,7 +64,7 @@ var metaForEachTests = []struct {
 		},
 	},
 	{
-		"string_match_find",
+		"string_capture",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -72,7 +72,7 @@ var metaForEachTests = []struct {
 					"set_key": "user_name",
 				},
 				"transform": config.Config{
-					Type: "string_match_find",
+					Type: "string_capture",
 					Settings: map[string]interface{}{
 						"pattern": "^([^@]*)@.*$",
 					},

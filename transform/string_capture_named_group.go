@@ -12,7 +12,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type stringMatchNamedGroupConfig struct {
+type stringCaptureNamedGroupConfig struct {
 	Object iconfig.Object `json:"object"`
 
 	// Pattern is the regular expression used to capture values.
@@ -22,11 +22,11 @@ type stringMatchNamedGroupConfig struct {
 	names []string
 }
 
-func (c *stringMatchNamedGroupConfig) Decode(in interface{}) error {
+func (c *stringCaptureNamedGroupConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *stringMatchNamedGroupConfig) Validate() error {
+func (c *stringCaptureNamedGroupConfig) Validate() error {
 	if c.Object.Key == "" && c.Object.SetKey != "" {
 		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
 	}
@@ -50,8 +50,8 @@ func (c *stringMatchNamedGroupConfig) Validate() error {
 	return nil
 }
 
-func newStringMatchNamedGroup(_ context.Context, cfg config.Config) (*stringMatchNamedGroup, error) {
-	conf := stringMatchNamedGroupConfig{}
+func newStringCaptureNamedGroup(_ context.Context, cfg config.Config) (*stringCaptureNamedGroup, error) {
+	conf := stringCaptureNamedGroupConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform: string_match_named_group: %v", err)
 	}
@@ -60,7 +60,7 @@ func newStringMatchNamedGroup(_ context.Context, cfg config.Config) (*stringMatc
 		return nil, fmt.Errorf("transform: string_match_named_group: %v", err)
 	}
 
-	tf := stringMatchNamedGroup{
+	tf := stringCaptureNamedGroup{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
 	}
@@ -68,12 +68,12 @@ func newStringMatchNamedGroup(_ context.Context, cfg config.Config) (*stringMatc
 	return &tf, nil
 }
 
-type stringMatchNamedGroup struct {
-	conf     stringMatchNamedGroupConfig
+type stringCaptureNamedGroup struct {
+	conf     stringCaptureNamedGroupConfig
 	isObject bool
 }
 
-func (tf *stringMatchNamedGroup) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *stringCaptureNamedGroup) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
@@ -121,7 +121,7 @@ func (tf *stringMatchNamedGroup) Transform(_ context.Context, msg *message.Messa
 	return []*message.Message{msg}, nil
 }
 
-func (tf *stringMatchNamedGroup) String() string {
+func (tf *stringCaptureNamedGroup) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

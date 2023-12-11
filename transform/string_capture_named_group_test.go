@@ -9,9 +9,9 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &stringMatchFindAll{}
+var _ Transformer = &stringCaptureNamedGroup{}
 
-var stringMatchFindAllTests = []struct {
+var stringCaptureNamedGroupTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
@@ -22,13 +22,12 @@ var stringMatchFindAllTests = []struct {
 		"data",
 		config.Config{
 			Settings: map[string]interface{}{
-				"count":   3,
-				"pattern": "(.{1})",
+				"pattern": "(?P<b>[a-zA-Z]+) (?P<d>[a-zA-Z]+)",
 			},
 		},
-		[]byte(`bcd`),
+		[]byte(`c e`),
 		[][]byte{
-			[]byte(`["b","c","d"]`),
+			[]byte(`{"b":"c","d":"e"}`),
 		},
 	},
 	// object tests
@@ -40,22 +39,21 @@ var stringMatchFindAllTests = []struct {
 					"key":     "a",
 					"set_key": "a",
 				},
-				"count":   3,
-				"pattern": "(.{1})",
+				"pattern": "(?P<b>[a-zA-Z]+) (?P<d>[a-zA-Z]+)",
 			},
 		},
-		[]byte(`{"a":"bcd"}`),
+		[]byte(`{"a":"c e"}`),
 		[][]byte{
-			[]byte(`{"a":["b","c","d"]}`),
+			[]byte(`{"a":{"b":"c","d":"e"}}`),
 		},
 	},
 }
 
-func TestStringMatchFindAll(t *testing.T) {
+func TestStringCaptureNamedGroup(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range stringMatchFindAllTests {
+	for _, test := range stringCaptureNamedGroupTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newStringMatchFindAll(ctx, test.cfg)
+			tf, err := newStringCaptureNamedGroup(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -78,7 +76,7 @@ func TestStringMatchFindAll(t *testing.T) {
 	}
 }
 
-func benchmarkStringMatchFindAll(b *testing.B, tf *stringMatchFindAll, data []byte) {
+func benchmarkStringCaptureNamedGroup(b *testing.B, tf *stringCaptureNamedGroup, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -86,16 +84,16 @@ func benchmarkStringMatchFindAll(b *testing.B, tf *stringMatchFindAll, data []by
 	}
 }
 
-func BenchmarkStringMatchFindAll(b *testing.B) {
-	for _, test := range stringMatchFindAllTests {
-		tf, err := newStringMatchFindAll(context.TODO(), test.cfg)
+func BenchmarkStringCaptureNamedGroup(b *testing.B) {
+	for _, test := range stringCaptureNamedGroupTests {
+		tf, err := newStringCaptureNamedGroup(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkStringMatchFindAll(b, tf, test.test)
+				benchmarkStringCaptureNamedGroup(b, tf, test.test)
 			},
 		)
 	}

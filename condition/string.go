@@ -7,7 +7,7 @@ import (
 type stringConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	String string `json:"string"`
+	Value string `json:"value"`
 }
 
 func (c *stringConfig) Decode(in interface{}) error {

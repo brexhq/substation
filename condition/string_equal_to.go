@@ -17,7 +17,7 @@ func newStringEqualTo(_ context.Context, cfg config.Config) (*stringEqualTo, err
 
 	insp := stringEqualTo{
 		conf: conf,
-		b:    []byte(conf.String),
+		b:    []byte(conf.Value),
 	}
 
 	return &insp, nil

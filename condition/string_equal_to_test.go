@@ -20,7 +20,7 @@ var stringEqualToTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": "abcde",
+				"value": "abcde",
 			},
 		},
 		[]byte("abcde"),
@@ -30,7 +30,7 @@ var stringEqualToTests = []struct {
 		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": "abcde",
+				"value": "abcde",
 			},
 		},
 		[]byte("abcdef"),
@@ -40,7 +40,7 @@ var stringEqualToTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": `""`,
+				"value": `""`,
 			},
 		},
 		[]byte("\"\""),

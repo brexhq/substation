@@ -181,7 +181,7 @@
     string: {
       default: {
         object: $.config.object,
-        string: null,
+        value: null,
       },
       has(settings={}): $.condition.string.contains(settings=settings),
       contains(settings={}): {

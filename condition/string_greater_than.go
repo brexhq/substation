@@ -17,7 +17,7 @@ func newStringGreaterThan(_ context.Context, cfg config.Config) (*stringGreaterT
 
 	insp := stringGreaterThan{
 		conf: conf,
-		b:    []byte(conf.String),
+		b:    []byte(conf.Value),
 	}
 
 	return &insp, nil

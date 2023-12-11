@@ -20,7 +20,7 @@ var stringLessThanTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": "b",
+				"value": "b",
 			},
 		},
 		[]byte("a"),
@@ -30,7 +30,7 @@ var stringLessThanTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": "2024-01",
+				"value": "2024-01",
 			},
 		},
 		[]byte(`2023-01-01T00:00:00Z`),

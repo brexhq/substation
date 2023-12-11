@@ -17,7 +17,7 @@ func newStringStartsWith(_ context.Context, cfg config.Config) (*stringStartsWit
 
 	insp := stringStartsWith{
 		conf: conf,
-		b:    []byte(conf.String),
+		b:    []byte(conf.Value),
 	}
 
 	return &insp, nil

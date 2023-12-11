@@ -33,7 +33,7 @@ var allTests = []struct {
 			{
 				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"string": "foo",
+					"value": "foo",
 				},
 			},
 		},
@@ -85,7 +85,7 @@ var allTests = []struct {
 			{
 				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"string": "foo",
+					"value": "foo",
 				},
 			},
 			{
@@ -112,13 +112,13 @@ var allTests = []struct {
 							{
 								Type: "string_starts_with",
 								Settings: map[string]interface{}{
-									"string": "f",
+									"value": "f",
 								},
 							},
 							{
 								Type: "string_ends_with",
 								Settings: map[string]interface{}{
-									"string": "b",
+									"value": "b",
 								},
 							},
 						},
@@ -207,13 +207,13 @@ var anyTests = []struct {
 			{
 				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"string": "foo",
+					"value": "foo",
 				},
 			},
 			{
 				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"string": "baz",
+					"value": "baz",
 				},
 			},
 		},
@@ -251,7 +251,7 @@ var anyTests = []struct {
 			{
 				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"string": "foo",
+					"value": "foo",
 				},
 			},
 			{
@@ -284,7 +284,7 @@ var anyTests = []struct {
 							{
 								Type: "string_starts_with",
 								Settings: map[string]interface{}{
-									"string": "f",
+									"value": "f",
 								},
 							},
 						},
@@ -372,13 +372,13 @@ var noneTests = []struct {
 			{
 				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"string": "baz",
+					"value": "baz",
 				},
 			},
 			{
 				Type: "string_starts_with",
 				Settings: map[string]interface{}{
-					"string": "b",
+					"value": "b",
 				},
 			},
 		},
@@ -391,13 +391,13 @@ var noneTests = []struct {
 			{
 				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"string": "foo",
+					"value": "foo",
 				},
 			},
 			{
 				Type: "string_starts_with",
 				Settings: map[string]interface{}{
-					"string": "b",
+					"value": "b",
 				},
 			},
 		},
@@ -420,7 +420,7 @@ var noneTests = []struct {
 					"inspector": map[string]interface{}{
 						"type": "string_starts_with",
 						"settings": map[string]interface{}{
-							"string": "f",
+							"value": "f",
 						},
 					},
 				},

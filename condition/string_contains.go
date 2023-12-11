@@ -17,7 +17,7 @@ func newStringContains(_ context.Context, cfg config.Config) (*stringContains, e
 
 	insp := stringContains{
 		conf: conf,
-		b:    []byte(conf.String),
+		b:    []byte(conf.Value),
 	}
 
 	return &insp, nil

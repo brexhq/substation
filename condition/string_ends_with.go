@@ -17,7 +17,7 @@ func newStringEndsWith(_ context.Context, cfg config.Config) (*stringEndsWith, e
 
 	insp := stringEndsWith{
 		conf: conf,
-		b:    []byte(conf.String),
+		b:    []byte(conf.Value),
 	}
 
 	return &insp, nil

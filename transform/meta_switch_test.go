@@ -38,7 +38,7 @@ var metaSwitchTests = []struct {
 										"object": map[string]interface{}{
 											"key": "a",
 										},
-										"string": "b",
+										"value": "b",
 									},
 								},
 							},
@@ -83,7 +83,7 @@ var metaSwitchTests = []struct {
 										"object": map[string]interface{}{
 											"key": "a",
 										},
-										"string": "c",
+										"value": "c",
 									},
 								},
 							},
@@ -138,7 +138,7 @@ var metaSwitchTests = []struct {
 										"object": map[string]interface{}{
 											"key": "a",
 										},
-										"string": "c",
+										"value": "c",
 									},
 								},
 							},
@@ -163,7 +163,7 @@ var metaSwitchTests = []struct {
 										"object": map[string]interface{}{
 											"key": "a",
 										},
-										"string": "d",
+										"value": "d",
 									},
 								},
 							},

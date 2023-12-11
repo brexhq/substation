@@ -23,7 +23,7 @@ var stringStartsWithTests = []struct {
 				"object": map[string]interface{}{
 					"key": "a",
 				},
-				"string": "bc",
+				"value": "bc",
 			},
 		},
 		[]byte(`{"a":"bcde"}`),
@@ -33,7 +33,7 @@ var stringStartsWithTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": "bc",
+				"value": "bc",
 			},
 		},
 		[]byte("bcde"),
@@ -43,7 +43,7 @@ var stringStartsWithTests = []struct {
 		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": "de",
+				"value": "de",
 			},
 		},
 		[]byte("bcde"),

@@ -25,7 +25,7 @@ var metaNegateTests = []struct {
 						"object": map[string]interface{}{
 							"key": "a",
 						},
-						"string": "bcd",
+						"value": "bcd",
 					},
 					"type": "string_equal_to",
 				},
@@ -41,7 +41,7 @@ var metaNegateTests = []struct {
 				"inspector": map[string]interface{}{
 					"type": "string_equal_to",
 					"settings": map[string]interface{}{
-						"string": "bcd",
+						"value": "bcd",
 					},
 				},
 			},

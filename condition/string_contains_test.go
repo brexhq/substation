@@ -20,7 +20,7 @@ var stringContainsTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": "bc",
+				"value": "bc",
 			},
 		},
 		[]byte("abcd"),
@@ -30,7 +30,7 @@ var stringContainsTests = []struct {
 		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": "BC",
+				"value": "BC",
 			},
 		},
 		[]byte("abcd"),

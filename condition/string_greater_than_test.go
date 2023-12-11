@@ -20,7 +20,7 @@ var stringGreaterThanTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": "a",
+				"value": "a",
 			},
 		},
 		[]byte("b"),
@@ -30,7 +30,7 @@ var stringGreaterThanTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": "2022-01-01T00:00:00Z",
+				"value": "2022-01-01T00:00:00Z",
 			},
 		},
 		[]byte(`2023-01-01T00:00:00Z`),

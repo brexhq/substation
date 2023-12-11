@@ -751,7 +751,7 @@
       append(settings={}): {
         local default = {
           object: $.config.object,
-          string: null,
+          suffix: null,
         },
 
         type: 'string_append',

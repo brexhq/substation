@@ -14,7 +14,8 @@ import (
 type stringAppendConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	String string `json:"string"`
+	// Suffix is the string to append.
+	Suffix string `json:"suffix"`
 }
 
 func (c *stringAppendConfig) Decode(in interface{}) error {
@@ -30,8 +31,8 @@ func (c *stringAppendConfig) Validate() error {
 		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.String == "" {
-		return fmt.Errorf("string: %v", errors.ErrMissingRequiredOption)
+	if c.Suffix == "" {
+		return fmt.Errorf("suffix: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -41,7 +42,7 @@ type stringAppend struct {
 	conf     stringAppendConfig
 	isObject bool
 
-	str []byte
+	s []byte
 }
 
 func newStringAppend(_ context.Context, cfg config.Config) (*stringAppend, error) {
@@ -57,7 +58,7 @@ func newStringAppend(_ context.Context, cfg config.Config) (*stringAppend, error
 	tf := stringAppend{
 		conf:     conf,
 		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
-		str:      []byte(conf.String),
+		s:        []byte(conf.Suffix),
 	}
 
 	return &tf, nil
@@ -70,7 +71,7 @@ func (tf *stringAppend) Transform(ctx context.Context, msg *message.Message) ([]
 
 	if !tf.isObject {
 		b := msg.Data()
-		b = append(b, tf.str...)
+		b = append(b, tf.s...)
 
 		msg.SetData(b)
 		return []*message.Message{msg}, nil
@@ -81,7 +82,7 @@ func (tf *stringAppend) Transform(ctx context.Context, msg *message.Message) ([]
 		return []*message.Message{msg}, nil
 	}
 
-	str := value.String() + tf.conf.String
+	str := value.String() + tf.conf.Suffix
 
 	if err := msg.SetValue(tf.conf.Object.SetKey, str); err != nil {
 		return nil, fmt.Errorf("transform: string_append: %v", err)

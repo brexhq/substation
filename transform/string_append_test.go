@@ -22,7 +22,7 @@ var stringAppendTests = []struct {
 		"data",
 		config.Config{
 			Settings: map[string]interface{}{
-				"string": "c",
+				"suffix": "c",
 			},
 		},
 		[]byte(`ab`),
@@ -39,7 +39,7 @@ var stringAppendTests = []struct {
 					"key":     "a",
 					"set_key": "a",
 				},
-				"string": "c",
+				"suffix": "c",
 			},
 		},
 		[]byte(`{"a":"b"}`),

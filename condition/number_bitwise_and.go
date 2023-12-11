@@ -36,9 +36,9 @@ func (insp *numberBitwiseAND) Inspect(ctx context.Context, msg *message.Message)
 			return false, err
 		}
 
-		return value&insp.conf.Operand != 0, nil
+		return value&insp.conf.Value != 0, nil
 	}
 
 	value := msg.GetValue(insp.conf.Object.Key)
-	return value.Int()&insp.conf.Operand != 0, nil
+	return value.Int()&insp.conf.Value != 0, nil
 }

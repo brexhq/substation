@@ -28,7 +28,7 @@
         and(settings={}): {
           local default = {
             object: $.config.object,
-            operand: null,
+            value: null,
           },
 
           type: 'number_bitwise_and',

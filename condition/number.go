@@ -9,8 +9,8 @@ import (
 type numberBitwiseConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	// Operand is used for comparison during inspection.
-	Operand int64 `json:"operand"`
+	// Value is an operand used for comparison during inspection.
+	Value int64 `json:"value"`
 }
 
 func (c *numberBitwiseConfig) Decode(in interface{}) error {

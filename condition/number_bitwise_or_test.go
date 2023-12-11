@@ -20,7 +20,7 @@ var numberBitwiseORTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"operand": -1,
+				"value": -1,
 			},
 		},
 		[]byte(`0`),

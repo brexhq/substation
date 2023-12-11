@@ -46,7 +46,7 @@ func (insp *numberLengthGreaterThan) Inspect(ctx context.Context, msg *message.M
 }
 
 func (c *numberLengthGreaterThan) match(length int) bool {
-	return length > c.conf.Length
+	return length > c.conf.Value
 }
 
 func (c *numberLengthGreaterThan) String() string {

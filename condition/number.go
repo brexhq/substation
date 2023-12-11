@@ -20,8 +20,8 @@ func (c *numberBitwiseConfig) Decode(in interface{}) error {
 type numberLengthConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	// Length is used for comparison during inspection.
-	Length int `json:"length"`
+	// Value used for comparison during inspection.
+	Value int `json:"value"`
 	// Measurement controls how the length is measured. The inspector automatically
 	// assigns measurement for objects when the key is an array.
 	//

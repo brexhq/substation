@@ -23,7 +23,7 @@ var numberLengthEqualToTests = []struct {
 				"object": map[string]interface{}{
 					"key": "a",
 				},
-				"length": 3,
+				"value": 3,
 			},
 		},
 		[]byte(`{"a":"bcd"}`),
@@ -33,7 +33,7 @@ var numberLengthEqualToTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"length": 3,
+				"value": 3,
 			},
 		},
 		[]byte(`bcd`),
@@ -46,7 +46,7 @@ var numberLengthEqualToTests = []struct {
 				"object": map[string]interface{}{
 					"key": "a",
 				},
-				"length": 4,
+				"value": 4,
 			},
 		},
 		[]byte(`{"a":"bcd"}`),
@@ -56,7 +56,7 @@ var numberLengthEqualToTests = []struct {
 		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
-				"length": 4,
+				"value": 4,
 			},
 		},
 		[]byte(`bcd`),

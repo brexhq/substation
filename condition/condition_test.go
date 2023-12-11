@@ -72,7 +72,7 @@ var allTests = []struct {
 			{
 				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"length": 3,
+					"value": 3,
 				},
 			},
 		},
@@ -91,7 +91,7 @@ var allTests = []struct {
 			{
 				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"length": 3,
+					"value": 3,
 				},
 			},
 		},
@@ -134,7 +134,7 @@ var allTests = []struct {
 							{
 								Type: "number_length_equal_to",
 								Settings: map[string]interface{}{
-									"length": 3,
+									"value": 3,
 								},
 							},
 						},
@@ -226,19 +226,19 @@ var anyTests = []struct {
 			{
 				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"length": 3,
+					"value": 3,
 				},
 			},
 			{
 				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"length": 4,
+					"value": 4,
 				},
 			},
 			{
 				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"length": 5,
+					"value": 5,
 				},
 			},
 		},
@@ -257,7 +257,7 @@ var anyTests = []struct {
 			{
 				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"length": 4,
+					"value": 4,
 				},
 			},
 		},
@@ -278,7 +278,7 @@ var anyTests = []struct {
 							{
 								Type: "number_length_equal_to",
 								Settings: map[string]interface{}{
-									"length": 4,
+									"value": 4,
 								},
 							},
 							{
@@ -300,7 +300,7 @@ var anyTests = []struct {
 							{
 								Type: "number_length_equal_to",
 								Settings: map[string]interface{}{
-									"length": 3,
+									"value": 3,
 								},
 							},
 						},
@@ -410,8 +410,8 @@ var noneTests = []struct {
 			{
 				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"type":   "equals",
-					"length": 0,
+					"type":  "equals",
+					"value": 0,
 				},
 			},
 			{

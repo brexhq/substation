@@ -102,7 +102,7 @@ var metaForEachTests = []struct {
 				"inspector": map[string]interface{}{
 					"type": "number_length_greater_than",
 					"settings": map[string]interface{}{
-						"length": 7,
+						"value": 7,
 					},
 				},
 			},
@@ -122,7 +122,7 @@ var metaForEachTests = []struct {
 				"inspector": map[string]interface{}{
 					"type": "number_length_equal_to",
 					"settings": map[string]interface{}{
-						"length": 4,
+						"value": 4,
 					},
 				},
 			},

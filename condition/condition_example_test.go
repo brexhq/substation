@@ -21,13 +21,13 @@ func ExampleOperator() {
 			{
 				Type: "number_length_less_than",
 				Settings: map[string]interface{}{
-					"length": 10,
+					"value": 10,
 				},
 			},
 			{
 				Type: "string_contains",
 				Settings: map[string]interface{}{
-					"string": "f",
+					"value": "f",
 				},
 			},
 		},

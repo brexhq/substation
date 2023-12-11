@@ -65,7 +65,7 @@
       length: {
         default: {
           object: $.config.object,
-          length: null,
+          value: null,
           measurement: 'byte',
         },
         eq(settings={}): $.condition.number.length.equal_to(settings=settings),

@@ -23,7 +23,7 @@ var numberLengthGreaterThanTests = []struct {
 				"object": map[string]interface{}{
 					"key": "foo",
 				},
-				"length": 2,
+				"value": 2,
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -33,7 +33,7 @@ var numberLengthGreaterThanTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"length": 2,
+				"value": 2,
 			},
 		},
 		[]byte(`bar`),
@@ -46,7 +46,7 @@ var numberLengthGreaterThanTests = []struct {
 				"object": map[string]interface{}{
 					"key": "foo",
 				},
-				"length": 3,
+				"value": 3,
 			},
 		},
 		[]byte(`{"foo":"bar"}`),
@@ -56,7 +56,7 @@ var numberLengthGreaterThanTests = []struct {
 		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
-				"length": 3,
+				"value": 3,
 			},
 		},
 		[]byte(`bar`),

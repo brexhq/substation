@@ -591,7 +591,7 @@
         settings: std.mergePatch(default, $.helpers.abbv(settings)),
       },
       jq(settings={}): {
-        local default = { query: null },
+        local default = { filter: null },
 
         type: 'object_jq',
         settings: std.mergePatch(default, $.helpers.abbv(settings)),

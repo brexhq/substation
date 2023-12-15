@@ -12,12 +12,12 @@ import (
 	"github.com/itchyny/gojq"
 )
 
-// errObjectJQNoOutputGenerated is returned when the jq query generates no output.
+// errObjectJQNoOutputGenerated is returned when jq generates no output.
 var errObjectJQNoOutputGenerated = fmt.Errorf("no output generated")
 
 type objectJQConfig struct {
-	// Query is the jq query applied to data.
-	Query string `json:"query"`
+	// Filter is the jq filter applied to data.
+	Filter string `json:"filter"`
 }
 
 func (c *objectJQConfig) Decode(in interface{}) error {
@@ -25,7 +25,7 @@ func (c *objectJQConfig) Decode(in interface{}) error {
 }
 
 func (c *objectJQConfig) Validate() error {
-	if c.Query == "" {
+	if c.Filter == "" {
 		return fmt.Errorf("query: %v", errors.ErrMissingRequiredOption)
 	}
 
@@ -42,7 +42,7 @@ func newObjectJQ(_ context.Context, cfg config.Config) (*objectJQ, error) {
 		return nil, fmt.Errorf("transform: object_jq: %v", err)
 	}
 
-	q, err := gojq.Parse(conf.Query)
+	q, err := gojq.Parse(conf.Filter)
 	if err != nil {
 		return nil, err
 	}

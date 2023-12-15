@@ -22,7 +22,7 @@ var objectJQTests = []struct {
 		"access",
 		config.Config{
 			Settings: map[string]interface{}{
-				"query": `.a`,
+				"filter": `.a`,
 			},
 		},
 		[]byte(`{"a":"b"}`),
@@ -35,7 +35,7 @@ var objectJQTests = []struct {
 		"access",
 		config.Config{
 			Settings: map[string]interface{}{
-				"query": `.a, .c`,
+				"filter": `.a, .c`,
 			},
 		},
 		[]byte(`{"a":"b","c":"d"}`),
@@ -48,7 +48,7 @@ var objectJQTests = []struct {
 		"access",
 		config.Config{
 			Settings: map[string]interface{}{
-				"query": `.a`,
+				"filter": `.a`,
 			},
 		},
 		[]byte(`{"a":{"b":"c"}}`),
@@ -61,7 +61,7 @@ var objectJQTests = []struct {
 		"array",
 		config.Config{
 			Settings: map[string]interface{}{
-				"query": `.a`,
+				"filter": `.a`,
 			},
 		},
 		[]byte(`{"a":["b","c","d"]}`),
@@ -74,7 +74,7 @@ var objectJQTests = []struct {
 		"slice",
 		config.Config{
 			Settings: map[string]interface{}{
-				"query": `.a[-1:]`,
+				"filter": `.a[-1:]`,
 			},
 		},
 		[]byte(`{"a":["b","c","d","e","f","g"]}`),
@@ -87,7 +87,7 @@ var objectJQTests = []struct {
 		"recursion",
 		config.Config{
 			Settings: map[string]interface{}{
-				"query": `walk( if type == "object" then 
+				"filter": `walk( if type == "object" then 
 					with_entries( select( 
 						(.value != "") and 
 						(.value != {}) and

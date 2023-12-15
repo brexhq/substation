@@ -70,9 +70,9 @@ func newAWSSecretsManager(_ context.Context, cfg config.Config) (*awsSecretsMana
 	}
 
 	c.client.Setup(aws.Config{
-		Region:        conf.AWS.Region,
-		AssumeRoleARN: conf.AWS.AssumeRoleARN,
-		MaxRetries:    conf.Retry.Count,
+		Region:     conf.AWS.Region,
+		RoleARN:    conf.AWS.RoleARN,
+		MaxRetries: conf.Retry.Count,
 	})
 
 	return c, nil

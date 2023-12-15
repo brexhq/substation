@@ -61,9 +61,9 @@ func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 
 	// Setup the AWS client.
 	tf.client.Setup(aws.Config{
-		Region:        conf.AWS.Region,
-		AssumeRoleARN: conf.AWS.AssumeRoleARN,
-		MaxRetries:    conf.Retry.Count,
+		Region:     conf.AWS.Region,
+		RoleARN:    conf.AWS.RoleARN,
+		MaxRetries: conf.Retry.Count,
 	})
 
 	buffer, err := aggregate.New(aggregate.Config{
@@ -92,7 +92,7 @@ type sendAWSSNS struct {
 	// client is safe for concurrent use.
 	client sns.API
 
-	mu 	  sync.Mutex
+	mu        sync.Mutex
 	buffer    *aggregate.Aggregate
 	bufferKey string
 }

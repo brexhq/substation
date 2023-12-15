@@ -16,8 +16,8 @@ type Object struct {
 }
 
 type AWS struct {
-	Region        string `json:"region"`
-	AssumeRoleARN string `json:"assume_role_arn"`
+	Region  string `json:"region"`
+	RoleARN string `json:"role_arn"`
 }
 
 type Metric struct {

@@ -965,7 +965,7 @@
   },
   // Mirrors structs from the internal/config package.
   config: {
-    aws: { region: null, assume_role_arn: null },
+    aws: { region: null, role_arn: null },
     buffer: { count: 1000, size: 100000, duration: '5m', key: null },
     metric: { name: null, attributes: null, destination: null },
     object: { key: null, set_key: null },

@@ -166,9 +166,9 @@ func (store *kvAWSDynamoDB) Setup(ctx context.Context) error {
 	}
 
 	store.client.Setup(aws.Config{
-		Region:        store.AWS.Region,
-		AssumeRoleARN: store.AWS.AssumeRoleARN,
-		MaxRetries:    store.Retry.Count,
+		Region:     store.AWS.Region,
+		RoleARN:    store.AWS.RoleARN,
+		MaxRetries: store.Retry.Count,
 	})
 
 	return nil

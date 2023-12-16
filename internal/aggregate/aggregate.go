@@ -6,8 +6,8 @@ import (
 
 const (
 	defaultCount    = 1000
-	defaultSize     = 1 * 1024 * 1024 // 1MB
-	defaultDuration = "5m"
+	defaultSize     = 1024 * 1024 // 1MB
+	defaultDuration = "1m"
 )
 
 type Config struct {

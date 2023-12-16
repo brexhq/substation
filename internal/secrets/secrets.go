@@ -44,12 +44,12 @@ func New(ctx context.Context, cfg config.Config) (Retriever, error) {
 // convention as the standard library's regexp package for capturing named
 // groups (${name}).
 //
-// For example, if the string is "/path/to/{SECRET:FOO}" and BAR is the
+// For example, if the string is "/path/to/${SECRET:FOO}" and BAR is the
 // secret value stored in the internal lookup, then the interpolated string
 // is "/path/to/BAR".
 //
 // Multiple secrets can be stored in a single string; if the string is
-// "/path/to/{SECRET:FOO}/{SECRET:BAZ}", then the interpolated string
+// "/path/to/${SECRET:FOO}/${SECRET:BAZ}", then the interpolated string
 // is "/path/to/BAR/QUX".
 //
 // If more than one interpolation function is applied to a string (e.g., non-secrets
@@ -71,10 +71,9 @@ func Interpolate(ctx context.Context, s string) (string, error) {
 			return "", err
 		}
 
-		// replaces each substring with a secret.
-		// if the secret is BAR and the string was
-		// "/path/to/secret/{SECRETS_ENV:FOO}", then the interpolated
-		// string output is "/path/to/secret/BAR".
+		// Replaces each substring with a secret. If the secret is
+		// BAR and the string was "/path/to/secret/${SECRET:FOO}",
+		// then the interpolated  string output is "/path/to/secret/BAR".
 		old := fmt.Sprintf("${%s}", m[len(m)-1])
 		s = strings.Replace(s, old, secret.(string), 1)
 	}
@@ -86,9 +85,7 @@ func init() {
 	kv, err := kv.New(config.Config{
 		Type: "memory",
 		Settings: map[string]interface{}{
-			// this can be converted to an env config if needed,
-			// but otherwise the capacity seems fine
-			"capacity": 100,
+			"capacity": 1000,
 		},
 	})
 	if err != nil {

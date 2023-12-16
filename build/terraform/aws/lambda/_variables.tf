@@ -23,9 +23,6 @@ variable "config" {
     timeout     = optional(number, 300)
     memory      = optional(number, 1024)
     env         = optional(map(any), null)
-    secret = optional(object({
-      name = optional(string, null)
-    }), { name = null })
     vpc_config = optional(object({
       subnet_ids         = list(string)
       security_group_ids = list(string)

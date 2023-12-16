@@ -43,7 +43,7 @@ resource "aws_lambda_function" "lambda_function" {
 }
 
 resource "aws_iam_role" "role" {
-  name               = var.config.name
+  name               = "sub-lambda-${var.config.name}"
   assume_role_policy = data.aws_iam_policy_document.service_policy_document.json
 
   tags = var.tags
@@ -70,14 +70,6 @@ resource "aws_appconfig_configuration_profile" "config" {
   location_uri   = "hosted"
 
   tags = var.tags
-}
-
-# Optional secrets creation.
-resource "aws_secretsmanager_secret" "secret" {
-  count      = var.config.secret.name != null ? 1 : 0
-  name       = var.config.secret.name
-  kms_key_id = var.kms.id
-  tags       = var.tags
 }
 
 ################################################
@@ -110,7 +102,7 @@ resource "aws_iam_role_policy_attachment" "custom_policy_attachment" {
 }
 
 resource "aws_iam_policy" "custom_policy" {
-  name        = var.config.name
+  name        = "sub-lambda-${var.config.name}"
   description = "Policy for the ${var.config.name} Lambda."
   policy      = data.aws_iam_policy_document.custom_policy_document.json
 }
@@ -140,23 +132,6 @@ data "aws_iam_policy_document" "custom_policy_document" {
     resources = [
       var.kms.arn,
     ]
-  }
-
-  // If the secret was created, then allow the Lambda function
-  // to read it.
-  dynamic "statement" {
-    for_each = var.config.secret.name != null ? [1] : []
-
-    content {
-      effect = "Allow"
-      actions = [
-        "secretsmanager:GetSecretValue",
-      ]
-      
-      resources = [
-        aws_secretsmanager_secret.secret.arn,
-      ]
-    }
   }
 
   // Add additional statements provided as a variable.

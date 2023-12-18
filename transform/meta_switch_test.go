@@ -24,7 +24,7 @@ var metaSwitchTests = []struct {
 		"if",
 		config.Config{
 			Settings: map[string]interface{}{
-				"switch": []struct {
+				"cases": []struct {
 					Condition condition.Config `json:"condition"`
 					Transform config.Config    `json:"transform"`
 				}{
@@ -69,7 +69,7 @@ var metaSwitchTests = []struct {
 		"if_else",
 		config.Config{
 			Settings: map[string]interface{}{
-				"switch": []struct {
+				"cases": []struct {
 					Condition condition.Config `json:"condition"`
 					Transform config.Config    `json:"transform"`
 				}{
@@ -124,7 +124,7 @@ var metaSwitchTests = []struct {
 		"if_else_if",
 		config.Config{
 			Settings: map[string]interface{}{
-				"switch": []struct {
+				"cases": []struct {
 					Condition condition.Config `json:"condition"`
 					Transform config.Config    `json:"transform"`
 				}{

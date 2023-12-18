@@ -1,3 +1,5 @@
+data "aws_region" "current" {}
+
 resource "aws_secretsmanager_secret" "secret" {
   name       = var.config.secret.name
   kms_key_id = var.kms.id
@@ -12,11 +14,10 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "sub-secret-${var.config.name}"
-  description = "Policy for the ${var.config.name} secret."
+  name        = "sub-secret-access-${var.config.name}-${data.aws_region.current.name}"
+  description = "Policy that grants access to the Substation ${var.config.name} secret."
   policy      = data.aws_iam_policy_document.access.json
 }
-
 
 data "aws_iam_policy_document" "access" {
   statement {

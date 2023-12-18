@@ -1,3 +1,5 @@
+data "aws_region" "current" {}
+
 locals {
   read_access = [
     "sqs:ReceiveMessage",
@@ -30,8 +32,8 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "sub-sqs-${var.config.name}"
-  description = "Policy for the ${var.config.name} SQS queue."
+  name        = "sub-sqs-access-${var.config.name}-${data.aws_region.current.name}"
+  description = "Policy that grants access to the Substation ${var.config.name} SQS queue."
   policy      = data.aws_iam_policy_document.access.json
 }
 

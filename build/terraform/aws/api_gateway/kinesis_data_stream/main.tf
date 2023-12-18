@@ -28,7 +28,7 @@ data "aws_iam_policy_document" "service_policy_document" {
 }
 
 resource "aws_iam_role" "role" {
-  name               = "sub-api-gateway-${var.config.name}"
+  name               = "sub-api-gateway-${var.config.name}-${data.aws_region.current.name}"
   assume_role_policy = data.aws_iam_policy_document.service_policy_document.json
   tags               = var.tags
 }

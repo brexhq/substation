@@ -1,11 +1,11 @@
+data "aws_region" "current" {}
+
 resource "aws_s3_bucket" "bucket" {
   bucket        = var.config.name
   force_destroy = var.config.force_destroy
   tags          = var.tags
 
-  object_lock_configuration {
-    object_lock_enabled = "Enabled"
-  }
+  object_lock_enabled = true
 }
 
 resource "aws_s3_bucket_ownership_controls" "bucket" {
@@ -54,8 +54,8 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "sub-s3-${var.config.name}"
-  description = "Policy for the ${var.config.name} S3 bucket."
+  name        = "sub-s3-access-${var.config.name}-${data.aws_region.current.name}"
+  description = "Policy that grants access to the Substation ${var.config.name} S3 bucket."
   policy      = data.aws_iam_policy_document.access.json
 }
 

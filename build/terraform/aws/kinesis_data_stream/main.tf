@@ -1,3 +1,5 @@
+data "aws_region" "current" {}
+
 resource "aws_kinesis_stream" "stream" {
   name             = var.config.name
   shard_count      = var.config.shards
@@ -19,8 +21,8 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "sub-kinesis-data-stream-${var.config.name}"
-  description = "Policy for the ${var.config.name} Kinesis Data Stream."
+  name        = "sub-kinesis-data-stream-access-${var.config.name}-${data.aws_region.current.name}"
+  description = "Policy that grants access to the Substation ${var.config.name} Kinesis Data Stream."
   policy      = data.aws_iam_policy_document.access.json
 }
 

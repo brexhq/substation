@@ -17,7 +17,7 @@ resource "aws_ecr_repository" "repository" {
 
 resource "aws_ecr_repository_policy" "repository_policy" {
   repository = aws_ecr_repository.repository.name
-  policy = data.aws_iam_policy_document.policy_document.json
+  policy     = data.aws_iam_policy_document.policy_document.json
 }
 
 data "aws_iam_policy_document" "policy_document" {

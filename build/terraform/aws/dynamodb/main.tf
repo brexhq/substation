@@ -1,3 +1,5 @@
+data "aws_region" "current" {}
+
 locals {
   read_capacity = var.config.read_capacity != null ? var.config.read_capacity : tomap({
     min    = 5
@@ -61,8 +63,8 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "sub-dynamodb-${var.config.name}"
-  description = "Policy for the ${var.config.name} DynamoDB table."
+  name        = "sub-dynamodb-access-${var.config.name}-${data.aws_region.current.name}"
+  description = "Policy that grants access to the Substation ${var.config.name} DynamoDB table."
   policy      = data.aws_iam_policy_document.access.json
 }
 

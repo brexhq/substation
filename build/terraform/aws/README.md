@@ -26,6 +26,16 @@ This module creates an API Gateway that sends a record to a Kinesis Data Stream.
 
 This module creates an API Gateway that invokes and sends a record to a Lambda function.
 
+### CloudWatch
+
+#### Destination
+
+This module creates a CloudWatch Logs destination that can be used to receive logs from any AWS account or region and send them to a destination.
+
+#### Subscription
+
+This module creates a CloudWatch Logs subscription filter that can be used to send logs from a CloudWatch Logs group to a destination. Use this with the `Destination` module to send logs from any AWS account or region to a single destination.
+
 ### DynamoDB
 
 This module is used as a template for deploying new DynamoDB tables with autoscaling enabled. These tables have [time to live](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html) enabled and users can optionally use it by writing values to the `ttl` column.

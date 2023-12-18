@@ -2,6 +2,64 @@
 
 These example deployments demonstrate different use cases for Substation on AWS.
 
+# CloudWatch Logs
+
+## Cross-Account / Cross-Region
+
+Deploys a data pipeline that collects data from CloudWatch log groups in any account or region into a Kinesis Data Stream.
+
+```mermaid
+
+flowchart LR
+    %% resources
+    cw1([CloudWatch Log Group])
+    cw2([CloudWatch Log Group])
+    cw3([CloudWatch Log Group])
+    kds([Kinesis Data Stream])
+
+    consumerHandler[[Handler]]
+    consumerTransforms[Transforms]
+
+    subgraph Account B / Region us-west-2
+    cw2
+    end
+
+    subgraph Account A / Region us-west-2
+    cw3
+    end
+
+    subgraph Account A / Region us-east-1
+    cw1 --> kds
+    cw3 --> kds
+    cw2 --> kds
+    kds --> consumerHandler
+
+    subgraph Substation Consumer Node 
+    consumerHandler  --> consumerTransforms
+    end
+    end
+```
+
+## To Lambda
+
+Deploys a data pipeline that sends data from a CloudWatch log group to a Lambda function.
+
+```mermaid
+
+flowchart LR
+    %% resources
+    cw([CloudWatch Log Group])
+
+    consumerHandler[[Handler]]
+    consumerTransforms[Transforms]
+
+    cw --> consumerHandler
+
+    subgraph Substation Consumer Node 
+    consumerHandler  --> consumerTransforms
+    end
+```
+
 # DynamoDB
 
 ## Change Data Capture (CDC)
@@ -60,26 +118,31 @@ Deploys a data pipeline that implements a multi-phase streaming data pattern usi
 
 flowchart LR
     %% resources
-    gateway([API Gateway])
-    kds1([Kinesis Data Stream])
-    kds2([Kinesis Data Stream])
+    cw1([CloudWatch Log Group])
+    cw2([CloudWatch Log Group])
+    cw3([CloudWatch Log Group])
+    kds([Kinesis Data Stream])
 
-    publisherHandler[[Handler]]
-    publisherTransforms[Transforms]
+    consumerHandler[[Handler]]
+    consumerTransforms[Transforms]
 
-    subscriberHandler[[Handler]]
-    subscriberTransforms[Transforms]
-
-    %% connections
-    gateway --> kds1 --> publisherHandler
-    subgraph Substation Publisher Node 
-    publisherHandler --> publisherTransforms
+    subgraph Account B / Region us-west-2
+    cw2
     end
 
-    publisherTransforms --> kds2 --> subscriberHandler
+    subgraph Account A / Region us-west-2
+    cw3
+    end
 
-    subgraph Substation Subscriber Node 
-    subscriberHandler  --> subscriberTransforms
+    subgraph Account A / Region us-east-1
+    cw1 --> kds
+    cw3 --> kds
+    cw2 --> kds
+    kds --> consumerHandler
+
+    subgraph Substation Consumer Node 
+    consumerHandler  --> consumerTransforms
+    end
     end
 ```
 

@@ -16,7 +16,7 @@ type metaSwitchConfig struct {
 	Cases []struct {
 		Condition condition.Config `json:"condition"`
 		Transform config.Config    `json:"transform"`
-	} `json:"switch"`
+	} `json:"cases"`
 }
 
 func (c *metaSwitchConfig) Decode(in interface{}) error {
@@ -25,7 +25,7 @@ func (c *metaSwitchConfig) Decode(in interface{}) error {
 
 func (c *metaSwitchConfig) Validate() error {
 	if len(c.Cases) == 0 {
-		return fmt.Errorf("switch: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("cases: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil

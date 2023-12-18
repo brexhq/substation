@@ -6,7 +6,7 @@ local sub = import '../../../../../../build/config/substation.libsonnet';
 local domain_match = sub.cnd.all(
   // After running the example, try changing this to "any" or "none" and see
   // what happens.
-  sub.cnd.meta.for_each(settings={ type: 'all', inspector: sub.cnd.str.ends_with(settings={ string: '@brex.com' }) }),
+  sub.cnd.meta.for_each(settings={ type: 'all', inspector: sub.cnd.str.ends_with(settings={ value: '@brex.com' }) }),
 );
 
 {
@@ -17,7 +17,7 @@ local domain_match = sub.cnd.all(
     // to summarize an array of values. For this example, the decision
     // is represented as a boolean value and printed to stdout.
     sub.tf.meta.switch(
-      settings={ switch: [
+      settings={ cases: [
         {
           condition: domain_match,
           transform: sub.tf.obj.insert(settings={ object: { set_key: 'meta result' }, value: true }),

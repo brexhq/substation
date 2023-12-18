@@ -14,13 +14,13 @@ local sub = import '../../../../../../build/config/substation.libsonnet';
     ),
     // A strict sample rate can be enforced by dropping any events that
     // contain the `sample` key, but do not have a length of 10.
-    sub.tf.meta.switch(settings={ switch: [
+    sub.tf.meta.switch(settings={ cases: [
       {
-        condition: sub.cnd.any(sub.cnd.num.len.eq(settings={ object: { key: 'sample' }, length: 10 })),
+        condition: sub.cnd.any(sub.cnd.num.len.eq(settings={ object: { key: 'sample' }, value: 10 })),
         transform: sub.tf.object.copy(settings={ object: { key: 'sample.0' } }),
       },
       {
-        condition: sub.cnd.any(sub.cnd.num.len.gt(settings={ object: { key: 'sample' }, length: 0 })),
+        condition: sub.cnd.any(sub.cnd.num.len.gt(settings={ object: { key: 'sample' }, value: 0 })),
         transform: sub.tf.util.drop(),
       },
     ] }),

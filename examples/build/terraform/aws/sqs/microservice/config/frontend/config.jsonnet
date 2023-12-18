@@ -9,7 +9,7 @@ local sub = import '../../../../../../../../build/config/substation.libsonnet';
       ),
       condition=sub.condition.all([
         sub.condition.number.length.greater_than(
-          settings={ object: { key: 'body' }, length: 0 }
+          settings={ object: { key: 'body' }, value: 0 }
         ),
       ]),
     ),

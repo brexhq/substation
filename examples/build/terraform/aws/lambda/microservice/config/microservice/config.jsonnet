@@ -6,7 +6,7 @@ local sub = import '../../../../../../../../build/config/substation.libsonnet';
     sub.pattern.tf.conditional(
       condition=sub.cnd.all([
         sub.cnd.number.length.greater_than(
-          settings={ object: { key: 'body' }, length: 0 }
+          settings={ object: { key: 'body' }, value: 0 }
         ),
       ]),
       transform=sub.tf.object.copy(

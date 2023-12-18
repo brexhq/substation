@@ -6,7 +6,7 @@ local sub = import '../../../../../../build/config/substation.libsonnet';
 // `key` is the target of the transform that may not produce an output and is
 // checked to determine if the transform was successful.
 local key = 'c';
-local key_is_empty = sub.cnd.num.len.eq(settings={ object: { key: key }, length: 0 });
+local key_is_empty = sub.cnd.num.len.eq(settings={ object: { key: key }, value: 0 });
 
 local cnd = sub.cnd.all([
   key_is_empty,
@@ -39,7 +39,7 @@ local retries = ['0s', '1s', '2s', '4s'];
     ] + [
       // If there is no output after all retry attempts, then an error is thrown to crash the program.
       // This is the same technique from the build/config/transform/meta/crash_program example.
-      sub.tf.meta.switch(settings={ switch: [
+      sub.tf.meta.switch(settings={ cases: [
         {
           condition: sub.cnd.any(key_is_empty),
           transform: sub.tf.util.err(settings={

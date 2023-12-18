@@ -22,7 +22,7 @@ local files_key = 'files';
     // [[name1, name2], [type1, type2], [size1, size2], [extension1, extension2]]
     sub.tf.meta.for_each(settings={
       object: { key: 'file_names', set_key: sub.helpers.key.append_array(files_key) },
-      transform: sub.tf.string.match.find(settings={ pattern: '\\.([^\\.]+)$' }),
+      transform: sub.tf.string.capture(settings={ pattern: '\\.([^\\.]+)$' }),
     }),
     sub.tf.send.stdout(),
     // The array of arrays is transformed into an array of objects based on

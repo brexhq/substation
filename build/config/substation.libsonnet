@@ -45,7 +45,7 @@
         or(settings={}): {
           local default = {
             object: $.config.object,
-            operand: null,
+            value: null,
           },
 
           type: 'number_bitwise_or',
@@ -54,7 +54,7 @@
         xor(settings={}): {
           local default = {
             object: $.config.object,
-            operand: null,
+            value: null,
           },
 
           type: 'number_bitwise_xor',
@@ -761,6 +761,7 @@
         local default = {
           object: $.config.object,
           pattern: null,
+          count: 0,
         },
 
         type: 'string_capture',

@@ -17,7 +17,7 @@ local key = 'c';
     // If there is no output from the transform, then an error is thrown to crash the program.
     sub.tf.meta.switch(settings={ switch: [
       {
-        condition: sub.cnd.any(sub.cnd.num.len.eq(settings={ object: { key: key }, length: 0 })),
+        condition: sub.cnd.any(sub.cnd.num.len.eq(settings={ object: { key: key }, value: 0 })),
         transform: sub.tf.util.err(settings={ message: 'transform produced no output' }),
       },
       { transform: sub.tf.send.stdout() },

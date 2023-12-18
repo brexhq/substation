@@ -8,7 +8,7 @@ local sub = import '../../../../../../../../build/config/substation.libsonnet';
     ),
     // Appending a newline is required so that the S3 object is line delimited.
     sub.tf.string.append(
-      settings={ string: '\n' }
+      settings={ suffix: '\n' }
     ),
   ],
 }

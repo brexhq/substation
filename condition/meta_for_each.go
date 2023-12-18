@@ -95,6 +95,10 @@ func (c *metaForEach) Inspect(ctx context.Context, msg *message.Message) (bool, 
 		value = msg.GetValue(c.conf.Object.Key)
 	}
 
+	if !value.Exists() {
+		return false, nil
+	}
+
 	if !value.IsArray() {
 		return false, fmt.Errorf("condition: meta_for_each: %v", "input must be an array")
 	}

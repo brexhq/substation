@@ -1032,13 +1032,13 @@
           // Use with the ANY / ALL operator to match empty data.
           // Use with the NONE operator to match non-empty data.
           eq_zero(key=null):
-            $.condition.number.length.equal_to(settings=$.pattern.condition.obj(key) { length: 0 }),
+            $.condition.number.length.equal_to(settings=$.pattern.condition.obj(key) { value: 0 }),
           // Checks if data is greater than zero.
           //
           // Use with the ANY / ALL operator to match non-empty data.
           // Use with the NONE operator to match empty data.
           gt_zero(key=null):
-            $.condition.number.length.greater_than(settings=$.pattern.condition.obj(key) { length: 0 }),
+            $.condition.number.length.greater_than(settings=$.pattern.condition.obj(key) { value: 0 }),
         },
       },
     },
@@ -1051,7 +1051,7 @@
         local c = if std.objectHas(condition, 'type') then { operator: 'any', inspectors: [condition] } else condition,
 
         type: 'meta_switch',
-        settings: { switch: [{ condition: c, transform: transform }] },
+        settings: { cases: [{ condition: c, transform: transform }] },
       },
     },
   },

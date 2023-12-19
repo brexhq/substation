@@ -1,4 +1,4 @@
-data "aws_region" "current" {}
+resource "random_uuid" "id" {}
 
 resource "aws_kinesis_stream" "stream" {
   name             = var.config.name
@@ -21,7 +21,7 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "sub-kinesis-data-stream-access-${var.config.name}-${data.aws_region.current.name}"
+  name        = "substation-kinesis-data-stream-access-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} Kinesis Data Stream."
   policy      = data.aws_iam_policy_document.access.json
 }

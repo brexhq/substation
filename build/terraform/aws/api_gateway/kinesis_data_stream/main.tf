@@ -1,3 +1,5 @@
+resource "random_uuid" "id" {}
+
 data "aws_region" "current" {}
 
 data "aws_partition" "current" {}
@@ -28,7 +30,7 @@ data "aws_iam_policy_document" "service_policy_document" {
 }
 
 resource "aws_iam_role" "role" {
-  name               = "sub-api-gateway-${var.config.name}-${data.aws_region.current.name}"
+  name               = "substation-api-gateway-${resource.random_uuid.id.id}"
   assume_role_policy = data.aws_iam_policy_document.service_policy_document.json
   tags               = var.tags
 }

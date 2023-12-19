@@ -1,4 +1,4 @@
-data "aws_region" "current" {}
+resource "random_uuid" "id" {}
 
 data "aws_caller_identity" "current" {}
 
@@ -84,7 +84,7 @@ data "aws_iam_policy_document" "destination" {
 }
 
 resource "aws_iam_role" "destination" {
-  name               = "sub-cloudwatch-destination-${var.config.name}-${data.aws_region.current.name}"
+  name               = "substation-cloudwatch-destination-${resource.random_uuid.id.id}"
   assume_role_policy = data.aws_iam_policy_document.destination_assume_role.json
   tags               = var.tags
 }
@@ -95,7 +95,7 @@ resource "aws_iam_role_policy_attachment" "destination" {
 }
 
 resource "aws_iam_policy" "destination" {
-  name        = "sub-cloudwatch-destination-${var.config.name}-${data.aws_region.current.name}"
+  name        = "substation-cloudwatch-destination-${resource.random_uuid.id.id}"
   description = "Policy for the ${var.config.name} CloudWatch destination."
   policy      = data.aws_iam_policy_document.destination.json
 }

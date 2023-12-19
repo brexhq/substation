@@ -1,4 +1,4 @@
-data "aws_region" "current" {}
+resource "random_uuid" "id" {}
 
 # var.map[*] is a convenience function for handling empty maps.
 locals {
@@ -45,7 +45,7 @@ resource "aws_lambda_function" "lambda_function" {
 }
 
 resource "aws_iam_role" "role" {
-  name               = "sub-lambda-${var.config.name}-${data.aws_region.current.name}"
+  name               = "substation-lambda-${resource.random_uuid.id.id}"
   assume_role_policy = data.aws_iam_policy_document.service_policy_document.json
 
   tags = var.tags
@@ -104,7 +104,7 @@ resource "aws_iam_role_policy_attachment" "custom_policy_attachment" {
 }
 
 resource "aws_iam_policy" "custom_policy" {
-  name        = "sub-lambda-${var.config.name}-${data.aws_region.current.name}"
+  name        = "substation-lambda-${resource.random_uuid.id.id}"
   description = "Policy for the ${var.config.name} Lambda."
   policy      = data.aws_iam_policy_document.policy.json
 }
@@ -158,7 +158,7 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "sub-lambda-access-${var.config.name}-${data.aws_region.current.name}"
+  name        = "substation-lambda-access-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} Lambda."
   policy      = data.aws_iam_policy_document.access.json
 }

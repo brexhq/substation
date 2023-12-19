@@ -1,4 +1,4 @@
-data "aws_region" "current" {}
+resource "random_uuid" "id" {}
 
 resource "aws_sns_topic" "topic" {
   name                        = var.config.name
@@ -17,7 +17,7 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "sub-sns-access-${var.config.name}-${data.aws_region.current.name}"
+  name        = "substation-sns-access-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} SNS topic."
   policy      = data.aws_iam_policy_document.access.json
 }

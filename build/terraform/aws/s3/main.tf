@@ -1,4 +1,4 @@
-data "aws_region" "current" {}
+resource "random_uuid" "id" {}
 
 resource "aws_s3_bucket" "bucket" {
   bucket        = var.config.name
@@ -41,7 +41,7 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "sub-s3-access-${var.config.name}-${data.aws_region.current.name}"
+  name        = "substation-s3-access-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} S3 bucket."
   policy      = data.aws_iam_policy_document.access.json
 }

@@ -43,6 +43,31 @@ var stringCaptureTests = []struct {
 			[]byte(`["b","c","d"]`),
 		},
 	},
+	{
+		"data",
+		config.Config{
+			Settings: map[string]interface{}{
+				"count":   1,
+				"pattern": "(.{1})",
+			},
+		},
+		[]byte(`bcd`),
+		[][]byte{
+			[]byte(`["b"]`),
+		},
+	},
+	{
+		"data",
+		config.Config{
+			Settings: map[string]interface{}{
+				"pattern": "(?P<b>[a-zA-Z]+) (?P<d>[a-zA-Z]+)",
+			},
+		},
+		[]byte(`c e`),
+		[][]byte{
+			[]byte(`{"b":"c","d":"e"}`),
+		},
+	},
 	// object tests
 	{
 		"object",
@@ -75,6 +100,39 @@ var stringCaptureTests = []struct {
 		[]byte(`{"a":"bcd"}`),
 		[][]byte{
 			[]byte(`{"a":["b","c","d"]}`),
+		},
+	},
+	{
+		"object",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"src_key": "a",
+					"dst_key": "a",
+				},
+				"count":   1,
+				"pattern": "(.{1})",
+			},
+		},
+		[]byte(`{"a":"bcd"}`),
+		[][]byte{
+			[]byte(`{"a":["b"]}`),
+		},
+	},
+	{
+		"object",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"src_key": "a",
+					"dst_key": "a",
+				},
+				"pattern": "(?P<b>[a-zA-Z]+) (?P<d>[a-zA-Z]+)",
+			},
+		},
+		[]byte(`{"a":"c e"}`),
+		[][]byte{
+			[]byte(`{"a":{"b":"c","d":"e"}}`),
 		},
 	},
 }

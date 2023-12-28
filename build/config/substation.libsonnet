@@ -767,15 +767,6 @@
         type: 'string_capture',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      capture_named_group(settings={}): {
-        local default = {
-          object: $.config.object,
-          pattern: null,
-        },
-
-        type: 'string_capture_named_group',
-        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
-      },
       replace(settings={}): {
         local default = {
           object: $.config.object,
@@ -1072,11 +1063,11 @@
       object: if std.objectHas(settings, 'object') then $.helpers.abbv_obj(settings.object) else if std.objectHas(settings, 'obj') then $.helpers.abbv_obj(settings.obj) else null,
       obj: null,
     }),
-    abbv_obj(s): std.mergePatch(s, {
+    abbv_obj(s): {
       src_key: if std.objectHas(s, 'src') then s.src else if std.objectHas(s, 'src_key') then s.src_key else null,
-      src: null,
       dst_key: if std.objectHas(s, 'dst') then s.dst else if std.objectHas(s, 'dst_key') then s.dst_key else null,
+      src: null,
       dst: null,
-    }),
+    },
   },
 }

@@ -142,8 +142,6 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newStringAppend(ctx, cfg)
 	case "string_capture":
 		return newStringCapture(ctx, cfg)
-	case "string_capture_named_group":
-		return newStringCaptureNamedGroup(ctx, cfg)
 	case "string_to_lower":
 		return newStringToLower(ctx, cfg)
 	case "string_to_snake":

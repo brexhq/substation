@@ -20,12 +20,12 @@ func (c *objectToBooleanConfig) Decode(in interface{}) error {
 }
 
 func (c *objectToBooleanConfig) Validate() error {
-	if c.Object.Key == "" && c.Object.SetKey != "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
+		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.Key != "" && c.Object.SetKey == "" {
-		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
+		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -62,12 +62,12 @@ func (tf *objectToBoolean) Transform(ctx context.Context, msg *message.Message) 
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, value.Bool()); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, value.Bool()); err != nil {
 		return nil, fmt.Errorf("transform: object_to_boolean: %v", err)
 	}
 

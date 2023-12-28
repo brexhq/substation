@@ -51,8 +51,8 @@ func newSendAWSDynamoDB(_ context.Context, cfg config.Config) (*sendAWSDynamoDB,
 		return nil, fmt.Errorf("transform: send_aws_dynamodb: %v", err)
 	}
 
-	if conf.Object.Key == "" {
-		conf.Object.Key = "@this"
+	if conf.Object.SrcKey == "" {
+		conf.Object.SrcKey = "@this"
 	}
 
 	tf := sendAWSDynamoDB{
@@ -84,7 +84,7 @@ func (tf *sendAWSDynamoDB) Transform(ctx context.Context, msg *message.Message) 
 		return nil, fmt.Errorf("transform: send_aws_dynamodb: table %s: %v", tf.conf.TableName, errSendAWSDynamoDBNonObject)
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}

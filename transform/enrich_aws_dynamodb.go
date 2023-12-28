@@ -48,8 +48,8 @@ func (c *enrichAWSDynamoDBConfig) Decode(in interface{}) error {
 }
 
 func (c *enrichAWSDynamoDBConfig) Validate() error {
-	if c.Object.SetKey == "" {
-		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.DstKey == "" {
+		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.PartitionKey == "" {
@@ -103,8 +103,8 @@ func (tf *enrichAWSDynamoDB) Transform(ctx context.Context, msg *message.Message
 	}
 
 	var tmp *message.Message
-	if tf.conf.Object.Key != "" {
-		value := msg.GetValue(tf.conf.Object.Key)
+	if tf.conf.Object.SrcKey != "" {
+		value := msg.GetValue(tf.conf.Object.SrcKey)
 		tmp = message.New().SetData(value.Bytes())
 	} else {
 		tmp = msg
@@ -131,7 +131,7 @@ func (tf *enrichAWSDynamoDB) Transform(ctx context.Context, msg *message.Message
 		return []*message.Message{msg}, nil
 	}
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, value); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, value); err != nil {
 		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", err)
 	}
 

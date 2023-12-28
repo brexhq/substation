@@ -26,12 +26,12 @@ func (c *stringCaptureNamedGroupConfig) Decode(in interface{}) error {
 }
 
 func (c *stringCaptureNamedGroupConfig) Validate() error {
-	if c.Object.Key == "" && c.Object.SetKey != "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
+		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.Key != "" && c.Object.SetKey == "" {
-		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
+		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.Pattern == "" {
@@ -61,7 +61,7 @@ func newStringCaptureNamedGroup(_ context.Context, cfg config.Config) (*stringCa
 
 	tf := stringCaptureNamedGroup{
 		conf:     conf,
-		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
+		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
 	}
 
 	return &tf, nil
@@ -94,7 +94,7 @@ func (tf *stringCaptureNamedGroup) Transform(_ context.Context, msg *message.Mes
 		return []*message.Message{outMsg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -111,7 +111,7 @@ func (tf *stringCaptureNamedGroup) Transform(_ context.Context, msg *message.Mes
 		// If set_key is "a" and the first group returns {"b":"c"}, then
 		// the output is {"a":{"b":"c"}}. If the second group returns
 		// {"d":"e"} then the output is {"a":{"b":"c","d":"e"}}.
-		setKey := tf.conf.Object.SetKey + "." + tf.conf.names[i]
+		setKey := tf.conf.Object.DstKey + "." + tf.conf.names[i]
 		if err := msg.SetValue(setKey, match); err != nil {
 			return nil, fmt.Errorf("transform: string_match_named_group: %v", err)
 		}

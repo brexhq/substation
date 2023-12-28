@@ -30,7 +30,7 @@ func newEnrichDNSIPLookup(_ context.Context, cfg config.Config) (*enrichDNSIPLoo
 
 	tf := enrichDNSIPLookup{
 		conf:     conf,
-		isObj:    conf.Object.Key != "" && conf.Object.SetKey != "",
+		isObj:    conf.Object.SrcKey != "" && conf.Object.DstKey != "",
 		resolver: net.Resolver{},
 		timeout:  dur,
 	}
@@ -68,7 +68,7 @@ func (tf *enrichDNSIPLookup) Transform(ctx context.Context, msg *message.Message
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -78,7 +78,7 @@ func (tf *enrichDNSIPLookup) Transform(ctx context.Context, msg *message.Message
 		return nil, fmt.Errorf("transform: enrich_dns_ip_lookup: %v", err)
 	}
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, addrs); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, addrs); err != nil {
 		return nil, fmt.Errorf("transform: enrich_dns_ip_lookup: %v", err)
 	}
 

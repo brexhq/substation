@@ -23,7 +23,7 @@ func newStringToLower(_ context.Context, cfg config.Config) (*stringToLower, err
 
 	tf := stringToLower{
 		conf:     conf,
-		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
+		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
 	}
 
 	return &tf, nil
@@ -46,13 +46,13 @@ func (tf *stringToLower) Transform(ctx context.Context, msg *message.Message) ([
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
 	s := strings.ToLower(value.String())
-	if err := msg.SetValue(tf.conf.Object.SetKey, s); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, s); err != nil {
 		return nil, fmt.Errorf("transform: string_to_lower: %v", err)
 	}
 

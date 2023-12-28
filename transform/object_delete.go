@@ -20,8 +20,8 @@ func (c *objectDeleteConfig) Decode(in interface{}) error {
 }
 
 func (c *objectDeleteConfig) Validate() error {
-	if c.Object.Key == "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey == "" {
+		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -53,7 +53,7 @@ func (tf *objectDelete) Transform(_ context.Context, msg *message.Message) ([]*m
 		return []*message.Message{msg}, nil
 	}
 
-	if err := msg.DeleteValue(tf.conf.Object.Key); err != nil {
+	if err := msg.DeleteValue(tf.conf.Object.SrcKey); err != nil {
 		return nil, fmt.Errorf("transform: object_delete: %v", err)
 	}
 

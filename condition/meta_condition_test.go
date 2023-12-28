@@ -27,7 +27,7 @@ var metaConditionTests = []struct {
 							Type: "string_contains",
 							Settings: map[string]interface{}{
 								"object": map[string]interface{}{
-									"key": "a",
+									"src_key": "a",
 								},
 								"string": "bcd",
 							},

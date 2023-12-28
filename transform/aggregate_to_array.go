@@ -19,7 +19,7 @@ func newAggregateToArray(_ context.Context, cfg config.Config) (*aggregateToArra
 
 	tf := aggregateToArray{
 		conf:         conf,
-		hasObjSetKey: conf.Object.SetKey != "",
+		hasObjSetKey: conf.Object.DstKey != "",
 	}
 
 	buffer, err := aggregate.New(aggregate.Config{
@@ -62,7 +62,7 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 
 			outMsg := message.New()
 			if tf.hasObjSetKey {
-				if err := outMsg.SetValue(tf.conf.Object.SetKey, agg); err != nil {
+				if err := outMsg.SetValue(tf.conf.Object.DstKey, agg); err != nil {
 					return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 				}
 			} else {
@@ -90,7 +90,7 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 
 	outMsg := message.New()
 	if tf.hasObjSetKey {
-		if err := outMsg.SetValue(tf.conf.Object.SetKey, agg); err != nil {
+		if err := outMsg.SetValue(tf.conf.Object.DstKey, agg); err != nil {
 			return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 		}
 	} else {

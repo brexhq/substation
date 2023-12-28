@@ -35,12 +35,12 @@ func (c *enrichKVStoreGetConfig) Decode(in interface{}) error {
 }
 
 func (c *enrichKVStoreGetConfig) Validate() error {
-	if c.Object.Key == "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey == "" {
+		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SetKey == "" {
-		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.DstKey == "" {
+		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.KVStore.Type == "" {
@@ -97,7 +97,7 @@ func (tf *enrichKVStoreGet) Transform(ctx context.Context, msg *message.Message)
 		}
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -112,7 +112,7 @@ func (tf *enrichKVStoreGet) Transform(ctx context.Context, msg *message.Message)
 		return nil, fmt.Errorf("transform: enrich_kv_store_get: %v", err)
 	}
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, v); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, v); err != nil {
 		return nil, fmt.Errorf("transform: enrich_kv_store_get: %v", err)
 	}
 

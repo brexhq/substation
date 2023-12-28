@@ -27,12 +27,12 @@ func (c *arrayGroupConfig) Decode(in interface{}) error {
 }
 
 func (c *arrayGroupConfig) Validate() error {
-	if c.Object.Key == "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey == "" {
+		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SetKey == "" {
-		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.DstKey == "" {
+		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -71,7 +71,7 @@ func (tf *arrayGroup) Transform(ctx context.Context, msg *message.Message) ([]*m
 		// input.key: [["a","b"],[1,2]]
 		// 	cache[0][]interface{}{"a",1}
 		// 	cache[1][]interface{}{"b",2}
-		value := msg.GetValue(tf.conf.Object.Key)
+		value := msg.GetValue(tf.conf.Object.SrcKey)
 		if !value.Exists() {
 			return []*message.Message{msg}, nil
 		}
@@ -93,7 +93,7 @@ func (tf *arrayGroup) Transform(ctx context.Context, msg *message.Message) ([]*m
 		}
 
 		// [["foo",123],["bar",456]]
-		if err := msg.SetValue(tf.conf.Object.SetKey, b); err != nil {
+		if err := msg.SetValue(tf.conf.Object.DstKey, b); err != nil {
 			return nil, fmt.Errorf("transform: array_group: %v", err)
 		}
 
@@ -107,7 +107,7 @@ func (tf *arrayGroup) Transform(ctx context.Context, msg *message.Message) ([]*m
 	// options.keys: ["str","int"]
 	// 	cache[0][]byte(`{"str":"a","int":1}`)
 	// 	cache[1][]byte(`{"str":"b","int":2}`)
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -139,7 +139,7 @@ func (tf *arrayGroup) Transform(ctx context.Context, msg *message.Message) ([]*m
 		}
 	}
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, b); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, b); err != nil {
 		return nil, fmt.Errorf("transform: array_group: %v", err)
 	}
 

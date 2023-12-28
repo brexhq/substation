@@ -36,7 +36,7 @@ var metaSwitchTests = []struct {
 									Type: "string_contains",
 									Settings: map[string]interface{}{
 										"object": map[string]interface{}{
-											"key": "a",
+											"src_key": "a",
 										},
 										"value": "b",
 									},
@@ -47,8 +47,8 @@ var metaSwitchTests = []struct {
 							Type: "object_copy",
 							Settings: map[string]interface{}{
 								"object": map[string]interface{}{
-									"key":     "a",
-									"set_key": "c",
+									"src_key": "a",
+									"dst_key": "c",
 								},
 							},
 						},
@@ -81,7 +81,7 @@ var metaSwitchTests = []struct {
 									Type: "string_contains",
 									Settings: map[string]interface{}{
 										"object": map[string]interface{}{
-											"key": "a",
+											"src_key": "a",
 										},
 										"value": "c",
 									},
@@ -92,8 +92,8 @@ var metaSwitchTests = []struct {
 							Type: "object_copy",
 							Settings: map[string]interface{}{
 								"object": map[string]interface{}{
-									"key":     "a",
-									"set_key": "c",
+									"src_key": "a",
+									"dst_key": "c",
 								},
 							},
 						},
@@ -104,8 +104,8 @@ var metaSwitchTests = []struct {
 							Type: "object_copy",
 							Settings: map[string]interface{}{
 								"object": map[string]interface{}{
-									"key":     "a",
-									"set_key": "x",
+									"src_key": "a",
+									"dst_key": "x",
 								},
 							},
 						},
@@ -136,7 +136,7 @@ var metaSwitchTests = []struct {
 									Type: "string_contains",
 									Settings: map[string]interface{}{
 										"object": map[string]interface{}{
-											"key": "a",
+											"src_key": "a",
 										},
 										"value": "c",
 									},
@@ -147,8 +147,8 @@ var metaSwitchTests = []struct {
 							Type: "object_copy",
 							Settings: map[string]interface{}{
 								"object": map[string]interface{}{
-									"key":     "a",
-									"set_key": "c",
+									"src_key": "a",
+									"dst_key": "c",
 								},
 							},
 						},
@@ -161,7 +161,7 @@ var metaSwitchTests = []struct {
 									Type: "string_contains",
 									Settings: map[string]interface{}{
 										"object": map[string]interface{}{
-											"key": "a",
+											"src_key": "a",
 										},
 										"value": "d",
 									},
@@ -171,8 +171,8 @@ var metaSwitchTests = []struct {
 						Transform: config.Config{
 							Type: "object_copy",
 							Settings: map[string]interface{}{
-								"key":     "a",
-								"set_key": "d",
+								"src_key": "a",
+								"dst_key": "d",
 							},
 						},
 					},

@@ -21,7 +21,7 @@ func newTimeToString(_ context.Context, cfg config.Config) (*timeToString, error
 
 	tf := timeToString{
 		conf:     conf,
-		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
+		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
 	}
 
 	return &tf, nil
@@ -39,7 +39,7 @@ func (tf *timeToString) Transform(ctx context.Context, msg *message.Message) ([]
 
 	var value message.Value
 	if tf.isObject {
-		value = msg.GetValue(tf.conf.Object.Key)
+		value = msg.GetValue(tf.conf.Object.SrcKey)
 	} else {
 		value = bytesToValue(msg.Data())
 	}
@@ -54,7 +54,7 @@ func (tf *timeToString) Transform(ctx context.Context, msg *message.Message) ([]
 	}
 
 	if tf.isObject {
-		if err := msg.SetValue(tf.conf.Object.SetKey, pattern); err != nil {
+		if err := msg.SetValue(tf.conf.Object.DstKey, pattern); err != nil {
 			return nil, fmt.Errorf("transform: time_to_string: %v", err)
 		}
 	} else {

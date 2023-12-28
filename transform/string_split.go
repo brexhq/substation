@@ -25,12 +25,12 @@ func (c *stringSplitConfig) Decode(in interface{}) error {
 }
 
 func (c *stringSplitConfig) Validate() error {
-	if c.Object.Key == "" && c.Object.SetKey != "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
+		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.Key != "" && c.Object.SetKey == "" {
-		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
+		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.Separator == "" {
@@ -59,7 +59,7 @@ func newStringSplit(_ context.Context, cfg config.Config) (*stringSplit, error) 
 
 	tf := stringSplit{
 		conf:      conf,
-		isObject:  conf.Object.Key != "" && conf.Object.SetKey != "",
+		isObject:  conf.Object.SrcKey != "" && conf.Object.DstKey != "",
 		separator: []byte(conf.Separator),
 	}
 
@@ -87,14 +87,14 @@ func (tf *stringSplit) Transform(ctx context.Context, msg *message.Message) ([]*
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
 	str := strings.Split(value.String(), tf.conf.Separator)
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, str); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, str); err != nil {
 		return nil, fmt.Errorf("transform: string_split: %v", err)
 	}
 

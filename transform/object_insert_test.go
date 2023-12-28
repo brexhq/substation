@@ -22,7 +22,7 @@ var objectInsertTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"set_key": "a",
+					"dst_key": "a",
 				}, "value": `{"b":"c"}`,
 			},
 		},
@@ -36,7 +36,7 @@ var objectInsertTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"set_key": "a",
+					"dst_key": "a",
 				}, "value": []string{"b", "c"},
 			},
 		},
@@ -50,7 +50,7 @@ var objectInsertTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"set_key": "a",
+					"dst_key": "a",
 				}, "value": map[string]string{
 					"b": "c",
 				},
@@ -66,7 +66,7 @@ var objectInsertTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"set_key": "a",
+					"dst_key": "a",
 				},
 				"value": "b",
 			},
@@ -81,7 +81,7 @@ var objectInsertTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"set_key": "a",
+					"dst_key": "a",
 				}, "value": 1,
 			},
 		},
@@ -95,7 +95,7 @@ var objectInsertTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"set_key": "a",
+					"dst_key": "a",
 				},
 				"value": []byte{120, 156, 5, 192, 49, 13, 0, 0, 0, 194, 48, 173, 76, 2, 254, 143, 166, 29, 2, 93, 1, 54},
 			},

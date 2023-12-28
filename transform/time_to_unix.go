@@ -22,7 +22,7 @@ func newTimeToUnix(_ context.Context, cfg config.Config) (*timeToUnix, error) {
 
 	tf := timeToUnix{
 		conf:     conf,
-		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
+		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
 	}
 
 	return &tf, nil
@@ -40,7 +40,7 @@ func (tf *timeToUnix) Transform(ctx context.Context, msg *message.Message) ([]*m
 
 	var value message.Value
 	if tf.isObject {
-		value = msg.GetValue(tf.conf.Object.Key)
+		value = msg.GetValue(tf.conf.Object.SrcKey)
 	} else {
 		value = bytesToValue(msg.Data())
 	}
@@ -54,7 +54,7 @@ func (tf *timeToUnix) Transform(ctx context.Context, msg *message.Message) ([]*m
 	unix := date.Unix()
 
 	if tf.isObject {
-		if err := msg.SetValue(tf.conf.Object.SetKey, unix); err != nil {
+		if err := msg.SetValue(tf.conf.Object.DstKey, unix); err != nil {
 			return nil, fmt.Errorf("transform: time_to_unix: %v", err)
 		}
 	} else {

@@ -11,8 +11,8 @@ import (
 )
 
 type Object struct {
-	Key    string `json:"key"`
-	SetKey string `json:"set_key"`
+	SrcKey string `json:"src_key"`
+	DstKey string `json:"dst_key"`
 }
 
 type AWS struct {

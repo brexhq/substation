@@ -22,7 +22,7 @@ func newHashSHA256(_ context.Context, cfg config.Config) (*hashSHA256, error) {
 
 	tf := hashSHA256{
 		conf:     conf,
-		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
+		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
 	}
 
 	return &tf, nil
@@ -46,7 +46,7 @@ func (tf *hashSHA256) Transform(ctx context.Context, msg *message.Message) ([]*m
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -54,7 +54,7 @@ func (tf *hashSHA256) Transform(ctx context.Context, msg *message.Message) ([]*m
 	sum := sha256.Sum256(value.Bytes())
 	str := fmt.Sprintf("%x", sum)
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, str); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, str); err != nil {
 		return nil, err
 	}
 

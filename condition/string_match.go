@@ -65,11 +65,11 @@ func (insp *stringMatch) Inspect(ctx context.Context, msg *message.Message) (out
 		return false, nil
 	}
 
-	if insp.conf.Object.Key == "" {
+	if insp.conf.Object.SrcKey == "" {
 		return insp.re.Match(msg.Data()), nil
 	}
 
-	value := msg.GetValue(insp.conf.Object.Key)
+	value := msg.GetValue(insp.conf.Object.SrcKey)
 	return insp.re.MatchString(value.String()), nil
 }
 

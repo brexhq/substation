@@ -34,11 +34,11 @@ func (insp *stringContains) Inspect(ctx context.Context, msg *message.Message) (
 		return false, nil
 	}
 
-	if insp.conf.Object.Key == "" {
+	if insp.conf.Object.SrcKey == "" {
 		return bytes.Contains(msg.Data(), insp.b), nil
 	}
 
-	value := msg.GetValue(insp.conf.Object.Key)
+	value := msg.GetValue(insp.conf.Object.SrcKey)
 	return bytes.Contains(value.Bytes(), insp.b), nil
 }
 

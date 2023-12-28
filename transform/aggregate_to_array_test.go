@@ -95,7 +95,7 @@ var aggregateToArrayTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"set_key": "x",
+					"dst_key": "x",
 				},
 			},
 		},

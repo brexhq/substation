@@ -1,33 +1,33 @@
 local sub = import 'substation.libsonnet';
 
-local key = 'a';
-local set_key = 'b';
+local src = 'a';
+local dst = 'b';
 
-local transform = sub.transform.object.copy(settings={ obj: { key: key, set_key: set_key } });
+local transform = sub.transform.object.copy(settings={ obj: { src: src, dst: dst } });
 local inspector = sub.condition.format.json();
 
 {
   helpers: {
-    make_array: sub.helpers.make_array(key),
+    make_array: sub.helpers.make_array(src),
     key: {
-      append: sub.helpers.key.append(key, set_key),
-      append_array: sub.helpers.key.append_array(key),
-      get_element: sub.helpers.key.get_element(key, 1),
+      append: sub.helpers.object.append(src, dst),
+      append_array: sub.helpers.object.append_array(src),
+      get_element: sub.helpers.object.get_element(src, 1),
     },
   },
   pattern: {
     condition: {
-      obj: sub.pattern.condition.obj(key),
+      obj: sub.pattern.condition.obj(src),
       negate: sub.pattern.condition.negate(inspector),
       network: {
         ip: {
-          internal: sub.pattern.condition.network.ip.internal(key),
+          internal: sub.pattern.condition.network.ip.internal(src),
         },
       },
       logic: {
         len: {
-          eq_zero: sub.pattern.condition.number.length.eq_zero(key),
-          gt_zero: sub.pattern.condition.number.length.gt_zero(key),
+          eq_zero: sub.pattern.condition.number.length.eq_zero(src),
+          gt_zero: sub.pattern.condition.number.length.gt_zero(src),
         },
       },
     },

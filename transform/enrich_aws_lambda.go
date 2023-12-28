@@ -28,12 +28,12 @@ func (c *enrichAWSLambdaConfig) Decode(in interface{}) error {
 }
 
 func (c *enrichAWSLambdaConfig) Validate() error {
-	if c.Object.Key == "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey == "" {
+		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SetKey == "" {
-		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.DstKey == "" {
+		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.FunctionName == "" {
@@ -79,7 +79,7 @@ func (tf *enrichAWSLambda) Transform(ctx context.Context, msg *message.Message) 
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -98,7 +98,7 @@ func (tf *enrichAWSLambda) Transform(ctx context.Context, msg *message.Message) 
 		return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", resErr)
 	}
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, resp.Payload); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, resp.Payload); err != nil {
 		return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", err)
 	}
 

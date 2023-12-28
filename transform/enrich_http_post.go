@@ -22,7 +22,7 @@ type enrichHTTPPostConfig struct {
 	// URL is the HTTP(S) endpoint that data is retrieved from.
 	//
 	// If the substring ${data} is in the URL, then the URL is interpolated with
-	// data (either the value from Object.Key or the raw data). URLs may be optionally
+	// data (either the value from Object.SrcKey or the raw data). URLs may be optionally
 	// interpolated with secrets (e.g., ${SECRETS_ENV:FOO}).
 	URL string `json:"url"`
 	// BodyKey retrieves a value from an object that is used as the message body.
@@ -42,12 +42,12 @@ func (c *enrichHTTPPostConfig) Decode(in interface{}) error {
 }
 
 func (c *enrichHTTPPostConfig) Validate() error {
-	if c.Object.Key == "" && c.Object.SetKey != "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
+		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.Key != "" && c.Object.SetKey == "" {
-		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
+		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.URL == "" {
@@ -118,8 +118,8 @@ func (tf *enrichHTTPPost) Transform(ctx context.Context, msg *message.Message) (
 	// The URL is always interpolated with the substring ${data}.
 	url := tf.conf.URL
 	if strings.Contains(url, enrichHTTPInterp) {
-		if tf.conf.Object.Key != "" {
-			value := msg.GetValue(tf.conf.Object.Key)
+		if tf.conf.Object.SrcKey != "" {
+			value := msg.GetValue(tf.conf.Object.SrcKey)
 			if value.Exists() {
 				return []*message.Message{msg}, nil
 			}
@@ -157,8 +157,8 @@ func (tf *enrichHTTPPost) Transform(ctx context.Context, msg *message.Message) (
 	// If SetKey exists, then the response body is written into the message,
 	// but otherwise the response is not stored and the message is returned
 	// as-is.
-	if tf.conf.Object.SetKey != "" {
-		if err := msg.SetValue(tf.conf.Object.SetKey, parsed); err != nil {
+	if tf.conf.Object.DstKey != "" {
+		if err := msg.SetValue(tf.conf.Object.DstKey, parsed); err != nil {
 			return nil, fmt.Errorf("transform: enrich_http_post: %v", err)
 		}
 	}

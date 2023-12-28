@@ -21,7 +21,7 @@ var stringEndsWithTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key": "a",
+					"src_key": "a",
 				},
 				"value": "de",
 			},

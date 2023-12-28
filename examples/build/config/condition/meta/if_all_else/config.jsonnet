@@ -20,14 +20,14 @@ local domain_match = sub.cnd.all(
       settings={ cases: [
         {
           condition: domain_match,
-          transform: sub.tf.obj.insert(settings={ object: { set_key: 'meta result' }, value: true }),
+          transform: sub.tf.obj.insert({ obj: { dst: 'meta result' }, value: true }),
         },
         {
-          transform: sub.tf.obj.insert(settings={ object: { set_key: 'meta result' }, value: false }),
+          transform: sub.tf.obj.insert({ obj: { dst: 'meta result' }, value: false }),
         },
       ] }
     ),
-    sub.tf.obj.cp(settings={ object: { key: 'meta result' } }),
+    sub.tf.obj.cp({ obj: { src: 'meta result' } }),
     sub.tf.send.stdout(),
   ],
 }

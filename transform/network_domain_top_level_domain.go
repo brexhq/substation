@@ -23,7 +23,7 @@ func newNetworkDomainTopLevelDomain(_ context.Context, cfg config.Config) (*netw
 
 	tf := networkDomainTopLevelDomain{
 		conf:  conf,
-		isObj: conf.Object.Key != "" && conf.Object.SetKey != "",
+		isObj: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
 	}
 
 	return &tf, nil
@@ -47,14 +47,14 @@ func (tf *networkDomainTopLevelDomain) Transform(ctx context.Context, msg *messa
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
 	domain, _ := publicsuffix.PublicSuffix(value.String())
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, domain); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, domain); err != nil {
 		return nil, fmt.Errorf("transform: network_domain_top_level_domain: %v", err)
 	}
 

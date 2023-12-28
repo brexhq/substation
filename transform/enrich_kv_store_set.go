@@ -54,12 +54,12 @@ func (c *enrichKVStoreSetConfig) Decode(in interface{}) error {
 }
 
 func (c *enrichKVStoreSetConfig) Validate() error {
-	if c.Object.Key == "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey == "" {
+		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SetKey == "" {
-		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.DstKey == "" {
+		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.KVStore.Type == "" {
@@ -123,7 +123,7 @@ func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message)
 		}
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -138,24 +138,24 @@ func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message)
 		value := msg.GetValue(tf.conf.TTLKey)
 		ttl := tf.truncateTTL(value) + tf.ttl
 
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.SetKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.DstKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
 	} else if tf.conf.TTLKey != "" {
 		value := msg.GetValue(tf.conf.TTLKey)
 		ttl := tf.truncateTTL(value)
 
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.SetKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.DstKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
 	} else if tf.ttl != 0 {
 		ttl := time.Now().Add(time.Duration(tf.ttl) * time.Second).Unix()
 
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.SetKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.DstKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
 	} else {
-		if err := tf.kvStore.Set(ctx, key, msg.GetValue(tf.conf.Object.SetKey).String()); err != nil {
+		if err := tf.kvStore.Set(ctx, key, msg.GetValue(tf.conf.Object.DstKey).String()); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
 	}

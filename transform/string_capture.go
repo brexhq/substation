@@ -31,12 +31,12 @@ func (c *stringCaptureConfig) Decode(in interface{}) error {
 }
 
 func (c *stringCaptureConfig) Validate() error {
-	if c.Object.Key == "" && c.Object.SetKey != "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
+		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.Key != "" && c.Object.SetKey == "" {
-		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
+		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.Pattern == "" {
@@ -65,7 +65,7 @@ func newStringCapture(_ context.Context, cfg config.Config) (*stringCapture, err
 
 	tf := stringCapture{
 		conf:     conf,
-		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
+		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
 	}
 
 	return &tf, nil
@@ -105,14 +105,14 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
 	if tf.conf.Count == 0 {
 		matches := tf.conf.re.FindStringSubmatch(value.String())
-		if err := msg.SetValue(tf.conf.Object.SetKey, strCaptureGetStringMatch(matches)); err != nil {
+		if err := msg.SetValue(tf.conf.Object.DstKey, strCaptureGetStringMatch(matches)); err != nil {
 			return nil, fmt.Errorf("transform: string_capture: %v", err)
 		}
 
@@ -127,7 +127,7 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 		matches = append(matches, m)
 	}
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, matches); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, matches); err != nil {
 		return nil, fmt.Errorf("transform: string_capture: %v", err)
 	}
 

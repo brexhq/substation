@@ -27,7 +27,7 @@ func newStringUUID(_ context.Context, cfg config.Config) (*stringUUID, error) {
 
 	tf := stringUUID{
 		conf:            conf,
-		hasObjectSetKey: conf.Object.SetKey != "",
+		hasObjectSetKey: conf.Object.DstKey != "",
 	}
 
 	return &tf, nil
@@ -45,7 +45,7 @@ func (tf *stringUUID) Transform(_ context.Context, msg *message.Message) ([]*mes
 
 	uid := uuid.NewString()
 	if tf.hasObjectSetKey {
-		if err := msg.SetValue(tf.conf.Object.SetKey, uid); err != nil {
+		if err := msg.SetValue(tf.conf.Object.DstKey, uid); err != nil {
 			return nil, fmt.Errorf("transform: string_uuid: %v", err)
 		}
 

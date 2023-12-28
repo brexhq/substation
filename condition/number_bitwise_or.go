@@ -30,7 +30,7 @@ func (insp *numberBitwiseOR) Inspect(ctx context.Context, msg *message.Message) 
 		return false, nil
 	}
 
-	if insp.conf.Object.Key == "" {
+	if insp.conf.Object.SrcKey == "" {
 		value, err := strconv.ParseInt(string(msg.Data()), 10, 64)
 		if err != nil {
 			return false, err
@@ -39,6 +39,6 @@ func (insp *numberBitwiseOR) Inspect(ctx context.Context, msg *message.Message) 
 		return value|insp.conf.Value != 0, nil
 	}
 
-	value := msg.GetValue(insp.conf.Object.Key)
+	value := msg.GetValue(insp.conf.Object.SrcKey)
 	return value.Int()|insp.conf.Value != 0, nil
 }

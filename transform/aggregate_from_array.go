@@ -18,8 +18,8 @@ func newAggregateFromArray(_ context.Context, cfg config.Config) (*aggregateFrom
 
 	tf := aggregateFromArray{
 		conf:         conf,
-		hasObjKey:    conf.Object.Key != "",
-		hasObjSetKey: conf.Object.SetKey != "",
+		hasObjKey:    conf.Object.SrcKey != "",
+		hasObjSetKey: conf.Object.DstKey != "",
 	}
 
 	return &tf, nil
@@ -41,8 +41,8 @@ func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Messag
 
 	var value message.Value
 	if tf.hasObjKey {
-		value = msg.GetValue(tf.conf.Object.Key)
-		if err := msg.DeleteValue(tf.conf.Object.Key); err != nil {
+		value = msg.GetValue(tf.conf.Object.SrcKey)
+		if err := msg.DeleteValue(tf.conf.Object.SrcKey); err != nil {
 			return nil, err
 		}
 	} else {
@@ -65,7 +65,7 @@ func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Messag
 		}
 
 		if tf.hasObjSetKey {
-			if err := outMsg.SetValue(tf.conf.Object.SetKey, res); err != nil {
+			if err := outMsg.SetValue(tf.conf.Object.DstKey, res); err != nil {
 				return nil, err
 			}
 

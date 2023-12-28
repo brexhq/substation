@@ -21,7 +21,7 @@ var numberLengthGreaterThanTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key": "foo",
+					"src_key": "foo",
 				},
 				"value": 2,
 			},
@@ -44,7 +44,7 @@ var numberLengthGreaterThanTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key": "foo",
+					"src_key": "foo",
 				},
 				"value": 3,
 			},

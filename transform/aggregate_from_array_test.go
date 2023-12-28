@@ -37,7 +37,7 @@ var aggregateFromArrayTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"set_key": "x",
+					"dst_key": "x",
 				},
 			},
 		},
@@ -56,7 +56,7 @@ var aggregateFromArrayTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key": "x",
+					"src_key": "x",
 				},
 			},
 		},
@@ -74,8 +74,8 @@ var aggregateFromArrayTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key":     "x",
-					"set_key": "x",
+					"src_key": "x",
+					"dst_key": "x",
 				},
 			},
 		},

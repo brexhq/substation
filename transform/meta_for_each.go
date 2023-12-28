@@ -23,12 +23,12 @@ func (c *metaForEachConfig) Decode(in interface{}) error {
 }
 
 func (c *metaForEachConfig) Validate() error {
-	if c.Object.Key == "" {
-		return fmt.Errorf("object_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SrcKey == "" {
+		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SetKey == "" {
-		return fmt.Errorf("object_set_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.DstKey == "" {
+		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.Transform.Type == "" {
@@ -82,7 +82,7 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.Key)
+	value := msg.GetValue(tf.conf.Object.SrcKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -105,7 +105,7 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 		}
 	}
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, arr); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, arr); err != nil {
 		return nil, fmt.Errorf("transform: meta_for_each: %v", err)
 	}
 

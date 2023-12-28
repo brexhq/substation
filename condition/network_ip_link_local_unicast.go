@@ -31,14 +31,14 @@ func (insp *networkIPLinkLocalUnicast) Inspect(ctx context.Context, msg *message
 		return false, nil
 	}
 
-	if insp.conf.Object.Key == "" {
+	if insp.conf.Object.SrcKey == "" {
 		str := string(msg.Data())
 		ip := net.ParseIP(str)
 
 		return ip.IsLinkLocalUnicast(), nil
 	}
 
-	value := msg.GetValue(insp.conf.Object.Key)
+	value := msg.GetValue(insp.conf.Object.SrcKey)
 	ip := net.ParseIP(value.String())
 
 	return ip.IsLinkLocalUnicast(), nil

@@ -8,9 +8,7 @@ local sub = import '../../../../../../build/config/substation.libsonnet';
 //
 // Run this on the local system as an example:
 //  export SUBSTATION_EXAMPLE_URL=https://www.gutenberg.org/files/2701/old/moby10b.txt
-local secret = sub.secrets.environment_variable(
-  settings={ id: 'ENV_VAR', name: 'SUBSTATION_EXAMPLE_URL' }
-);
+local secret = sub.secrets.environment_variable({ id: 'ENV_VAR', name: 'SUBSTATION_EXAMPLE_URL' });
 
 {
   // The `utility_secret` transform retrieves the secret from the environment
@@ -19,12 +17,8 @@ local secret = sub.secrets.environment_variable(
   // URL of a web page that is retrieved by the `enrich_http_get` transform and
   // sent to stdout by the `send_stdout` transform.
   transforms: [
-    sub.transform.utility.secret(
-      settings={ secret: secret }
-    ),
-    sub.transform.enrich.http.get(
-      settings={ url: '${SECRET:ENV_VAR}' }
-    ),
+    sub.transform.utility.secret({ secret: secret }),
+    sub.transform.enrich.http.get({ url: '${SECRET:ENV_VAR}' }),
     sub.tf.send.stdout(),
   ],
 }

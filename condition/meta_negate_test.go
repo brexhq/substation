@@ -23,7 +23,7 @@ var metaNegateTests = []struct {
 				"inspector": map[string]interface{}{
 					"settings": map[string]interface{}{
 						"object": map[string]interface{}{
-							"key": "a",
+							"src_key": "a",
 						},
 						"value": "bcd",
 					},

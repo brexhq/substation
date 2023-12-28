@@ -23,7 +23,7 @@ func newNumberMathMultiplication(_ context.Context, cfg config.Config) (*numberM
 
 	tf := numberMathMultiplication{
 		conf:     conf,
-		isObject: conf.Object.Key != "" && conf.Object.SetKey != "",
+		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
 	}
 
 	return &tf, nil
@@ -41,7 +41,7 @@ func (tf *numberMathMultiplication) Transform(ctx context.Context, msg *message.
 
 	var value message.Value
 	if tf.isObject {
-		value = msg.GetValue(tf.conf.Object.Key)
+		value = msg.GetValue(tf.conf.Object.SrcKey)
 	} else {
 		value = bytesToValue(msg.Data())
 	}
@@ -76,7 +76,7 @@ func (tf *numberMathMultiplication) Transform(ctx context.Context, msg *message.
 		return nil, fmt.Errorf("transform: number_math_multiplication: %v", err)
 	}
 
-	if err := msg.SetValue(tf.conf.Object.SetKey, f); err != nil {
+	if err := msg.SetValue(tf.conf.Object.DstKey, f); err != nil {
 		return nil, fmt.Errorf("transform: number_math_multiplication: %v", err)
 	}
 

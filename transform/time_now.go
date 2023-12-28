@@ -35,7 +35,7 @@ func newTimeNow(_ context.Context, cfg config.Config) (*timeNow, error) {
 
 	tf := timeNow{
 		conf:            conf,
-		hasObjectSetKey: conf.Object.SetKey != "",
+		hasObjectSetKey: conf.Object.DstKey != "",
 	}
 
 	return &tf, nil
@@ -54,7 +54,7 @@ func (tf *timeNow) Transform(ctx context.Context, msg *message.Message) ([]*mess
 	date := time.Now()
 
 	if tf.hasObjectSetKey {
-		if err := msg.SetValue(tf.conf.Object.SetKey, date.UnixNano()); err != nil {
+		if err := msg.SetValue(tf.conf.Object.DstKey, date.UnixNano()); err != nil {
 			return nil, fmt.Errorf("time: now: %v", err)
 		}
 

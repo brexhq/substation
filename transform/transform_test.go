@@ -21,7 +21,7 @@ var transformTests = []struct {
 			Type: "object_copy",
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"set_key": "a",
+					"dst_key": "a",
 				},
 			},
 		},
@@ -36,7 +36,7 @@ var transformTests = []struct {
 			Type: "object_insert",
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"set_key": "c",
+					"dst_key": "c",
 				},
 				"value": "d",
 			},

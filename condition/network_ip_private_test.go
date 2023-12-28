@@ -27,7 +27,7 @@ var networkIPPrivateTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"key": "ip_address",
+					"src_key": "ip_address",
 				},
 			},
 		},

@@ -727,23 +727,12 @@
             headers_key: null,
           },
 
-          type: 'send_http',
+          type: 'send_http_post',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
       },
       stdout(settings={}): {
         type: 'send_stdout',
-      },
-      sumologic(settings={}): {
-        local default = {
-          buffer: $.config.buffer,
-          url: null,
-          category: null,
-          category_key: null,
-        },
-
-        type: 'send_sumologic',
-        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
     },
     str: $.transform.string,

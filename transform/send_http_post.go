@@ -119,7 +119,7 @@ func (tf *sendHTTPPost) Transform(ctx context.Context, msg *message.Message) ([]
 		return nil, fmt.Errorf("transform: send_http_post: %v", err)
 	}
 
-	resp, err := tf.client.Post(ctx, url, string(msg.Data()), headers...)
+	resp, err := tf.client.Post(ctx, url, msg.Data(), headers...)
 	if err != nil {
 		// Post errors return metadata.
 		return nil, fmt.Errorf("transform: send_http_post: %v", err)

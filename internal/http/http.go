@@ -49,8 +49,7 @@ func (h *HTTP) Get(ctx context.Context, url string, headers ...Header) (*http.Re
 		req.Header.Add(h.Key, h.Value)
 	}
 
-	reqCtx := req.WithContext(ctx)
-	resp, err := h.Client.Do(reqCtx)
+	resp, err := h.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("http get URL %s: %v", url, err)
 	}
@@ -75,13 +74,12 @@ func (h *HTTP) Post(ctx context.Context, url string, payload interface{}, header
 	if err != nil {
 		return nil, fmt.Errorf("http post URL %s: %v", url, err)
 	}
-	reqCtx := req.WithContext(ctx)
 
 	for _, h := range headers {
 		req.Header.Add(h.Key, h.Value)
 	}
 
-	resp, err = h.Client.Do(reqCtx)
+	resp, err = h.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("http post URL %s: %v", url, err)
 	}

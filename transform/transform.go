@@ -135,8 +135,6 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newSendHTTPPost(ctx, cfg)
 	case "send_stdout":
 		return newSendStdout(ctx, cfg)
-	case "send_sumologic":
-		return newSendSumologic(ctx, cfg)
 	// String transforms.
 	case "string_append":
 		return newStringAppend(ctx, cfg)

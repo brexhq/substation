@@ -87,7 +87,8 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 	}
 
 	if !tf.isObject {
-		if tf.containsCaptureGroup {
+		switch {
+		case tf.containsCaptureGroup:
 			outMsg := message.New().SetMetadata(msg.Metadata())
 
 			matches := tf.conf.re.FindSubmatch(msg.Data())
@@ -102,29 +103,29 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 			}
 
 			return []*message.Message{outMsg}, nil
-		}
 
-		if tf.conf.Count == 0 {
+		case tf.conf.Count == 0:
 			matches := tf.conf.re.FindSubmatch(msg.Data())
 			msg.SetData(strCaptureGetBytesMatch(matches))
 
 			return []*message.Message{msg}, nil
-		}
 
-		tmpMsg := message.New()
-		subs := tf.conf.re.FindAllSubmatch(msg.Data(), tf.conf.Count)
+		default:
+			tmpMsg := message.New()
+			subs := tf.conf.re.FindAllSubmatch(msg.Data(), tf.conf.Count)
 
-		for _, s := range subs {
-			m := strCaptureGetBytesMatch(s)
-			if err := tmpMsg.SetValue("key.-1", m); err != nil {
-				return nil, fmt.Errorf("transform: string_capture: %v", err)
+			for _, s := range subs {
+				m := strCaptureGetBytesMatch(s)
+				if err := tmpMsg.SetValue("key.-1", m); err != nil {
+					return nil, fmt.Errorf("transform: string_capture: %v", err)
+				}
 			}
+
+			v := tmpMsg.GetValue("key")
+			msg.SetData(v.Bytes())
+
+			return []*message.Message{msg}, nil
 		}
-
-		v := tmpMsg.GetValue("key")
-		msg.SetData(v.Bytes())
-
-		return []*message.Message{msg}, nil
 	}
 
 	value := msg.GetValue(tf.conf.Object.SrcKey)
@@ -132,7 +133,8 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 		return []*message.Message{msg}, nil
 	}
 
-	if tf.containsCaptureGroup {
+	switch {
+	case tf.containsCaptureGroup:
 		matches := tf.conf.re.FindStringSubmatch(value.String())
 		for i, match := range matches {
 			if i == 0 {
@@ -152,30 +154,30 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 		}
 
 		return []*message.Message{msg}, nil
-	}
 
-	if tf.conf.Count == 0 {
+	case tf.conf.Count == 0:
 		matches := tf.conf.re.FindStringSubmatch(value.String())
 		if err := msg.SetValue(tf.conf.Object.DstKey, strCaptureGetStringMatch(matches)); err != nil {
 			return nil, fmt.Errorf("transform: string_capture: %v", err)
 		}
 
 		return []*message.Message{msg}, nil
+
+	default:
+		var matches []string
+		subs := tf.conf.re.FindAllStringSubmatch(value.String(), tf.conf.Count)
+
+		for _, s := range subs {
+			m := strCaptureGetStringMatch(s)
+			matches = append(matches, m)
+		}
+
+		if err := msg.SetValue(tf.conf.Object.DstKey, matches); err != nil {
+			return nil, fmt.Errorf("transform: string_capture: %v", err)
+		}
+
+		return []*message.Message{msg}, nil
 	}
-
-	var matches []string
-	subs := tf.conf.re.FindAllStringSubmatch(value.String(), tf.conf.Count)
-
-	for _, s := range subs {
-		m := strCaptureGetStringMatch(s)
-		matches = append(matches, m)
-	}
-
-	if err := msg.SetValue(tf.conf.Object.DstKey, matches); err != nil {
-		return nil, fmt.Errorf("transform: string_capture: %v", err)
-	}
-
-	return []*message.Message{msg}, nil
 }
 
 func (tf *stringCapture) String() string {

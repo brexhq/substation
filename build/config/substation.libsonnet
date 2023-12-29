@@ -727,8 +727,15 @@
             headers_key: null,
           },
 
+          local s = std.mergePatch(settings, {
+            headers: if std.objectHas(settings, 'headers') then settings.headers else if std.objectHas(settings, 'hdr') then settings.hdr else null,
+            headers_key: if std.objectHas(settings, 'headers_key') then settings.headers_key else if std.objectHas(settings, 'hdr_key') then settings.hdr_key else null,
+            hdr: null,
+            hdr_key: null,
+          }),
+
           type: 'send_http_post',
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
         },
       },
       stdout(settings={}): {
@@ -756,6 +763,7 @@
         type: 'string_capture',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
+      repl: $.transform.string.replace,
       replace(settings={}): {
         local default = {
           object: $.config.object,
@@ -763,8 +771,14 @@
           replacement: null,
         },
 
+        local s = std.mergePatch(settings, {
+          pattern: settings.pattern,
+          replacement: if std.objectHas(settings, 'replacement') then settings.replacement else if std.objectHas(settings, 'repl') then settings.repl else null,
+          repl: null,
+        }),
+
         type: 'string_replace',
-        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
       },
       split(settings={}): {
         local default = {
@@ -772,8 +786,13 @@
           separator: null,
         },
 
+        local s = std.mergePatch(settings, {
+          separator: if std.objectHas(settings, 'separator') then settings.separator else if std.objectHas(settings, 'sep') then settings.sep else null,
+          sep: null,
+        }),
+
         type: 'string_split',
-        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
       },
       to: {
         default: {

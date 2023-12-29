@@ -32,10 +32,6 @@ func (c *arrayJoinConfig) Validate() error {
 		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Separator == "" {
-		return fmt.Errorf("separator: %v", errors.ErrMissingRequiredOption)
-	}
-
 	return nil
 }
 

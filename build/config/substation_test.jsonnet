@@ -7,6 +7,32 @@ local transform = sub.transform.object.copy(settings={ obj: { src: src, dst: dst
 local inspector = sub.condition.format.json();
 
 {
+  transform: {
+    send: {
+      http: {
+        post: sub.transform.send.http.post({
+          url: 'http://localhost:8080',
+          hdr: [{ key: 'Content-Type', value: 'application/json' }],
+        }),
+      },
+    },
+    string: {
+      repl: sub.transform.string.repl({
+        obj: { src: src, dst: dst },
+        pattern: 'a',
+        repl: 'b',
+      }),
+      replace: sub.transform.string.replace({
+        object: { src_key: src, dst_key: dst },
+        pattern: 'a',
+        replacement: 'b',
+      }),
+      split: sub.transform.string.split({
+        object: { src_key: src, dst_key: dst },
+        sep: '.',
+      }),
+    },
+  },
   helpers: {
     make_array: sub.helpers.make_array(src),
     key: {

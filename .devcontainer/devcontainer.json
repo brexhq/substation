@@ -5,7 +5,7 @@
 	},
 	"remoteUser": "root",
 	"runArgs": [
-		"--memory=1g",
+		"--memory=2g",
 		"--cpus=2"
 	],
 	"postCreateCommand": "bash .devcontainer/install-dev-tools.sh",

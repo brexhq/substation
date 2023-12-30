@@ -118,31 +118,26 @@ Deploys a data pipeline that implements a multi-phase streaming data pattern usi
 
 flowchart LR
     %% resources
-    cw1([CloudWatch Log Group])
-    cw2([CloudWatch Log Group])
-    cw3([CloudWatch Log Group])
-    kds([Kinesis Data Stream])
+    gateway([API Gateway])
+    kds1([Kinesis Data Stream])
+    kds2([Kinesis Data Stream])
 
-    consumerHandler[[Handler]]
-    consumerTransforms[Transforms]
+    publisherHandler[[Handler]]
+    publisherTransforms[Transforms]
 
-    subgraph Account B / Region us-west-2
-    cw2
+    subscriberHandler[[Handler]]
+    subscriberTransforms[Transforms]
+
+    %% connections
+    gateway --> kds1 --> publisherHandler
+    subgraph Substation Publisher Node 
+    publisherHandler --> publisherTransforms
     end
 
-    subgraph Account A / Region us-west-2
-    cw3
-    end
+    publisherTransforms --> kds2 --> subscriberHandler
 
-    subgraph Account A / Region us-east-1
-    cw1 --> kds
-    cw3 --> kds
-    cw2 --> kds
-    kds --> consumerHandler
-
-    subgraph Substation Consumer Node 
-    consumerHandler  --> consumerTransforms
-    end
+    subgraph Substation Subscriber Node 
+    subscriberHandler  --> subscriberTransforms
     end
 ```
 

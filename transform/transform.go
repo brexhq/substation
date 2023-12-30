@@ -31,10 +31,10 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "aggregate_to_string":
 		return newAggregateToString(ctx, cfg)
 	// Array transforms.
-	case "array_group":
-		return newArrayGroup(ctx, cfg)
 	case "array_join":
 		return newArrayJoin(ctx, cfg)
+	case "array_zip":
+		return newArrayZip(ctx, cfg)
 	// Enrichment transforms.
 	case "enrich_aws_dynamodb":
 		return newEnrichAWSDynamoDB(ctx, cfg)

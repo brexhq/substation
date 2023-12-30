@@ -292,15 +292,6 @@
     },
     arr: $.transform.array,
     array: {
-      group(settings={}): {
-        local default = {
-          object: $.config.object,
-          group_keys: null,
-        },
-
-        type: 'array_group',
-        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
-      },
       join(settings={}): {
         local default = {
           object: $.config.object,
@@ -308,6 +299,16 @@
         },
 
         type: 'array_join',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      zip(settings={}): {
+        local default = {
+          object: $.config.object,
+          as_object: false,
+          with_keys: null,
+        },
+
+        type: 'array_zip',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
     },

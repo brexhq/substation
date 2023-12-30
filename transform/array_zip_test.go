@@ -9,16 +9,16 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-var _ Transformer = &arrayGroup{}
+var _ Transformer = &arrayZip{}
 
-var arrayGroupTests = []struct {
+var arrayZipTests = []struct {
 	name     string
 	cfg      config.Config
 	test     []byte
 	expected [][]byte
 }{
 	{
-		"tuples",
+		"array",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -33,28 +33,61 @@ var arrayGroupTests = []struct {
 		},
 	},
 	{
-		"objects",
+		"array as_object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
 					"src_key": "a",
 					"dst_key": "a",
 				},
-				"group_keys": []string{"d.e", "f"},
+				"as_object": true,
 			},
 		},
 		[]byte(`{"a":[["b","c"],[1,2]]}`),
 		[][]byte{
-			[]byte(`{"a":[{"d":{"e":"b"},"f":1},{"d":{"e":"c"},"f":2}]}`),
+			[]byte(`{"a":{"b":1,"c":2}}`),
+		},
+	},
+	{
+		"array as_object multi_value",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"src_key": "a",
+					"dst_key": "a",
+				},
+				"as_object": true,
+			},
+		},
+		[]byte(`{"a":[["b","c"],[1,2],[3,4]]}`),
+		[][]byte{
+			[]byte(`{"a":{"b":[1,3],"c":[2,4]}}`),
+		},
+	},
+	{
+		"array as_object multi_value with_keys",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"src_key": "a",
+					"dst_key": "a",
+				},
+				"as_object": true,
+				"with_keys": []string{"x", "y"},
+			},
+		},
+		[]byte(`{"a":[["b","c"],[1,2],[3,4]]}`),
+		[][]byte{
+			[]byte(`{"a":{"x":["b",1,3],"y":["c",2,4]}}`),
 		},
 	},
 }
 
-func TestArrayGroup(t *testing.T) {
+func TestArrayZip(t *testing.T) {
 	ctx := context.TODO()
-	for _, test := range arrayGroupTests {
+	for _, test := range arrayZipTests {
 		t.Run(test.name, func(t *testing.T) {
-			tf, err := newArrayGroup(ctx, test.cfg)
+			tf, err := newArrayZip(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -77,7 +110,7 @@ func TestArrayGroup(t *testing.T) {
 	}
 }
 
-func benchmarkArrayGroup(b *testing.B, tf *arrayGroup, data []byte) {
+func benchmarkArrayZip(b *testing.B, tf *arrayZip, data []byte) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		msg := message.New().SetData(data)
@@ -85,16 +118,16 @@ func benchmarkArrayGroup(b *testing.B, tf *arrayGroup, data []byte) {
 	}
 }
 
-func BenchmarkArrayGroup(b *testing.B) {
-	for _, test := range arrayGroupTests {
-		tf, err := newArrayGroup(context.TODO(), test.cfg)
+func BenchmarkArrayZip(b *testing.B) {
+	for _, test := range arrayZipTests {
+		tf, err := newArrayZip(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkArrayGroup(b, tf, test.test)
+				benchmarkArrayZip(b, tf, test.test)
 			},
 		)
 	}

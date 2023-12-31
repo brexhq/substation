@@ -29,7 +29,7 @@ local files_key = 'files';
     // index and configured keys. For example:
     //
     // [{name: name1, type: type1, size: size1}, {name: name2, type: type2, size: size2}]
-    sub.tf.arr.group({ obj: { src: files_key, dst: files_key }, group_keys: ['name', 'type', 'size', 'extension'] }),
+    sub.tf.arr.zip({ obj: { src: files_key, dst: files_key }, as_object: true, with_keys: ['name', 'type', 'size', 'extension'] }),
     sub.tf.send.stdout(),
     // The array of objects are transformed into new events.
     sub.tf.obj.cp({ obj: { src: files_key } }),

@@ -24,7 +24,7 @@ resource "aws_dynamodb_table" "table" {
 
   # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html.
   ttl {
-    attribute_name = var.config.ttl_key
+    attribute_name = var.config.ttl_key != null ? var.config.ttl_key : ""
     enabled        = var.config.ttl_key != null ? true : false
   }
   point_in_time_recovery {

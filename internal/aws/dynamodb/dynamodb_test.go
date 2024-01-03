@@ -63,6 +63,62 @@ func TestGetItem(t *testing.T) {
 	}
 }
 
+type mockedBatchPutItem struct {
+	dynamodbiface.DynamoDBAPI
+	Resp dynamodb.BatchWriteItemOutput
+}
+
+func (m mockedBatchPutItem) BatchWriteItemWithContext(ctx aws.Context, input *dynamodb.BatchWriteItemInput, opts ...request.Option) (*dynamodb.BatchWriteItemOutput, error) {
+	return &m.Resp, nil
+}
+
+func TestBatchPutItem(t *testing.T) {
+	tests := []struct {
+		resp     dynamodb.BatchWriteItemOutput
+		expected string
+	}{
+		{
+			resp: dynamodb.BatchWriteItemOutput{
+				ItemCollectionMetrics: map[string][]*dynamodb.ItemCollectionMetrics{
+					"table": {
+						{
+							ItemCollectionKey: map[string]*dynamodb.AttributeValue{
+								"foo": {
+									S: aws.String("bar"),
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: "bar",
+		},
+	}
+
+	ctx := context.TODO()
+
+	for _, test := range tests {
+		a := API{
+			mockedBatchPutItem{Resp: test.resp},
+		}
+
+		resp, err := a.BatchPutItem(ctx, "", []map[string]*dynamodb.AttributeValue{})
+		if err != nil {
+			t.Fatalf("%d, unexpected error", err)
+		}
+
+		var item map[string]interface{}
+		err = dynamodbattribute.UnmarshalMap(resp.ItemCollectionMetrics["table"][0].ItemCollectionKey, &item)
+		if err != nil {
+			t.Fatalf("%d, unexpected error", err)
+		}
+
+		if item["foo"] != test.expected {
+			t.Errorf("expected %+v, got %s", item["foo"], test.expected)
+		}
+	}
+}
+
 type mockedPutItem struct {
 	dynamodbiface.DynamoDBAPI
 	Resp dynamodb.PutItemOutput

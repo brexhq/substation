@@ -1,7 +1,7 @@
 local sub = import '../../../../../../../../build/config/substation.libsonnet';
 
 // This is a placeholder that must be replaced with the bucket produced by Terraform.
-local bucket = 'f926941a-30b6-f858-6f4b-7a48d8808ab3-substation';
+local bucket = 'c034c726-70bf-c397-81bd-c9a0d9e82371-substation';
 
 {
   concurrency: 1,
@@ -9,9 +9,9 @@ local bucket = 'f926941a-30b6-f858-6f4b-7a48d8808ab3-substation';
   transforms: [
     sub.tf.send.aws.s3(
       settings={
-        auxiliary_transforms: sub.pattern.tf.fmt.jsonl,
         bucket_name: bucket,
-        path: { prefix: 'original' },
+        file_path: { prefix: 'original', time_format: '2006/01/02', uuid: true },
+        auxiliary_transforms: sub.pattern.tf.fmt.jsonl,
       }
     ),
     sub.tf.object.insert(
@@ -19,9 +19,9 @@ local bucket = 'f926941a-30b6-f858-6f4b-7a48d8808ab3-substation';
     ),
     sub.tf.send.aws.s3(
       settings={
-        auxiliary_transforms: sub.pattern.tf.fmt.jsonl,
         bucket_name: bucket,
-        path: { prefix: 'transformed' },
+        file_path: { prefix: 'transformed', time_format: '2006/01/02', uuid: true },
+        auxiliary_transforms: sub.pattern.tf.fmt.jsonl,
       }
     ),
   ],

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/brexhq/substation/config"
@@ -153,15 +152,9 @@ func (tf *sendAWSS3) send(ctx context.Context, key string) error {
 		p.Prefix = key
 	}
 
-	path := p.New()
-	if path == "" {
+	filePath := p.New()
+	if filePath == "" {
 		return fmt.Errorf("file path is empty")
-	}
-
-	// Ensures that the path is OS agnostic.
-	path = filepath.FromSlash(path)
-	if err := os.MkdirAll(filepath.Dir(path), 0o770); err != nil {
-		return err
 	}
 
 	temp, err := os.CreateTemp("", "substation")
@@ -192,7 +185,7 @@ func (tf *sendAWSS3) send(ctx context.Context, key string) error {
 	}
 	defer f.Close()
 
-	if _, err := tf.client.Upload(ctx, tf.conf.BucketName, path, f); err != nil {
+	if _, err := tf.client.Upload(ctx, tf.conf.BucketName, filePath, f); err != nil {
 		return err
 	}
 

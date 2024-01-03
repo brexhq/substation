@@ -24,7 +24,7 @@ module "lambda_subscriber" {
 }
 
 resource "aws_lambda_event_source_mapping" "lambda_subscriber" {
-  event_source_arn                   = module.kds_trg.arn
+  event_source_arn                   = module.kds_dst.arn
   function_name                      = module.lambda_subscriber.arn
   maximum_batching_window_in_seconds = 10
   batch_size                         = 100

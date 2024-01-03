@@ -103,7 +103,7 @@ module "kds_src" {
   kms    = module.kms
 
   config = {
-    name              = "src"
+    name              = "substation_src"
     autoscaling_topic = aws_sns_topic.autoscaling_topic.arn
   }
 
@@ -118,12 +118,12 @@ module "kds_src" {
 }
 
 # Kinesis Data Stream that stores data sent from the pipeline processor.
-module "kds_trg" {
+module "kds_dst" {
   source = "../../../../../../../build/terraform/aws/kinesis_data_stream"
   kms    = module.kms
 
   config = {
-    name              = "trg"
+    name              = "substation_dst"
     autoscaling_topic = aws_sns_topic.autoscaling_topic.arn
   }
 

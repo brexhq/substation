@@ -25,6 +25,7 @@ func newUtilityRandom(_ context.Context, cfg config.Config) (*utilityRandom, err
 
 	insp := utilityRandom{
 		conf: conf,
+		r:    rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 
 	return &insp, nil
@@ -32,6 +33,8 @@ func newUtilityRandom(_ context.Context, cfg config.Config) (*utilityRandom, err
 
 type utilityRandom struct {
 	conf utilityRandomConfig
+
+	r *rand.Rand
 }
 
 func (insp *utilityRandom) Inspect(_ context.Context, msg *message.Message) (bool, error) {
@@ -39,14 +42,10 @@ func (insp *utilityRandom) Inspect(_ context.Context, msg *message.Message) (boo
 		return false, nil
 	}
 
-	return rand.Intn(2) == 1, nil
+	return insp.r.Intn(2) == 1, nil
 }
 
 func (insp *utilityRandom) String() string {
 	b, _ := json.Marshal(insp.conf)
 	return string(b)
-}
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
 }

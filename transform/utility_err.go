@@ -36,6 +36,10 @@ type utilityErr struct {
 }
 
 func (tf *utilityErr) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
+	if msg.IsControl() {
+		return []*message.Message{msg}, nil
+	}
+
 	return []*message.Message{msg}, fmt.Errorf("%s", tf.conf.Message)
 }
 

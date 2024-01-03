@@ -12,7 +12,7 @@ local dest = { type: 'aws_cloudwatch_embedded_metrics' };
     sub.transform.meta.metric.duration(
       settings={
         metric: { name: 'ObjectCopyDuration', attributes: attr, destination: dest },
-        transform: sub.transform.object.copy({ obj: { src: 'foo', dst: 'baz' } }),
+        transform: sub.transform.object.copy({ object: { source_key: 'foo', target_key: 'baz' } }),
       },
     ),
     // This can be useful for measuring the execution time of transforms that

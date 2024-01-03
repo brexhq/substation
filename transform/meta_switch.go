@@ -84,6 +84,12 @@ type metaSwitch struct {
 
 func (tf *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
+		for _, c := range tf.conditional {
+			if _, err := c.tf.Transform(ctx, msg); err != nil {
+				return nil, fmt.Errorf("transform: meta_switch: %v", err)
+			}
+		}
+
 		return []*message.Message{msg}, nil
 	}
 

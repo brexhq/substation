@@ -12,12 +12,12 @@ local key = 'c';
     // This conditional transform simulates a transform that may not produce an output.
     sub.pattern.tf.conditional(
       condition=sub.cnd.any(sub.cnd.utility.random()),
-      transform=sub.tf.obj.insert(settings={ obj: { dst: key }, value: true }),
+      transform=sub.tf.obj.insert(settings={ object: { target_key: key }, value: true }),
     ),
     // If there is no output from the transform, then an error is thrown to crash the program.
-    sub.tf.meta.switch(settings={ switch: [
+    sub.tf.meta.switch(settings={ cases: [
       {
-        condition: sub.cnd.any(sub.cnd.num.len.eq(settings={ obj: { src: key }, value: 0 })),
+        condition: sub.cnd.any(sub.cnd.num.len.eq(settings={ object: { source_key: key }, value: 0 })),
         transform: sub.tf.util.err(settings={ message: 'transform produced no output' }),
       },
       { transform: sub.tf.send.stdout() },

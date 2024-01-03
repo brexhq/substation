@@ -22,7 +22,7 @@ var objectDeleteTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "c",
+					"source_key": "c",
 				},
 			},
 		},
@@ -36,7 +36,7 @@ var objectDeleteTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "c",
+					"source_key": "c",
 				},
 			},
 		},
@@ -50,7 +50,7 @@ var objectDeleteTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "c",
+					"source_key": "c",
 				},
 			},
 		},
@@ -65,7 +65,7 @@ var objectDeleteTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "c",
+					"source_key": "c",
 				},
 			},
 		},

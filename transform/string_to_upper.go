@@ -23,7 +23,7 @@ func newStringToUpper(_ context.Context, cfg config.Config) (*stringToUpper, err
 
 	tf := stringToUpper{
 		conf:     conf,
-		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObject: conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 	}
 
 	return &tf, nil
@@ -46,13 +46,13 @@ func (tf *stringToUpper) Transform(ctx context.Context, msg *message.Message) ([
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
 	s := strings.ToUpper(value.String())
-	if err := msg.SetValue(tf.conf.Object.DstKey, s); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, s); err != nil {
 		return nil, fmt.Errorf("transform: string_to_lower: %v", err)
 	}
 

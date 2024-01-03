@@ -73,11 +73,11 @@ func (a *aggregate) Size() int {
 }
 
 func New(cfg Config) (*Aggregate, error) {
-	if cfg.Count <= 1 {
+	if cfg.Count < 1 {
 		cfg.Count = defaultCount
 	}
 
-	if cfg.Size <= 1 {
+	if cfg.Size < 1 {
 		cfg.Size = defaultSize
 	}
 

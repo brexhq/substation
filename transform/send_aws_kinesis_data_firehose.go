@@ -25,9 +25,12 @@ const sendAWSKinesisDataFirehoseMessageSizeLimit = 1024 * 1000
 var errSendAWSKinesisDataFirehoseRecordSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSKinesisDataFirehoseConfig struct {
-	Buffer iconfig.Buffer `json:"buffer"`
-	AWS    iconfig.AWS    `json:"aws"`
-	Retry  iconfig.Retry  `json:"retry"`
+	Object        iconfig.Object  `json:"object"`
+	Batch         iconfig.Batch   `json:"batch"`
+	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
+	AWS   iconfig.AWS   `json:"aws"`
+	Retry iconfig.Retry `json:"retry"`
 
 	// StreamName is the Firehose Delivery Stream that records are sent to.
 	StreamName string `json:"stream_name"`
@@ -66,22 +69,28 @@ func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendA
 		MaxRetries: conf.Retry.Count,
 	})
 
-	buffer, err := aggregate.New(aggregate.Config{
-		// Firehose limits batch operations to 500 records.
-		Count: 500,
-		// Firehose limits batch operations to 4 MiB.
+	agg, err := aggregate.New(aggregate.Config{
+		// Firehose limits batch operations to 500 records and 4 MiB.
+		Count:    500,
 		Size:     sendAWSKinesisDataFirehoseMessageSizeLimit * 4,
-		Duration: conf.Buffer.Duration,
+		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
 		return nil, err
 	}
+	tf.agg = agg
 
-	// All data is stored in a single buffer, the bufferKey
-	// only exists for forward compatibility to allow for
-	// multiple buffers.
-	tf.buffer = buffer
-	tf.bufferKey = conf.Buffer.Key
+	if len(conf.AuxTransforms) > 0 {
+		tf.tforms = make([]Transformer, len(conf.AuxTransforms))
+		for i, c := range conf.AuxTransforms {
+			t, err := New(context.Background(), c)
+			if err != nil {
+				return nil, fmt.Errorf("transform: send_aws_kinesis_data_firehose: %v", err)
+			}
+
+			tf.tforms[i] = t
+		}
+	}
 
 	return &tf, nil
 }
@@ -92,9 +101,9 @@ type sendAWSKinesisDataFirehose struct {
 	// client is safe for concurrent use.
 	client firehose.API
 
-	mu        sync.Mutex
-	buffer    *aggregate.Aggregate
-	bufferKey string
+	mu     sync.Mutex
+	agg    *aggregate.Aggregate
+	tforms []Transformer
 }
 
 func (tf *sendAWSKinesisDataFirehose) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -102,16 +111,17 @@ func (tf *sendAWSKinesisDataFirehose) Transform(ctx context.Context, msg *messag
 	defer tf.mu.Unlock()
 
 	if msg.IsControl() {
-		if tf.buffer.Count(tf.bufferKey) == 0 {
-			return []*message.Message{msg}, nil
+		for key := range tf.agg.GetAll() {
+			if tf.agg.Count(key) == 0 {
+				continue
+			}
+
+			if err := tf.send(ctx, key); err != nil {
+				return nil, fmt.Errorf("transform: send_aws_kinesis_data_firehose: %v", err)
+			}
 		}
 
-		items := tf.buffer.Get(tf.bufferKey)
-		if _, err := tf.client.PutRecordBatch(ctx, tf.conf.StreamName, items); err != nil {
-			return nil, fmt.Errorf("transform: send_aws_kinesis_data_firehose: %v", err)
-		}
-
-		tf.buffer.Reset(tf.bufferKey)
+		tf.agg.ResetAll()
 		return []*message.Message{msg}, nil
 	}
 
@@ -119,19 +129,21 @@ func (tf *sendAWSKinesisDataFirehose) Transform(ctx context.Context, msg *messag
 		return nil, fmt.Errorf("transform: send_aws_kinesis_data_firehose: %v", errSendAWSKinesisDataFirehoseRecordSizeLimit)
 	}
 
-	// Send data to Kinesis Firehose only when the buffer is full.
-	if ok := tf.buffer.Add(tf.bufferKey, msg.Data()); ok {
+	// If this value does not exist, then all data is batched together.
+	key := msg.GetValue(tf.conf.Object.BatchKey).String()
+	if ok := tf.agg.Add(key, msg.Data()); ok {
 		return []*message.Message{msg}, nil
 	}
 
-	items := tf.buffer.Get(tf.bufferKey)
-	if _, err := tf.client.PutRecordBatch(ctx, tf.conf.StreamName, items); err != nil {
+	if err := tf.send(ctx, key); err != nil {
 		return nil, fmt.Errorf("transform: send_aws_kinesis_data_firehose: %v", err)
 	}
 
-	// Reset the buffer and add the msg data.
-	tf.buffer.Reset(tf.bufferKey)
-	_ = tf.buffer.Add(tf.bufferKey, msg.Data())
+	// If data cannot be added after reset, then the batch is misconfgured.
+	tf.agg.Reset(key)
+	if ok := tf.agg.Add(key, msg.Data()); !ok {
+		return nil, fmt.Errorf("transform: send_aws_kinesis_data_firehose: %v", errSendBatchMisconfigured)
+	}
 
 	return []*message.Message{msg}, nil
 }
@@ -141,6 +153,15 @@ func (tf *sendAWSKinesisDataFirehose) String() string {
 	return string(b)
 }
 
-func (*sendAWSKinesisDataFirehose) Close(_ context.Context) error {
+func (tf *sendAWSKinesisDataFirehose) send(ctx context.Context, key string) error {
+	data, err := withTransforms(ctx, tf.tforms, tf.agg.Get(key))
+	if err != nil {
+		return err
+	}
+
+	if _, err := tf.client.PutRecordBatch(ctx, tf.conf.StreamName, data); err != nil {
+		return err
+	}
+
 	return nil
 }

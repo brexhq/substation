@@ -28,12 +28,12 @@ func (c *stringReplaceConfig) Decode(in interface{}) error {
 }
 
 func (c *stringReplaceConfig) Validate() error {
-	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
-		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
+		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
-		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.Pattern == "" {
@@ -62,7 +62,7 @@ func newStringReplace(_ context.Context, cfg config.Config) (*stringReplace, err
 
 	tf := stringReplace{
 		conf:     conf,
-		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObject: conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 		r:        []byte(conf.Replacement),
 	}
 
@@ -88,13 +88,13 @@ func (tf *stringReplace) Transform(ctx context.Context, msg *message.Message) ([
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
 	s := tf.conf.re.ReplaceAllString(value.String(), string(tf.r))
-	if err := msg.SetValue(tf.conf.Object.DstKey, s); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, s); err != nil {
 		return nil, fmt.Errorf("transform: string_replace: %v", err)
 	}
 

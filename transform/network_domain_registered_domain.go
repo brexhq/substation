@@ -23,7 +23,7 @@ func newNetworkDomainRegisteredDomain(_ context.Context, cfg config.Config) (*ne
 
 	tf := networkDomainRegisteredDomain{
 		conf:  conf,
-		isObj: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObj: conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 	}
 
 	return &tf, nil
@@ -50,7 +50,7 @@ func (tf *networkDomainRegisteredDomain) Transform(ctx context.Context, msg *mes
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -60,7 +60,7 @@ func (tf *networkDomainRegisteredDomain) Transform(ctx context.Context, msg *mes
 		return nil, fmt.Errorf("transform: network_domain_registered_domain: %v", err)
 	}
 
-	if err := msg.SetValue(tf.conf.Object.DstKey, domain); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, domain); err != nil {
 		return nil, fmt.Errorf("transform: network_domain_registered_domain: %v", err)
 	}
 

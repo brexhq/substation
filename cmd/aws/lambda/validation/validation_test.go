@@ -48,8 +48,8 @@ var testCfgs = []struct {
 				{
 					"settings": {
 						"object": {
-							"src_key": "foo",
-							"dst_key": "baz"	 
+							"source_key": "foo",
+							"target_key": "baz"	 
 						}
 					},
 					"type": "object_copy"

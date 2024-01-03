@@ -22,7 +22,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "input",
+					"source_key": "input",
 				},
 				"type": "all",
 				"inspector": map[string]interface{}{
@@ -42,7 +42,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "input",
+					"source_key": "input",
 				},
 				"type": "all",
 				"inspector": map[string]interface{}{
@@ -59,7 +59,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "input",
+					"source_key": "input",
 				},
 				"type": "any",
 				"inspector": map[string]interface{}{
@@ -96,7 +96,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "input",
+					"source_key": "input",
 				},
 				"type": "none",
 				"inspector": map[string]interface{}{
@@ -116,7 +116,7 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "input",
+					"source_key": "input",
 				},
 				"type": "all",
 				"inspector": map[string]interface{}{

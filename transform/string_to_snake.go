@@ -22,7 +22,7 @@ func newStringToSnake(_ context.Context, cfg config.Config) (*stringToSnake, err
 
 	tf := stringToSnake{
 		conf:     conf,
-		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObject: conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 	}
 
 	return &tf, nil
@@ -45,13 +45,13 @@ func (tf *stringToSnake) Transform(ctx context.Context, msg *message.Message) ([
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
 	s := strcase.ToSnake(value.String())
-	if err := msg.SetValue(tf.conf.Object.DstKey, s); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, s); err != nil {
 		return nil, fmt.Errorf("transform: string_to_snake: %v", err)
 	}
 

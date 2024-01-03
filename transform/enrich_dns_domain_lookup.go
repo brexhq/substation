@@ -30,7 +30,7 @@ func newEnrichDNSDomainLookup(_ context.Context, cfg config.Config) (*enrichDNSD
 
 	tf := enrichDNSDomainLookup{
 		conf:     conf,
-		isObj:    conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObj:    conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 		resolver: net.Resolver{},
 		timeout:  dur,
 	}
@@ -68,7 +68,7 @@ func (tf *enrichDNSDomainLookup) Transform(ctx context.Context, msg *message.Mes
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -78,7 +78,7 @@ func (tf *enrichDNSDomainLookup) Transform(ctx context.Context, msg *message.Mes
 		return nil, fmt.Errorf("transform: enrich_dns_domain_lookup: %v", err)
 	}
 
-	if err := msg.SetValue(tf.conf.Object.DstKey, names); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, names); err != nil {
 		return nil, fmt.Errorf("transform: enrich_dns_domain_lookup: %v", err)
 	}
 

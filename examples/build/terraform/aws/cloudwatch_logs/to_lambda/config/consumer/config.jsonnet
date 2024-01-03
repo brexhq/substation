@@ -7,7 +7,7 @@ local sub = import '../../../../../../../../build/config/substation.libsonnet';
     // compressed within the `awslogs.data` field of the event.
     // These must be decoded and decompressed before other transforms are
     // applied.
-    sub.tf.obj.cp({ obj: { src: 'awslogs.data' } }),
+    sub.tf.obj.cp({ object: { source_key: 'awslogs.data' } }),
     sub.tf.fmt.from.base64(),
     sub.tf.fmt.from.gzip(),
     sub.tf.send.stdout(),

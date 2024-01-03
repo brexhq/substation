@@ -21,12 +21,12 @@ func (c *timeUnixConfig) Decode(in interface{}) error {
 }
 
 func (c *timeUnixConfig) Validate() error {
-	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
-		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
+		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
-		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -35,8 +35,8 @@ func (c *timeUnixConfig) Validate() error {
 type timePatternConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	Location string `json:"location"`
 	Format   string `json:"format"`
+	Location string `json:"location"`
 }
 
 func (c *timePatternConfig) Decode(in interface{}) error {
@@ -44,12 +44,12 @@ func (c *timePatternConfig) Decode(in interface{}) error {
 }
 
 func (c *timePatternConfig) Validate() error {
-	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
-		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
+		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
-		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.Format == "" {

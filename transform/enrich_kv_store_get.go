@@ -15,18 +15,18 @@ import (
 )
 
 type enrichKVStoreGetConfig struct {
-	Object iconfig.Object `json:"object"`
+	Object  iconfig.Object `json:"object"`
+	KVStore config.Config  `json:"kv_store"`
 
 	// Prefix is prepended to the key and can be used to simplify
 	// data management within a KV store.
 	//
 	// This is optional and defaults to an empty string.
 	Prefix string `json:"prefix"`
-	// KVStore determine the type of KV store used by the transform. Refer to internal/kv
-	// for more information.
-	KVStore config.Config `json:"kv_store"`
 	// CloseKVStore determines if the KV store is closed when a control
 	// message is received.
+	//
+	// This is optional and defaults to false (KV store is not closed).
 	CloseKVStore bool `json:"close_kv_store"`
 }
 
@@ -35,12 +35,12 @@ func (c *enrichKVStoreGetConfig) Decode(in interface{}) error {
 }
 
 func (c *enrichKVStoreGetConfig) Validate() error {
-	if c.Object.SrcKey == "" {
-		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey == "" {
+		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.DstKey == "" {
-		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.KVStore.Type == "" {
@@ -97,7 +97,7 @@ func (tf *enrichKVStoreGet) Transform(ctx context.Context, msg *message.Message)
 		}
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -112,7 +112,7 @@ func (tf *enrichKVStoreGet) Transform(ctx context.Context, msg *message.Message)
 		return nil, fmt.Errorf("transform: enrich_kv_store_get: %v", err)
 	}
 
-	if err := msg.SetValue(tf.conf.Object.DstKey, v); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, v); err != nil {
 		return nil, fmt.Errorf("transform: enrich_kv_store_get: %v", err)
 	}
 

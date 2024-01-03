@@ -32,8 +32,8 @@ var stringToLowerTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "a",
+					"source_key": "a",
+					"target_key": "a",
 				},
 			},
 		},

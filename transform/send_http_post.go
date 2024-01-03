@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aggregate"
 	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/http"
@@ -16,6 +18,10 @@ import (
 )
 
 type sendHTTPPostConfig struct {
+	Object        iconfig.Object  `json:"object"`
+	Batch         iconfig.Batch   `json:"batch"`
+	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
 	// URL is the HTTP(S) endpoint that data is sent to.
 	URL string `json:"url"`
 	// Headers are an array of objects that contain HTTP headers sent in the request.
@@ -25,12 +31,6 @@ type sendHTTPPostConfig struct {
 		Key   string `json:"key"`
 		Value string `json:"value"`
 	} `json:"headers"`
-	// HeadersKey retrieves a value from an object that contains one or
-	// more objects containing HTTP headers sent in the request. If Headers
-	// is used, then both are merged together.
-	//
-	// This is optional and has no default.
-	HeadersKey string `json:"headers_key"`
 }
 
 func (c *sendHTTPPostConfig) Decode(in interface{}) error {
@@ -64,6 +64,28 @@ func newSendHTTPPost(_ context.Context, cfg config.Config) (*sendHTTPPost, error
 		tf.client.EnableXRay()
 	}
 
+	agg, err := aggregate.New(aggregate.Config{
+		Count:    conf.Batch.Count,
+		Size:     conf.Batch.Size,
+		Duration: conf.Batch.Duration,
+	})
+	if err != nil {
+		return nil, err
+	}
+	tf.agg = agg
+
+	if len(conf.AuxTransforms) > 0 {
+		tf.tforms = make([]Transformer, len(conf.AuxTransforms))
+		for i, c := range conf.AuxTransforms {
+			t, err := New(context.Background(), c)
+			if err != nil {
+				return nil, fmt.Errorf("transform: send_http_post: %v", err)
+			}
+
+			tf.tforms[i] = t
+		}
+	}
+
 	return &tf, nil
 }
 
@@ -72,27 +94,62 @@ type sendHTTPPost struct {
 
 	// client is safe for concurrent use.
 	client http.HTTP
+
+	mu     sync.Mutex
+	agg    *aggregate.Aggregate
+	tforms []Transformer
 }
 
 func (tf *sendHTTPPost) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
+
 	if msg.IsControl() {
+		for key := range tf.agg.GetAll() {
+			if tf.agg.Count(key) == 0 {
+				continue
+			}
+
+			if err := tf.send(ctx, key); err != nil {
+				return nil, fmt.Errorf("transform: send_http_post: %v", err)
+			}
+		}
+
+		tf.agg.ResetAll()
 		return []*message.Message{msg}, nil
 	}
 
-	var headers []http.Header
-
-	if json.Valid(msg.Data()) {
-		headers = append(headers, http.Header{
-			Key:   "Content-Type",
-			Value: "application/json",
-		})
+	// If this value does not exist, then all data is batched together.
+	key := msg.GetValue(tf.conf.Object.BatchKey).String()
+	if ok := tf.agg.Add(key, msg.Data()); ok {
+		return []*message.Message{msg}, nil
 	}
 
+	if err := tf.send(ctx, key); err != nil {
+		return nil, fmt.Errorf("transform: send_http_post: %v", err)
+	}
+
+	// If data cannot be added after reset, then the batch is misconfgured.
+	tf.agg.Reset(key)
+	if ok := tf.agg.Add(key, msg.Data()); !ok {
+		return nil, fmt.Errorf("transform: send_http_post: %v", errSendBatchMisconfigured)
+	}
+
+	return []*message.Message{msg}, nil
+}
+
+func (tf *sendHTTPPost) String() string {
+	b, _ := json.Marshal(tf.conf)
+	return string(b)
+}
+
+func (tf *sendHTTPPost) send(ctx context.Context, key string) error {
+	var headers []http.Header
 	for _, hdr := range tf.conf.Headers {
 		// Retrieve secret and interpolate with header value.
 		v, err := secrets.Interpolate(ctx, hdr.Value)
 		if err != nil {
-			return nil, fmt.Errorf("transform: send_http_post: %v", err)
+			return err
 		}
 
 		headers = append(headers, http.Header{
@@ -101,38 +158,27 @@ func (tf *sendHTTPPost) Transform(ctx context.Context, msg *message.Message) ([]
 		})
 	}
 
-	if tf.conf.HeadersKey != "" {
-		h := msg.GetValue(tf.conf.HeadersKey).Array()
-		for _, header := range h {
-			for k, v := range header.Map() {
-				headers = append(headers, http.Header{
-					Key:   k,
-					Value: v.String(),
-				})
-			}
-		}
-	}
-
 	// Retrieve secret and interpolate with URL.
 	url, err := secrets.Interpolate(ctx, tf.conf.URL)
 	if err != nil {
-		return nil, fmt.Errorf("transform: send_http_post: %v", err)
+		return err
 	}
 
-	resp, err := tf.client.Post(ctx, url, msg.Data(), headers...)
+	data, err := withTransforms(ctx, tf.tforms, tf.agg.Get(key))
 	if err != nil {
-		// Post errors return metadata.
-		return nil, fmt.Errorf("transform: send_http_post: %v", err)
+		return err
 	}
 
-	//nolint:errcheck // Response body is discarded to avoid resource leaks.
-	io.Copy(io.Discard, resp.Body)
-	resp.Body.Close()
+	for _, d := range data {
+		resp, err := tf.client.Post(ctx, url, d, headers...)
+		if err != nil {
+			return err
+		}
 
-	return []*message.Message{msg}, nil
-}
+		//nolint:errcheck // Response body is discarded to avoid resource leaks.
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+	}
 
-func (tf *sendHTTPPost) String() string {
-	b, _ := json.Marshal(tf.conf)
-	return string(b)
+	return nil
 }

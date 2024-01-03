@@ -16,14 +16,8 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type enrichKVStoreSetConfig struct {
-	Object iconfig.Object `json:"object"`
-
-	// Prefix is prepended to the key and can be used to simplify
-	// data management within a KV store.
-	//
-	// This is optional and defaults to an empty string.
-	Prefix string `json:"prefix"`
+type enrichKVStoreSetObjectConfig struct {
+	iconfig.Object
 	// TTLKey retrieves a value from an object that is used as the time-to-live (TTL)
 	// of the item set into the KV store. This value must be an integer that represents
 	// the Unix time when the item will be evicted from the store. Any precision greater
@@ -31,6 +25,17 @@ type enrichKVStoreSetConfig struct {
 	//
 	// This is optional and defaults to using no TTL when setting items into the store.
 	TTLKey string `json:"ttl_key"`
+}
+
+type enrichKVStoreSetConfig struct {
+	Object  enrichKVStoreSetObjectConfig `json:"object"`
+	KVStore config.Config                `json:"kv_store"`
+
+	// Prefix is prepended to the key and can be used to simplify
+	// data management within a KV store.
+	//
+	// This is optional and defaults to an empty string.
+	Prefix string `json:"prefix"`
 	// TTLOffset is an offset used to determine the time-to-live (TTL) of the item set
 	// into the KV store. If TTLKey is configured, then this value is added to the TTL
 	// value retrieved from the object. If TTLKey is not used, then this value is added
@@ -41,11 +46,10 @@ type enrichKVStoreSetConfig struct {
 	//
 	// This is optional and defaults to using no TTL when setting values into the store.
 	TTLOffset string `json:"ttl_offset"`
-	// KVStore determine the type of KV store used by the transform. Refer to internal/kv
-	// for more information.
-	KVStore config.Config `json:"kv_store"`
 	// CloseKVStore determines if the KV store is closed when a control
 	// message is received.
+	//
+	// This is optional and defaults to false (KV store is not closed).
 	CloseKVStore bool `json:"close_kv_store"`
 }
 
@@ -54,12 +58,12 @@ func (c *enrichKVStoreSetConfig) Decode(in interface{}) error {
 }
 
 func (c *enrichKVStoreSetConfig) Validate() error {
-	if c.Object.SrcKey == "" {
-		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey == "" {
+		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.DstKey == "" {
-		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.KVStore.Type == "" {
@@ -123,7 +127,7 @@ func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message)
 		}
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -134,28 +138,28 @@ func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message)
 	}
 
 	//nolint: nestif // ignore nesting complexity
-	if tf.conf.TTLKey != "" && tf.ttl != 0 {
-		value := msg.GetValue(tf.conf.TTLKey)
+	if tf.conf.Object.TTLKey != "" && tf.ttl != 0 {
+		value := msg.GetValue(tf.conf.Object.TTLKey)
 		ttl := tf.truncateTTL(value) + tf.ttl
 
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.DstKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
-	} else if tf.conf.TTLKey != "" {
-		value := msg.GetValue(tf.conf.TTLKey)
+	} else if tf.conf.Object.TTLKey != "" {
+		value := msg.GetValue(tf.conf.Object.TTLKey)
 		ttl := tf.truncateTTL(value)
 
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.DstKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
 	} else if tf.ttl != 0 {
 		ttl := time.Now().Add(time.Duration(tf.ttl) * time.Second).Unix()
 
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.DstKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
 	} else {
-		if err := tf.kvStore.Set(ctx, key, msg.GetValue(tf.conf.Object.DstKey).String()); err != nil {
+		if err := tf.kvStore.Set(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String()); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
 	}

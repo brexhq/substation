@@ -6,57 +6,33 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/message"
+
 	"github.com/brexhq/substation/internal/aggregate"
 	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/s3manager"
 	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
-	"github.com/brexhq/substation/message"
 )
 
 type sendAWSS3Config struct {
-	Buffer iconfig.Buffer `json:"buffer"`
-	AWS    iconfig.AWS    `json:"aws"`
-	Retry  iconfig.Retry  `json:"retry"`
+	Object        iconfig.Object  `json:"object"`
+	Batch         iconfig.Batch   `json:"batch"`
+	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
+	AWS   iconfig.AWS   `json:"aws"`
+	Retry iconfig.Retry `json:"retry"`
 
 	// BucketName is the AWS S3 bucket that data is written to.
 	BucketName string `json:"bucket_name"`
 	// FilePath determines how the name of the uploaded object is constructed.
 	// See filePath.New for more information.
-	FilePath file.Path `json:"file_path"`
-	// FileFormat determines the format of the file. These file formats are
-	// supported:
-	//
-	// - data (binary data)
-	//
-	// - json
-	//
-	// - text
-	//
-	// If the format type does not have a common file extension, then
-	// no extension is added to the file name.
-	//
-	// Defaults to json.
-	FileFormat config.Config `json:"file_format"`
-	// FileCompression determines the compression type applied to the file.
-	// These compression types are supported:
-	//
-	// - gzip (https://en.wikipedia.org/wiki/Gzip)
-	//
-	// - snappy (https://en.wikipedia.org/wiki/Snappy_(compression))
-	//
-	// - zstd (https://en.wikipedia.org/wiki/Zstd)
-	//
-	// If the compression type does not have a common file extension, then
-	// no extension is added to the file name.
-	//
-	// Defaults to gzip.
-	FileCompression config.Config `json:"file_compression"`
+	FilePath            file.Path `json:"file_path"`
+	UseBatchKeyAsPrefix bool      `json:"use_batch_key_as_prefix"`
 }
 
 func (c *sendAWSS3Config) Decode(in interface{}) error {
@@ -65,15 +41,7 @@ func (c *sendAWSS3Config) Decode(in interface{}) error {
 
 func (c *sendAWSS3Config) Validate() error {
 	if c.BucketName == "" {
-		return fmt.Errorf("bucket: %v", errors.ErrMissingRequiredOption)
-	}
-
-	if c.FileFormat.Type == "" {
-		c.FileFormat.Type = "json"
-	}
-
-	if c.FileCompression.Type == "" {
-		c.FileCompression.Type = "gzip"
+		return fmt.Errorf("bucket_name: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -93,18 +61,27 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 		conf: conf,
 	}
 
-	// File extensions are dynamic and not directly configurable.
-	tf.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
-
-	buffer, err := aggregate.New(aggregate.Config{
-		Count:    conf.Buffer.Count,
-		Size:     conf.Buffer.Size,
-		Duration: conf.Buffer.Duration,
+	agg, err := aggregate.New(aggregate.Config{
+		Count:    conf.Batch.Count,
+		Size:     conf.Batch.Size,
+		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
 	}
-	tf.buffer = buffer
+	tf.agg = agg
+
+	if len(conf.AuxTransforms) > 0 {
+		tf.tforms = make([]Transformer, len(conf.AuxTransforms))
+		for i, c := range conf.AuxTransforms {
+			t, err := New(context.Background(), c)
+			if err != nil {
+				return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
+			}
+
+			tf.tforms[i] = t
+		}
+	}
 
 	// Setup the AWS client.
 	tf.client.Setup(aws.Config{
@@ -119,12 +96,12 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 type sendAWSS3 struct {
 	conf sendAWSS3Config
 
-	extension string
 	// client is safe for concurrent use.
 	client s3manager.UploaderAPI
 
 	mu     sync.Mutex
-	buffer *aggregate.Aggregate
+	agg    *aggregate.Aggregate
+	tforms []Transformer
 }
 
 func (tf *sendAWSS3) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -132,52 +109,60 @@ func (tf *sendAWSS3) Transform(ctx context.Context, msg *message.Message) ([]*me
 	defer tf.mu.Unlock()
 
 	if msg.IsControl() {
-		for key := range tf.buffer.GetAll() {
-			if err := tf.writeFile(ctx, key); err != nil {
+		for key := range tf.agg.GetAll() {
+			if tf.agg.Count(key) == 0 {
+				continue
+			}
+
+			if err := tf.send(ctx, key); err != nil {
 				return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
 			}
 		}
 
-		tf.buffer.ResetAll()
+		tf.agg.ResetAll()
 		return []*message.Message{msg}, nil
 	}
 
-	key := msg.GetValue(tf.conf.FilePath.PrefixKey).String()
-	// Writes data as an object to S3 only when the buffer is full.
-	if ok := tf.buffer.Add(key, msg.Data()); ok {
+	// If this value does not exist, then all data is batched together.
+	key := msg.GetValue(tf.conf.Object.BatchKey).String()
+	if ok := tf.agg.Add(key, msg.Data()); ok {
 		return []*message.Message{msg}, nil
 	}
 
-	if err := tf.writeFile(ctx, key); err != nil {
+	if err := tf.send(ctx, key); err != nil {
 		return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
 	}
 
-	// Reset the buffer and add the msg data.
-	tf.buffer.Reset(key)
-	_ = tf.buffer.Add(key, msg.Data())
+	// If data cannot be added after reset, then the batch is misconfgured.
+	tf.agg.Reset(key)
+	if ok := tf.agg.Add(key, msg.Data()); !ok {
+		return nil, fmt.Errorf("transform: send_aws_s3: %v", errSendBatchMisconfigured)
+	}
 
 	return []*message.Message{msg}, nil
 }
 
-func (t *sendAWSS3) writeFile(ctx context.Context, prefix string) error {
-	// If the buffer is empty, then there is nothing to write.
-	if t.buffer.Count(prefix) == 0 {
-		return nil
+func (tf *sendAWSS3) String() string {
+	b, _ := json.Marshal(tf.conf)
+	return string(b)
+}
+
+func (tf *sendAWSS3) send(ctx context.Context, key string) error {
+	p := tf.conf.FilePath
+	if key != "" && tf.conf.UseBatchKeyAsPrefix {
+		p.Prefix = key
 	}
 
-	fpath := t.conf.FilePath.New()
-	if fpath == "" {
-		return fmt.Errorf("file_path is empty")
+	path := p.New()
+	if path == "" {
+		return fmt.Errorf("file path is empty")
 	}
-
-	if prefix != "" {
-		fpath = strings.Replace(fpath, "${PATH_PREFIX}", prefix, 1)
-	}
-
-	fpath += t.extension
 
 	// Ensures that the path is OS agnostic.
-	fpath = filepath.FromSlash(fpath)
+	path = filepath.FromSlash(path)
+	if err := os.MkdirAll(filepath.Dir(path), 0o770); err != nil {
+		return err
+	}
 
 	temp, err := os.CreateTemp("", "substation")
 	if err != nil {
@@ -185,19 +170,19 @@ func (t *sendAWSS3) writeFile(ctx context.Context, prefix string) error {
 	}
 	defer temp.Close()
 
-	w, err := file.NewWrapper(temp, t.conf.FileFormat, t.conf.FileCompression)
+	data, err := withTransforms(ctx, tf.tforms, tf.agg.Get(key))
 	if err != nil {
-		return err
+		return fmt.Errorf("transform: send_aws_s3: %v", err)
 	}
 
-	for _, data := range t.buffer.Get(prefix) {
-		if _, err := w.Write(data); err != nil {
+	for _, d := range data {
+		if _, err := temp.Write(d); err != nil {
 			return err
 		}
 	}
 
 	// Flush the file before uploading to S3.
-	if err := w.Close(); err != nil {
+	if err := temp.Close(); err != nil {
 		return err
 	}
 
@@ -207,14 +192,9 @@ func (t *sendAWSS3) writeFile(ctx context.Context, prefix string) error {
 	}
 	defer f.Close()
 
-	if _, err := t.client.Upload(ctx, t.conf.BucketName, fpath, f); err != nil {
+	if _, err := tf.client.Upload(ctx, tf.conf.BucketName, path, f); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (tf *sendAWSS3) String() string {
-	b, _ := json.Marshal(tf.conf)
-	return string(b)
 }

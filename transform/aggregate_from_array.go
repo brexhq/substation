@@ -17,18 +17,18 @@ func newAggregateFromArray(_ context.Context, cfg config.Config) (*aggregateFrom
 	}
 
 	tf := aggregateFromArray{
-		conf:         conf,
-		hasObjKey:    conf.Object.SrcKey != "",
-		hasObjSetKey: conf.Object.DstKey != "",
+		conf:      conf,
+		hasObjSrc: conf.Object.SourceKey != "",
+		hasObjTrg: conf.Object.TargetKey != "",
 	}
 
 	return &tf, nil
 }
 
 type aggregateFromArray struct {
-	conf         aggregateArrayConfig
-	hasObjKey    bool
-	hasObjSetKey bool
+	conf      aggregateArrayConfig
+	hasObjSrc bool
+	hasObjTrg bool
 }
 
 func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -40,9 +40,9 @@ func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Messag
 	var output []*message.Message
 
 	var value message.Value
-	if tf.hasObjKey {
-		value = msg.GetValue(tf.conf.Object.SrcKey)
-		if err := msg.DeleteValue(tf.conf.Object.SrcKey); err != nil {
+	if tf.hasObjSrc {
+		value = msg.GetValue(tf.conf.Object.SourceKey)
+		if err := msg.DeleteValue(tf.conf.Object.SourceKey); err != nil {
 			return nil, err
 		}
 	} else {
@@ -56,7 +56,7 @@ func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Messag
 	for _, res := range value.Array() {
 		outMsg := message.New().SetMetadata(meta)
 
-		if tf.hasObjKey {
+		if tf.hasObjSrc {
 			for key, val := range msg.GetValue("@this").Map() {
 				if err := outMsg.SetValue(key, val.Value()); err != nil {
 					return nil, err
@@ -64,8 +64,8 @@ func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Messag
 			}
 		}
 
-		if tf.hasObjSetKey {
-			if err := outMsg.SetValue(tf.conf.Object.DstKey, res); err != nil {
+		if tf.hasObjTrg {
+			if err := outMsg.SetValue(tf.conf.Object.TargetKey, res); err != nil {
 				return nil, err
 			}
 
@@ -73,7 +73,7 @@ func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Messag
 			continue
 		}
 
-		if tf.hasObjKey {
+		if tf.hasObjSrc {
 			tmp := fmt.Sprintf(`[%s,%s]`, outMsg.Data(), res.String())
 			join := gjson.GetBytes([]byte(tmp), "@join")
 

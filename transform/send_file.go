@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/brexhq/substation/config"
@@ -17,39 +16,14 @@ import (
 )
 
 type sendFileConfig struct {
-	Buffer iconfig.Buffer `json:"buffer"`
+	Object              iconfig.Object  `json:"object"`
+	Batch               iconfig.Batch   `json:"batch"`
+	AuxiliaryTransforms []config.Config `json:"auxiliary_transforms"`
 
 	// FilePath determines how the name of the file is constructed.
 	// See filePath.New for more information.
-	FilePath file.Path `json:"file_path"`
-	// FileFormat determines the format of the file. These file formats are
-	// supported:
-	//
-	// - json
-	//
-	// - text
-	//
-	// - data (binary data)
-	//
-	// If the format type does not have a common file extension, then
-	// no extension is added to the file name.
-	//
-	// Defaults to json.
-	FileFormat config.Config `json:"file_format"`
-	// FileCompression determines the compression type applied to the file.
-	// These compression types are supported:
-	//
-	// - gzip (https://en.wikipedia.org/wiki/Gzip)
-	//
-	// - snappy (https://en.wikipedia.org/wiki/Snappy_(compression))
-	//
-	// - zstd (https://en.wikipedia.org/wiki/Zstd)
-	//
-	// If the compression type does not have a common file extension, then
-	// no extension is added to the file name.
-	//
-	// Defaults to gzip.
-	FileCompression config.Config `json:"file_compression"`
+	FilePath            file.Path `json:"file_path"`
+	UseBatchKeyAsPrefix bool      `json:"use_batch_key_as_prefix"`
 }
 
 func (c *sendFileConfig) Decode(in interface{}) error {
@@ -57,14 +31,6 @@ func (c *sendFileConfig) Decode(in interface{}) error {
 }
 
 func (c *sendFileConfig) Validate() error {
-	if c.FileFormat.Type == "" {
-		c.FileFormat.Type = "json"
-	}
-
-	if c.FileCompression.Type == "" {
-		c.FileCompression.Type = "gzip"
-	}
-
 	return nil
 }
 
@@ -82,18 +48,27 @@ func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 		conf: conf,
 	}
 
-	// File extensions are dynamic and not directly configurable.
-	tf.extension = file.NewExtension(conf.FileFormat, conf.FileCompression)
-
-	buffer, err := aggregate.New(aggregate.Config{
-		Count:    conf.Buffer.Count,
-		Size:     conf.Buffer.Size,
-		Duration: conf.Buffer.Duration,
+	agg, err := aggregate.New(aggregate.Config{
+		Count:    conf.Batch.Count,
+		Size:     conf.Batch.Size,
+		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("transform: send_file: %v", err)
 	}
-	tf.buffer = buffer
+	tf.agg = agg
+
+	if len(conf.AuxiliaryTransforms) > 0 {
+		tf.tforms = make([]Transformer, len(conf.AuxiliaryTransforms))
+		for i, c := range conf.AuxiliaryTransforms {
+			t, err := New(context.Background(), c)
+			if err != nil {
+				return nil, fmt.Errorf("transform: send_file: %v", err)
+			}
+
+			tf.tforms[i] = t
+		}
+	}
 
 	return &tf, nil
 }
@@ -101,10 +76,9 @@ func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 type sendFile struct {
 	conf sendFileConfig
 
-	extension string
-
 	mu     sync.Mutex
-	buffer *aggregate.Aggregate
+	agg    *aggregate.Aggregate
+	tforms []Transformer
 }
 
 func (tf *sendFile) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -112,80 +86,81 @@ func (tf *sendFile) Transform(ctx context.Context, msg *message.Message) ([]*mes
 	defer tf.mu.Unlock()
 
 	if msg.IsControl() {
-		for prefix := range tf.buffer.GetAll() {
-			if err := tf.writeFile(prefix); err != nil {
-				return nil, fmt.Errorf("transform: send_file: prefix %s: %v", prefix, err)
+		for key := range tf.agg.GetAll() {
+			if tf.agg.Count(key) == 0 {
+				continue
+			}
+
+			if err := tf.send(ctx, key); err != nil {
+				return nil, fmt.Errorf("transform: send_file: %v", err)
 			}
 		}
 
-		tf.buffer.ResetAll()
+		tf.agg.ResetAll()
 		return []*message.Message{msg}, nil
 	}
 
-	prefix := msg.GetValue(tf.conf.FilePath.PrefixKey).String()
-	// Writes data as a file only when the buffer is full.
-	if ok := tf.buffer.Add(prefix, msg.Data()); ok {
+	// If this value does not exist, then all data is batched together.
+	key := msg.GetValue(tf.conf.Object.BatchKey).String()
+	if ok := tf.agg.Add(key, msg.Data()); ok {
 		return []*message.Message{msg}, nil
 	}
 
-	if err := tf.writeFile(prefix); err != nil {
+	if err := tf.send(ctx, key); err != nil {
 		return nil, fmt.Errorf("transform: send_file: %v", err)
 	}
 
-	// Reset the buffer and add the msg data.
-	tf.buffer.Reset(prefix)
-	_ = tf.buffer.Add(prefix, msg.Data())
+	// If data cannot be added after reset, then the batch is misconfgured.
+	tf.agg.Reset(key)
+	if ok := tf.agg.Add(key, msg.Data()); !ok {
+		return nil, fmt.Errorf("transform: send_file: %v", errSendBatchMisconfigured)
+	}
 
 	return []*message.Message{msg}, nil
-}
-
-func (t *sendFile) writeFile(prefix string) error {
-	if t.buffer.Count(prefix) == 0 {
-		return nil
-	}
-
-	fpath := t.conf.FilePath.New()
-	if fpath == "" {
-		return fmt.Errorf("file_path is empty")
-	}
-
-	if prefix != "" {
-		fpath = strings.Replace(fpath, "${PATH_PREFIX}", prefix, 1)
-	}
-
-	fpath += t.extension
-
-	// Ensures that the path is OS agnostic.
-	fpath = filepath.FromSlash(fpath)
-	if err := os.MkdirAll(filepath.Dir(fpath), 0o770); err != nil {
-		return err
-	}
-
-	f, err := os.Create(fpath)
-	if err != nil {
-		fmt.Println(fpath)
-		return err
-	}
-
-	w, err := file.NewWrapper(f, t.conf.FileFormat, t.conf.FileCompression)
-	if err != nil {
-		return err
-	}
-
-	for _, rec := range t.buffer.Get(prefix) {
-		if _, err := w.Write(rec); err != nil {
-			return err
-		}
-	}
-
-	if err := w.Close(); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (tf *sendFile) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
+}
+
+func (tf *sendFile) send(ctx context.Context, key string) error {
+	p := tf.conf.FilePath
+	if key != "" && tf.conf.UseBatchKeyAsPrefix {
+		p.Prefix = key
+	}
+
+	path := p.New()
+	if path == "" {
+		return fmt.Errorf("file path is empty")
+	}
+
+	// Ensures that the path is OS agnostic.
+	path = filepath.FromSlash(path)
+	if err := os.MkdirAll(filepath.Dir(path), 0o770); err != nil {
+		return err
+	}
+
+	f, err := os.Create(path)
+	if err != nil {
+		fmt.Println(path)
+		return err
+	}
+
+	data, err := withTransforms(ctx, tf.tforms, tf.agg.Get(key))
+	if err != nil {
+		return fmt.Errorf("transform: send_file: %v", err)
+	}
+
+	for _, d := range data {
+		if _, err := f.Write(d); err != nil {
+			return err
+		}
+	}
+
+	if err := f.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }

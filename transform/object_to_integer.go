@@ -20,12 +20,12 @@ func (c *objectToIntegerConfig) Decode(in interface{}) error {
 }
 
 func (c *objectToIntegerConfig) Validate() error {
-	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
-		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
+		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
-		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -53,12 +53,12 @@ func (tf *objectToInteger) Transform(ctx context.Context, msg *message.Message) 
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
-	if err := msg.SetValue(tf.conf.Object.DstKey, value.Int()); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, value.Int()); err != nil {
 		return nil, fmt.Errorf("transform: object_to_integer: %v", err)
 	}
 

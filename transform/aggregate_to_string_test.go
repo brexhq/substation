@@ -38,8 +38,8 @@ var aggregateToStringTests = []struct {
 		"data with_key",
 		config.Config{
 			Settings: map[string]interface{}{
-				"buffer": map[string]interface{}{
-					"key": "c",
+				"object": map[string]interface{}{
+					"batch_key": "c",
 				},
 				"separator": `\n`,
 			},
@@ -58,7 +58,7 @@ var aggregateToStringTests = []struct {
 		"data max_count",
 		config.Config{
 			Settings: map[string]interface{}{
-				"buffer": map[string]interface{}{
+				"batch": map[string]interface{}{
 					"count": 2,
 				},
 				"separator": `\n`,
@@ -78,7 +78,7 @@ var aggregateToStringTests = []struct {
 		"data max_size",
 		config.Config{
 			Settings: map[string]interface{}{
-				"buffer": map[string]interface{}{
+				"batch": map[string]interface{}{
 					"size": 25,
 				},
 				"separator": `\n`,

@@ -17,8 +17,8 @@ func ExampleTransformer() {
 		Type: "object_copy",
 		Settings: map[string]interface{}{
 			"object": map[string]interface{}{
-				"src_key": "a",
-				"dst_key": "b",
+				"source_key": "a",
+				"target_key": "b",
 			},
 		},
 	}

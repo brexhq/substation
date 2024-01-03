@@ -18,32 +18,29 @@ func newAggregateToArray(_ context.Context, cfg config.Config) (*aggregateToArra
 	}
 
 	tf := aggregateToArray{
-		conf:         conf,
-		hasObjSetKey: conf.Object.DstKey != "",
+		conf:      conf,
+		hasObjTrg: conf.Object.TargetKey != "",
 	}
 
-	buffer, err := aggregate.New(aggregate.Config{
-		Count:    conf.Buffer.Count,
-		Size:     conf.Buffer.Size,
-		Duration: conf.Buffer.Duration,
+	agg, err := aggregate.New(aggregate.Config{
+		Count:    conf.Batch.Count,
+		Size:     conf.Batch.Size,
+		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 	}
-
-	tf.buffer = *buffer
-	tf.bufferKey = conf.Buffer.Key
+	tf.agg = *agg
 
 	return &tf, nil
 }
 
 type aggregateToArray struct {
-	conf         aggregateArrayConfig
-	hasObjSetKey bool
+	conf      aggregateArrayConfig
+	hasObjTrg bool
 
-	mu        sync.Mutex
-	buffer    aggregate.Aggregate
-	bufferKey string
+	mu  sync.Mutex
+	agg aggregate.Aggregate
 }
 
 func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -54,15 +51,15 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 	if msg.IsControl() {
 		var output []*message.Message
 
-		for _, items := range tf.buffer.GetAll() {
+		for _, items := range tf.agg.GetAll() {
 			agg, err := aggToArray(items.Get())
 			if err != nil {
 				return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 			}
 
 			outMsg := message.New()
-			if tf.hasObjSetKey {
-				if err := outMsg.SetValue(tf.conf.Object.DstKey, agg); err != nil {
+			if tf.hasObjTrg {
+				if err := outMsg.SetValue(tf.conf.Object.TargetKey, agg); err != nil {
 					return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 				}
 			} else {
@@ -72,35 +69,36 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 			output = append(output, outMsg)
 		}
 
-		tf.buffer.ResetAll()
+		tf.agg.ResetAll()
 
 		output = append(output, msg)
 		return output, nil
 	}
 
-	key := msg.GetValue(tf.bufferKey).String()
-	if ok := tf.buffer.Add(key, msg.Data()); ok {
+	key := msg.GetValue(tf.conf.Object.BatchKey).String()
+	if ok := tf.agg.Add(key, msg.Data()); ok {
 		return nil, nil
 	}
 
-	agg, err := aggToArray(tf.buffer.Get(key))
+	agg, err := aggToArray(tf.agg.Get(key))
 	if err != nil {
 		return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 	}
 
 	outMsg := message.New()
-	if tf.hasObjSetKey {
-		if err := outMsg.SetValue(tf.conf.Object.DstKey, agg); err != nil {
+	if tf.hasObjTrg {
+		if err := outMsg.SetValue(tf.conf.Object.TargetKey, agg); err != nil {
 			return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 		}
 	} else {
 		outMsg.SetData(agg)
 	}
 
-	// By this point, addition of the failed data is guaranteed
-	// to succeed after the buffer is reset.
-	tf.buffer.Reset(key)
-	_ = tf.buffer.Add(key, msg.Data())
+	// If data cannot be added after reset, then the batch is misconfgured.
+	tf.agg.Reset(key)
+	if ok := tf.agg.Add(key, msg.Data()); !ok {
+		return nil, fmt.Errorf("transform: send_stdout: %v", errSendBatchMisconfigured)
+	}
 
 	return []*message.Message{outMsg}, nil
 }

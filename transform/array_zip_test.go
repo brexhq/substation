@@ -18,67 +18,28 @@ var arrayZipTests = []struct {
 	expected [][]byte
 }{
 	{
-		"array",
+		"data",
+		config.Config{
+			Settings: map[string]interface{}{},
+		},
+		[]byte(`[["b","c"],[1,2]]`),
+		[][]byte{
+			[]byte(`[["b",1],["c",2]]`),
+		},
+	},
+	{
+		"object",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "a",
+					"source_key": "a",
+					"target_key": "a",
 				},
 			},
 		},
 		[]byte(`{"a":[["b","c"],[1,2]]}`),
 		[][]byte{
 			[]byte(`{"a":[["b",1],["c",2]]}`),
-		},
-	},
-	{
-		"array as_object",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "a",
-				},
-				"as_object": true,
-			},
-		},
-		[]byte(`{"a":[["b","c"],[1,2]]}`),
-		[][]byte{
-			[]byte(`{"a":{"b":1,"c":2}}`),
-		},
-	},
-	{
-		"array as_object multi_value",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "a",
-				},
-				"as_object": true,
-			},
-		},
-		[]byte(`{"a":[["b","c"],[1,2],[3,4]]}`),
-		[][]byte{
-			[]byte(`{"a":{"b":[1,3],"c":[2,4]}}`),
-		},
-	},
-	{
-		"array as_object multi_value with_keys",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "a",
-				},
-				"as_object": true,
-				"with_keys": []string{"x", "y"},
-			},
-		},
-		[]byte(`{"a":[["b","c"],[1,2],[3,4]]}`),
-		[][]byte{
-			[]byte(`{"a":{"x":["b",1,3],"y":["c",2,4]}}`),
 		},
 	},
 }

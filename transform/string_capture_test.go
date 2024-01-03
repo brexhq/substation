@@ -74,8 +74,8 @@ var stringCaptureTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "a",
+					"source_key": "a",
+					"target_key": "a",
 				},
 				"pattern": "^([^@]*)@.*$",
 			},
@@ -90,8 +90,8 @@ var stringCaptureTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "a",
+					"source_key": "a",
+					"target_key": "a",
 				},
 				"count":   3,
 				"pattern": "(.{1})",
@@ -107,8 +107,8 @@ var stringCaptureTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "a",
+					"source_key": "a",
+					"target_key": "a",
 				},
 				"count":   1,
 				"pattern": "(.{1})",
@@ -124,8 +124,8 @@ var stringCaptureTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "a",
+					"source_key": "a",
+					"target_key": "a",
 				},
 				"pattern": "(?P<b>[a-zA-Z]+) (?P<d>[a-zA-Z]+)",
 			},

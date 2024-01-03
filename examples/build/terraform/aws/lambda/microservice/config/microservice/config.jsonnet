@@ -6,26 +6,26 @@ local sub = import '../../../../../../../../build/config/substation.libsonnet';
     sub.pattern.tf.conditional(
       condition=sub.cnd.all([
         sub.cnd.number.length.greater_than(
-          settings={ object: { src: 'body' }, value: 0 }
+          settings={ object: { source_key: 'body' }, value: 0 }
         ),
       ]),
       transform=sub.tf.object.copy(
-        settings={ object: { src: 'body' } }
+        settings={ object: { source_key: 'body' } }
       ),
     ),
     // Performs a reverse DNS lookup on the 'addr' field if it is a public IP address.
     sub.pattern.tf.conditional(
       condition=sub.cnd.none(sub.pattern.cnd.network.ip.internal(key='addr')),
       transform=sub.tf.enrich.dns.ip_lookup(
-        settings={ object: { src: 'addr', dst: 'domain' } },
+        settings={ object: { source_key: 'addr', target_key: 'domain' } },
       ),
     ),
     // The DNS response is copied so that it is the only value returned in the object.
     sub.tf.object.copy(
-      settings={ object: { src: 'domain' } },
+      settings={ object: { source_key: 'domain' } },
     ),
     sub.tf.object.copy(
-      settings={ object: { dst: 'domain' } },
+      settings={ object: { target_key: 'domain' } },
     ),
   ],
 }

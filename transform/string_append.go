@@ -14,7 +14,7 @@ import (
 type stringAppendConfig struct {
 	Object iconfig.Object `json:"object"`
 
-	// Suffix is the string to append.
+	// Suffix is the string appended to the end of the string.
 	Suffix string `json:"suffix"`
 }
 
@@ -23,12 +23,12 @@ func (c *stringAppendConfig) Decode(in interface{}) error {
 }
 
 func (c *stringAppendConfig) Validate() error {
-	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
-		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
+		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
-		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.Suffix == "" {
@@ -57,7 +57,7 @@ func newStringAppend(_ context.Context, cfg config.Config) (*stringAppend, error
 
 	tf := stringAppend{
 		conf:     conf,
-		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObject: conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 		s:        []byte(conf.Suffix),
 	}
 
@@ -77,14 +77,14 @@ func (tf *stringAppend) Transform(ctx context.Context, msg *message.Message) ([]
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
 	str := value.String() + tf.conf.Suffix
 
-	if err := msg.SetValue(tf.conf.Object.DstKey, str); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, str); err != nil {
 		return nil, fmt.Errorf("transform: string_append: %v", err)
 	}
 

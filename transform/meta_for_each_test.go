@@ -22,8 +22,8 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "b",
+					"source_key": "a",
+					"target_key": "b",
 				},
 				"transform": config.Config{
 					Type: "meta_pipeline",
@@ -50,8 +50,8 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "secrets",
-					"dst_key": "decoded",
+					"source_key": "secrets",
+					"target_key": "decoded",
 				},
 				"transform": config.Config{
 					Type: "format_from_base64",
@@ -68,8 +68,8 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "user_email",
-					"dst_key": "user_name",
+					"source_key": "user_email",
+					"target_key": "user_name",
 				},
 				"transform": config.Config{
 					Type: "string_capture",
@@ -89,8 +89,8 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "upcase",
-					"dst_key": "downcase",
+					"source_key": "upcase",
+					"target_key": "downcase",
 				},
 				"transform": config.Config{
 					Type: "string_to_lower",
@@ -107,8 +107,8 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "domain",
-					"dst_key": "subdomain",
+					"source_key": "domain",
+					"target_key": "subdomain",
 				},
 				"transform": config.Config{
 					Type: "network_domain_subdomain",
@@ -125,8 +125,8 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "b",
+					"source_key": "a",
+					"target_key": "b",
 				},
 				"transform": config.Config{
 					Type: "hash_sha256",
@@ -143,14 +143,14 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "b",
+					"source_key": "a",
+					"target_key": "b",
 				},
 				"transform": config.Config{
 					Type: "object_insert",
 					Settings: map[string]interface{}{
 						"object": map[string]interface{}{
-							"dst_key": "baz",
+							"target_key": "baz",
 						},
 						"value": "qux",
 					},
@@ -167,8 +167,8 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "b",
+					"source_key": "a",
+					"target_key": "b",
 				},
 				"transform": config.Config{
 					Type: "string_replace",
@@ -189,8 +189,8 @@ var metaForEachTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "b",
+					"source_key": "a",
+					"target_key": "b",
 				},
 				"transform": config.Config{
 					Type: "time_from_string",

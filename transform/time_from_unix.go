@@ -22,7 +22,7 @@ func newTimeFromUnix(_ context.Context, cfg config.Config) (*timeFromUnix, error
 
 	tf := timeFromUnix{
 		conf:     conf,
-		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObject: conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 	}
 
 	return &tf, nil
@@ -40,7 +40,7 @@ func (tf *timeFromUnix) Transform(ctx context.Context, msg *message.Message) ([]
 
 	var value message.Value
 	if tf.isObject {
-		value = msg.GetValue(tf.conf.Object.SrcKey)
+		value = msg.GetValue(tf.conf.Object.SourceKey)
 	} else {
 		value = bytesToValue(msg.Data())
 	}
@@ -54,7 +54,7 @@ func (tf *timeFromUnix) Transform(ctx context.Context, msg *message.Message) ([]
 	ns := date.UnixNano()
 
 	if tf.isObject {
-		if err := msg.SetValue(tf.conf.Object.DstKey, ns); err != nil {
+		if err := msg.SetValue(tf.conf.Object.TargetKey, ns); err != nil {
 			return nil, fmt.Errorf("transform: time_from_unix: %v", err)
 		}
 	} else {

@@ -22,8 +22,8 @@ var objectCopyTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "c",
+					"source_key": "a",
+					"target_key": "c",
 				},
 			},
 		},
@@ -37,8 +37,8 @@ var objectCopyTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "a",
+					"source_key": "a",
+					"target_key": "a",
 				},
 			},
 		},
@@ -52,8 +52,8 @@ var objectCopyTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
-					"dst_key": "a",
+					"source_key": "a",
+					"target_key": "a",
 				},
 			},
 		},
@@ -67,7 +67,7 @@ var objectCopyTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
+					"source_key": "a",
 				},
 			},
 		},
@@ -81,7 +81,7 @@ var objectCopyTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "a",
+					"source_key": "a",
 				},
 			},
 		},
@@ -95,7 +95,7 @@ var objectCopyTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"dst_key": "a",
+					"target_key": "a",
 				},
 			},
 		},
@@ -109,7 +109,7 @@ var objectCopyTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"dst_key": "a.b",
+					"target_key": "a.b",
 				},
 			},
 		},
@@ -123,7 +123,7 @@ var objectCopyTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"dst_key": "a",
+					"target_key": "a",
 				},
 			},
 		},

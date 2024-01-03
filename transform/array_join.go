@@ -24,12 +24,12 @@ func (c *arrayJoinConfig) Decode(in interface{}) error {
 }
 
 func (c *arrayJoinConfig) Validate() error {
-	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
-		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
+		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
-		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -47,8 +47,8 @@ func newArrayJoin(_ context.Context, cfg config.Config) (*arrayJoin, error) {
 
 	tf := arrayJoin{
 		conf:            conf,
-		hasObjectKey:    conf.Object.SrcKey != "",
-		hasObjectSetKey: conf.Object.DstKey != "",
+		hasObjectKey:    conf.Object.SourceKey != "",
+		hasObjectSetKey: conf.Object.TargetKey != "",
 		separator:       []byte(conf.Separator),
 	}
 
@@ -70,7 +70,7 @@ func (tf *arrayJoin) Transform(ctx context.Context, msg *message.Message) ([]*me
 
 	var value message.Value
 	if tf.hasObjectKey {
-		value = msg.GetValue(tf.conf.Object.SrcKey)
+		value = msg.GetValue(tf.conf.Object.SourceKey)
 	} else {
 		value = bytesToValue(msg.Data())
 	}
@@ -91,7 +91,7 @@ func (tf *arrayJoin) Transform(ctx context.Context, msg *message.Message) ([]*me
 	str := strings.Join(arr, tf.conf.Separator)
 
 	if tf.hasObjectSetKey {
-		if err := msg.SetValue(tf.conf.Object.DstKey, str); err != nil {
+		if err := msg.SetValue(tf.conf.Object.TargetKey, str); err != nil {
 			return nil, fmt.Errorf("transform: array_join: %v", err)
 		}
 

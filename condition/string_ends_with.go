@@ -34,11 +34,11 @@ func (insp *stringEndsWith) Inspect(ctx context.Context, msg *message.Message) (
 		return false, nil
 	}
 
-	if insp.conf.Object.SrcKey == "" {
+	if insp.conf.Object.SourceKey == "" {
 		return bytes.HasSuffix(msg.Data(), insp.b), nil
 	}
 
-	value := msg.GetValue(insp.conf.Object.SrcKey)
+	value := msg.GetValue(insp.conf.Object.SourceKey)
 	return bytes.HasSuffix(value.Bytes(), insp.b), nil
 }
 

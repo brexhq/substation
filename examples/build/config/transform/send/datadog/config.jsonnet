@@ -5,21 +5,23 @@
 // https://docs.datadoghq.com/api/latest/logs/#send-logs
 local sub = import '../../../../../../build/config/substation.libsonnet';
 
-// Datadog has a strict limit of 5MB per payload. Any individual event larger
-// than 1MB will be truncated on ingest.
+// Datadog has a strict limit of 5MB per payload. Any individual event
+// larger than 1MB will be truncated on ingest.
 local max_size = 1000 * 1000 * 5;
 
 // Datadog has a strict limit of 1000 events per payload.
 local max_count = 1000;
-
 
 {
   concurrency: 1,
   transforms: [
     // Connections to the Datadog Logs API are authenticated using an API key.
     sub.transform.utility.secret({ secret: sub.secrets.environment_variable({ id: 'DD', name: 'DATADOG_API_KEY' }) }),
-    sub.tf.aggregate.to.array({ object: { dst_key: 'message' }, buffer: { size: max_size, count: max_count } }),
     sub.tf.send.http.post({
+      batch: { size: max_size, count: max_count },
+      auxiliary_transforms: [
+        sub.tf.agg.to.array({ object: { target_key: 'message' } }),
+      ],
       url: 'https://http-intake.logs.datadoghq.com/api/v2/logs',
       headers: [
         {

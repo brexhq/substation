@@ -38,26 +38,3 @@ func TestKVStoreSetTruncate(t *testing.T) {
 		})
 	}
 }
-
-// func benchmarkFormatFromBase64(b *testing.B, tf *formatFromBase64, data []byte) {
-// 	ctx := context.TODO()
-// 	for i := 0; i < b.N; i++ {
-// 		msg := message.New().SetData(data)
-// 		_, _ = tf.Transform(ctx, msg)
-// 	}
-// }
-
-// func BenchmarkFormatFromBase64(b *testing.B) {
-// 	for _, test := range formatFromBase64Tests {
-// 		tf, err := newFormatFromBase64(context.TODO(), test.cfg)
-// 		if err != nil {
-// 			b.Fatal(err)
-// 		}
-
-// 		b.Run(test.name,
-// 			func(b *testing.B) {
-// 				benchmarkFormatFromBase64(b, tf, test.test)
-// 			},
-// 		)
-// 	}
-// }

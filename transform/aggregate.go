@@ -11,7 +11,7 @@ import (
 
 type aggregateArrayConfig struct {
 	Object iconfig.Object `json:"object"`
-	Buffer iconfig.Buffer `json:"buffer"`
+	Batch  iconfig.Batch  `json:"batch"`
 }
 
 func (c *aggregateArrayConfig) Decode(in interface{}) error {
@@ -32,10 +32,9 @@ func aggToArray(data [][]byte) ([]byte, error) {
 }
 
 type aggregateStrConfig struct {
-	Buffer iconfig.Buffer `json:"buffer"`
-
-	// Separator is the string that separates messages.
-	Separator string `json:"separator"`
+	Object    iconfig.Object `json:"object"`
+	Batch     iconfig.Batch  `json:"batch"`
+	Separator string         `json:"separator"`
 }
 
 func (c *aggregateStrConfig) Decode(in interface{}) error {

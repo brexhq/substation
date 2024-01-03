@@ -30,12 +30,12 @@ func (insp *numberLengthGreaterThan) Inspect(ctx context.Context, msg *message.M
 		return false, nil
 	}
 
-	if insp.conf.Object.SrcKey == "" {
+	if insp.conf.Object.SourceKey == "" {
 		llm := numberLengthMeasurement(msg.Data(), insp.conf.Measurement)
 		return insp.match(llm), nil
 	}
 
-	value := msg.GetValue(insp.conf.Object.SrcKey)
+	value := msg.GetValue(insp.conf.Object.SourceKey)
 	if value.IsArray() {
 		l := len(value.Array())
 		return insp.match(l), nil

@@ -26,17 +26,15 @@ func newAggregateToString(_ context.Context, cfg config.Config) (*aggregateToStr
 		separator: []byte(conf.Separator),
 	}
 
-	buffer, err := aggregate.New(aggregate.Config{
-		Count:    conf.Buffer.Count,
-		Size:     conf.Buffer.Size,
-		Duration: conf.Buffer.Duration,
+	agg, err := aggregate.New(aggregate.Config{
+		Count:    conf.Batch.Count,
+		Size:     conf.Batch.Size,
+		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("transform: aggregate_to_string: %v", err)
 	}
-
-	tf.buffer = buffer
-	tf.bufferKey = conf.Buffer.Key
+	tf.agg = agg
 
 	return &tf, nil
 }
@@ -46,9 +44,8 @@ type aggregateToString struct {
 
 	separator []byte
 
-	mu        sync.Mutex
-	buffer    *aggregate.Aggregate
-	bufferKey string
+	mu  sync.Mutex
+	agg *aggregate.Aggregate
 }
 
 func (tf *aggregateToString) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -58,31 +55,33 @@ func (tf *aggregateToString) Transform(ctx context.Context, msg *message.Message
 	if msg.IsControl() {
 		var output []*message.Message
 
-		for _, items := range tf.buffer.GetAll() {
+		for _, items := range tf.agg.GetAll() {
 			agg := aggToStr(items.Get(), tf.separator)
 			outMsg := message.New().SetData(agg)
 
 			output = append(output, outMsg)
 		}
 
-		tf.buffer.ResetAll()
+		tf.agg.ResetAll()
 
 		output = append(output, msg)
 		return output, nil
 	}
 
-	key := msg.GetValue(tf.bufferKey).String()
-	if ok := tf.buffer.Add(key, msg.Data()); ok {
+	// If this value does not exist, then all data is batched together.
+	key := msg.GetValue(tf.conf.Object.BatchKey).String()
+	if ok := tf.agg.Add(key, msg.Data()); ok {
 		return nil, nil
 	}
 
-	agg := aggToStr(tf.buffer.Get(key), tf.separator)
+	agg := aggToStr(tf.agg.Get(key), tf.separator)
 	outMsg := message.New().SetData(agg)
 
-	// By this point, addition of the failed data is guaranteed
-	// to succeed after the buffer is reset.
-	tf.buffer.Reset(key)
-	_ = tf.buffer.Add(key, msg.Data())
+	// If data cannot be added after reset, then the batch is misconfgured.
+	tf.agg.Reset(key)
+	if ok := tf.agg.Add(key, msg.Data()); !ok {
+		return nil, fmt.Errorf("transform: send_stdout: %v", errSendBatchMisconfigured)
+	}
 
 	return []*message.Message{outMsg}, nil
 }

@@ -272,7 +272,7 @@
         array(settings={}): {
           local default = {
             object: $.config.object,
-            buffer: $.config.buffer,
+            batch: $.config.batch,
           },
 
           type: 'aggregate_to_array',
@@ -281,7 +281,7 @@
         str(settings={}): $.transform.aggregate.to.string(settings=settings),
         string(settings={}): {
           local default = {
-            buffer: $.config.buffer,
+            batch: $.config.batch,
             separator: null,
           },
 
@@ -300,6 +300,18 @@
 
         type: 'array_join',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      to: {
+        obj: $.transform.array.to.object,
+        object(settings={}): {
+          local default = {
+            object: $.config.object,
+            object_keys: null,
+          },
+
+          type: 'array_to_object',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
       },
       zip(settings={}): {
         local default = {
@@ -526,7 +538,7 @@
       pipeline(settings={}): {
         local default = {
           object: $.config.object,
-          transform: null,
+          transforms: null,
         },
 
         type: 'meta_pipeline',
@@ -638,101 +650,140 @@
       aws: {
         dynamodb(settings={}): {
           local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
             aws: $.config.aws,
             retry: $.config.retry,
             table_name: null,
           },
 
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
           type: 'send_aws_dynamodb',
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
         },
         firehose(settings={}): $.transform.send.aws.kinesis_data_firehose(settings=settings),
         kinesis_data_firehose(settings={}): {
           local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
             aws: $.config.aws,
-            buffer: $.config.buffer,
             retry: $.config.retry,
             stream_name: null,
           },
 
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
           type: 'send_aws_kinesis_data_firehose',
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
         },
         kinesis_data_stream(settings={}): {
           local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
             aws: $.config.aws,
-            buffer: $.config.buffer,
             retry: $.config.retry,
             stream_name: null,
-            partition: null,
-            partition_key: null,
-            aggregation: false,
+            use_batch_key_as_partition_key: false,
+            enable_record_aggregation: false,
           },
 
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
           type: 'send_aws_kinesis_data_stream',
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
         },
         s3(settings={}): {
           local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
             aws: $.config.aws,
-            buffer: $.config.buffer,
             retry: $.config.retry,
             bucket_name: null,
             file_path: $.file_path,
-            file_format: { type: 'json' },
-            file_compression: { type: 'gzip' },
           },
 
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
           type: 'send_aws_s3',
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
         },
         sns(settings={}): {
           local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
             aws: $.config.aws,
-            buffer: $.config.buffer,
             retry: $.config.retry,
             arn: null,
           },
 
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
           type: 'send_aws_sns',
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
         },
         sqs(settings={}): {
           local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
             aws: $.config.aws,
-            buffer: $.config.buffer,
             retry: $.config.retry,
             arn: null,
           },
 
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
           type: 'send_aws_sqs',
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
         },
       },
       file(settings={}): {
         local default = {
-          buffer: $.config.buffer,
+          batch: $.config.batch,
+          auxiliary_transforms: null,
           file_path: $.file_path,
-          file_format: { type: 'json' },
-          file_compression: { type: 'gzip' },
         },
 
+        local s = std.mergePatch(settings, {
+          auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+          aux_tforms: null,
+        }),
+
         type: 'send_file',
-        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
       },
       http: {
         post(settings={}): {
           local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
             url: null,
             headers: null,
-            headers_key: null,
           },
 
           local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
             headers: if std.objectHas(settings, 'headers') then settings.headers else if std.objectHas(settings, 'hdr') then settings.hdr else null,
-            headers_key: if std.objectHas(settings, 'headers_key') then settings.headers_key else if std.objectHas(settings, 'hdr_key') then settings.hdr_key else null,
             hdr: null,
-            hdr_key: null,
           }),
 
           type: 'send_http_post',
@@ -740,7 +791,18 @@
         },
       },
       stdout(settings={}): {
+        local default = {
+          batch: $.config.batch,
+          auxiliary_transforms: null,
+        },
+
+        local s = std.mergePatch(settings, {
+          auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+          aux_tforms: null,
+        }),
+
         type: 'send_stdout',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
       },
     },
     str: $.transform.string,
@@ -966,14 +1028,14 @@
   // Mirrors structs from the internal/config package.
   config: {
     aws: { region: null, role_arn: null },
-    buffer: { count: 1000, size: 100000, duration: '5m', key: null },
+    batch: { count: 1000, size: 1000 * 1000, duration: '1m' },
     metric: { name: null, attributes: null, destination: null },
-    object: { src_key: null, dst_key: null },
+    object: { source_key: null, target_key: null, batch_key: null },
     request: { timeout: '1s' },
     retry: { count: 3 },
   },
   // Mirrors config from the internal/file package.
-  file_path: { prefix: null, prefix_key: null, time_format: '2006/01/02', uuid: true, extension: true },
+  file_path: { prefix: null, time_format: '2006/01/02', uuid: true, suffix: null },
   // Mirrors interfaces from the internal/secrets package.
   secrets: {
     default: { id: null, ttl: null },
@@ -1052,6 +1114,19 @@
         type: 'meta_switch',
         settings: { cases: [{ condition: c, transform: transform }] },
       },
+      fmt: $.pattern.transform.format,
+      format: {
+        // Creates JSON Lines text from data. Only valid JSON text is included.
+        jsonl: [
+          $.pattern.tf.conditional(
+            condition=$.cnd.meta.negate({ inspector: $.cnd.fmt.json() }),
+            transform=$.tf.util.drop(),
+          ),
+          $.tf.agg.to.arr(),
+          $.tf.arr.join({ separator: '\n' }),
+          $.tf.str.append({ suffix: '\n' }),
+        ],
+      },
     },
   },
   // Utility functions that can be used in conditions and transforms.
@@ -1073,10 +1148,11 @@
       obj: null,
     }),
     abbv_obj(s): {
-      src_key: if std.objectHas(s, 'src') then s.src else if std.objectHas(s, 'src_key') then s.src_key else null,
-      dst_key: if std.objectHas(s, 'dst') then s.dst else if std.objectHas(s, 'dst_key') then s.dst_key else null,
+      source_key: if std.objectHas(s, 'src') then s.src else if std.objectHas(s, 'source_key') then s.source_key else null,
       src: null,
-      dst: null,
+      target_key: if std.objectHas(s, 'trg') then s.trg else if std.objectHas(s, 'target_key') then s.target_key else null,
+      trg: null,
+      batch_key: if std.objectHas(s, 'btch') then s.batch else if std.objectHas(s, 'batch_key') then s.batch_key else null,
     },
   },
 }

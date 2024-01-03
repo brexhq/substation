@@ -23,8 +23,8 @@ func (c *objectInsertConfig) Decode(in interface{}) error {
 }
 
 func (c *objectInsertConfig) Validate() error {
-	if c.Object.DstKey == "" {
-		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.Value == nil {
@@ -60,7 +60,7 @@ func (tf *objectInsert) Transform(ctx context.Context, msg *message.Message) ([]
 		return []*message.Message{msg}, nil
 	}
 
-	if err := msg.SetValue(tf.conf.Object.DstKey, tf.conf.Value); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, tf.conf.Value); err != nil {
 		return nil, fmt.Errorf("transform: object_insert: %v", err)
 	}
 

@@ -19,6 +19,8 @@ local secret = sub.secrets.environment_variable({ id: 'ENV_VAR', name: 'SUBSTATI
   transforms: [
     sub.transform.utility.secret({ secret: secret }),
     sub.transform.enrich.http.get({ url: '${SECRET:ENV_VAR}' }),
-    sub.tf.send.stdout(),
+    // Moby Dick is a large text, so the max size of the batch
+    // has to be increased, otherwise the data won't fit.
+    sub.tf.send.stdout({ batch: { size: 10000000 } }),
   ],
 }

@@ -26,8 +26,8 @@ func newObjectCopy(_ context.Context, cfg config.Config) (*objectCopy, error) {
 
 	tf := objectCopy{
 		conf:            conf,
-		hasObjectKey:    conf.Object.SrcKey != "" && conf.Object.DstKey == "",
-		hasObjectSetKey: conf.Object.SrcKey == "" && conf.Object.DstKey != "",
+		hasObjectKey:    conf.Object.SourceKey != "" && conf.Object.TargetKey == "",
+		hasObjectSetKey: conf.Object.SourceKey == "" && conf.Object.TargetKey != "",
 	}
 
 	return &tf, nil
@@ -45,7 +45,7 @@ func (tf *objectCopy) Transform(ctx context.Context, msg *message.Message) ([]*m
 	}
 
 	if tf.hasObjectKey {
-		value := msg.GetValue(tf.conf.Object.SrcKey)
+		value := msg.GetValue(tf.conf.Object.SourceKey)
 		if !value.Exists() {
 			return []*message.Message{msg}, nil
 		}
@@ -60,19 +60,19 @@ func (tf *objectCopy) Transform(ctx context.Context, msg *message.Message) ([]*m
 		}
 
 		outMsg := message.New().SetMetadata(msg.Metadata())
-		if err := outMsg.SetValue(tf.conf.Object.DstKey, msg.Data()); err != nil {
+		if err := outMsg.SetValue(tf.conf.Object.TargetKey, msg.Data()); err != nil {
 			return nil, fmt.Errorf("transform: object_copy: %v", err)
 		}
 
 		return []*message.Message{outMsg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
-	if err := msg.SetValue(tf.conf.Object.DstKey, value); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, value); err != nil {
 		return nil, fmt.Errorf("transform: object_copy: %v", err)
 	}
 

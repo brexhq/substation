@@ -11,8 +11,9 @@ import (
 )
 
 type Object struct {
-	SrcKey string `json:"src_key"`
-	DstKey string `json:"dst_key"`
+	SourceKey string `json:"source_key"`
+	TargetKey string `json:"target_key"`
+	BatchKey  string `json:"batch_key"`
 }
 
 type AWS struct {
@@ -34,13 +35,10 @@ type Retry struct {
 	Count int `json:"count"`
 }
 
-// Buffer should be used by any transform that supports buffering data
-// with internal/aggregate.
-type Buffer struct {
+type Batch struct {
 	Count    int    `json:"count"`
 	Size     int    `json:"size"`
 	Duration string `json:"duration"`
-	Key      string `json:"key"`
 }
 
 // Decode marshals and unmarshals an input interface into the output interface

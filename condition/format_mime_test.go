@@ -22,7 +22,7 @@ var formatMIMETests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"src_key": "ip_address",
+					"source_key": "ip_address",
 				},
 				"type": "application/x-gzip",
 			},

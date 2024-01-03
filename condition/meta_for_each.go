@@ -89,10 +89,10 @@ func (c *metaForEach) Inspect(ctx context.Context, msg *message.Message) (bool, 
 
 	// This is required to support JSON arrays and objects.
 	var value message.Value
-	if c.conf.Object.SrcKey == "" {
+	if c.conf.Object.SourceKey == "" {
 		value = msg.GetValue("@this")
 	} else {
-		value = msg.GetValue(c.conf.Object.SrcKey)
+		value = msg.GetValue(c.conf.Object.SourceKey)
 	}
 
 	if !value.Exists() {

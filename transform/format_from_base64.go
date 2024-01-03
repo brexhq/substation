@@ -28,7 +28,7 @@ func newFormatFromBase64(_ context.Context, cfg config.Config) (*formatFromBase6
 
 	tf := formatFromBase64{
 		conf:     conf,
-		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObject: conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 	}
 
 	return &tf, nil
@@ -54,7 +54,7 @@ func (tf *formatFromBase64) Transform(ctx context.Context, msg *message.Message)
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -68,7 +68,7 @@ func (tf *formatFromBase64) Transform(ctx context.Context, msg *message.Message)
 		return nil, errFormatFromBase64DecodeBinary
 	}
 
-	if err := msg.SetValue(tf.conf.Object.DstKey, b64); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, b64); err != nil {
 		return nil, fmt.Errorf("transform: format_from_base64: %v", err)
 	}
 

@@ -38,7 +38,7 @@ var enrichAWSDynamoDBTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"dst_key": "a",
+					"target_key": "a",
 				},
 				"table_name":               "tab",
 				"partition_key":            "PK",

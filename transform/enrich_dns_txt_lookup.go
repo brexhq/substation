@@ -30,7 +30,7 @@ func newEnrichDNSTxtLookup(_ context.Context, cfg config.Config) (*enrichDNSTxtL
 
 	tf := enrichDNSTxtLookup{
 		conf:     conf,
-		isObj:    conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObj:    conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 		resolver: net.Resolver{},
 		timeout:  dur,
 	}
@@ -68,7 +68,7 @@ func (tf *enrichDNSTxtLookup) Transform(ctx context.Context, msg *message.Messag
 		return []*message.Message{msg}, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -78,7 +78,7 @@ func (tf *enrichDNSTxtLookup) Transform(ctx context.Context, msg *message.Messag
 		return nil, fmt.Errorf("transform: enrich_dns_txt_lookup: %v", err)
 	}
 
-	if err := msg.SetValue(tf.conf.Object.DstKey, recs); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, recs); err != nil {
 		return nil, fmt.Errorf("transform: enrich_dns_txt_lookup: %v", err)
 	}
 

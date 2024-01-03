@@ -33,12 +33,12 @@ func (c *stringCaptureConfig) Decode(in interface{}) error {
 }
 
 func (c *stringCaptureConfig) Validate() error {
-	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
-		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
+		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
-		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if c.Pattern == "" {
@@ -67,7 +67,7 @@ func newStringCapture(_ context.Context, cfg config.Config) (*stringCapture, err
 
 	tf := stringCapture{
 		conf:     conf,
-		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObject: conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 		// Check if the regular expression contains at least one named capture group.
 		containsCaptureGroup: strings.Contains(conf.Pattern, "(?P<"),
 	}
@@ -128,7 +128,7 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 		}
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
@@ -147,7 +147,7 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 			// If set_key is "a" and the first group returns {"b":"c"}, then
 			// the output is {"a":{"b":"c"}}. If the second group returns
 			// {"d":"e"} then the output is {"a":{"b":"c","d":"e"}}.
-			setKey := tf.conf.Object.DstKey + "." + tf.conf.re.SubexpNames()[i]
+			setKey := tf.conf.Object.TargetKey + "." + tf.conf.re.SubexpNames()[i]
 			if err := msg.SetValue(setKey, match); err != nil {
 				return nil, fmt.Errorf("transform: string_capture: %v", err)
 			}
@@ -157,7 +157,7 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 
 	case tf.conf.Count == 0:
 		matches := tf.conf.re.FindStringSubmatch(value.String())
-		if err := msg.SetValue(tf.conf.Object.DstKey, strCaptureGetStringMatch(matches)); err != nil {
+		if err := msg.SetValue(tf.conf.Object.TargetKey, strCaptureGetStringMatch(matches)); err != nil {
 			return nil, fmt.Errorf("transform: string_capture: %v", err)
 		}
 
@@ -172,7 +172,7 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 			matches = append(matches, m)
 		}
 
-		if err := msg.SetValue(tf.conf.Object.DstKey, matches); err != nil {
+		if err := msg.SetValue(tf.conf.Object.TargetKey, matches); err != nil {
 			return nil, fmt.Errorf("transform: string_capture: %v", err)
 		}
 

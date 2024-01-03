@@ -11,9 +11,9 @@ local max_size = 1000 * 1000;
 {
   concurrency: 1,
   transforms: [
-    sub.tf.aggregate.to.array({ buffer: { size: max_size } }),
-    sub.tf.array.join({ separator: '\n' }),
     sub.tf.send.http.post({
+      batch: { size: max_size },
+      auxiliary_transforms: sub.pattern.tf.fmt.jsonl,
       // There is no authentication, so the URL should be treated like a secret.
       url: 'https://endpoint6.collection.us2.sumologic.com/receiver/v1/http/xxxxxxxxxx',
       // You can override the default source category associated with the URL.

@@ -23,7 +23,7 @@ func newNumberMathSubtraction(_ context.Context, cfg config.Config) (*numberMath
 
 	tf := numberMathSubtraction{
 		conf:     conf,
-		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObject: conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 	}
 
 	return &tf, nil
@@ -41,7 +41,7 @@ func (tf *numberMathSubtraction) Transform(ctx context.Context, msg *message.Mes
 
 	var value message.Value
 	if tf.isObject {
-		value = msg.GetValue(tf.conf.Object.SrcKey)
+		value = msg.GetValue(tf.conf.Object.SourceKey)
 	} else {
 		value = bytesToValue(msg.Data())
 	}
@@ -76,7 +76,7 @@ func (tf *numberMathSubtraction) Transform(ctx context.Context, msg *message.Mes
 		return nil, fmt.Errorf("transform: number_math_subtraction: %v", err)
 	}
 
-	if err := msg.SetValue(tf.conf.Object.DstKey, f); err != nil {
+	if err := msg.SetValue(tf.conf.Object.TargetKey, f); err != nil {
 		return nil, fmt.Errorf("transform: number_math_subtraction: %v", err)
 	}
 

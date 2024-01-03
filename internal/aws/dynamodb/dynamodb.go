@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
@@ -38,6 +39,50 @@ func (a *API) Setup(cfg iaws.Config) {
 // IsEnabled returns true if the client is enabled and ready for use.
 func (a *API) IsEnabled() bool {
 	return a.Client != nil
+}
+
+// BatchPutItem is a convenience wrapper for putting multiple items into a DynamoDB table.
+func (a *API) BatchPutItem(ctx aws.Context, table string, items []map[string]*dynamodb.AttributeValue) (resp *dynamodb.BatchWriteItemOutput, err error) {
+	var requests []*dynamodb.WriteRequest
+	for _, item := range items {
+		requests = append(requests, &dynamodb.WriteRequest{
+			PutRequest: &dynamodb.PutRequest{
+				Item: item,
+			},
+		})
+	}
+
+	resp, err = a.Client.BatchWriteItemWithContext(
+		ctx,
+		&dynamodb.BatchWriteItemInput{
+			RequestItems: map[string][]*dynamodb.WriteRequest{
+				table: requests,
+			},
+		},
+	)
+
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case dynamodb.ErrCodeProvisionedThroughputExceededException:
+				var retry []map[string]*dynamodb.AttributeValue
+
+				for _, item := range resp.UnprocessedItems[table] {
+					retry = append(retry, item.PutRequest.Item)
+				}
+
+				if len(retry) > 0 {
+					return a.BatchPutItem(ctx, table, retry)
+				}
+
+				fallthrough
+			default:
+				return nil, fmt.Errorf("batch_put_item: table %s: %v", table, err)
+			}
+		}
+	}
+
+	return resp, nil
 }
 
 // PutItem is a convenience wrapper for putting items into a DynamoDB table.

@@ -19,7 +19,7 @@ func ExampleSubstation() {
 	conf := []byte(`
 		{
 			"transforms":[
-				{"type":"object_copy","settings":{"object":{"src_key":"a","dst_key":"c"}}},
+				{"type":"object_copy","settings":{"object":{"source_key":"a","target_key":"c"}}},
 				{"type":"send_stdout"}
 			]
 		}
@@ -57,7 +57,7 @@ func ExampleSubstation() {
 	}
 
 	// Output:
-	// {"transforms":[{"type":"object_copy","settings":{"object":{"dst_key":"c","src_key":"a"}}},{"type":"send_stdout","settings":null}]}
+	// {"transforms":[{"type":"object_copy","settings":{"object":{"source_key":"a","target_key":"c"}}},{"type":"send_stdout","settings":null}]}
 	// {"a":"b","c":"b"}
 }
 
@@ -87,7 +87,7 @@ func Example_customSubstation() {
 	conf := []byte(`
 		{
 			"transforms":[
-				{"type":"object_copy","settings":{"object":{"dst_key":"c","src_key":"a"}}},
+				{"type":"object_copy","settings":{"object":{"source_key":"a","target_key":"c"}}},
 				{"type":"send_stdout"}
 			],
 			"auth":{
@@ -117,6 +117,6 @@ func Example_customSubstation() {
 	fmt.Println(cfg)
 
 	// Output:
-	// {"transforms":[{"type":"object_copy","settings":{"object":{"dst_key":"c","src_key":"a"}}},{"type":"send_stdout","settings":null}]}
+	// {"transforms":[{"type":"object_copy","settings":{"object":{"source_key":"a","target_key":"c"}}},{"type":"send_stdout","settings":null}]}
 	// foo:bar
 }

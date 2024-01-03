@@ -25,9 +25,12 @@ const sendAWSSNSMessageSizeLimit = 1024 * 1024 * 256
 var errSendAWSSNSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSNSConfig struct {
-	Buffer iconfig.Buffer `json:"buffer"`
-	AWS    iconfig.AWS    `json:"aws"`
-	Retry  iconfig.Retry  `json:"retry"`
+	Object        iconfig.Object  `json:"object"`
+	Batch         iconfig.Batch   `json:"batch"`
+	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
+	AWS   iconfig.AWS   `json:"aws"`
+	Retry iconfig.Retry `json:"retry"`
 
 	// ARN is the AWS SNS topic ARN that messages are sent to.
 	ARN string `json:"arn"`
@@ -66,22 +69,29 @@ func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 		MaxRetries: conf.Retry.Count,
 	})
 
-	buffer, err := aggregate.New(aggregate.Config{
+	agg, err := aggregate.New(aggregate.Config{
 		// SQS limits batch operations to 10 messages.
 		Count: 10,
 		// SNS limits batch operations to 256 KB.
 		Size:     sendAWSSNSMessageSizeLimit,
-		Duration: conf.Buffer.Duration,
+		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
 		return nil, err
 	}
+	tf.agg = agg
 
-	// All data is stored in a single buffer, the bufferKey
-	// only exists for forward compatibility to allow for
-	// multiple buffers.
-	tf.buffer = buffer
-	tf.bufferKey = conf.Buffer.Key
+	if len(conf.AuxTransforms) > 0 {
+		tf.tforms = make([]Transformer, len(conf.AuxTransforms))
+		for i, c := range conf.AuxTransforms {
+			t, err := New(context.Background(), c)
+			if err != nil {
+				return nil, fmt.Errorf("transform: send_aws_sns: %v", err)
+			}
+
+			tf.tforms[i] = t
+		}
+	}
 
 	return &tf, nil
 }
@@ -92,9 +102,9 @@ type sendAWSSNS struct {
 	// client is safe for concurrent use.
 	client sns.API
 
-	mu        sync.Mutex
-	buffer    *aggregate.Aggregate
-	bufferKey string
+	mu     sync.Mutex
+	agg    *aggregate.Aggregate
+	tforms []Transformer
 }
 
 func (tf *sendAWSSNS) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -102,16 +112,17 @@ func (tf *sendAWSSNS) Transform(ctx context.Context, msg *message.Message) ([]*m
 	defer tf.mu.Unlock()
 
 	if msg.IsControl() {
-		if tf.buffer.Count(tf.bufferKey) == 0 {
-			return []*message.Message{msg}, nil
+		for key := range tf.agg.GetAll() {
+			if tf.agg.Count(key) == 0 {
+				continue
+			}
+
+			if err := tf.send(ctx, key); err != nil {
+				return nil, fmt.Errorf("transform: send_aws_sns: %v", err)
+			}
 		}
 
-		items := tf.buffer.Get(tf.bufferKey)
-		if _, err := tf.client.PublishBatch(ctx, tf.conf.ARN, items); err != nil {
-			return nil, fmt.Errorf("transform: send_aws_sns: %v", err)
-		}
-
-		tf.buffer.Reset(tf.bufferKey)
+		tf.agg.ResetAll()
 		return []*message.Message{msg}, nil
 	}
 
@@ -119,24 +130,38 @@ func (tf *sendAWSSNS) Transform(ctx context.Context, msg *message.Message) ([]*m
 		return nil, fmt.Errorf("transform: send_aws_sns: %v", errSendAWSSNSMessageSizeLimit)
 	}
 
-	// Send data to SNS only when the buffer is full.
-	if ok := tf.buffer.Add(tf.bufferKey, msg.Data()); ok {
+	// If this value does not exist, then all data is batched together.
+	key := msg.GetValue(tf.conf.Object.BatchKey).String()
+	if ok := tf.agg.Add(key, msg.Data()); ok {
 		return []*message.Message{msg}, nil
 	}
 
-	items := tf.buffer.Get(tf.bufferKey)
-	if _, err := tf.client.PublishBatch(ctx, tf.conf.ARN, items); err != nil {
+	if err := tf.send(ctx, key); err != nil {
 		return nil, fmt.Errorf("transform: send_aws_sns: %v", err)
 	}
 
-	// Reset the buffer and add the msg data.
-	tf.buffer.Reset(tf.bufferKey)
-	_ = tf.buffer.Add(tf.bufferKey, msg.Data())
-
+	// If data cannot be added after reset, then the batch is misconfgured.
+	tf.agg.Reset(key)
+	if ok := tf.agg.Add(key, msg.Data()); !ok {
+		return nil, fmt.Errorf("transform: send_aws_sns: %v", errSendBatchMisconfigured)
+	}
 	return []*message.Message{msg}, nil
 }
 
 func (tf *sendAWSSNS) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
+}
+
+func (tf *sendAWSSNS) send(ctx context.Context, key string) error {
+	data, err := withTransforms(ctx, tf.tforms, tf.agg.Get(key))
+	if err != nil {
+		return err
+	}
+
+	if _, err := tf.client.PublishBatch(ctx, tf.conf.ARN, data); err != nil {
+		return err
+	}
+
+	return nil
 }

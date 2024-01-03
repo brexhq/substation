@@ -29,12 +29,12 @@ func (c *metaPipelineConfig) Decode(in interface{}) error {
 }
 
 func (c *metaPipelineConfig) Validate() error {
-	if c.Object.SrcKey == "" && c.Object.DstKey != "" {
-		return fmt.Errorf("object_src_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
+		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Object.SrcKey != "" && c.Object.DstKey == "" {
-		return fmt.Errorf("object_dst_key: %v", errors.ErrMissingRequiredOption)
+	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
 	if len(c.Transforms) == 0 {
@@ -56,7 +56,7 @@ func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, err
 
 	tf := metaPipeline{
 		conf:     conf,
-		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObject: conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 	}
 
 	var tform []Transformer
@@ -82,6 +82,10 @@ type metaPipeline struct {
 
 func (tf *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
+		if _, err := Apply(ctx, tf.tf, msg); err != nil {
+			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+		}
+
 		return []*message.Message{msg}, nil
 	}
 
@@ -94,24 +98,23 @@ func (tf *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]
 		return msgs, nil
 	}
 
-	value := msg.GetValue(tf.conf.Object.SrcKey)
+	value := msg.GetValue(tf.conf.Object.SourceKey)
 	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 
 	if value.IsArray() {
-		return nil, fmt.Errorf("transform: meta_pipeline: key %s: %v", tf.conf.Object.SrcKey, errMetaPipelineArrayInput)
+		return nil, fmt.Errorf("transform: meta_pipeline: key %s: %v", tf.conf.Object.SourceKey, errMetaPipelineArrayInput)
 	}
 
-	tmpMsg := message.New().SetData(value.Bytes())
-	msgs, err := Apply(ctx, tf.tf, tmpMsg)
+	res, err := Apply(ctx, tf.tf, message.New().SetData(value.Bytes()))
 	if err != nil {
 		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 	}
 
 	var output []*message.Message
-	for _, msg := range msgs {
-		if err := msg.SetValue(tf.conf.Object.DstKey, msg.Data()); err != nil {
+	for _, msg := range res {
+		if err := msg.SetValue(tf.conf.Object.TargetKey, msg.Data()); err != nil {
 			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 		}
 

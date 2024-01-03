@@ -51,6 +51,10 @@ type utilitySecret struct {
 }
 
 func (tf *utilitySecret) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	if msg.IsControl() {
+		return []*message.Message{msg}, nil
+	}
+
 	if tf.secret.Expired() {
 		if err := tf.secret.Retrieve(ctx); err != nil {
 			return nil, fmt.Errorf("transform: utility_secret: %v", err)

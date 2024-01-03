@@ -1,9 +1,9 @@
 local sub = import 'substation.libsonnet';
 
 local src = 'a';
-local dst = 'b';
+local trg = 'b';
 
-local transform = sub.transform.object.copy(settings={ obj: { src: src, dst: dst } });
+local transform = sub.transform.object.copy(settings={ obj: { src: src, trg: trg } });
 local inspector = sub.condition.format.json();
 
 {
@@ -18,17 +18,17 @@ local inspector = sub.condition.format.json();
     },
     string: {
       repl: sub.transform.string.repl({
-        obj: { src: src, dst: dst },
+        obj: { src: src, trg: trg },
         pattern: 'a',
         repl: 'b',
       }),
       replace: sub.transform.string.replace({
-        object: { src_key: src, dst_key: dst },
+        object: { source_key: src, target_key: trg },
         pattern: 'a',
         replacement: 'b',
       }),
       split: sub.transform.string.split({
-        object: { src_key: src, dst_key: dst },
+        object: { source_key: src, target_key: trg },
         sep: '.',
       }),
     },
@@ -36,7 +36,7 @@ local inspector = sub.condition.format.json();
   helpers: {
     make_array: sub.helpers.make_array(src),
     key: {
-      append: sub.helpers.object.append(src, dst),
+      append: sub.helpers.object.append(src, trg),
       append_array: sub.helpers.object.append_array(src),
       get_element: sub.helpers.object.get_element(src, 1),
     },

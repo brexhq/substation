@@ -34,11 +34,11 @@ func (insp *stringLessThan) Inspect(ctx context.Context, msg *message.Message) (
 		return false, nil
 	}
 
-	if insp.conf.Object.SrcKey == "" {
+	if insp.conf.Object.SourceKey == "" {
 		return bytes.Compare(msg.Data(), insp.b) < 0, nil
 	}
 
-	value := msg.GetValue(insp.conf.Object.SrcKey)
+	value := msg.GetValue(insp.conf.Object.SourceKey)
 	return bytes.Compare(value.Bytes(), insp.b) < 0, nil
 }
 

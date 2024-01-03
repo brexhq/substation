@@ -21,7 +21,7 @@ func newTimeFromString(_ context.Context, cfg config.Config) (*timeFromString, e
 
 	tf := timeFromString{
 		conf:     conf,
-		isObject: conf.Object.SrcKey != "" && conf.Object.DstKey != "",
+		isObject: conf.Object.SourceKey != "" && conf.Object.TargetKey != "",
 	}
 
 	return &tf, nil
@@ -39,7 +39,7 @@ func (tf *timeFromString) Transform(ctx context.Context, msg *message.Message) (
 
 	var value message.Value
 	if tf.isObject {
-		value = msg.GetValue(tf.conf.Object.SrcKey)
+		value = msg.GetValue(tf.conf.Object.SourceKey)
 	} else {
 		value = bytesToValue(msg.Data())
 	}
@@ -54,7 +54,7 @@ func (tf *timeFromString) Transform(ctx context.Context, msg *message.Message) (
 	}
 
 	if tf.isObject {
-		if err := msg.SetValue(tf.conf.Object.DstKey, date.UnixNano()); err != nil {
+		if err := msg.SetValue(tf.conf.Object.TargetKey, date.UnixNano()); err != nil {
 			return nil, fmt.Errorf("transform: time_from_string: %v", err)
 		}
 	} else {

@@ -9,8 +9,10 @@ module "kms" {
   }
 }
 
+# This policy is required to support encrypted SNS topics.
+# More information: https://repost.aws/knowledge-center/cloudwatch-receive-sns-for-alarm-trigger
 data "aws_iam_policy_document" "kms" {
-  # Allows CloudWatch to access encrypted resources.
+  # Allows CloudWatch to access encrypted SNS topic.
   statement {
     sid    = "CloudWatch"
     effect = "Allow"

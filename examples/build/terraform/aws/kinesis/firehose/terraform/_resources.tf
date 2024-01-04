@@ -9,33 +9,7 @@ module "kms" {
   source = "../../../../../../../build/terraform/aws/kms"
 
   config = {
-    name   = "alias/substation"
-    policy = <<POLICY
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-      "Effect": "Allow",
-      "Action": [
-        "kms:Decrypt",
-        "kms:GenerateDataKey"
-      ],
-      "Principal": {
-        "Service": "cloudwatch.amazonaws.com"
-      },
-      "Resource": "*"
-      },
-      {
-      "Effect": "Allow",
-      "Action": "kms:*",
-      "Principal": {
-        "AWS": "arn:aws:iam::${data.aws_caller_identity.caller.account_id}:root"
-      },
-      "Resource": "*"
-      }
-    ]
-  }
-  POLICY
+    name = "alias/substation"
   }
 }
 

@@ -6,32 +6,45 @@ module "kms" {
 
   config = {
     name   = "alias/substation"
-    policy = <<POLICY
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-      "Effect": "Allow",
-      "Action": [
-        "kms:Decrypt",
-        "kms:GenerateDataKey"
-      ],
-      "Principal": {
-        "Service": "cloudwatch.amazonaws.com"
-      },
-      "Resource": "*"
-      },
-      {
-      "Effect": "Allow",
-      "Action": "kms:*",
-      "Principal": {
-        "AWS": "arn:aws:iam::${data.aws_caller_identity.caller.account_id}:root"
-      },
-      "Resource": "*"
-      }
-    ]
+    policy = data.aws_iam_policy_document.kms.json
   }
-  POLICY
+}
+
+# This policy is required to support encrypted SNS topics.
+# More information: https://repost.aws/knowledge-center/cloudwatch-receive-sns-for-alarm-trigger
+data "aws_iam_policy_document" "kms" {
+  # Allows CloudWatch to access encrypted SNS topic.
+  statement {
+    sid    = "CloudWatch"
+    effect = "Allow"
+    actions = [
+      "kms:Decrypt",
+      "kms:GenerateDataKey"
+    ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudwatch.amazonaws.com"]
+    }
+
+    resources = ["*"]
+  }
+
+  # Default key policy for KMS.
+  # https://docs.aws.amazon.com/kms/latest/developerguide/determining-access-key-policy.html
+  statement {
+    sid    = "KMS"
+    effect = "Allow"
+    actions = [
+      "kms:*",
+    ]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.caller.account_id}:root"]
+    }
+
+    resources = ["*"]
   }
 }
 

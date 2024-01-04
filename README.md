@@ -179,7 +179,7 @@ In this configuration, data is:
 local sub = import 'substation.libsonnet';
 
 // This filters events based on the value of field3.
-local is_false = sub.cnd.str.eq(settings={ obj: { key: 'field3' }, string: 'false' });
+local is_false = sub.cnd.str.eq(settings={ object: { source_key: 'field3' }, value: 'false' });
 
 {
   transforms: [
@@ -206,9 +206,9 @@ local sub = import 'substation.libsonnet';
   transforms: [
     // If field3 is false, then the event is sent to an HTTPS endpoint; otherwise,
     // the event is written to an object in AWS S3.
-    sub.tf.meta.switch(settings={ switch: [
+    sub.tf.meta.switch(settings={ cases: [
       {
-        condition: sub.cnd.any(sub.cnd.str.eq(settings={ object: { key: 'field3' }, string: 'false' })),
+        condition: sub.cnd.any(sub.cnd.str.eq(settings={ object: { source_key: 'field3' }, value: 'false' })),
         transform: sub.tf.send.http.post(settings={ url: 'https://example-http-endpoint.com' }),
       },
       {
@@ -223,9 +223,9 @@ local sub = import 'substation.libsonnet';
 
 ## Configuring Applications
 
-Substation applications share configurations and all transform functions behave identically whether they are run from a laptop, server, container, or AWS Lambda. This makes it easy to develop configuration changes locally, validate them in a build (CI/CD) pipeline, and run integration tests in a staging environment before deploying to production.
+Substation applications use the same baseline configuration and all transform functions behave identically whether they are run from a laptop, server, container, or serverless function. This makes it easy to develop configuration changes locally, validate them in a build (CI/CD) pipeline, and run integration tests in a staging environment before deploying to production.
 
-Configurations are written in Jsonnet and can be expressed as functional code; this makes management in version control easier and lets you build reusable data processing libraries. Compare the configuration below to similar configurations for Logstash and Fluentd:
+Configurations are written in Jsonnet and can be expressed as functional code, which simplifies version control easier and allows you to build reusable data processing libraries. For power users, configurations also have abbreviations that make them easier to write. Compare the configuration below to similar configurations for Logstash and Fluentd:
 
 <table>
 <tr>
@@ -242,11 +242,9 @@ local sub = import 'substation.libsonnet';
 {
   transforms: [
     sub.tf.obj.cp(
-      settings={ obj: { key: 'src_field_1', set_key: 'dest_field_1' } }
+      settings={ object: { source_key: 'src_field_1', target_key: 'dest_field_1' } }
     ),
-    sub.tf.obj.cp(
-      settings={ obj: { key: 'src_field_2', set_key: 'dest_field_2' } }
-    ),
+    sub.tf.obj.cp({ obj: { src: 'src_field_2', trg: 'dest_field_2' } }),
     sub.tf.send.stdout(),
     sub.tf.send.http.post(
       settings={ url: 'https://example-http-endpoint.com' }

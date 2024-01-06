@@ -33,8 +33,6 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	// Array transforms.
 	case "array_join":
 		return newArrayJoin(ctx, cfg)
-	case "array_to_object":
-		return newArrayToObject(ctx, cfg)
 	case "array_zip":
 		return newArrayZip(ctx, cfg)
 	// Enrichment transforms.

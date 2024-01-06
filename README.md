@@ -45,8 +45,8 @@ Substation excels at formatting, normalizing, and enriching event logs. For exam
 
 <table>
 <tr>
-<th><code>Pre-Transform</code></th>
-<th><code>Post-Transform</code></th>
+<th><code>Raw Event</code></th>
+<th><code>Transformed Event</code></th>
 </tr>
 <tr>
 <td>

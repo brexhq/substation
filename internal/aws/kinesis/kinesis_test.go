@@ -11,12 +11,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/kinesis/kinesisiface"
 )
 
-type mockedReceiveMsgs struct {
+type mockedPutRecord struct {
 	kinesisiface.KinesisAPI
 	Resp kinesis.PutRecordOutput
 }
 
-func (m mockedReceiveMsgs) PutRecordWithContext(ctx aws.Context, in *kinesis.PutRecordInput, opts ...request.Option) (*kinesis.PutRecordOutput, error) {
+func (m mockedPutRecord) PutRecordWithContext(ctx aws.Context, in *kinesis.PutRecordInput, opts ...request.Option) (*kinesis.PutRecordOutput, error) {
 	return &m.Resp, nil
 }
 
@@ -39,7 +39,7 @@ func TestPutRecord(t *testing.T) {
 
 	for _, test := range tests {
 		a := API{
-			mockedReceiveMsgs{Resp: test.resp},
+			mockedPutRecord{Resp: test.resp},
 		}
 		resp, err := a.PutRecord(ctx, "", "", []byte(""))
 		if err != nil {
@@ -48,6 +48,57 @@ func TestPutRecord(t *testing.T) {
 
 		if *resp.SequenceNumber != test.expected {
 			t.Errorf("expected %+v, got %s", resp.SequenceNumber, test.expected)
+		}
+	}
+}
+
+type mockedPutRecords struct {
+	kinesisiface.KinesisAPI
+	Resp kinesis.PutRecordsOutput
+}
+
+func (m mockedPutRecords) PutRecordsWithContext(ctx aws.Context, in *kinesis.PutRecordsInput, opts ...request.Option) (*kinesis.PutRecordsOutput, error) {
+	return &m.Resp, nil
+}
+
+func TestPutRecords(t *testing.T) {
+	tests := []struct {
+		resp     kinesis.PutRecordsOutput
+		expected string
+	}{
+		{
+			resp: kinesis.PutRecordsOutput{
+				EncryptionType: aws.String("NONE"),
+				Records: []*kinesis.PutRecordsResultEntry{
+					{
+						ErrorCode:      aws.String(""),
+						ErrorMessage:   aws.String(""),
+						SequenceNumber: aws.String("ABCDEF"),
+						ShardId:        aws.String("XYZ"),
+					},
+				},
+			},
+			expected: "ABCDEF",
+		},
+	}
+
+	ctx := context.TODO()
+
+	for _, test := range tests {
+		a := API{
+			mockedPutRecords{Resp: test.resp},
+		}
+
+		b := [][]byte{
+			[]byte(""),
+		}
+		resp, err := a.PutRecords(ctx, "", "", b)
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
+
+		if *resp.Records[0].SequenceNumber != test.expected {
+			t.Errorf("expected %+v, got %s", test.expected, *resp.Records[0].SequenceNumber)
 		}
 	}
 }

@@ -1,7 +1,7 @@
 data "aws_region" "current" {}
 
 resource "aws_api_gateway_rest_api" "api" {
-  name = var.name
+  name = var.config.name
   tags = var.tags
 }
 
@@ -19,7 +19,7 @@ resource "aws_api_gateway_integration" "integration" {
 
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = "arn:aws:apigateway:${data.aws_region.current.name}:lambda:path/2015-03-31/functions/${var.function_arn}/invocations"
+  uri                     = "arn:aws:apigateway:${data.aws_region.current.name}:lambda:path/2015-03-31/functions/${var.lambda.arn}/invocations"
 }
 
 resource "aws_api_gateway_deployment" "deployment" {
@@ -28,13 +28,13 @@ resource "aws_api_gateway_deployment" "deployment" {
   ]
 
   rest_api_id = aws_api_gateway_rest_api.api.id
-  stage_name  = var.name
+  stage_name  = var.config.name
 }
 
 resource "aws_lambda_permission" "gateway_permission" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = var.function_arn
+  function_name = var.lambda.arn
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"

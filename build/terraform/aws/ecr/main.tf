@@ -1,5 +1,7 @@
 resource "aws_ecr_repository" "repository" {
-  name                 = var.name
+  name         = var.config.name
+  force_delete = var.config.force_delete
+
   image_tag_mutability = "IMMUTABLE"
   image_scanning_configuration {
     scan_on_push = true
@@ -7,7 +9,7 @@ resource "aws_ecr_repository" "repository" {
 
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key         = var.kms_arn
+    kms_key         = var.kms.arn
   }
 
   tags = var.tags
@@ -15,8 +17,7 @@ resource "aws_ecr_repository" "repository" {
 
 resource "aws_ecr_repository_policy" "repository_policy" {
   repository = aws_ecr_repository.repository.name
-
-  policy = data.aws_iam_policy_document.policy_document.json
+  policy     = data.aws_iam_policy_document.policy_document.json
 }
 
 data "aws_iam_policy_document" "policy_document" {

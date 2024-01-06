@@ -1,12 +1,19 @@
-variable "name" {
-  type = string
+variable "lambda" {
+  type = object({
+    arn = string
+  })
+  description = "Lambda invoked by the API Gateway."
 }
 
-variable "function_arn" {
-  type = string
+variable "config" {
+  type = object({
+    name = string
+  })
+  description = "Configuration for the API Gateway Lambda integration."
 }
 
 variable "tags" {
-  type    = map(any)
-  default = {}
+  type        = map(any)
+  default     = {}
+  description = "Tags to apply to all resources."
 }

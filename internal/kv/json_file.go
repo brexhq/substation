@@ -2,16 +2,21 @@ package kv
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 	"sync"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
-	"github.com/brexhq/substation/internal/json"
+	"github.com/tidwall/gjson"
 )
+
+// errJSONFileInvalid is returned when the file contains invalid JSON.
+var errJSONFileInvalid = fmt.Errorf("invalid JSON")
 
 // kvJSONFile is a read-only key-value store that is derived from a file containing
 // an object and stored in memory.
@@ -30,7 +35,7 @@ type kvJSONFile struct {
 // Create a new JSON file KV store.
 func newKVJSONFile(cfg config.Config) (*kvJSONFile, error) {
 	var store kvJSONFile
-	if err := config.Decode(cfg.Settings, &store); err != nil {
+	if err := _config.Decode(cfg.Settings, &store); err != nil {
 		return nil, err
 	}
 	store.mu = new(sync.Mutex)
@@ -55,7 +60,7 @@ func (store *kvJSONFile) Get(ctx context.Context, key string) (interface{}, erro
 	// See https://github.com/tidwall/gjson#json-lines for more information.
 	if store.IsLines && !strings.HasPrefix(key, "..#.") {
 		key = "..#." + key
-		res := json.Get(store.object, key)
+		res := gjson.GetBytes(store.object, key)
 
 		for _, v := range res.Array() {
 			if v.Exists() {
@@ -66,8 +71,8 @@ func (store *kvJSONFile) Get(ctx context.Context, key string) (interface{}, erro
 		return nil, nil
 	}
 
-	res := json.Get(store.object, key)
-	if json.Types[res.Type] == "Null" {
+	res := gjson.GetBytes(store.object, key)
+	if !res.Exists() {
 		return nil, nil
 	}
 
@@ -111,6 +116,10 @@ func (store *kvJSONFile) Setup(ctx context.Context) error {
 	buf, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("kv: json_file: %v", err)
+	}
+
+	if !json.Valid(buf) {
+		return fmt.Errorf("kv: json_file: %v", errJSONFileInvalid)
 	}
 
 	store.object = buf

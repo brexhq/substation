@@ -4,16 +4,15 @@ import (
 	"crypto/md5"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
 	"github.com/aws/aws-sdk-go/service/kinesis/kinesisiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
 	rec "github.com/awslabs/kinesis-aggregation/go/records"
+	iaws "github.com/brexhq/substation/internal/aws"
 
 	//nolint: staticcheck // not ready to switch package
 	"github.com/golang/protobuf/proto"
@@ -164,26 +163,10 @@ func ConvertEventsRecords(records []events.KinesisEventRecord) []*kinesis.Record
 }
 
 // New returns a configured Kinesis client.
-func New() *kinesis.Kinesis {
-	conf := aws.NewConfig()
+func New(cfg iaws.Config) *kinesis.Kinesis {
+	conf, sess := iaws.New(cfg)
 
-	// provides forward compatibility for the Go SDK to support env var configuration settings
-	// https://github.com/aws/aws-sdk-go/issues/4207
-	max, found := os.LookupEnv("AWS_MAX_ATTEMPTS")
-	if found {
-		m, err := strconv.Atoi(max)
-		if err != nil {
-			panic(err)
-		}
-
-		conf = conf.WithMaxRetries(m)
-	}
-
-	c := kinesis.New(
-		session.Must(session.NewSession()),
-		conf,
-	)
-
+	c := kinesis.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
 		xray.AWS(c.Client)
 	}
@@ -197,8 +180,8 @@ type API struct {
 }
 
 // Setup creates a new Kinesis client.
-func (a *API) Setup() {
-	a.Client = New()
+func (a *API) Setup(cfg iaws.Config) {
+	a.Client = New(cfg)
 }
 
 // IsEnabled returns true if the client is enabled and ready for use.
@@ -210,7 +193,6 @@ func (a *API) IsEnabled() bool {
 func (a *API) PutRecord(ctx aws.Context, stream, partitionKey string, data []byte) (*kinesis.PutRecordOutput, error) {
 	resp, err := a.Client.PutRecordWithContext(
 		ctx,
-		// TODO(v1.0.0): add ARN support
 		&kinesis.PutRecordInput{
 			Data:         data,
 			StreamName:   aws.String(stream),
@@ -218,6 +200,47 @@ func (a *API) PutRecord(ctx aws.Context, stream, partitionKey string, data []byt
 		})
 	if err != nil {
 		return nil, fmt.Errorf("putrecord stream %s partitionkey %s: %v", stream, partitionKey, err)
+	}
+
+	return resp, nil
+}
+
+// PutRecords is a convenience wrapper for putting multiple records into a Kinesis stream.
+func (a *API) PutRecords(ctx aws.Context, stream, partitionKey string, data [][]byte) (*kinesis.PutRecordsOutput, error) {
+	var records []*kinesis.PutRecordsRequestEntry
+
+	for _, d := range data {
+		records = append(records, &kinesis.PutRecordsRequestEntry{
+			Data:         d,
+			PartitionKey: aws.String(partitionKey),
+		})
+	}
+
+	resp, err := a.Client.PutRecordsWithContext(
+		ctx,
+		&kinesis.PutRecordsInput{
+			Records:    records,
+			StreamName: aws.String(stream),
+		},
+	)
+
+	// If any record fails, then the record is recursively retried.
+	if resp.FailedRecordCount != nil && *resp.FailedRecordCount > 0 {
+		var retry [][]byte
+
+		for idx, r := range resp.Records {
+			if r.ErrorCode != nil {
+				retry = append(retry, data[idx])
+			}
+		}
+
+		if len(retry) > 0 {
+			return a.PutRecords(ctx, stream, partitionKey, retry)
+		}
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("put_records: stream %s: %v", stream, err)
 	}
 
 	return resp, nil

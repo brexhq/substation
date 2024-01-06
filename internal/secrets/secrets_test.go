@@ -2,58 +2,42 @@ package secrets
 
 import (
 	"context"
-	"errors"
 	"testing"
+
+	"github.com/brexhq/substation/config"
 )
 
-var interpolateTest = []struct {
-	name     string
-	test     string
-	expected string
-	err      error
-}{
-	{
-		"zero secrets",
-		"/path/to/secret/",
-		"/path/to/secret/",
-		nil,
-	},
-	{
-		"one secrets",
-		"/path/to/secret/${SECRETS_ENV:SECRET_FOO}",
-		"/path/to/secret/foo",
-		nil,
-	},
-	{
-		"two secrets",
-		"/path/to/secret/${SECRETS_ENV:SECRET_FOO}/${SECRETS_ENV:SECRET_BAR}",
-		"/path/to/secret/foo/bar",
-		nil,
-	},
-	{
-		"secrets not found",
-		"/path/to/secret/${SECRETS_NIL:SECRET_FOO}/${SECRETS_NIL:SECRET_BAR}",
-		"",
-		errSecretNotFound,
-	},
-}
+func TestCollect(t *testing.T) {
+	t.Setenv("FOO", "bar")
 
-func TestInterpolate(t *testing.T) {
-	t.Setenv("SECRET_FOO", "foo")
-	t.Setenv("SECRET_BAR", "bar")
+	ctx := context.Background()
 
-	for _, test := range interpolateTest {
-		interp, err := Interpolate(context.TODO(), test.test)
-		if test.err != nil && !errors.Is(err, test.err) {
-			continue
-		}
+	cfg := config.Config{
+		Type: "environment_variable",
+		Settings: map[string]interface{}{
+			"id":   "id",
+			"name": "FOO",
+		},
+	}
 
-		if err != nil {
-			t.Errorf("got error %v", err)
-		}
+	ret, err := New(ctx, cfg)
+	if err != nil {
+		// handle error
+		panic(err)
+	}
 
-		if interp != test.expected {
-			t.Errorf("expected %s, got %s", test.expected, interp)
-		}
+	if err := ret.Retrieve(ctx); err != nil {
+		// handle error
+		panic(err)
+	}
+
+	interp, err := Interpolate(context.TODO(), "/path/to/secret/${SECRET:id}")
+	if err != nil {
+		// handle error
+		panic(err)
+	}
+
+	if interp != "/path/to/secret/bar" {
+		t.Fatalf("unexpected interpolation: %s", interp)
 	}
 }

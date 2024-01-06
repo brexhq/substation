@@ -55,13 +55,11 @@ We rely on contributors to test changes before they are submitted as pull reques
 
 #### Environment Variables
 
-Substation uses environment variables to customize runtime settings of the system (e.g., concurrency is controlled by `SUBSTATION_CONCURRENCY`). 
-
-Custom applications should implement their own runtime settings as required; for example, the [AWS Lambda application](/cmd/aws/lambda/substation/) uses `SUBSTATION_HANDLER` to manage [invocation settings](https://docs.aws.amazon.com/lambda/latest/dg/lambda-invocation.html).
+Applications may implement runtime settings that are managed by environment variables. For example, the [AWS Lambda application](/cmd/aws/lambda/substation/) uses `SUBSTATION_HANDLER` to manage [invocation settings](https://docs.aws.amazon.com/lambda/latest/dg/lambda-invocation.html).
 
 #### Configurations
 
-Substation uses a single configuration pattern for all components in the system (see `Config` in [config/config.go](/config/config.go)). This pattern is highly reusable and should be nested to create complex configurations supported by Jsonnet. Below is an example that shows how configurations should be designed:
+Substation uses a single configuration pattern for all components in the system (see `Config` in [config/config.go](/config/config.go)). This pattern is highly reusable and should be embedded to create custom configurations. Below is an example that shows how configurations should be designed:
 
 ```json
    "foo": {
@@ -81,13 +79,13 @@ Substation uses a single configuration pattern for all components in the system 
    }
 ```
 
-Repeating this pattern allows components and applications to integrate with the factory pattern.
+Repeating this pattern allows components and applications to integrate with Substation's factory patterns.
 
 #### Factories
 
-Substation relies on [factory methods](https://refactoring.guru/design-patterns/factory-method) to create objects that [satisfy interfaces](https://go.dev/doc/effective_go#interface_methods) across the system. Factories should be combined with the configuration design pattern to create pre-configured, ready-to-use objects.
+Substation relies on [factory methods](https://refactoring.guru/design-patterns/factory-method) to create objects that [satisfy interfaces](https://go.dev/doc/effective_go#interface_methods) across the project. Factories should be combined with the configuration design pattern to create new components.
 
-Factories are the preferred method for allowing users to customize the system. Example factories can be seen in [condition](/condition/condition.go) and [process](/process/process.go).
+Factories are the preferred method for allowing users to customize the system. Example factories can be seen in [condition](/condition/condition.go) and [transform](/transform/transform.go).
 
 #### Reading and Writing Streaming Data
 
@@ -103,9 +101,9 @@ Substation commonly uses these io compatible containers:
 
 #### Errors
 
-Errors should always start with `err` (or `Err`, if they are public) and be defined as constants using [internal/errors](/internal/errors/errors.go).
+Errors should always start with `err` (or `Err`, if they are public). Commonly used errors are defined in [internal/errors.go](internal/errors.go).
 
-If the error is related to an object created by an interface factory, then the object should be referenced by name in the error. For example, if the factory returns objects named `Foo`, `Bar`, and `Baz`, then related errors should be `errFooShortDescription`, `errBarShortDescription`, and `errBazShortDescription`.
+If the error is related to a specific component, then the component name should be included in the error. For example, if the error is related to the `Foo` component, then the error should be named `errFooShortDescription`.
 
 #### Environment Variables
 
@@ -115,15 +113,15 @@ Any environment variable that changes a default runtime setting should always st
 
 #### Application Variables
 
-Variable names should always follow conventions from [Effective Go](https://go.dev/doc/effective_go#names), the [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments#variable-names) and avoid [predeclared identifiers](https://go.dev/ref/spec#Predeclared_identifiers). For example `capsule` is used instead of `cap` to avoid shadowing the capacity function while modifiers and plural usage are `newCapsule` and `capsules`.
+Variable names should always follow conventions from [Effective Go](https://go.dev/doc/effective_go#names), the [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments#variable-names) and avoid [predeclared identifiers](https://go.dev/ref/spec#Predeclared_identifiers).
 
 #### Source Metadata
 
-Sources that [add metadata during encapsulation](/config/README.md) should use lowerCamelCase for their JSON keys.
+Sources that [add metadata during message creation](/message/) should use lowerCamelCase for their JSON keys.
 
 #### Package Configurations
 
-Configurations for packages (for example, [process](/process/README.md) and [condition](/condition/README.md)) should always use lower_snake_case in their JSON keys. This helps maintain readability when reviewing large configuration files.
+Configurations for packages (for example, [condition](/condition/README.md) and [transform](/transform/README.md)) should always use lower_snake_case in their JSON keys. This helps maintain readability when reviewing large configuration files.
 
 We strongly urge everyone to use Jsonnet for managing configurations.
 

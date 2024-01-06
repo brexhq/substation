@@ -1,0 +1,215 @@
+// Package transform provides functions for transforming data.
+package transform
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/errors"
+	"github.com/brexhq/substation/message"
+)
+
+var errMsgInvalidObject = fmt.Errorf("message must be JSON object")
+
+// Transformer is the interface implemented by all transforms and
+// provides the ability to transform data.
+type Transformer interface {
+	Transform(context.Context, *message.Message) ([]*message.Message, error)
+}
+
+// New returns a configured Transformer.
+func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
+	switch cfg.Type {
+	// Aggregation transforms.
+	case "aggregate_from_array":
+		return newAggregateFromArray(ctx, cfg)
+	case "aggregate_to_array":
+		return newAggregateToArray(ctx, cfg)
+	case "aggregate_from_string":
+		return newAggregateFromString(ctx, cfg)
+	case "aggregate_to_string":
+		return newAggregateToString(ctx, cfg)
+	// Array transforms.
+	case "array_join":
+		return newArrayJoin(ctx, cfg)
+	case "array_zip":
+		return newArrayZip(ctx, cfg)
+	// Enrichment transforms.
+	case "enrich_aws_dynamodb":
+		return newEnrichAWSDynamoDB(ctx, cfg)
+	case "enrich_aws_lambda":
+		return newEnrichAWSLambda(ctx, cfg)
+	case "enrich_dns_ip_lookup":
+		return newEnrichDNSIPLookup(ctx, cfg)
+	case "enrich_dns_domain_lookup":
+		return newEnrichDNSDomainLookup(ctx, cfg)
+	case "enrich_dns_text_lookup":
+		return newEnrichDNSTxtLookup(ctx, cfg)
+	case "enrich_http_get":
+		return newEnrichHTTPGet(ctx, cfg)
+	case "enrich_http_post":
+		return newEnrichHTTPPost(ctx, cfg)
+	case "enrich_kv_store_get":
+		return newEnrichKVStoreGet(ctx, cfg)
+	case "enrich_kv_store_set":
+		return newEnrichKVStoreSet(ctx, cfg)
+	// Format transforms.
+	case "format_from_base64":
+		return newFormatFromBase64(ctx, cfg)
+	case "format_to_base64":
+		return newFormatToBase64(ctx, cfg)
+	case "format_from_gzip":
+		return newFormatFromGzip(ctx, cfg)
+	case "format_to_gzip":
+		return newFormatToGzip(ctx, cfg)
+	case "format_from_pretty_print":
+		return newFormatFromPrettyPrint(ctx, cfg)
+	// Hash transforms.
+	case "hash_md5":
+		return newHashMD5(ctx, cfg)
+	case "hash_sha256":
+		return newHashSHA256(ctx, cfg)
+	// Meta transforms.
+	case "meta_err":
+		return newMetaErr(ctx, cfg)
+	case "meta_for_each":
+		return newMetaForEach(ctx, cfg)
+	case "meta_metric_duration":
+		return newMetaMetricsDuration(ctx, cfg)
+	case "meta_pipeline":
+		return newMetaPipeline(ctx, cfg)
+	case "meta_switch":
+		return newMetaSwitch(ctx, cfg)
+	// Number transforms.
+	case "number_math_addition":
+		return newNumberMathAddition(ctx, cfg)
+	case "number_math_division":
+		return newNumberMathDivision(ctx, cfg)
+	case "number_math_multiplication":
+		return newNumberMathMultiplication(ctx, cfg)
+	case "number_math_subtraction":
+		return newNumberMathSubtraction(ctx, cfg)
+	// Network transforms.
+	case "network_domain_registered_domain":
+		return newNetworkDomainRegisteredDomain(ctx, cfg)
+	case "network_domain_subdomain":
+		return newNetworkDomainSubdomain(ctx, cfg)
+	case "network_domain_top_level_domain":
+		return newNetworkDomainTopLevelDomain(ctx, cfg)
+	// Object transforms.
+	case "object_copy":
+		return newObjectCopy(ctx, cfg)
+	case "object_delete":
+		return newObjectDelete(ctx, cfg)
+	case "object_insert":
+		return newObjectInsert(ctx, cfg)
+	case "object_jq":
+		return newObjectJQ(ctx, cfg)
+	case "object_to_boolean":
+		return newObjectToBoolean(ctx, cfg)
+	case "object_to_float":
+		return newObjectToFloat(ctx, cfg)
+	case "object_to_integer":
+		return newObjectToInteger(ctx, cfg)
+	case "object_to_string":
+		return newObjectToString(ctx, cfg)
+	case "object_to_unsigned_integer":
+		return newObjectToUnsignedInteger(ctx, cfg)
+	// Send transforms.
+	case "send_aws_dynamodb":
+		return newSendAWSDynamoDB(ctx, cfg)
+	case "send_aws_kinesis_data_firehose":
+		return newSendAWSKinesisDataFirehose(ctx, cfg)
+	case "send_aws_kinesis_data_stream":
+		return newSendAWSKinesisDataStream(ctx, cfg)
+	case "send_aws_s3":
+		return newSendAWSS3(ctx, cfg)
+	case "send_aws_sns":
+		return newSendAWSSNS(ctx, cfg)
+	case "send_aws_sqs":
+		return newSendAWSSQS(ctx, cfg)
+	case "send_file":
+		return newSendFile(ctx, cfg)
+	case "send_http_post":
+		return newSendHTTPPost(ctx, cfg)
+	case "send_stdout":
+		return newSendStdout(ctx, cfg)
+	// String transforms.
+	case "string_append":
+		return newStringAppend(ctx, cfg)
+	case "string_capture":
+		return newStringCapture(ctx, cfg)
+	case "string_to_lower":
+		return newStringToLower(ctx, cfg)
+	case "string_to_snake":
+		return newStringToSnake(ctx, cfg)
+	case "string_to_upper":
+		return newStringToUpper(ctx, cfg)
+	case "string_replace":
+		return newStringReplace(ctx, cfg)
+	case "string_split":
+		return newStringSplit(ctx, cfg)
+	case "string_uuid":
+		return newStringUUID(ctx, cfg)
+	// Time transforms.
+	case "time_from_string":
+		return newTimeFromString(ctx, cfg)
+	case "time_from_unix":
+		return newTimeFromUnix(ctx, cfg)
+	case "time_now":
+		return newTimeNow(ctx, cfg)
+	case "time_to_string":
+		return newTimeToString(ctx, cfg)
+	case "time_to_unix":
+		return newTimeToUnix(ctx, cfg)
+	// Utility transforms.
+	case "utility_delay":
+		return newUtilityDelay(ctx, cfg)
+	case "utility_drop":
+		return newUtilityDrop(ctx, cfg)
+	case "utility_err":
+		return newUtilityErr(ctx, cfg)
+	case "utility_metric_count":
+		return newUtilityMetricCount(ctx, cfg)
+	case "utility_secret":
+		return newUtilitySecret(ctx, cfg)
+	default:
+		return nil, fmt.Errorf("transform: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
+	}
+}
+
+func Apply(ctx context.Context, tf []Transformer, mess ...*message.Message) ([]*message.Message, error) {
+	resultMsgs := make([]*message.Message, len(mess))
+	copy(resultMsgs, mess)
+
+	for i := 0; len(resultMsgs) > 0 && i < len(tf); i++ {
+		var nextResultMsgs []*message.Message
+		for _, m := range resultMsgs {
+			rMsgs, err := tf[i].Transform(ctx, m)
+			if err != nil {
+				// We immediately return if a transform hits an unrecoverable
+				// error on a message.
+				return nil, err
+			}
+			nextResultMsgs = append(nextResultMsgs, rMsgs...)
+		}
+		resultMsgs = nextResultMsgs
+	}
+
+	return resultMsgs, nil
+}
+
+func bytesToValue(b []byte) message.Value {
+	msg := message.New()
+	_ = msg.SetValue("_", b)
+
+	return msg.GetValue("_")
+}
+
+func anyToBytes(v any) []byte {
+	msg := message.New()
+	_ = msg.SetValue("_", v)
+
+	return msg.GetValue("_").Bytes()
+}

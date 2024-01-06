@@ -3,18 +3,17 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/brexhq/substation/cmd"
-	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/s3manager"
 	"github.com/brexhq/substation/internal/bufio"
-	"github.com/brexhq/substation/internal/log"
+	"github.com/brexhq/substation/internal/channel"
+	"github.com/brexhq/substation/message"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -27,112 +26,137 @@ type s3Metadata struct {
 }
 
 func s3Handler(ctx context.Context, event events.S3Event) error {
-	sub := cmd.New()
-
-	// retrieve and load configuration
-	cfg, err := getConfig(ctx)
+	// Retrieve and load configuration.
+	conf, err := getConfig(ctx)
 	if err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+		return err
 	}
 
-	if err := sub.SetConfig(cfg); err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+	cfg := customConfig{}
+	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
+		return err
 	}
 
-	// maintains app state
+	sub, err := substation.New(ctx, cfg.Config)
+	if err != nil {
+		return err
+	}
+
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
-	// load
-	var sinkWg sync.WaitGroup
-	sinkWg.Add(1)
+	// Data transformation. Transforms are executed concurrently using a worker pool
+	// managed by an errgroup. Each message is processed in a separate goroutine.
 	group.Go(func() error {
-		return sub.Sink(ctx, &sinkWg)
+		tfGroup, tfCtx := errgroup.WithContext(ctx)
+		tfGroup.SetLimit(cfg.Concurrency)
+
+		for message := range ch.Recv() {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
+			msg := message
+			tfGroup.Go(func() error {
+				// Transformed messages are never returned to the caller because
+				// invocation is asynchronous.
+				if _, err := sub.Transform(tfCtx, msg); err != nil {
+					return err
+				}
+
+				return nil
+			})
+		}
+
+		if err := tfGroup.Wait(); err != nil {
+			return err
+		}
+
+		// CTRL messages flush the pipeline. This must be done
+		// after all messages have been processed.
+		ctrl := message.New(message.AsControl())
+		if _, err := sub.Transform(tfCtx, ctrl); err != nil {
+			return err
+		}
+
+		return nil
 	})
 
-	// transform
-	var transformWg sync.WaitGroup
-	for w := 0; w < sub.Concurrency(); w++ {
-		transformWg.Add(1)
-		group.Go(func() error {
-			return sub.Transform(ctx, &transformWg)
-		})
-	}
-
-	// ingest
-	api := s3manager.DownloaderAPI{}
-	api.Setup()
-
+	// Data ingest
 	group.Go(func() error {
+		defer ch.Close()
+
+		client := s3manager.DownloaderAPI{}
+		client.Setup(aws.Config{})
+
+		// Create Message metadata.
+		m := s3Metadata{
+			EventTime:  event.Records[0].EventTime,
+			BucketArn:  event.Records[0].S3.Bucket.Arn,
+			BucketName: event.Records[0].S3.Bucket.Name,
+			ObjectKey:  event.Records[0].S3.Object.Key,
+			ObjectSize: event.Records[0].S3.Object.Size,
+		}
+
+		metadata, err := json.Marshal(m)
+		if err != nil {
+			return err
+		}
+
 		for _, record := range event.Records {
-			// the S3 object key is URL encoded
+			// The S3 object key is URL encoded.
 			//
 			// https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
 			objectKey, err := url.QueryUnescape(record.S3.Object.Key)
 			if err != nil {
-				return fmt.Errorf("s3 sns handler: %v", err)
+				return err
 			}
-
-			log.WithField(
-				"bucket", record.S3.Bucket.Name,
-			).WithField(
-				"key", objectKey,
-			).Debug("received S3 trigger")
 
 			dst, err := os.CreateTemp("", "substation")
 			if err != nil {
-				return fmt.Errorf("s3 handler: %v", err)
+				return err
 			}
 			defer os.Remove(dst.Name())
 			defer dst.Close()
 
-			if _, err := api.Download(ctx, record.S3.Bucket.Name, objectKey, dst); err != nil {
-				return fmt.Errorf("s3 handler: %v", err)
-			}
-
-			capsule := config.NewCapsule()
-			if _, err = capsule.SetMetadata(s3Metadata{
-				record.EventTime,
-				record.S3.Bucket.Arn,
-				record.S3.Bucket.Name,
-				objectKey,
-				record.S3.Object.Size,
-			}); err != nil {
-				return fmt.Errorf("s3 handler: %v", err)
+			if _, err := client.Download(ctx, record.S3.Bucket.Name, objectKey, dst); err != nil {
+				return err
 			}
 
 			scanner := bufio.NewScanner()
 			defer scanner.Close()
 
 			if err := scanner.ReadFile(dst); err != nil {
-				return fmt.Errorf("s3 handler: %v", err)
+				return err
 			}
 
 			for scanner.Scan() {
-				switch scanner.Method() {
-				case "bytes":
-					capsule.SetData(scanner.Bytes())
-				case "text":
-					capsule.SetData([]byte(scanner.Text()))
-				}
-
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
 				default:
-					sub.Send(capsule)
 				}
+
+				b := []byte(scanner.Text())
+				msg := message.New().SetData(b).SetMetadata(metadata)
+
+				ch.Send(msg)
+			}
+
+			if err := scanner.Err(); err != nil {
+				return err
 			}
 		}
-
-		sub.WaitTransform(&transformWg)
-		sub.WaitSink(&sinkWg)
 
 		return nil
 	})
 
-	// block until ITL is complete
-	if err := sub.Block(ctx, group); err != nil {
-		return fmt.Errorf("s3 handler: %v", err)
+	// Wait for all goroutines to complete. This includes the goroutines that are
+	// executing the transform functions.
+	if err := group.Wait(); err != nil {
+		return err
 	}
 
 	return nil
@@ -140,42 +164,71 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 
 //nolint:gocognit
 func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
-	sub := cmd.New()
-
-	// retrieve and load configuration
-	cfg, err := getConfig(ctx)
+	// Retrieve and load configuration.
+	conf, err := getConfig(ctx)
 	if err != nil {
-		return fmt.Errorf("s3 sns handler: %v", err)
+		return err
 	}
 
-	if err := sub.SetConfig(cfg); err != nil {
-		return fmt.Errorf("s3 sns handler: %v", err)
+	cfg := customConfig{}
+	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
+		return err
 	}
 
-	// maintains app state
+	sub, err := substation.New(ctx, cfg.Config)
+	if err != nil {
+		return err
+	}
+
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
-	// load
-	var sinkWg sync.WaitGroup
-	sinkWg.Add(1)
+	// Data transformation. Transforms are executed concurrently using a worker pool
+	// managed by an errgroup. Each Message is processed in a separate goroutine.
 	group.Go(func() error {
-		return sub.Sink(ctx, &sinkWg)
+		tfGroup, tfCtx := errgroup.WithContext(ctx)
+		tfGroup.SetLimit(cfg.Concurrency)
+
+		for message := range ch.Recv() {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
+			msg := message
+			tfGroup.Go(func() error {
+				// Transformed messages are never returned to the caller because
+				// invocation is asynchronous.
+				if _, err := sub.Transform(tfCtx, msg); err != nil {
+					return err
+				}
+
+				return nil
+			})
+		}
+
+		if err := tfGroup.Wait(); err != nil {
+			return err
+		}
+
+		// CTRL messages flush the pipeline. This must be done
+		// after all messages have been processed.
+		ctrl := message.New(message.AsControl())
+		if _, err := sub.Transform(tfCtx, ctrl); err != nil {
+			return err
+		}
+
+		return nil
 	})
 
-	// transform
-	var transformWg sync.WaitGroup
-	for w := 0; w < sub.Concurrency(); w++ {
-		transformWg.Add(1)
-		group.Go(func() error {
-			return sub.Transform(ctx, &transformWg)
-		})
-	}
-
-	// ingest
-	api := s3manager.DownloaderAPI{}
-	api.Setup()
-
+	// Data ingest.
 	group.Go(func() error {
+		defer ch.Close()
+
+		client := s3manager.DownloaderAPI{}
+		client.Setup(aws.Config{})
+
 		for _, record := range event.Records {
 			var s3Event events.S3Event
 			err := json.Unmarshal([]byte(record.SNS.Message), &s3Event)
@@ -184,76 +237,70 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 			}
 
 			for _, record := range s3Event.Records {
-				// the S3 object key is URL encoded
+				// The S3 object key is URL encoded.
 				//
 				// https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
 				objectKey, err := url.QueryUnescape(record.S3.Object.Key)
 				if err != nil {
-					return fmt.Errorf("s3 sns handler: %v", err)
+					return err
 				}
-
-				log.WithField(
-					"bucket", record.S3.Bucket.Name,
-				).WithField(
-					"key", objectKey,
-				).Debug("received S3 trigger")
 
 				dst, err := os.CreateTemp("", "substation")
 				if err != nil {
-					return fmt.Errorf("s3 sns handler: %v", err)
+					return err
 				}
 				defer os.Remove(dst.Name())
 				defer dst.Close()
 
-				if _, err := api.Download(ctx, record.S3.Bucket.Name, objectKey, dst); err != nil {
-					return fmt.Errorf("s3 sns handler: %v", err)
-				}
-
-				capsule := config.NewCapsule()
-				if _, err := capsule.SetMetadata(s3Metadata{
-					record.EventTime,
-					record.S3.Bucket.Arn,
-					record.S3.Bucket.Name,
-					objectKey,
-					record.S3.Object.Size,
-				}); err != nil {
-					return fmt.Errorf("s3 sns handler: %v", err)
+				if _, err := client.Download(ctx, record.S3.Bucket.Name, objectKey, dst); err != nil {
+					return err
 				}
 
 				scanner := bufio.NewScanner()
 				defer scanner.Close()
 
 				if err := scanner.ReadFile(dst); err != nil {
-					return fmt.Errorf("s3 sns handler: %v", err)
+					return err
+				}
+
+				m := s3Metadata{
+					record.EventTime,
+					record.S3.Bucket.Arn,
+					record.S3.Bucket.Name,
+					objectKey,
+					record.S3.Object.Size,
+				}
+				metadata, err := json.Marshal(m)
+				if err != nil {
+					return err
 				}
 
 				for scanner.Scan() {
-					switch scanner.Method() {
-					case "bytes":
-						capsule.SetData(scanner.Bytes())
-					case "text":
-						capsule.SetData([]byte(scanner.Text()))
-					}
-
 					select {
 					case <-ctx.Done():
 						return ctx.Err()
 					default:
-						sub.Send(capsule)
 					}
+
+					b := []byte(scanner.Text())
+					msg := message.New().SetData(b).SetMetadata(metadata)
+
+					ch.Send(msg)
+				}
+
+				if err := scanner.Err(); err != nil {
+					return err
 				}
 			}
 		}
 
-		sub.WaitTransform(&transformWg)
-		sub.WaitSink(&sinkWg)
-
 		return nil
 	})
 
-	// block until ITL is complete
-	if err := sub.Block(ctx, group); err != nil {
-		return fmt.Errorf("s3 sns handler: %v", err)
+	// Wait for all goroutines to complete. This includes the goroutines that are
+	// executing the transform functions.
+	if err := group.Wait(); err != nil {
+		return err
 	}
 
 	return nil

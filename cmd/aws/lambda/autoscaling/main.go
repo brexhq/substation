@@ -9,10 +9,11 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/cloudwatch"
 	"github.com/brexhq/substation/internal/aws/kinesis"
-	"github.com/brexhq/substation/internal/json"
 	"github.com/brexhq/substation/internal/log"
+	"github.com/tidwall/gjson"
 )
 
 const (
@@ -25,8 +26,9 @@ var (
 )
 
 func init() {
-	cloudwatchAPI.Setup()
-	kinesisAPI.Setup()
+	// These must run in the same AWS account and region as the Lambda function.
+	cloudwatchAPI.Setup(aws.Config{})
+	kinesisAPI.Setup(aws.Config{})
 }
 
 func main() {
@@ -38,16 +40,16 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 	topicArn := payload.TopicArn
 	message := payload.Message
 
-	alarmName := json.Get([]byte(message), "AlarmName").String()
-	triggerMetrics := json.Get([]byte(message), "Trigger.Metrics")
+	alarmName := gjson.Get(message, "AlarmName").String()
+	triggerMetrics := gjson.Get(message, "Trigger.Metrics")
 
 	log.WithField("alarm", alarmName).Info("received autoscale notification")
 
 	var stream string
 	for _, v := range triggerMetrics.Array() {
-		id := json.Get([]byte(v.String()), "Id").String()
+		id := gjson.Get(v.String(), "Id").String()
 		if id == "m1" || id == "m2" {
-			stream = json.Get([]byte(v.String()), "MetricStat.Metric.Dimensions.0.value").String()
+			stream = gjson.Get(v.String(), "MetricStat.Metric.Dimensions.0.value").String()
 			break
 		}
 	}

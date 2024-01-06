@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/message"
 )
 
 var allTests = []struct {
@@ -14,15 +15,25 @@ var allTests = []struct {
 	expected bool
 }{
 	{
-		"strings",
+		"format_mime",
 		[]config.Config{
 			{
-				Type: "strings",
+				Type: "format_mime",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type":       "equals",
-						"expression": "foo",
-					},
+					"type": "application/x-gzip",
+				},
+			},
+		},
+		[]byte{80, 75, 3, 4},
+		false,
+	},
+	{
+		"string",
+		[]config.Config{
+			{
+				Type: "string_equal_to",
+				Settings: map[string]interface{}{
+					"value": "foo",
 				},
 			},
 		},
@@ -30,14 +41,12 @@ var allTests = []struct {
 		true,
 	},
 	{
-		"regexp",
+		"pattern",
 		[]config.Config{
 			{
-				Type: "regexp",
+				Type: "string_match",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"expression": "^foo$",
-					},
+					"pattern": "^foo$",
 				},
 			},
 		},
@@ -48,11 +57,9 @@ var allTests = []struct {
 		"content",
 		[]config.Config{
 			{
-				Type: "content",
+				Type: "format_mime",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type": "application/x-gzip",
-					},
+					"type": "application/x-gzip",
 				},
 			},
 		},
@@ -63,12 +70,9 @@ var allTests = []struct {
 		"length",
 		[]config.Config{
 			{
-				Type: "length",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"value": 3,
-						"type":  "equals",
-					},
+					"value": 3,
 				},
 			},
 		},
@@ -79,21 +83,15 @@ var allTests = []struct {
 		"string length",
 		[]config.Config{
 			{
-				Type: "strings",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type":       "equals",
-						"expression": "foo",
-					},
+					"value": "foo",
 				},
 			},
 			{
-				Type: "length",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"value": 3,
-						"type":  "equals",
-					},
+					"value": 3,
 				},
 			},
 		},
@@ -106,27 +104,21 @@ var allTests = []struct {
 		"condition",
 		[]config.Config{
 			{
-				Type: "condition",
+				Type: "meta_condition",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
+					"condition": map[string]interface{}{
 						"operator": "any",
 						"inspectors": []config.Config{
 							{
-								Type: "strings",
+								Type: "string_starts_with",
 								Settings: map[string]interface{}{
-									"options": map[string]interface{}{
-										"expression": "f",
-										"type":       "starts_with",
-									},
+									"value": "f",
 								},
 							},
 							{
-								Type: "strings",
+								Type: "string_ends_with",
 								Settings: map[string]interface{}{
-									"options": map[string]interface{}{
-										"expression": "b",
-										"type":       "ends_with",
-									},
+									"value": "b",
 								},
 							},
 						},
@@ -134,18 +126,15 @@ var allTests = []struct {
 				},
 			},
 			{
-				Type: "condition",
+				Type: "meta_condition",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
+					"condition": map[string]interface{}{
 						"operator": "all",
 						"inspectors": []config.Config{
 							{
-								Type: "length",
+								Type: "number_length_equal_to",
 								Settings: map[string]interface{}{
-									"options": map[string]interface{}{
-										"value": 3,
-										"type":  "equals",
-									},
+									"value": 3,
 								},
 							},
 						},
@@ -160,23 +149,21 @@ var allTests = []struct {
 
 func TestAll(t *testing.T) {
 	ctx := context.TODO()
-	capsule := config.NewCapsule()
 
 	for _, test := range allTests {
 		t.Run(test.name, func(t *testing.T) {
-			capsule.SetData(test.test)
-
+			message := message.New().SetData(test.test)
 			cfg := Config{
 				Operator:   "all",
 				Inspectors: test.conf,
 			}
 
-			op, err := NewOperator(ctx, cfg)
+			op, err := New(ctx, cfg)
 			if err != nil {
 				t.Error(err)
 			}
 
-			ok, err := op.Operate(ctx, capsule)
+			ok, err := op.Operate(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}
@@ -188,22 +175,21 @@ func TestAll(t *testing.T) {
 	}
 }
 
-func benchmarkAll(b *testing.B, conf []config.Config, capsule config.Capsule) {
+func benchmarkAll(b *testing.B, conf []config.Config, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := NewInspectors(ctx, conf...)
+		inspectors, _ := newInspectors(ctx, conf...)
 		op := opAll{inspectors}
-		_, _ = op.Operate(ctx, capsule)
+		_, _ = op.Operate(ctx, message)
 	}
 }
 
 func BenchmarkAll(b *testing.B) {
-	capsule := config.NewCapsule()
 	for _, test := range allTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				capsule.SetData(test.test)
-				benchmarkAll(b, test.conf, capsule)
+				message := message.New().SetData(test.test)
+				benchmarkAll(b, test.conf, message)
 			},
 		)
 	}
@@ -216,24 +202,18 @@ var anyTests = []struct {
 	expected bool
 }{
 	{
-		"strings",
+		"string",
 		[]config.Config{
 			{
-				Type: "strings",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type":       "equals",
-						"expression": "foo",
-					},
+					"value": "foo",
 				},
 			},
 			{
-				Type: "strings",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type":       "equals",
-						"expression": "baz",
-					},
+					"value": "baz",
 				},
 			},
 		},
@@ -244,30 +224,21 @@ var anyTests = []struct {
 		"length",
 		[]config.Config{
 			{
-				Type: "length",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"value": 3,
-						"type":  "equals",
-					},
+					"value": 3,
 				},
 			},
 			{
-				Type: "length",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"value": 4,
-						"type":  "equals",
-					},
+					"value": 4,
 				},
 			},
 			{
-				Type: "length",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"value": 5,
-						"type":  "equals",
-					},
+					"value": 5,
 				},
 			},
 		},
@@ -278,21 +249,15 @@ var anyTests = []struct {
 		"string length",
 		[]config.Config{
 			{
-				Type: "strings",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type":       "equals",
-						"expression": "foo",
-					},
+					"value": "foo",
 				},
 			},
 			{
-				Type: "length",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"value": 4,
-						"type":  "equals",
-					},
+					"value": 4,
 				},
 			},
 		},
@@ -305,27 +270,21 @@ var anyTests = []struct {
 		"condition",
 		[]config.Config{
 			{
-				Type: "condition",
+				Type: "meta_condition",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
+					"condition": map[string]interface{}{
 						"operator": "all",
 						"inspectors": []config.Config{
 							{
-								Type: "length",
+								Type: "number_length_equal_to",
 								Settings: map[string]interface{}{
-									"options": map[string]interface{}{
-										"value": 4,
-										"type":  "equals",
-									},
+									"value": 4,
 								},
 							},
 							{
-								Type: "strings",
+								Type: "string_starts_with",
 								Settings: map[string]interface{}{
-									"options": map[string]interface{}{
-										"expression": "f",
-										"type":       "starts_with",
-									},
+									"value": "f",
 								},
 							},
 						},
@@ -333,18 +292,15 @@ var anyTests = []struct {
 				},
 			},
 			{
-				Type: "condition",
+				Type: "meta_condition",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
+					"condition": map[string]interface{}{
 						"operator": "all",
 						"inspectors": []config.Config{
 							{
-								Type: "length",
+								Type: "number_length_equal_to",
 								Settings: map[string]interface{}{
-									"options": map[string]interface{}{
-										"value": 3,
-										"type":  "equals",
-									},
+									"value": 3,
 								},
 							},
 						},
@@ -359,22 +315,21 @@ var anyTests = []struct {
 
 func TestAny(t *testing.T) {
 	ctx := context.TODO()
-	capsule := config.NewCapsule()
 
 	for _, test := range anyTests {
-		capsule.SetData(test.test)
+		message := message.New().SetData(test.test)
 
 		cfg := Config{
 			Operator:   "any",
 			Inspectors: test.conf,
 		}
 
-		op, err := NewOperator(ctx, cfg)
+		op, err := New(ctx, cfg)
 		if err != nil {
 			t.Error(err)
 		}
 
-		ok, err := op.Operate(ctx, capsule)
+		ok, err := op.Operate(ctx, message)
 		if err != nil {
 			t.Error(err)
 		}
@@ -385,22 +340,21 @@ func TestAny(t *testing.T) {
 	}
 }
 
-func benchmarkAny(b *testing.B, conf []config.Config, capsule config.Capsule) {
+func benchmarkAny(b *testing.B, conf []config.Config, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := NewInspectors(ctx, conf...)
+		inspectors, _ := newInspectors(ctx, conf...)
 		op := opAny{inspectors}
-		_, _ = op.Operate(ctx, capsule)
+		_, _ = op.Operate(ctx, message)
 	}
 }
 
 func BenchmarkAny(b *testing.B) {
-	capsule := config.NewCapsule()
 	for _, test := range anyTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				capsule.SetData(test.test)
-				benchmarkAny(b, test.conf, capsule)
+				message := message.New().SetData(test.test)
+				benchmarkAny(b, test.conf, message)
 			},
 		)
 	}
@@ -413,24 +367,18 @@ var noneTests = []struct {
 	expected bool
 }{
 	{
-		"strings",
+		"string",
 		[]config.Config{
 			{
-				Type: "strings",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type":       "equals",
-						"expression": "baz",
-					},
+					"value": "baz",
 				},
 			},
 			{
-				Type: "strings",
+				Type: "string_starts_with",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type":       "starts_with",
-						"expression": "b",
-					},
+					"value": "b",
 				},
 			},
 		},
@@ -438,24 +386,18 @@ var noneTests = []struct {
 		true,
 	},
 	{
-		"strings",
+		"string",
 		[]config.Config{
 			{
-				Type: "strings",
+				Type: "string_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type":       "equals",
-						"expression": "foo",
-					},
+					"value": "foo",
 				},
 			},
 			{
-				Type: "strings",
+				Type: "string_starts_with",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type":       "starts_with",
-						"expression": "b",
-					},
+					"value": "b",
 				},
 			},
 		},
@@ -466,22 +408,21 @@ var noneTests = []struct {
 		"length",
 		[]config.Config{
 			{
-				Type: "length",
+				Type: "number_length_equal_to",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type":  "equals",
-						"value": 0,
-					},
+					"type":  "equals",
+					"value": 0,
 				},
 			},
 			{
-				Type: "strings",
+				Type: "meta_negate",
 				Settings: map[string]interface{}{
-					"options": map[string]interface{}{
-						"type":       "starts_with",
-						"expression": "f",
+					"inspector": map[string]interface{}{
+						"type": "string_starts_with",
+						"settings": map[string]interface{}{
+							"value": "f",
+						},
 					},
-					"negate": true,
 				},
 			},
 		},
@@ -492,23 +433,21 @@ var noneTests = []struct {
 
 func TestNone(t *testing.T) {
 	ctx := context.TODO()
-	capsule := config.NewCapsule()
 
 	for _, test := range noneTests {
 		t.Run(test.name, func(t *testing.T) {
-			capsule.SetData(test.test)
-
+			message := message.New().SetData(test.test)
 			cfg := Config{
 				Operator:   "none",
 				Inspectors: test.conf,
 			}
 
-			op, err := NewOperator(ctx, cfg)
+			op, err := New(ctx, cfg)
 			if err != nil {
 				t.Error(err)
 			}
 
-			ok, err := op.Operate(ctx, capsule)
+			ok, err := op.Operate(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}
@@ -520,22 +459,21 @@ func TestNone(t *testing.T) {
 	}
 }
 
-func benchmarkNone(b *testing.B, conf []config.Config, capsule config.Capsule) {
+func benchmarkNone(b *testing.B, conf []config.Config, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		inspectors, _ := NewInspectors(ctx, conf...)
+		inspectors, _ := newInspectors(ctx, conf...)
 		op := opNone{inspectors}
-		_, _ = op.Operate(ctx, capsule)
+		_, _ = op.Operate(ctx, message)
 	}
 }
 
 func BenchmarkNone(b *testing.B) {
-	capsule := config.NewCapsule()
 	for _, test := range noneTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				capsule.SetData(test.test)
-				benchmarkNone(b, test.conf, capsule)
+				message := message.New().SetData(test.test)
+				benchmarkNone(b, test.conf, message)
 			},
 		)
 	}
@@ -543,16 +481,16 @@ func BenchmarkNone(b *testing.B) {
 
 func TestNewInspector(t *testing.T) {
 	for _, test := range allTests {
-		_, err := NewInspector(context.TODO(), test.conf[0])
+		_, err := newInspector(context.TODO(), test.conf[0])
 		if err != nil {
 			t.Error(err)
 		}
 	}
 }
 
-func benchmarkNewInspector(b *testing.B, conf config.Config) {
+func benchmarknewInspector(b *testing.B, conf config.Config) {
 	for i := 0; i < b.N; i++ {
-		_, _ = NewInspector(context.TODO(), conf)
+		_, _ = newInspector(context.TODO(), conf)
 	}
 }
 
@@ -560,113 +498,7 @@ func BenchmarkNewInspector(b *testing.B) {
 	for _, test := range allTests {
 		b.Run(test.name,
 			func(b *testing.B) {
-				benchmarkNewInspector(b, test.conf[0])
-			},
-		)
-	}
-}
-
-var conditionTests = []struct {
-	name     string
-	cfg      config.Config
-	test     []byte
-	expected bool
-}{
-	{
-		"object",
-		config.Config{
-			Type: "condition",
-			Settings: map[string]interface{}{
-				"options": Config{
-					Operator: "all",
-					Inspectors: []config.Config{
-						{
-							Type: "ip",
-							Settings: map[string]interface{}{
-								"key": "ip_address",
-								"options": map[string]interface{}{
-									"type": "private",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		[]byte(`{"ip_address":"192.168.1.2"}`),
-		true,
-	},
-	{
-		"data",
-		config.Config{
-			Type: "condition",
-			Settings: map[string]interface{}{
-				"options": Config{
-					Operator: "all",
-					Inspectors: []config.Config{
-						{
-							Type: "ip",
-							Settings: map[string]interface{}{
-								"options": map[string]interface{}{
-									"type": "private",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		[]byte("192.168.1.2"),
-		true,
-	},
-}
-
-var _ Inspector = inspCondition{}
-
-func TestCondition(t *testing.T) {
-	ctx := context.TODO()
-	capsule := config.NewCapsule()
-
-	for _, test := range conditionTests {
-		t.Run(test.name, func(t *testing.T) {
-			capsule.SetData(test.test)
-
-			insp, err := newInspCondition(ctx, test.cfg)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			check, err := insp.Inspect(ctx, capsule)
-			if err != nil {
-				t.Error(err)
-			}
-
-			if test.expected != check {
-				t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
-			}
-		})
-	}
-}
-
-func benchmarkCondition(b *testing.B, inspector inspCondition, capsule config.Capsule) {
-	ctx := context.TODO()
-	for i := 0; i < b.N; i++ {
-		_, _ = inspector.Inspect(ctx, capsule)
-	}
-}
-
-func BenchmarkCondition(b *testing.B) {
-	capsule := config.NewCapsule()
-	for _, test := range conditionTests {
-		insp, err := newInspCondition(context.TODO(), test.cfg)
-		if err != nil {
-			b.Fatal(err)
-		}
-
-		b.Run(test.name,
-			func(b *testing.B) {
-				capsule.SetData(test.test)
-				benchmarkCondition(b, insp, capsule)
+				benchmarknewInspector(b, test.conf[0])
 			},
 		)
 	}

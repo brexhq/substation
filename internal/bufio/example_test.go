@@ -10,17 +10,6 @@ import (
 func ExampleNewScanner_setup() {
 	s := bufio.NewScanner()
 	defer s.Close()
-
-	// sets maximum capacity to 1024 bytes
-	// defaults to 65536 bytes
-	s.SetCapacity(1024)
-
-	// sets method to "bytes"
-	// defaults to "text"
-	if err := s.SetMethod("bytes"); err != nil {
-		// handle error
-		panic(err)
-	}
 }
 
 func ExampleNewScanner_readFile() {
@@ -41,12 +30,12 @@ func ExampleNewScanner_readFile() {
 	}
 
 	for s.Scan() {
-		switch s.Method() {
-		case "bytes":
-			fmt.Println(s.Bytes())
-		case "text":
-			fmt.Println(s.Text())
-		}
+		fmt.Println(s.Text())
+	}
+
+	if err := s.Err(); err != nil {
+		// handle error
+		panic(err)
 	}
 
 	// Output:

@@ -1,1261 +1,1158 @@
 {
-  defaults: {
-    inspector: {
-      bitmath: {
-        options: { type: null, value: null },
+  // Mirrors interfaces from the condition package.
+  cnd: $.condition,
+  condition: {
+    // Operators.
+    all(i): { operator: 'all', inspectors: $.helpers.make_array(i) },
+    any(i): { operator: 'any', inspectors: $.helpers.make_array(i) },
+    none(i): { operator: 'none', inspectors: $.helpers.make_array(i) },
+    // Inspectors.
+    fmt: $.condition.format,
+    format: {
+      json(settings={}): {
+        type: 'format_json',
       },
-      content: {
-        options: { type: null },
+      mime(settings={}): {
+        local default = {
+          object: $.config.object,
+          type: null,
+        },
+
+        type: 'format_mime',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      for_each: {
-        options: { type: null, inspector: null },
+    },
+    num: $.condition.number,
+    number: {
+      bitwise: {
+        and(settings={}): {
+          local default = {
+            object: $.config.object,
+            value: null,
+          },
+
+          type: 'number_bitwise_and',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        not(settings={}): {
+          local default = {
+            object: $.config.object,
+          },
+
+          type: 'number_bitwise_not',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        or(settings={}): {
+          local default = {
+            object: $.config.object,
+            value: null,
+          },
+
+          type: 'number_bitwise_or',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        xor(settings={}): {
+          local default = {
+            object: $.config.object,
+            value: null,
+          },
+
+          type: 'number_bitwise_xor',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
       },
-      ip: {
-        options: { type: null },
-      },
-      json_schema: {
-        options: { schema: null },
-      },
+      len: $.condition.number.length,
       length: {
-        options: { type: null, value: null, measurement: 'byte' },
-      },
-      regexp: {
-        options: { expression: null },
-      },
-      strings: {
-        options: { type: null, expression: null },
-      },
-    },
-    ip_database: {
-      ip2location: {
-        settings: { database: null },
-      },
-      maxmind_asn: {
-        settings: { database: null, language: 'en' },
-      },
-      maxmind_city: {
-        settings: { database: null, language: 'en' },
-      },
-    },
-    kv_store: {
-      aws_dynamodb: {
-        settings: { table: null, attributes: { partition_key: null, sort_key: null, value: null, ttl: null } },
-      },
-      csv_file: {
-        settings: { file: null, column: null, delimiter: ',', header: null },
-      },
-      json_file: {
-        settings: { file: null, is_lines: false },
-      },
-      memory: {
-        settings: { capacity: 1024 },
-      },
-      mmdb: {
-        settings: { file: null },
-      },
-      text_file: {
-        settings: { file: null },
+        default: {
+          object: $.config.object,
+          value: null,
+          measurement: 'byte',
+        },
+        eq(settings={}): $.condition.number.length.equal_to(settings=settings),
+        equal_to(settings={}): {
+          local default = $.condition.number.length.default,
+
+          type: 'number_length_equal_to',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        gt(settings={}): $.condition.number.length.greater_than(settings=settings),
+        greater_than(settings={}): {
+          local default = $.condition.number.length.default,
+
+          type: 'number_length_greater_than',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        lt(settings={}): $.condition.number.length.less_than(settings=settings),
+        less_than(settings={}): {
+          local default = $.condition.number.length.default,
+
+          type: 'number_length_less_than',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
       },
     },
-    processor: {
-      aggregate: {
-        options: { key: null, separator: null, max_count: 1000, max_size: 10000 },
+    meta: {
+      condition(settings={}): {
+        local default = { condition: null },
+
+        type: 'meta_condition',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      aws_dynamodb: {
-        options: { table: null, key_condition_expression: null, limit: 1, scan_index_forward: false },
+      for_each(settings={}): {
+        local default = {
+          object: $.config.object,
+          type: null,
+          inspector: null,
+        },
+
+        type: 'meta_for_each',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      aws_lambda: {
-        options: { function_name: null },
-      },
-      base64: {
-        options: { direction: null },
-      },
-      capture: {
-        options: { expression: null, type: 'find', count: -1 },
-      },
-      case: {
-        options: { type: null },
-      },
-      convert: {
-        options: { type: null },
-      },
-      dns: {
-        options: { type: null, timeout: 1000 },
-      },
-      domain: {
-        options: { type: null },
-      },
-      flatten: {
-        options: { deep: true },
-      },
-      for_each: {
-        options: { processor: null },
-      },
-      group: {
-        options: { keys: null },
-      },
-      gzip: {
-        options: { direction: null },
-      },
-      hash: {
-        options: { algorithm: 'sha256' },
-      },
-      http: {
-        options: { method: 'get', url: null, headers: null, key: null },
-      },
-      insert: {
-        options: { value: null },
-      },
-      ip_database: {
-        options: { type: null, settings: null },
-      },
-      join: {
-        options: { separator: null },
-      },
-      jq: {
-        options: { query: null },
-      },
-      kv_store: {
-        options: { type: null, prefix: null, ttl_key: null, offset_ttl: null, kv_options: null },
-      },
-      math: {
-        options: { operation: null },
-      },
-      pipeline: {
-        options: { processors: null },
-      },
-      pretty_print: {
-        options: { direction: null },
-      },
-      replace: {
-        options: { old: null, new: null, count: -1 },
-      },
-      split: {
-        options: { separator: null },
-      },
-      time: {
-        options: { format: null, location: null, set_format: $.defaults.processor.time.set_format, set_location: null },
-        set_format: '2006-01-02T15:04:05.000000Z',
+      negate(settings={}): {
+        local default = { inspector: null },
+
+        type: 'meta_negate',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
     },
-    sink: {
-      aws_dynamodb: {
-        settings: { table: null, key: null },
+    net: $.condition.network,
+    network: {
+      ip: {
+        default: {
+          object: $.config.object,
+        },
+        global_unicast(settings={}): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_global_unicast',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        link_local_multicast(settings={}): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_link_local_multicast',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        link_local_unicast(settings={}): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_link_local_unicast',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        loopback(settings={}): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_loopback',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        multicast(settings={}): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_multicast',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        private(settings={}): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_private',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        unicast(settings={}): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_unicast',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        unspecified(settings={}): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_unspecified',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        valid(settings={}): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_valid',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
       },
-      aws_kinesis: {
-        settings: { stream: null, partition: null, partition_key: null, shard_redistribution: false },
+    },
+    str: $.condition.string,
+    string: {
+      default: {
+        object: $.config.object,
+        value: null,
       },
-      aws_kinesis_firehose: {
-        settings: { stream: null },
+      has(settings={}): $.condition.string.contains(settings=settings),
+      contains(settings={}): {
+        local default = $.condition.string.default,
+
+        type: 'string_contains',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      aws_s3: {
-        // TODO(v1.0.0): remove legacy prefix and prefix_key
-        // TODO(v1.0.0): set format and compression defaults
-        settings: { bucket: null, prefix: null, prefix_key: null, file_path: null, file_format: null, file_compression: null },
+      eq(settings={}): $.condition.string.equal_to(settings=settings),
+      equal_to(settings={}): {
+        local default = $.condition.string.default,
+
+        type: 'string_equal_to',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      aws_sns: {
-        settings: { arn: null },
+      gt(settings={}): $.condition.string.greater_than(settings=settings),
+      greater_than(settings={}): {
+        local default = $.condition.string.default,
+
+        type: 'string_greater_than',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      aws_sqs: {
-        settings: { queue: null },
+      lt(settings={}): $.condition.string.less_than(settings=settings),
+      less_than(settings={}): {
+        local default = $.condition.string.default,
+
+        type: 'string_less_than',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      file: {
-        settings: { file_path: null, file_format: { type: 'json' }, file_compression: { type: 'gzip' } },
+      prefix(settings={}): $.condition.string.starts_with(settings=settings),
+      starts_with(settings={}): {
+        local default = $.condition.string.default,
+
+        type: 'string_starts_with',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      grpc: {
-        settings: { server: null, timeout: null, certificate: null },
+      suffix(settings={}): $.condition.string.ends_with(settings=settings),
+      ends_with(settings={}): {
+        local default = $.condition.string.default,
+
+        type: 'string_ends_with',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      http: {
-        settings: { url: null, headers: null, headers_key: null },
+      match(settings={}): {
+        local default = {
+          object: $.config.object,
+          pattern: null,
+        },
+
+        type: 'string_match',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      sumologic: {
-        settings: { url: null, category: null, category_key: null },
+    },
+    util: $.transform.utility,
+    utility: {
+      random(settings={}): {
+        type: 'utility_random',
       },
     },
   },
+  // Mirrors interfaces from the transform package.
+  tf: $.transform,
+  transform: {
+    agg: $.transform.aggregate,
+    aggregate: {
+      from: {
+        arr(settings={}): $.transform.aggregate.from.array(settings=settings),
+        array(settings={}): {
+          local default = {
+            object: $.config.object,
+          },
+
+          type: 'aggregate_from_array',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        str(settings={}): $.transform.aggregate.from.string(settings=settings),
+        string(settings={}): {
+          local default = {
+            separator: null,
+          },
+
+          type: 'aggregate_from_string',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+      to: {
+        arr(settings={}): $.transform.aggregate.to.array(settings=settings),
+        array(settings={}): {
+          local default = {
+            object: $.config.object,
+            batch: $.config.batch,
+          },
+
+          type: 'aggregate_to_array',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        str(settings={}): $.transform.aggregate.to.string(settings=settings),
+        string(settings={}): {
+          local default = {
+            batch: $.config.batch,
+            separator: null,
+          },
+
+          type: 'aggregate_to_string',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+    },
+    arr: $.transform.array,
+    array: {
+      join(settings={}): {
+        local default = {
+          object: $.config.object,
+          separator: null,
+        },
+
+        type: 'array_join',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      to: {
+        obj: $.transform.array.to.object,
+        object(settings={}): {
+          local default = {
+            object: $.config.object,
+            object_keys: null,
+          },
+
+          type: 'array_to_object',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+      zip(settings={}): {
+        local default = {
+          object: $.config.object,
+          as_object: false,
+          with_keys: null,
+        },
+
+        type: 'array_zip',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+    },
+    enrich: {
+      aws: {
+        dynamodb(settings={}): {
+          local default = {
+            object: $.config.object,
+            aws: $.config.aws,
+            retry: $.config.retry,
+            table_name: null,
+            partition_key: null,
+            sort_key: null,
+            key_condition_expression: null,
+            limit: 1,
+            scan_index_forward: false,
+          },
+
+          type: 'enrich_aws_dynamodb',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        lambda(settings={}): {
+          local default = {
+            object: $.config.object,
+            aws: $.config.aws,
+            retry: $.config.retry,
+            function_name: null,
+          },
+
+          type: 'enrich_aws_lambda',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+      dns: {
+        default: {
+          object: $.config.object,
+          request: $.config.request,
+        },
+        domain_lookup(settings={}): {
+          local default = $.transform.enrich.dns.default,
+
+          type: 'enrich_dns_domain_lookup',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        ip_lookup(settings={}): {
+          local default = $.transform.enrich.dns.default,
+
+          type: 'enrich_dns_ip_lookup',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        txt_lookup(settings={}): {
+          local default = $.transform.enrich.dns.default,
+
+          type: 'enrich_dns_txt_lookup',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+      http: {
+        default: {
+          object: $.config.object,
+          request: $.config.request,
+          url: null,
+          headers: null,
+        },
+        get(settings={}): {
+          local default = $.transform.enrich.http.default,
+
+          type: 'enrich_http_get',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        post(settings={}): {
+          local default = $.transform.enrich.http.default { body_key: null },
+
+          type: 'enrich_http_post',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+      kv_store: {
+        default: {
+          object: $.config.object,
+          prefix: null,
+          kv_store: null,
+          close_kv_store: false,
+        },
+        get(settings={}): {
+          local default = $.transform.enrich.kv_store.default,
+
+          type: 'enrich_kv_store_get',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        set(settings={}): {
+          local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: null },
+
+          type: 'enrich_kv_store_set',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+    },
+    fmt: $.transform.format,
+    format: {
+      default: {
+        object: $.config.object,
+      },
+      from: {
+        b64(settings={}): $.transform.format.from.base64(settings=settings),
+        base64(settings={}): {
+          local default = $.transform.format.default,
+
+          type: 'format_from_base64',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        gz(settings={}): $.transform.format.from.gzip(settings=settings),
+        gzip(settings={}): {
+          type: 'format_from_gzip',
+        },
+        pretty_print(settings={}): {
+          type: 'format_from_pretty_print',
+        },
+      },
+      to: {
+        b64(settings={}): $.transform.format.to.base64(settings=settings),
+        base64(settings={}): {
+          local default = $.transform.format.default,
+
+          type: 'format_to_base64',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        gz(settings={}): $.transform.format.to.gzip(settings=settings),
+        gzip(settings={}): {
+          type: 'format_to_gzip',
+        },
+      },
+    },
+    hash: {
+      default: {
+        object: $.config.object,
+      },
+      md5(settings={}): {
+        local default = $.transform.hash.default,
+
+        type: 'hash_md5',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      sha256(settings={}): {
+        local default = $.transform.hash.default,
+
+        type: 'hash_sha256',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+    },
+    num: $.transform.number,
+    number: {
+      math: {
+        default: {
+          object: $.config.object,
+        },
+        add(settings={}): $.transform.number.math.addition(settings=settings),
+        addition(settings={}): {
+          local default = $.transform.number.math.default,
+
+          type: 'number_math_addition',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        sub(settings={}): $.transform.number.math.subtraction(settings=settings),
+        subtraction(settings={}): {
+          local default = $.transform.number.math.default,
+
+          type: 'number_math_subtraction',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        mul(settings={}): $.transform.number.math.multiplication(settings=settings),
+        multiplication(settings={}): {
+          local default = $.transform.number.math.default,
+
+          type: 'number_math_multiplication',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        div(settings={}): $.transform.number.math.division(settings=settings),
+        division(settings={}): {
+          local default = $.transform.number.math.default,
+
+          type: 'number_math_division',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+    },
+    meta: {
+      err(settings={}): {
+        local default = { transform: null },
+
+        type: 'meta_err',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      for_each(settings={}): {
+        local default = {
+          object: $.config.object,
+          transform: null,
+        },
+
+        type: 'meta_for_each',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      metric: {
+        duration(settings={}): {
+          local default = {
+            metric: $.config.metric,
+            transform: null,
+          },
+
+          type: 'meta_metric_duration',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+      pipe(settings={}): $.transform.meta.pipeline(settings=settings),
+      pipeline(settings={}): {
+        local default = {
+          object: $.config.object,
+          transforms: null,
+        },
+
+        type: 'meta_pipeline',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      switch(settings={}): {
+        local default = { cases: null },
+
+        type: 'meta_switch',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+    },
+    net: $.transform.network,
+    network: {
+      domain: {
+        default: {
+          object: $.config.object,
+        },
+        registered_domain(settings={}): {
+          local default = $.transform.network.domain.default,
+
+          type: 'network_domain_registered_domain',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        subdomain(settings={}): {
+          local default = $.transform.network.domain.default,
+
+          type: 'network_domain_subdomain',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        tld(settings={}): $.transform.network.domain.top_level_domain(settings=settings),
+        top_level_domain(settings={}): {
+          local default = $.transform.network.domain.default,
+
+          type: 'network_domain_top_level_domain',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+    },
+    obj: $.transform.object,
+    object: {
+      default: {
+        object: $.config.object,
+      },
+      cp(settings={}): $.transform.object.copy(settings=settings),
+      copy(settings={}): {
+        local default = $.transform.object.default,
+
+        type: 'object_copy',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      del(settings={}): $.transform.object.delete(settings=settings),
+      delete(settings={}): {
+        local default = $.transform.object.default,
+
+        type: 'object_delete',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      insert(settings={}): {
+        local default = $.transform.object.default,
+
+        type: 'object_insert',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      jq(settings={}): {
+        local default = { filter: null },
+
+        type: 'object_jq',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      to: {
+        bool(settings={}): $.transform.object.to.boolean(settings=settings),
+        boolean(settings={}): {
+          local default = $.transform.object.default,
+
+          type: 'object_to_boolean',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        float(settings={}): {
+          local default = $.transform.object.default,
+
+          type: 'object_to_float',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        int(settings={}): $.transform.object.to.integer(settings=settings),
+        integer(settings={}): {
+          local default = $.transform.object.default,
+
+          type: 'object_to_integer',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        str(settings={}): $.transform.object.to.string(settings=settings),
+        string(settings={}): {
+          local default = $.transform.object.default,
+
+          type: 'object_to_string',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        uint(settings={}): $.transform.object.to.unsigned_integer(settings=settings),
+        unsigned_integer(settings={}): {
+          local default = $.transform.object.default,
+
+          type: 'object_to_unsigned_integer',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+    },
+    send: {
+      aws: {
+        dynamodb(settings={}): {
+          local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
+            aws: $.config.aws,
+            retry: $.config.retry,
+            table_name: null,
+          },
+
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
+          type: 'send_aws_dynamodb',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+        },
+        firehose(settings={}): $.transform.send.aws.kinesis_data_firehose(settings=settings),
+        kinesis_data_firehose(settings={}): {
+          local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
+            aws: $.config.aws,
+            retry: $.config.retry,
+            stream_name: null,
+          },
+
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
+          type: 'send_aws_kinesis_data_firehose',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+        },
+        kinesis_data_stream(settings={}): {
+          local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
+            aws: $.config.aws,
+            retry: $.config.retry,
+            stream_name: null,
+            use_batch_key_as_partition_key: false,
+            enable_record_aggregation: false,
+          },
+
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
+          type: 'send_aws_kinesis_data_stream',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+        },
+        s3(settings={}): {
+          local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
+            aws: $.config.aws,
+            retry: $.config.retry,
+            bucket_name: null,
+            file_path: $.file_path,
+          },
+
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
+          type: 'send_aws_s3',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+        },
+        sns(settings={}): {
+          local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
+            aws: $.config.aws,
+            retry: $.config.retry,
+            arn: null,
+          },
+
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
+          type: 'send_aws_sns',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+        },
+        sqs(settings={}): {
+          local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
+            aws: $.config.aws,
+            retry: $.config.retry,
+            arn: null,
+          },
+
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
+          type: 'send_aws_sqs',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+        },
+      },
+      file(settings={}): {
+        local default = {
+          batch: $.config.batch,
+          auxiliary_transforms: null,
+          file_path: $.file_path,
+        },
+
+        local s = std.mergePatch(settings, {
+          auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+          aux_tforms: null,
+        }),
+
+        type: 'send_file',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+      },
+      http: {
+        post(settings={}): {
+          local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
+            url: null,
+            headers: null,
+          },
+
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+            headers: if std.objectHas(settings, 'headers') then settings.headers else if std.objectHas(settings, 'hdr') then settings.hdr else null,
+            hdr: null,
+          }),
+
+          type: 'send_http_post',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+        },
+      },
+      stdout(settings={}): {
+        local default = {
+          batch: $.config.batch,
+          auxiliary_transforms: null,
+        },
+
+        local s = std.mergePatch(settings, {
+          auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+          aux_tforms: null,
+        }),
+
+        type: 'send_stdout',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+      },
+    },
+    str: $.transform.string,
+    string: {
+      append(settings={}): {
+        local default = {
+          object: $.config.object,
+          suffix: null,
+        },
+
+        type: 'string_append',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      capture(settings={}): {
+        local default = {
+          object: $.config.object,
+          pattern: null,
+          count: 0,
+        },
+
+        type: 'string_capture',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      repl: $.transform.string.replace,
+      replace(settings={}): {
+        local default = {
+          object: $.config.object,
+          pattern: null,
+          replacement: null,
+        },
+
+        local s = std.mergePatch(settings, {
+          pattern: settings.pattern,
+          replacement: if std.objectHas(settings, 'replacement') then settings.replacement else if std.objectHas(settings, 'repl') then settings.repl else null,
+          repl: null,
+        }),
+
+        type: 'string_replace',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+      },
+      split(settings={}): {
+        local default = {
+          object: $.config.object,
+          separator: null,
+        },
+
+        local s = std.mergePatch(settings, {
+          separator: if std.objectHas(settings, 'separator') then settings.separator else if std.objectHas(settings, 'sep') then settings.sep else null,
+          sep: null,
+        }),
+
+        type: 'string_split',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+      },
+      to: {
+        default: {
+          object: $.config.object,
+        },
+        lower(settings={}): {
+          local default = $.transform.string.to.default,
+
+          type: 'string_to_lower',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        upper(settings={}): {
+          local default = $.transform.string.to.default,
+
+          type: 'string_to_upper',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        snake(settings={}): {
+          local default = $.transform.string.to.default,
+
+          type: 'string_to_snake',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+      uuid(settings={}): {
+        local default = {
+          object: $.config.object,
+        },
+
+        type: 'string_uuid',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+    },
+    time: {
+      from: {
+        str(settings={}): $.transform.time.from.string(settings=settings),
+        string(settings={}): {
+          local default = {
+            object: $.config.object,
+            format: null,
+            location: null,
+          },
+
+          type: 'time_from_string',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        unix(settings={}): {
+          local default = {
+            object: $.config.object,
+          },
+
+          type: 'time_from_unix',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+      now(settings={}): {
+        local default = {
+          object: $.config.object,
+        },
+
+        type: 'time_now',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      to: {
+        str(settings={}): $.transform.time.to.string(settings=settings),
+        string(settings={}): {
+          local default = {
+            object: $.config.object,
+            format: null,
+            location: null,
+          },
+
+          type: 'time_to_string',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+      unix(settings={}): {
+        local default = {
+          object: $.config.object,
+        },
+
+        type: 'time_to_unix',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+    },
+    util: $.transform.utility,
+    utility: {
+      delay(settings={}): {
+        local default = {
+          duration: null,
+        },
+
+        type: 'utility_delay',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      drop(settings={}): {
+        type: 'utility_drop',
+      },
+      err(settings={}): {
+        local default = {
+          message: null,
+        },
+
+        type: 'utility_err',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      metric: {
+        count(settings={}): {
+          local default = {
+            metric: $.config.metric,
+          },
+
+          type: 'utility_metric_count',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
+      secret(settings={}): {
+        local default = { secret: null },
+
+        type: 'utility_secret',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+    },
+  },
+  // Mirrors interfaces from the internal/kv_store package.
+  kv_store: {
+    aws_dynamodb(settings={}): {
+      local default = {
+        aws: $.config.aws,
+        retry: $.config.retry,
+        table_name: null,
+        attributes: { partition_key: null, sort_key: null, value: null, ttl: null },
+        consistent_read: false,
+      },
+
+      type: 'aws_dynamodb',
+      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+    },
+    csv_file(settings={}): {
+      local default = { file: null, column: null, delimiter: ',', header: null },
+
+      type: 'csv_file',
+      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+    },
+    json_file(settings=$.defaults.kv_store.json_file.settings): {
+      local default = { file: null, is_lines: false },
+
+      type: 'json_file',
+      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+    },
+    memory(settings={}): {
+      local default = { capacity: 1024 },
+
+      type: 'memory',
+      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+    },
+    mmdb(settings={}): {
+      local default = { file: null },
+
+      type: 'mmdb',
+      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+    },
+    text_file(settings={}): {
+      local default = { file: null },
+
+      type: 'text_file',
+      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+    },
+  },
+  // Mirrors structs from the internal/config package.
+  config: {
+    aws: { region: null, role_arn: null },
+    batch: { count: 1000, size: 1000 * 1000, duration: '1m' },
+    metric: { name: null, attributes: null, destination: null },
+    object: { source_key: null, target_key: null, batch_key: null },
+    request: { timeout: '1s' },
+    retry: { count: 3 },
+  },
+  // Mirrors config from the internal/file package.
+  file_path: { prefix: null, time_format: '2006/01/02', uuid: true, suffix: null },
+  // Mirrors interfaces from the internal/secrets package.
+  secrets: {
+    default: { id: null, ttl: null },
+    aws_secrets_manager(settings={}): {
+      local default = {
+        id: null,
+        name: null,
+        ttl_offset: null,
+        aws: $.config.aws,
+        retry: $.config.retry,
+      },
+
+      type: 'aws_secrets_manager',
+      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+    },
+    environment_variable(settings={}): {
+      local default = { id: null, name: null, ttl_offset: null },
+
+      type: 'environment_variable',
+      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+    },
+  },
+  // Commonly used condition and transform patterns.
+  pattern: {
+    cnd: $.pattern.condition,
+    condition: {
+      obj(key): {
+        object: { source: key },
+      },
+      // Negates any inspector.
+      negate(inspector): $.condition.meta.negate(settings={ inspector: inspector }),
+      net: $.pattern.condition.network,
+      network: {
+        ip: {
+          // Checks if an IP address is internal.
+          //
+          // Use with the ANY operator to match internal IP addresses.
+          // Use with the NONE operator to match external IP addresses.
+          internal(key=null): [
+            $.condition.network.ip.link_local_multicast(settings=$.pattern.condition.obj(key)),
+            $.condition.network.ip.link_local_unicast(settings=$.pattern.condition.obj(key)),
+            $.condition.network.ip.loopback(settings=$.pattern.condition.obj(key)),
+            $.condition.network.ip.multicast(settings=$.pattern.condition.obj(key)),
+            $.condition.network.ip.private(settings=$.pattern.condition.obj(key)),
+            $.condition.network.ip.unspecified(settings=$.pattern.condition.obj(key)),
+          ],
+        },
+      },
+      num: $.pattern.condition.number,
+      number: {
+        len: $.pattern.condition.number.length,
+        length: {
+          // Checks if data is equal to zero.
+          //
+          // Use with the ANY / ALL operator to match empty data.
+          // Use with the NONE operator to match non-empty data.
+          eq_zero(key=null):
+            $.condition.number.length.equal_to(settings=$.pattern.condition.obj(key) { value: 0 }),
+          // Checks if data is greater than zero.
+          //
+          // Use with the ANY / ALL operator to match non-empty data.
+          // Use with the NONE operator to match empty data.
+          gt_zero(key=null):
+            $.condition.number.length.greater_than(settings=$.pattern.condition.obj(key) { value: 0 }),
+        },
+      },
+    },
+    tf: $.pattern.transform,
+    transform: {
+      // Conditional applies a transform when a single condition is met. If
+      // the condition does not contain a valid operator, then it is assumed
+      // to be an ANY operator.
+      conditional(condition, transform): {
+        local c = if std.objectHas(condition, 'type') then { operator: 'any', inspectors: [condition] } else condition,
+
+        type: 'meta_switch',
+        settings: { cases: [{ condition: c, transform: transform }] },
+      },
+      fmt: $.pattern.transform.format,
+      format: {
+        // Creates JSON Lines text from data. Only valid JSON text is included.
+        jsonl: [
+          $.pattern.tf.conditional(
+            condition=$.cnd.meta.negate({ inspector: $.cnd.fmt.json() }),
+            transform=$.tf.util.drop(),
+          ),
+          $.tf.agg.to.arr(),
+          $.tf.arr.join({ separator: '\n' }),
+          $.tf.str.append({ suffix: '\n' }),
+        ],
+      },
+    },
+  },
+  // Utility functions that can be used in conditions and transforms.
   helpers: {
-    // if input is not an array, then this returns an array
+    // If the input is not an array, then this returns it as an array.
     make_array(i): if !std.isArray(i) then [i] else i,
-    key: {
-      // if key is foo and arr is bar, then result is foo.bar
-      // if key is foo and arr is [bar, baz], then result is foo.bar.baz
+    obj: $.helpers.object,
+    object: {
+      // If key is `foo` and arr is `bar`, then the result is `foo.bar`.
+      // If key is `foo` and arr is `[bar, baz]`, then the result is `foo.bar.baz`.
       append(key, arr): std.join('.', $.helpers.make_array(key) + $.helpers.make_array(arr)),
-      // if key is foo, then result is foo.-1
+      // If key is `foo`, then the result is `foo.-1`.
       append_array(key): key + '.-1',
-      // if key is foo and e is 0, then result is foo.0
+      // If key is `foo` and e is `0`, then the result is `foo.0`.
       get_element(key, e=0): std.join('.', [key, if std.isNumber(e) then std.toString(e) else e]),
     },
-    inspector: {
-      // validates base settings of any inspector by checking for the
-      // existence of any fields except key and negate
-      validate(settings): std.all([
-        if !std.member(['key', 'negate'], x) then false else true
-        for x in std.objectFields(settings)
-      ]),
-    },
-    // dynamically flattens processor configurations
-    flatten_processors(processor): std.flattenArrays([
-      if std.objectHas(p, 'processor') then
-        if std.isArray(p.processor) then p.processor
-        else [p.processor]
-      else [p]
-
-      for p in $.helpers.make_array(processor)
-    ]),
-  },
-  interfaces: {
-    // mirrors interfaces from the condition package
-    operator: {
-      all(i): { operator: 'all', inspectors: if !std.isArray(i) then [i] else i },
-      any(i): { operator: 'any', inspectors: if !std.isArray(i) then [i] else i },
-      none(i): { operator: 'none', inspectors: if !std.isArray(i) then [i] else i },
-    },
-    inspector: {
-      settings: { key: null, negate: null },
-      bitmath(options=$.defaults.inspector.bitmath.options,
-             settings=$.interfaces.inspector.settings): {
-        local opt = std.mergePatch($.defaults.inspector.bitmath.options, options),
-
-        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
-        local s = std.mergePatch($.interfaces.inspector.settings, settings),
-
-        type: 'bitmath',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      condition(options=null,
-                settings=$.interfaces.inspector.settings): {
-        assert options != null : 'invalid inspector options',
-        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
-        local s = std.mergePatch($.interfaces.inspector.settings, settings),
-
-        type: 'condition',
-        settings: std.mergePatch({ options: options }, s),
-      },
-      content(options=$.defaults.inspector.content.options,
-              settings=$.interfaces.inspector.settings): {
-        local opt = std.mergePatch($.defaults.inspector.content.options, options),
-
-        assert options != {} : 'invalid inspector options',
-        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
-        local s = std.mergePatch($.interfaces.inspector.settings, settings),
-
-        type: 'content',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      for_each(options=$.defaults.inspector.for_each.options,
-               settings=$.interfaces.inspector.settings): {
-        local opt = std.mergePatch($.defaults.inspector.for_each.options, options),
-
-        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
-        local s = std.mergePatch($.interfaces.inspector.settings, settings),
-
-        type: 'for_each',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      ip(options=$.defaults.inspector.ip.options,
-         settings=$.interfaces.inspector.settings): {
-        local opt = std.mergePatch($.defaults.inspector.ip.options, options),
-
-        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
-        local s = std.mergePatch($.interfaces.inspector.settings, settings),
-
-        type: 'ip',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      json_schema(options=$.defaults.inspector.json_schema.options,
-                  settings=$.interfaces.inspector.settings): {
-        local opt = std.mergePatch($.defaults.inspector.json_schema.options, options),
-
-        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
-        local s = std.mergePatch($.interfaces.inspector.settings, settings),
-
-        type: 'json_schema',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      json_valid(settings=$.interfaces.inspector.settings): {
-        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
-        local s = std.mergePatch($.interfaces.inspector.settings, settings),
-
-        type: 'json_valid',
-        settings: s,
-      },
-      length(options=$.defaults.inspector.length.options,
-             settings=$.interfaces.inspector.settings): {
-        local opt = std.mergePatch($.defaults.inspector.length.options, options),
-
-        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
-        local s = std.mergePatch($.interfaces.inspector.settings, settings),
-
-        type: 'length',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      random: {
-        type: 'random',
-      },
-      regexp(options=$.defaults.inspector.regexp.options,
-             settings=$.interfaces.inspector.settings): {
-        local opt = std.mergePatch($.defaults.inspector.regexp.options, options),
-
-        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
-        local s = std.mergePatch($.interfaces.inspector.settings, settings),
-
-        type: 'regexp',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      strings(options=$.defaults.inspector.strings.options,
-              settings=$.interfaces.inspector.settings): {
-        local opt = std.mergePatch($.defaults.inspector.strings.options, options),
-
-        assert $.helpers.inspector.validate(settings) : 'invalid inspector settings',
-        local s = std.mergePatch($.interfaces.inspector.settings, settings),
-
-        type: 'strings',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-    },
-    // mirrors interfaces from the process package
-    processor: {
-      settings: { key: null, set_key: null, condition: null, ignore_close: null, ignore_errors: null },
-      aggregate(options=$.defaults.processor.aggregate.options,
-                settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.aggregate.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'aggregate',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      aws_dynamodb(options=$.defaults.processor.aws_dynamodb.options,
-                   settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.aws_dynamodb.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'aws_dynamodb',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      aws_lambda(options=$.defaults.processor.aws_lambda.options,
-                 settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.aws_lambda.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'aws_lambda',
-        settings: std.mergePatch({ options: opt }, s),
-
-      },
-      base64(options=$.defaults.processor.base64.options,
-             settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.base64.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'base64',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      capture(options=$.defaults.processor.capture.options,
-              settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.capture.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'capture',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      case(options=$.defaults.processor.case.options,
-           settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.case.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'case',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      convert(options=$.defaults.processor.convert.options,
-              settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.convert.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'convert',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      copy(settings=$.interfaces.processor.settings): {
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'copy',
-        settings: s,
-      },
-      delete(settings=$.interfaces.processor.settings): {
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'delete',
-        settings: s,
-      },
-      dns(options=$.defaults.processor.dns.options,
-          settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.dns.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'dns',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      domain(options=$.defaults.processor.domain.options,
-             settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.domain.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'domain',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      drop(settings=$.interfaces.processor.settings): {
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'drop',
-        settings: s,
-      },
-      expand(settings=$.interfaces.processor.settings): {
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'expand',
-        settings: s,
-      },
-      flatten(options=$.defaults.processor.flatten.options,
-              settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.flatten.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'flatten',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      for_each(options=$.defaults.processor.for_each.options,
-               settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.for_each.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'for_each',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      group(options=$.defaults.processor.group.options,
-            settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.group.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'group',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      gzip(options=$.defaults.processor.gzip.options,
-           settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.gzip.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'gzip',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      hash(options=$.defaults.processor.hash.options,
-           settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.hash.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'hash',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      http(options=$.defaults.processor.http.options,
-           settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.http.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'http',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      insert(options=$.defaults.processor.insert.options,
-             settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.insert.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'insert',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      ip_database(options=$.defaults.processor.ip_database.options,
-                  settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.ip_database.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'ip_database',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      join(options=$.defaults.processor.join.options,
-           settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.join.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'join',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      jq(options=$.defaults.processor.jq.options,
-           settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.jq.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'jq',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      kv_store(options=$.defaults.processor.kv_store.options,
-               settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.kv_store.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'kv_store',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      math(options=$.defaults.processor.math.options,
-           settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.math.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'math',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      pipeline(options=$.defaults.processor.pipeline.options,
-               settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.pipeline.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'pipeline',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      pretty_print(options=$.defaults.processor.pretty_print.options,
-                   settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.pretty_print.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'pretty_print',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      replace(options=$.defaults.processor.replace.options,
-              settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.replace.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'replace',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      split(options=$.defaults.processor.split.options,
-            settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.split.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'split',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-      time(options=$.defaults.processor.time.options,
-           settings=$.interfaces.processor.settings): {
-        local opt = std.mergePatch($.defaults.processor.time.options, options),
-        local s = std.mergePatch($.interfaces.processor.settings, settings),
-
-        type: 'time',
-        settings: std.mergePatch({ options: opt }, s),
-      },
-    },
-    // mirrors interfaces from the internal/sink package
-    sink: {
-      aws_dynamodb(settings=$.defaults.sink.aws_dynamodb.settings): {
-        local s = std.mergePatch($.defaults.sink.aws_dynamodb.settings, settings),
-
-        type: 'aws_dynamodb',
-        settings: s,
-      },
-      aws_kinesis(settings=$.defaults.sink.aws_kinesis.settings): {
-        local s = std.mergePatch($.defaults.sink.aws_kinesis.settings, settings),
-
-        type: 'aws_kinesis',
-        settings: s,
-      },
-      aws_kinesis_firehose(settings=$.defaults.sink.aws_kinesis_firehose.settings): {
-        local s = std.mergePatch($.defaults.sink.aws_kinesis_firehose.settings, settings),
-
-        type: 'aws_kinesis_firehose',
-        settings: s,
-      },
-      aws_s3(settings=$.defaults.sink.aws_s3.settings): {
-        local s = 
-          // if prefix or prefix_key exists, then the legacy object name style is used
-          // if path exists, then the new object name style is used
-          // TODO(v1.0.0)
-          if ( std.objectHas(settings, 'prefix') || std.objectHas(settings, 'prefix_key') ) || std.objectHas(settings, 'file_path')
-          then std.mergePatch($.defaults.sink.aws_s3.settings, settings)
-          // default settings for the new object name style
-          // this provides back compatibility with v0.8.4
-          else std.mergePatch({file_path: { time_format: '2006/01/02', uuid: true, extension: true }}, settings),
-        
-        type: 'aws_s3',
-        settings: s,
-      },
-      aws_sns(settings=$.defaults.sink.aws_sns.settings): {
-        local s = std.mergePatch($.defaults.sink.aws_sns.settings, settings),
-
-        type: 'aws_sns',
-        settings: s,
-      },
-      aws_sqs(settings=$.defaults.sink.aws_sqs.settings): {
-        local s = std.mergePatch($.defaults.sink.aws_sqs.settings, settings),
-
-        type: 'aws_sqs',
-        settings: s,
-      },
-      file(settings=$.defaults.sink.file.settings): {
-        local s = std.mergePatch($.defaults.sink.file.settings, settings),
-
-        type: 'file',
-        settings: s,
-      },
-      grpc(settings=$.defaults.sink.grpc.settings): {
-        local s = std.mergePatch($.defaults.sink.grpc.settings, settings),
-
-        type: 'grpc',
-        settings: s,
-      },
-      http(settings=$.defaults.sink.http.settings): {
-        local s = std.mergePatch($.defaults.sink.http.settings, settings),
-
-        type: 'http',
-        settings: s,
-      },
-      stdout: {
-        type: 'stdout',
-      },
-      sumologic(settings=$.defaults.sink.sumologic.settings): {
-        local s = std.mergePatch($.defaults.sink.sumologic.settings, settings),
-
-        type: 'sumologic',
-        settings: s,
-      },
-    },
-    // mirrors interfaces from the internal/kv_store package
-    kv_store: {
-      aws_dynamodb(settings=$.defaults.kv_store.aws_dynamodb.settings): {
-        local s = std.mergePatch($.defaults.kv_store.aws_dynamodb.settings, settings),
-
-        type: 'aws_dynamodb',
-        settings: s,
-      },
-      csv_file(settings=$.defaults.kv_store.csv_file.settings): {
-        local s = std.mergePatch($.defaults.kv_store.csv_file.settings, settings),
-
-        type: 'csv_file',
-        settings: s,
-      },
-      json_file(settings=$.defaults.kv_store.json_file.settings): {
-        local s = std.mergePatch($.defaults.kv_store.json_file.settings, settings),
-
-        type: 'json_file',
-        settings: s,
-      },
-      memory(settings=$.defaults.kv_store.memory.settings): {
-        local s = std.mergePatch($.defaults.kv_store.memory.settings, settings),
-
-        type: 'memory',
-        settings: s,
-      },
-      mmdb(settings=$.defaults.kv_store.mmdb.settings): {
-        local s = std.mergePatch($.defaults.kv_store.mmdb.settings, settings),
-
-        type: 'mmdb',
-        settings: s,
-      },
-      text_file(settings=$.defaults.kv_store.text_file.settings): {
-        local s = std.mergePatch($.defaults.kv_store.text_file.settings, settings),
-
-        type: 'text_file',
-        settings: s,
-      },
-    },
-    // mirrors interfaces from the internal/ip_database/database package
-    ip_database: {
-      ip2location(settings=$.defaults.ip_database.ip2location.settings): {
-        local s = std.mergePatch($.defaults.ip_database.ip2location.settings, settings),
-
-        type: 'ip2location',
-        settings: s,
-      },
-      maxmind_asn(settings=$.defaults.ip_database.maxmind_asn.settings): {
-        local s = std.mergePatch($.defaults.ip_database.maxmind_asn.settings, settings),
-
-        type: 'maxmind_asn',
-        settings: s,
-      },
-      maxmind_city(settings=$.defaults.ip_database.maxmind_city.settings): {
-        local s = std.mergePatch($.defaults.ip_database.maxmind_city.settings, settings),
-
-        type: 'maxmind_city',
-        settings: s,
-      },
-    },
-  },
-  patterns: {
-    inspector: {
-      // negates any inspector
-      negate(inspector): std.mergePatch(inspector, { settings: { negate: true } }),
-      ip: {
-        // checks if an IP address is private.
-        //
-        // use with the ANY operator to match private IP addresses.
-        // use with the NONE operator to match public IP addresses.
-        private(key=null): [
-          $.interfaces.inspector.ip(options={ type: 'loopback' }, settings={ key: key }),
-          $.interfaces.inspector.ip(options={ type: 'multicast' }, settings={ key: key }),
-          $.interfaces.inspector.ip(options={ type: 'multicast_link_local' }, settings={ key: key }),
-          $.interfaces.inspector.ip(options={ type: 'private' }, settings={ key: key }),
-          $.interfaces.inspector.ip(options={ type: 'unicast_link_local' }, settings={ key: key }),
-          $.interfaces.inspector.ip(options={ type: 'unspecified' }, settings={ key: key }),
-        ],
-      },
-      length: {
-        // checks if data is equal to zero.
-        //
-        // use with the ANY / ALL operator to match empty data.
-        // use with the NONE operator to match non-empty data.
-        eq_zero(key=null):
-          $.interfaces.inspector.length(options={ type: 'equals', value: 0 }, settings={ key: key }),
-        // checks if data is greater than zero.
-        //
-        // use with the ANY / ALL operator to match non-empty data.
-        // use with the NONE operator to match empty data.
-        gt_zero(key=null):
-          $.interfaces.inspector.length(options={ type: 'greater_than', value: 0 }, settings={ key: key }),
-      },
-      strings: {
-        contains(expression, key=null):
-          $.interfaces.inspector.strings(options={ type: 'contains', expression: expression }, settings={ key: key }),
-        equals(expression, key=null):
-          $.interfaces.inspector.strings(options={ type: 'equals', expression: expression }, settings={ key: key }),
-        starts_with(expression, key=null):
-          $.interfaces.inspector.strings(options={ type: 'starts_with', expression: expression }, settings={ key: key }),
-        ends_with(expression, key=null):
-          $.interfaces.inspector.strings(options={ type: 'ends_with', expression: expression }, settings={ key: key }),
-      },
-    },
-    operator: {
-      ip: {
-        // returns true if the key is a valid IP address and is not private
-        public(key=null): $.interfaces.operator.none(
-          $.patterns.inspector.ip.private(key=key)
-          + [
-            // the none operator combined with negation returns true if the key is a valid IP
-            $.interfaces.inspector.ip(options={ type: 'valid' }, settings={ key: key, negate: true }),
-          ]
-        ),
-        // returns true if the key is a private IP address
-        private(key=null): $.interfaces.operator.any($.patterns.inspector.ip.private(key=key)),
-      },
-    },
-    processor: {
-      // replaces a condition in one or more processors.
-      //
-      // by default this will not replace a condition if the
-      // processor(s) have no condition, but this can be overriden
-      // by setting force to true.
-      replace_condition(processor, condition, force=false): {
-        local p = if !std.isArray(processor)
-        then [processor]
-        else processor,
-
-        processor: [
-          if force || std.objectHas(p.settings, 'condition')
-          then std.mergePatch(p, { settings: { condition: condition } })
-          else p
-
-          for p in $.helpers.flatten_processors(p)
-        ],
-      },
-      // executes one or more processors if key is not empty.
-      //
-      // if negate is set to true, then this executes the processor(s)
-      // if key is empty.
-      if_not_empty(processor, key, set_key=null, negate=false): {
-        local i = if negate == false
-        then $.patterns.inspector.length.gt_zero(key=key)
-        else $.patterns.inspector.length.eq_zero(key=key),
-        local c = $.interfaces.operator.all(i),
-
-        processor: $.helpers.flatten_processors(
-          $.patterns.processor.replace_condition(processor, c, force=true)
-        ),
-      },
-      // performs a "move" by copying and deleting keys.
-      move(key, set_key, condition=null): {
-        processor: $.interfaces.processor.pipeline(
-          // @this requires special handling because the delete processor cannot
-          // delete complex objects.
-          //
-          // this works by copying the object into a metadata key, replacing the
-          // object with empty data, then copying the metadata key into the
-          // object.
-          options={ processors:
-            if key == '@this'
-            then [
-              $.interfaces.processor.copy(settings={ set_key: '!metadata move' }),
-              $.interfaces.processor.copy(settings={ key: '!metadata __null' }),
-              $.interfaces.processor.copy(settings={ key: '!metadata move', set_key: set_key }),
-            ]
-            else [
-              $.interfaces.processor.copy(settings={ key: key, set_key: set_key }),
-              $.interfaces.processor.delete(settings={ key: key }),
-            ] },
-          settings={ condition: condition },
-        ),
-      },
-      copy: {
-        // copies one or more keys into an array.
-        //
-        // apply a condition using the pipeline processor:
-        //  local c = foo,
-        //  local p = $.interfaces.processor.pipeline(processors=into_array(...).processors, condition=c),
-        //  processor: $.interfaces.processor.apply(p)
-        //
-        // embed within other processor arrays by appending:
-        //  processors: [
-        //    ...,
-        //    ...,
-        // ] + into_array(...).processors
-        into_array(keys, set_key, condition=null): {
-          local opts = $.interfaces.processor.copy,
-
-          processor: $.interfaces.processor.pipeline(
-            options={ processors: [
-              $.interfaces.processor.copy(settings={ key: key, set_key: $.helpers.key.append_array(set_key) })
-              for key in keys
-            ] }, settings={ condition: condition }
-          ),
-        },
-      },
-      dns: {
-        // queries the Team Cymru Malware Hash Registry (https://www.team-cymru.com/mhr).
-        //
-        // MHR enriches hash data with a summary of results from anti-virus engines.
-        // this pattern will cause significant latency in a data pipeline and should
-        // be used in combination with a caching deployment patterns.
-        query_team_cymru_mhr(key, set_key='!metadata dns.query_team_cymru_mhr', condition=null): {
-          local mhr_query = '!metadata query_team_cymru_mhr',
-          local mhr_response = '!metadata response_team_cymru_mhr',
-
-          processor: $.interfaces.processor.pipeline(
-            options={ processors: [
-              // creates the MHR query domain by concatenating the key with the MHR service domain
-              $.interfaces.processor.copy(
-                settings={ key: key, set_key: $.helpers.key.append_array(mhr_query) }
-              ),
-              $.interfaces.processor.insert(
-                options={ value: 'hash.cymru.com' },
-                settings={ set_key: $.helpers.key.append_array(mhr_query) }
-              ),
-              $.interfaces.processor.join(
-                options={ separator: '.' },
-                settings={ key: mhr_query, set_key: mhr_query }
-              ),
-              // performs MHR query and parses returned value `["epoch" "hits"]` into object `{"team_cymru":{"epoch":"", "hits":""}}`
-              $.interfaces.processor.dns(
-                options={ type: 'query_txt' },
-                settings={ key: mhr_query, set_key: mhr_response }
-              ),
-              $.interfaces.processor.split(
-                options={ separator: ' ' },
-                settings={ key: $.helpers.key.get_element(mhr_response, 0), set_key: mhr_response }
-              ),
-              $.interfaces.processor.copy(
-                settings={ key: $.helpers.key.get_element(mhr_response, 0), set_key: $.helpers.key.append(set_key, 'epoch') }
-              ),
-              $.interfaces.processor.copy(
-                settings={ key: $.helpers.key.get_element(mhr_response, 1), set_key: $.helpers.key.append(set_key, 'hits') }
-              ),
-              // converts values from strings to integers
-              $.interfaces.processor.convert(
-                options={ type: 'int' },
-                settings={
-                  key: $.helpers.key.append(set_key, 'epoch'),
-                  set_key: $.helpers.key.append(set_key, 'epoch'),
-                }
-              ),
-              $.interfaces.processor.convert(
-                options={ type: 'int' },
-                settings={
-                  key: $.helpers.key.append(set_key, 'hits'),
-                  set_key: $.helpers.key.append(set_key, 'hits'),
-                }
-              ),
-              // delete remaining keys
-              $.interfaces.processor.delete(settings={ key: mhr_query }),
-              $.interfaces.processor.delete(settings={ key: mhr_response }),
-            ] }, settings={ condition: condition }
-          ),
-        },
-      },
-      drop: {
-        // randomly drops data.
-        //
-        // this can be used for integration testing when full load is not required.
-        random: {
-          local c = $.interfaces.operator.all($.interfaces.inspector.random),
-          processor: $.interfaces.processor.drop(settings={ condition: c }),
-        },
-      },
-      hash: {
-        // hashes data using the SHA-256 algorithm.
-        //
-        // this patterns dynamically supports objects, plaintext data, and binary data.
-        data(set_key='!metadata hash.data', algorithm='sha256'): {
-          local hash_opts = { algorithm: algorithm },
-
-          // where data is temporarily stored during hashing
-          local key = '!metadata data',
-
-          local is_plaintext = $.interfaces.inspector.content(options={ type: 'text/plain; charset=utf-8' }, settings={ key: key }),
-          local is_json = $.interfaces.inspector.json_valid(),
-          local not_json = $.interfaces.inspector.json_valid(settings={ negate: true }),
-
-          processor: [
-            // copies data to metadata for hashing
-            $.interfaces.processor.copy(settings={ set_key: key }),
-            // if data is an object, then hash its contents
-            $.interfaces.processor.hash(hash_opts,
-                                        settings={ key: '@this', set_key: set_key, condition: $.interfaces.operator.all([is_plaintext, is_json]) }),
-            // if data is not an object but is plaintext, then hash it without decoding
-            $.interfaces.processor.hash(hash_opts,
-                                        settings={ key: key, set_key: set_key, condition: $.interfaces.operator.all([is_plaintext, not_json]) }),
-            // if data is not plaintext, then decode and hash it
-            $.interfaces.processor.pipeline(
-              options={ processors: [
-                $.interfaces.processor.base64(options={ direction: 'from' }),
-                $.interfaces.processor.hash(hash_opts),
-              ] },
-              settings={ key: key, set_key: set_key, condition: $.interfaces.operator.none([is_plaintext]) }
-            ),
-            // delete copied data
-            $.interfaces.processor.delete(settings={ key: key }),
-          ],
-        },
-      },
-      ip_database: {
-        // performs lookup for any public IP address in any IP enrichment database.
-        lookup_address(key, set_key='!metadata ip_database.lookup_address', options=null): {
-          assert options != null : 'ip_database.lookup_address options cannot be null',
-
-          // only performs lookups against public IP addresses
-          local c = $.patterns.operator.ip.public(key),
-
-          processor: $.interfaces.processor.ip_database(
-            options,
-            settings={ key: key, set_key: set_key, condition: c }
-          ),
-        },
-      },
-      http: {
-        // queries any GreyNoise IP API endpoints.
-        greynoise(key, set_key='!metadata greynoise', condition=null, secrets_provider='ENV', endpoint='community'): {
-          // by default, only lookup valid, public IP addresses
-          local c = if condition != null then condition else $.patterns.operator.ip.public(key),
-
-          // only the Community API is v3, all other API endpoints are v2
-          local version = if endpoint == 'community' then 'v3' else 'v2',
-
-          // the URL is composed of three variables:
-          // - the API version
-          // - the API endpoint
-          // - the HTTP processor's data interpolation substring
-          local url = std.format('https://api.greynoise.io/%s/%s/%s', [version, endpoint, '${data}']),
-
-          processor: $.interfaces.processor.http(
-            options={
-              url: url,
-              headers: [
-                {
-                  key: 'key',
-                  // the secret can be stored in any supported location
-                  value: std.format('${SECRETS_%s:GREYNOISE_KEY}', secrets_provider),
-                },
-              ],
-            },
-            settings={ key: key, set_key: set_key, condition: c }
-          ),
-        },
-        // queries any GreyNoise Bulk IP API endpoints. 
-        greynoise_bulk(key, set_key='!metadata greynoise', condition=null, secrets_provider='ENV', endpoint='noise/multi/quick'): {
-          // all bulk API endpoints are v2
-          local version = 'v2',
-
-          // the URL is composed of two variables:
-          // - the API version
-          // - the API endpoint
-          local url = std.format('https://api.greynoise.io/%s/%s', [version, endpoint]),
-
-          processor: $.interfaces.processor.http(
-            options={
-              url: url,
-              method: 'POST',
-              body_key: key,
-              headers: [
-                {
-                  key: 'key',
-                  // the secret can be stored in any supported location
-                  value: std.format('${SECRETS_%s:GREYNOISE_KEY}', secrets_provider),
-                },
-              ],
-            },
-            settings={ key: key, set_key: set_key, condition: condition }
-          ),
-        },
-      },
-      kv_store: {
-        // implements a cache-aside pattern using the KV store processor:
-        // - perform a get against the KV store
-        // - if the get succeeds, then the value is put into set_key
-        // - if the get fails, then the processor runs, the value is put into set_key,
-        // and the value is put into the KV store
-        //
-        // this pattern uses the KV store processor's prefix option to automatically
-        // organize keys in the store. by default the prefix is the value of set_key.
-        // if the processor produces no output (null), then a static value is put into
-        // the KV store that indicates the source processor and the result (e.g.,
-        // 'dns:null').
-        //
-        // the resulting KV store action (get or set) is stored in the key
-        // '!metadata kv_store.activity'. activity use this schema:
-        // 'kv_store:[action]:[set_key]'. for example: if the value retrieved from the
-        // store was set into the key 'server.domain', then the result is
-        // 'kv_store:get:server.domain'. if the same key were used in a set action,
-        // then the result is 'kv_store:set:server.domain'. this can be used as metadata
-        // to inform users which values were retrieved and put into the KV store.
-        //
-        // learn more about the cache-aside pattern here:
-        // https://docs.aws.amazon.com/whitepapers/latest/database-caching-strategies-using-redis/caching-patterns.html.
-        cache_aside(processor, kv_options, offset_ttl=0, prefix=null, keep_kv_open=true): {
-          local key = processor.settings.key,
-          local set_key = processor.settings.set_key,
-          local pfix = if prefix != null then prefix else set_key,
-          local c = if std.objectHas(processor.settings, 'condition') then processor.settings.condition else null,
-
-          // these keys are deleted when the pattern exits
-          local _path = '!metadata kv_store.cache_aside',
-          local _store_key = '!metadata kv_store.cache_aside.value',
-          local _processor_flag = '!metadata kv_store.cache_aside.insp.processor_flag',
-          local _null_flag = '!metadata kv_store.cache_aside.insp.null_flag',
-          local _kv_store_activity = '!metadata _kv_store.cache_aside.activity',
-
-          // this key persists after the pattern exits
-          // activity from every KV store can be retained by copying this key into the
-          // capsule's data
-          local kv_store_activity = '!metadata kv_store.activity',
-
-          local kv_hit = $.interfaces.operator.all([
-            $.patterns.inspector.length.gt_zero(key=_store_key),
-          ]),
-
-          // if there was no result from the KV store and the processor flag is bool
-          // true, then the processor runs
-          local kv_miss = $.interfaces.operator.all([
-            $.patterns.inspector.length.eq_zero(key=_store_key),
-            $.patterns.inspector.length.gt_zero(key=_processor_flag),
-          ]),
-
-          // if the processor ran and the result is null, then a static value is
-          // crearted for putting into the KV store
-          local processor_returned_null = $.interfaces.operator.all([
-            $.patterns.inspector.length.gt_zero(key=_processor_flag),
-            $.patterns.inspector.length.eq_zero(key=set_key),
-          ]),
-          local insert_static_val = $.interfaces.operator.all([
-            $.patterns.inspector.length.gt_zero(key=_null_flag),
-          ]),
-
-          processor:
-            [
-              // flag determines if the processor should run based on its condition
-              $.interfaces.processor.insert(
-                settings={ set_key: _processor_flag, condition: c },
-                options={ value: true }
-              ),
-              // performs a KV store get using the value from set_key as a prefix
-              // this relies on the condition from the processor
-              $.interfaces.processor.kv_store(
-                settings={ key: key, set_key: _store_key, condition: c, ignore_close: keep_kv_open },
-                options={ type: 'get', prefix: pfix, kv_options: kv_options }
-              ),
-              // if there is a hit in the KV store, then the value is set and tagged
-              $.interfaces.processor.copy(
-                settings={ key: _store_key, set_key: set_key, condition: kv_hit },
-              ),
-              $.interfaces.processor.copy(
-                settings={ key: set_key, set_key: set_key, condition: kv_hit },
-              ),
-              $.interfaces.processor.insert(
-                settings={ set_key: $.helpers.key.append_array(_kv_store_activity), condition: kv_hit },
-                options={ value: 'kv_store:get' }
-              ),
-              $.interfaces.processor.insert(
-                settings={ set_key: $.helpers.key.append_array(_kv_store_activity), condition: kv_hit },
-                options={ value: set_key }
-              ),
-              $.interfaces.processor.join(
-                settings={ key: _kv_store_activity, set_key: $.helpers.key.append_array(kv_store_activity), condition: kv_hit },
-                options={ separator: ':' }
-              ),
-              // if there is a miss and the processor flag is true, then the processor runs
-              $.patterns.processor.replace_condition(processor, condition=kv_miss, force=true).processor[0],
-              // if the processor result is null, then a static value is created in its place
-              // the value indicates which processor produced the null value (e.g., 'dns:null')
-              $.interfaces.processor.insert(
-                settings={ set_key: _null_flag, condition: processor_returned_null },
-                options={ value: true }
-              ),
-              $.interfaces.processor.delete(
-                settings={ key: set_key, condition: insert_static_val },
-              ),
-              $.interfaces.processor.insert(
-                settings={ set_key: $.helpers.key.append_array(set_key), condition: insert_static_val },
-                options={ value: processor.type }
-              ),
-              $.interfaces.processor.insert(
-                settings={ set_key: $.helpers.key.append_array(set_key), condition: insert_static_val },
-                options={ value: 'null' }
-              ),
-              $.interfaces.processor.join(
-                settings={ key: set_key, set_key: set_key, condition: insert_static_val },
-                options={ separator: ':' }
-              ),
-              // the resulting value is put into the KV store and tagged
-              $.interfaces.processor.copy(
-                settings={ key: set_key, set_key: set_key, condition: kv_miss },
-              ),
-              $.interfaces.processor.kv_store(
-                settings={ key: processor.settings.set_key, set_key: key, condition: kv_miss, ignore_close: keep_kv_open },
-                options={ type: 'set', prefix: pfix, offset_ttl: offset_ttl, kv_options: kv_options }
-              ),
-              $.interfaces.processor.insert(
-                settings={ set_key: $.helpers.key.append_array(_kv_store_activity), condition: kv_miss },
-                options={ value: 'kv_store:set' }
-              ),
-              $.interfaces.processor.insert(
-                settings={ set_key: $.helpers.key.append_array(_kv_store_activity), condition: kv_miss },
-                options={ value: set_key }
-              ),
-              $.interfaces.processor.join(
-                settings={ key: _kv_store_activity, set_key: $.helpers.key.append_array(kv_store_activity), condition: kv_miss },
-                options={ separator: ':' }
-              ),
-              // temporary keys are removed to prevent collisions with the next pattern call
-              $.interfaces.processor.delete(
-                settings={ key: _path }
-              ),
-            ],
-        },
-        // provides indicator matching against an Emerging Threats Compromised IP address file.
-        // more information about Emerging Threats is available here: https://doc.emergingthreats.net/.
-        emerging_threats_compromised_address(
-          key,
-          set_key=$.helpers.key.append_array('!metadata kv_store.emerging_threats_compromised_address'),
-          file='https://rules.emergingthreats.net/blockrules/compromised-ips.txt',
-          keep_kv_open=true,
-        ): {
-          local kv_options = {
-            file: file,
-          },
-
-          local _et_comp_addr = '!metadata _kv_store.emerging_threats_compromised_address',
-
-          processor: [
-            $.interfaces.processor.kv_store(
-              settings={ key: key, set_key: _et_comp_addr, condition: $.patterns.operator.ip.public(key=key), ignore_close: keep_kv_open },
-              options={ type: 'get', kv_options: $.interfaces.kv_store.text_file(kv_options) }
-            ),
-            $.interfaces.processor.pipeline(
-              // the text file KV store returns true or false, so we use the string inspector
-              // to coerce the value to a string then compare it to 'true'
-              settings={ condition: $.interfaces.operator.all([
-                $.interfaces.inspector.strings(
-                  settings={ key: _et_comp_addr },
-                  options={ type: 'equals', expression: 'true' }
-                ),
-              ]) },
-              options={ processors: [
-                // previous value, either true or false, is deleted so the field can be reused
-                $.interfaces.processor.delete(
-                  settings={ key: _et_comp_addr },
-                ),
-                $.interfaces.processor.insert(
-                  settings={ set_key: $.helpers.key.append(_et_comp_addr, 'matched_field') },
-                  options={ value: key }
-                ),
-                $.interfaces.processor.insert(
-                  settings={ set_key: $.helpers.key.append(_et_comp_addr, 'reference') },
-                  options={ value: file }
-                ),
-                $.interfaces.processor.copy(
-                  settings={ key: _et_comp_addr, set_key: set_key },
-                ),
-              ] },
-            ),
-            // temporary keys are removed to prevent collisions with the next pattern call
-            $.interfaces.processor.delete(
-              settings={ key: _et_comp_addr },
-            ),
-          ],
-        },
-        // provides indicator matching against a Zeek Intelligence Framework file. the
-        // file is loaded into a read-only key-value store and by default indicator matches
-        // are stored in an array in the capsule's metadata. KV store misses (no indicator
-        // match) are ignored. more information about the Zeek Intelligence Framework
-        // can be found here: https://docs.zeek.org/en/master/frameworks/intel.html.
-        //
-        // by default this pattern is compatible with the Zeek Intelligence Feeds provided
-        // by Critical Path Security: https://github.com/CriticalPathSecurity/Zeek-Intelligence-Feeds.
-        zeek_intel(
-          key,
-          set_key=$.helpers.key.append_array('!metadata kv_store.zeek_intel'),
-          condition=null,
-          file=null,
-          header='indicator\tindicator_type\tmeta_source\tmeta_do_notice\tmeta_desc',
-          keep_kv_open=true
-        ): {
-          local kv_options = {
-            file: file,
-            column: 'indicator',
-            delimiter: '\t',
-            header: header,
-          },
-
-          local _zeek_intel = '!metadata _kv_store.zeek_intel',
-
-          processor:
-            [
-              $.interfaces.processor.kv_store(
-                settings={ key: key, set_key: _zeek_intel, condition: condition, ignore_close: keep_kv_open },
-                options={ type: 'get', kv_options: $.interfaces.kv_store.csv_file(kv_options) }
-              ),
-              // if the indicator is matched, then insert the field it matched on and copy to
-              // the set_key. this mimics the schema of the Zeek Intel framework.
-              $.interfaces.processor.pipeline(
-                settings={ condition: $.interfaces.operator.all([
-                  $.patterns.inspector.length.gt_zero(key=_zeek_intel),
-                ]) },
-                options={ processors: [
-                  $.interfaces.processor.insert(
-                    settings={ set_key: $.helpers.key.append(_zeek_intel, 'seen_where') },
-                    options={ value: key }
-                  ),
-                  $.interfaces.processor.copy(
-                    settings={ key: _zeek_intel, set_key: set_key },
-                  ),
-                ] },
-              ),
-              // temporary keys are removed to prevent collisions with the next pattern call
-              $.interfaces.processor.delete(
-                settings={ key: _zeek_intel },
-              ),
-            ],
-        },
-      },
-      time: {
-        // generates current time.
-        now(set_key='!metadata time.now', set_format=$.defaults.processor.time.set_format, condition=null): {
-          processor: $.interfaces.processor.time(
-            options={ format: 'now', set_format: set_format },
-            settings={ set_key: set_key, condition: condition }
-          ),
-        },
-      },
+    abbv(settings): std.mergePatch(settings, {
+      object: if std.objectHas(settings, 'object') then $.helpers.abbv_obj(settings.object) else if std.objectHas(settings, 'obj') then $.helpers.abbv_obj(settings.obj) else null,
+      obj: null,
+    }),
+    abbv_obj(s): {
+      source_key: if std.objectHas(s, 'src') then s.src else if std.objectHas(s, 'source_key') then s.source_key else null,
+      src: null,
+      target_key: if std.objectHas(s, 'trg') then s.trg else if std.objectHas(s, 'target_key') then s.target_key else null,
+      trg: null,
+      batch_key: if std.objectHas(s, 'btch') then s.batch else if std.objectHas(s, 'batch_key') then s.batch_key else null,
     },
   },
 }

@@ -7,34 +7,18 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sns/snsiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
+	iaws "github.com/brexhq/substation/internal/aws"
 	"github.com/google/uuid"
 )
 
-// New creates a new session for SNS.
-func New() *sns.SNS {
-	conf := aws.NewConfig()
+// New returns a configured SNS client.
+func New(cfg iaws.Config) *sns.SNS {
+	conf, sess := iaws.New(cfg)
 
-	// provides forward compatibility for the Go SDK to support env var configuration settings
-	// https://github.com/aws/aws-sdk-go/issues/4207
-	max, found := os.LookupEnv("AWS_MAX_ATTEMPTS")
-	if found {
-		m, err := strconv.Atoi(max)
-		if err != nil {
-			panic(err)
-		}
-
-		conf = conf.WithMaxRetries(m)
-	}
-
-	c := sns.New(
-		session.Must(session.NewSession()),
-		conf,
-	)
-
+	c := sns.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
 		xray.AWS(c.Client)
 	}
@@ -53,31 +37,32 @@ func (a *API) IsEnabled() bool {
 }
 
 // Setup creates an SNS client.
-func (a *API) Setup() {
-	a.Client = New()
+func (a *API) Setup(cfg iaws.Config) {
+	a.Client = New(cfg)
 }
 
 // Publish is a convenience wrapper for publishing a message to an SNS topic.
 func (a *API) Publish(ctx aws.Context, arn string, data []byte) (*sns.PublishOutput, error) {
-	mgid := uuid.New().String()
+	req := &sns.PublishInput{
+		Message:  aws.String(string(data)),
+		TopicArn: aws.String(arn),
+	}
 
-	resp, err := a.Client.PublishWithContext(
-		ctx,
-		&sns.PublishInput{
-			Message:        aws.String(string(data)),
-			MessageGroupId: aws.String(mgid),
-			TopicArn:       aws.String(arn),
-		},
-	)
+	if strings.HasSuffix(arn, ".fifo") {
+		mgid := uuid.New().String()
+		req.MessageGroupId = aws.String(mgid)
+	}
+
+	resp, err := a.Client.PublishWithContext(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("publish arn %s: %v", arn, err)
+		return nil, fmt.Errorf("publish: topic %s: %v", arn, err)
 	}
 
 	return resp, nil
 }
 
 // PublishBatch is a convenience wrapper for publishing a batch of messages to an SNS topic.
-func (a *API) PublishBatch(ctx aws.Context, arn string, data [][]byte) (*sns.PublishBatchOutput, error) {
+func (a *API) PublishBatch(ctx aws.Context, topic string, data [][]byte) (*sns.PublishBatchOutput, error) {
 	mgid := uuid.New().String()
 
 	var entries []*sns.PublishBatchRequestEntry
@@ -87,7 +72,7 @@ func (a *API) PublishBatch(ctx aws.Context, arn string, data [][]byte) (*sns.Pub
 			Message: aws.String(string(d)),
 		}
 
-		if strings.HasSuffix(arn, ".fifo") {
+		if strings.HasSuffix(topic, ".fifo") {
 			entry.MessageGroupId = aws.String(mgid)
 		}
 
@@ -98,7 +83,7 @@ func (a *API) PublishBatch(ctx aws.Context, arn string, data [][]byte) (*sns.Pub
 		ctx,
 		&sns.PublishBatchInput{
 			PublishBatchRequestEntries: entries,
-			TopicArn:                   aws.String(arn),
+			TopicArn:                   aws.String(topic),
 		},
 	)
 
@@ -117,12 +102,12 @@ func (a *API) PublishBatch(ctx aws.Context, arn string, data [][]byte) (*sns.Pub
 		}
 
 		if len(retry) > 0 {
-			return a.PublishBatch(ctx, arn, retry)
+			return a.PublishBatch(ctx, topic, retry)
 		}
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("publish batch arn %s: %v", arn, err)
+		return nil, fmt.Errorf("publish_batch: topic %s: %v", topic, err)
 	}
 
 	return resp, nil

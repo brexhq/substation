@@ -12,19 +12,15 @@ CHANGELOG.md
 
 # ignore all JSON by default
 *.json
+*.jsonl
 # allow Visual Studio Code devcontainer config file
 !.devcontainer/devcontainer.json
 # allow Visual Studio Code settings config file
 !.vscode/settings.json
-# allow static JSON files in the examples/ directory
-!examples/condition/data.json
-!examples/*/data.json
-!examples/quickstart/data.json
-# ignore playground files
-playground.wasm
-playground.wasm.gz
-wasm_exec.js
-build/playground/substation_logo.png
+# allow specific JSON files in the examples/ directory
+!examples/**/data*.json
+!examples/**/data*.jsonl
+!examples/**/stdout.jsonl
 
 # Go profiling files
 *.prof

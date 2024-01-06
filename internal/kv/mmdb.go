@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/brexhq/substation/config"
+	_config "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/internal/file"
 	"github.com/oschwald/maxminddb-golang"
@@ -36,7 +37,7 @@ type kvMMDB struct {
 // Create a new MMDB KV store.
 func newKVMMDB(cfg config.Config) (*kvMMDB, error) {
 	var store kvMMDB
-	if err := config.Decode(cfg.Settings, &store); err != nil {
+	if err := _config.Decode(cfg.Settings, &store); err != nil {
 		return nil, err
 	}
 

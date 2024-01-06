@@ -5,38 +5,21 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
 	"github.com/aws/aws-xray-sdk-go/xray"
+	iaws "github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/media"
 )
 
 // NewS3 returns a configured S3 client.
-func NewS3() *s3.S3 {
-	conf := aws.NewConfig()
+func NewS3(cfg iaws.Config) *s3.S3 {
+	conf, sess := iaws.New(cfg)
 
-	// provides forward compatibility for the Go SDK to support env var configuration settings
-	// https://github.com/aws/aws-sdk-go/issues/4207
-	max, found := os.LookupEnv("AWS_MAX_ATTEMPTS")
-	if found {
-		m, err := strconv.Atoi(max)
-		if err != nil {
-			panic(err)
-		}
-
-		conf = conf.WithMaxRetries(m)
-	}
-
-	c := s3.New(
-		session.Must(session.NewSession()),
-		conf,
-	)
-
+	c := s3.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
 		xray.AWS(c.Client)
 	}
@@ -45,8 +28,8 @@ func NewS3() *s3.S3 {
 }
 
 // NewS3Downloader returns a configured Downloader client.
-func NewS3Downloader() *s3manager.Downloader {
-	return s3manager.NewDownloaderWithClient(NewS3())
+func NewS3Downloader(cfg iaws.Config) *s3manager.Downloader {
+	return s3manager.NewDownloaderWithClient(NewS3(cfg))
 }
 
 // DownloaderAPI wraps the Downloader API interface.
@@ -55,8 +38,8 @@ type DownloaderAPI struct {
 }
 
 // Setup creates a new Downloader client.
-func (a *DownloaderAPI) Setup() {
-	a.Client = NewS3Downloader()
+func (a *DownloaderAPI) Setup(cfg iaws.Config) {
+	a.Client = NewS3Downloader(cfg)
 }
 
 // IsEnabled returns true if the client is enabled and ready for use.
@@ -66,7 +49,6 @@ func (a *DownloaderAPI) IsEnabled() bool {
 
 // Download is a convenience wrapper for downloading an object from S3.
 func (a *DownloaderAPI) Download(ctx aws.Context, bucket, key string, dst io.WriterAt) (int64, error) {
-	// TODO(v1.0.0): add ARN support
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
@@ -81,8 +63,8 @@ func (a *DownloaderAPI) Download(ctx aws.Context, bucket, key string, dst io.Wri
 }
 
 // NewS3Uploader returns a configured Uploader client.
-func NewS3Uploader() *s3manager.Uploader {
-	return s3manager.NewUploaderWithClient(NewS3())
+func NewS3Uploader(cfg iaws.Config) *s3manager.Uploader {
+	return s3manager.NewUploaderWithClient(NewS3(cfg))
 }
 
 // UploaderAPI wraps the Uploader API interface.
@@ -91,8 +73,8 @@ type UploaderAPI struct {
 }
 
 // Setup creates a new Uploader client.
-func (a *UploaderAPI) Setup() {
-	a.Client = NewS3Uploader()
+func (a *UploaderAPI) Setup(cfg iaws.Config) {
+	a.Client = NewS3Uploader(cfg)
 }
 
 // IsEnabled returns true if the client is enabled and ready for use.
@@ -122,7 +104,6 @@ func (a *UploaderAPI) Upload(ctx aws.Context, bucket, key string, src io.Reader)
 	if _, err := dst.Seek(0, 0); err != nil {
 		return nil, fmt.Errorf("s3manager upload bucket %s key %s: %v", bucket, key, err)
 	}
-	// TODO(v1.0.0): add ARN support
 	input := &s3manager.UploadInput{
 		Bucket:      aws.String(bucket),
 		Key:         aws.String(key),

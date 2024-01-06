@@ -6,7 +6,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/internal/aws"
 	"github.com/brexhq/substation/internal/aws/dynamodb"
+	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 )
 
@@ -17,8 +19,10 @@ import (
 //
 // - Does not support Global Secondary Indexes
 type kvAWSDynamoDB struct {
-	// Table is the DynamoDB table that items are read and written to.
-	Table      string `json:"table"`
+	AWS   iconfig.AWS   `json:"aws"`
+	Retry iconfig.Retry `json:"retry"`
+	// TableName is the DynamoDB table that items are read and written to.
+	TableName  string `json:"table_name"`
 	Attributes struct {
 		// PartitionKey is the table's parition key attribute.
 		//
@@ -37,17 +41,21 @@ type kvAWSDynamoDB struct {
 		// about DynamoDB's TTL implementation here: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html.
 		TTL string `json:"ttl"`
 	} `json:"attributes"`
-	api dynamodb.API
+	// ConsistentRead specifies whether or not to use strongly consistent reads.
+	//
+	// This is optional and defaults to false (eventually consistent reads).
+	ConsistentRead bool `json:"consistent_read"`
+	client         dynamodb.API
 }
 
 // Create a new AWS DynamoDB KV store.
-func newKVAWSDyanmoDB(cfg config.Config) (*kvAWSDynamoDB, error) {
+func newKVAWSDynamoDB(cfg config.Config) (*kvAWSDynamoDB, error) {
 	var store kvAWSDynamoDB
-	if err := config.Decode(cfg.Settings, &store); err != nil {
+	if err := iconfig.Decode(cfg.Settings, &store); err != nil {
 		return nil, err
 	}
 
-	if store.Table == "" {
+	if store.TableName == "" {
 		return nil, fmt.Errorf("kv: aws_dynamodb: table %+v: %v", &store, errors.ErrMissingRequiredOption)
 	}
 
@@ -73,7 +81,7 @@ func (store *kvAWSDynamoDB) Get(ctx context.Context, key string) (interface{}, e
 		m[store.Attributes.SortKey] = "substation:kv_store"
 	}
 
-	resp, err := store.api.GetItem(ctx, store.Table, m)
+	resp, err := store.client.GetItem(ctx, store.TableName, m, store.ConsistentRead)
 	if err != nil {
 		return "", err
 	}
@@ -106,7 +114,7 @@ func (store *kvAWSDynamoDB) Set(ctx context.Context, key string, val interface{}
 		return err
 	}
 
-	if _, err := store.api.PutItem(ctx, store.Table, record); err != nil {
+	if _, err := store.client.PutItem(ctx, store.TableName, record); err != nil {
 		return err
 	}
 
@@ -134,7 +142,7 @@ func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val inte
 		return err
 	}
 
-	if _, err := store.api.PutItem(ctx, store.Table, record); err != nil {
+	if _, err := store.client.PutItem(ctx, store.TableName, record); err != nil {
 		return err
 	}
 
@@ -143,21 +151,25 @@ func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val inte
 
 // IsEnabled returns true if the DynamoDB client is ready for use.
 func (store *kvAWSDynamoDB) IsEnabled() bool {
-	return store.api.IsEnabled()
+	return store.client.IsEnabled()
 }
 
 // Setup creates a new DynamoDB client.
 func (store *kvAWSDynamoDB) Setup(ctx context.Context) error {
-	if store.Table == "" || store.Attributes.PartitionKey == "" {
+	if store.TableName == "" || store.Attributes.PartitionKey == "" {
 		return errors.ErrMissingRequiredOption
 	}
 
-	// avoids unnecessary setup
-	if store.api.IsEnabled() {
+	// Avoids unnecessary setup.
+	if store.client.IsEnabled() {
 		return nil
 	}
 
-	store.api.Setup()
+	store.client.Setup(aws.Config{
+		Region:     store.AWS.Region,
+		RoleARN:    store.AWS.RoleARN,
+		MaxRetries: store.Retry.Count,
+	})
 
 	return nil
 }

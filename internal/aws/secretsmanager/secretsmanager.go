@@ -3,36 +3,19 @@ package secretsmanager
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
 	"github.com/aws/aws-xray-sdk-go/xray"
+	iaws "github.com/brexhq/substation/internal/aws"
 )
 
 // New returns a configured Secrets Manager client.
-func New() *secretsmanager.SecretsManager {
-	conf := aws.NewConfig()
+func New(cfg iaws.Config) *secretsmanager.SecretsManager {
+	conf, sess := iaws.New(cfg)
 
-	// provides forward compatibility for the Go SDK to support env var configuration settings
-	// https://github.com/aws/aws-sdk-go/issues/4207
-	max, found := os.LookupEnv("AWS_MAX_ATTEMPTS")
-	if found {
-		m, err := strconv.Atoi(max)
-		if err != nil {
-			panic(err)
-		}
-
-		conf = conf.WithMaxRetries(m)
-	}
-
-	c := secretsmanager.New(
-		session.Must(session.NewSession()),
-		conf,
-	)
-
+	c := secretsmanager.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
 		xray.AWS(c.Client)
 	}
@@ -46,8 +29,8 @@ type API struct {
 }
 
 // Setup creates a new Secrets Manager client.
-func (a *API) Setup() {
-	a.Client = New()
+func (a *API) Setup(cfg iaws.Config) {
+	a.Client = New(cfg)
 }
 
 // IsEnabled returns true if the client is enabled and ready for use.
@@ -57,7 +40,6 @@ func (a *API) IsEnabled() bool {
 
 // GetSecret is a convenience wrapper for getting a secret from Secrets Manager.
 func (a *API) GetSecret(ctx aws.Context, secretName string) (secret string, err error) {
-	// TODO(v1.0.0): add ARN support
 	input := &secretsmanager.GetSecretValueInput{
 		SecretId:     aws.String(secretName),
 		VersionStage: aws.String("AWSCURRENT"), // VersionStage defaults to AWSCURRENT if unspecified

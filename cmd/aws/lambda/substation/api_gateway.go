@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"sync"
+	"encoding/json"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/brexhq/substation/cmd"
-	"github.com/brexhq/substation/config"
-	"golang.org/x/sync/errgroup"
+	"github.com/brexhq/substation"
+	"github.com/brexhq/substation/message"
 )
+
+var gateway500Response = events.APIGatewayProxyResponse{StatusCode: 500}
 
 type gatewayMetadata struct {
 	Resource string            `json:"resource"`
@@ -18,63 +18,72 @@ type gatewayMetadata struct {
 }
 
 func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	sub := cmd.New()
-
-	// retrieve and load configuration
-	cfg, err := getConfig(ctx)
+	// Retrieve and load configuration.
+	conf, err := getConfig(ctx)
 	if err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway: %v", err)
+		return gateway500Response, err
 	}
 
-	if err := sub.SetConfig(cfg); err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway: %v", err)
+	cfg := substation.Config{}
+	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
+		return gateway500Response, err
 	}
 
-	// maintains app state
-	group, ctx := errgroup.WithContext(ctx)
-
-	// load
-	var sinkWg sync.WaitGroup
-	sinkWg.Add(1)
-	group.Go(func() error {
-		return sub.Sink(ctx, &sinkWg)
-	})
-
-	// transform
-	var transformWg sync.WaitGroup
-	for w := 0; w < sub.Concurrency(); w++ {
-		transformWg.Add(1)
-		group.Go(func() error {
-			return sub.Transform(ctx, &transformWg)
-		})
+	sub, err := substation.New(ctx, cfg)
+	if err != nil {
+		return gateway500Response, err
 	}
 
-	// ingest
-	group.Go(func() error {
-		if len(request.Body) != 0 {
-			capsule := config.NewCapsule()
-			capsule.SetData([]byte(request.Body))
-			if _, err := capsule.SetMetadata(gatewayMetadata{
-				request.Resource,
-				request.Path,
-				request.Headers,
-			}); err != nil {
-				return fmt.Errorf("gateway handler: %v", err)
-			}
+	// Create metadata.
+	m := gatewayMetadata{
+		Resource: request.Resource,
+		Path:     request.Path,
+		Headers:  request.Headers,
+	}
 
-			sub.Send(capsule)
+	metadata, err := json.Marshal(m)
+	if err != nil {
+		return gateway500Response, err
+	}
+
+	b := []byte(request.Body)
+	msg := []*message.Message{
+		message.New().SetData(b).SetMetadata(metadata),
+		message.New(message.AsControl()),
+	}
+
+	res, err := sub.Transform(ctx, msg...)
+	if err != nil {
+		return gateway500Response, err
+	}
+
+	// Convert transformed messages to a JSON array.
+	var output []json.RawMessage
+	for _, msg := range res {
+		if msg.IsControl() {
+			continue
 		}
 
-		sub.WaitTransform(&transformWg)
-		sub.WaitSink(&sinkWg)
+		if !json.Valid(msg.Data()) {
+			return gateway500Response, errLambdaInvalidJSON
+		}
 
-		return nil
-	})
+		var rm json.RawMessage
+		if err := json.Unmarshal(msg.Data(), &rm); err != nil {
+			return gateway500Response, err
+		}
 
-	// block until ITL is complete
-	if err := sub.Block(ctx, group); err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500}, fmt.Errorf("gateway: %v", err)
+		output = append(output, rm)
 	}
 
-	return events.APIGatewayProxyResponse{StatusCode: 200}, nil
+	body, err := json.Marshal(output)
+	if err != nil {
+		return gateway500Response, err
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers:    map[string]string{"Content-Type": "application/json"},
+		Body:       string(body),
+	}, nil
 }

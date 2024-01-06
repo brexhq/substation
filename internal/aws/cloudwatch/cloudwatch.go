@@ -6,10 +6,10 @@ import (
 	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/aws/aws-sdk-go/service/cloudwatch/cloudwatchiface"
 	"github.com/aws/aws-xray-sdk-go/xray"
+	iaws "github.com/brexhq/substation/internal/aws"
 )
 
 const (
@@ -52,26 +52,10 @@ func init() {
 }
 
 // New returns a configured CloudWatch client.
-func New() *cloudwatch.CloudWatch {
-	conf := aws.NewConfig()
+func New(cfg iaws.Config) *cloudwatch.CloudWatch {
+	conf, sess := iaws.New(cfg)
 
-	// provides forward compatibility for the Go SDK to support env var configuration settings
-	// https://github.com/aws/aws-sdk-go/issues/4207
-	max, found := os.LookupEnv("AWS_MAX_ATTEMPTS")
-	if found {
-		m, err := strconv.Atoi(max)
-		if err != nil {
-			panic(err)
-		}
-
-		conf = conf.WithMaxRetries(m)
-	}
-
-	c := cloudwatch.New(
-		session.Must(session.NewSession()),
-		conf,
-	)
-
+	c := cloudwatch.New(sess, conf)
 	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
 		xray.AWS(c.Client)
 	}
@@ -85,8 +69,8 @@ type API struct {
 }
 
 // Setup creates a new CloudWatch client.
-func (a *API) Setup() {
-	a.Client = New()
+func (a *API) Setup(cfg iaws.Config) {
+	a.Client = New(cfg)
 }
 
 // IsEnabled returns true if the client is enabled and ready for use.

@@ -18,8 +18,8 @@ local sub = import '../../../build/config/substation.libsonnet';
     // This is identical to the previous example, but uses a pre-defined
     // pattern and library abbreviations.
     sub.pattern.tf.conditional(
-      condition=sub.cnd.str.eq({ object: { source_key: 'a' }, value: 'z' }),
-      transform=sub.tf.obj.insert({ object: { target_key: 'c' }, value: 'd' }),
+      condition=sub.cnd.str.eq({ obj: { src: 'a' }, value: 'z' }),
+      transform=sub.tf.obj.insert({ obj: { trg: 'c' }, value: 'd' }),
     ),
     // Applications usually rely on a `send` transform to send results
     // to a destination. These can be defined anywhere in the config.

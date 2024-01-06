@@ -14,8 +14,6 @@ import (
 )
 
 type stringCaptureConfig struct {
-	Object iconfig.Object `json:"object"`
-
 	// Pattern is the regular expression used to capture values.
 	Pattern string `json:"pattern"`
 	re      *regexp.Regexp
@@ -26,6 +24,8 @@ type stringCaptureConfig struct {
 	// capture is made. If a named capture group is used, then this
 	// is ignored.
 	Count int `json:"count"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *stringCaptureConfig) Decode(in interface{}) error {

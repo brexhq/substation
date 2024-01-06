@@ -26,15 +26,15 @@ const sendSQSMessageSizeLimit = 1024 * 1024 * 256
 var errSendSQSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSQSConfig struct {
-	Object        iconfig.Object  `json:"object"`
-	Batch         iconfig.Batch   `json:"batch"`
-	AuxTransforms []config.Config `json:"auxiliary_transforms"`
-
-	AWS   iconfig.AWS   `json:"aws"`
-	Retry iconfig.Retry `json:"retry"`
-
 	// ARN is the AWS SNS topic ARN that messages are sent to.
 	ARN string `json:"arn"`
+	// AuxTransforms are applied to batched data before it is sent.
+	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
+	Object iconfig.Object `json:"object"`
+	Batch  iconfig.Batch  `json:"batch"`
+	AWS    iconfig.AWS    `json:"aws"`
+	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *sendAWSSQSConfig) Decode(in interface{}) error {

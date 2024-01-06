@@ -15,12 +15,12 @@ import (
 )
 
 type enrichAWSLambdaConfig struct {
+	// FunctionName is the AWS Lambda function to synchronously invoke.
+	FunctionName string `json:"function_name"`
+
 	Object iconfig.Object `json:"object"`
 	AWS    iconfig.AWS    `json:"aws"`
 	Retry  iconfig.Retry  `json:"retry"`
-
-	// FunctionName is the AWS Lambda function to synchronously invoke.
-	FunctionName string `json:"function_name"`
 }
 
 func (c *enrichAWSLambdaConfig) Decode(in interface{}) error {

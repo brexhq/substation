@@ -18,19 +18,17 @@ import (
 )
 
 type sendHTTPPostConfig struct {
-	Object        iconfig.Object  `json:"object"`
-	Batch         iconfig.Batch   `json:"batch"`
-	AuxTransforms []config.Config `json:"auxiliary_transforms"`
-
 	// URL is the HTTP(S) endpoint that data is sent to.
 	URL string `json:"url"`
 	// Headers are an array of objects that contain HTTP headers sent in the request.
 	//
 	// This is optional and has no default.
-	Headers []struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
-	} `json:"headers"`
+	Headers map[string]string `json:"headers"`
+	// AuxTransforms are applied to batched data before it is sent.
+	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
+	Object iconfig.Object `json:"object"`
+	Batch  iconfig.Batch  `json:"batch"`
 }
 
 func (c *sendHTTPPostConfig) Decode(in interface{}) error {
@@ -145,15 +143,15 @@ func (tf *sendHTTPPost) String() string {
 
 func (tf *sendHTTPPost) send(ctx context.Context, key string) error {
 	var headers []http.Header
-	for _, hdr := range tf.conf.Headers {
+	for k, v := range tf.conf.Headers {
 		// Retrieve secret and interpolate with header value.
-		v, err := secrets.Interpolate(ctx, hdr.Value)
+		v, err := secrets.Interpolate(ctx, v)
 		if err != nil {
 			return err
 		}
 
 		headers = append(headers, http.Header{
-			Key:   hdr.Key,
+			Key:   k,
 			Value: v,
 		})
 	}

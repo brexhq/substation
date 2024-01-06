@@ -13,14 +13,13 @@ import (
 )
 
 type stringReplaceConfig struct {
-	Object iconfig.Object `json:"object"`
-
 	// Pattern is the regular expression used to identify values to replace.
 	Pattern string `json:"pattern"`
 	re      *regexp.Regexp
-
 	// Replacement is the string to replace the matched values with.
 	Replacement string `json:"replacement"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *stringReplaceConfig) Decode(in interface{}) error {

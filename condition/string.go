@@ -5,9 +5,10 @@ import (
 )
 
 type stringConfig struct {
-	Object iconfig.Object `json:"object"`
-
+	// Value used for comparison during inspection.
 	Value string `json:"value"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *stringConfig) Decode(in interface{}) error {

@@ -32,9 +32,11 @@ func aggToArray(data [][]byte) ([]byte, error) {
 }
 
 type aggregateStrConfig struct {
-	Object    iconfig.Object `json:"object"`
-	Batch     iconfig.Batch  `json:"batch"`
-	Separator string         `json:"separator"`
+	// Separator is the string that is used to join and split data.
+	Separator string `json:"separator"`
+
+	Object iconfig.Object `json:"object"`
+	Batch  iconfig.Batch  `json:"batch"`
 }
 
 func (c *aggregateStrConfig) Decode(in interface{}) error {

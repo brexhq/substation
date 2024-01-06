@@ -11,6 +11,7 @@ import (
 )
 
 type utilityErrConfig struct {
+	// Message is the error message to return.
 	Message string `json:"message"`
 }
 

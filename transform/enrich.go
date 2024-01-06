@@ -12,7 +12,7 @@ import (
 )
 
 // enrichHTTPInterp is used for interpolating data into URLs.
-const enrichHTTPInterp = `${data}`
+const enrichHTTPInterp = `${DATA}`
 
 type enrichDNSConfig struct {
 	Object  iconfig.Object  `json:"object"`

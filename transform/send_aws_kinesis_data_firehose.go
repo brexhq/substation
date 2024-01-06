@@ -25,15 +25,15 @@ const sendAWSKinesisDataFirehoseMessageSizeLimit = 1024 * 1000
 var errSendAWSKinesisDataFirehoseRecordSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSKinesisDataFirehoseConfig struct {
-	Object        iconfig.Object  `json:"object"`
-	Batch         iconfig.Batch   `json:"batch"`
-	AuxTransforms []config.Config `json:"auxiliary_transforms"`
-
-	AWS   iconfig.AWS   `json:"aws"`
-	Retry iconfig.Retry `json:"retry"`
-
 	// StreamName is the Firehose Delivery Stream that records are sent to.
 	StreamName string `json:"stream_name"`
+	// AuxTransforms are applied to batched data before it is sent.
+	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
+	Object iconfig.Object `json:"object"`
+	Batch  iconfig.Batch  `json:"batch"`
+	AWS    iconfig.AWS    `json:"aws"`
+	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *sendAWSKinesisDataFirehoseConfig) Decode(in interface{}) error {

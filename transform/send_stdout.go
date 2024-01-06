@@ -13,9 +13,11 @@ import (
 )
 
 type sendStdoutConfig struct {
-	Object        iconfig.Object  `json:"object"`
-	Batch         iconfig.Batch   `json:"batch"`
+	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
+	Object iconfig.Object `json:"object"`
+	Batch  iconfig.Batch  `json:"batch"`
 }
 
 func (c *sendStdoutConfig) Decode(in interface{}) error {

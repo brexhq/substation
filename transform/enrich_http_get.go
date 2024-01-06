@@ -17,22 +17,19 @@ import (
 )
 
 type enrichHTTPGetConfig struct {
-	Object iconfig.Object `json:"object"`
-
 	// URL is the HTTP(S) endpoint that data is retrieved from.
 	//
-	// If the substring ${data} is in the URL, then the URL is interpolated with
+	// If the substring ${DATA} is in the URL, then the URL is interpolated with
 	// data (either the value from Object.SourceKey or the raw data). URLs may be optionally
-	// interpolated with secrets (e.g., ${SECRETS_ENV:FOO}).
+	// interpolated with secrets (e.g., ${SECRET:FOO}).
 	URL string `json:"url"`
 	// Headers are an array of objects that contain HTTP headers sent in the request.
-	// Values may be optionally interpolated with secrets (e.g., ${SECRETS_ENV:FOO}).
+	// Values may be optionally interpolated with secrets (e.g., ${SECRET:FOO}).
 	//
 	// This is optional and has no default.
-	Headers []struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
-	} `json:"headers"`
+	Headers map[string]string `json:"headers"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *enrichHTTPGetConfig) Decode(in interface{}) error {
@@ -70,15 +67,15 @@ func newEnrichHTTPGet(ctx context.Context, cfg config.Config) (*enrichHTTPGet, e
 	}
 
 	tf.client.Setup()
-	for _, hdr := range conf.Headers {
+	for k, v := range conf.Headers {
 		// Retrieve secret and interpolate with header value.
-		v, err := secrets.Interpolate(ctx, hdr.Value)
+		v, err := secrets.Interpolate(ctx, v)
 		if err != nil {
 			return nil, fmt.Errorf("transform: enrich_http_get: %v", err)
 		}
 
 		tf.headers = append(tf.headers, http.Header{
-			Key:   hdr.Key,
+			Key:   k,
 			Value: v,
 		})
 	}

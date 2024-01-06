@@ -13,6 +13,7 @@ import (
 )
 
 type metaNegateConfig struct {
+	// Inspector used to inspect the message.
 	Inspector config.Config `json:"inspector"`
 }
 

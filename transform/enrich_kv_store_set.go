@@ -17,7 +17,6 @@ import (
 )
 
 type enrichKVStoreSetObjectConfig struct {
-	iconfig.Object
 	// TTLKey retrieves a value from an object that is used as the time-to-live (TTL)
 	// of the item set into the KV store. This value must be an integer that represents
 	// the Unix time when the item will be evicted from the store. Any precision greater
@@ -25,23 +24,22 @@ type enrichKVStoreSetObjectConfig struct {
 	//
 	// This is optional and defaults to using no TTL when setting items into the store.
 	TTLKey string `json:"ttl_key"`
+
+	iconfig.Object
 }
 
 type enrichKVStoreSetConfig struct {
-	Object  enrichKVStoreSetObjectConfig `json:"object"`
-	KVStore config.Config                `json:"kv_store"`
-
 	// Prefix is prepended to the key and can be used to simplify
 	// data management within a KV store.
 	//
 	// This is optional and defaults to an empty string.
 	Prefix string `json:"prefix"`
 	// TTLOffset is an offset used to determine the time-to-live (TTL) of the item set
-	// into the KV store. If TTLKey is configured, then this value is added to the TTL
-	// value retrieved from the object. If TTLKey is not used, then this value is added
+	// into the KV store. If Object.TTLKey is configured, then this value is added to the TTL
+	// value retrieved from the object. If Object.TTLKey is not used, then this value is added
 	// to the current time.
 	//
-	// For example, if TTLKey is not set and the offset is "1d", then the value
+	// For example, if Object.TTLKey is not set and the offset is "1d", then the value
 	// will be evicted from the store when more than 1 day has passed.
 	//
 	// This is optional and defaults to using no TTL when setting values into the store.
@@ -51,6 +49,9 @@ type enrichKVStoreSetConfig struct {
 	//
 	// This is optional and defaults to false (KV store is not closed).
 	CloseKVStore bool `json:"close_kv_store"`
+
+	Object  enrichKVStoreSetObjectConfig `json:"object"`
+	KVStore config.Config                `json:"kv_store"`
 }
 
 func (c *enrichKVStoreSetConfig) Decode(in interface{}) error {

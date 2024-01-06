@@ -12,6 +12,7 @@ import (
 )
 
 type utilitySecretConfig struct {
+	// Secret is the secret to retrieve.
 	Secret config.Config `json:"secret"`
 }
 

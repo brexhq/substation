@@ -15,9 +15,6 @@ import (
 )
 
 type enrichKVStoreGetConfig struct {
-	Object  iconfig.Object `json:"object"`
-	KVStore config.Config  `json:"kv_store"`
-
 	// Prefix is prepended to the key and can be used to simplify
 	// data management within a KV store.
 	//
@@ -28,6 +25,9 @@ type enrichKVStoreGetConfig struct {
 	//
 	// This is optional and defaults to false (KV store is not closed).
 	CloseKVStore bool `json:"close_kv_store"`
+
+	Object  iconfig.Object `json:"object"`
+	KVStore config.Config  `json:"kv_store"`
 }
 
 func (c *enrichKVStoreGetConfig) Decode(in interface{}) error {

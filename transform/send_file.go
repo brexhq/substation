@@ -16,14 +16,16 @@ import (
 )
 
 type sendFileConfig struct {
-	Object              iconfig.Object  `json:"object"`
-	Batch               iconfig.Batch   `json:"batch"`
-	AuxiliaryTransforms []config.Config `json:"auxiliary_transforms"`
-
 	// FilePath determines how the name of the file is constructed.
 	// See filePath.New for more information.
-	FilePath            file.Path `json:"file_path"`
-	UseBatchKeyAsPrefix bool      `json:"use_batch_key_as_prefix"`
+	FilePath file.Path `json:"file_path"`
+	// UseBatchKeyAsPrefix determines if the batch key should be used as the prefix.
+	UseBatchKeyAsPrefix bool `json:"use_batch_key_as_prefix"`
+	// AuxTransforms are applied to batched data before it is sent.
+	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
+	Object iconfig.Object `json:"object"`
+	Batch  iconfig.Batch  `json:"batch"`
 }
 
 func (c *sendFileConfig) Decode(in interface{}) error {
@@ -58,9 +60,9 @@ func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	}
 	tf.agg = agg
 
-	if len(conf.AuxiliaryTransforms) > 0 {
-		tf.tforms = make([]Transformer, len(conf.AuxiliaryTransforms))
-		for i, c := range conf.AuxiliaryTransforms {
+	if len(conf.AuxTransforms) > 0 {
+		tf.tforms = make([]Transformer, len(conf.AuxTransforms))
+		for i, c := range conf.AuxTransforms {
 			t, err := New(context.Background(), c)
 			if err != nil {
 				return nil, fmt.Errorf("transform: send_file: %v", err)

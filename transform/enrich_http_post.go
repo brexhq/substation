@@ -17,14 +17,13 @@ import (
 )
 
 type enrichHTTPPostObjectConfig struct {
-	iconfig.Object
 	// BodyKey retrieves a value from an object that is used as the message body.
 	BodyKey string `json:"body_key"`
+
+	iconfig.Object
 }
 
 type enrichHTTPPostConfig struct {
-	Object enrichHTTPPostObjectConfig `json:"object"`
-
 	// URL is the HTTP(S) endpoint that data is retrieved from.
 	//
 	// If the substring ${data} is in the URL, then the URL is interpolated with
@@ -36,10 +35,9 @@ type enrichHTTPPostConfig struct {
 	// Values may be optionally interpolated with secrets (e.g., ${SECRETS_ENV:FOO}).
 	//
 	// This is optional and has no default.
-	Headers []struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
-	} `json:"headers"`
+	Headers map[string]string `json:"headers"`
+
+	Object enrichHTTPPostObjectConfig `json:"object"`
 }
 
 func (c *enrichHTTPPostConfig) Decode(in interface{}) error {
@@ -81,15 +79,15 @@ func newEnrichHTTPPost(ctx context.Context, cfg config.Config) (*enrichHTTPPost,
 	}
 
 	tf.client.Setup()
-	for _, hdr := range conf.Headers {
+	for k, v := range conf.Headers {
 		// Retrieve secret and interpolate with header value.
-		v, err := secrets.Interpolate(ctx, hdr.Value)
+		v, err := secrets.Interpolate(ctx, v)
 		if err != nil {
 			return nil, fmt.Errorf("transform: enrich_http_post: %v", err)
 		}
 
 		tf.headers = append(tf.headers, http.Header{
-			Key:   hdr.Key,
+			Key:   k,
 			Value: v,
 		})
 	}

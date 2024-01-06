@@ -16,15 +16,13 @@ import (
 )
 
 type enrichAWSDynamoDBConfig struct {
-	Object iconfig.Object `json:"object"`
-	AWS    iconfig.AWS    `json:"aws"`
-	Retry  iconfig.Retry  `json:"retry"`
-
 	// TableName is the DynamoDB table that is queried.
 	TableName string `json:"table_name"`
 	// PartitionKey is the DynamoDB partition key.
 	PartitionKey string `json:"partition_key"`
 	// SortKey is the DynamoDB sort key.
+	//
+	// This is optional and has no default.
 	SortKey string `json:"sort_key"`
 	// KeyConditionExpression is the DynamoDB key condition
 	// expression string (see documentation).
@@ -41,6 +39,10 @@ type enrichAWSDynamoDBConfig struct {
 	//
 	// This is optional and defaults to true.
 	ScanIndexForward bool `json:"scan_index_forward"`
+
+	Object iconfig.Object `json:"object"`
+	AWS    iconfig.AWS    `json:"aws"`
+	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *enrichAWSDynamoDBConfig) Decode(in interface{}) error {
@@ -120,7 +122,6 @@ func (tf *enrichAWSDynamoDB) Transform(ctx context.Context, msg *message.Message
 	}
 
 	sk := tmp.GetValue(tf.conf.SortKey)
-
 	value, err := tf.dynamodb(ctx, pk.String(), sk.String())
 	if err != nil {
 		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", err)

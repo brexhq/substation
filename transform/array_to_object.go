@@ -13,8 +13,14 @@ import (
 )
 
 type arrayToObjectConfig struct {
-	Object     iconfig.Object `json:"object"`
-	ObjectKeys []string       `json:"object_keys"`
+	// ObjectKeys are the keys used in the created object.
+	//
+	// This is optional and has no default. If this is not set, then the
+	// first value in the array is used as the key and the remaining values
+	// are used as the value.
+	ObjectKeys []string `json:"object_keys"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *arrayToObjectConfig) Decode(in interface{}) error {

@@ -14,10 +14,10 @@ import (
 )
 
 type stringSplitConfig struct {
-	Object iconfig.Object `json:"object"`
-
 	// Separator splits the string into elements of the array.
 	Separator string `json:"separator"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *stringSplitConfig) Decode(in interface{}) error {

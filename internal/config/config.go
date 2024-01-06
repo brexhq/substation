@@ -11,33 +11,47 @@ import (
 )
 
 type Object struct {
+	// SourceKey retrieves a value from a JSON object.
 	SourceKey string `json:"source_key"`
+	// TargetKey place a value into a JSON object.
 	TargetKey string `json:"target_key"`
-	BatchKey  string `json:"batch_key"`
+	// BatchKey retrieves a value from a JSON object that is used to organize
+	// batched data (internal/aggregate).
+	BatchKey string `json:"batch_key"`
 }
 
 type AWS struct {
-	Region  string `json:"region"`
+	// Region is the AWS region that the AWS client will use.
+	Region string `json:"region"`
+	// RoleARN is the AWS IAM role that the AWS client will assume.
 	RoleARN string `json:"role_arn"`
 }
 
 type Metric struct {
-	Name        string            `json:"name"`
-	Attributes  map[string]string `json:"attributes"`
-	Destination config.Config     `json:"destination"`
+	// Name is the name of the metric.
+	Name string `json:"name"`
+	// Attributes are key-value pairs that are associated with the metric.
+	Attributes map[string]string `json:"attributes"`
+	// Destination is the metrics destination that the metric will be sent to (internal/metrics).
+	Destination config.Config `json:"destination"`
 }
 
 type Request struct {
+	// Timeout is the amount of time that the request will wait before timing out.
 	Timeout string `json:"Timeout"`
 }
 
 type Retry struct {
+	// Count is the maximum number of times that the action will be retried.
 	Count int `json:"count"`
 }
 
 type Batch struct {
-	Count    int    `json:"count"`
-	Size     int    `json:"size"`
+	// Count is the maximum number of records that can be batched.
+	Count int `json:"count"`
+	// Size is the maximum size of the batch in bytes.
+	Size int `json:"size"`
+	// Duration is the maximum amount of time that records can be batched for.
 	Duration string `json:"duration"`
 }
 

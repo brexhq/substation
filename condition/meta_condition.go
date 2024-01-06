@@ -12,7 +12,7 @@ import (
 )
 
 type metaConditionConfig struct {
-	// Condition is the operator used to inspect the message.
+	// Condition used to inspect the message.
 	Condition Config `json:"condition"`
 }
 

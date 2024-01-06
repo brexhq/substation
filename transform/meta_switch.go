@@ -13,6 +13,9 @@ import (
 )
 
 type metaSwitchConfig struct {
+	// Cases are the transforms that are conditionally applied. If
+	// no condition is configured, then the transform is always
+	// applied.
 	Cases []struct {
 		Condition condition.Config `json:"condition"`
 		Transform config.Config    `json:"transform"`

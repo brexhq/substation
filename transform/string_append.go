@@ -12,10 +12,10 @@ import (
 )
 
 type stringAppendConfig struct {
-	Object iconfig.Object `json:"object"`
-
 	// Suffix is the string appended to the end of the string.
 	Suffix string `json:"suffix"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *stringAppendConfig) Decode(in interface{}) error {

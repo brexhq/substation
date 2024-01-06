@@ -12,6 +12,7 @@ import (
 )
 
 type metaErrConfig struct {
+	// Transform that is applied with error handling.
 	Transform config.Config `json:"transform"`
 }
 

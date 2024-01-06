@@ -32,15 +32,15 @@ var errSendAWSDynamoDBItemSizeLimit = fmt.Errorf("data exceeded size limit")
 var errSendAWSDynamoDBNonObject = fmt.Errorf("input must be object")
 
 type sendAWSDynamoDBConfig struct {
-	Object        iconfig.Object  `json:"object"`
-	Batch         iconfig.Batch   `json:"batch"`
-	AuxTransforms []config.Config `json:"auxiliary_transforms"`
-
-	AWS   iconfig.AWS   `json:"aws"`
-	Retry iconfig.Retry `json:"retry"`
-
 	// TableName is the DynamoDB table that items are written to.
 	TableName string `json:"table_name"`
+	// AuxTransforms are applied to batched data before it is sent.
+	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
+	Object iconfig.Object `json:"object"`
+	Batch  iconfig.Batch  `json:"batch"`
+	AWS    iconfig.AWS    `json:"aws"`
+	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *sendAWSDynamoDBConfig) Decode(in interface{}) error {

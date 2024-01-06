@@ -13,6 +13,7 @@ import (
 )
 
 type utilityDelayConfig struct {
+	// Duration is the amount of time to delay.
 	Duration string `json:"duration"`
 }
 

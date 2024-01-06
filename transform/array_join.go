@@ -13,10 +13,10 @@ import (
 )
 
 type arrayJoinConfig struct {
-	Object iconfig.Object `json:"object"`
-
-	// Separator is the string that joins the array.
+	// Separator is the string that is used to join data.
 	Separator string `json:"separator"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *arrayJoinConfig) Decode(in interface{}) error {

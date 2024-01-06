@@ -12,10 +12,10 @@ import (
 )
 
 type metaForEachConfig struct {
-	Object iconfig.Object `json:"object"`
-
-	// Transform is the transform that is applied to each item in the array.
+	// Transform that is applied to each item in the array.
 	Transform config.Config `json:"transform"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *metaForEachConfig) Decode(in interface{}) error {

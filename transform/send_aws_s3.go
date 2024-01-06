@@ -19,19 +19,20 @@ import (
 )
 
 type sendAWSS3Config struct {
-	Object        iconfig.Object  `json:"object"`
-	Batch         iconfig.Batch   `json:"batch"`
-	AuxTransforms []config.Config `json:"auxiliary_transforms"`
-
-	AWS   iconfig.AWS   `json:"aws"`
-	Retry iconfig.Retry `json:"retry"`
-
 	// BucketName is the AWS S3 bucket that data is written to.
 	BucketName string `json:"bucket_name"`
 	// FilePath determines how the name of the uploaded object is constructed.
 	// See filePath.New for more information.
-	FilePath            file.Path `json:"file_path"`
-	UseBatchKeyAsPrefix bool      `json:"use_batch_key_as_prefix"`
+	FilePath file.Path `json:"file_path"`
+	// UseBatchKeyAsPrefix determines if the batch key should be used as the prefix.
+	UseBatchKeyAsPrefix bool `json:"use_batch_key_as_prefix"`
+	// AuxTransforms are applied to batched data before it is sent.
+	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
+	Object iconfig.Object `json:"object"`
+	Batch  iconfig.Batch  `json:"batch"`
+	AWS    iconfig.AWS    `json:"aws"`
+	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *sendAWSS3Config) Decode(in interface{}) error {

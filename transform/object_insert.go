@@ -12,10 +12,10 @@ import (
 )
 
 type objectInsertConfig struct {
-	Object iconfig.Object `json:"object"`
-
 	// Value inserted into the object.
 	Value interface{} `json:"value"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *objectInsertConfig) Decode(in interface{}) error {

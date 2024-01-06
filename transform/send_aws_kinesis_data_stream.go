@@ -27,19 +27,19 @@ const sendAWSKinesisDataStreamMessageSizeLimit = 1024 * 1024 * 1
 var errSendAWSKinesisDataStreamMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSKinesisDataStreamConfig struct {
-	Object        iconfig.Object  `json:"object"`
-	Batch         iconfig.Batch   `json:"batch"`
-	AuxTransforms []config.Config `json:"auxiliary_transforms"`
-
-	AWS   iconfig.AWS   `json:"aws"`
-	Retry iconfig.Retry `json:"retry"`
-
 	// StreamName is the Kinesis Data Stream that records are sent to.
 	StreamName string `json:"stream_name"`
 	// UseBatchKeyAsPartitionKey determines if the batch key should be used as the partition key.
 	UseBatchKeyAsPartitionKey bool `json:"use_batch_key_as_partition_key"`
 	// EnableRecordAggregation determines if records should be aggregated.
 	EnableRecordAggregation bool `json:"enable_record_aggregation"`
+	// AuxTransforms are applied to batched data before it is sent.
+	AuxTransforms []config.Config `json:"auxiliary_transforms"`
+
+	Object iconfig.Object `json:"object"`
+	Batch  iconfig.Batch  `json:"batch"`
+	AWS    iconfig.AWS    `json:"aws"`
+	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *sendAWSKinesisDataStreamConfig) Decode(in interface{}) error {

@@ -14,17 +14,17 @@ import (
 )
 
 type metaForEachConfig struct {
-	Object iconfig.Object `json:"object"`
-
 	// Type determines the method of combining results from the inspector.
 	//
 	// Must be one of:
-	//	- none: none of the elements match the condition
-	//	- any: at least one of the elements match the condition
-	//	- all: all of the elements match the condition
+	//	- none: none of the elements match the inspector
+	//	- any: at least one of the elements match the inspector
+	//	- all: all of the elements match the inspector
 	Type string `json:"type"`
-	// Inspector is the condition applied to each element.
+	// Inspector applied to each element.
 	Inspector config.Config `json:"inspector"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *metaForEachConfig) Decode(in interface{}) error {

@@ -13,10 +13,10 @@ import (
 )
 
 type formatMIMEConfig struct {
-	Object iconfig.Object `json:"object"`
-
 	// Type is the media type used for comparison during inspection. Media types follow this specification: https://mimesniff.spec.whatwg.org/.
 	Type string `json:"type"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *formatMIMEConfig) Decode(in interface{}) error {

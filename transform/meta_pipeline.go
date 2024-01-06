@@ -18,10 +18,10 @@ import (
 var errMetaPipelineArrayInput = fmt.Errorf("input is an array")
 
 type metaPipelineConfig struct {
-	Object iconfig.Object `json:"object"`
-
-	// Transforms applied in series to the data.
+	// Transforms that is applied in series to the data.
 	Transforms []config.Config `json:"transforms"`
+
+	Object iconfig.Object `json:"object"`
 }
 
 func (c *metaPipelineConfig) Decode(in interface{}) error {

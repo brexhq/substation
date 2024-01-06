@@ -15,14 +15,14 @@ src="https://github.com/brexhq/substation/blob/release/v1/.github/media/substati
 
 ## At a Glance
 
-Substation is inspired by data pipeline systems such as Logstash and Fluentd, but is built for modern security teams:
+Substation is inspired by data pipeline systems like Logstash and Fluentd, but is built for modern security teams:
 
 - **Extensible Data Processing**: Build data processing pipeline systems and microservices using out-of-the-box applications and 100+ data transformation functions, or create your own written in Go.
-- **Route Data Across the Enterprise**: Conditionally route data to, from, and between AWS cloud services, including S3, Kinesis, SQS, and Lambda, or to any HTTP endpoint.
+- **Route Data Across the Cloud**: Conditionally route data to, from, and between AWS cloud services, including S3, Kinesis, SQS, and Lambda, or to any HTTP endpoint.
 - **Bring Your Own Schema**: Format, normalize, and enrich event logs to comply with the Elastic Common Schema (ECS), Open Cybersecurity Schema Framework (OCSF), or any other schema.
 - **Unlimited Data Enrichment**: Use external APIs to enrich event logs affordably and at scale with enterprise and threat intelligence, or build a microservice that reduces spend in expensive security APIs.
 - **No Servers, No Maintenance**: Deploys as a serverless application in your AWS account, launches in minutes using Terraform, and requires no maintenance after deployment.
-- **Runs Almost Anywhere**: Create applications that run on most platforms supported by Go and transform data consistently across laptops, servers, containers, and serverless cloud functions.
+- **Runs Almost Anywhere**: Create applications that run on most platforms supported by Go and transform data consistently across laptops, servers, containers, and serverless functions.
 - **High Performance, Low Cost**: Transform 100,000+ events per second while keeping cloud costs as low as a few cents per GB. Vendor solutions, like [Cribl](https://cribl.io/cribl-pricing/) and [Datadog](https://www.datadoghq.com/pricing/?product=observability-pipelines#products), can cost up to 10x more.
 
 All of these data pipeline and microservice systems, and many more, can be built with Substation:
@@ -223,9 +223,9 @@ local sub = import 'substation.libsonnet';
 
 ## Configuring Applications
 
-Substation applications use the same baseline configuration and all transform functions behave identically whether they are run from a laptop, server, container, or serverless function. This makes it easy to develop configuration changes locally, validate them in a build (CI/CD) pipeline, and run integration tests in a staging environment before deploying to production.
+Substation applications run almost anywhere (laptops, servers, containers, serverless functions) and all transform functions behave identically regardless of where they are run. This makes it easy to develop configuration changes locally, validate them in a build (CI/CD) pipeline, and run integration tests in a staging environment before deploying to production.
 
-Configurations are written in Jsonnet and can be expressed as functional code, which simplifies version control easier and allows you to build reusable data processing libraries. For power users, configurations also have abbreviations that make them easier to write. Compare the configuration below to similar configurations for Logstash and Fluentd:
+Configurations are written in Jsonnet and can be expressed as functional code, simplifying version control and making it easy to build custom data processing libraries. For power users, configurations also have abbreviations that make them easier to write. Compare the configuration below to similar configurations for Logstash and Fluentd:
 
 <table>
 <tr>

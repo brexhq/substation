@@ -2,7 +2,7 @@
 
 <p align="center">
 <img alt="substation logo" width="200"
-src="https://github.com/brexhq/substation/blob/release/v1/.github/media/substation_logo.png" />
+src="https://github.com/brexhq/substation/blob/main/.github/media/substation_logo.png" />
 </p>
 
 <p align="center">Substation is a cloud-native, event-driven data pipeline toolkit built for security teams.</p>

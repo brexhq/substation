@@ -2,7 +2,7 @@ resource "aws_cloudwatch_event_rule" "rule" {
   name                = var.config.name
   description         = var.config.description
   schedule_expression = var.config.schedule
-  tags                = var.config.tags
+  tags                = var.tags
 }
 
 resource "aws_cloudwatch_event_target" "target" {

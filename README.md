@@ -399,7 +399,7 @@ module "s3" {
   # resource. This access applies least privilege.
   access = [
     # Lambda functions create unique roles that are
-    # used to access to resources.
+    # used to access resources.
     module.node.role.name,
   ]
 }

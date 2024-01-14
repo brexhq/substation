@@ -87,13 +87,18 @@ type metaSwitch struct {
 
 func (tf *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
+		var msgs []*message.Message
 		for _, c := range tf.conditional {
-			if _, err := c.tf.Transform(ctx, msg); err != nil {
-				return nil, fmt.Errorf("transform: meta_switch: %v", err)
+			res, err := c.tf.Transform(ctx, msg)
+			if err != nil {
+				return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 			}
+
+			msgs = append(msgs, res...)
 		}
 
-		return []*message.Message{msg}, nil
+		msgs = append(msgs, msg)
+		return msgs, nil
 	}
 
 	for _, c := range tf.conditional {

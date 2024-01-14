@@ -21,7 +21,7 @@ func withTransforms(ctx context.Context, tf []Transformer, items [][]byte) ([][]
 	for _, i := range items {
 		msg = append(msg, message.New().SetData(i))
 	}
-	msg = append(msg, message.New(message.AsControl()))
+	msg = append(msg, message.New().AsControl())
 
 	res, err := Apply(ctx, tf, msg...)
 	if err != nil {

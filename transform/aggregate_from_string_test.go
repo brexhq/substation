@@ -6,7 +6,6 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/message"
-	mess "github.com/brexhq/substation/message"
 	"golang.org/x/exp/slices"
 )
 
@@ -48,7 +47,7 @@ func TestAggregateFromString(t *testing.T) {
 
 			// aggregateFromString relies on an interrupt message to flush the buffer,
 			// so it's always added and then removed from the output.
-			ctrl := message.New(mess.AsControl())
+			ctrl := message.New().AsControl()
 			messages = append(messages, ctrl)
 
 			tf, err := newAggregateFromString(ctx, test.cfg)

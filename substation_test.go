@@ -47,7 +47,7 @@ func ExampleSubstation() {
 		// The first message is a data message. Only data messages are transformed.
 		message.New().SetData([]byte(`{"a":"b"}`)),
 		// The second message is a ctrl message. ctrl messages flush the pipeline.
-		message.New(message.AsControl()),
+		message.New().AsControl(),
 	}
 
 	// Transform the group of messages. In this example, results are not used.

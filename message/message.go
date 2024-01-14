@@ -59,10 +59,12 @@ func New(opts ...func(*Message)) *Message {
 	return msg
 }
 
-func AsControl() func(*Message) {
-	return func(m *Message) {
-		m.ctrl = true
-	}
+func (m *Message) AsControl() *Message {
+	m.data = nil
+	m.meta = nil
+
+	m.ctrl = true
+	return m
 }
 
 func (m *Message) IsControl() bool {

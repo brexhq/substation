@@ -72,7 +72,7 @@ func kinesisStreamHandler(ctx context.Context, event events.KinesisEvent) error 
 
 		// CTRL messages flush the pipeline. This must be done
 		// after all messages have been processed.
-		ctrl := message.New(message.AsControl())
+		ctrl := message.New().AsControl()
 		if _, err := sub.Transform(ctx, ctrl); err != nil {
 			return err
 		}

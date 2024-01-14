@@ -49,7 +49,7 @@ func gatewayHandler(ctx context.Context, request events.APIGatewayProxyRequest) 
 	b := []byte(request.Body)
 	msg := []*message.Message{
 		message.New().SetData(b).SetMetadata(metadata),
-		message.New(message.AsControl()),
+		message.New().AsControl(),
 	}
 
 	res, err := sub.Transform(ctx, msg...)

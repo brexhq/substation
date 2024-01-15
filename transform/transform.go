@@ -157,12 +157,16 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newTimeFromString(ctx, cfg)
 	case "time_from_unix":
 		return newTimeFromUnix(ctx, cfg)
+	case "time_from_unix_milli":
+		return newTimeFromUnixMilli(ctx, cfg)
 	case "time_now":
 		return newTimeNow(ctx, cfg)
 	case "time_to_string":
 		return newTimeToString(ctx, cfg)
 	case "time_to_unix":
 		return newTimeToUnix(ctx, cfg)
+	case "time_to_unix_milli":
+		return newTimeToUnixMilli(ctx, cfg)
 	// Utility transforms.
 	case "utility_delay":
 		return newUtilityDelay(ctx, cfg)

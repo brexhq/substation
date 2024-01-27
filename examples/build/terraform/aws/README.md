@@ -141,6 +141,41 @@ flowchart LR
     end
 ```
 
+## Time Travel
+
+Deploys a data pipeline that implements a "time travel" pattern by having a subscriber node read data more slowly than an enrichment node. The nodes share data observed across different events using a DynamoDB table.
+
+```mermaid
+
+flowchart LR
+    %% resources
+    gateway([API Gateway])
+    kinesis([Kinesis Data Stream])
+    dynamodb([DynamoDB Table])
+
+    enrichmentHandler[[Handler]]
+    enrichmentTransforms[Transforms]
+
+    subscriberHandler[[Handler]]
+    subscriberTransforms[Transforms]
+
+    gateway --> kinesis
+    %% connections
+    kinesis -- 5 seconds --> enrichmentHandler
+    subgraph Substation Enrichment Node 
+    enrichmentHandler --> enrichmentTransforms
+    end
+
+    enrichmentTransforms --> dynamodb
+
+    kinesis -- 15 seconds --> subscriberHandler
+    subgraph Substation Subscriber Node 
+    subscriberHandler --> subscriberTransforms
+    end
+
+    dynamodb --- subscriberTransforms
+```
+
 # Lambda
 
 ## Microservice

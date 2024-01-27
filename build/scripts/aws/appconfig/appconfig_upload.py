@@ -6,6 +6,7 @@ Enumerates hosted configurations in AppConfig and retrieves each profile's lates
 
     SUBSTATION_CONFIG_DIRECTORY=examples/aws/config AWS_APPCONFIG_APPLICATION_NAME=substation AWS_APPCONFIG_ENVIRONMENT=prod AWS_APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 appconfig_upload.py
 """
+
 import json
 import os
 import time

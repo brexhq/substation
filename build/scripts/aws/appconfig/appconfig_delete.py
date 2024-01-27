@@ -6,6 +6,7 @@ Enumerates hosted configurations in AppConfig for a user-defined application pro
 
 	AWS_APPCONFIG_APPLICATION_NAME=substation AWS_APPCONFIG_PROFILE_NAME=foo python3 appconfig_delete.py
 """
+
 import os
 
 import boto3

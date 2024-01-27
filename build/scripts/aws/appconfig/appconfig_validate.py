@@ -10,6 +10,7 @@ Typical usage example:
 
     SUBSTATION_CONFIG_DIRECTORY=config AWS_APPCONFIG_VALIDATOR=substation_validator python3 appconfig_validate.py
 """
+
 import json
 import os
 import base64

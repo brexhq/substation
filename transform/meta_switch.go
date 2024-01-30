@@ -97,7 +97,6 @@ func (tf *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*m
 			msgs = append(msgs, res...)
 		}
 
-		msgs = append(msgs, msg)
 		return msgs, nil
 	}
 

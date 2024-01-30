@@ -87,7 +87,6 @@ func (tf *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]
 			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 		}
 
-		msgs = append(msgs, msg)
 		return msgs, nil
 	}
 

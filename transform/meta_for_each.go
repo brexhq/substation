@@ -84,7 +84,6 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 			return nil, fmt.Errorf("transform: meta_for_each: %v", err)
 		}
 
-		msgs = append(msgs, msg)
 		return msgs, nil
 	}
 

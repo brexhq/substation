@@ -28,6 +28,8 @@ func GetPrefetch(ctx context.Context, dst io.Writer) error {
 	}
 
 	local := "http://localhost:2772" + url
+
+	ctx = context.WithoutCancel(ctx)
 	resp, err := client.Get(ctx, local)
 	if err != nil {
 		return fmt.Errorf("appconfig getprefetch URL %s: %v", local, err)

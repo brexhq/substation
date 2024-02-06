@@ -1,6 +1,7 @@
 package sns
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -53,6 +54,7 @@ func (a *API) Publish(ctx aws.Context, arn string, data []byte) (*sns.PublishOut
 		req.MessageGroupId = aws.String(mgid)
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	resp, err := a.Client.PublishWithContext(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("publish: topic %s: %v", arn, err)
@@ -79,6 +81,7 @@ func (a *API) PublishBatch(ctx aws.Context, topic string, data [][]byte) (*sns.P
 		entries = append(entries, entry)
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	resp, err := a.Client.PublishBatchWithContext(
 		ctx,
 		&sns.PublishBatchInput{

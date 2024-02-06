@@ -1,6 +1,7 @@
 package firehose
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -40,6 +41,7 @@ func (a *API) Setup(cfg iaws.Config) {
 
 // PutRecord is a convenience wrapper for putting a record into a Kinesis Firehose stream.
 func (a *API) PutRecord(ctx aws.Context, data []byte, stream string) (*firehose.PutRecordOutput, error) {
+	ctx = context.WithoutCancel(ctx)
 	resp, err := a.Client.PutRecordWithContext(
 		ctx,
 		&firehose.PutRecordInput{
@@ -60,6 +62,7 @@ func (a *API) PutRecordBatch(ctx aws.Context, stream string, data [][]byte) (*fi
 		records = append(records, &firehose.Record{Data: d})
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	resp, err := a.Client.PutRecordBatchWithContext(
 		ctx,
 		&firehose.PutRecordBatchInput{

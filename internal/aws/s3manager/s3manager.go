@@ -2,6 +2,7 @@
 package s3manager
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -54,6 +55,7 @@ func (a *DownloaderAPI) Download(ctx aws.Context, bucket, key string, dst io.Wri
 		Key:    aws.String(key),
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	size, err := a.Client.DownloadWithContext(ctx, dst, input)
 	if err != nil {
 		return 0, fmt.Errorf("s3manager download bucket %s key %s: %v", bucket, key, err)
@@ -111,6 +113,7 @@ func (a *UploaderAPI) Upload(ctx aws.Context, bucket, key string, src io.Reader)
 		ContentType: aws.String(mediaType),
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	resp, err := a.Client.UploadWithContext(ctx, input)
 	if err != nil {
 		return nil, fmt.Errorf("s3manager upload bucket %s key %s: %v", bucket, key, err)

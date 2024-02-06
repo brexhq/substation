@@ -1,6 +1,7 @@
 package kinesis
 
 import (
+	"context"
 	"crypto/md5"
 	"fmt"
 	"os"
@@ -191,6 +192,7 @@ func (a *API) IsEnabled() bool {
 
 // PutRecord is a convenience wrapper for putting a record into a Kinesis stream.
 func (a *API) PutRecord(ctx aws.Context, stream, partitionKey string, data []byte) (*kinesis.PutRecordOutput, error) {
+	ctx = context.WithoutCancel(ctx)
 	resp, err := a.Client.PutRecordWithContext(
 		ctx,
 		&kinesis.PutRecordInput{
@@ -209,6 +211,7 @@ func (a *API) PutRecord(ctx aws.Context, stream, partitionKey string, data []byt
 func (a *API) PutRecords(ctx aws.Context, stream, partitionKey string, data [][]byte) (*kinesis.PutRecordsOutput, error) {
 	var records []*kinesis.PutRecordsRequestEntry
 
+	ctx = context.WithoutCancel(ctx)
 	for _, d := range data {
 		records = append(records, &kinesis.PutRecordsRequestEntry{
 			Data:         d,

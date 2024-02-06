@@ -1,6 +1,7 @@
 package lambda
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -41,6 +42,7 @@ func (a *API) IsEnabled() bool {
 
 // Invoke is a convenience wrapper for synchronously invoking a Lambda function.
 func (a *API) Invoke(ctx aws.Context, function string, payload []byte) (resp *lambda.InvokeOutput, err error) {
+	ctx = context.WithoutCancel(ctx)
 	resp, err = a.Client.InvokeWithContext(
 		ctx,
 		&lambda.InvokeInput{

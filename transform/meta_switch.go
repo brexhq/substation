@@ -87,16 +87,28 @@ type metaSwitch struct {
 
 func (tf *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
-		var msgs []*message.Message
+		var messages []*message.Message
 		for _, c := range tf.conditional {
 			res, err := c.tf.Transform(ctx, msg)
 			if err != nil {
 				return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 			}
 
-			msgs = append(msgs, res...)
+			messages = append(messages, res...)
 		}
 
+		// This is required to deduplicate the control messages that
+		// were sent to the conditional transforms.
+		var msgs []*message.Message
+		for _, m := range messages {
+			if m.IsControl() {
+				continue
+			}
+
+			msgs = append(msgs, m)
+		}
+
+		msgs = append(msgs, msg)
 		return msgs, nil
 	}
 

@@ -88,7 +88,7 @@ func (s *scanner) ReadFile(file *os.File) error {
 	} else {
 		m, _ := strconv.ParseFloat(mem, 64)
 		// For AWS Lambda, the max capacity is 80% of the function's memory.
-		s.Scanner.Buffer(b, (1024^2)*int(m*0.8))
+		s.Scanner.Buffer(b, 1000000*int(m*0.8))
 	}
 
 	return nil

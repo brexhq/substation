@@ -9,7 +9,7 @@ resource "aws_ecr_repository" "repository" {
 
   encryption_configuration {
     encryption_type = var.kms ? "KMS" : "AES256"
-    kms_key         = var.kms ? var.kms : null
+    kms_key         = var.kms ? var.kms.arn : null
   }
 
   tags = var.tags

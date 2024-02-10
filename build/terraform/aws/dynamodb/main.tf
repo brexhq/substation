@@ -30,12 +30,15 @@ resource "aws_dynamodb_table" "table" {
   point_in_time_recovery {
     enabled = true
   }
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = var.kms.arn
-  }
   lifecycle {
     ignore_changes = [read_capacity, write_capacity]
+  }
+
+  # If a customer managed KMS key is not provided, then DynamoDB automatically
+  # encrypts the table with an AWS owned KMS key.
+  server_side_encryption {
+    enabled     = var.kms ? true : false
+    kms_key_arn = var.kms ? var.kms.arn : null
   }
 
   # Streams are only charged for read operations and reads from AWS Lambda are free:
@@ -72,18 +75,6 @@ data "aws_iam_policy_document" "access" {
   statement {
     effect = "Allow"
     actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
-
-    resources = [
-      var.kms.arn,
-    ]
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
       # Read actions
       "dynamodb:GetItem",
       "dynamodb:Query",
@@ -110,6 +101,22 @@ data "aws_iam_policy_document" "access" {
     resources = [
       aws_dynamodb_table.table.stream_arn,
     ]
+  }
+
+  dynamic "statement" {
+    for_each = var.kms ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
   }
 }
 

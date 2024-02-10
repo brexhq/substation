@@ -5,7 +5,7 @@ resource "aws_kinesis_stream" "stream" {
   shard_count      = var.config.shards
   retention_period = var.config.retention
   encryption_type  = "KMS"
-  kms_key_id       = var.kms.id
+  kms_key_id       = var.kms ? var.kms.id : "alias/aws/kinesis"
   lifecycle {
     ignore_changes = [shard_count]
   }
@@ -27,18 +27,6 @@ resource "aws_iam_policy" "access" {
 }
 
 data "aws_iam_policy_document" "access" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
-
-    resources = [
-      var.kms.arn,
-    ]
-  }
-
   statement {
     effect = "Allow"
     actions = [
@@ -72,8 +60,23 @@ data "aws_iam_policy_document" "access" {
       aws_kinesis_stream.stream.arn,
     ]
   }
-}
 
+  dynamic "statement" {
+    for_each = var.kms ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
+  }
+}
 
 resource "aws_cloudwatch_metric_alarm" "metric_alarm_downscale" {
   alarm_name          = "${var.config.name}_downscale"

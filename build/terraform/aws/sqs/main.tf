@@ -16,7 +16,7 @@ resource "aws_sqs_queue" "queue" {
   name                              = var.config.name
   delay_seconds                     = var.config.delay
   visibility_timeout_seconds        = var.config.timeout
-  kms_master_key_id                 = var.kms.id
+  kms_master_key_id                 = var.kms ? var.kms.id : "alias/aws/sqs"
   kms_data_key_reuse_period_seconds = 300
   fifo_queue                        = endswith(var.config.name, ".fifo") ? true : false
   content_based_deduplication       = endswith(var.config.name, ".fifo") ? true : false
@@ -40,18 +40,6 @@ resource "aws_iam_policy" "access" {
 data "aws_iam_policy_document" "access" {
   statement {
     effect = "Allow"
-    actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
-
-    resources = [
-      var.kms.arn,
-    ]
-  }
-
-  statement {
-    effect = "Allow"
     actions = concat(
       local.read_access,
       local.write_access,
@@ -60,5 +48,21 @@ data "aws_iam_policy_document" "access" {
     resources = [
       aws_sqs_queue.queue.arn,
     ]
+  }
+
+  dynamic "statement" {
+    for_each = var.kms ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
   }
 }

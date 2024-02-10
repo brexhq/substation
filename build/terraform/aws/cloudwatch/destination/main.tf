@@ -29,17 +29,20 @@ data "aws_iam_policy_document" "destination_assume_role" {
 }
 
 data "aws_iam_policy_document" "destination" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
+  dynamic "statement" {
+    for_each = var.kms ? [1] : []
 
-    // Access the KMS key.
-    resources = [
-      var.kms.arn,
-    ]
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
   }
 
   // If the destination is Kinesis Firehose, the role must have write access.

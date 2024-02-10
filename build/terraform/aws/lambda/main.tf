@@ -11,7 +11,7 @@ resource "aws_lambda_function" "lambda_function" {
 
   # Runtime settings.
   role        = aws_iam_role.role.arn
-  kms_key_arn = var.kms.arn
+  kms_key_arn = var.kms ? var.kms.arn : null
   timeout     = var.config.timeout
   memory_size = var.config.memory
 
@@ -66,6 +66,8 @@ data "aws_iam_policy_document" "service_policy_document" {
 }
 
 resource "aws_appconfig_configuration_profile" "config" {
+  count = var.appconfig ? 1 : 0
+
   application_id = var.appconfig.id
   description    = "Configuration profile for the ${var.config.name} Lambda"
   name           = var.config.name
@@ -110,30 +112,37 @@ resource "aws_iam_policy" "custom_policy" {
 }
 
 data "aws_iam_policy_document" "policy" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "appconfig:GetConfiguration",
-      "appconfig:GetLatestConfiguration",
-      "appconfig:StartConfigurationSession",
-    ]
+  dynamic "statement" {
+    for_each = var.appconfig ? [1] : []
 
-    resources = [
-      "${var.appconfig.arn}/*"
-    ]
+    content {
+      effect = "Allow"
+      actions = [
+        "appconfig:GetConfiguration",
+        "appconfig:GetLatestConfiguration",
+        "appconfig:StartConfigurationSession",
+      ]
+
+      resources = [
+        "${var.appconfig.arn}/*"
+      ]
+    }
   }
 
-  statement {
-    effect = "Allow"
-    actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
+  dynamic "statement" {
+    for_each = var.kms ? [1] : []
 
-    // Access the KMS key.
-    resources = [
-      var.kms.arn,
-    ]
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
   }
 
   // Add additional statements provided as a variable.
@@ -167,18 +176,6 @@ data "aws_iam_policy_document" "access" {
   statement {
     effect = "Allow"
     actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
-
-    resources = [
-      var.kms.arn,
-    ]
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
       "lambda:GetFunctionConfiguration",
       "lambda:InvokeAsync",
       "lambda:InvokeFunction",
@@ -189,5 +186,21 @@ data "aws_iam_policy_document" "access" {
       # This is required for data transformation support in Kinesis Data Firehose.
       "${aws_lambda_function.lambda_function.arn}:*", # Allow access to all versions.
     ]
+  }
+
+  dynamic "statement" {
+    for_each = var.kms ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
   }
 }

@@ -28,8 +28,10 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
   bucket = aws_s3_bucket.bucket.bucket
 
   rule {
+    # Objects are encrypted with the default S3 AWS KMS key if a KMS key is 
+    # not provided.
     apply_server_side_encryption_by_default {
-      kms_master_key_id = var.kms.arn
+      kms_master_key_id = var.kms ? var.kms.arn : null
       sse_algorithm     = "aws:kms"
     }
   }
@@ -63,18 +65,6 @@ data "aws_iam_policy_document" "access" {
   statement {
     effect = "Allow"
     actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
-
-    resources = [
-      var.kms.arn,
-    ]
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
       "s3:GetObject",
       "s3:PutObject",
     ]
@@ -83,5 +73,21 @@ data "aws_iam_policy_document" "access" {
       aws_s3_bucket.bucket.arn,
       "${aws_s3_bucket.bucket.arn}/*",
     ]
+  }
+
+  dynamic "statement" {
+    for_each = var.kms ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
   }
 }

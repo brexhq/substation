@@ -2,7 +2,7 @@ resource "random_uuid" "id" {}
 
 resource "aws_secretsmanager_secret" "secret" {
   name       = var.config.name
-  kms_key_id = var.kms.id
+  kms_key_id = var.kms ? var.kms.id : null
   tags       = var.tags
 }
 
@@ -23,23 +23,27 @@ data "aws_iam_policy_document" "access" {
   statement {
     effect = "Allow"
     actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
-
-    resources = [
-      var.kms.arn,
-    ]
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
       "secretsmanager:GetSecretValue",
     ]
 
     resources = [
       aws_secretsmanager_secret.secret.arn,
     ]
+  }
+
+  dynamic "statement" {
+    for_each = var.kms ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
   }
 }

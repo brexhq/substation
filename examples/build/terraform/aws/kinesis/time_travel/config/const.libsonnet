@@ -6,5 +6,5 @@ local sub = import '../../../../../../../build/config/substation.libsonnet';
     attributes: { partition_key: 'PK', sort_key: 'SK', ttl: 'TTL', value: 'cache' },
   }),
   field: 'context',
-  field_exists: sub.cnd.num.len.gt({obj: {src: $.field}, value: 0}),
+  field_exists: sub.cnd.num.len.gt({ obj: { src: $.field }, value: 0 }),
 }

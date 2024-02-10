@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/vscode/devcontainers/go:1.21
+FROM mcr.microsoft.com/vscode/devcontainers/go:dev-1.22
 RUN apt-get update -y && \
     # https://developer.hashicorp.com/terraform/downloads
     wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg && \

@@ -4,7 +4,6 @@ locals {
 
 data "aws_caller_identity" "caller" {}
 
-# KMS encryption key that is shared by all Substation infrastructure
 module "kms" {
   source = "../../../../../../../build/terraform/aws/kms"
 
@@ -13,31 +12,18 @@ module "kms" {
   }
 }
 
-# AppConfig application that is shared by all Substation applications.
-resource "aws_appconfig_application" "substation" {
-  name        = "substation"
-  description = "Stores compiled configuration files for Substation"
+module "appconfig" {
+  source = "../../../../../../../build/terraform/aws/appconfig"
+
+  config = {
+    name        = "substation"
+    environments = [{
+      name = "example"
+    }]
+  }
 }
 
-resource "aws_appconfig_environment" "example" {
-  name           = "example"
-  description    = "Stores example Substation configuration files"
-  application_id = aws_appconfig_application.substation.id
-}
-
-# AWS Lambda requires an instant deployment strategy.
-resource "aws_appconfig_deployment_strategy" "instant" {
-  name                           = "Instant"
-  description                    = "This strategy deploys the configuration to all targets immediately with zero bake time."
-  deployment_duration_in_minutes = 0
-  final_bake_time_in_minutes     = 0
-  growth_factor                  = 100
-  growth_type                    = "LINEAR"
-  replicate_to                   = "NONE"
-}
-
-# Repository for the core Substation application.
-module "ecr_substation" {
+module "ecr" {
   source = "../../../../../../../build/terraform/aws/ecr"
   kms    = module.kms
 
@@ -180,14 +166,13 @@ resource "aws_kinesis_firehose_delivery_stream" "firehose" {
 
 module "processor" {
   source = "../../../../../../../build/terraform/aws/lambda"
-  # These are always required for all Lambda.
-  kms       = module.kms
-  appconfig = aws_appconfig_application.substation
+  kms = module.kms
+  appconfig = module.appconfig
 
   config = {
     name        = "processor"
     description = "Processes Kinesis Data Firehose records."
-    image_uri   = "${module.ecr_substation.url}:latest"
+    image_uri   = "${module.ecr.url}:latest"
     image_arm   = true
 
     memory  = 128
@@ -204,7 +189,7 @@ module "processor" {
   ]
 
   depends_on = [
-    aws_appconfig_application.substation,
+    module.appconfig.name,
     module.ecr_substation.url,
   ]
 }

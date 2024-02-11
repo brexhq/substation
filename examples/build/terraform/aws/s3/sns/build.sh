@@ -30,9 +30,7 @@ cd $BUILD_DIR/terraform && \
 terraform init && \
 terraform apply \
 -target=module.kms \
--target=aws_appconfig_application.substation \
--target=aws_appconfig_environment.example \
--target=aws_appconfig_deployment_strategy.instant \
+-target=module.appconfig \
 -target=module.ecr
 
 echo "> Building Substation container images and pushing to AWS ECR" && \

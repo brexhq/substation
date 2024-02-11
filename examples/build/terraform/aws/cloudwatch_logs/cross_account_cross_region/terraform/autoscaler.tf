@@ -2,9 +2,7 @@
 
 module "lambda_autoscaling" {
   source = "../../../../../../../build/terraform/aws/lambda"
-  # These are always required for all Lambda.
-  kms       = module.kms
-  appconfig = aws_appconfig_application.substation
+  appconfig = module.appconfig
 
   config = {
     name        = "autoscaler"
@@ -14,7 +12,7 @@ module "lambda_autoscaling" {
   }
 
   depends_on = [
-    aws_appconfig_application.substation,
+    module.appconfig.name,
     module.ecr_autoscaling.url,
   ]
 }

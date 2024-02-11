@@ -1,8 +1,7 @@
 module "lambda_publisher" {
   source = "../../../../../../../build/terraform/aws/lambda"
-  # These are always required for all Lambda.
   kms       = module.kms
-  appconfig = aws_appconfig_application.substation
+  appconfig = module.appconfig
 
   config = {
     name        = "publisher"
@@ -18,7 +17,7 @@ module "lambda_publisher" {
   }
 
   depends_on = [
-    aws_appconfig_application.substation,
+    module.appconfig.name,
     module.ecr_substation.url,
   ]
 }

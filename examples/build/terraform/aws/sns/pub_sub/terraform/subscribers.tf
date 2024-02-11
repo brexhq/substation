@@ -1,13 +1,11 @@
 module "subscriber_x" {
   source = "../../../../../../../build/terraform/aws/lambda"
-  # These are always required for all Lambda.
-  kms       = module.kms
-  appconfig = aws_appconfig_application.substation
+  appconfig = module.appconfig
 
   config = {
     name        = "subscriber_x"
     description = "Substation node that subscribes to SNS"
-    image_uri   = "${module.ecr_substation.url}:latest"
+    image_uri   = "${module.ecr.url}:latest"
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/subscriber_x"
@@ -17,8 +15,8 @@ module "subscriber_x" {
   }
 
   depends_on = [
-    aws_appconfig_application.substation,
-    module.ecr_substation.url,
+    module.appconfig.name,
+    module.ecr.url,
   ]
 }
 
@@ -42,14 +40,12 @@ resource "aws_lambda_permission" "subscriber_x" {
 
 module "subscriber_y" {
   source = "../../../../../../../build/terraform/aws/lambda"
-  # These are always required for all Lambda.
-  kms       = module.kms
-  appconfig = aws_appconfig_application.substation
+  appconfig = module.appconfig
 
   config = {
     name        = "subscriber_y"
     description = "Substation node that subscribes to SNS"
-    image_uri   = "${module.ecr_substation.url}:latest"
+    image_uri   = "${module.ecr.url}:latest"
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/subscriber_y"
@@ -59,8 +55,8 @@ module "subscriber_y" {
   }
 
   depends_on = [
-    aws_appconfig_application.substation,
-    module.ecr_substation.url,
+    module.appconfig.name,
+    module.ecr.url,
   ]
 }
 
@@ -85,14 +81,12 @@ resource "aws_lambda_permission" "subscriber_y" {
 
 module "subscriber_z" {
   source = "../../../../../../../build/terraform/aws/lambda"
-  # These are always required for all Lambda.
-  kms       = module.kms
-  appconfig = aws_appconfig_application.substation
+  appconfig = module.appconfig  
 
   config = {
     name        = "subscriber_z"
     description = "Substation node that subscribes to SNS"
-    image_uri   = "${module.ecr_substation.url}:latest"
+    image_uri   = "${module.ecr.url}:latest"
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/subscriber_z"
@@ -103,8 +97,8 @@ module "subscriber_z" {
 
 
   depends_on = [
-    aws_appconfig_application.substation,
-    module.ecr_substation.url,
+    module.appconfig.name,
+    module.ecr.url,
   ]
 }
 

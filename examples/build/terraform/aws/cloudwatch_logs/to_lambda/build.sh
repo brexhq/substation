@@ -29,12 +29,9 @@ echo "> Deploying infrastructure in AWS with Terraform" && \
 cd $BUILD_DIR/terraform && \
 terraform init && \
 terraform apply \
--target=module.kms_substation \
--target=aws_appconfig_application.substation \
--target=aws_appconfig_environment.prod \
--target=aws_appconfig_environment.dev \
--target=aws_appconfig_deployment_strategy.instant \
--target=module.ecr_substation \
+-target=module.kms \
+-target=module.appconfig \
+-target=module.ecr
 
 echo "> Building Substation container images and pushing to AWS ECR" && \
 cd $SUBSTATION_ROOT && \

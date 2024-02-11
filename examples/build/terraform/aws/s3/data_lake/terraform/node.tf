@@ -13,14 +13,12 @@ module "lambda_gateway" {
 
 module "lambda_node" {
   source = "../../../../../../../build/terraform/aws/lambda"
-  # These are always required for all Lambda.
-  kms       = module.kms
-  appconfig = aws_appconfig_application.substation
+  appconfig = module.appconfig
 
   config = {
     name        = "node"
     description = "Substation node that writes data to S3"
-    image_uri   = "${module.ecr_substation.url}:latest"
+    image_uri   = "${module.ecr.url}:latest"
     image_arm   = true
 
     env = {
@@ -31,7 +29,7 @@ module "lambda_node" {
   }
 
   depends_on = [
-    aws_appconfig_application.substation,
-    module.ecr_substation.url,
+    module.appconfig.name,
+    module.ecr.url,
   ]
 }

@@ -3,14 +3,12 @@ data "aws_region" "current" {}
 
 module "lambda_consumer" {
   source = "../../../../../../../build/terraform/aws/lambda"
-  # These are always required for all Lambda.
-  kms       = module.kms
-  appconfig = aws_appconfig_application.substation
+  appconfig = module.appconfig
 
   config = {
     name        = "consumer"
     description = "Substation node that is invoked by CloudWatch"
-    image_uri   = "${module.ecr_substation.url}:latest"
+    image_uri   = "${module.ecr.url}:latest"
     image_arm   = true
 
     env = {
@@ -21,8 +19,8 @@ module "lambda_consumer" {
   }
 
   depends_on = [
-    aws_appconfig_application.substation,
-    module.ecr_substation.url,
+    module.appconfig.name,
+    module.ecr.url,
   ]
 }
 
@@ -44,7 +42,7 @@ module "cw_subscription" {
     name            = "substation"
     destination_arn = module.lambda_consumer.arn
     log_groups = [
-      # This example causes recursion. Add other log groups for resources in the account and region.
+      # This group does not exist. Add other log groups for resources in the account and region.
       "/aws/lambda/test",
     ]
   }

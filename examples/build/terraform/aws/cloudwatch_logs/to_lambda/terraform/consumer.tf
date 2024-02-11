@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 module "lambda_consumer" {
-  source = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {

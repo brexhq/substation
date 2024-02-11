@@ -12,7 +12,7 @@ module "lambda_gateway" {
 }
 
 module "lambda_node" {
-  source = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {

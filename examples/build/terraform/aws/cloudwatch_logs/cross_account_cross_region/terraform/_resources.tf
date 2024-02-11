@@ -4,7 +4,7 @@ module "appconfig" {
   source = "../../../../../../../build/terraform/aws/appconfig"
 
   config = {
-    name        = "substation"
+    name = "substation"
     environments = [{
       name = "example"
     }]
@@ -33,7 +33,7 @@ module "ecr_autoscaling" {
 
 # SNS topic for Kinesis Data Stream autoscaling alarms.
 resource "aws_sns_topic" "autoscaling_topic" {
-  name              = "autoscaler"
+  name = "autoscaler"
 }
 
 # Kinesis Data Stream that is used as the destination for CloudWatch Logs.

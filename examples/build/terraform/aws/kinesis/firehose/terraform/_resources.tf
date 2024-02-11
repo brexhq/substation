@@ -16,7 +16,7 @@ module "appconfig" {
   source = "../../../../../../../build/terraform/aws/appconfig"
 
   config = {
-    name        = "substation"
+    name = "substation"
     environments = [{
       name = "example"
     }]
@@ -165,8 +165,8 @@ resource "aws_kinesis_firehose_delivery_stream" "firehose" {
 }
 
 module "processor" {
-  source = "../../../../../../../build/terraform/aws/lambda"
-  kms = module.kms
+  source    = "../../../../../../../build/terraform/aws/lambda"
+  kms       = module.kms
   appconfig = module.appconfig
 
   config = {

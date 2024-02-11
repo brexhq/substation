@@ -1,5 +1,5 @@
 module "lambda_consumer" {
-  source = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {

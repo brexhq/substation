@@ -1,5 +1,5 @@
 module "frontend" {
-  source = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {

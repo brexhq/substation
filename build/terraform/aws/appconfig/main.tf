@@ -1,5 +1,5 @@
 resource "aws_appconfig_application" "app" {
-  name        = var.config.name
+  name = var.config.name
 }
 
 resource "aws_appconfig_environment" "env" {

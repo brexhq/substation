@@ -1,5 +1,5 @@
 module "lambda_enrichment" {
-  source = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {

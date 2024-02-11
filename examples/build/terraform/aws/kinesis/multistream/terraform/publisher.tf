@@ -1,5 +1,5 @@
 module "lambda_publisher" {
-  source = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../../build/terraform/aws/lambda"
   kms       = module.kms
   appconfig = module.appconfig
 

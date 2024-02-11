@@ -34,8 +34,6 @@ resource "aws_dynamodb_table" "table" {
     ignore_changes = [read_capacity, write_capacity]
   }
 
-  # If a customer managed KMS key is not provided, then DynamoDB automatically
-  # encrypts the table with an AWS owned KMS key.
   server_side_encryption {
     enabled     = var.kms ? true : false
     kms_key_arn = var.kms ? var.kms.arn : null

@@ -3,7 +3,8 @@ variable "appconfig" {
     arn = string
     id  = string
   })
-  description = "AppConfig application used for the Lambda configuration."
+  default     = null
+  description = "AppConfig application used for configuring the function. If not provided, then no AppConfig configuration will be created for the function."
 }
 
 variable "kms" {
@@ -11,7 +12,8 @@ variable "kms" {
     arn = string
     id  = string
   })
-  description = "KMS key used to encrypt the Lambda."
+  default     = null
+  description = "Customer managed KMS key used to encrypt the function's environment variables. If not provided, then an AWS managed key is used. See https://docs.aws.amazon.com/lambda/latest/dg/security-dataprotection.html#security-privacy-atrest for more information."
 }
 
 variable "config" {

@@ -3,7 +3,8 @@ variable "kms" {
     arn = string
     id  = string
   })
-  description = "KMS key used to encrypt the repository."
+  default     = null
+  description = "Customer managed KMS key used to encrypt the image. If not provided, then an S3 managed key is used. See https://docs.aws.amazon.com/AmazonECR/latest/userguide/encryption-at-rest.html for more information."
 }
 
 variable "config" {
@@ -11,7 +12,7 @@ variable "config" {
     name         = string
     force_delete = optional(bool, false)
   })
-  description = "Configuration for the ECR repository."
+  description = "Configuration for the ECR image."
 }
 
 variable "tags" {

@@ -2,7 +2,7 @@ resource "random_uuid" "id" {}
 
 resource "aws_sns_topic" "topic" {
   name                        = var.config.name
-  kms_master_key_id           = var.kms ? var.kms.id : "alias/aws/sns"
+  kms_master_key_id           = var.kms ? var.kms.id : null
   fifo_topic                  = endswith(var.config.name, ".fifo") ? true : false
   content_based_deduplication = endswith(var.config.name, ".fifo") ? true : false
 

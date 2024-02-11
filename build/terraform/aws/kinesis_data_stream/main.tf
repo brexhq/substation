@@ -4,8 +4,8 @@ resource "aws_kinesis_stream" "stream" {
   name             = var.config.name
   shard_count      = var.config.shards
   retention_period = var.config.retention
-  encryption_type  = "KMS"
-  kms_key_id       = var.kms ? var.kms.id : "alias/aws/kinesis"
+  encryption_type  = var.kms ? "KMS" : "NONE"
+  kms_key_id       = var.kms ? var.kms.id : null
   lifecycle {
     ignore_changes = [shard_count]
   }

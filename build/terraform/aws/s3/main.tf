@@ -1,9 +1,11 @@
 resource "random_uuid" "id" {}
 
 resource "aws_s3_bucket" "bucket" {
-  bucket        = var.config.name
-  force_destroy = var.config.force_destroy
-  tags          = var.tags
+  bucket              = var.config.name
+  force_destroy       = var.config.force_destroy
+  object_lock_enabled = var.config.compliance ? true : false
+
+  tags = var.tags
 }
 
 resource "aws_s3_bucket_ownership_controls" "bucket" {
@@ -23,14 +25,27 @@ resource "aws_s3_bucket_acl" "bucket" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
+  count = var.kms ? 1 : 0
+
   bucket = aws_s3_bucket.bucket.bucket
 
   rule {
-    # Objects are encrypted with the default S3 AWS KMS key if a KMS key is 
-    # not provided.
     apply_server_side_encryption_by_default {
-      kms_master_key_id = var.kms ? var.kms.arn : null
+      kms_master_key_id = var.kms.arn
       sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+resource "aws_s3_bucket_object_lock_configuration" "object_lock" {
+  count = var.config.compliance ? 1 : 0
+
+  bucket = aws_s3_bucket.bucket.bucket
+
+  rule {
+    default_retention {
+      mode = "COMPLIANCE"
+      days = var.config.compliance.retention
     }
   }
 }

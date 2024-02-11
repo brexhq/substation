@@ -3,7 +3,8 @@ variable "kms" {
     arn = string
     id  = string
   })
-  description = "KMS key used to encrypt the queue."
+  default     = null
+  description = "Customer managed KMS key used to encrypt messages in the queue. If not provided, then no server-side encryption is used. See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-server-side-encryption.html for more information."
 }
 
 variable "config" {

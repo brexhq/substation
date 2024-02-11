@@ -3,7 +3,8 @@ variable "kms" {
     arn = string
     id  = string
   })
-  description = "KMS key used to encrypt the table."
+  default     = null
+  description = "Customer managed KMS key used to encrypt the table. If not provided, then an AWS owned key is used. See https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/EncryptionAtRest.html for more information."
 }
 
 variable "config" {

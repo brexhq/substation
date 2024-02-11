@@ -16,7 +16,7 @@ resource "aws_sqs_queue" "queue" {
   name                              = var.config.name
   delay_seconds                     = var.config.delay
   visibility_timeout_seconds        = var.config.timeout
-  kms_master_key_id                 = var.kms ? var.kms.id : "alias/aws/sqs"
+  kms_master_key_id                 = var.kms ? var.kms.id : null
   kms_data_key_reuse_period_seconds = 300
   fifo_queue                        = endswith(var.config.name, ".fifo") ? true : false
   content_based_deduplication       = endswith(var.config.name, ".fifo") ? true : false

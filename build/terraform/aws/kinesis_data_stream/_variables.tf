@@ -3,7 +3,8 @@ variable "kms" {
     arn = string
     id  = string
   })
-  description = "KMS key used to encrypt the stream."
+  default     = null
+  description = "KMS key used to encrypt the stream. If not provided, then no server-side encryption is used. See https://docs.aws.amazon.com/streams/latest/dev/what-is-sse.html for more information."
 }
 
 variable "config" {

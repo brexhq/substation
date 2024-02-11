@@ -3,13 +3,17 @@ variable "kms" {
     arn = string
     id  = string
   })
-  description = "KMS key used to encrypt the bucket."
+  default     = null
+  description = "Customer managed KMS key used to encrypt objects in the bucket. If not provided, then an S3 managed key is used. See https://docs.aws.amazon.com/AmazonS3/latest/userguide/serv-side-encryption.html for more information."
 }
 
 variable "config" {
   type = object({
     name          = string
     force_destroy = optional(bool, true)
+    compliance = optional(object({
+      retention = optional(number, 0)
+    }))
   })
   description = "Configuration for the S3 bucket."
 }

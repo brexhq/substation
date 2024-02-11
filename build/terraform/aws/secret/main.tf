@@ -2,7 +2,7 @@ resource "random_uuid" "id" {}
 
 resource "aws_secretsmanager_secret" "secret" {
   name       = var.config.name
-  kms_key_id = var.kms ? var.kms.id : null
+  kms_key_id = var.kms != null ? var.kms.id : null
   tags       = var.tags
 }
 
@@ -32,7 +32,7 @@ data "aws_iam_policy_document" "access" {
   }
 
   dynamic "statement" {
-    for_each = var.kms ? [1] : []
+    for_each = var.kms != null ? [1] : []
 
     content {
       effect = "Allow"

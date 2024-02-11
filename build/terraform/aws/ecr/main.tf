@@ -8,8 +8,8 @@ resource "aws_ecr_repository" "repository" {
   }
 
   encryption_configuration {
-    encryption_type = var.kms ? "KMS" : null
-    kms_key         = var.kms ? var.kms.arn : null
+    encryption_type = var.kms != null ? "KMS" : null
+    kms_key         = var.kms != null ? var.kms.arn : null
   }
 
   tags = var.tags

@@ -30,7 +30,7 @@ data "aws_iam_policy_document" "destination_assume_role" {
 
 data "aws_iam_policy_document" "destination" {
   dynamic "statement" {
-    for_each = var.kms ? [1] : []
+    for_each = var.kms != null ? [1] : []
 
     content {
       effect = "Allow"

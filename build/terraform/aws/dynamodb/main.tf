@@ -35,8 +35,8 @@ resource "aws_dynamodb_table" "table" {
   }
 
   server_side_encryption {
-    enabled     = var.kms ? true : false
-    kms_key_arn = var.kms ? var.kms.arn : null
+    enabled     = var.kms != null ? true : false
+    kms_key_arn = var.kms != null ? var.kms.arn : null
   }
 
   # Streams are only charged for read operations and reads from AWS Lambda are free:
@@ -102,7 +102,7 @@ data "aws_iam_policy_document" "access" {
   }
 
   dynamic "statement" {
-    for_each = var.kms ? [1] : []
+    for_each = var.kms != null ? [1] : []
 
     content {
       effect = "Allow"

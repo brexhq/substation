@@ -2,7 +2,7 @@ resource "random_uuid" "id" {}
 
 resource "aws_sns_topic" "topic" {
   name                        = var.config.name
-  kms_master_key_id           = var.kms ? var.kms.id : null
+  kms_master_key_id           = var.kms != null ? var.kms.id : null
   fifo_topic                  = endswith(var.config.name, ".fifo") ? true : false
   content_based_deduplication = endswith(var.config.name, ".fifo") ? true : false
 
@@ -35,7 +35,7 @@ data "aws_iam_policy_document" "access" {
   }
 
   dynamic "statement" {
-    for_each = var.kms ? [1] : []
+    for_each = var.kms != null ? [1] : []
 
     content {
       effect = "Allow"

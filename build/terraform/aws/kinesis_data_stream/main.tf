@@ -4,8 +4,8 @@ resource "aws_kinesis_stream" "stream" {
   name             = var.config.name
   shard_count      = var.config.shards
   retention_period = var.config.retention
-  encryption_type  = var.kms ? "KMS" : "NONE"
-  kms_key_id       = var.kms ? var.kms.id : null
+  encryption_type  = var.kms != null ? "KMS" : "NONE"
+  kms_key_id       = var.kms != null ? var.kms.id : null
   lifecycle {
     ignore_changes = [shard_count]
   }
@@ -62,7 +62,7 @@ data "aws_iam_policy_document" "access" {
   }
 
   dynamic "statement" {
-    for_each = var.kms ? [1] : []
+    for_each = var.kms != null ? [1] : []
 
     content {
       effect = "Allow"

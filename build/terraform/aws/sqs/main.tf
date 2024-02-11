@@ -16,7 +16,7 @@ resource "aws_sqs_queue" "queue" {
   name                              = var.config.name
   delay_seconds                     = var.config.delay
   visibility_timeout_seconds        = var.config.timeout
-  kms_master_key_id                 = var.kms ? var.kms.id : null
+  kms_master_key_id                 = var.kms != null ? var.kms.id : null
   kms_data_key_reuse_period_seconds = 300
   fifo_queue                        = endswith(var.config.name, ".fifo") ? true : false
   content_based_deduplication       = endswith(var.config.name, ".fifo") ? true : false
@@ -51,7 +51,7 @@ data "aws_iam_policy_document" "access" {
   }
 
   dynamic "statement" {
-    for_each = var.kms ? [1] : []
+    for_each = var.kms != null ? [1] : []
 
     content {
       effect = "Allow"

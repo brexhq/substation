@@ -25,7 +25,7 @@ resource "aws_s3_bucket_acl" "bucket" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
-  count = var.kms ? 1 : 0
+  count = var.kms != null ? 1 : 0
 
   bucket = aws_s3_bucket.bucket.bucket
 
@@ -78,7 +78,7 @@ data "aws_iam_policy_document" "access" {
   }
 
   dynamic "statement" {
-    for_each = var.kms ? [1] : []
+    for_each = var.kms != null ? [1] : []
 
     content {
       effect = "Allow"

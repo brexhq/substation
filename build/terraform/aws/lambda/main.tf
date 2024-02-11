@@ -11,7 +11,7 @@ resource "aws_lambda_function" "lambda_function" {
 
   # Runtime settings.
   role        = aws_iam_role.role.arn
-  kms_key_arn = var.kms ? var.kms.arn : null
+  kms_key_arn = var.kms != null ? var.kms.arn : null
   timeout     = var.config.timeout
   memory_size = var.config.memory
 
@@ -66,7 +66,7 @@ data "aws_iam_policy_document" "service_policy_document" {
 }
 
 resource "aws_appconfig_configuration_profile" "config" {
-  count = var.appconfig ? 1 : 0
+  count = var.appconfig != null ? 1 : 0
 
   application_id = var.appconfig.id
   description    = "Configuration profile for the ${var.config.name} Lambda"
@@ -113,7 +113,7 @@ resource "aws_iam_policy" "custom_policy" {
 
 data "aws_iam_policy_document" "policy" {
   dynamic "statement" {
-    for_each = var.appconfig ? [1] : []
+    for_each = var.appconfig != null ? [1] : []
 
     content {
       effect = "Allow"
@@ -130,7 +130,7 @@ data "aws_iam_policy_document" "policy" {
   }
 
   dynamic "statement" {
-    for_each = var.kms ? [1] : []
+    for_each = var.kms != null ? [1] : []
 
     content {
       effect = "Allow"
@@ -189,7 +189,7 @@ data "aws_iam_policy_document" "access" {
   }
 
   dynamic "statement" {
-    for_each = var.kms ? [1] : []
+    for_each = var.kms != null ? [1] : []
 
     content {
       effect = "Allow"

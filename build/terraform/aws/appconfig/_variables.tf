@@ -1,7 +1,6 @@
 variable "config" {
   type = object({
     name        = string
-    description = string
     environments = list(object({
       name = string
     }))

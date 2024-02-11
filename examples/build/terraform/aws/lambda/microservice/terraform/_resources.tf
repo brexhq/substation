@@ -13,7 +13,6 @@ module "appconfig" {
 
 module "ecr" {
   source = "../../../../../../../build/terraform/aws/ecr"
-  kms    = module.kms
 
   config = {
     name         = "substation"

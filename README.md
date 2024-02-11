@@ -359,6 +359,9 @@ module "appconfig" {
 
   config = {
     name = "substation"
+    environments = [{
+        name = "example"
+    }]
   }
 }
 

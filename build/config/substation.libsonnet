@@ -910,6 +910,14 @@
           type: 'time_from_unix',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
+        unix_milli(settings={}): {
+          local default = {
+            object: $.config.object,
+          },
+
+          type: 'time_from_unix_milli',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
       },
       now(settings={}): {
         local default = {
@@ -938,6 +946,14 @@
         },
 
         type: 'time_to_unix',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      unix_milli(settings={}): {
+        local default = {
+          object: $.config.object,
+        },
+
+        type: 'time_to_unix_milli',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
     },

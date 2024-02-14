@@ -1079,7 +1079,7 @@
     cnd: $.pattern.condition,
     condition: {
       obj(key): {
-        object: { source: key },
+        object: { source_key: key },
       },
       // Negates any inspector.
       negate(inspector): $.condition.meta.negate(settings={ inspector: inspector }),

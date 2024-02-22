@@ -123,7 +123,7 @@ func (tf *enrichHTTPPost) Transform(ctx context.Context, msg *message.Message) (
 	if strings.Contains(url, enrichHTTPInterp) {
 		if tf.conf.Object.SourceKey != "" {
 			value := msg.GetValue(tf.conf.Object.SourceKey)
-			if value.Exists() {
+			if !value.Exists() {
 				return []*message.Message{msg}, nil
 			}
 

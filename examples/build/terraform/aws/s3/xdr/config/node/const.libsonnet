@@ -1,20 +1,16 @@
 local sub = import '../../../../../../../../build/config/substation.libsonnet';
 
 {
-  threat_signal_key: 'meta threat.signals',
-  // threat_signal is a custom function that generates a new threat signal
-  // and stores it in an array. This array is later processed into new events
-  // that are sent to the S3 bucket.
+  threat_signals_key: 'threat.signals',
+  // threat_signal is a custom function that appends a threat signal to an
+  // event as enrichment metadata.
   //
-  // An alternate approach is to add the threat signal into the original event
-  // as enrichment metadata. This approach provides more context but results in
-  // larger events.
-  threat_signal(settings): [
-    sub.tf.obj.insert({
-      obj: { trg: 'meta threat' },
-      value: { signal: { name: settings.name, description: settings.description, risk_score: settings.risk_score } },
-    }),
-    sub.tf.obj.cp({ src: settings.entity, trg: 'meta threat.signal.entity' }),
-    sub.tf.obj.cp({ src: 'meta threat.signal', trg: sub.helpers.obj.append_array($.threat_signal_key) }),
-  ],
+  // An alternate approach is to compose a new threat signal event within
+  // the message metadata and send it as a separate event. This results in
+  // smaller events with less context and requires a correlation value
+  // (e.g., hash, ID) to link the threat signal to the original event.
+  threat_signal(settings): sub.tf.obj.insert({
+    obj: { trg: sub.helpers.obj.append_array($.threat_signals_key) },
+    value: { name: settings.name, description: settings.description, risk_score: settings.risk_score },
+  }),
 }

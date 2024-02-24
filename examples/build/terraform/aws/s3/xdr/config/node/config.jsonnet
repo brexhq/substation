@@ -1,7 +1,7 @@
 local sub = import '../../../../../../../../build/config/substation.libsonnet';
 
 // This is a placeholder that must be replaced with the bucket produced by Terraform.
-local bucket = 'c034c726-70bf-c397-81bd-c9a0d9e82371-substation';
+local bucket = 'substation-3e820117-61f0-2fbb-05c4-1fba0db9d82c';
 local const = import 'const.libsonnet';
 
 {
@@ -15,7 +15,7 @@ local const = import 'const.libsonnet';
         condition: sub.cnd.any([
           sub.cnd.str.has({ obj: { src: 'user_name' }, value: 'root' }),
         ]),
-        transform: sub.tf.meta.pipe({ transforms: const.threat_signal({ name: 'root_activity', description: 'Root user activity detected.', risk_score: 74, entity: 'user_name' }) }),
+        transform: const.threat_signal({ name: 'root_activity', description: 'Root user activity detected.', risk_score: 74 }),
       },
     ] }),
     // Complex conditions are made possible by using the meta_condition inspector.
@@ -34,33 +34,26 @@ local const = import 'const.libsonnet';
             sub.cnd.str.has({ obj: { src: 'user_name' }, value: 'admin' }),
           ]) }),
         ]),
-        transform: sub.tf.meta.pipe({
-          transforms:
-            const.threat_signal({ name: 'public_ip_root_admin_activity', description: 'Public IP root or admin user activity detected.', risk_score: 99, entity: 'source_ip'
-                                                                                                                                                                 + const.threat_signal({ name: 'public_ip_root_admin_activity', description: 'Public IP root or admin user activity detected.', risk_score: 99, entity: 'user_name' }) }),
-        }),
+        transform: const.threat_signal({ name: 'public_ip_root_admin_activity', description: 'Public IP root or admin user activity detected.', risk_score: 99 }),
       },
     ] }),
-    // If the threat signal key contains matches, then those are written to the S3
-    // bucket as individual events. The `auxiliary_transforms` field is used to format
-    // the data as a JSON Lines file.
+    // If the event contains a threat signal, then it's written to the XDR path
+    // in the S3 bucket; otherwise the event is discarded. The `auxiliary_transforms`
+    // field is used to format the data as a JSON Lines file.
     //
-    // If the threat signal key is empty, then no data is written to the S3 bucket.
+    // If there are no threat signals, then the event is discarded.
     sub.tf.meta.switch({ cases: [
       {
         condition: sub.cnd.any([
-          sub.cnd.num.len.gt({ obj: { src: const.threat_signal_key }, value: 0 }),
+          sub.cnd.num.len.gt({ obj: { src: const.threat_signals_key }, value: 0 }),
         ]),
-        transform: sub.tf.meta.pipe({ transforms: [
-          sub.tf.agg.from.array({ obj: { src: const.threat_signal_key } }),
-          sub.tf.send.aws.s3(
-            settings={
-              bucket_name: bucket,
-              file_path: { prefix: 'xdr', time_format: '2006/01/02', uuid: true },
-              auxiliary_transforms: sub.pattern.tf.fmt.jsonl,
-            }
-          ),
-        ] }),
+        transform: sub.tf.send.aws.s3(
+          settings={
+            bucket_name: bucket,
+            file_path: { prefix: 'xdr', time_format: '2006/01/02', uuid: true, suffix: '.jsonl' },
+            auxiliary_transforms: sub.pattern.tf.fmt.jsonl,
+          }
+        ),
       },
     ] }),
   ],

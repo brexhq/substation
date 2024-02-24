@@ -280,6 +280,34 @@ flowchart LR
     end
 ```
 
+## XDR
+
+Deploys a data pipeline that implements an XDR (extended detection and response) pattern by reading files from an S3 bucket, conditionally filtering and applying threat / risk enrichment metadata to events, and then writing the enriched events to an S3 bucket. The S3 bucket contains two copies of the data (original and transformed).
+
+```mermaid
+flowchart LR
+    bucket([S3 Bucket])
+    handler[[Handler]]
+
+    threat[Threat Enrichments]
+    sendS3[Send to AWS S3]
+
+    %% connections
+    bucket --> handler
+
+    subgraph Substation Node
+    handler --> threat
+
+    subgraph Transforms
+    threat --> sendS3
+    end
+
+    end
+
+    sendS3 --> bucket
+```
+
+
 # SNS
 
 ## Pub/Sub

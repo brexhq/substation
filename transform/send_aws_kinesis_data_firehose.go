@@ -64,9 +64,10 @@ func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendA
 
 	// Setup the AWS client.
 	tf.client.Setup(aws.Config{
-		Region:     conf.AWS.Region,
-		RoleARN:    conf.AWS.RoleARN,
-		MaxRetries: conf.Retry.Count,
+		Region:          conf.AWS.Region,
+		RoleARN:         conf.AWS.RoleARN,
+		MaxRetries:      conf.Retry.Count,
+		RetryableErrors: conf.Retry.ErrorMessages,
 	})
 
 	agg, err := aggregate.New(aggregate.Config{

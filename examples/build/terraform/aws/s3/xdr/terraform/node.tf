@@ -10,7 +10,7 @@ module "lambda_node" {
 
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/node"
-      "SUBSTATION_HANDLER" : "AWS_S3_SNS"
+      "SUBSTATION_HANDLER" : "AWS_S3"
       "SUBSTATION_DEBUG" : true
     }
   }

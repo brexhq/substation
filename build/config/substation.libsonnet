@@ -1055,17 +1055,19 @@
   // Mirrors interfaces from the internal/secrets package.
   secrets: {
     default: { id: null, ttl: null },
-    aws_secrets_manager(settings={}): {
-      local default = {
-        id: null,
-        name: null,
-        ttl_offset: null,
-        aws: $.config.aws,
-        retry: $.config.retry,
-      },
+    aws: {
+      secrets_manager(settings={}): {
+        local default = {
+          id: null,
+          name: null,
+          ttl_offset: null,
+          aws: $.config.aws,
+          retry: $.config.retry,
+        },
 
-      type: 'aws_secrets_manager',
-      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        type: 'aws_secrets_manager',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
     },
     environment_variable(settings={}): {
       local default = { id: null, name: null, ttl_offset: null },

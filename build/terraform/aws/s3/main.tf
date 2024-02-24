@@ -3,7 +3,7 @@ resource "random_uuid" "id" {}
 resource "aws_s3_bucket" "bucket" {
   bucket              = var.config.name
   force_destroy       = var.config.force_destroy
-  object_lock_enabled = var.config.compliance ? true : false
+  object_lock_enabled = var.config.compliance != null ? true : false
 
   tags = var.tags
 }
@@ -38,7 +38,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
 }
 
 resource "aws_s3_bucket_object_lock_configuration" "object_lock" {
-  count = var.config.compliance ? 1 : 0
+  count = var.config.compliance != null ? 1 : 0
 
   bucket = aws_s3_bucket.bucket.bucket
 

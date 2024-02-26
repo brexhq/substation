@@ -2,12 +2,10 @@
 Manages the validation check before deployment of Substation configurations
 in AWS AppConfig.
 
-This is intended to be deployed to a CI/CD
-pipeline (e.g., GitHub Actions, Circle CI, Jenkins, etc.) for automated
-configuration tests.
+This is intended to be deployed to a CI/CD pipeline (e.g., GitHub Actions, 
+Circle CI, Jenkins, etc.) for automated configuration tests.
 
-Typical usage example:
-
+Usage example:
     SUBSTATION_CONFIG_DIRECTORY=config AWS_APPCONFIG_VALIDATOR=substation_validator python3 appconfig_validate.py
 """
 

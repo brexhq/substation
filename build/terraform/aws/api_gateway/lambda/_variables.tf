@@ -9,7 +9,12 @@ variable "config" {
   type = object({
     name = string
   })
-  description = "Configuration for the API Gateway Lambda integration."
+
+  description = <<EOH
+    Configuration for the API Gateway Lambda integration:
+
+    * name: The name of the API Gateway.
+EOH
 }
 
 variable "tags" {

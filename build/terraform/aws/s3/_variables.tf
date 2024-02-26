@@ -15,7 +15,13 @@ variable "config" {
       retention = optional(number, 0)
     }))
   })
-  description = "Configuration for the S3 bucket."
+  description = <<EOH
+    Configuration for the S3 bucket:
+
+    * name:    The name of the bucket.
+    * force_destroy: A boolean that indicates all objects should be deleted from the bucket so that the bucket can be destroyed without error. These objects are not recoverable.
+    * compliance.retention: The default retention period for objects in the bucket. The value is in days. **Note: this enables Compliance mode for objects in the bucket.** See https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html#object-lock-retention-modes for more information.
+EOH
 }
 
 variable "tags" {

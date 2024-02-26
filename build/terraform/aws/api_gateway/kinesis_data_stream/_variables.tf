@@ -10,7 +10,13 @@ variable "config" {
     name    = string
     timeout = optional(number, 1000)
   })
-  description = "Configuration for the API Gateway Kinesis Data Stream integration."
+
+  description = <<EOH
+    Configuration for the API Gateway Kinesis Data Stream integration:
+
+    * name: The name of the API Gateway.
+    * timeout: The timeout in milliseconds for the API Gateway.
+EOH
 }
 
 variable "tags" {

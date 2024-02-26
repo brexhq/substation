@@ -12,7 +12,12 @@ variable "config" {
     name         = string
     force_delete = optional(bool, false)
   })
-  description = "Configuration for the ECR image."
+  description = <<EOH
+    Configuration for the ECR repository:
+
+    * name:         The name of the repository.
+    * force_delete: Determines if the repository can be deleted when it contains images.
+EOH
 }
 
 variable "tags" {

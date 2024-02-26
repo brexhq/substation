@@ -11,7 +11,11 @@ variable "config" {
   type = object({
     name = string
   })
-  description = "Configuration for the SNS topic."
+  description = <<EOH
+    Configuration for the SNS topic:
+
+    * name:    The name of the SNS topic.
+EOH
 }
 
 variable "tags" {

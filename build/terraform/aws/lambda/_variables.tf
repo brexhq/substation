@@ -38,7 +38,19 @@ variable "config" {
       resources = list(string)
     })), [])
   })
-  description = "Configuration for the Lambda function."
+  description = <<EOH
+    Configuration for the Lambda function:
+
+    * name: The name of the Lambda function.
+    * description: The description of the Lambda function.
+    * image_uri: The URI of the container image that contains the function code.
+    * image_arm: Determines whether the image is an ARM64 image.
+    * timeout: The amount of time that Lambda allows a function to run before stopping it. The default is 300 seconds.
+    * memory: The amount of memory that your function has access to. The default is 1024 MB.
+    * env: A map that defines environment variables for the function.
+    * vpc_config: A map that defines the VPC configuration for the function.
+    * iam_statements: A list of custom IAM policy statements to attach to the function's role.
+EOH
 }
 
 variable "tags" {

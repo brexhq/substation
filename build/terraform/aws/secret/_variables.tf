@@ -11,7 +11,11 @@ variable "config" {
   type = object({
     name = string
   })
-  description = "Configuration for the secret."
+  description = <<EOH
+    Configuration for the secret:
+
+    * name:    The name of the secret.
+EOH
 }
 
 variable "tags" {

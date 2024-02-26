@@ -21,7 +21,13 @@ variable "config" {
       "10.0.192.0/18" = "us-east-1c"
     }
   }
-  description = "Configuration for the VPC."
+  description = <<EOH
+    Configuration for the VPC:
+
+    * cidr_block: The CIDR block for the VPC. Defaults to 10.0.0.0/16.
+    * public_subnet: A map of CIDR blocks to availability zones for the public subnets. Defaults to 10.0.0.0/18 in us-east-1a.
+    * private_subnets: A map of CIDR blocks to availability zones for the private subnets. Defaults to 10.0.64.0/18 in us-east-1a, 10.0.128.0/18 in us-east-1b, and 10.0.192.0/18 in us-east-1c.
+EOH
 
   validation {
     condition     = length(keys(var.config.public_subnet)) == 1

@@ -1,9 +1,8 @@
 # Versioning
 
-Substation uses [Semantic Versioning 2.0](https://semver.org/). Versions are managed using Git tags and are updated by the maintainers when releases are made. The version applies to the [Go module](https://pkg.go.dev/github.com/brexhq/substation) and the components described below:
+Substation uses [Semantic Versioning 2.0](https://semver.org/). Versions are managed using Git tags and are updated by the maintainers when releases are made. The version applies to the [Go module](https://pkg.go.dev/github.com/brexhq/substation) and the components below:
 
 - cmd/aws/*
-- cmd/client/*
 - condition/*
 - config/*
 - message/*

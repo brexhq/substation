@@ -5,7 +5,6 @@ Usage example:
     python3 put_records.py my-stream my-file.txt --print-response
 """
 
-
 import argparse
 import boto3
 import uuid

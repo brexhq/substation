@@ -1,4 +1,4 @@
-// Package transform provides functions for transforming data.
+// Package transform provides functions for transforming messages.
 package transform
 
 import (
@@ -13,7 +13,7 @@ import (
 var errMsgInvalidObject = fmt.Errorf("message must be JSON object")
 
 // Transformer is the interface implemented by all transforms and
-// provides the ability to transform data.
+// provides the ability to transform a message.
 type Transformer interface {
 	Transform(context.Context, *message.Message) ([]*message.Message, error)
 }
@@ -183,9 +183,10 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	}
 }
 
-func Apply(ctx context.Context, tf []Transformer, mess ...*message.Message) ([]*message.Message, error) {
-	resultMsgs := make([]*message.Message, len(mess))
-	copy(resultMsgs, mess)
+// Applies one or more transform functions to one or more messages.
+func Apply(ctx context.Context, tf []Transformer, msgs ...*message.Message) ([]*message.Message, error) {
+	resultMsgs := make([]*message.Message, len(msgs))
+	copy(resultMsgs, msgs)
 
 	for i := 0; len(resultMsgs) > 0 && i < len(tf); i++ {
 		var nextResultMsgs []*message.Message

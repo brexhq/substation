@@ -14,7 +14,7 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "substation-secret-access-${resource.random_uuid.id.id}"
+  name        = "substation-secret-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} secret."
   policy      = data.aws_iam_policy_document.access.json
 }

@@ -58,7 +58,7 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "substation-s3-access-${resource.random_uuid.id.id}"
+  name        = "substation-s3-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} S3 bucket."
   policy      = data.aws_iam_policy_document.access.json
 }

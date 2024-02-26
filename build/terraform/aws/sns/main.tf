@@ -17,7 +17,7 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "substation-sns-access-${resource.random_uuid.id.id}"
+  name        = "substation-sns-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} SNS topic."
   policy      = data.aws_iam_policy_document.access.json
 }

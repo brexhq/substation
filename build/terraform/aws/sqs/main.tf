@@ -32,7 +32,7 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "substation-sqs-access-${resource.random_uuid.id.id}"
+  name        = "substation-sqs-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} SQS queue."
   policy      = data.aws_iam_policy_document.access.json
 }

@@ -28,6 +28,15 @@ module "validator" {
   ]
 }
 
+module "ecr" {
+  source = "../../../../../../../build/terraform/aws/ecr"
+
+  config = {
+    name         = "substation"
+    force_delete = true
+  }
+}
+
 module "ecr_validator" {
   source = "../../../../../../../build/terraform/aws/ecr"
 

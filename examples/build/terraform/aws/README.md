@@ -178,6 +178,10 @@ flowchart LR
 
 # Lambda
 
+## AppConfig
+
+Deploys a data pipeline with an invalid config that triggers AppConfig's validation feature. When the AppConfig service receives the compiled Substation configuration and attempts to deploy, the deployment will fail.
+
 ## Microservice
 
 Deploys a synchronous microservice that performs DNS resolution. The service can be invoked [synchronously](https://docs.aws.amazon.com/lambda/latest/dg/invocation-sync.html) or using a [Lambda URL](https://docs.aws.amazon.com/lambda/latest/dg/lambda-urls.html). 

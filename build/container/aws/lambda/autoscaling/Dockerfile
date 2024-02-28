@@ -2,6 +2,7 @@ ARG AWS_ARCHITECTURE=x86_64
 
 FROM golang:1.22 as build
 ENV GO111MODULE=on
+ENV CGO_ENABLED=0
 
 # install AppConfig Lambda extension
 COPY build/scripts/aws/lambda/extension.zip /tmp/extension.zip

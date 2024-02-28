@@ -2,6 +2,7 @@ ARG AWS_ARCHITECTURE=x86_64
 
 FROM golang:1.22 as build
 ENV GO111MODULE=on
+ENV CGO_ENABLED=0
 
 # install deps
 WORKDIR /usr/local/go/src/substation/

@@ -1,7 +1,16 @@
+# This matches the output from the AppConfig module.
 variable "appconfig" {
   type = object({
     arn = string
     id  = string
+    lambda = optional(object({
+      name = string
+      arn  = string
+      role = object({
+        name = string
+        arn  = string
+      })
+    }))
   })
   default     = null
   description = "AppConfig application used for configuring the function. If not provided, then no AppConfig configuration will be created for the function."

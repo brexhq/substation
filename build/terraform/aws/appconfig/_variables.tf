@@ -1,3 +1,16 @@
+variable "lambda" {
+  type = object({
+    name = string
+    arn  = string
+    role = object({
+      name = string
+      arn  = string
+    })
+  })
+  default     = null
+  description = "Lambda function used to validate configuration profiles."
+}
+
 variable "config" {
   type = object({
     name = string

@@ -73,6 +73,11 @@ resource "aws_appconfig_configuration_profile" "config" {
   name           = var.config.name
   location_uri   = "hosted"
 
+  validator {
+    type    = var.appconfig.lambda != null ? "LAMBDA" : null
+    content = var.appconfig.lambda != null ? var.appconfig.lambda.arn : null
+  }
+
   tags = var.tags
 }
 
@@ -112,6 +117,18 @@ resource "aws_iam_policy" "custom_policy" {
 }
 
 data "aws_iam_policy_document" "policy" {
+  // This is a no-op statement that is used for creating a default policy.
+  statement {
+    effect = "Allow"
+    actions = [
+      "none:Substation",
+    ]
+
+    resources = [
+      "*"
+    ]
+  }
+
   dynamic "statement" {
     for_each = var.appconfig != null ? [1] : []
 

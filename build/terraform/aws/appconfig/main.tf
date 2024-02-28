@@ -21,3 +21,13 @@ resource "aws_appconfig_deployment_strategy" "instant" {
   growth_type                    = "LINEAR"
   replicate_to                   = "NONE"
 }
+
+# Allows AppConfig to execute a validator Lambda function.
+resource "aws_lambda_permission" "allow_appconfig" {
+  count = var.lambda != null ? 1 : 0
+
+  statement_id  = "AllowExecutionFromAppConfig"
+  action        = "lambda:InvokeFunction"
+  function_name = var.lambda.name
+  principal     = "appconfig.amazonaws.com"
+}

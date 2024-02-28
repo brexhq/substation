@@ -180,7 +180,7 @@ flowchart LR
 
 ## AppConfig
 
-Deploys a data pipeline with an invalid config that triggers AppConfig's validation feature. When the AppConfig service receives the compiled Substation configuration and attempts to deploy, the deployment will fail.
+Deploys a data pipeline with an invalid config that triggers AppConfig's validation feature. When the AppConfig service receives the compiled Substation configuration and attempts to deploy, the deployment will fail and return an error.
 
 ## Microservice
 

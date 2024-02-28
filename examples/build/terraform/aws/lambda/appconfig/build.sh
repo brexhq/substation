@@ -36,7 +36,7 @@ echo "> Building Substation container images and pushing to AWS ECR" && \
 cd $SUBSTATION_ROOT && \
 sh build/scripts/aws/lambda/get_appconfig_extension.sh && \
 docker build --build-arg AWS_ARCHITECTURE=$AWS_ARCHITECTURE -f build/container/aws/lambda/substation/Dockerfile -t substation:latest-$AWS_ARCHITECTURE . && \
-docker build --build-arg AWS_ARCHITECTURE=$AWS_ARCHITECTURE -f build/container/aws/lambda/validation/Dockerfile -t substation_validator:latest-$AWS_ARCHITECTURE . && \
+docker build --build-arg AWS_ARCHITECTURE=$AWS_ARCHITECTURE -f build/container/aws/lambda/validator/Dockerfile -t substation_validator:latest-$AWS_ARCHITECTURE . && \
 # In production environments the tag should match the version of Substation being deployed
 docker tag substation:latest-$AWS_ARCHITECTURE $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation:latest && \
 docker tag substation_validator:latest-$AWS_ARCHITECTURE $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation_validator:latest && \

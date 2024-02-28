@@ -73,9 +73,12 @@ resource "aws_appconfig_configuration_profile" "config" {
   name           = var.config.name
   location_uri   = "hosted"
 
-  validator {
-    type    = var.appconfig.lambda != null ? "LAMBDA" : null
-    content = var.appconfig.lambda != null ? var.appconfig.lambda.arn : null
+  dynamic "validator" {
+    for_each = var.appconfig.lambda != null ? [1] : []
+    content {
+      type    = "LAMBDA"
+      content = var.appconfig.lambda.arn
+    }
   }
 
   tags = var.tags
@@ -94,7 +97,6 @@ resource "aws_iam_role_policy_attachment" "lambda_vpc_access_execution_role" {
   role       = aws_iam_role.role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
-
 
 resource "aws_iam_role_policy_attachment" "xray_write_only_access" {
   role       = aws_iam_role.role.name

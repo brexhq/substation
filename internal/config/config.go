@@ -44,6 +44,9 @@ type Request struct {
 type Retry struct {
 	// Count is the maximum number of times that the action will be retried.
 	Count int `json:"count"`
+	// ErrorMessages are regular expressions that match error messages and determine
+	// if the action should be retried.
+	ErrorMessages []string `json:"error_messages"`
 }
 
 type Batch struct {

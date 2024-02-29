@@ -40,7 +40,7 @@ func (h *HTTP) IsEnabled() bool {
 
 // Get is a context-aware convenience function for making GET requests.
 func (h *HTTP) Get(ctx context.Context, url string, headers ...Header) (*http.Response, error) {
-	req, err := retryablehttp.NewRequest("GET", url, nil)
+	req, err := retryablehttp.NewRequestWithContext(context.WithoutCancel(ctx), "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("http get URL %s: %v", url, err)
 	}
@@ -70,7 +70,7 @@ func (h *HTTP) Post(ctx context.Context, url string, payload interface{}, header
 		return nil, fmt.Errorf("http post URL %s: %v", url, errHTTPInvalidPayload)
 	}
 
-	req, err := retryablehttp.NewRequest("POST", url, tmp)
+	req, err := retryablehttp.NewRequestWithContext(context.WithoutCancel(ctx), "POST", url, tmp)
 	if err != nil {
 		return nil, fmt.Errorf("http post URL %s: %v", url, err)
 	}

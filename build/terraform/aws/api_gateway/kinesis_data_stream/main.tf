@@ -30,7 +30,7 @@ data "aws_iam_policy_document" "service_policy_document" {
 }
 
 resource "aws_iam_role" "role" {
-  name               = "substation-api-gateway-${resource.random_uuid.id.id}"
+  name               = "substation-api-kinesis-${resource.random_uuid.id.id}"
   assume_role_policy = data.aws_iam_policy_document.service_policy_document.json
   tags               = var.tags
 }

@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"io"
 	"os"
+	"strconv"
 
 	"github.com/brexhq/substation/internal/media"
 	"github.com/klauspost/compress/snappy"
@@ -79,9 +80,16 @@ func (s *scanner) ReadFile(file *os.File) error {
 	s.Scanner = bufio.NewScanner(reader)
 	s.Scanner.Split(bufio.ScanLines)
 
-	// Each line has a default capacity of 64 KB and a maximum capacity of 128 MB.
+	// Each line has a default capacity of 64 KB and a variable maximum capacity
+	// (defaults to 128 MB).
 	b := make([]byte, bufio.MaxScanTokenSize)
-	s.Scanner.Buffer(b, (1024^2)*128)
+	if mem, ok := os.LookupEnv("AWS_LAMBDA_FUNCTION_MEMORY_SIZE"); !ok {
+		s.Scanner.Buffer(b, (1024^2)*128)
+	} else {
+		m, _ := strconv.ParseFloat(mem, 64)
+		// For AWS Lambda, the max capacity is 80% of the function's memory.
+		s.Scanner.Buffer(b, 1000000*int(m*0.8))
+	}
 
 	return nil
 }

@@ -910,6 +910,14 @@
           type: 'time_from_unix',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
+        unix_milli(settings={}): {
+          local default = {
+            object: $.config.object,
+          },
+
+          type: 'time_from_unix_milli',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
       },
       now(settings={}): {
         local default = {
@@ -938,6 +946,14 @@
         },
 
         type: 'time_to_unix',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      unix_milli(settings={}): {
+        local default = {
+          object: $.config.object,
+        },
+
+        type: 'time_to_unix_milli',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
     },
@@ -1032,24 +1048,26 @@
     metric: { name: null, attributes: null, destination: null },
     object: { source_key: null, target_key: null, batch_key: null },
     request: { timeout: '1s' },
-    retry: { count: 3 },
+    retry: { count: 3, error_messages: null },
   },
   // Mirrors config from the internal/file package.
   file_path: { prefix: null, time_format: '2006/01/02', uuid: true, suffix: null },
   // Mirrors interfaces from the internal/secrets package.
   secrets: {
     default: { id: null, ttl: null },
-    aws_secrets_manager(settings={}): {
-      local default = {
-        id: null,
-        name: null,
-        ttl_offset: null,
-        aws: $.config.aws,
-        retry: $.config.retry,
-      },
+    aws: {
+      secrets_manager(settings={}): {
+        local default = {
+          id: null,
+          name: null,
+          ttl_offset: null,
+          aws: $.config.aws,
+          retry: $.config.retry,
+        },
 
-      type: 'aws_secrets_manager',
-      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        type: 'aws_secrets_manager',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
     },
     environment_variable(settings={}): {
       local default = { id: null, name: null, ttl_offset: null },
@@ -1063,7 +1081,7 @@
     cnd: $.pattern.condition,
     condition: {
       obj(key): {
-        object: { source: key },
+        object: { source_key: key },
       },
       // Negates any inspector.
       negate(inspector): $.condition.meta.negate(settings={ inspector: inspector }),

@@ -1,0 +1,7 @@
+.devcontainer/
+.github/
+.vscode/
+build/config/
+build/container/
+build/terraform/
+examples/

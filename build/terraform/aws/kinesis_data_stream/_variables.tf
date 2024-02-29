@@ -3,7 +3,8 @@ variable "kms" {
     arn = string
     id  = string
   })
-  description = "KMS key used to encrypt the stream."
+  default     = null
+  description = "KMS key used to encrypt the stream. If not provided, then no server-side encryption is used. See https://docs.aws.amazon.com/streams/latest/dev/what-is-sse.html for more information."
 }
 
 variable "config" {
@@ -13,7 +14,14 @@ variable "config" {
     shards            = optional(number, 2)
     retention         = optional(number, 24)
   })
-  description = "Configuration for the Kinesis stream."
+  description = <<EOH
+    Configuration for the Kinesis Data Stream:
+
+    * name: The name of the Kinesis Data Stream.
+    * autoscaling_topic: The ARN of the SNS topic that will be used for autoscaling.
+    * shards: The number of shards to create for the stream. Defaults to 2.
+    * retention: The number of hours to retain data records in the stream. Defaults to 24.
+EOH
 }
 
 variable "tags" {

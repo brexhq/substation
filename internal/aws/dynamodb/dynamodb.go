@@ -1,6 +1,7 @@
 package dynamodb
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -52,6 +53,7 @@ func (a *API) BatchPutItem(ctx aws.Context, table string, items []map[string]*dy
 		})
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	resp, err = a.Client.BatchWriteItemWithContext(
 		ctx,
 		&dynamodb.BatchWriteItemInput{
@@ -87,6 +89,7 @@ func (a *API) BatchPutItem(ctx aws.Context, table string, items []map[string]*dy
 
 // PutItem is a convenience wrapper for putting items into a DynamoDB table.
 func (a *API) PutItem(ctx aws.Context, table string, item map[string]*dynamodb.AttributeValue) (resp *dynamodb.PutItemOutput, err error) {
+	ctx = context.WithoutCancel(ctx)
 	resp, err = a.Client.PutItemWithContext(
 		ctx,
 		&dynamodb.PutItemInput{
@@ -120,6 +123,7 @@ func (a *API) Query(ctx aws.Context, table, partitionKey, sortKey, keyConditionE
 		}
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	resp, err = a.Client.QueryWithContext(
 		ctx,
 		&dynamodb.QueryInput{
@@ -143,6 +147,7 @@ func (a *API) GetItem(ctx aws.Context, table string, attributes map[string]inter
 		return nil, fmt.Errorf("get_item: table %s: %v", table, err)
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	resp, err = a.Client.GetItemWithContext(
 		ctx,
 		&dynamodb.GetItemInput{

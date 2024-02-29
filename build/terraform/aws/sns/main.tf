@@ -2,7 +2,7 @@ resource "random_uuid" "id" {}
 
 resource "aws_sns_topic" "topic" {
   name                        = var.config.name
-  kms_master_key_id           = var.kms.id
+  kms_master_key_id           = var.kms != null ? var.kms.id : null
   fifo_topic                  = endswith(var.config.name, ".fifo") ? true : false
   content_based_deduplication = endswith(var.config.name, ".fifo") ? true : false
 
@@ -17,24 +17,12 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "substation-sns-access-${resource.random_uuid.id.id}"
+  name        = "substation-sns-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} SNS topic."
   policy      = data.aws_iam_policy_document.access.json
 }
 
 data "aws_iam_policy_document" "access" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
-
-    resources = [
-      var.kms.arn,
-    ]
-  }
-
   statement {
     effect = "Allow"
     actions = [
@@ -44,5 +32,21 @@ data "aws_iam_policy_document" "access" {
     resources = [
       aws_sns_topic.topic.arn,
     ]
+  }
+
+  dynamic "statement" {
+    for_each = var.kms != null ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
   }
 }

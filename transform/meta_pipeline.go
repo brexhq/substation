@@ -82,11 +82,12 @@ type metaPipeline struct {
 
 func (tf *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
-		if _, err := Apply(ctx, tf.tf, msg); err != nil {
+		msgs, err := Apply(ctx, tf.tf, msg)
+		if err != nil {
 			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 		}
 
-		return []*message.Message{msg}, nil
+		return msgs, nil
 	}
 
 	if !tf.isObject {

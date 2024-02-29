@@ -77,7 +77,12 @@ func (tf *metaMetricDuration) Transform(ctx context.Context, msg *message.Messag
 			return nil, fmt.Errorf("transform: meta_metric_duration: %v", err)
 		}
 
-		return []*message.Message{msg}, nil
+		msgs, err := tf.tf.Transform(ctx, msg)
+		if err != nil {
+			return nil, fmt.Errorf("transform: meta_metric_duration: %v", err)
+		}
+
+		return msgs, nil
 	}
 
 	start := time.Now()

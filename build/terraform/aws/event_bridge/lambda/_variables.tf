@@ -8,7 +8,14 @@ variable "config" {
       name = string
     })
   })
-  description = "Configuration for the EventBridge Lambda rule."
+  description = <<EOH
+    Configuration for the EventBridge Lambda rule:
+
+    * name:         The name of the rule.
+    * description:  The description of the rule.
+    * schedule:     The schedule expression for the rule.
+    * function:     The Lambda function to invoke when the rule is triggered.
+EOH
 }
 
 variable "tags" {

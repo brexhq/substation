@@ -6,7 +6,9 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation"
+	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/transform"
 )
 
 func ExampleSubstation() {
@@ -47,7 +49,7 @@ func ExampleSubstation() {
 		// The first message is a data message. Only data messages are transformed.
 		message.New().SetData([]byte(`{"a":"b"}`)),
 		// The second message is a ctrl message. ctrl messages flush the pipeline.
-		message.New(message.AsControl()),
+		message.New().AsControl(),
 	}
 
 	// Transform the group of messages. In this example, results are not used.
@@ -78,7 +80,7 @@ func (c customConfig) String() string {
 	return fmt.Sprintf("%s:%s", c.Auth.Username, c.Auth.Password)
 }
 
-func Example_customSubstation() {
+func Example_substationCustomConfig() {
 	// Substation applications rely on a context for cancellation and timeouts.
 	ctx := context.Background()
 
@@ -119,4 +121,82 @@ func Example_customSubstation() {
 	// Output:
 	// {"transforms":[{"type":"object_copy","settings":{"object":{"source_key":"a","target_key":"c"}}},{"type":"send_stdout","settings":null}]}
 	// foo:bar
+}
+
+func Example_substationCustomTransforms() {
+	// Substation applications rely on a context for cancellation and timeouts.
+	ctx := context.Background()
+
+	// Define and load the configuration. This config includes a transform that
+	// is not part of the standard Substation package.
+	conf := []byte(`
+		{
+			"transforms":[
+				{"type":"utility_duplicate"},
+				{"type":"send_stdout"}
+			]
+		}
+	`)
+
+	cfg := substation.Config{}
+	if err := json.Unmarshal(conf, &cfg); err != nil {
+		// Handle error.
+		panic(err)
+	}
+
+	// Create a new Substation instance with a custom transform factory for loading
+	// the custom transform.
+	sub, err := substation.New(ctx, cfg, substation.WithTransformFactory(customFactory))
+	if err != nil {
+		// Handle error.
+		panic(err)
+	}
+
+	msg := []*message.Message{
+		message.New().SetData([]byte(`{"a":"b"}`)),
+		message.New().AsControl(),
+	}
+
+	// Transform the group of messages. In this example, results are not used.
+	if _, err := sub.Transform(ctx, msg...); err != nil {
+		// Handle error.
+		panic(err)
+	}
+
+	// Output:
+	// {"a":"b"}
+	// {"a":"b"}
+}
+
+// customFactory is used in the custom transform example to load the custom transform.
+func customFactory(ctx context.Context, cfg config.Config) (transform.Transformer, error) {
+	switch cfg.Type {
+	// Usually a custom transform requires configuration, but this
+	// is a toy example. Customizable transforms should have a new
+	// function that returns a new instance of the configured transform.
+	case "utility_duplicate":
+		return &utilityDuplicate{Count: 1}, nil
+	}
+
+	return transform.New(ctx, cfg)
+}
+
+// Duplicates a message.
+type utilityDuplicate struct {
+	// Count is the number of times to duplicate the message.
+	Count int `json:"count"`
+}
+
+func (t *utilityDuplicate) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	// Always return control messages.
+	if msg.IsControl() {
+		return []*message.Message{msg}, nil
+	}
+
+	output := []*message.Message{msg}
+	for i := 0; i < t.Count; i++ {
+		output = append(output, msg)
+	}
+
+	return output, nil
 }

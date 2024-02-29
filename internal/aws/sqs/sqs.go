@@ -1,6 +1,7 @@
 package sqs
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -54,6 +55,7 @@ func (a *API) SendMessage(ctx aws.Context, queue string, data []byte) (*sqs.Send
 		msg.MessageGroupId = aws.String(mgid)
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	resp, err := a.Client.SendMessageWithContext(ctx, msg)
 	if err != nil {
 		return nil, fmt.Errorf("send_message: queue %s: %v", queue, err)
@@ -80,6 +82,7 @@ func (a *API) SendMessageBatch(ctx aws.Context, queue string, data [][]byte) (*s
 		messages = append(messages, entry)
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	resp, err := a.Client.SendMessageBatchWithContext(
 		ctx,
 		&sqs.SendMessageBatchInput{

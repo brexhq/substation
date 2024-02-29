@@ -2,7 +2,7 @@
 Rehydrates data from an AWS S3 bucket into an SNS topic by simulating S3 
 object creation events.
 
-Typical usage example:
+Usage example:
 
     python3 s3_rehydration.py --bucket my-bucket --topic my-topic 
     --prefix my-prefix --filter my-filter my-other-filter

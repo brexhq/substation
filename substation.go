@@ -23,32 +23,43 @@ type Config struct {
 type Substation struct {
 	cfg Config
 
-	tforms []transform.Transformer
+	factory transform.Factory
+	tforms  []transform.Transformer
 }
 
 // New returns a new Substation instance.
-func New(ctx context.Context, cfg Config) (*Substation, error) {
+func New(ctx context.Context, cfg Config, opts ...func(*Substation)) (*Substation, error) {
 	if cfg.Transforms == nil {
 		return nil, errNoTransforms
 	}
 
+	sub := &Substation{
+		cfg:     cfg,
+		factory: transform.New,
+	}
+
+	for _, o := range opts {
+		o(sub)
+	}
+
 	// Create transforms from the configuration.
-	var tforms []transform.Transformer
 	for _, c := range cfg.Transforms {
-		t, err := transform.New(ctx, c)
+		t, err := sub.factory(ctx, c)
 		if err != nil {
 			return nil, err
 		}
 
-		tforms = append(tforms, t)
+		sub.tforms = append(sub.tforms, t)
 	}
 
-	sub := Substation{
-		cfg:    cfg,
-		tforms: tforms,
-	}
+	return sub, nil
+}
 
-	return &sub, nil
+// WithTransformFactory implements a custom transform factory.
+func WithTransformFactory(fac transform.Factory) func(*Substation) {
+	return func(s *Substation) {
+		s.factory = fac
+	}
 }
 
 // Transform runs the configured data transformation functions on the

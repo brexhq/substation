@@ -3,14 +3,19 @@ variable "kms" {
     arn = string
     id  = string
   })
-  description = "KMS key used to encrypt the secret."
+  default     = null
+  description = "Customer managed KMS key used to encrypt the secret. If not provided, then an AWS managed key is used. See https://docs.aws.amazon.com/secretsmanager/latest/userguide/data-protection.html#encryption-at-rest for more information."
 }
 
 variable "config" {
   type = object({
     name = string
   })
-  description = "Configuration for the secret."
+  description = <<EOH
+    Configuration for the secret:
+
+    * name:    The name of the secret.
+EOH
 }
 
 variable "tags" {

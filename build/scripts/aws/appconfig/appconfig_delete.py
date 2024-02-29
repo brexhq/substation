@@ -1,11 +1,12 @@
 """Deletes application profiles, including hosted configurations, in AWS AppConfig.
 
-Enumerates hosted configurations in AppConfig for a user-defined application profile and deletes each configuration. When all configurations are deleted, the profile is deleted.
+Enumerates hosted configurations in AppConfig for a user-defined application profile 
+and deletes each configuration. When all configurations are deleted, the profile is deleted.
 
-	Typical usage example:
-
+Usage example:
 	AWS_APPCONFIG_APPLICATION_NAME=substation AWS_APPCONFIG_PROFILE_NAME=foo python3 appconfig_delete.py
 """
+
 import os
 
 import boto3

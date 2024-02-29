@@ -1,4 +1,4 @@
-// Package transform provides functions for transforming data.
+// Package transform provides functions for transforming messages.
 package transform
 
 import (
@@ -13,12 +13,15 @@ import (
 var errMsgInvalidObject = fmt.Errorf("message must be JSON object")
 
 // Transformer is the interface implemented by all transforms and
-// provides the ability to transform data.
+// provides the ability to transform a message.
 type Transformer interface {
 	Transform(context.Context, *message.Message) ([]*message.Message, error)
 }
 
-// New returns a configured Transformer.
+// Factory can be used to implement custom transform factory functions.
+type Factory func(context.Context, config.Config) (Transformer, error)
+
+// New is a factory function for returning a configured Transformer.
 func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
 	// Aggregation transforms.
@@ -157,12 +160,16 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newTimeFromString(ctx, cfg)
 	case "time_from_unix":
 		return newTimeFromUnix(ctx, cfg)
+	case "time_from_unix_milli":
+		return newTimeFromUnixMilli(ctx, cfg)
 	case "time_now":
 		return newTimeNow(ctx, cfg)
 	case "time_to_string":
 		return newTimeToString(ctx, cfg)
 	case "time_to_unix":
 		return newTimeToUnix(ctx, cfg)
+	case "time_to_unix_milli":
+		return newTimeToUnixMilli(ctx, cfg)
 	// Utility transforms.
 	case "utility_delay":
 		return newUtilityDelay(ctx, cfg)
@@ -179,9 +186,10 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	}
 }
 
-func Apply(ctx context.Context, tf []Transformer, mess ...*message.Message) ([]*message.Message, error) {
-	resultMsgs := make([]*message.Message, len(mess))
-	copy(resultMsgs, mess)
+// Applies one or more transform functions to one or more messages.
+func Apply(ctx context.Context, tf []Transformer, msgs ...*message.Message) ([]*message.Message, error) {
+	resultMsgs := make([]*message.Message, len(msgs))
+	copy(resultMsgs, msgs)
 
 	for i := 0; len(resultMsgs) > 0 && i < len(tf); i++ {
 		var nextResultMsgs []*message.Message

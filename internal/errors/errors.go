@@ -8,5 +8,5 @@ var ErrInvalidFactoryInput = fmt.Errorf("invalid factory input")
 // ErrMissingRequiredOption is returned when a component does not have the required options to properly run.
 var ErrMissingRequiredOption = fmt.Errorf("missing required option")
 
-// ErrInvalidOption is returned when an invalid option input received in a constructor.
-var ErrInvalidOption = fmt.Errorf("invalid option input")
+// ErrInvalidOption is returned when an invalid option is received in a constructor.
+var ErrInvalidOption = fmt.Errorf("invalid option")

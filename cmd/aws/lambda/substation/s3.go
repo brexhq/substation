@@ -76,7 +76,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 
 		// CTRL messages flush the pipeline. This must be done
 		// after all messages have been processed.
-		ctrl := message.New(message.AsControl())
+		ctrl := message.New().AsControl()
 		if _, err := sub.Transform(tfCtx, ctrl); err != nil {
 			return err
 		}
@@ -214,7 +214,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 
 		// CTRL messages flush the pipeline. This must be done
 		// after all messages have been processed.
-		ctrl := message.New(message.AsControl())
+		ctrl := message.New().AsControl()
 		if _, err := sub.Transform(tfCtx, ctrl); err != nil {
 			return err
 		}

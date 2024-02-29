@@ -79,11 +79,12 @@ type metaForEach struct {
 
 func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
-		if _, err := tf.tf.Transform(ctx, msg); err != nil {
+		msgs, err := tf.tf.Transform(ctx, msg)
+		if err != nil {
 			return nil, fmt.Errorf("transform: meta_for_each: %v", err)
 		}
 
-		return []*message.Message{msg}, nil
+		return msgs, nil
 	}
 
 	value := msg.GetValue(tf.conf.Object.SourceKey)

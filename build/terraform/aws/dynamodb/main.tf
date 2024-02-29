@@ -24,18 +24,19 @@ resource "aws_dynamodb_table" "table" {
 
   # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html.
   ttl {
-    attribute_name = var.config.ttl_key != null ? var.config.ttl_key : ""
-    enabled        = var.config.ttl_key != null ? true : false
+    attribute_name = var.config.ttl != null ? var.config.ttl : ""
+    enabled        = var.config.ttl != null ? true : false
   }
   point_in_time_recovery {
     enabled = true
   }
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = var.kms.arn
-  }
   lifecycle {
     ignore_changes = [read_capacity, write_capacity]
+  }
+
+  server_side_encryption {
+    enabled     = var.kms != null ? true : false
+    kms_key_arn = var.kms != null ? var.kms.arn : null
   }
 
   # Streams are only charged for read operations and reads from AWS Lambda are free:
@@ -63,24 +64,12 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "substation-dynamodb-access-${resource.random_uuid.id.id}"
+  name        = "substation-dynamodb-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} DynamoDB table."
   policy      = data.aws_iam_policy_document.access.json
 }
 
 data "aws_iam_policy_document" "access" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
-
-    resources = [
-      var.kms.arn,
-    ]
-  }
-
   statement {
     effect = "Allow"
     actions = [
@@ -110,6 +99,22 @@ data "aws_iam_policy_document" "access" {
     resources = [
       aws_dynamodb_table.table.stream_arn,
     ]
+  }
+
+  dynamic "statement" {
+    for_each = var.kms != null ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
   }
 }
 

@@ -1,11 +1,17 @@
 """Manages the upload and deployment of Substation configurations in AWS AppConfig.
 
-Enumerates hosted configurations in AppConfig and retrieves each profile's latest version, uploads local configurations, and deploys configurations if they have changed. AppConfig increments the version number of hosted configurations when new (non-duplicate) content is uploaded, so this script uploads all local configurations and uses the returned version number to determine if deployment is needed. This is intended to be deployed to a CI/CD pipeline (e.g., GitHub Actions, Circle CI, Jenkins, etc.) for automated configuration management.
+Enumerates hosted configurations in AppConfig and retrieves each profile's latest 
+version, uploads local configurations, and deploys configurations if they have changed. 
+AppConfig increments the version number of hosted configurations when new (non-duplicate) 
+content is uploaded, so this script uploads all local configurations and uses the returned 
+version number to determine if deployment is needed. This is intended to be deployed to 
+a CI/CD pipeline (e.g., GitHub Actions, Circle CI, Jenkins, etc.) for automated configuration 
+management.
 
-    Typical usage example:
-
+Usage example:
     SUBSTATION_CONFIG_DIRECTORY=examples/aws/config AWS_APPCONFIG_APPLICATION_NAME=substation AWS_APPCONFIG_ENVIRONMENT=prod AWS_APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 appconfig_upload.py
 """
+
 import json
 import os
 import time

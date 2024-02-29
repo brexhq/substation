@@ -1,6 +1,7 @@
 package secretsmanager
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -45,6 +46,7 @@ func (a *API) GetSecret(ctx aws.Context, secretName string) (secret string, err 
 		VersionStage: aws.String("AWSCURRENT"), // VersionStage defaults to AWSCURRENT if unspecified
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	result, err := a.Client.GetSecretValueWithContext(ctx, input)
 	if err != nil {
 		return secret, fmt.Errorf("getsecretvalue secret %s: %v", secretName, err)

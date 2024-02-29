@@ -16,7 +16,7 @@ resource "aws_sqs_queue" "queue" {
   name                              = var.config.name
   delay_seconds                     = var.config.delay
   visibility_timeout_seconds        = var.config.timeout
-  kms_master_key_id                 = var.kms.id
+  kms_master_key_id                 = var.kms != null ? var.kms.id : null
   kms_data_key_reuse_period_seconds = 300
   fifo_queue                        = endswith(var.config.name, ".fifo") ? true : false
   content_based_deduplication       = endswith(var.config.name, ".fifo") ? true : false
@@ -32,24 +32,12 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "substation-sqs-access-${resource.random_uuid.id.id}"
+  name        = "substation-sqs-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} SQS queue."
   policy      = data.aws_iam_policy_document.access.json
 }
 
 data "aws_iam_policy_document" "access" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
-
-    resources = [
-      var.kms.arn,
-    ]
-  }
-
   statement {
     effect = "Allow"
     actions = concat(
@@ -60,5 +48,21 @@ data "aws_iam_policy_document" "access" {
     resources = [
       aws_sqs_queue.queue.arn,
     ]
+  }
+
+  dynamic "statement" {
+    for_each = var.kms != null ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
   }
 }

@@ -4,8 +4,8 @@ resource "aws_kinesis_stream" "stream" {
   name             = var.config.name
   shard_count      = var.config.shards
   retention_period = var.config.retention
-  encryption_type  = "KMS"
-  kms_key_id       = var.kms.id
+  encryption_type  = var.kms != null ? "KMS" : "NONE"
+  kms_key_id       = var.kms != null ? var.kms.id : null
   lifecycle {
     ignore_changes = [shard_count]
   }
@@ -21,24 +21,12 @@ resource "aws_iam_role_policy_attachment" "access" {
 }
 
 resource "aws_iam_policy" "access" {
-  name        = "substation-kinesis-data-stream-access-${resource.random_uuid.id.id}"
+  name        = "substation-kinesis-${resource.random_uuid.id.id}"
   description = "Policy that grants access to the Substation ${var.config.name} Kinesis Data Stream."
   policy      = data.aws_iam_policy_document.access.json
 }
 
 data "aws_iam_policy_document" "access" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "kms:Decrypt",
-      "kms:GenerateDataKey"
-    ]
-
-    resources = [
-      var.kms.arn,
-    ]
-  }
-
   statement {
     effect = "Allow"
     actions = [
@@ -72,8 +60,23 @@ data "aws_iam_policy_document" "access" {
       aws_kinesis_stream.stream.arn,
     ]
   }
-}
 
+  dynamic "statement" {
+    for_each = var.kms != null ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        var.kms.arn,
+      ]
+    }
+  }
+}
 
 resource "aws_cloudwatch_metric_alarm" "metric_alarm_downscale" {
   alarm_name          = "${var.config.name}_downscale"

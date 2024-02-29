@@ -343,6 +343,7 @@ Substation includes Terraform modules for securely deploying data pipelines and 
 ```tcl
 # These resources are deployed once and are used by all Substation infrastructure.
 
+# Substation resources can be encrypted using a customer-managed KMS key.
 module "kms" {
   source = "../../../../../../build/terraform/aws/kms"
 
@@ -351,30 +352,20 @@ module "kms" {
   }
 }
 
-resource "aws_appconfig_application" "substation" {
-  name        = "substation"
-  description = "Stores compiled configuration files for Substation"
+# Substation typically uses AppConfig to manage configuration files, but
+# configurations can also be loaded from an S3 URI or an HTTP endpoint.
+module "appconfig" {
+  source = "../../../../../../build/terraform/aws/appconfig"
+
+  config = {
+    name = "substation"
+    environments = [{
+        name = "example"
+    }]
+  }
 }
 
-resource "aws_appconfig_environment" "example" {
-  name           = "example"
-  description    = "Stores example Substation configuration files"
-  application_id = aws_appconfig_application.substation.id
-}
-
-# AWS Lambda requires an instant deployment strategy.
-resource "aws_appconfig_deployment_strategy" "instant" {
-  name                           = "Instant"
-  description                    = "This strategy deploys the configuration
-  to all targets immediately with zero bake time."
-  deployment_duration_in_minutes = 0
-  final_bake_time_in_minutes     = 0
-  growth_factor                  = 100
-  growth_type                    = "LINEAR"
-  replicate_to                   = "NONE"
-}
-
-module "ecr_substation" {
+module "ecr" {
   source = "../../../../../../build/terraform/aws/ecr"
   kms    = module.kms
 
@@ -396,10 +387,11 @@ module "s3" {
   }
 
   # Access is granted by providing the role name of a
-  # resource. This access applies least privilege.
+  # resource. This access applies least privilege and
+  # grants access to dependent resources, such as KMS.
   access = [
     # Lambda functions create unique roles that are
-    # used to access to resources.
+    # used to access resources.
     module.node.role.name,
   ]
 }
@@ -424,19 +416,16 @@ module "node_gateway" {
 
 module "node" {
   source = "../../../../../../build/terraform/aws/lambda"
-  # These are always required for all Lambda.
-  kms       = module.kms
-  appconfig = aws_appconfig_application.substation
+  kms       = module.kms  # Optional
+  appconfig = module.appconfig  # Optional
 
   config = {
     name        = "node"
-    description = "Substation node that writes data to S3"
-    image_uri   = "${module.ecr_substation.url}:latest"
+    description = "Substation node that writes data to S3."
+    image_uri   = "${module.ecr.url}:latest"
     image_arm   = true
 
     env = {
-      # Each Lambda includes an AppConfig layer that hosts configuration files locally.
-      # Alternatively, configuration files can be loaded from AWS S3 using an S3 URI.
       "SUBSTATION_CONFIG" : "https://localhost:2772/applications/substation/environments/example/configurations/node"
       # This Substation node will ingest data from API Gateway. More nodes can be 
       # deployed to ingest data from other sources, such as Kinesis or SQS.
@@ -446,8 +435,8 @@ module "node" {
   }
 
   depends_on = [
-    aws_appconfig_application.substation,
-    module.ecr_substation.url,
+    module.appconfig.name,
+    module.ecr.url,
   ]
 }
 ```

@@ -85,9 +85,10 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 
 	// Setup the AWS client.
 	tf.client.Setup(aws.Config{
-		Region:     conf.AWS.Region,
-		RoleARN:    conf.AWS.RoleARN,
-		MaxRetries: conf.Retry.Count,
+		Region:          conf.AWS.Region,
+		RoleARN:         conf.AWS.RoleARN,
+		MaxRetries:      conf.Retry.Count,
+		RetryableErrors: conf.Retry.ErrorMessages,
 	})
 
 	return &tf, nil

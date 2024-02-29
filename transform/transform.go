@@ -18,7 +18,10 @@ type Transformer interface {
 	Transform(context.Context, *message.Message) ([]*message.Message, error)
 }
 
-// New returns a configured Transformer.
+// Factory can be used to implement custom transform factory functions.
+type Factory func(context.Context, config.Config) (Transformer, error)
+
+// New is a factory function for returning a configured Transformer.
 func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
 	// Aggregation transforms.

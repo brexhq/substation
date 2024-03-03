@@ -1,7 +1,7 @@
 // This example shows how to implement retry with backoff behavior for any
 // transform that does not produce an output. This technique may be useful
 // when enriching data with external services or asynchronous data pipelines.
-local sub = import '../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 // `key` is the target of the transform that may not produce an output and is
 // checked to determine if the transform was successful.

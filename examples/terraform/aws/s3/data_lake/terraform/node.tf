@@ -1,5 +1,5 @@
 module "lambda_gateway" {
-  source = "../../../../../../../build/terraform/aws/api_gateway/lambda"
+  source = "../../../../../../build/terraform/aws/api_gateway/lambda"
   lambda = module.lambda_node
 
   config = {
@@ -12,7 +12,7 @@ module "lambda_gateway" {
 }
 
 module "lambda_node" {
-  source    = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {

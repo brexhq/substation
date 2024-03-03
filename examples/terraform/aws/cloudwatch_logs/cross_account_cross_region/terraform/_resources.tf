@@ -1,7 +1,7 @@
 data "aws_caller_identity" "caller" {}
 
 module "appconfig" {
-  source = "../../../../../../../build/terraform/aws/appconfig"
+  source = "../../../../../../build/terraform/aws/appconfig"
 
   config = {
     name = "substation"
@@ -12,8 +12,8 @@ module "appconfig" {
 }
 
 # Repository for the core Substation application.
-module "ecr_substation" {
-  source = "../../../../../../../build/terraform/aws/ecr"
+module "ecr" {
+  source = "../../../../../../build/terraform/aws/ecr"
 
   config = {
     name         = "substation"
@@ -22,23 +22,23 @@ module "ecr_substation" {
 }
 
 # Repository for the autoscaling application.
-module "ecr_autoscaling" {
-  source = "../../../../../../../build/terraform/aws/ecr"
+module "ecr_autoscale" {
+  source = "../../../../../../build/terraform/aws/ecr"
 
   config = {
-    name         = "autoscaler"
+    name         = "autoscale"
     force_delete = true
   }
 }
 
 # SNS topic for Kinesis Data Stream autoscaling alarms.
 resource "aws_sns_topic" "autoscaling_topic" {
-  name = "autoscaler"
+  name = "autoscale"
 }
 
 # Kinesis Data Stream that is used as the destination for CloudWatch Logs.
 module "kds" {
-  source = "../../../../../../../build/terraform/aws/kinesis_data_stream"
+  source = "../../../../../../build/terraform/aws/kinesis_data_stream"
 
   config = {
     name              = "substation"
@@ -58,7 +58,7 @@ module "kds" {
 
 # CloudWatch Logs destination that sends logs to the Kinesis Data Stream from us-east-1.
 module "cw_destination_use1" {
-  source = "../../../../../../../build/terraform/aws/cloudwatch/destination"
+  source = "../../../../../../build/terraform/aws/cloudwatch/destination"
 
   config = {
     name            = "substation"
@@ -71,7 +71,7 @@ module "cw_destination_use1" {
 }
 
 module "cw_subscription_use1" {
-  source = "../../../../../../../build/terraform/aws/cloudwatch/subscription"
+  source = "../../../../../../build/terraform/aws/cloudwatch/subscription"
 
   config = {
     name            = "substation"
@@ -86,7 +86,7 @@ module "cw_subscription_use1" {
 # CloudWatch Logs destination that sends logs to the Kinesis Data Stream from us-west-2.
 # To add support for more regions, copy this module and change the provider.
 module "cw_destination_usw2" {
-  source = "../../../../../../../build/terraform/aws/cloudwatch/destination"
+  source = "../../../../../../build/terraform/aws/cloudwatch/destination"
   providers = {
     aws = aws.usw2
   }

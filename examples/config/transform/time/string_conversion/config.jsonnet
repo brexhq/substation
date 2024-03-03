@@ -1,5 +1,5 @@
 // This example shows how to convert time values between string formats.
-local sub = import '../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 {
   concurrency: 1,

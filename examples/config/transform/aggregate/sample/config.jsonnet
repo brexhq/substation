@@ -1,7 +1,7 @@
 // This example samples data by aggregating events into an array, then
 // selecting the first event in the array as a sample. The sampling rate
 // is 1/N, where N is the count of events in the buffer.
-local sub = import '../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 {
   concurrency: 1,

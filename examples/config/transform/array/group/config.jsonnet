@@ -1,6 +1,6 @@
 // This example groups an array of arrays into an array of objects
 // based on index and configured keys.
-local sub = import '../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 local files_key = 'meta files';
 

@@ -2,7 +2,7 @@ data "aws_caller_identity" "caller" {}
 
 # KMS encryption key that is shared by all Substation infrastructure
 module "kms" {
-  source = "../../../../../../../build/terraform/aws/kms"
+  source = "../../../../../../build/terraform/aws/kms"
 
   config = {
     name   = "alias/substation"
@@ -49,7 +49,7 @@ data "aws_iam_policy_document" "kms" {
 }
 
 module "appconfig" {
-  source = "../../../../../../../build/terraform/aws/appconfig"
+  source = "../../../../../../build/terraform/aws/appconfig"
 
   config = {
     name = "substation"
@@ -60,8 +60,8 @@ module "appconfig" {
 }
 
 # Repository for the core Substation application.
-module "ecr_substation" {
-  source = "../../../../../../../build/terraform/aws/ecr"
+module "ecr" {
+  source = "../../../../../../build/terraform/aws/ecr"
   kms    = module.kms
 
   config = {
@@ -71,25 +71,25 @@ module "ecr_substation" {
 }
 
 # Repository for the autoscaling application.
-module "ecr_autoscaling" {
-  source = "../../../../../../../build/terraform/aws/ecr"
+module "ecr_autoscale" {
+  source = "../../../../../../build/terraform/aws/ecr"
   kms    = module.kms
 
   config = {
-    name         = "autoscaler"
+    name         = "autoscale"
     force_delete = true
   }
 }
 
 # SNS topic for Kinesis Data Stream autoscaling alarms.
 resource "aws_sns_topic" "autoscaling_topic" {
-  name              = "autoscaler"
+  name              = "autoscale"
   kms_master_key_id = module.kms.id
 }
 
 # API Gateway that sends data to Kinesis.
 module "gateway_to_kinesis" {
-  source = "../../../../../../../build/terraform/aws/api_gateway/kinesis_data_stream"
+  source = "../../../../../../build/terraform/aws/api_gateway/kinesis_data_stream"
   # Always required for the Kinisis Data Stream integration.
   kinesis_data_stream = module.kds_src
 
@@ -100,7 +100,7 @@ module "gateway_to_kinesis" {
 
 # Kinesis Data Stream that stores data sent from pipeline sources.
 module "kds_src" {
-  source = "../../../../../../../build/terraform/aws/kinesis_data_stream"
+  source = "../../../../../../build/terraform/aws/kinesis_data_stream"
   kms    = module.kms
 
   config = {
@@ -120,7 +120,7 @@ module "kds_src" {
 
 # Kinesis Data Stream that stores data sent from the pipeline processor.
 module "kds_dst" {
-  source = "../../../../../../../build/terraform/aws/kinesis_data_stream"
+  source = "../../../../../../build/terraform/aws/kinesis_data_stream"
   kms    = module.kms
 
   config = {

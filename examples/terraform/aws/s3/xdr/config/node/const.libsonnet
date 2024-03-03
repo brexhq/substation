@@ -1,4 +1,4 @@
-local sub = import '../../../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../../../build/config/substation.libsonnet';
 
 {
   threat_signals_key: 'threat.signals',

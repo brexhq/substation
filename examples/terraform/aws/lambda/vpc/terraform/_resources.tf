@@ -1,7 +1,7 @@
 data "aws_caller_identity" "caller" {}
 
 module "appconfig" {
-  source = "../../../../../../../build/terraform/aws/appconfig"
+  source = "../../../../../../build/terraform/aws/appconfig"
 
   config = {
     name = "substation"
@@ -12,7 +12,7 @@ module "appconfig" {
 }
 
 module "ecr" {
-  source = "../../../../../../../build/terraform/aws/ecr"
+  source = "../../../../../../build/terraform/aws/ecr"
 
   config = {
     name         = "substation"
@@ -25,5 +25,5 @@ module "ecr" {
 # By default, this creates a /16 VPC with private subnets 
 # in three availability zones in us-east-1.
 module "vpc_substation" {
-  source = "../../../../../../../build/terraform/aws/networking/vpc"
+  source = "../../../../../../build/terraform/aws/networking/vpc"
 }

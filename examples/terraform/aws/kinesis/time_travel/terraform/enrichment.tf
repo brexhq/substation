@@ -1,11 +1,11 @@
 module "lambda_enrichment" {
-  source    = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {
     name        = "enrichment"
     description = "Substation node that enriches data from Kinesis and writes it to DynamoDB"
-    image_uri   = "${module.ecr_substation.url}:latest"
+    image_uri   = "${module.ecr.url}:latest"
     image_arm   = true
 
     env = {
@@ -17,7 +17,7 @@ module "lambda_enrichment" {
 
   depends_on = [
     module.appconfig.name,
-    module.ecr_substation.url,
+    module.ecr.url,
   ]
 }
 

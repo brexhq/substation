@@ -1,6 +1,6 @@
 // This example shows how to use the `utility_secret` transform to
 // retrieve a secret and reference it in a subsequent transform.
-local sub = import '../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 // The secret is retrieved from the environment variable named
 // `SUBSTATION_EXAMPLE_URL` and referenced in subsequent transforms using

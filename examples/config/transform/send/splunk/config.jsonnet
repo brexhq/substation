@@ -5,7 +5,7 @@
 //
 // More information about the Splunk HEC can be found here:
 // https://docs.splunk.com/Documentation/SplunkCloud/latest/Data/HECExamples
-local sub = import '../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 // By default the Splunk HEC limits the size of each request to 1MB.
 local max_size = 1000 * 1000;

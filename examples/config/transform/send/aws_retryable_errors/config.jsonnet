@@ -2,7 +2,7 @@
 // destination transform. All AWS transforms support a custom retry strategy,
 // which can be used to handle transient errors in a way that is specific to
 // the AWS service being used or the specific use case.
-local sub = import '../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 {
   concurrency: 1,

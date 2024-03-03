@@ -1,7 +1,7 @@
 data "aws_caller_identity" "caller" {}
 
 module "appconfig" {
-  source = "../../../../../../../build/terraform/aws/appconfig"
+  source = "../../../../../../build/terraform/aws/appconfig"
 
   config = {
     name = "substation"
@@ -12,7 +12,7 @@ module "appconfig" {
 }
 
 module "ecr" {
-  source = "../../../../../../../build/terraform/aws/ecr"
+  source = "../../../../../../build/terraform/aws/ecr"
 
   config = {
     name         = "substation"
@@ -21,7 +21,7 @@ module "ecr" {
 }
 
 module "sns" {
-  source = "../../../../../../../build/terraform/aws/sns"
+  source = "../../../../../../build/terraform/aws/sns"
 
   config = {
     name = "substation"

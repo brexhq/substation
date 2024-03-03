@@ -1,7 +1,7 @@
 // This example shows how to intentionally crash a program if a transform
 // does not produce an output. This technique can be used to provide strict
 // guarantees about the result of data transformations.
-local sub = import '../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 // `key` is the target of the transform that may not produce an output and is
 // checked to determine if the transform was successful.

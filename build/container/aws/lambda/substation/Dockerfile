@@ -1,4 +1,4 @@
-ARG AWS_ARCHITECTURE=x86_64
+ARG ARCH=x86_64
 
 FROM golang:1.22 as build
 ENV GO111MODULE=on 
@@ -22,7 +22,7 @@ RUN go test -timeout 30s -v ./...
 WORKDIR /usr/local/go/src/substation/cmd/aws/lambda/substation
 RUN go build -ldflags "-w -s" -o /var/task/main
 
-FROM public.ecr.aws/lambda/provided:al2-$AWS_ARCHITECTURE
+FROM public.ecr.aws/lambda/provided:al2-$ARCH
 COPY --from=build /opt /opt
 COPY --from=build /var/task/main /var/task/main
 ENTRYPOINT ["/var/task/main"]

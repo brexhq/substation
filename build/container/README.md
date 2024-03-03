@@ -8,4 +8,4 @@ Images stored in AWS ECR should be built using environment variables: `docker bu
 
 We recommend tagging images with the Semantic Version of each release: `docker tag foo $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation:$(git describe --abbrev=0 --tags)`
 
-To specify the instruction set architecture, use the AWS_ARCHITECTURE build arg: `docker build --build-arg AWS_ARCHITECTURE=$AWS_ARCHITECTURE -f build/container/aws/lambda/substation/Dockerfile -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation:latest-$AWS_ARCHITECTURE .`
+To specify the instruction set architecture, use the ARCH build arg: `docker build --build-arg ARCH=$ARCH -f build/container/aws/lambda/substation/Dockerfile -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/substation:latest-$ARCH .`

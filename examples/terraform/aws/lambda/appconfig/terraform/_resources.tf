@@ -1,6 +1,6 @@
 module "appconfig" {
-  source = "../../../../../../../build/terraform/aws/appconfig"
-  lambda = module.validator
+  source = "../../../../../../build/terraform/aws/appconfig"
+  lambda = module.validate
 
   config = {
     name = "substation"
@@ -10,12 +10,12 @@ module "appconfig" {
   }
 }
 
-module "validator" {
-  source = "../../../../../../../build/terraform/aws/lambda"
+module "validate" {
+  source = "../../../../../../build/terraform/aws/lambda"
   config = {
-    name        = "validator"
-    description = "Substation validator that is executed by AppConfig."
-    image_uri   = "${module.ecr_validator.url}:latest"
+    name        = "validate"
+    description = "Substation configuration validator that is executed by AppConfig."
+    image_uri   = "${module.ecr_validate.url}:latest"
     image_arm   = true
 
     memory  = 128
@@ -24,12 +24,12 @@ module "validator" {
 
   depends_on = [
     module.appconfig.name,
-    module.ecr_validator.url,
+    module.ecr_validate.url,
   ]
 }
 
 module "ecr" {
-  source = "../../../../../../../build/terraform/aws/ecr"
+  source = "../../../../../../build/terraform/aws/ecr"
 
   config = {
     name         = "substation"
@@ -37,11 +37,11 @@ module "ecr" {
   }
 }
 
-module "ecr_validator" {
-  source = "../../../../../../../build/terraform/aws/ecr"
+module "ecr_validate" {
+  source = "../../../../../../build/terraform/aws/ecr"
 
   config = {
-    name         = "substation_validator"
+    name         = "validate"
     force_delete = true
   }
 }

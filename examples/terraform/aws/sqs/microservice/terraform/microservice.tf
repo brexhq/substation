@@ -1,5 +1,5 @@
 module "microservice" {
-  source    = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {
@@ -19,7 +19,7 @@ module "microservice" {
 
   depends_on = [
     module.appconfig.name,
-    module.ecr_substation.url,
+    module.ecr.url,
   ]
 }
 

@@ -1,19 +1,19 @@
 # Used for deploying and maintaining the Kinesis Data Streams autoscaling application; does not need to be used if deployments don't include Kinesis Data Streams.
 
 module "lambda_autoscaling" {
-  source    = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {
-    name        = "autoscaler"
+    name        = "autoscale"
     description = "Autoscaler for Kinesis Data Streams"
-    image_uri   = "${module.ecr_autoscaling.url}:latest"
+    image_uri   = "${module.ecr_autoscale.url}:latest"
     image_arm   = true
   }
 
   depends_on = [
     module.appconfig.name,
-    module.ecr_autoscaling.url,
+    module.ecr_autoscale.url,
   ]
 }
 

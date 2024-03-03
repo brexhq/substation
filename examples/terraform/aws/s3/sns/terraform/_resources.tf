@@ -2,7 +2,7 @@ data "aws_caller_identity" "caller" {}
 
 # KMS encryption key that is shared by all Substation resources.
 module "kms" {
-  source = "../../../../../../../build/terraform/aws/kms"
+  source = "../../../../../../build/terraform/aws/kms"
   config = {
     name   = "alias/substation"
     policy = data.aws_iam_policy_document.kms.json
@@ -65,7 +65,7 @@ data "aws_iam_policy_document" "kms" {
 }
 
 module "appconfig" {
-  source = "../../../../../../../build/terraform/aws/appconfig"
+  source = "../../../../../../build/terraform/aws/appconfig"
 
   config = {
     name = "substation"
@@ -77,7 +77,7 @@ module "appconfig" {
 
 # Repository for the core Substation application.
 module "ecr" {
-  source = "../../../../../../../build/terraform/aws/ecr"
+  source = "../../../../../../build/terraform/aws/ecr"
   kms    = module.kms
 
   config = {
@@ -90,7 +90,7 @@ resource "random_uuid" "s3" {}
 
 # S3 bucket used to store all data.
 module "s3" {
-  source = "../../../../../../../build/terraform/aws/s3"
+  source = "../../../../../../build/terraform/aws/s3"
   kms    = module.kms
 
   config = {
@@ -104,7 +104,7 @@ module "s3" {
 }
 
 module "sns" {
-  source = "../../../../../../../build/terraform/aws/sns"
+  source = "../../../../../../build/terraform/aws/sns"
   kms    = module.kms
 
   config = {

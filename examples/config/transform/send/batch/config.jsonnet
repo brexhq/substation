@@ -1,7 +1,7 @@
 // This example configures send transforms with batch keys to organize
 // data before it is sent externally. Every send transform supports batching
 // and optionally grouping JSON objects by a value derived from the object.
-local sub = import '../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 {
   concurrency: 1,

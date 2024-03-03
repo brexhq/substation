@@ -1,5 +1,5 @@
 module "node" {
-  source = "../../../../../../../build/terraform/aws/lambda"
+  source = "../../../../../../build/terraform/aws/lambda"
 
   # AppConfig is configured to validate configurations before deployment.
   appconfig = module.appconfig

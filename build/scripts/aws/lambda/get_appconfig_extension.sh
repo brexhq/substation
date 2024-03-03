@@ -136,4 +136,4 @@ fi
 aws lambda get-layer-version-by-arn \
   --region $AWS_REGION --arn $AWS_ARN \
   | jq -r '.Content.Location' \
-  | xargs curl -o $DIR/extension.zip 
+  | xargs curl -s -o $DIR/extension.zip 

@@ -1,12 +1,12 @@
 module "lambda_publisher" {
-  source    = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   kms       = module.kms
   appconfig = module.appconfig
 
   config = {
     name        = "publisher"
     description = "Substation node that publishes to Kinesis"
-    image_uri   = "${module.ecr_substation.url}:latest"
+    image_uri   = "${module.ecr.url}:latest"
     image_arm   = true
 
     env = {
@@ -18,7 +18,7 @@ module "lambda_publisher" {
 
   depends_on = [
     module.appconfig.name,
-    module.ecr_substation.url,
+    module.ecr.url,
   ]
 }
 

@@ -5,7 +5,7 @@ locals {
 data "aws_caller_identity" "caller" {}
 
 module "kms" {
-  source = "../../../../../../../build/terraform/aws/kms"
+  source = "../../../../../../build/terraform/aws/kms"
 
   config = {
     name = "alias/substation"
@@ -13,7 +13,7 @@ module "kms" {
 }
 
 module "appconfig" {
-  source = "../../../../../../../build/terraform/aws/appconfig"
+  source = "../../../../../../build/terraform/aws/appconfig"
 
   config = {
     name = "substation"
@@ -24,7 +24,7 @@ module "appconfig" {
 }
 
 module "ecr" {
-  source = "../../../../../../../build/terraform/aws/ecr"
+  source = "../../../../../../build/terraform/aws/ecr"
   kms    = module.kms
 
   config = {
@@ -165,7 +165,7 @@ resource "aws_kinesis_firehose_delivery_stream" "firehose" {
 }
 
 module "processor" {
-  source    = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   kms       = module.kms
   appconfig = module.appconfig
 
@@ -190,6 +190,6 @@ module "processor" {
 
   depends_on = [
     module.appconfig.name,
-    module.ecr_substation.url,
+    module.ecr.url,
   ]
 }

@@ -3,7 +3,7 @@
 //
 // More information about Sumo Logic HTTP upload can be found here:
 // https://help.sumologic.com/docs/send-data/hosted-collectors/http-source/logs-metrics/upload-logs/
-local sub = import '../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../build/config/substation.libsonnet';
 
 // Sumo Logic has a strict limit of 1MB per request.
 local max_size = 1000 * 1000;

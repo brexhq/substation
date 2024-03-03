@@ -1,4 +1,4 @@
-local sub = import '../../../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../../../build/config/substation.libsonnet';
 
 // This is a placeholder that must be replaced with the bucket produced by Terraform.
 local bucket = 'substation-3e820117-61f0-2fbb-05c4-1fba0db9d82c';

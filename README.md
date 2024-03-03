@@ -1,9 +1,6 @@
 # Substation
 
-<p align="center">
-<img alt="substation logo" width="200"
-src="https://github.com/brexhq/substation/blob/main/.github/media/substation_logo.png" />
-</p>
+![Substation Banner](.github/media/substation_banner.png)
 
 <p align="center">Substation is a cloud-native, event-driven data pipeline toolkit built for security teams.</p>
 
@@ -37,7 +34,27 @@ You can run Substation on these platforms:
 - [macOS / Linux](https://substation.readme.io/v1.0.0/docs/try-substation-on-macos-linux)
 - [AWS](https://substation.readme.io/v1.0.0/docs/try-substation-on-aws)
 
-When you're ready to deploy Substation in production, use the [AWS examples](examples/build/terraform/aws) as a starting point. These examples include common deployment patterns and demonstrate best practices for managing the system using Terraform and Jsonnet.
+The project includes a Makefile that simplifies local development and test deployments. To test the system in AWS, run this from the project root:
+
+```sh
+# Checks that dependencies are installed and environment variables are set.
+make check
+# Deploys Substation to AWS. This deploys the Kinesis Time Travel example 
+# and writes data to the Kinesis stream.
+make test-aws
+```
+
+The [AWS examples](examples/terraform/aws) folder contains reusable deployment patterns that demonstrate best practices for managing the system using [Terraform](https://www.terraform.io/) and [Jsonnet](https://jsonnet.org/). Deploy them using these commands:
+
+```sh
+make check
+# Builds dependencies required for AWS deployments.
+make build-aws
+# Deploys the DynamoDB Change Data Capture example.
+make deploy-aws DEPLOYMENT_DIR=examples/terraform/aws/dynamodb/cdc AWS_APPCONFIG_ENV=example
+```
+
+**We do not recommend managing cloud deployments from a local machine using the Makefile. Production deployments should use a CI/CD pipeline with a remote state backend to manage infrastructure.**
 
 ## Transforming Event Logs
 
@@ -345,7 +362,7 @@ Substation includes Terraform modules for securely deploying data pipelines and 
 
 # Substation resources can be encrypted using a customer-managed KMS key.
 module "kms" {
-  source = "../../../../../../build/terraform/aws/kms"
+  source = "build/terraform/aws/kms"
 
   config = {
     name   = "alias/substation"
@@ -355,7 +372,7 @@ module "kms" {
 # Substation typically uses AppConfig to manage configuration files, but
 # configurations can also be loaded from an S3 URI or an HTTP endpoint.
 module "appconfig" {
-  source = "../../../../../../build/terraform/aws/appconfig"
+  source = "build/terraform/aws/appconfig"
 
   config = {
     name = "substation"
@@ -366,7 +383,7 @@ module "appconfig" {
 }
 
 module "ecr" {
-  source = "../../../../../../build/terraform/aws/ecr"
+  source = "build/terraform/aws/ecr"
   kms    = module.kms
 
   config = {
@@ -378,7 +395,7 @@ module "ecr" {
 resource "random_uuid" "s3" {}
 
 module "s3" {
-  source = "../../../../../../build/terraform/aws/s3"
+  source = "build/terraform/aws/s3"
   kms    = module.kms
 
   config = {
@@ -402,7 +419,7 @@ module "s3" {
 ```tcl
 # Deploys an unauthenticated API Gateway that forwards data to the node.
 module "node_gateway" {
-  source = "../../../../../../build/terraform/aws/api_gateway/lambda"
+  source = "build/terraform/aws/api_gateway/lambda"
   lambda = module.node
 
   config = {
@@ -415,7 +432,7 @@ module "node_gateway" {
 }
 
 module "node" {
-  source = "../../../../../../build/terraform/aws/lambda"
+  source = "build/terraform/aws/lambda"
   kms       = module.kms  # Optional
   appconfig = module.appconfig  # Optional
 

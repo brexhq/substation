@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 module "lambda_consumer" {
-  source    = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {
@@ -36,7 +36,7 @@ resource "aws_lambda_permission" "consumer" {
 
 # CloudWatch Logs subscription filter that sends logs to the Lambda function.
 module "cw_subscription" {
-  source = "../../../../../../../build/terraform/aws/cloudwatch/subscription"
+  source = "../../../../../../build/terraform/aws/cloudwatch/subscription"
 
   config = {
     name            = "substation"

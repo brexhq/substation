@@ -1,4 +1,4 @@
-local sub = import '../../../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../../../build/config/substation.libsonnet';
 
 {
   kv_store: sub.kv_store.aws_dynamodb({

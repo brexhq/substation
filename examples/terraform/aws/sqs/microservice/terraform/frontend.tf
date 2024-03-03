@@ -1,5 +1,5 @@
 module "frontend" {
-  source    = "../../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {
@@ -16,7 +16,7 @@ module "frontend" {
 
   depends_on = [
     module.appconfig.name,
-    module.ecr_substation.url,
+    module.ecr.url,
   ]
 }
 

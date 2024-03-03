@@ -37,16 +37,21 @@ You can run Substation on these platforms:
 The project includes a Makefile that simplifies local development and test deployments. To test the system in AWS, run this from the project root:
 
 ```sh
-make check  # Checks that dependencies are installed and environment variables are set.
-make test-aws  # Deploys Substation to AWS. This deploys the Kinesis Time Travel example and writes data to the Kinesis stream.
+# Checks that dependencies are installed and environment variables are set.
+make check
+# Deploys Substation to AWS. This deploys the Kinesis Time Travel example 
+# and writes data to the Kinesis stream.
+make test-aws
 ```
 
 The [AWS examples](examples/terraform/aws) folder contains reusable deployment patterns that demonstrate best practices for managing the system using [Terraform](https://www.terraform.io/) and [Jsonnet](https://jsonnet.org/). Deploy them using these commands:
 
 ```sh
-make check  # Checks that dependencies are installed and environment variables are set.
-make build-aws # Builds dependencies required for AWS deployments.
-make deploy-aws DEPLOYMENT_DIR=examples/terraform/aws/dynamodb/cdc AWS_APPCONFIG_ENV=example  # Deploys the DynamoDB Change Data Capture example.
+make check
+# Builds dependencies required for AWS deployments.
+make build-aws
+# Deploys the DynamoDB Change Data Capture example.
+make deploy-aws DEPLOYMENT_DIR=examples/terraform/aws/dynamodb/cdc AWS_APPCONFIG_ENV=example
 ```
 
 **We do not recommend managing cloud deployments from a local machine using the Makefile. Production deployments should use a CI/CD pipeline with a remote state backend to manage infrastructure.**

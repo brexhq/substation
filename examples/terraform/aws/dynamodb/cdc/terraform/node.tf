@@ -9,7 +9,7 @@ module "node" {
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/node"
-      "SUBSTATION_HANDLER" : "AWS_DYNAMODB_STREAM"
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_DYNAMODB_STREAM"
       "SUBSTATION_DEBUG" : true
     }
   }

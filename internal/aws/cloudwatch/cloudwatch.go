@@ -21,14 +21,14 @@ const (
 )
 
 var (
-	// By default, AWS Kinesis streams must be below the lower threshold for 95% of the evaluation period (57 minutes) to scale down. This value can be overridden by the environment variable SUBSTATION_AUTOSCALING_DOWNSCALE_DATAPOINTS, but it cannot exceed 60 minutes.
+	// By default, AWS Kinesis streams must be below the lower threshold for 95% of the evaluation period (57 minutes) to scale down. This value can be overridden by the environment variable AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS, but it cannot exceed 60 minutes.
 	kinesisDownscaleDatapoints = 57
-	// By default, AWS Kinesis streams must be above the upper threshold for 100% of the evaluation period (5 minutes) to scale up. This value can be overridden by the environment variable SUBSTATION_AUTOSCALING_UPSCALE_DATAPOINTS, but it cannot exceed 5 minutes.
+	// By default, AWS Kinesis streams must be above the upper threshold for 100% of the evaluation period (5 minutes) to scale up. This value can be overridden by the environment variable AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS, but it cannot exceed 5 minutes.
 	kinesisUpscaleDatapoints = 5
 )
 
 func init() {
-	if v, found := os.LookupEnv("SUBSTATION_AUTOSCALING_DOWNSCALE_DATAPOINTS"); found {
+	if v, found := os.LookupEnv("AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS"); found {
 		downscale, err := strconv.Atoi(v)
 		if err != nil {
 			panic(err)
@@ -39,7 +39,7 @@ func init() {
 		}
 	}
 
-	if v, found := os.LookupEnv("SUBSTATION_AUTOSCALING_UPSCALE_DATAPOINTS"); found {
+	if v, found := os.LookupEnv("AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS"); found {
 		upscale, err := strconv.Atoi(v)
 		if err != nil {
 			panic(err)

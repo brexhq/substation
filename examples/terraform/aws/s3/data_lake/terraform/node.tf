@@ -23,7 +23,7 @@ module "lambda_node" {
 
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/node"
-      "SUBSTATION_HANDLER" : "AWS_API_GATEWAY"
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_API_GATEWAY"
       "SUBSTATION_DEBUG" : true
     }
   }

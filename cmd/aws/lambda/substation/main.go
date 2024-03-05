@@ -16,10 +16,10 @@ var (
 	handler string
 
 	// errLambdaMissingHandler is returned when the Lambda is deployed without a configured handler.
-	errLambdaMissingHandler = fmt.Errorf("SUBSTATION_HANDLER environment variable is missing")
+	errLambdaMissingHandler = fmt.Errorf("SUBSTATION_LAMBDA_HANDLER environment variable is missing")
 
 	// errLambdaInvalidHandler is returned when the Lambda is deployed with an unsupported handler.
-	errLambdaInvalidHandler = fmt.Errorf("SUBSTATION_HANDLER environment variable is invalid")
+	errLambdaInvalidHandler = fmt.Errorf("SUBSTATION_LAMBDA_HANDLER environment variable is invalid")
 
 	// errLambdaInvalidJSON is returned when the Lambda is deployed with a transform that produces invalid JSON.
 	errLambdaInvalidJSON = fmt.Errorf("transformed data is invalid JSON and cannot be returned")
@@ -87,7 +87,7 @@ func main() {
 
 func init() {
 	var ok bool
-	handler, ok = os.LookupEnv("SUBSTATION_HANDLER")
+	handler, ok = os.LookupEnv("SUBSTATION_LAMBDA_HANDLER")
 	if !ok {
 		panic(fmt.Errorf("init handler %s: %v", handler, errLambdaMissingHandler))
 	}

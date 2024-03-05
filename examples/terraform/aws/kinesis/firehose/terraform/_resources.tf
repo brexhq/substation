@@ -179,7 +179,7 @@ module "processor" {
     timeout = 60
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/processor"
-      "SUBSTATION_HANDLER" : "AWS_KINESIS_DATA_FIREHOSE"
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_KINESIS_DATA_FIREHOSE"
       "SUBSTATION_DEBUG" : true
     }
   }

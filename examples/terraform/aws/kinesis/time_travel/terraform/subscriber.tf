@@ -10,7 +10,7 @@ module "lambda_subscriber" {
 
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/subscriber"
-      "SUBSTATION_HANDLER" : "AWS_KINESIS_DATA_STREAM"
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_KINESIS_DATA_STREAM"
       "SUBSTATION_DEBUG" : true
     }
   }

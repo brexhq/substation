@@ -55,7 +55,7 @@ We rely on contributors to test changes before they are submitted as pull reques
 
 #### Environment Variables
 
-Applications may implement runtime settings that are managed by environment variables. For example, the [AWS Lambda application](/cmd/aws/lambda/substation/) uses `SUBSTATION_HANDLER` to manage [invocation settings](https://docs.aws.amazon.com/lambda/latest/dg/lambda-invocation.html).
+Applications may implement runtime settings that are managed by environment variables. For example, the [AWS Lambda application](/cmd/aws/lambda/substation/) uses `SUBSTATION_LAMBDA_HANDLER` to manage [invocation settings](https://docs.aws.amazon.com/lambda/latest/dg/lambda-invocation.html). These should reference the application by name, if possible.
 
 #### Configurations
 

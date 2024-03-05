@@ -9,7 +9,7 @@ module "subscriber_x" {
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/subscriber_x"
-      "SUBSTATION_HANDLER" : "AWS_SNS"
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_SNS"
       "SUBSTATION_DEBUG" : true
     }
   }
@@ -49,7 +49,7 @@ module "subscriber_y" {
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/subscriber_y"
-      "SUBSTATION_HANDLER" : "AWS_SNS"
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_SNS"
       "SUBSTATION_DEBUG" : true
     }
   }
@@ -90,7 +90,7 @@ module "subscriber_z" {
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/subscriber_z"
-      "SUBSTATION_HANDLER" : "AWS_SNS"
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_SNS"
       "SUBSTATION_DEBUG" : true
     }
   }

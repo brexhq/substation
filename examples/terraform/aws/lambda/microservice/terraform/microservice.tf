@@ -12,7 +12,7 @@ module "microservice" {
     timeout = 10
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/microservice"
-      "SUBSTATION_HANDLER" : "AWS_LAMBDA"
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_LAMBDA"
       "SUBSTATION_DEBUG" : true
     }
   }

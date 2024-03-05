@@ -1,5 +1,82 @@
 # Changelog
 
+## [1.0.0](https://github.com/brexhq/substation/compare/v1.0.0-rc.1...v1.0.0) (2024-03-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* `cmd/development/substation` refactored into `cmd/client/file/substation`
+* `condition.Inspector` is no longer in the public API
+* `condition` inspectors refactored into individual functions
+   * JSON Schema inspector removed
+   * Inspectors no longer directly support negation
+* `config.Capsule` refactored into `message` package
+* `config.Channel` is no longer in the public API
+* `process` package refactored into `transform` package
+   * Count processor removed
+   * Flatten processor removed
+   * IP Database processor removed
+   * Processors (Transfoms) no longer directly support conditions
+* `internal/transform` package removed
+* `internal/sink` package removed
+* `proto` removed
+* Secrets are now explicitly retrieved and put into the Secrets Store using the `utility_secret` transform
+* The `enrich_kv_store_set` transform had it's object.key and object.set_key behavior flipped (key is now the value put into the KV, set_key is now the key used in the KV)
+* The `send_http` transform is now `send_http_post`
+* All `TTLOffset` settings are now strings instead of integers (e.g., "15m")
+* Removed application metrics, added `meta_metric_duration` and `utility_metric_count` in transform package
+* Refactored `Transforms` method in substation package
+* Moved `cmd/file/client` application to `examples/cmd/file/client`
+* Renamed multiple fields based on recommendations from GitHub Copilot
+* Sumo Logic support removed (replaced)
+* Group processor removed (replaced)
+
+### Features
+
+
+* Added `substation` package
+* Added `message` package
+* Updated applications to use new concurrency and data processing model
+* Added Kinesis Data Firehose support to `cmd/aws/lambda/substation`
+* Added `meta_negate` inspector to `condition` package
+* Added `meta_err` transform to `transform` package
+* Added `meta_switch` transform to `transform` package
+* Added `string_append` transform to `transform` package
+* Added `string_uuid` transform to `transform` package
+* Added `utility_delay` transform to `transform` package
+* Added `utility_err` transform to `transform` package
+* Added support for non-aggregated data to AWS Kinesis Data Stream transform
+* Added region and assume role support to all AWS transforms
+* Added buffering to several `send` transforms
+* Removed IAM modules in `build/terraform/aws/`
+* Added `build/scripts/config/format.sh`
+* Added `build/scripts/terraform/format.sh`
+* Added shorthand to `build/config/substation.libsonnet`
+* Added `build/config/substation_test.jsonnet`
+* Downgraded `go.mod` and development containers to Go 1.19
+* Upgraded application containers to Go 1.21
+* Refactored all `examples/`
+* Added `utility_secret` transform
+* All transform object handling patterns (object.key) return the input message if the retrieved key value does not exist
+* Secrets Store AWS Secrets Manager backend supports AWS and retry configuration
+* KV Store AWS DynamoDB backend supports AWS and retry configuration
+* Added example for summarizing multiple events into a single event
+* Added example for using MaxMind with the KV transform
+* Added JSON array support to `meta_for_each` in condition package
+* Upgraded `go.mod` to Go 1.20
+* Added multi-region support to Terraform modules
+* Added CloudWatch Terraform modules to collect log data
+* Added (refactor) Secrets Terraform module
+* Added `array_zip` transform
+* IAM roles and policies in Terraform use randomized names
+
+## Bug Fixes
+* Concurrency bug in internal/aggregate package
+
+### Code Refactoring
+
+* Consistent Environment Variable and Application Names ([#141](https://github.com/brexhq/substation/issues/141)) ([e4062f4](https://github.com/brexhq/substation/commit/e4062f4221f0e9fcc897cda7b40a2b2d9f8aa6b2))
+
 ## [0.9.2](https://github.com/brexhq/substation/compare/v0.9.1...v0.9.2) (2023-08-10)
 
 

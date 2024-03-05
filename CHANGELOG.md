@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.0.0](https://github.com/brexhq/substation/compare/v1.0.0-rc.1...v1.0.0) (2024-03-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* Consistent Environment Variable and Application Names ([#141](https://github.com/brexhq/substation/issues/141))
+
+### Miscellaneous Chores
+
+* release 1.0.0 ([23367cf](https://github.com/brexhq/substation/commit/23367cf6395a3165de72870c1a5880a9a4f3329c))
+
+
+### Code Refactoring
+
+* Consistent Environment Variable and Application Names ([#141](https://github.com/brexhq/substation/issues/141)) ([e4062f4](https://github.com/brexhq/substation/commit/e4062f4221f0e9fcc897cda7b40a2b2d9f8aa6b2))
+
 ## [0.9.2](https://github.com/brexhq/substation/compare/v0.9.1...v0.9.2) (2023-08-10)
 
 

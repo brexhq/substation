@@ -22,7 +22,7 @@ This app handles Kinesis Data Stream autoscaling through SNS notifications and C
 
 Stream utilization is based on volume (i.e., 60, 000 events per minute) and size (i.e., 10GB data per minute); these values are converted to a percentage (0.0 to 1.0) and the maximum of either is considered the stream's current utilization.
 
-By default, streams must be above the upper threshold for all 5 minutes to scale up and below the lower threshold for at least 57 minutes to scale down. These values can be overriden by the environment variables SUBSTATION_AUTOSCALING_UPSCALE_DATAPOINTS (cannot exceed 5 minutes) and SUBSTATION_AUTOSCALING_DOWNSCALE_DATAPOINTS (cannot exceed 60 minutes).
+By default, streams must be above the upper threshold for all 5 minutes to scale up and below the lower threshold for at least 57 minutes to scale down. These values can be overriden by the environment variables AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS (cannot exceed 5 minutes) and AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS (cannot exceed 60 minutes).
 
 For example:
 

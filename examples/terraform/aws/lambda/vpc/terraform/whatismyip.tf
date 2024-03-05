@@ -18,7 +18,7 @@ module "whatismyip" {
 
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/whatismyip"
-      "SUBSTATION_HANDLER" : "AWS_LAMBDA"
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_LAMBDA"
       "SUBSTATION_DEBUG" : true
     }
   }

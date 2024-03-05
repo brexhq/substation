@@ -23,12 +23,14 @@ No modules.
 | [aws_appconfig_application.app](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appconfig_application) | resource |
 | [aws_appconfig_deployment_strategy.instant](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appconfig_deployment_strategy) | resource |
 | [aws_appconfig_environment.env](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appconfig_environment) | resource |
+| [aws_lambda_permission.allow_appconfig](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_permission) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_config"></a> [config](#input\_config) | Configuration for the AppConfig application:<br><br>    * name: The name of the AppConfig application.<br>    * environments: A list of environments to create for the AppConfig application. | <pre>object({<br>    name = string<br>    environments = list(object({<br>      name = string<br>    }))<br>  })</pre> | n/a | yes |
+| <a name="input_lambda"></a> [lambda](#input\_lambda) | Lambda function used to validate configuration profiles. | <pre>object({<br>    name = string<br>    arn  = string<br>    role = object({<br>      name = string<br>      arn  = string<br>    })<br>  })</pre> | `null` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | n/a | `map(any)` | `{}` | no |
 
 ## Outputs
@@ -37,4 +39,5 @@ No modules.
 |------|-------------|
 | <a name="output_arn"></a> [arn](#output\_arn) | The ARN of the AppConfig application. |
 | <a name="output_id"></a> [id](#output\_id) | The ID of the AppConfig application. |
+| <a name="output_lambda"></a> [lambda](#output\_lambda) | The validator Lambda function passed to the AppConfig application. |
 <!-- END_TF_DOCS -->

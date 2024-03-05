@@ -444,10 +444,10 @@ module "node" {
 
     env = {
       "SUBSTATION_CONFIG" : "https://localhost:2772/applications/substation/environments/example/configurations/node"
+      "SUBSTATION_DEBUG" : true
       # This Substation node will ingest data from API Gateway. More nodes can be 
       # deployed to ingest data from other sources, such as Kinesis or SQS.
-      "SUBSTATION_HANDLER" : "AWS_API_GATEWAY"
-      "SUBSTATION_DEBUG" : true
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_API_GATEWAY"
     }
   }
 

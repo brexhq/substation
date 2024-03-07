@@ -979,6 +979,14 @@
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
       metric: {
+        bytes(settings={}): {
+          local default = {
+            metric: $.config.metric,
+          },
+
+          type: 'utility_metric_bytes',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
         count(settings={}): {
           local default = {
             metric: $.config.metric,

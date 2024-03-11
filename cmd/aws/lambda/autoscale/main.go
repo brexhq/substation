@@ -160,9 +160,9 @@ func downscale(shards float64) int64 {
 	switch {
 	case shards < 5:
 		return int64(math.Ceil(shards / 2))
-	case shards < 25:
+	case shards < 13:
 		return int64(math.Ceil(shards / 1.75))
-	case shards < 50:
+	case shards < 33:
 		return int64(math.Ceil(shards / 1.5))
 	default:
 		return int64(math.Ceil(shards / 1.25))
@@ -173,9 +173,9 @@ func upscale(shards float64) int64 {
 	switch {
 	case shards < 5:
 		return int64(math.Floor(shards * 2))
-	case shards < 25:
+	case shards < 13:
 		return int64(math.Floor(shards * 1.75))
-	case shards < 50:
+	case shards < 33:
 		return int64(math.Floor(shards * 1.5))
 	default:
 		return int64(math.Floor(shards * 1.25))

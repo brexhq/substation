@@ -340,3 +340,19 @@ func (a *API) GetTags(ctx aws.Context, stream string) ([]*kinesis.Tag, error) {
 
 	return tags, nil
 }
+
+// UpdateTag updates a tag on a Kinesis stream.
+func (a *API) UpdateTag(ctx aws.Context, stream, key, value string) error {
+	input := &kinesis.AddTagsToStreamInput{
+		StreamName: aws.String(stream),
+		Tags: map[string]*string{
+			key: aws.String(value),
+		},
+	}
+
+	if _, err := a.Client.AddTagsToStreamWithContext(ctx, input); err != nil {
+		return fmt.Errorf("updatetag stream %s key %s value %s: %v", stream, key, value, err)
+	}
+
+	return nil
+}

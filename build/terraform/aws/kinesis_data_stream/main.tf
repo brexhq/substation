@@ -51,6 +51,7 @@ data "aws_iam_policy_document" "access" {
       "kinesis:GetShardIterator",
       "kinesis:ListShards",
       "kinesis:ListStreams",
+      "kinesis:ListTagsForStream",
       "kinesis:PutRecord*",
       "kinesis:SubscribeToShard",
       "kinesis:RegisterStreamConsumer",

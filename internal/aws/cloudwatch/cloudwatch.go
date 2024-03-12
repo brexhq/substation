@@ -22,14 +22,10 @@ var (
 	// By default, AWS Kinesis streams must be below the lower threshold for
 	// 100% of the evaluation period (60 minutes) to scale down. This value can
 	// be overridden by the environment variable AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS.
-	// If overridden, then the evaluation period will be adjusted every 60 minutes,
-	// up to 6 hours, as needed to match the number of datapoints.
 	kinesisDownscaleDatapoints = 60
 	// By default, AWS Kinesis streams must be above the upper threshold for
 	// 100% of the evaluation period (5 minutes) to scale up. This value can
 	// be overridden by the environment variable AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS.
-	// If overridden, then the evaluation period will be adjusted every 5 minutes,
-	// up to 30 minutes, as needed to match the number of datapoints.
 	kinesisUpscaleDatapoints = 5
 	// By default, AWS Kinesis streams will scale up if the incoming records and bytes
 	// are above 70% of the threshold. This value can be overridden by the environment

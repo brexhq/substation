@@ -24,15 +24,13 @@ var (
 	// be overridden by the environment variable AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS.
 	// If overridden, then the evaluation period will be adjusted every 60 minutes,
 	// up to 6 hours, as needed to match the number of datapoints.
-	kinesisDownscaleDatapoints       = 60
-	kinesisDownscaleEvaluationPeriod = 60
+	kinesisDownscaleDatapoints = 60
 	// By default, AWS Kinesis streams must be above the upper threshold for
 	// 100% of the evaluation period (5 minutes) to scale up. This value can
 	// be overridden by the environment variable AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS.
 	// If overridden, then the evaluation period will be adjusted every 5 minutes,
 	// up to 30 minutes, as needed to match the number of datapoints.
-	kinesisUpscaleDatapoints       = 5
-	kinesisUpscaleEvaluationPeriod = 5
+	kinesisUpscaleDatapoints = 5
 	// By default, AWS Kinesis streams will scale up if the incoming records and bytes
 	// are above 70% of the threshold. This value can be overridden by the environment
 	// variable AUTOSCALE_KINESIS_THRESHOLD, but it cannot be less than 40% or greater
@@ -47,21 +45,6 @@ func init() {
 			panic(err)
 		}
 
-		switch {
-		case dps <= 60:
-			kinesisDownscaleEvaluationPeriod = 60
-		case dps <= 60*2:
-			kinesisDownscaleEvaluationPeriod = 120
-		case dps <= 60*3:
-			kinesisDownscaleEvaluationPeriod = 180
-		case dps <= 60*4:
-			kinesisDownscaleEvaluationPeriod = 240
-		case dps <= 60*5:
-			kinesisDownscaleEvaluationPeriod = 300
-		case dps <= 60*6:
-			kinesisDownscaleEvaluationPeriod = 360
-		}
-
 		kinesisDownscaleDatapoints = dps
 	}
 
@@ -69,21 +52,6 @@ func init() {
 		dps, err := strconv.Atoi(v)
 		if err != nil {
 			panic(err)
-		}
-
-		switch {
-		case dps <= 5:
-			kinesisUpscaleEvaluationPeriod = 5
-		case dps <= 5*2:
-			kinesisUpscaleEvaluationPeriod = 10
-		case dps <= 5*3:
-			kinesisUpscaleEvaluationPeriod = 15
-		case dps <= 5*4:
-			kinesisUpscaleEvaluationPeriod = 20
-		case dps <= 5*5:
-			kinesisUpscaleEvaluationPeriod = 25
-		case dps <= 5*6:
-			kinesisUpscaleEvaluationPeriod = 30
 		}
 
 		kinesisUpscaleDatapoints = dps
@@ -139,7 +107,7 @@ func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic s
 			AlarmDescription:   aws.String(stream),
 			ActionsEnabled:     aws.Bool(true),
 			AlarmActions:       []*string{aws.String(topic)},
-			EvaluationPeriods:  aws.Int64(int64(kinesisDownscaleEvaluationPeriod)),
+			EvaluationPeriods:  aws.Int64(int64(kinesisDownscaleDatapoints)),
 			DatapointsToAlarm:  aws.Int64(int64(kinesisDownscaleDatapoints)),
 			Threshold:          aws.Float64(downscaleThreshold),
 			ComparisonOperator: aws.String("LessThanOrEqualToThreshold"),
@@ -240,7 +208,7 @@ func (a *API) UpdateKinesisUpscaleAlarm(ctx aws.Context, name, stream, topic str
 			AlarmDescription:   aws.String(stream),
 			ActionsEnabled:     aws.Bool(true),
 			AlarmActions:       []*string{aws.String(topic)},
-			EvaluationPeriods:  aws.Int64(int64(kinesisUpscaleEvaluationPeriod)),
+			EvaluationPeriods:  aws.Int64(int64(kinesisUpscaleDatapoints)),
 			DatapointsToAlarm:  aws.Int64(int64(kinesisUpscaleDatapoints)),
 			Threshold:          aws.Float64(upscaleThreshold),
 			ComparisonOperator: aws.String("GreaterThanOrEqualToThreshold"),

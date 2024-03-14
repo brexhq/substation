@@ -18,18 +18,18 @@ This app handles ingest, transform, and load for data from these AWS services:
 
 ## autoscale
 
-This app handles Kinesis Data Stream autoscaling through SNS notifications and CloudWatch alarms. The scaling behavior is to scale up / out if stream utilization is greater than 75% of the Kinesis service limits within a 5 minute period and scale down / in if stream utilization is less than 25% of the Kinesis service limits within a 60 minute period. In both cases, streams scale by 50%.
+This app handles Kinesis Data Stream autoscaling through SNS notifications and CloudWatch alarms. Scaling is based on stream capacity as determined by the number and size of incoming records written to the stream. By default, the scaling behavior follows this pattern:
 
-Stream utilization is based on volume (i.e., 60, 000 events per minute) and size (i.e., 10GB data per minute); these values are converted to a percentage (0.0 to 1.0) and the maximum of either is considered the stream's current utilization.
+* If stream utilization is greater than 70% of the Kinesis service limits consistently within a 5 minute period, then scale up
+* If stream utilization is less than 35% of the Kinesis service limits consistently within a 60 minute period, then scale down
 
-By default, streams must be above the upper threshold for all 5 minutes to scale up and below the lower threshold for at least 57 minutes to scale down. These values can be overriden by the environment variables AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS (cannot exceed 5 minutes) and AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS (cannot exceed 60 minutes).
+The scaling behavior is customizable using environment variables:
 
-For example:
+* `AUTOSCALE_KINESIS_THRESHOLD` - The target threshold to cause a scaling event. The default value is 0.7 (70%), but it can be set to any value between 0.4 (40%) and 0.9 (90%). If the threshold is low, then the stream is more sensitive to scaling up and less sensitive to scaling down. If the threshold is high, then the stream is less sensitive to scaling up and more sensitive to scaling down.
+* `AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS` - The number of data points required to scale up. The default value is 5, but it can be set to any value between 1 and 30. The number of data points affects the evaluation period; every 5 data points is equivalent to 5 minutes and the maximum evaluation period is 30 minutes. Use a higher value to reduce the frequency of scaling up.
+* `AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS` - The number of data points required to scale down. The default value is 60, but it can be set to any value between 1 and 360. The number of data points affects the evaluation period; every 60 data points is equivalent to 1 hour and the maximum evaluation period is 6 hours. Use a higher value to reduce the frequency of scaling down.
 
-* If a stream is configured with 10 shards and it triggers the upscale alarm, then the stream is scaled up to 15 shards
-* If a stream is configured with 10 shards and it triggers the downscale alarm, then the stream is scaled down to 5 shards
-
-Shards will not scale evenly, but the autoscaling functionality follows [AWS best practices for resharding streams](https://docs.aws.amazon.com/kinesis/latest/APIReference/API_UpdateShardCount.html). UpdateShardCount has many limitations that the application is designed around, but there may be times when these limits cannot be avoided; if any limits are met, then users should file a service limit increase with AWS. Although rare, the most common service limits that users may experience are:
+Shards do not scale evenly, but the autoscaling follows [AWS best practices for resharding streams](https://docs.aws.amazon.com/kinesis/latest/APIReference/API_UpdateShardCount.html). UpdateShardCount has many limitations that the application is designed around, but there may be times when these limits cannot be avoided; if any limits are met, then users should file a service limit increase with AWS. Although rare, the most common service limits that users may experience are:
 
 * Scaling a stream more than 10 times per 24 hour rolling period
 * Scaling a stream beyond 10000 shards

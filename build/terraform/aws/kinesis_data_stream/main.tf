@@ -6,11 +6,12 @@ resource "aws_kinesis_stream" "stream" {
   retention_period = var.config.retention
   encryption_type  = var.kms != null ? "KMS" : "NONE"
   kms_key_id       = var.kms != null ? var.kms.id : null
-  lifecycle {
-    ignore_changes = [shard_count]
-  }
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [shard_count, tags]
+  }
 }
 
 # Applies the policy to each role in the access list.
@@ -44,13 +45,14 @@ data "aws_iam_policy_document" "access" {
   statement {
     effect = "Allow"
     actions = [
+      "kinesis:AddTagsToStream",
       "kinesis:DescribeStream*",
       "kinesis:GetRecords",
       "kinesis:GetShardIterator",
       "kinesis:ListShards",
       "kinesis:ListStreams",
+      "kinesis:ListTagsForStream",
       "kinesis:PutRecord*",
-      "kinesis:SubscribeToShard",
       "kinesis:SubscribeToShard",
       "kinesis:RegisterStreamConsumer",
       "kinesis:UpdateShardCount",
@@ -84,10 +86,11 @@ resource "aws_cloudwatch_metric_alarm" "metric_alarm_downscale" {
   actions_enabled     = true
   alarm_actions       = [var.config.autoscaling_topic]
   evaluation_periods  = 60
-  datapoints_to_alarm = 57
-  threshold           = 0.25
+  datapoints_to_alarm = 60
+  threshold           = 0.35
   comparison_operator = "LessThanOrEqualToThreshold"
   treat_missing_data  = "ignore"
+
   lifecycle {
     ignore_changes = [metric_query, datapoints_to_alarm]
   }
@@ -169,9 +172,10 @@ resource "aws_cloudwatch_metric_alarm" "metric_alarm_upscale" {
   alarm_actions       = [var.config.autoscaling_topic]
   evaluation_periods  = 5
   datapoints_to_alarm = 5
-  threshold           = 0.75
+  threshold           = 0.70
   comparison_operator = "GreaterThanOrEqualToThreshold"
   treat_missing_data  = "ignore"
+
   lifecycle {
     ignore_changes = [metric_query, datapoints_to_alarm]
   }

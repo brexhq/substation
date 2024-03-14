@@ -13,40 +13,54 @@ import (
 )
 
 const (
+	// This is the period in seconds that the AWS Kinesis CloudWatch alarms
+	// will evaluate the metrics over.
 	kinesisMetricsPeriod = 60
-	// AWS Kinesis streams will scale down / in if they are less than 25% of the Kinesis service limits within a 60 minute / 1 hour period.
-	kinesisDownscaleEvaluationPeriod, kinesisDownscaleThreshold = 60, 0.25
-	// AWS Kinesis streams will scale up / out if they are greater than 75% of the Kinesis service limits within a 5 minute period.
-	kinesisUpscaleEvaluationPeriod, kinesisUpscaleThreshold = 5, 0.75
 )
 
 var (
-	// By default, AWS Kinesis streams must be below the lower threshold for 95% of the evaluation period (57 minutes) to scale down. This value can be overridden by the environment variable AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS, but it cannot exceed 60 minutes.
-	kinesisDownscaleDatapoints = 57
-	// By default, AWS Kinesis streams must be above the upper threshold for 100% of the evaluation period (5 minutes) to scale up. This value can be overridden by the environment variable AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS, but it cannot exceed 5 minutes.
+	// By default, AWS Kinesis streams must be below the lower threshold for
+	// 100% of the evaluation period (60 minutes) to scale down. This value can
+	// be overridden by the environment variable AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS.
+	kinesisDownscaleDatapoints = 60
+	// By default, AWS Kinesis streams must be above the upper threshold for
+	// 100% of the evaluation period (5 minutes) to scale up. This value can
+	// be overridden by the environment variable AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS.
 	kinesisUpscaleDatapoints = 5
+	// By default, AWS Kinesis streams will scale up if the incoming records and bytes
+	// are above 70% of the threshold. This value can be overridden by the environment
+	// variable AUTOSCALE_KINESIS_THRESHOLD, but it cannot be less than 40% or greater
+	// than 90%.
+	kinesisThreshold = 0.7
 )
 
 func init() {
 	if v, found := os.LookupEnv("AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS"); found {
-		downscale, err := strconv.Atoi(v)
+		dps, err := strconv.Atoi(v)
 		if err != nil {
 			panic(err)
 		}
 
-		if downscale <= kinesisDownscaleEvaluationPeriod {
-			kinesisDownscaleDatapoints = downscale
-		}
+		kinesisDownscaleDatapoints = dps
 	}
 
 	if v, found := os.LookupEnv("AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS"); found {
-		upscale, err := strconv.Atoi(v)
+		dps, err := strconv.Atoi(v)
 		if err != nil {
 			panic(err)
 		}
 
-		if upscale <= kinesisUpscaleEvaluationPeriod {
-			kinesisUpscaleDatapoints = upscale
+		kinesisUpscaleDatapoints = dps
+	}
+
+	if v, found := os.LookupEnv("AUTOSCALE_KINESIS_THRESHOLD"); found {
+		threshold, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			panic(err)
+		}
+
+		if threshold >= 0.4 && threshold <= 0.9 {
+			kinesisThreshold = threshold
 		}
 	}
 }
@@ -80,6 +94,8 @@ func (a *API) IsEnabled() bool {
 
 // UpdateKinesisDownscaleAlarm updates CloudWatch alarms that manage the scale down tracking for Kinesis streams.
 func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic string, shards int64) error {
+	downscaleThreshold := kinesisThreshold - 0.35
+
 	if _, err := a.Client.PutMetricAlarmWithContext(
 		ctx,
 		&cloudwatch.PutMetricAlarmInput{
@@ -87,9 +103,9 @@ func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic s
 			AlarmDescription:   aws.String(stream),
 			ActionsEnabled:     aws.Bool(true),
 			AlarmActions:       []*string{aws.String(topic)},
-			EvaluationPeriods:  aws.Int64(kinesisDownscaleEvaluationPeriod),
+			EvaluationPeriods:  aws.Int64(int64(kinesisDownscaleDatapoints)),
 			DatapointsToAlarm:  aws.Int64(int64(kinesisDownscaleDatapoints)),
-			Threshold:          aws.Float64(kinesisDownscaleThreshold),
+			Threshold:          aws.Float64(downscaleThreshold),
 			ComparisonOperator: aws.String("LessThanOrEqualToThreshold"),
 			TreatMissingData:   aws.String("ignore"),
 			Metrics: []*cloudwatch.MetricDataQuery{
@@ -170,12 +186,7 @@ func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic s
 		return fmt.Errorf("updatealarm alarm %s stream %s: %v", name, stream, err)
 	}
 
-	if _, err := a.Client.SetAlarmStateWithContext(ctx,
-		&cloudwatch.SetAlarmStateInput{
-			AlarmName:   aws.String(name),
-			StateValue:  aws.String("INSUFFICIENT_DATA"),
-			StateReason: aws.String("Threshold value updated"),
-		}); err != nil {
+	if err := a.UpdateKinesisAlarmState(ctx, name, "Threshold value updated"); err != nil {
 		return fmt.Errorf("updatealarm alarm %s stream %s: %v", name, stream, err)
 	}
 
@@ -184,6 +195,8 @@ func (a *API) UpdateKinesisDownscaleAlarm(ctx aws.Context, name, stream, topic s
 
 // UpdateKinesisUpscaleAlarm updates CloudWatch alarms that manage the scale up tracking for Kinesis streams.
 func (a *API) UpdateKinesisUpscaleAlarm(ctx aws.Context, name, stream, topic string, shards int64) error {
+	upscaleThreshold := kinesisThreshold
+
 	if _, err := a.Client.PutMetricAlarmWithContext(
 		ctx,
 		&cloudwatch.PutMetricAlarmInput{
@@ -191,9 +204,9 @@ func (a *API) UpdateKinesisUpscaleAlarm(ctx aws.Context, name, stream, topic str
 			AlarmDescription:   aws.String(stream),
 			ActionsEnabled:     aws.Bool(true),
 			AlarmActions:       []*string{aws.String(topic)},
-			EvaluationPeriods:  aws.Int64(kinesisUpscaleEvaluationPeriod),
+			EvaluationPeriods:  aws.Int64(int64(kinesisUpscaleDatapoints)),
 			DatapointsToAlarm:  aws.Int64(int64(kinesisUpscaleDatapoints)),
-			Threshold:          aws.Float64(kinesisUpscaleThreshold),
+			Threshold:          aws.Float64(upscaleThreshold),
 			ComparisonOperator: aws.String("GreaterThanOrEqualToThreshold"),
 			TreatMissingData:   aws.String("ignore"),
 			Metrics: []*cloudwatch.MetricDataQuery{
@@ -274,14 +287,19 @@ func (a *API) UpdateKinesisUpscaleAlarm(ctx aws.Context, name, stream, topic str
 		return fmt.Errorf("updatealarm alarm %s stream %s: %v", name, stream, err)
 	}
 
-	if _, err := a.Client.SetAlarmStateWithContext(ctx,
-		&cloudwatch.SetAlarmStateInput{
-			AlarmName:   aws.String(name),
-			StateValue:  aws.String("INSUFFICIENT_DATA"),
-			StateReason: aws.String("Threshold value updated"),
-		}); err != nil {
+	if err := a.UpdateKinesisAlarmState(ctx, name, "Threshold value updated"); err != nil {
 		return fmt.Errorf("updatealarm alarm %s stream %s: %v", name, stream, err)
 	}
 
 	return nil
+}
+
+func (a *API) UpdateKinesisAlarmState(ctx aws.Context, name, reason string) error {
+	_, err := a.Client.SetAlarmStateWithContext(ctx,
+		&cloudwatch.SetAlarmStateInput{
+			AlarmName:   aws.String(name),
+			StateValue:  aws.String("INSUFFICIENT_DATA"),
+			StateReason: aws.String(reason),
+		})
+	return err
 }

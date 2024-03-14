@@ -6,6 +6,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -14,10 +15,6 @@ import (
 	"github.com/brexhq/substation/internal/aws/kinesis"
 	"github.com/brexhq/substation/internal/log"
 	"github.com/tidwall/gjson"
-)
-
-const (
-	autoscalePercentage = 50.0
 )
 
 var (
@@ -43,7 +40,7 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 	alarmName := gjson.Get(message, "AlarmName").String()
 	triggerMetrics := gjson.Get(message, "Trigger.Metrics")
 
-	log.WithField("alarm", alarmName).Info("received autoscale notification")
+	log.WithField("alarm", alarmName).Debug("Received autoscale notification.")
 
 	var stream string
 	for _, v := range triggerMetrics.Array() {
@@ -53,22 +50,24 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 			break
 		}
 	}
-	log.WithField("alarm", alarmName).WithField("stream", stream).Info("parsed Kinesis stream")
+	log.WithField("alarm", alarmName).WithField("stream", stream).Debug("Parsed Kinesis stream.")
 
 	shards, err := kinesisAPI.ActiveShards(ctx, stream)
 	if err != nil {
 		return fmt.Errorf("handler: %v", err)
 	}
 	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", shards).
-		Info("retrieved active shard count")
+		Info("Retrieved active shard count.")
 
 	var newShards int64
 	if strings.Contains(alarmName, "upscale") {
-		newShards = upscale(float64(shards), autoscalePercentage)
+		newShards = upscale(float64(shards))
 	}
 	if strings.Contains(alarmName, "downscale") {
-		newShards = downscale(float64(shards), autoscalePercentage)
+		newShards = downscale(float64(shards))
 	}
+
+	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", newShards).Info("Calculated new shard count.")
 
 	tags, err := kinesisAPI.GetTags(ctx, stream)
 	if err != nil {
@@ -83,7 +82,7 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 				return fmt.Errorf("handler: %v", err)
 			}
 
-			log.WithField("stream", stream).WithField("count", minShard).Info("retrieved minimum shard count")
+			log.WithField("stream", stream).WithField("count", minShard).Debug("Retrieved minimum shard count.")
 		}
 
 		if *tag.Key == "MaximumShards" {
@@ -92,7 +91,28 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 				return fmt.Errorf("handler: %v", err)
 			}
 
-			log.WithField("stream", stream).WithField("count", maxShard).Info("retrieved maximum shard count")
+			log.WithField("stream", stream).WithField("count", maxShard).Debug("Retrieved maximum shard count.")
+		}
+
+		// Tracking the last scaling event prevents scaling from occurring too frequently.
+		// If the current scaling event is an upscale, then the last scaling event must be at least 3 minutes ago.
+		// If the current scaling event is a downscale, then the last scaling event must be at least 30 minutes ago.
+		if *tag.Key == "LastScalingEvent" {
+			lastScalingEvent, err := time.Parse(time.RFC3339, *tag.Value)
+			if err != nil {
+				return fmt.Errorf("handler: %v", err)
+			}
+
+			if (time.Since(lastScalingEvent) < 3*time.Minute && strings.Contains(alarmName, "upscale")) ||
+				(time.Since(lastScalingEvent) < 30*time.Minute && strings.Contains(alarmName, "downscale")) {
+				log.WithField("stream", stream).WithField("time", lastScalingEvent).Info("Last scaling event is too recent.")
+
+				if err := cloudwatchAPI.UpdateKinesisAlarmState(ctx, alarmName, "Last scaling event is too recent"); err != nil {
+					return fmt.Errorf("handler: %v", err)
+				}
+
+				return nil
+			}
 		}
 	}
 
@@ -109,32 +129,55 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 	}
 
 	if newShards == shards {
-		log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", shards).Info("active shard count is at minimum threshold, no updates necessary")
+		log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", shards).Info("Active shard count is at minimum threshold, no change is required.")
 		return nil
 	}
 
 	if err := kinesisAPI.UpdateShards(ctx, stream, newShards); err != nil {
 		return fmt.Errorf("handler: %v", err)
 	}
-	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", newShards).Info("updated shards")
+
+	if err := kinesisAPI.UpdateTag(ctx, stream, "LastScalingEvent", time.Now().Format(time.RFC3339)); err != nil {
+		return fmt.Errorf("handler: %v", err)
+	}
+
+	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", newShards).Info("Updated shard count.")
 
 	if err := cloudwatchAPI.UpdateKinesisDownscaleAlarm(ctx, stream+"_downscale", stream, topicArn, newShards); err != nil {
 		return fmt.Errorf("handler: %v", err)
 	}
-	log.WithField("alarm", stream+"_downscale").WithField("stream", stream).WithField("count", newShards).Info("reset alarm")
+	log.WithField("alarm", stream+"_downscale").WithField("stream", stream).WithField("count", newShards).Debug("Reset CloudWatch alarm.")
 
 	if err := cloudwatchAPI.UpdateKinesisUpscaleAlarm(ctx, stream+"_upscale", stream, topicArn, newShards); err != nil {
 		return fmt.Errorf("handler: %v", err)
 	}
-	log.WithField("alarm", stream+"_upscale").WithField("stream", stream).WithField("count", newShards).Info("reset alarm")
+	log.WithField("alarm", stream+"_upscale").WithField("stream", stream).WithField("count", newShards).Debug("Reset CloudWatch alarm.")
 
 	return nil
 }
 
-func downscale(shards, pct float64) int64 {
-	return int64(math.Ceil(shards - (shards * (pct / 100))))
+func downscale(shards float64) int64 {
+	switch {
+	case shards < 5:
+		return int64(math.Ceil(shards / 2))
+	case shards < 13:
+		return int64(math.Ceil(shards / 1.75))
+	case shards < 33:
+		return int64(math.Ceil(shards / 1.5))
+	default:
+		return int64(math.Ceil(shards / 1.25))
+	}
 }
 
-func upscale(shards, pct float64) int64 {
-	return int64(math.Ceil(shards + (shards * (pct / 100))))
+func upscale(shards float64) int64 {
+	switch {
+	case shards < 5:
+		return int64(math.Floor(shards * 2))
+	case shards < 13:
+		return int64(math.Floor(shards * 1.75))
+	case shards < 33:
+		return int64(math.Floor(shards * 1.5))
+	default:
+		return int64(math.Floor(shards * 1.25))
+	}
 }

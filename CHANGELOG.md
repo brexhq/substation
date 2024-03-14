@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/brexhq/substation/compare/v1.0.0...v1.1.0) (2024-03-14)
+
+
+### Features
+
+* **autoscale:** Dynamic Kinesis Scaling with Thresholds ([#144](https://github.com/brexhq/substation/issues/144)) ([079fda9](https://github.com/brexhq/substation/commit/079fda9e46f70d8544568ed2ca941416212356d0))
+* **transform:** Add Metrics Bytes Transform ([#142](https://github.com/brexhq/substation/issues/142)) ([d708580](https://github.com/brexhq/substation/commit/d70858085f1be265a02ac5f1298efd986e7f275e))
+
 ## [1.0.0](https://github.com/brexhq/substation/compare/v1.0.0-rc.1...v1.0.0) (2024-03-05)
 
 

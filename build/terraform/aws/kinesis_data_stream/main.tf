@@ -21,7 +21,7 @@ resource "aws_kinesis_stream" "stream" {
   tags = var.tags
 
   lifecycle {
-    ignore_changes = [shard_count, tags]
+    ignore_changes = [shard_count, tags["LastScalingEvent"]]
   }
 }
 

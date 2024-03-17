@@ -92,7 +92,12 @@ resource "aws_cloudwatch_metric_alarm" "metric_alarm_downscale" {
   treat_missing_data  = "ignore"
 
   lifecycle {
-    ignore_changes = [metric_query, datapoints_to_alarm]
+    ignore_changes = [
+      datapoints_to_alarm,
+      evaluation_periods,
+      threshold,
+      metric_query,
+    ]
   }
 
   metric_query {
@@ -177,7 +182,12 @@ resource "aws_cloudwatch_metric_alarm" "metric_alarm_upscale" {
   treat_missing_data  = "ignore"
 
   lifecycle {
-    ignore_changes = [metric_query, datapoints_to_alarm]
+    ignore_changes = [
+      datapoints_to_alarm,
+      evaluation_periods,
+      threshold,
+      metric_query,
+    ]
   }
 
   metric_query {

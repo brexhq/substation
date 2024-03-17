@@ -84,6 +84,32 @@ flowchart LR
 
 # Kinesis
 
+## Autoscale
+
+Deploys a Kinesis Data Stream with autoscaling enabled. This can also be used without Substation to manage Kinesis Data Streams.
+
+```mermaid
+
+flowchart LR
+    kds[("Kinesis
+    Data Stream")]
+    sns("Autoscale SNS Topic")
+    cw_upscale("CloudWatch Upscale Alarm")
+    cw_downscale("CloudWatch Downscale Alarm")
+    autoscale("Autoscale Lambda")
+
+    autoscale -- UpdateShardCount API --> kds
+    autoscale -- PutMetricAlarm API ---> cw_upscale
+    autoscale -- PutMetricAlarm API ---> cw_downscale
+
+    cw_downscale -. notifies .- sns
+    cw_upscale -. notifies .- sns
+
+    sns -- notifies ---> autoscale
+    cw_downscale -. monitors .- kds
+    cw_upscale -. monitors .- kds
+```
+
 ## Firehose
 
 Deploys a [Kinesis Data Firehose](https://aws.amazon.com/kinesis/data-firehose/) delivery stream with [data transformation](https://docs.aws.amazon.com/firehose/latest/dev/data-transformation.html) enabled.

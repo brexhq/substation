@@ -18,8 +18,15 @@ module "kds" {
   source = "../../../../../../build/terraform/aws/kinesis_data_stream"
 
   config = {
-    name      = "substation"
-    autoscale = aws_sns_topic.autoscale.arn
+    name              = "substation"
+    autoscaling_topic = aws_sns_topic.autoscale.arn
+  }
+
+  # Min and max shards can be defined as tags to override changes made
+  # by the Autoscale app.
+  tags = {
+    MinimumShards = 2
+    MaximumShards = 4
   }
 
   # Add additional consumer and producer roles as needed.

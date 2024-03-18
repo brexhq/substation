@@ -11,47 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/kinesis/kinesisiface"
 )
 
-type mockedPutRecord struct {
-	kinesisiface.KinesisAPI
-	Resp kinesis.PutRecordOutput
-}
-
-func (m mockedPutRecord) PutRecordWithContext(ctx aws.Context, in *kinesis.PutRecordInput, opts ...request.Option) (*kinesis.PutRecordOutput, error) {
-	return &m.Resp, nil
-}
-
-func TestPutRecord(t *testing.T) {
-	tests := []struct {
-		resp     kinesis.PutRecordOutput
-		expected string
-	}{
-		{
-			resp: kinesis.PutRecordOutput{
-				EncryptionType: aws.String("NONE"),
-				SequenceNumber: aws.String("ABCDEF"),
-				ShardId:        aws.String("XYZ"),
-			},
-			expected: "ABCDEF",
-		},
-	}
-
-	ctx := context.TODO()
-
-	for _, test := range tests {
-		a := API{
-			mockedPutRecord{Resp: test.resp},
-		}
-		resp, err := a.PutRecord(ctx, "", "", []byte(""))
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
-
-		if *resp.SequenceNumber != test.expected {
-			t.Errorf("expected %+v, got %s", resp.SequenceNumber, test.expected)
-		}
-	}
-}
-
 type mockedPutRecords struct {
 	kinesisiface.KinesisAPI
 	Resp kinesis.PutRecordsOutput
@@ -185,12 +144,12 @@ func TestSize(t *testing.T) {
 		},
 		{
 			[]byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-			235,
+			58,
 			"8Ex8TUWD3dWUMh6dUKaT",
 		},
 		{
 			[]byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-			5678,
+			235,
 			"8Ex8TUWD3dWUMh6dUKaT",
 		},
 	}

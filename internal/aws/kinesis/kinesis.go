@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	kplMagicLen   = 4  // Length of magic header for KPL Aggregate Record checking.
-	kplDigestSize = 16 // MD5 Message size for protobuf.
-	kplMaxBytes   = 1024 * 1024
+	kplMagicLen   = 4         // Length of magic header for KPL Aggregate Record checking.
+	kplDigestSize = 16        // MD5 Message size for protobuf.
+	kplMaxBytes   = 1000 * 25 // 25KB is the minimum size of a PUT Payload unit.
 	kplMaxCount   = 10000
 )
 
@@ -188,23 +188,6 @@ func (a *API) Setup(cfg iaws.Config) {
 // IsEnabled returns true if the client is enabled and ready for use.
 func (a *API) IsEnabled() bool {
 	return a.Client != nil
-}
-
-// PutRecord is a convenience wrapper for putting a record into a Kinesis stream.
-func (a *API) PutRecord(ctx aws.Context, stream, partitionKey string, data []byte) (*kinesis.PutRecordOutput, error) {
-	ctx = context.WithoutCancel(ctx)
-	resp, err := a.Client.PutRecordWithContext(
-		ctx,
-		&kinesis.PutRecordInput{
-			Data:         data,
-			StreamName:   aws.String(stream),
-			PartitionKey: aws.String(partitionKey),
-		})
-	if err != nil {
-		return nil, fmt.Errorf("putrecord stream %s partitionkey %s: %v", stream, partitionKey, err)
-	}
-
-	return resp, nil
 }
 
 // PutRecords is a convenience wrapper for putting multiple records into a Kinesis stream.

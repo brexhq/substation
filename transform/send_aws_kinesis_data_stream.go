@@ -180,7 +180,7 @@ func (tf *sendAWSKinesisDataStream) send(ctx context.Context, key string) error 
 			return err
 		}
 	case true:
-		if err := tf.sendAggregateRecord(ctx, tf.conf.StreamName, partitionKey, data); err != nil {
+		if _, err := tf.client.PutRecords(ctx, tf.conf.StreamName, partitionKey, tf.aggregateRecords(partitionKey, data)); err != nil {
 			return err
 		}
 	}
@@ -188,7 +188,9 @@ func (tf *sendAWSKinesisDataStream) send(ctx context.Context, key string) error 
 	return nil
 }
 
-func (tf *sendAWSKinesisDataStream) sendAggregateRecord(ctx context.Context, stream, partitionKey string, data [][]byte) error {
+func (tf *sendAWSKinesisDataStream) aggregateRecords(partitionKey string, data [][]byte) [][]byte {
+	var records [][]byte
+
 	agg := &kinesis.Aggregate{}
 	agg.New()
 
@@ -197,19 +199,15 @@ func (tf *sendAWSKinesisDataStream) sendAggregateRecord(ctx context.Context, str
 			continue
 		}
 
-		if _, err := tf.client.PutRecord(ctx, stream, partitionKey, agg.Get()); err != nil {
-			return err
-		}
+		records = append(records, agg.Get())
 
 		agg.New()
 		_ = agg.Add(b, partitionKey)
 	}
 
 	if agg.Count > 0 {
-		if _, err := tf.client.PutRecord(ctx, stream, partitionKey, agg.Get()); err != nil {
-			return err
-		}
+		records = append(records, agg.Get())
 	}
 
-	return nil
+	return records
 }

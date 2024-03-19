@@ -20,10 +20,16 @@ import (
 )
 
 const (
-	kplMagicLen   = 4  // Length of magic header for KPL Aggregate Record checking.
-	kplDigestSize = 16 // MD5 Message size for protobuf.
-	kplMaxBytes   = 1024 * 1024
-	kplMaxCount   = 10000
+	// kplMaxBytes ensures that an aggregated Kinesis record will not exceed 25 KB, which is
+	// the minimum record size charged by the Kinesis service ("PUT Payload Unit"). Any record
+	// smaller than 25 KB will be charged as 25 KB and any record larger than 25 KB will be
+	// charged in 25 KB increments. See the Kinesis pricing page for more details:
+	// https://aws.amazon.com/kinesis/data-streams/pricing/.
+	kplMaxBytes = 1000 * 25
+	// kplMaxCount is the maximum number of records that can be aggregated into a single Kinesis
+	// record. There is no limit imposed by the Kinesis service on the number of records that can
+	// be aggregated into a single Kinesis record, so this value is set to a reasonable upper bound.
+	kplMaxCount = 10000
 )
 
 // Aggregate produces a KPL-compliant Kinesis record
@@ -188,23 +194,6 @@ func (a *API) Setup(cfg iaws.Config) {
 // IsEnabled returns true if the client is enabled and ready for use.
 func (a *API) IsEnabled() bool {
 	return a.Client != nil
-}
-
-// PutRecord is a convenience wrapper for putting a record into a Kinesis stream.
-func (a *API) PutRecord(ctx aws.Context, stream, partitionKey string, data []byte) (*kinesis.PutRecordOutput, error) {
-	ctx = context.WithoutCancel(ctx)
-	resp, err := a.Client.PutRecordWithContext(
-		ctx,
-		&kinesis.PutRecordInput{
-			Data:         data,
-			StreamName:   aws.String(stream),
-			PartitionKey: aws.String(partitionKey),
-		})
-	if err != nil {
-		return nil, fmt.Errorf("putrecord stream %s partitionkey %s: %v", stream, partitionKey, err)
-	}
-
-	return resp, nil
 }
 
 // PutRecords is a convenience wrapper for putting multiple records into a Kinesis stream.

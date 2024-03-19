@@ -20,10 +20,16 @@ import (
 )
 
 const (
-	kplMagicLen   = 4         // Length of magic header for KPL Aggregate Record checking.
-	kplDigestSize = 16        // MD5 Message size for protobuf.
-	kplMaxBytes   = 1000 * 25 // 25KB is the minimum size of a PUT Payload unit.
-	kplMaxCount   = 10000
+	// kplMaxBytes ensures that an aggregated Kinesis record will not exceed 25 KB, which is
+	// the minimum record size charged by the Kinesis service ("PUT Payload Unit"). Any record
+	// smaller than 25 KB will be charged as 25 KB and any record larger than 25 KB will be
+	// charged in 25 KB increments. See the Kinesis pricing page for more details:
+	// https://aws.amazon.com/kinesis/data-streams/pricing/.
+	kplMaxBytes = 1000 * 25
+	// kplMaxCount is the maximum number of records that can be aggregated into a single Kinesis
+	// record. There is no limit imposed by the Kinesis service on the number of records that can
+	// be aggregated into a single Kinesis record, so this value is set to a reasonable upper bound.
+	kplMaxCount = 10000
 )
 
 // Aggregate produces a KPL-compliant Kinesis record

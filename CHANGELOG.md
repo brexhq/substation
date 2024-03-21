@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/brexhq/substation/compare/v1.1.0...v1.1.1) (2024-03-21)
+
+
+### Performance Improvements
+
+* **aws:** Reduce Aggregated Kinesis Record Size ([#147](https://github.com/brexhq/substation/issues/147)) ([a0ef232](https://github.com/brexhq/substation/commit/a0ef23263c8a34bcaa413c1cdd1a9c80b8d2f55a))
+* **transform:** Improve AggregateToArray Throughput ([#150](https://github.com/brexhq/substation/issues/150)) ([d730cc6](https://github.com/brexhq/substation/commit/d730cc6b967b6ee853ebf5f6b18f1ead9c1bcb55))
+
 ## [1.1.0](https://github.com/brexhq/substation/compare/v1.0.0...v1.1.0) (2024-03-14)
 
 

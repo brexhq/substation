@@ -47,23 +47,19 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
 
-	//nolint: nestif // ignore nesting complexity
 	if msg.IsControl() {
 		var output []*message.Message
 
 		for _, items := range tf.agg.GetAll() {
-			agg, err := aggToArray(items.Get())
-			if err != nil {
-				return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
-			}
+			array := aggToArray(items.Get())
 
 			outMsg := message.New()
 			if tf.hasObjTrg {
-				if err := outMsg.SetValue(tf.conf.Object.TargetKey, agg); err != nil {
+				if err := outMsg.SetValue(tf.conf.Object.TargetKey, array); err != nil {
 					return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 				}
 			} else {
-				outMsg.SetData(agg)
+				outMsg.SetData(array)
 			}
 
 			output = append(output, outMsg)
@@ -80,18 +76,15 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 		return nil, nil
 	}
 
-	agg, err := aggToArray(tf.agg.Get(key))
-	if err != nil {
-		return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
-	}
+	array := aggToArray(tf.agg.Get(key))
 
 	outMsg := message.New()
 	if tf.hasObjTrg {
-		if err := outMsg.SetValue(tf.conf.Object.TargetKey, agg); err != nil {
+		if err := outMsg.SetValue(tf.conf.Object.TargetKey, array); err != nil {
 			return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
 		}
 	} else {
-		outMsg.SetData(agg)
+		outMsg.SetData(array)
 	}
 
 	// If data cannot be added after reset, then the batch is misconfgured.

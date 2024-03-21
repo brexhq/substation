@@ -3,10 +3,10 @@ package transform
 import (
 	"bytes"
 	"fmt"
+	"slices"
 
 	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/message"
 )
 
 type aggregateArrayConfig struct {
@@ -18,17 +18,8 @@ func (c *aggregateArrayConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func aggToArray(data [][]byte) ([]byte, error) {
-	msg := message.New()
-
-	for _, d := range data {
-		if err := msg.SetValue("array.-1", d); err != nil {
-			return nil, err
-		}
-	}
-
-	b := msg.GetValue("array")
-	return b.Bytes(), nil
+func aggToArray(data [][]byte) []byte {
+	return slices.Concat([]byte("["), bytes.Join(data, []byte(",")), []byte("]"))
 }
 
 type aggregateStrConfig struct {

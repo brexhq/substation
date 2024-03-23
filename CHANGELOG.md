@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/brexhq/substation/compare/v1.1.1...v1.1.2) (2024-03-23)
+
+
+### Bug Fixes
+
+* **enrich_kv_store_set:** default to 0 duration ([#151](https://github.com/brexhq/substation/issues/151)) ([8a1d31c](https://github.com/brexhq/substation/commit/8a1d31ccc457f92028135176b7f650630d09bee9))
+
 ## [1.1.1](https://github.com/brexhq/substation/compare/v1.1.0...v1.1.1) (2024-03-21)
 
 

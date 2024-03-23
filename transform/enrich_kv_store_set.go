@@ -89,6 +89,10 @@ func newEnrichKVStoreSet(_ context.Context, cfg config.Config) (*enrichKVStoreSe
 		return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 	}
 
+	if conf.TTLOffset == "" {
+		conf.TTLOffset = "0s"
+	}
+
 	dur, err := time.ParseDuration(conf.TTLOffset)
 	if err != nil {
 		return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)

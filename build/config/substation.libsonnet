@@ -702,6 +702,18 @@
           type: 'send_aws_kinesis_data_stream',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
         },
+        lambda(settings={}): {
+          local default = {
+            batch: $.config.batch,
+            auxiliary_transforms: null,
+            aws: $.config.aws,
+            retry: $.config.retry,
+            function_name: null,
+          },
+
+          type: 'send_aws_lambda',
+          settings: std.mergePatch(default, $.helpers.abbv(settings)),
+        },
         s3(settings={}): {
           local default = {
             batch: $.config.batch,

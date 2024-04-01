@@ -50,9 +50,25 @@ func (a *API) Invoke(ctx aws.Context, function string, payload []byte) (resp *la
 			InvocationType: aws.String("RequestResponse"),
 			Payload:        payload,
 		})
-
 	if err != nil {
 		return nil, fmt.Errorf("invoke function %s: %v", function, err)
+	}
+
+	return resp, nil
+}
+
+// InvokeAsync is a convenience wrapper for asynchronously invoking a Lambda function.
+func (a *API) InvokeAsync(ctx aws.Context, function string, payload []byte) (resp *lambda.InvokeOutput, err error) {
+	ctx = context.WithoutCancel(ctx)
+	resp, err = a.Client.InvokeWithContext(
+		ctx,
+		&lambda.InvokeInput{
+			FunctionName:   aws.String(function),
+			InvocationType: aws.String("Event"),
+			Payload:        payload,
+		})
+	if err != nil {
+		return nil, fmt.Errorf("invoke_async function %s: %v", function, err)
 	}
 
 	return resp, nil

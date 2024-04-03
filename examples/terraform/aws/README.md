@@ -289,6 +289,30 @@ flowchart LR
     sendS3y --> bucket
 ```
 
+## Retry on Failure
+
+Deploys a data pipeline that reads data from an S3 bucket and automatically retries failed events using an SQS queue as a [failure destination](https://aws.amazon.com/blogs/compute/introducing-aws-lambda-destinations/). This example will retry forever until the error is resolved.
+
+```mermaid
+
+flowchart LR
+    %% resources
+    bucket([S3 Bucket])
+    queue([SQS Queue])
+    %% connections
+    bucket --> handler
+    N -.-> queue
+    queue --> R
+    rTransforms --> handler
+    
+    subgraph N["Substation Node"]
+    handler[[Handler]] --> transforms[Transforms]
+    end
+    subgraph R["Substation Retrier"]
+    rHandler[[Handler]] --> rTransforms[Transforms]
+    end
+```
+
 ## SNS
 
 Deploys a data pipeline that reads data from an S3 bucket via an SNS topic.

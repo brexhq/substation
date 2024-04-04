@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/brexhq/substation/compare/v1.1.2...v1.2.0) (2024-04-03)
+
+
+### Features
+
+* **transform:** Add Send for AWS Lambda ([#153](https://github.com/brexhq/substation/issues/153)) ([c517ea5](https://github.com/brexhq/substation/commit/c517ea56b97b314ea0b3fda46786e677377ce6e0))
+
 ## [1.1.2](https://github.com/brexhq/substation/compare/v1.1.1...v1.1.2) (2024-03-23)
 
 

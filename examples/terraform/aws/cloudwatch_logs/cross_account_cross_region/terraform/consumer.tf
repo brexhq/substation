@@ -5,7 +5,7 @@ module "lambda_consumer" {
   config = {
     name        = "consumer"
     description = "Substation node that consumes from Kinesis"
-    image_uri   = "${module.ecr.url}:latest"
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
 
     env = {

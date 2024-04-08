@@ -43,7 +43,7 @@ module "lambda_autoscale" {
   config = {
     name        = "autoscale"
     description = "Autoscaler for Kinesis Data Streams."
-    image_uri   = "${module.ecr.url}:latest" # This should use the project's release tags.
+    image_uri   = "${module.ecr.url}:v1.2.0" # This should use the project's release tags.
     image_arm   = true
 
     # Override the default Autoscale configuration using environment variables.

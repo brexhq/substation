@@ -12,6 +12,4 @@ examples
 .gitignore
 .golangci.yml
 CODEOWNERS
-LICENSE
-Makefile
 **/*.md

@@ -34,27 +34,41 @@ You can run Substation on these platforms:
 - [macOS / Linux](https://substation.readme.io/v1.0.0/docs/try-substation-on-macos-linux)
 - [AWS](https://substation.readme.io/v1.0.0/docs/try-substation-on-aws)
 
-The project includes a Makefile that simplifies local development and test deployments. To test the system in AWS, run this from the project root:
+### Development
+
+[VS Code](https://code.visualstudio.com/docs/devcontainers/containers) is the recommended development environment for Substation. The project includes a [development container](.devcontainer/Dockerfile) that can be used to develop and test the system. Refer to the [development guide](CONTRIBUTING.md) for more information.
+
+### Testing
+
+The development container can be used to test the system locally and in the cloud. If you're not using VS Code, then you should run the development container from the command line:
 
 ```sh
-# Checks that dependencies are installed and environment variables are set.
-make check
-# Deploys Substation to AWS. This deploys the Kinesis Time Travel example 
-# and writes data to the Kinesis stream.
-make test-aws
+git clone https://github.com/brexhq/substation.git && cd substation && \
+docker build -t substation-dev .devcontainer/ && \
+docker run -v $(pwd):/workspaces/substation/  -w /workspaces/substation -v /var/run/docker.sock:/var/run/docker.sock -it substation-dev
 ```
 
-The [AWS examples](examples/terraform/aws) folder contains reusable deployment patterns that demonstrate best practices for managing the system using [Terraform](https://www.terraform.io/) and [Jsonnet](https://jsonnet.org/). Deploy them using these commands:
-
+To try the system locally, run this from the [examples](examples) directory:
 ```sh
-make check
-# Builds dependencies required for AWS deployments.
-make build-aws
-# Deploys the DynamoDB Change Data Capture example.
-make deploy-aws DEPLOYMENT_DIR=examples/terraform/aws/dynamodb/cdc AWS_APPCONFIG_ENV=example
+cd examples && \
+make -s quickstart
 ```
 
-**We do not recommend managing cloud deployments from a local machine using the Makefile. Production deployments should use a CI/CD pipeline with a remote state backend to manage infrastructure.**
+To try the system in the cloud, choose an [AWS example](examples/terraform/aws) to deploy:
+```sh
+cd examples && \
+aws configure && \
+make -s check && \
+make -s build && \
+make -s deploy EXAMPLE=terraform/aws/dynamodb/cdc
+```
+
+After testing is complete, the cloud deployment should be destroyed:
+```sh
+make -s destroy EXAMPLE=terraform/aws/dynamodb/cdc
+```
+
+**We do not recommend managing cloud deployments from a local machine using the examples Makefile. Production deployments should use a CI/CD pipeline with a remote state backend to manage infrastructure.**
 
 ## Transforming Event Logs
 

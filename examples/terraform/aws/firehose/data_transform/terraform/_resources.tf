@@ -105,7 +105,7 @@ resource "aws_iam_role_policy_attachment" "firehose_s3" {
 resource "random_uuid" "firehose_s3" {}
 
 resource "aws_s3_bucket" "firehose_s3" {
-  bucket = "${random_uuid.firehose_s3.result}-substation"
+  bucket        = "${random_uuid.firehose_s3.result}-substation"
   force_destroy = true
 }
 

@@ -2,8 +2,8 @@ module "appconfig" {
   source = "../../../../../../build/terraform/aws/appconfig"
 
   config = {
-    name = "substation"
-    environments = [{name = "example"}]
+    name         = "substation"
+    environments = [{ name = "example" }]
   }
 }
 

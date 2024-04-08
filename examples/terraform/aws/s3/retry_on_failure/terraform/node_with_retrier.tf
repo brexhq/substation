@@ -1,5 +1,5 @@
 module "lambda_node" {
-  source = "../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {
@@ -58,7 +58,7 @@ resource "aws_lambda_function_event_invoke_config" "node" {
 }
 
 module "lambda_retrier" {
-  source = "../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {

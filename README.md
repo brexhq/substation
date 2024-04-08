@@ -50,12 +50,14 @@ docker run -v $(pwd):/workspaces/substation/  -w /workspaces/substation -v /var/
 
 To try the system locally, run this from the [examples](examples) directory:
 ```sh
+git config --global --add safe.directory /workspaces/substation && \
 cd examples && \
 make -s quickstart
 ```
 
 To try the system in the cloud, choose an [AWS example](examples/terraform/aws) to deploy:
 ```sh
+git config --global --add safe.directory /workspaces/substation && \
 cd examples && \
 aws configure && \
 make -s check && \

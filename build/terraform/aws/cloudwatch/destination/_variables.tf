@@ -3,7 +3,8 @@ variable "kms" {
     arn = string
     id  = string
   })
-  description = "KMS key used to encrypt the resources."
+  default     = null
+  description = "KMS key used to encrypt the resources. This is not required if the config.destination_arn does not use customer-managed encryption."
 }
 
 variable "config" {

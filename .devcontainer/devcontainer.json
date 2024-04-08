@@ -8,13 +8,15 @@
 		"--memory=2g",
 		"--cpus=2"
 	],
-	"postCreateCommand": "bash .devcontainer/install-dev-tools.sh",
+	"mounts": [
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+	],
+	"postCreateCommand": "bash .devcontainer/post-create.sh",
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"ms-vscode.go",
 				"hashicorp.terraform",
-				"zxh404.vscode-proto3",
 				"grafana.vscode-jsonnet"
 			]
 		}

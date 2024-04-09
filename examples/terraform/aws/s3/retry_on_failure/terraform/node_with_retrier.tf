@@ -1,11 +1,11 @@
 module "lambda_node" {
-  source = "../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {
     name        = "node"
     description = "Substation node that reads data from S3. The node will retry forever if it fails."
-    image_uri   = "${module.ecr.url}:latest"
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
 
     env = {
@@ -58,13 +58,13 @@ resource "aws_lambda_function_event_invoke_config" "node" {
 }
 
 module "lambda_retrier" {
-  source = "../../../../../../build/terraform/aws/lambda"
+  source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {
     name        = "retrier"
     description = "Substation node that receives events from the retry queue and invokes the original Lambda function."
-    image_uri   = "${module.ecr.url}:latest"
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
 
     # This value should be 1/6th of the visibility timeout of the SQS queue.

@@ -5,7 +5,7 @@ module "subscriber_x" {
   config = {
     name        = "subscriber_x"
     description = "Substation node that subscribes to SNS"
-    image_uri   = "${module.ecr.url}:latest"
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/subscriber_x"
@@ -45,7 +45,7 @@ module "subscriber_y" {
   config = {
     name        = "subscriber_y"
     description = "Substation node that subscribes to SNS"
-    image_uri   = "${module.ecr.url}:latest"
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/subscriber_y"
@@ -86,7 +86,7 @@ module "subscriber_z" {
   config = {
     name        = "subscriber_z"
     description = "Substation node that subscribes to SNS"
-    image_uri   = "${module.ecr.url}:latest"
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/subscriber_z"

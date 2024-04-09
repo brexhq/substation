@@ -7,7 +7,7 @@ module "lambda_autoscaling" {
   config = {
     name        = "autoscale"
     description = "Autoscaler for Kinesis Data Streams"
-    image_uri   = "${module.ecr_autoscale.url}:latest"
+    image_uri   = "${module.ecr_autoscale.url}:v1.2.0"
     image_arm   = true
   }
 

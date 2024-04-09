@@ -5,7 +5,7 @@ module "node" {
   config = {
     name        = "node"
     description = "Substation node that receives CDC events"
-    image_uri   = "${module.ecr.url}:latest"
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/node"

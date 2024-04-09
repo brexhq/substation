@@ -5,7 +5,7 @@ module "lambda_subscriber" {
   config = {
     name        = "subscriber"
     description = "Substation node that reads from Kinesis with a delay to support enrichment"
-    image_uri   = "${module.ecr.url}:latest"
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
 
     env = {

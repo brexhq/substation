@@ -8,7 +8,7 @@ module "lambda_consumer" {
   config = {
     name        = "consumer"
     description = "Substation node that is invoked by CloudWatch"
-    image_uri   = "${module.ecr.url}:latest"
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
 
     env = {
@@ -42,8 +42,8 @@ module "cw_subscription" {
     name            = "substation"
     destination_arn = module.lambda_consumer.arn
     log_groups = [
-      # This group does not exist. Add other log groups for resources in the account and region.
-      "/aws/lambda/test",
+      # This log group does not exist. Add other log groups for resources in the account and region.
+      # "/aws/lambda/test",
     ]
   }
 }

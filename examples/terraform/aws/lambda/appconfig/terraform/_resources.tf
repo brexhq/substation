@@ -15,7 +15,7 @@ module "validate" {
   config = {
     name        = "validate"
     description = "Substation configuration validator that is executed by AppConfig."
-    image_uri   = "${module.ecr_validate.url}:latest"
+    image_uri   = "${module.ecr_validate.url}:v1.2.0"
     image_arm   = true
 
     memory  = 128

@@ -6,7 +6,7 @@ module "lambda_publisher" {
   config = {
     name        = "publisher"
     description = "Substation node that publishes to Kinesis"
-    image_uri   = "${module.ecr.url}:latest"
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
 
     env = {

@@ -4,6 +4,8 @@ locals {
 
 data "aws_caller_identity" "caller" {}
 
+resource "random_uuid" "id" {}
+
 module "kms" {
   source = "../../../../../../build/terraform/aws/kms"
 
@@ -34,7 +36,7 @@ module "ecr" {
 }
 
 ##################################
-# Kinesis Data Firehose resources
+# Firehose resources
 ##################################
 
 # IAM
@@ -52,10 +54,9 @@ data "aws_iam_policy_document" "firehose" {
 }
 
 resource "aws_iam_role" "firehose" {
-  name               = "sub-${local.name}"
+  name               = "substation-firehose-${local.name}"
   assume_role_policy = data.aws_iam_policy_document.firehose.json
 }
-
 
 data "aws_iam_policy_document" "firehose_s3" {
   statement {
@@ -89,7 +90,7 @@ data "aws_iam_policy_document" "firehose_s3" {
 }
 
 resource "aws_iam_policy" "firehose_s3" {
-  name        = "sub-${local.name}"
+  name        = "substation-firehose-${resource.random_uuid.id.id}"
   description = "Policy for the ${local.name} Kinesis Data Firehose."
   policy      = data.aws_iam_policy_document.firehose_s3.json
 }
@@ -104,8 +105,8 @@ resource "aws_iam_role_policy_attachment" "firehose_s3" {
 resource "random_uuid" "firehose_s3" {}
 
 resource "aws_s3_bucket" "firehose_s3" {
-  bucket = "${random_uuid.firehose_s3.result}-substation"
-
+  bucket        = "${random_uuid.firehose_s3.result}-substation"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_ownership_controls" "firehose_s3" {
@@ -113,11 +114,6 @@ resource "aws_s3_bucket_ownership_controls" "firehose_s3" {
   rule {
     object_ownership = "BucketOwnerPreferred"
   }
-}
-
-resource "aws_s3_bucket_acl" "firehose_s3" {
-  bucket = aws_s3_bucket.firehose_s3.id
-  acl    = "private"
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "firehose_s3" {
@@ -157,28 +153,28 @@ resource "aws_kinesis_firehose_delivery_stream" "firehose" {
         parameters {
           parameter_name = "LambdaArn"
           # LATEST is always used for container images.
-          parameter_value = "${module.processor.arn}:$LATEST"
+          parameter_value = "${module.transform.arn}:$LATEST"
         }
       }
     }
   }
 }
 
-module "processor" {
+module "transform" {
   source    = "../../../../../../build/terraform/aws/lambda"
   kms       = module.kms
   appconfig = module.appconfig
 
   config = {
-    name        = "processor"
-    description = "Processes Kinesis Data Firehose records."
-    image_uri   = "${module.ecr.url}:latest"
+    name        = "transform_node"
+    description = "Transforms Kinesis Data Firehose records."
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
 
     memory  = 128
     timeout = 60
     env = {
-      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/processor"
+      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/transform_node"
       "SUBSTATION_LAMBDA_HANDLER" : "AWS_KINESIS_DATA_FIREHOSE"
       "SUBSTATION_DEBUG" : true
     }

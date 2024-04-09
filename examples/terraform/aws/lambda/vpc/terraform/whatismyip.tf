@@ -5,7 +5,7 @@ module "whatismyip" {
   config = {
     name        = "whatismyip"
     description = "Substation node that acts as a synchronous microservice"
-    image_uri   = "${module.ecr.url}:latest"
+    image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
 
     memory  = 128

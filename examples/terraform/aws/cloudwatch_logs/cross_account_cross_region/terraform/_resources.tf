@@ -77,8 +77,8 @@ module "cw_subscription_use1" {
     name            = "substation"
     destination_arn = module.cw_destination_use1.arn
     log_groups = [
-      # This example causes recursion. Add other log groups for resources in us-east-1.
-      # "/aws/lambda/consumer",
+      # This log group does not exist. Add other log groups for resources in the account and region.
+      # "/aws/lambda/test",
     ]
   }
 }
@@ -91,7 +91,6 @@ module "cw_destination_usw2" {
     aws = aws.usw2
   }
 
-  kms = module.kms
   config = {
     name            = "substation"
     destination_arn = module.kds.arn

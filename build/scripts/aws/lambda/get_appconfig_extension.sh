@@ -133,7 +133,6 @@ else
 	exit 1
 fi
 
-aws lambda get-layer-version-by-arn \
-  --region $AWS_REGION --arn $AWS_ARN \
+aws lambda get-layer-version-by-arn --region $AWS_REGION --arn $AWS_ARN --output json \
   | jq -r '.Content.Location' \
-  | xargs curl -s -o $DIR/extension.zip 
+  | xargs curl -s -o $DIR/extension.zip

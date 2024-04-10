@@ -1,5 +1,5 @@
 SUBSTATION_DIR ?= $(shell git rev-parse --show-toplevel 2> /dev/null)
-SUBSTATION_VERSION ?= $(shell git describe --tags --always 2> /dev/null)
+SUBSTATION_VERSION ?= $(shell git describe --tags --always --abbrev=0 2> /dev/null)
 AWS_ACCOUNT_ID ?= $(shell aws sts get-caller-identity --query 'Account' --output text 2> /dev/null)
 AWS_REGION ?= $(shell aws configure get region 2> /dev/null)
 
@@ -105,7 +105,7 @@ deploy-aws-infra:
 
 deploy-aws-config:
 	@printf "$(FONT_RED)>> Deploying configurations to AppConfig with Python...$(FONT_RESET)\n"
-	@cd $(SUBSTATION_DIR) && SUBSTATION_CONFIG_DIRECTORY=examples/$(EXAMPLE) AWS_APPCONFIG_APPLICATION_NAME=substation AWS_APPCONFIG_ENVIRONMENT=example AWS_APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 build/scripts/aws/appconfig/appconfig_upload.py
+	@cd $(SUBSTATION_DIR) && SUBSTATION_CONFIG_DIRECTORY=examples/$(EXAMPLE) AWS_DEFAULT_REGION=$(AWS_REGION) AWS_APPCONFIG_APPLICATION_NAME=substation AWS_APPCONFIG_ENVIRONMENT=example AWS_APPCONFIG_DEPLOYMENT_STRATEGY=Instant python3 build/scripts/aws/appconfig/appconfig_upload.py
 
 deploy-aws-post-script:
 ifneq ("$(wildcard $(EXAMPLE)/post_deploy.sh)","")

@@ -108,7 +108,7 @@ func (tf *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]
 		return nil, fmt.Errorf("transform: meta_pipeline: key %s: %v", tf.conf.Object.SourceKey, errMetaPipelineArrayInput)
 	}
 
-	res, err := Apply(ctx, tf.tf, message.New().SetData(value.Bytes()))
+	res, err := Apply(ctx, tf.tf, message.New().SetData(value.Bytes()).SetMetadata(msg.Metadata()))
 	if err != nil {
 		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
 	}

@@ -98,7 +98,7 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 
 	var arr []interface{}
 	for _, res := range value.Array() {
-		tmpMsg := message.New().SetData(res.Bytes())
+		tmpMsg := message.New().SetData(res.Bytes()).SetMetadata(msg.Metadata())
 		tfMsgs, err := tf.tf.Transform(ctx, tmpMsg)
 		if err != nil {
 			return nil, fmt.Errorf("transform: meta_for_each: %v", err)

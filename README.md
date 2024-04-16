@@ -50,14 +50,14 @@ docker run -v $(pwd):/workspaces/substation/  -w /workspaces/substation -v /var/
 
 To try the system locally, run this from the [examples](examples) directory:
 ```sh
-sh .devcontainer/entrypoint.sh && \
+sh .devcontainer/post_start.sh && \
 cd examples && \
 make -s quickstart
 ```
 
 To try the system in the cloud, choose an [AWS example](examples/terraform/aws) to deploy:
 ```sh
-sh .devcontainer/entrypoint.sh && \
+sh .devcontainer/post_start.sh && \
 cd examples && \
 aws configure && \
 make -s check && \

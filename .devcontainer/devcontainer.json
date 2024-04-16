@@ -11,7 +11,7 @@
 	"mounts": [
 		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
 	],
-	"postStartCommand": "sh .devcontainer/entrypoint.sh",
+	"postStartCommand": "sh .devcontainer/post_start.sh",
 	"customizations": {
 		"vscode": {
 			"extensions": [

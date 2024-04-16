@@ -169,6 +169,44 @@ flowchart LR
     end
 ```
 
+## nXDR
+
+Deploys a data pipeline that implements an nXDR pattern by applying threat / risk enrichment metadata to events and sending the enriched data to multiple destinations. This pattern is useful for:
+- Generating risk-based detection rules
+- Guiding analysts during incident investigations and incident response
+- Aiding unstructured threat hunts
+- Priorizing logs for retention and analysis
+
+```mermaid
+
+flowchart LR
+    %% resources
+    kinesis([Kinesis Data Stream])
+    dynamodb([DynamoDB Table])
+    ext([External System])
+
+    enrichmentHandler[[Handler]]
+    enrichmentTransforms[Transforms]
+
+    transformHandler[[Handler]]
+    transformTransforms[Transforms]
+
+    %% connections
+    kinesis --> enrichmentHandler
+    subgraph Substation Enrichment Node 
+    enrichmentHandler --> enrichmentTransforms
+    end
+
+    enrichmentTransforms --> dynamodb
+
+    kinesis --> transformHandler
+    subgraph Substation Transform Node 
+    transformHandler --> transformTransforms
+    end
+
+    transformTransforms --> ext
+```
+
 ## Time Travel
 
 Deploys a data pipeline that implements a "time travel" pattern by having a subscriber node read data more slowly than an enrichment node. The nodes share data observed across different events using a DynamoDB table.

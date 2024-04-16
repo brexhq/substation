@@ -1,1 +1,0 @@
-rm ~/.docker/config.json

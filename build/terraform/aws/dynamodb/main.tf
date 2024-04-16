@@ -79,6 +79,7 @@ data "aws_iam_policy_document" "access" {
       # Write actions
       "dynamodb:PutItem",
       "dynamodb:UpdateItem",
+      "dynamodb:BatchWriteItem",
     ]
 
     resources = [

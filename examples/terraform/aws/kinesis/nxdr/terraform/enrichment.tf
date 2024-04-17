@@ -25,5 +25,5 @@ resource "aws_lambda_event_source_mapping" "lambda_enrichment" {
   # In this example, we start from the beginning of the stream,
   # but in a prod environment, you may want to start from the end
   # of the stream to avoid processing old data ("LATEST").
-  starting_position                  = "TRIM_HORIZON"
+  starting_position = "TRIM_HORIZON"
 }

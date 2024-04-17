@@ -1,6 +1,5 @@
 local sub = import '../../../../../../../build/config/substation.libsonnet';
 
-local const = import '../const.libsonnet';
 local threat = import '../threat_enrichment.libsonnet';
 
 {

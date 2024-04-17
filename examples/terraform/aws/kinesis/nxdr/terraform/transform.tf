@@ -22,5 +22,8 @@ resource "aws_lambda_event_source_mapping" "lambda_transform" {
   maximum_batching_window_in_seconds = 10
   batch_size                         = 100
   parallelization_factor             = 1
-  starting_position                  = "LATEST"
+  # In this example, we start from the beginning of the stream,
+  # but in a prod environment, you may want to start from the end
+  # of the stream to avoid processing old data ("LATEST").
+  starting_position                  = "TRIM_HORIZON"
 }

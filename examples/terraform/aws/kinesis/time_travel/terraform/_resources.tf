@@ -39,6 +39,7 @@ module "kinesis" {
   config = {
     name              = "substation"
     autoscaling_topic = aws_sns_topic.autoscaling_topic.arn
+    shards            = 1
   }
 
   access = [

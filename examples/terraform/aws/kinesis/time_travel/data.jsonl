@@ -1,0 +1,4 @@
+{"event":{"category":"network","type":"connection"},"process":{"name":"Spotify","pid":"d3a6c0b9d3751559f206e12fb1b8f226"},"server":{"ip":"35.186.224.39","port":443},"@timestamp":"2024-03-29T04:02:38.470000Z"}
+{"event":{"category":"process","type":"start"},"process":{"command_line":"/sbin/launchd","name":"launchd","pid":"f23e8b548d2e5e1ef3e122a9c5e08a63","start":"2024-03-13T16:17:45.000000Z","parent":{"pid":"b745f7a7c3a98ac5f087be7420e6e3f9"}}}
+{"event":{"category":"process","type":"start"},"process":{"command_line":"/usr/libexec/runningboardd","name":"runningboardd","pid":"8faae8aa27f9b4faff6fd98e60201e3d","start":"2024-03-13T16:17:49.000000Z","parent":{"pid":"f23e8b548d2e5e1ef3e122a9c5e08a63"}}}
+{"event":{"category":"process","type":"start"},"process":{"command_line":"/Applications/Spotify.app/Contents/MacOS/Spotify","name":"Spotify","pid":"d3a6c0b9d3751559f206e12fb1b8f226","start":"2024-03-13T16:29:17.000000Z","parent":{"pid":"8faae8aa27f9b4faff6fd98e60201e3d"}}}

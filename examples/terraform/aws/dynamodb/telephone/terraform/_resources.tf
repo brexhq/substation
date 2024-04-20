@@ -51,7 +51,7 @@ module "dynamodb" {
   access = [
     module.edr_enrichment.role.name,
     module.edr_transform.role.name,
-    module.idp_transform.role.name,
-    module.md_transform.role.name,
+    module.idp_enrichment.role.name,
+    module.dvc_mgmt_enrichment.role.name,
   ]
 }

@@ -1,5 +1,5 @@
 # Kinesis Data Stream that stores data sent from pipeline sources.
-module "md_kinesis" {
+module "dvc_mgmt_kinesis" {
   source = "../../../../../../build/terraform/aws/kinesis_data_stream"
 
   config = {
@@ -11,30 +11,30 @@ module "md_kinesis" {
     # Autoscales the stream.
     module.lambda_autoscaling.role.name,
     # Consumes data from the stream.
-    module.md_transform.role.name,
+    module.dvc_mgmt_enrichment.role.name,
   ]
 }
 
-module "md_transform" {
+module "dvc_mgmt_enrichment" {
   source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {
-    name        = "md_transform"
-    description = "Substation node that transforms managed device data."
+    name        = "dvc_mgmt_enrichment"
+    description = "Substation node that enriches device management data."
     image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
     env = {
-      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/md_transform"
+      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/dvc_mgmt_enrichment"
       "SUBSTATION_LAMBDA_HANDLER" : "AWS_KINESIS_DATA_STREAM"
       "SUBSTATION_DEBUG" : true
     }
   }
 }
 
-resource "aws_lambda_event_source_mapping" "md_transform" {
-  event_source_arn                   = module.md_kinesis.arn
-  function_name                      = module.md_transform.arn
+resource "aws_lambda_event_source_mapping" "dvc_mgmt_enrichment" {
+  event_source_arn                   = module.dvc_mgmt_kinesis.arn
+  function_name                      = module.dvc_mgmt_enrichment.arn
   maximum_batching_window_in_seconds = 5
   batch_size                         = 100
   parallelization_factor             = 1

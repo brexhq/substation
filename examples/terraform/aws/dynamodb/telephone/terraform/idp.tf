@@ -11,30 +11,30 @@ module "idp_kinesis" {
     # Autoscales the stream.
     module.lambda_autoscaling.role.name,
     # Consumes data from the stream.
-    module.idp_transform.role.name,
+    module.idp_enrichment.role.name,
   ]
 }
 
-module "idp_transform" {
+module "idp_enrichment" {
   source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {
-    name        = "idp_transform"
-    description = "Substation node that transforms IdP data."
+    name        = "idp_enrichment"
+    description = "Substation node that enriches IdP data."
     image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
     env = {
-      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/idp_transform"
+      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/idp_enrichment"
       "SUBSTATION_LAMBDA_HANDLER" : "AWS_KINESIS_DATA_STREAM"
       "SUBSTATION_DEBUG" : true
     }
   }
 }
 
-resource "aws_lambda_event_source_mapping" "idp_transform" {
+resource "aws_lambda_event_source_mapping" "idp_enrichment" {
   event_source_arn                   = module.idp_kinesis.arn
-  function_name                      = module.idp_transform.arn
+  function_name                      = module.idp_enrichment.arn
   maximum_batching_window_in_seconds = 5
   batch_size                         = 100
   parallelization_factor             = 1

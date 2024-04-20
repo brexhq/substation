@@ -120,12 +120,12 @@ flowchart LR
     end
 
     idp_kinesis --> idpEnrichmentHandler
-    subgraph Substation IdP Transform Node 
+    subgraph Substation IdP Enrichment Node 
     idpEnrichmentHandler --> idpEnrichmentTransforms
     end
 
     md_kinesis --> mdEnrichmentHandler
-    subgraph Substation Dvc Mgmt Transform Node 
+    subgraph Substation Dvc Mgmt Enrichment Node 
     mdEnrichmentHandler --> mdEnrichmentTransforms
     end
 

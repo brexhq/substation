@@ -65,10 +65,6 @@ func newSendAWSDynamoDB(_ context.Context, cfg config.Config) (*sendAWSDynamoDB,
 		return nil, fmt.Errorf("transform: send_aws_dynamodb: %v", err)
 	}
 
-	if conf.Object.SourceKey == "" {
-		conf.Object.SourceKey = "@this"
-	}
-
 	tf := sendAWSDynamoDB{
 		conf: conf,
 	}
@@ -140,12 +136,7 @@ func (tf *sendAWSDynamoDB) Transform(ctx context.Context, msg *message.Message) 
 		return nil, fmt.Errorf("transform: send_aws_dynamodb: %v", errSendAWSDynamoDBNonObject)
 	}
 
-	value := msg.GetValue(tf.conf.Object.SourceKey)
-	if !value.Exists() {
-		return []*message.Message{msg}, nil
-	}
-
-	if len(value.Bytes()) > sendAWSDynamoDBItemSizeLimit {
+	if len(msg.Data()) > sendAWSDynamoDBItemSizeLimit {
 		return nil, fmt.Errorf("transform: send_aws_dynamodb: %v", errSendAWSDynamoDBItemSizeLimit)
 	}
 

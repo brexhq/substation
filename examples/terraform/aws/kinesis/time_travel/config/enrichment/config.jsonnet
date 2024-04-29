@@ -1,3 +1,4 @@
+// Puts process metadata into the KV store.
 local sub = import '../../../../../../../build/config/substation.libsonnet';
 local const = import '../const.libsonnet';
 
@@ -5,14 +6,11 @@ local const = import '../const.libsonnet';
   // The concurrency is set to 1 to ensure that the KV store is not updated in parallel.
   concurrency: 1,
   transforms: [
-    // If the field exists, then put the value into the KV store. If the data stream is
-    // at risk of write heavy activity, then consider first querying the KV store to see
-    // if the value already exists and only writing if it does not.
+    // If the event is a process, then store the process metadata in the KV store
+    // indexed by the PID. The data is stored in the KV store for 90 days.
     sub.pattern.tf.conditional(
-      condition=sub.cnd.all(const.field_exists),
-      // The ttl_offset is low for the purposes of this example. It should be set to a
-      // value that is appropriate for the data stream (usually hours or days).
-      transform=sub.tf.enrich.kv_store.set({ obj: { src: 'ip', trg: const.field }, ttl_offset: '30s', kv_store: const.kv_store }),
+      condition=sub.cnd.all(const.is_process),
+      transform=sub.tf.enrich.kv_store.set({ obj: { src: 'process.pid', trg: 'process' }, prefix: 'process', ttl_offset: std.format('%dh', 24 * 90), kv_store: const.kv_store, close_kv_store: false }),
     ),
   ],
 }

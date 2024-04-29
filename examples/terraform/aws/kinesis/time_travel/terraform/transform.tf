@@ -1,31 +1,29 @@
-module "lambda_subscriber" {
+module "lambda_transform" {
   source    = "../../../../../../build/terraform/aws/lambda"
   appconfig = module.appconfig
 
   config = {
-    name        = "subscriber"
+    name        = "transform"
     description = "Substation node that reads from Kinesis with a delay to support enrichment"
     image_uri   = "${module.ecr.url}:v1.2.0"
     image_arm   = true
 
     env = {
-      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/subscriber"
+      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/transform"
       "SUBSTATION_LAMBDA_HANDLER" : "AWS_KINESIS_DATA_STREAM"
       "SUBSTATION_DEBUG" : true
     }
   }
-
-  depends_on = [
-    module.appconfig.name,
-    module.ecr.url,
-  ]
 }
 
-resource "aws_lambda_event_source_mapping" "lambda_subscriber" {
+resource "aws_lambda_event_source_mapping" "lambda_transform" {
   event_source_arn                   = module.kinesis.arn
-  function_name                      = module.lambda_subscriber.arn
+  function_name                      = module.lambda_transform.arn
   maximum_batching_window_in_seconds = 15
   batch_size                         = 100
   parallelization_factor             = 1
-  starting_position                  = "LATEST"
+  # In this example, we start from the beginning of the stream,
+  # but in a prod environment, you may want to start from the end
+  # of the stream to avoid processing old data ("LATEST").
+  starting_position = "TRIM_HORIZON"
 }

@@ -10,11 +10,6 @@ module "lambda_autoscaling" {
     image_uri   = "${module.ecr_autoscale.url}:v1.2.0"
     image_arm   = true
   }
-
-  depends_on = [
-    module.appconfig.name,
-    module.ecr_autoscale.url,
-  ]
 }
 
 resource "aws_sns_topic_subscription" "autoscaling_subscription" {

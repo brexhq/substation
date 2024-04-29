@@ -82,6 +82,59 @@ flowchart LR
     end
 ```
 
+## Telephone
+
+Deploys a data pipeline that implements a "telephone" pattern by sharing data as context between multiple Lambda functions using a DynamoDB table. This pattern can be used to enrich events across unique data sources.
+
+```mermaid
+
+flowchart LR
+    %% resources
+    md_kinesis([Device Management
+    Kinesis Data Stream])
+    edr_kinesis([EDR Kinesis Data Stream])
+    idp_kinesis([IdP Kinesis Data Stream])
+    dynamodb([DynamoDB Table])
+
+    edrEnrichmentHandler[[Handler]]
+    edrEnrichmentTransforms[Transforms]
+
+    edrTransformHandler[[Handler]]
+    edrTransformTransforms[Transforms]
+
+    idpEnrichmentHandler[[Handler]]
+    idpEnrichmentTransforms[Transforms]
+
+    mdEnrichmentHandler[[Handler]]
+    mdEnrichmentTransforms[Transforms]
+
+    %% connections
+    edr_kinesis --> edrEnrichmentHandler
+    subgraph Substation EDR Enrichment Node 
+    edrEnrichmentHandler --> edrEnrichmentTransforms
+    end
+
+    edr_kinesis --> edrTransformHandler
+    subgraph Substation EDR Transform Node 
+    edrTransformHandler --> edrTransformTransforms
+    end
+
+    idp_kinesis --> idpEnrichmentHandler
+    subgraph Substation IdP Enrichment Node 
+    idpEnrichmentHandler --> idpEnrichmentTransforms
+    end
+
+    md_kinesis --> mdEnrichmentHandler
+    subgraph Substation Dvc Mgmt Enrichment Node 
+    mdEnrichmentHandler --> mdEnrichmentTransforms
+    end
+
+    edrEnrichmentTransforms --- dynamodb
+    edrTransformTransforms --- dynamodb
+    idpEnrichmentTransforms --- dynamodb
+    mdEnrichmentTransforms --- dynamodb
+```
+
 # Firehose
 
 ## Data Transform

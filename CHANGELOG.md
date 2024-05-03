@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/brexhq/substation/compare/v1.2.0...v1.2.1) (2024-05-03)
+
+
+### Bug Fixes
+
+* **kinesis:** remove Kinesis aggregation size and count limits ([#168](https://github.com/brexhq/substation/issues/168)) ([156750b](https://github.com/brexhq/substation/commit/156750be54343181be61c36f2543b5d3259b38f1))
+* **transform:** AWS DynamoDB Send Payload ([#166](https://github.com/brexhq/substation/issues/166)) ([83f71b0](https://github.com/brexhq/substation/commit/83f71b00785b3186d0ea9e9392c73bfb40221760))
+
 ## [1.2.0](https://github.com/brexhq/substation/compare/v1.1.2...v1.2.0) (2024-04-03)
 
 

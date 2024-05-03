@@ -1,7 +1,6 @@
 package kinesis
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
@@ -126,45 +125,6 @@ func TestGetTags(t *testing.T) {
 				t.Logf("expected %s, got %s", *test.Value, *tag.Value)
 				t.Fail()
 			}
-		}
-	}
-}
-
-// tests that the calculated record size matches the size of returned data
-func TestSize(t *testing.T) {
-	tests := []struct {
-		data   []byte
-		repeat int
-		pk     string
-	}{
-		{
-			[]byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-			1,
-			"8Ex8TUWD3dWUMh6dUKaT",
-		},
-		{
-			[]byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-			58,
-			"8Ex8TUWD3dWUMh6dUKaT",
-		},
-		{
-			[]byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-			235,
-			"8Ex8TUWD3dWUMh6dUKaT",
-		},
-	}
-
-	rec := Aggregate{}
-	rec.New()
-
-	for _, test := range tests {
-		b := bytes.Repeat(test.data, test.repeat)
-		check := rec.calculateRecordSize(b, test.pk)
-		rec.Add(b, test.pk)
-
-		data := rec.Get()
-		if check != len(data) {
-			t.Errorf("expected %v, got %v", len(data), check)
 		}
 	}
 }

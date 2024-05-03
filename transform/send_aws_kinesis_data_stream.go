@@ -174,15 +174,16 @@ func (tf *sendAWSKinesisDataStream) send(ctx context.Context, key string) error 
 		partitionKey = uuid.NewString()
 	}
 
-	switch tf.conf.EnableRecordAggregation {
-	case false:
-		if _, err := tf.client.PutRecords(ctx, tf.conf.StreamName, partitionKey, data); err != nil {
-			return err
-		}
-	case true:
-		if _, err := tf.client.PutRecords(ctx, tf.conf.StreamName, partitionKey, tf.aggregateRecords(partitionKey, data)); err != nil {
-			return err
-		}
+	if tf.conf.EnableRecordAggregation {
+		data = tf.aggregateRecords(partitionKey, data)
+	}
+
+	if len(data) == 0 {
+		return nil
+	}
+
+	if _, err := tf.client.PutRecords(ctx, tf.conf.StreamName, partitionKey, data); err != nil {
+		return err
 	}
 
 	return nil
@@ -194,15 +195,15 @@ func (tf *sendAWSKinesisDataStream) aggregateRecords(partitionKey string, data [
 	agg := &kinesis.Aggregate{}
 	agg.New()
 
-	for _, b := range data {
-		if ok := agg.Add(b, partitionKey); ok {
+	for _, d := range data {
+		if ok := agg.Add(d, partitionKey); ok {
 			continue
 		}
 
 		records = append(records, agg.Get())
 
 		agg.New()
-		_ = agg.Add(b, partitionKey)
+		_ = agg.Add(d, partitionKey)
 	}
 
 	if agg.Count > 0 {

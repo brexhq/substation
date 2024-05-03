@@ -19,25 +19,10 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-const (
-	// kplMaxBytes ensures that an aggregated Kinesis record will not exceed 25 KB, which is
-	// the minimum record size charged by the Kinesis service ("PUT Payload Unit"). Any record
-	// smaller than 25 KB will be charged as 25 KB and any record larger than 25 KB will be
-	// charged in 25 KB increments. See the Kinesis pricing page for more details:
-	// https://aws.amazon.com/kinesis/data-streams/pricing/.
-	kplMaxBytes = 1000 * 25
-	// kplMaxCount is the maximum number of records that can be aggregated into a single Kinesis
-	// record. There is no limit imposed by the Kinesis service on the number of records that can
-	// be aggregated into a single Kinesis record, so this value is set to a reasonable upper bound.
-	kplMaxCount = 10000
-)
-
 // Aggregate produces a KPL-compliant Kinesis record
 type Aggregate struct {
 	Record       *rec.AggregatedRecord
 	Count        int
-	MaxCount     int
-	MaxSize      int
 	PartitionKey string
 }
 
@@ -47,59 +32,8 @@ func (a *Aggregate) New() {
 	a.Record = &rec.AggregatedRecord{}
 	a.Count = 0
 
-	if a.MaxCount == 0 {
-		a.MaxCount = kplMaxCount
-	}
-	if a.MaxCount > kplMaxCount {
-		a.MaxCount = kplMaxCount
-	}
-
-	if a.MaxSize == 0 {
-		a.MaxSize = kplMaxBytes
-	}
-	if a.MaxSize > kplMaxBytes {
-		a.MaxSize = kplMaxBytes
-	}
-
 	a.PartitionKey = ""
 	a.Record.PartitionKeyTable = make([]string, 0)
-}
-
-func varIntSize(i int) int {
-	if i == 0 {
-		return 1
-	}
-
-	var needed int
-	for i > 0 {
-		needed++
-		i >>= 1
-	}
-
-	bytes := needed / 7
-	if needed%7 > 0 {
-		bytes++
-	}
-
-	return bytes
-}
-
-func (a *Aggregate) calculateRecordSize(data []byte, partitionKey string) int {
-	var recordSize int
-	// https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L344-L349
-	pkSize := 1 + varIntSize(len(partitionKey)) + len(partitionKey)
-	recordSize += pkSize
-	// https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L362-L364
-	pkiSize := 1 + varIntSize(a.Count)
-	recordSize += pkiSize
-	// https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L371-L374
-	dataSize := 1 + varIntSize(len(data)) + len(data)
-	recordSize += dataSize
-	// https://github.com/awslabs/kinesis-aggregation/blob/398fbd4b430d4bf590431b301d03cbbc94279cef/python/aws_kinesis_agg/aggregator.py#L376-L378
-	recordSize = recordSize + 1 + varIntSize(pkiSize+dataSize)
-
-	// input record size + current aggregated record size + 4 byte magic header + 16 byte MD5 digest
-	return recordSize + a.Record.XXX_Size() + 20
 }
 
 // Add inserts a Kinesis record into an aggregated Kinesis record
@@ -113,15 +47,6 @@ func (a *Aggregate) Add(data []byte, partitionKey string) bool {
 	// grab the first parition key in the set of events
 	if a.PartitionKey == "" {
 		a.PartitionKey = partitionKey
-	}
-
-	if a.Count > a.MaxCount {
-		return false
-	}
-
-	newSize := a.calculateRecordSize(data, partitionKey)
-	if newSize > a.MaxSize {
-		return false
 	}
 
 	pki := uint64(a.Count)

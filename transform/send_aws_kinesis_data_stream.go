@@ -198,13 +198,12 @@ func (tf *sendAWSKinesisDataStream) aggregateRecords(partitionKey string, data [
 	for _, d := range data {
 		if ok := agg.Add(d, partitionKey); ok {
 			continue
+		} else if agg.Count > 0 {
+			records = append(records, agg.Get())
 		}
 
-		records = append(records, agg.Get())
-
-		agg.New()
-
 		// This silently drops any data that is between ~0.9999 MB and 1 MB.
+		agg.New()
 		_ = agg.Add(d, partitionKey)
 	}
 

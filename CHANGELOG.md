@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.2](https://github.com/brexhq/substation/compare/v1.2.1...v1.2.2) (2024-05-06)
+
+
+### Bug Fixes
+
+* **kinesis:** Limit Aggregated Records to 1MB ([#169](https://github.com/brexhq/substation/issues/169)) ([9065f1c](https://github.com/brexhq/substation/commit/9065f1c0d0379620d009a7b5d1abdb3792e13bab))
+* **transform:** Empty Aggregated Kinesis Records ([#171](https://github.com/brexhq/substation/issues/171)) ([7c519fe](https://github.com/brexhq/substation/commit/7c519fef8c03dde5547189d0bd0461db0d942ec1))
+* **transform:** Empty AWS Kinesis Aggregated Records ([841caa9](https://github.com/brexhq/substation/commit/841caa9bfbbbe4698443ba2fe43cd380709fe2fb))
+
 ## [1.2.1](https://github.com/brexhq/substation/compare/v1.2.0...v1.2.1) (2024-05-03)
 
 

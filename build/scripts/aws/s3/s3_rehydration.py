@@ -92,7 +92,7 @@ def main():
                                 },
                                 "s3": {
                                     "s3SchemaVersion": "1.0",
-                                    "configurationId": "substation_s3_rehydrate",
+                                    "configurationId": "substation_s3_rehydration",
                                     "bucket": {
                                         "name": args.bucket,
                                         "arn": f"arn:aws:s3:::{args.bucket}",

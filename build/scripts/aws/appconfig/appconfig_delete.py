@@ -36,9 +36,20 @@ def main():
         return
 
     profile_map = {}
-    profiles = client.list_configuration_profiles(ApplicationId=application_id)
-    for p in profiles.get("Items"):
-        profile_map[p.get("Name")] = p.get("Id")
+
+    next_token = None
+    while 1:
+        kwargs = {"ApplicationId": application_id}
+        if next_token:
+            kwargs["NextToken"] = next_token
+
+        profiles = client.list_configuration_profiles(**kwargs)
+        for p in profiles.get("Items"):
+            profile_map[p.get("Name")] = p.get("Id")
+
+        next_token = profiles.get("NextToken")
+        if not next_token:
+            break
 
     profile_id = profile_map.get(profile_name)
     if not profile_id:

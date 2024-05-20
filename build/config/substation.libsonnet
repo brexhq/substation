@@ -509,7 +509,7 @@
     },
     meta: {
       err(settings={}): {
-        local default = { transform: null },
+        local default = { transform: null, error_messages: null },
 
         type: 'meta_err',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),

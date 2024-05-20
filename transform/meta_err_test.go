@@ -34,6 +34,26 @@ var metaErrTests = []struct {
 			[]byte(`{"a":"b"}`),
 		},
 	},
+	{
+		"error_messages",
+		config.Config{
+			Settings: map[string]interface{}{
+				"transform": config.Config{
+					Settings: map[string]interface{}{
+						"message": "test error",
+					},
+					Type: "utility_err",
+				},
+				"error_messages": []string{
+					"test error",
+				},
+			},
+		},
+		[]byte(`{"a":"b"}`),
+		[][]byte{
+			[]byte(`{"a":"b"}`),
+		},
+	},
 }
 
 func TestMetaErr(t *testing.T) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 
 	"github.com/brexhq/substation/config"
 	iconfig "github.com/brexhq/substation/internal/config"
@@ -14,6 +15,11 @@ import (
 type metaErrConfig struct {
 	// Transform that is applied with error handling.
 	Transform config.Config `json:"transform"`
+	// ErrorMessages are regular expressions that match error messages and determine
+	// if the error should be caught.
+	//
+	// This is optional and defaults to an empty list (all errors are caught).
+	ErrorMessages []string `json:"error_messages"`
 }
 
 func (c *metaErrConfig) Decode(in interface{}) error {
@@ -43,9 +49,20 @@ func newMetaErr(ctx context.Context, cfg config.Config) (*metaErr, error) {
 		return nil, fmt.Errorf("transform: meta_err: %v", err)
 	}
 
+	errMsgs := make([]*regexp.Regexp, len(conf.ErrorMessages))
+	for i, eMsg := range conf.ErrorMessages {
+		r, err := regexp.Compile(eMsg)
+		if err != nil {
+			return nil, fmt.Errorf("transform: meta_err: %v", err)
+		}
+
+		errMsgs[i] = r
+	}
+
 	meta := metaErr{
-		conf: conf,
-		tf:   tf,
+		conf:          conf,
+		tf:            tf,
+		errorMessages: errMsgs,
 	}
 
 	return &meta, nil
@@ -54,14 +71,24 @@ func newMetaErr(ctx context.Context, cfg config.Config) (*metaErr, error) {
 type metaErr struct {
 	conf metaErrConfig
 
-	tf Transformer
+	tf            Transformer
+	errorMessages []*regexp.Regexp
 }
 
 func (tf *metaErr) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	msgs, err := tf.tf.Transform(ctx, msg)
 	if err != nil {
-		//nolint: nilerr // ignore non-nil error
-		return []*message.Message{msg}, nil
+		if len(tf.errorMessages) == 0 {
+			return []*message.Message{msg}, nil
+		}
+
+		for _, e := range tf.errorMessages {
+			if e.MatchString(err.Error()) {
+				return []*message.Message{msg}, nil
+			}
+		}
+
+		return nil, fmt.Errorf("transform: meta_err: %v", err)
 	}
 
 	return msgs, nil

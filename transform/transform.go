@@ -173,6 +173,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "time_to_unix_milli":
 		return newTimeToUnixMilli(ctx, cfg)
 	// Utility transforms.
+	case "utility_control":
+		return newUtilityControl(ctx, cfg)
 	case "utility_delay":
 		return newUtilityDelay(ctx, cfg)
 	case "utility_drop":

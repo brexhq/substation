@@ -19,6 +19,10 @@ func (c *aggregateArrayConfig) Decode(in interface{}) error {
 }
 
 func aggToArray(data [][]byte) []byte {
+	if len(data) == 0 {
+		return nil
+	}
+
 	return slices.Concat([]byte("["), bytes.Join(data, []byte(",")), []byte("]"))
 }
 
@@ -43,6 +47,10 @@ func (c *aggregateStrConfig) Validate() error {
 }
 
 func aggToStr(data [][]byte, separator []byte) []byte {
+	if len(data) == 0 {
+		return nil
+	}
+
 	return bytes.Join(data, separator)
 }
 

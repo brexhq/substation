@@ -971,6 +971,14 @@
     },
     util: $.transform.utility,
     utility: {
+      control(settings={}): {
+        local default = {
+          batch: $.config.batch,
+        },
+
+        type: 'utility_control',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
       delay(settings={}): {
         local default = {
           duration: null,

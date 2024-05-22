@@ -170,7 +170,7 @@ func (tf *metaKVStoreLock) Transform(ctx context.Context, msg *message.Message) 
 		ttl = time.Now().Add(time.Duration(tf.ttl) * time.Second).Unix()
 	}
 
-	// Acquire the lock. If the lock is already held, then an error is returned.
+	// Acquire the lock. If the lock is already held, then the message is returned as is.
 	// This prevents the transform from being applied to the message more than once.
 	if err := tf.locker.Lock(ctx, lockKey, ttl); err != nil {
 		if err == kv.ErrNoLock {

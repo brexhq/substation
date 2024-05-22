@@ -523,6 +523,20 @@
         type: 'meta_for_each',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
+      kv_store: {
+        lock(settings={}): {
+          local default = {
+            object: $.config.object { lock_key: null, ttl_key: null },
+            transform: null,
+            kv_store: null,
+            prefix: null,
+            ttl_offset: "0s",
+          },
+
+          type: 'meta_kv_store_lock',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+      },
       metric: {
         duration(settings={}): {
           local default = {

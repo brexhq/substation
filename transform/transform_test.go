@@ -107,3 +107,33 @@ func TestTransform(t *testing.T) {
 		})
 	}
 }
+
+var truncateTTLTests = []struct {
+	name     string
+	test     []byte
+	expected int64
+}{
+	{
+		"unix millisecond",
+		[]byte("1696482368492"),
+		1696482368,
+	},
+	{
+		"unix nanosecond",
+		[]byte("1696482368492290"),
+		1696482368,
+	},
+}
+
+func TestTruncateTTL(t *testing.T) {
+	for _, test := range truncateTTLTests {
+		t.Run(test.name, func(t *testing.T) {
+			tmp := bytesToValue(test.test)
+			result := truncateTTL(tmp)
+
+			if !reflect.DeepEqual(result, test.expected) {
+				t.Errorf("expected %v, got %v", test.expected, result)
+			}
+		})
+	}
+}

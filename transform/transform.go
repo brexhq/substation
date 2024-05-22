@@ -4,6 +4,7 @@ package transform
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/errors"
@@ -78,6 +79,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newMetaErr(ctx, cfg)
 	case "meta_for_each":
 		return newMetaForEach(ctx, cfg)
+	case "meta_kv_store_lock":
+		return newMetaKVStoreLock(ctx, cfg)
 	case "meta_metric_duration":
 		return newMetaMetricsDuration(ctx, cfg)
 	case "meta_pipeline":
@@ -226,4 +229,19 @@ func anyToBytes(v any) []byte {
 	_ = msg.SetValue("_", v)
 
 	return msg.GetValue("_").Bytes()
+}
+
+// truncateTTL truncates the time-to-live (TTL) value from any precision greater
+// than seconds (e.g., milliseconds, nanoseconds) to seconds.
+//
+// For example:
+//   - 1696482368492 -> 1696482368
+//   - 1696482368492290 -> 1696482368
+func truncateTTL(v message.Value) int64 {
+	if len(v.String()) <= 10 {
+		return v.Int()
+	}
+
+	l := len(v.String()) - 10
+	return v.Int() / int64(math.Pow10(l))
 }

@@ -42,6 +42,22 @@ func (a *API) IsEnabled() bool {
 	return a.Client != nil
 }
 
+func (a *API) DeleteItem(ctx aws.Context, table string, key map[string]*dynamodb.AttributeValue) (resp *dynamodb.DeleteItemOutput, err error) {
+	ctx = context.WithoutCancel(ctx)
+	resp, err = a.Client.DeleteItemWithContext(
+		ctx,
+		&dynamodb.DeleteItemInput{
+			TableName: aws.String(table),
+			Key:       key,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("deleteitem table %s: %v", table, err)
+	}
+
+	return resp, nil
+}
+
 // BatchPutItem is a convenience wrapper for putting multiple items into a DynamoDB table.
 func (a *API) BatchPutItem(ctx aws.Context, table string, items []map[string]*dynamodb.AttributeValue) (resp *dynamodb.BatchWriteItemOutput, err error) {
 	var requests []*dynamodb.WriteRequest
@@ -62,7 +78,6 @@ func (a *API) BatchPutItem(ctx aws.Context, table string, items []map[string]*dy
 			},
 		},
 	)
-
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
@@ -96,9 +111,27 @@ func (a *API) PutItem(ctx aws.Context, table string, item map[string]*dynamodb.A
 			TableName: aws.String(table),
 			Item:      item,
 		})
-
 	if err != nil {
 		return nil, fmt.Errorf("putitem table %s: %v", table, err)
+	}
+
+	return resp, nil
+}
+
+func (a *API) PutItemWithCondition(ctx aws.Context, table string, item map[string]*dynamodb.AttributeValue, conditionExpression string, expressionAttributeNames map[string]*string, expressionAttributeValues map[string]*dynamodb.AttributeValue) (resp *dynamodb.PutItemOutput, err error) {
+	input := &dynamodb.PutItemInput{
+		TableName:                           aws.String(table),
+		ConditionExpression:                 aws.String(conditionExpression),
+		ExpressionAttributeNames:            expressionAttributeNames,
+		Item:                                item,
+		ExpressionAttributeValues:           expressionAttributeValues,
+		ReturnValues:                        aws.String("ALL_NEW"),
+		ReturnValuesOnConditionCheckFailure: aws.String("ALL_OLD"),
+	}
+
+	resp, err = a.Client.PutItemWithContext(ctx, input)
+	if err != nil {
+		return resp, err
 	}
 
 	return resp, nil

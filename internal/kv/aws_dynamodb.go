@@ -3,7 +3,9 @@ package kv
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
@@ -64,6 +66,73 @@ func newKVAWSDynamoDB(cfg config.Config) (*kvAWSDynamoDB, error) {
 
 func (store *kvAWSDynamoDB) String() string {
 	return toString(store)
+}
+
+// Lock adds an item to the DynamoDB table with a conditional check.
+func (kv *kvAWSDynamoDB) Lock(ctx context.Context, key string, ttl int64) error {
+	attr := map[string]interface{}{
+		kv.Attributes.PartitionKey: key,
+		kv.Attributes.TTL:          ttl,
+	}
+
+	if kv.Attributes.SortKey != "" {
+		attr[kv.Attributes.SortKey] = "substation:kv_store"
+	}
+
+	// Since the sort key is optional and static, it is not included in the check.
+	exp := "attribute_not_exists(#pk) OR #ttl <= :now"
+	expAttrNames := map[string]*string{
+		"#pk":  &kv.Attributes.PartitionKey,
+		"#ttl": &kv.Attributes.TTL,
+	}
+	expAttrVals := map[string]interface{}{
+		":now": time.Now().Unix(),
+	}
+
+	a, err := dynamodbattribute.MarshalMap(attr)
+	if err != nil {
+		return err
+	}
+
+	v, err := dynamodbattribute.MarshalMap(expAttrVals)
+	if err != nil {
+		return err
+	}
+
+	// If the item already exists and the TTL has not expired, then this returns ErrNoLock. The
+	// caller is expected to handle this error and retry the call if necessary.
+	if _, err := kv.client.PutItemWithCondition(ctx, kv.TableName, a, exp, expAttrNames, v); err != nil {
+		if awsErr, ok := err.(awserr.Error); ok {
+			if awsErr.Code() == "ConditionalCheckFailedException" {
+				return ErrNoLock
+			}
+		} else {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (store *kvAWSDynamoDB) Unlock(ctx context.Context, key string) error {
+	m := map[string]interface{}{
+		store.Attributes.PartitionKey: key,
+	}
+
+	if store.Attributes.SortKey != "" {
+		m[store.Attributes.SortKey] = "substation:kv_store"
+	}
+
+	item, err := dynamodbattribute.MarshalMap(m)
+	if err != nil {
+		return err
+	}
+
+	if _, err := store.client.DeleteItem(ctx, store.TableName, item); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Get retrieves an item from the DynamoDB table. If the item had a time-to-live (TTL)

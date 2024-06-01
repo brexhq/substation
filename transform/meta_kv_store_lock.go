@@ -184,6 +184,7 @@ func (tf *metaKVStoreLock) Transform(ctx context.Context, msg *message.Message) 
 		return nil, fmt.Errorf("transform: meta_kv_store_lock: %v", err)
 	}
 
+	tf.keys = append(tf.keys, lockKey)
 	msgs, err := tf.tf.Transform(ctx, msg)
 	if err != nil {
 		for _, key := range tf.keys {
@@ -193,6 +194,5 @@ func (tf *metaKVStoreLock) Transform(ctx context.Context, msg *message.Message) 
 		return nil, fmt.Errorf("transform: meta_kv_store_lock: %v", err)
 	}
 
-	tf.keys = append(tf.keys, lockKey)
 	return msgs, nil
 }

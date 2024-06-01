@@ -106,9 +106,9 @@ func (kv *kvAWSDynamoDB) Lock(ctx context.Context, key string, ttl int64) error 
 			if awsErr.Code() == "ConditionalCheckFailedException" {
 				return ErrNoLock
 			}
-		} else {
-			return err
 		}
+
+		return err
 	}
 
 	return nil

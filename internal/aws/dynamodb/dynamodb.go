@@ -120,13 +120,12 @@ func (a *API) PutItem(ctx aws.Context, table string, item map[string]*dynamodb.A
 
 func (a *API) PutItemWithCondition(ctx aws.Context, table string, item map[string]*dynamodb.AttributeValue, conditionExpression string, expressionAttributeNames map[string]*string, expressionAttributeValues map[string]*dynamodb.AttributeValue) (resp *dynamodb.PutItemOutput, err error) {
 	input := &dynamodb.PutItemInput{
-		TableName:                           aws.String(table),
-		ConditionExpression:                 aws.String(conditionExpression),
-		ExpressionAttributeNames:            expressionAttributeNames,
-		Item:                                item,
-		ExpressionAttributeValues:           expressionAttributeValues,
-		ReturnValues:                        aws.String("ALL_NEW"),
-		ReturnValuesOnConditionCheckFailure: aws.String("ALL_OLD"),
+		TableName:                 aws.String(table),
+		ConditionExpression:       aws.String(conditionExpression),
+		ExpressionAttributeNames:  expressionAttributeNames,
+		Item:                      item,
+		ExpressionAttributeValues: expressionAttributeValues,
+		ReturnValues:              aws.String("ALL_OLD"),
 	}
 
 	resp, err = a.Client.PutItemWithContext(ctx, input)

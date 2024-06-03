@@ -185,6 +185,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newUtilityMetricBytes(ctx, cfg)
 	case "utility_metric_count":
 		return newUtilityMetricCount(ctx, cfg)
+	case "utility_metric_freshness":
+		return newUtilityMetricFreshness(ctx, cfg)
 	case "utility_secret":
 		return newUtilitySecret(ctx, cfg)
 	default:

@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/brexhq/substation/config"
@@ -145,14 +144,14 @@ func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message)
 	//nolint: nestif // ignore nesting complexity
 	if tf.conf.Object.TTLKey != "" && tf.ttl != 0 {
 		value := msg.GetValue(tf.conf.Object.TTLKey)
-		ttl := tf.truncateTTL(value) + tf.ttl
+		ttl := truncateTTL(value) + tf.ttl
 
 		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
 		}
 	} else if tf.conf.Object.TTLKey != "" {
 		value := msg.GetValue(tf.conf.Object.TTLKey)
-		ttl := tf.truncateTTL(value)
+		ttl := truncateTTL(value)
 
 		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), ttl); err != nil {
 			return nil, fmt.Errorf("transform: enrich_kv_store_set: %v", err)
@@ -175,19 +174,4 @@ func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message)
 func (tf *enrichKVStoreSet) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
-}
-
-// truncateTTL truncates the time-to-live (TTL) value from any precision greater
-// than seconds (e.g., milliseconds, nanoseconds) to seconds.
-//
-// For example:
-//   - 1696482368492 -> 1696482368
-//   - 1696482368492290 -> 1696482368
-func (tf *enrichKVStoreSet) truncateTTL(v message.Value) int64 {
-	if len(v.String()) <= 10 {
-		return v.Int()
-	}
-
-	l := len(v.String()) - 10
-	return v.Int() / int64(math.Pow10(l))
 }

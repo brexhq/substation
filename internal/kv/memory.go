@@ -20,6 +20,7 @@ type kvMemory struct {
 	// This is optional and defaults to 1024 values.
 	Capacity int `json:"capacity"`
 	mu       sync.Mutex
+	lockMu   sync.Mutex
 	lru      list.List
 	items    map[string]*list.Element
 }
@@ -101,6 +102,38 @@ func (store *kvMemory) SetWithTTL(ctx context.Context, key string, val interface
 
 		store.lru.Remove(node)
 		delete(store.items, node.Value.(kvMemoryElement).key)
+	}
+
+	return nil
+}
+
+// Lock adds an item to the store if it does not already exist. If the item already exists
+// and the time-to-live (TTL) has not expired, then this returns ErrNoLock.
+func (store *kvMemory) Lock(ctx context.Context, key string, ttl int64) error {
+	store.lockMu.Lock()
+	defer store.lockMu.Unlock()
+
+	if node, ok := store.items[key]; ok {
+		ttl := node.Value.(kvMemoryElement).ttl
+		if ttl <= time.Now().Unix() {
+			delete(store.items, key)
+			store.lru.Remove(node)
+		}
+
+		return ErrNoLock
+	}
+
+	return store.SetWithTTL(ctx, key, nil, ttl)
+}
+
+// Unlock removes an item from the store.
+func (store *kvMemory) Unlock(ctx context.Context, key string) error {
+	store.lockMu.Lock()
+	defer store.lockMu.Unlock()
+
+	if node, ok := store.items[key]; ok {
+		store.lru.Remove(node)
+		delete(store.items, key)
 	}
 
 	return nil

@@ -1015,6 +1015,16 @@
           type: 'utility_metric_count',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
+        freshness(settings={}): {
+          local default = {
+            threshold: null,
+            metric: $.config.metric,
+            object: $.config.object,
+          },
+
+          type: 'utility_metric_freshness',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
       },
       secret(settings={}): {
         local default = { secret: null },

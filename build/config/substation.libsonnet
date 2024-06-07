@@ -412,7 +412,7 @@
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         set(settings={}): {
-          local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: "0s" },
+          local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s' },
 
           type: 'enrich_kv_store_set',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -526,11 +526,11 @@
       kv_store: {
         lock(settings={}): {
           local default = {
-            object: $.config.object { lock_key: null, ttl_key: null },
+            object: $.config.object { ttl_key: null },
             transform: null,
             kv_store: null,
             prefix: null,
-            ttl_offset: "0s",
+            ttl_offset: '0s',
           },
 
           type: 'meta_kv_store_lock',

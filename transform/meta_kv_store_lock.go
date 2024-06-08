@@ -15,10 +15,6 @@ import (
 )
 
 type metaVStoreLockObjectConfig struct {
-	// LockKey retrieves a value from an object that is used as the key to lock
-	// the item in the KV store. If this value is not set, then the SHA256 hash
-	// of the message is used as the key.
-	LockKey string `json:"lock_key"`
 	// TTLKey retrieves a value from an object that is used as the time-to-live (TTL)
 	// of the item locked in the KV store. This value must be an integer that represents
 	// the Unix time when the item will be evicted from the store. Any precision greater
@@ -146,7 +142,7 @@ func (tf *metaKVStoreLock) Transform(ctx context.Context, msg *message.Message) 
 
 	// By default, the lock key is the SHA256 hash of the message.
 	var lockKey string
-	v := msg.GetValue(tf.conf.Object.LockKey)
+	v := msg.GetValue(tf.conf.Object.SourceKey)
 	if !v.Exists() {
 		sum := sha256.Sum256(msg.Data())
 		lockKey = fmt.Sprintf("%x", sum)

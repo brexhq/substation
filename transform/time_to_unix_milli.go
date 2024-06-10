@@ -59,7 +59,7 @@ func (tf *timeToUnixMilli) Transform(ctx context.Context, msg *message.Message) 
 
 	if tf.isObject {
 		if err := msg.SetValue(tf.conf.Object.TargetKey, ms); err != nil {
-			return nil, fmt.Errorf("transform %s: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	} else {
 		value := []byte(fmt.Sprintf("%d", ms))

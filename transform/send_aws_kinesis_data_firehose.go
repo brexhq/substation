@@ -142,7 +142,7 @@ func (tf *sendAWSKinesisDataFirehose) Transform(ctx context.Context, msg *messag
 	}
 
 	if err := tf.send(ctx, key); err != nil {
-		return nil, fmt.Errorf("transform %s: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	// If data cannot be added after reset, then the batch is misconfgured.

@@ -81,7 +81,7 @@ func (tf *numberMathMultiplication) Transform(ctx context.Context, msg *message.
 	}
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, f); err != nil {
-		return nil, fmt.Errorf("transform %s: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

@@ -29,6 +29,7 @@ type sendAWSS3Config struct {
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 	AWS    iconfig.AWS    `json:"aws"`
@@ -50,11 +51,15 @@ func (c *sendAWSS3Config) Validate() error {
 func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 	conf := sendAWSS3Config{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
+		return nil, fmt.Errorf("transform send_aws_s3: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "send_aws_s3"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := sendAWSS3{
@@ -67,7 +72,7 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 	tf.agg = agg
 
@@ -76,7 +81,7 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 		for i, c := range conf.AuxTransforms {
 			t, err := New(context.Background(), c)
 			if err != nil {
-				return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 			}
 
 			tf.tforms[i] = t
@@ -116,7 +121,7 @@ func (tf *sendAWSS3) Transform(ctx context.Context, msg *message.Message) ([]*me
 			}
 
 			if err := tf.send(ctx, key); err != nil {
-				return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}
 		}
 
@@ -131,13 +136,13 @@ func (tf *sendAWSS3) Transform(ctx context.Context, msg *message.Message) ([]*me
 	}
 
 	if err := tf.send(ctx, key); err != nil {
-		return nil, fmt.Errorf("transform: send_aws_s3: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", err)
 	}
 
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform: send_aws_s3: %v", errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
 	}
 
 	return []*message.Message{msg}, nil
@@ -167,7 +172,7 @@ func (tf *sendAWSS3) send(ctx context.Context, key string) error {
 
 	data, err := withTransforms(ctx, tf.tforms, tf.agg.Get(key))
 	if err != nil {
-		return fmt.Errorf("transform: send_aws_s3: %v", err)
+		return err
 	}
 
 	for _, d := range data {

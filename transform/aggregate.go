@@ -10,6 +10,7 @@ import (
 )
 
 type aggregateArrayConfig struct {
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 }
@@ -30,6 +31,7 @@ type aggregateStrConfig struct {
 	// Separator is the string that is used to join and split data.
 	Separator string `json:"separator"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 }

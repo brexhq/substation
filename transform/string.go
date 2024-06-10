@@ -8,6 +8,7 @@ import (
 )
 
 type strCaseConfig struct {
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 

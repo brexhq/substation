@@ -15,6 +15,7 @@ import (
 const enrichHTTPInterp = `${DATA}`
 
 type enrichDNSConfig struct {
+	ID      string          `json:"id"`
 	Object  iconfig.Object  `json:"object"`
 	Request iconfig.Request `json:"request"`
 }

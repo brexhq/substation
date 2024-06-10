@@ -13,6 +13,7 @@ import (
 )
 
 type utilityControlConfig struct {
+	ID    string        `json:"id"`
 	Batch iconfig.Batch `json:"batch"`
 }
 
@@ -23,7 +24,11 @@ func (c *utilityControlConfig) Decode(in interface{}) error {
 func newUtilityControl(_ context.Context, cfg config.Config) (*utilityControl, error) {
 	conf := utilityControlConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: utility_control: %v", err)
+		return nil, fmt.Errorf("transform utility_control: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "utility_control"
 	}
 
 	agg, err := aggregate.New(aggregate.Config{
@@ -32,7 +37,7 @@ func newUtilityControl(_ context.Context, cfg config.Config) (*utilityControl, e
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: utility_control: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := utilityControl{
@@ -68,7 +73,7 @@ func (tf *utilityControl) Transform(_ context.Context, msg *message.Message) ([]
 
 	tf.agg.Reset("")
 	if ok := tf.agg.Add("", msg.Data()); !ok {
-		return nil, fmt.Errorf("transform: utility_control: %v", errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
 	}
 
 	ctrl := message.New().AsControl()

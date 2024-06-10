@@ -12,6 +12,7 @@ import (
 )
 
 type arrayZipConfig struct {
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -34,11 +35,15 @@ func (c *arrayZipConfig) Validate() error {
 func newArrayZip(_ context.Context, cfg config.Config) (*arrayZip, error) {
 	conf := arrayZipConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: array_zip: %v", err)
+		return nil, fmt.Errorf("transform array_zip: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "array_zip"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: array_zip: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := arrayZip{
@@ -86,7 +91,7 @@ func (tf *arrayZip) Transform(ctx context.Context, msg *message.Message) ([]*mes
 
 	if tf.hasObjDst {
 		if err := msg.SetValue(tf.conf.Object.TargetKey, b); err != nil {
-			return nil, fmt.Errorf("transform: array_zip: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		return []*message.Message{msg}, nil

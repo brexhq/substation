@@ -19,11 +19,15 @@ var errFormatFromBase64DecodeBinary = fmt.Errorf("cannot write binary as object"
 func newFormatFromBase64(_ context.Context, cfg config.Config) (*formatFromBase64, error) {
 	conf := formatBase64Config{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: format_from_base64: %v", err)
+		return nil, fmt.Errorf("transform format_from_base64: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "format_from_base64"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: format_from_base64: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := formatFromBase64{
@@ -47,7 +51,7 @@ func (tf *formatFromBase64) Transform(ctx context.Context, msg *message.Message)
 	if !tf.isObject {
 		decoded, err := ibase64.Decode(msg.Data())
 		if err != nil {
-			return nil, fmt.Errorf("transform: format_from_base64: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		msg.SetData(decoded)
@@ -61,7 +65,7 @@ func (tf *formatFromBase64) Transform(ctx context.Context, msg *message.Message)
 
 	b64, err := ibase64.Decode(value.Bytes())
 	if err != nil {
-		return nil, fmt.Errorf("transform: format_from_base64: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	if !utf8.Valid(b64) {
@@ -69,7 +73,7 @@ func (tf *formatFromBase64) Transform(ctx context.Context, msg *message.Message)
 	}
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, b64); err != nil {
-		return nil, fmt.Errorf("transform: format_from_base64: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

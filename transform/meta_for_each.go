@@ -15,6 +15,7 @@ type metaForEachConfig struct {
 	// Transform that is applied to each item in the array.
 	Transform config.Config `json:"transform"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -41,11 +42,15 @@ func (c *metaForEachConfig) Validate() error {
 func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error) {
 	conf := metaForEachConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: meta_for_each: %v", err)
+		return nil, fmt.Errorf("transform meta_for_each: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "meta_for_each"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: meta_for_each: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := metaForEach{
@@ -63,7 +68,7 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 
 	tfer, err := New(ctx, tf.tfCfg)
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_for_each: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 	tf.tf = tfer
 
@@ -81,7 +86,7 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 	if msg.IsControl() {
 		msgs, err := tf.tf.Transform(ctx, msg)
 		if err != nil {
-			return nil, fmt.Errorf("transform: meta_for_each: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		return msgs, nil
@@ -101,7 +106,7 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 		tmpMsg := message.New().SetData(res.Bytes())
 		tfMsgs, err := tf.tf.Transform(ctx, tmpMsg)
 		if err != nil {
-			return nil, fmt.Errorf("transform: meta_for_each: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		for _, m := range tfMsgs {
@@ -111,7 +116,7 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 	}
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, arr); err != nil {
-		return nil, fmt.Errorf("transform: meta_for_each: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

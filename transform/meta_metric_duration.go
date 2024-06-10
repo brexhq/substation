@@ -13,6 +13,7 @@ import (
 )
 
 type metaMetricDurationConfig struct {
+	ID        string         `json:"id"`
 	Metric    iconfig.Metric `json:"metric"`
 	Transform config.Config  `json:"transform"`
 }
@@ -25,12 +26,16 @@ func newMetaMetricsDuration(ctx context.Context, cfg config.Config) (*metaMetric
 	// conf gets validated when calling metrics.New.
 	conf := metaMetricDurationConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: meta_metric_duration: %v", err)
+		return nil, fmt.Errorf("transform meta_metric_duration: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "meta_metric_duration"
 	}
 
 	m, err := metrics.New(ctx, conf.Metric.Destination)
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_metric_duration: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := metaMetricDuration{
@@ -50,7 +55,7 @@ func newMetaMetricsDuration(ctx context.Context, cfg config.Config) (*metaMetric
 
 	tfer, err := New(ctx, tfCfg)
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_metric_duration: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 	tf.tf = tfer
 
@@ -74,12 +79,12 @@ func (tf *metaMetricDuration) Transform(ctx context.Context, msg *message.Messag
 			Value:      tf.duration,
 			Attributes: tf.conf.Metric.Attributes,
 		}); err != nil {
-			return nil, fmt.Errorf("transform: meta_metric_duration: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		msgs, err := tf.tf.Transform(ctx, msg)
 		if err != nil {
-			return nil, fmt.Errorf("transform: meta_metric_duration: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		return msgs, nil

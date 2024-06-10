@@ -19,6 +19,7 @@ type stringReplaceConfig struct {
 	// Replacement is the string to replace the matched values with.
 	Replacement string `json:"replacement"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -52,11 +53,15 @@ func (c *stringReplaceConfig) Validate() error {
 func newStringReplace(_ context.Context, cfg config.Config) (*stringReplace, error) {
 	conf := stringReplaceConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: string_replace: %v", err)
+		return nil, fmt.Errorf("transform string_replace: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "string_replace"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: string_replace: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := stringReplace{
@@ -94,7 +99,7 @@ func (tf *stringReplace) Transform(ctx context.Context, msg *message.Message) ([
 
 	s := tf.conf.re.ReplaceAllString(value.String(), string(tf.r))
 	if err := msg.SetValue(tf.conf.Object.TargetKey, s); err != nil {
-		return nil, fmt.Errorf("transform: string_replace: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

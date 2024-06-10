@@ -37,6 +37,7 @@ type enrichHTTPPostConfig struct {
 	// This is optional and has no default.
 	Headers map[string]string `json:"headers"`
 
+	ID     string                     `json:"id"`
 	Object enrichHTTPPostObjectConfig `json:"object"`
 }
 
@@ -67,11 +68,15 @@ func (c *enrichHTTPPostConfig) Validate() error {
 func newEnrichHTTPPost(ctx context.Context, cfg config.Config) (*enrichHTTPPost, error) {
 	conf := enrichHTTPPostConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: enrich_http_post: %v", err)
+		return nil, fmt.Errorf("transform enrich_http_post: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "enrich_http_post"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: enrich_http_post: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := enrichHTTPPost{
@@ -83,7 +88,7 @@ func newEnrichHTTPPost(ctx context.Context, cfg config.Config) (*enrichHTTPPost,
 		// Retrieve secret and interpolate with header value.
 		v, err := secrets.Interpolate(ctx, v)
 		if err != nil {
-			return nil, fmt.Errorf("transform: enrich_http_post: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 		}
 
 		tf.headers = append(tf.headers, http.Header{
@@ -136,7 +141,7 @@ func (tf *enrichHTTPPost) Transform(ctx context.Context, msg *message.Message) (
 	// Retrieve secret and interpolate with URL
 	url, err := secrets.Interpolate(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("transform: enrich_http_post: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	bodyValue := msg.GetValue(tf.conf.Object.BodyKey)
@@ -149,12 +154,12 @@ func (tf *enrichHTTPPost) Transform(ctx context.Context, msg *message.Message) (
 	// If ErrorOnFailure is configured, then errors are returned,
 	// but otherwise the message is returned as-is.
 	if err != nil {
-		return nil, fmt.Errorf("transform: enrich_http_post: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	parsed, err := enrichHTTPParseResponse(resp)
 	if err != nil {
-		return nil, fmt.Errorf("transform: enrich_http_post: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	// If SetKey exists, then the response body is written into the message,
@@ -162,7 +167,7 @@ func (tf *enrichHTTPPost) Transform(ctx context.Context, msg *message.Message) (
 	// as-is.
 	if tf.conf.Object.TargetKey != "" {
 		if err := msg.SetValue(tf.conf.Object.TargetKey, parsed); err != nil {
-			return nil, fmt.Errorf("transform: enrich_http_post: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	}
 

@@ -13,11 +13,15 @@ import (
 func newStringToSnake(_ context.Context, cfg config.Config) (*stringToSnake, error) {
 	conf := strCaseConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: string_to_snake: %v", err)
+		return nil, fmt.Errorf("transform string_to_snake: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "string_to_snake"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: string_to_snake: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := stringToSnake{
@@ -52,7 +56,7 @@ func (tf *stringToSnake) Transform(ctx context.Context, msg *message.Message) ([
 
 	s := strcase.ToSnake(value.String())
 	if err := msg.SetValue(tf.conf.Object.TargetKey, s); err != nil {
-		return nil, fmt.Errorf("transform: string_to_snake: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

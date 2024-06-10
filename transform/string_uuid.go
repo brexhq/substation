@@ -12,6 +12,7 @@ import (
 )
 
 type stringUUIDConfig struct {
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -22,7 +23,11 @@ func (c *stringUUIDConfig) Decode(in interface{}) error {
 func newStringUUID(_ context.Context, cfg config.Config) (*stringUUID, error) {
 	conf := stringUUIDConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: string_uuid: %v", err)
+		return nil, fmt.Errorf("transform string_uuid: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "string_uuid"
 	}
 
 	tf := stringUUID{
@@ -46,7 +51,7 @@ func (tf *stringUUID) Transform(_ context.Context, msg *message.Message) ([]*mes
 	uid := uuid.NewString()
 	if tf.hasObjectSetKey {
 		if err := msg.SetValue(tf.conf.Object.TargetKey, uid); err != nil {
-			return nil, fmt.Errorf("transform: string_uuid: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		return []*message.Message{msg}, nil

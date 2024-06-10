@@ -29,6 +29,7 @@ type enrichHTTPGetConfig struct {
 	// This is optional and has no default.
 	Headers map[string]string `json:"headers"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -55,11 +56,15 @@ func (c *enrichHTTPGetConfig) Validate() error {
 func newEnrichHTTPGet(ctx context.Context, cfg config.Config) (*enrichHTTPGet, error) {
 	conf := enrichHTTPGetConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: enrich_http_get: %v", err)
+		return nil, fmt.Errorf("transform enrich_http_get: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "enrich_http_get"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: enrich_http_get: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := enrichHTTPGet{
@@ -71,7 +76,7 @@ func newEnrichHTTPGet(ctx context.Context, cfg config.Config) (*enrichHTTPGet, e
 		// Retrieve secret and interpolate with header value.
 		v, err := secrets.Interpolate(ctx, v)
 		if err != nil {
-			return nil, fmt.Errorf("transform: enrich_http_get: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 		}
 
 		tf.headers = append(tf.headers, http.Header{
@@ -124,23 +129,23 @@ func (tf *enrichHTTPGet) Transform(ctx context.Context, msg *message.Message) ([
 	// Retrieve secret and interpolate with URL
 	url, err := secrets.Interpolate(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("transform: enrich_http_get: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	// resp.Body is closed by enrichHTTPParseResponse.
 	resp, err := tf.client.Get(ctx, url, tf.headers...)
 	if err != nil {
-		return nil, fmt.Errorf("transform: enrich_http_get: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	parsed, err := enrichHTTPParseResponse(resp)
 	if err != nil {
-		return nil, fmt.Errorf("transform: enrich_http_get: %v", err)
+		return nil, fmt.Errorf("transform	%s: %v", tf.conf.ID, err)
 	}
 
 	if tf.conf.Object.TargetKey != "" {
 		if err := msg.SetValue(tf.conf.Object.TargetKey, parsed); err != nil {
-			return nil, fmt.Errorf("transform: enrich_http_get: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		return []*message.Message{msg}, nil

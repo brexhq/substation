@@ -251,6 +251,7 @@
         arr(settings={}): $.transform.aggregate.from.array(settings=settings),
         array(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.aggregate.from.array.type, settings),
             object: $.config.object,
           },
 
@@ -260,6 +261,7 @@
         str(settings={}): $.transform.aggregate.from.string(settings=settings),
         string(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.aggregate.from.string.type, settings),
             separator: null,
           },
 
@@ -271,6 +273,7 @@
         arr(settings={}): $.transform.aggregate.to.array(settings=settings),
         array(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.aggregate.to.array.type, settings),
             object: $.config.object,
             batch: $.config.batch,
           },
@@ -281,6 +284,7 @@
         str(settings={}): $.transform.aggregate.to.string(settings=settings),
         string(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.aggregate.to.string.type, settings),
             batch: $.config.batch,
             separator: null,
           },
@@ -294,6 +298,7 @@
     array: {
       join(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.array.join.type, settings),
           object: $.config.object,
           separator: null,
         },
@@ -301,23 +306,10 @@
         type: 'array_join',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
-      to: {
-        obj: $.transform.array.to.object,
-        object(settings={}): {
-          local default = {
-            object: $.config.object,
-            object_keys: null,
-          },
-
-          type: 'array_to_object',
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
-        },
-      },
       zip(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.array.zip.type, settings),
           object: $.config.object,
-          as_object: false,
-          with_keys: null,
         },
 
         type: 'array_zip',
@@ -328,6 +320,7 @@
       aws: {
         dynamodb(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.enrich.aws.dynamodb.type, settings),
             object: $.config.object,
             aws: $.config.aws,
             retry: $.config.retry,
@@ -344,6 +337,7 @@
         },
         lambda(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.enrich.aws.lambda.type, settings),
             object: $.config.object,
             aws: $.config.aws,
             retry: $.config.retry,
@@ -360,19 +354,19 @@
           request: $.config.request,
         },
         domain_lookup(settings={}): {
-          local default = $.transform.enrich.dns.default,
+          local default = $.transform.enrich.dns.default { id: $.helpers.id($.transform.enrich.dns.domain_lookup.type, settings) },
 
           type: 'enrich_dns_domain_lookup',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         ip_lookup(settings={}): {
-          local default = $.transform.enrich.dns.default,
+          local default = $.transform.enrich.dns.default { id: $.helpers.id($.transform.enrich.dns.ip_lookup.type, settings) },
 
           type: 'enrich_dns_ip_lookup',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         txt_lookup(settings={}): {
-          local default = $.transform.enrich.dns.default,
+          local default = $.transform.enrich.dns.default { id: $.helpers.id($.transform.enrich.dns.txt_lookup.type, settings) },
 
           type: 'enrich_dns_txt_lookup',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -386,13 +380,13 @@
           headers: null,
         },
         get(settings={}): {
-          local default = $.transform.enrich.http.default,
+          local default = $.transform.enrich.http.default { id: $.helpers.id($.transform.enrich.http.get.type, settings)},
 
           type: 'enrich_http_get',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         post(settings={}): {
-          local default = $.transform.enrich.http.default { body_key: null },
+          local default = $.transform.enrich.http.default { body_key: null, id: $.helpers.id($.transform.enrich.http.post.type, settings) },
 
           type: 'enrich_http_post',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -406,13 +400,13 @@
           close_kv_store: false,
         },
         get(settings={}): {
-          local default = $.transform.enrich.kv_store.default,
+          local default = $.transform.enrich.kv_store.default {id: $.helpers.id($.transform.enrich.kv_store.get.type, settings)},
 
           type: 'enrich_kv_store_get',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         set(settings={}): {
-          local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s' },
+          local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s', id: $.helpers.id($.transform.enrich.kv_store.set.type, settings) },
 
           type: 'enrich_kv_store_set',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -427,30 +421,39 @@
       from: {
         b64(settings={}): $.transform.format.from.base64(settings=settings),
         base64(settings={}): {
-          local default = $.transform.format.default,
+          local default = $.transform.format.default { id: $.helpers.id($.transform.format.from.base64.type, settings) },
 
           type: 'format_from_base64',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         gz(settings={}): $.transform.format.from.gzip(settings=settings),
         gzip(settings={}): {
+          local default = { id: $.helpers.id($.transform.format.from.gzip.type, settings) },
+
           type: 'format_from_gzip',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         pretty_print(settings={}): {
+          local default = { id: $.helpers.id($.transform.format.from.pretty_print.type, settings) },
+
           type: 'format_from_pretty_print',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
       },
       to: {
         b64(settings={}): $.transform.format.to.base64(settings=settings),
         base64(settings={}): {
-          local default = $.transform.format.default,
+          local default = $.transform.format.default { id: $.helpers.id($.transform.format.to.base64.type, settings) },
 
           type: 'format_to_base64',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         gz(settings={}): $.transform.format.to.gzip(settings=settings),
         gzip(settings={}): {
+          local default = { id: $.helpers.id($.transform.format.to.gzip.type, settings) },
+
           type: 'format_to_gzip',
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
       },
     },
@@ -459,13 +462,13 @@
         object: $.config.object,
       },
       md5(settings={}): {
-        local default = $.transform.hash.default,
+        local default = $.transform.hash.default { id: $.helpers.id($.transform.hash.md5.type, settings) },
 
         type: 'hash_md5',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
       sha256(settings={}): {
-        local default = $.transform.hash.default,
+        local default = $.transform.hash.default { id: $.helpers.id($.transform.hash.sha256.type, settings) },
 
         type: 'hash_sha256',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -479,28 +482,28 @@
         },
         add(settings={}): $.transform.number.math.addition(settings=settings),
         addition(settings={}): {
-          local default = $.transform.number.math.default,
+          local default = $.transform.number.math.default { id: $.helpers.id($.transform.number.math.addition.type, settings) },
 
           type: 'number_math_addition',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         sub(settings={}): $.transform.number.math.subtraction(settings=settings),
         subtraction(settings={}): {
-          local default = $.transform.number.math.default,
+          local default = $.transform.number.math.default { id: $.helpers.id($.transform.number.math.subtraction.type, settings) },
 
           type: 'number_math_subtraction',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         mul(settings={}): $.transform.number.math.multiplication(settings=settings),
         multiplication(settings={}): {
-          local default = $.transform.number.math.default,
+          local default = $.transform.number.math.default { id: $.helpers.id($.transform.number.math.multiplication.type, settings) },
 
           type: 'number_math_multiplication',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         div(settings={}): $.transform.number.math.division(settings=settings),
         division(settings={}): {
-          local default = $.transform.number.math.default,
+          local default = $.transform.number.math.default { id: $.helpers.id($.transform.number.math.division.type, settings) },
 
           type: 'number_math_division',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -509,13 +512,18 @@
     },
     meta: {
       err(settings={}): {
-        local default = { transform: null, error_messages: null },
+        local default = { 
+          id: $.helpers.id($.transform.meta.err.type, settings),
+          transform: null, 
+          error_messages: null, 
+        },
 
         type: 'meta_err',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
       for_each(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.meta.for_each.type, settings),
           object: $.config.object,
           transform: null,
         },
@@ -526,6 +534,7 @@
       kv_store: {
         lock(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.meta.kv_store.lock.type, settings),
             object: $.config.object { ttl_key: null },
             transform: null,
             kv_store: null,
@@ -540,6 +549,7 @@
       metric: {
         duration(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.meta.metric.duration.type, settings),
             metric: $.config.metric,
             transform: null,
           },
@@ -551,6 +561,7 @@
       pipe(settings={}): $.transform.meta.pipeline(settings=settings),
       pipeline(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.meta.pipeline.type, settings),
           object: $.config.object,
           transforms: null,
         },
@@ -559,7 +570,10 @@
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
       switch(settings={}): {
-        local default = { cases: null },
+        local default = { 
+          id: $.helpers.id($.transform.meta.switch.type, settings),
+          cases: null 
+        },
 
         type: 'meta_switch',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -572,20 +586,20 @@
           object: $.config.object,
         },
         registered_domain(settings={}): {
-          local default = $.transform.network.domain.default,
+          local default = $.transform.network.domain.default { id: $.helpers.id($.transform.network.domain.registered_domain.type, settings) },
 
           type: 'network_domain_registered_domain',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         subdomain(settings={}): {
-          local default = $.transform.network.domain.default,
+          local default = $.transform.network.domain.default { id: $.helpers.id($.transform.network.domain.subdomain.type, settings) },
 
           type: 'network_domain_subdomain',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         tld(settings={}): $.transform.network.domain.top_level_domain(settings=settings),
         top_level_domain(settings={}): {
-          local default = $.transform.network.domain.default,
+          local default = $.transform.network.domain.default { id: $.helpers.id($.transform.network.domain.top_level_domain.type, settings) },
 
           type: 'network_domain_top_level_domain',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -599,26 +613,29 @@
       },
       cp(settings={}): $.transform.object.copy(settings=settings),
       copy(settings={}): {
-        local default = $.transform.object.default,
+        local default = $.transform.object.default { id: $.helpers.id($.transform.object.copy.type, settings) },
 
         type: 'object_copy',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
       del(settings={}): $.transform.object.delete(settings=settings),
       delete(settings={}): {
-        local default = $.transform.object.default,
+        local default = $.transform.object.default { id: $.helpers.id($.transform.object.delete.type, settings) },
 
         type: 'object_delete',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
       insert(settings={}): {
-        local default = $.transform.object.default,
+        local default = $.transform.object.default { id: $.helpers.id($.transform.object.insert.type, settings) },
 
         type: 'object_insert',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
       jq(settings={}): {
-        local default = { filter: null },
+        local default = { 
+          id: $.helpers.id($.transform.object.jq.type, settings),
+          filter: null 
+        },
 
         type: 'object_jq',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -626,34 +643,34 @@
       to: {
         bool(settings={}): $.transform.object.to.boolean(settings=settings),
         boolean(settings={}): {
-          local default = $.transform.object.default,
+          local default = $.transform.object.default { id: $.helpers.id($.transform.object.to.boolean.type, settings) },
 
           type: 'object_to_boolean',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         float(settings={}): {
-          local default = $.transform.object.default,
+          local default = $.transform.object.default { id: $.helpers.id($.transform.object.to.float.type, settings) },
 
           type: 'object_to_float',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         int(settings={}): $.transform.object.to.integer(settings=settings),
         integer(settings={}): {
-          local default = $.transform.object.default,
+          local default = $.transform.object.default { id: $.helpers.id($.transform.object.to.integer.type, settings) },
 
           type: 'object_to_integer',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         str(settings={}): $.transform.object.to.string(settings=settings),
         string(settings={}): {
-          local default = $.transform.object.default,
+          local default = $.transform.object.default { id: $.helpers.id($.transform.object.to.string.type, settings) },
 
           type: 'object_to_string',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         uint(settings={}): $.transform.object.to.unsigned_integer(settings=settings),
         unsigned_integer(settings={}): {
-          local default = $.transform.object.default,
+          local default = $.transform.object.default { id: $.helpers.id($.transform.object.to.unsigned_integer.type, settings) },
 
           type: 'object_to_unsigned_integer',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -664,6 +681,7 @@
       aws: {
         dynamodb(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.send.aws.dynamodb.type, settings),
             batch: $.config.batch,
             auxiliary_transforms: null,
             aws: $.config.aws,
@@ -682,6 +700,7 @@
         firehose(settings={}): $.transform.send.aws.kinesis_data_firehose(settings=settings),
         kinesis_data_firehose(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.send.aws.kinesis_data_firehose.type, settings),
             batch: $.config.batch,
             auxiliary_transforms: null,
             aws: $.config.aws,
@@ -699,6 +718,7 @@
         },
         kinesis_data_stream(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.send.aws.kinesis_data_stream.type, settings),
             batch: $.config.batch,
             auxiliary_transforms: null,
             aws: $.config.aws,
@@ -718,6 +738,7 @@
         },
         lambda(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.send.aws.lambda.type, settings),
             batch: $.config.batch,
             auxiliary_transforms: null,
             aws: $.config.aws,
@@ -730,6 +751,7 @@
         },
         s3(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.send.aws.s3.type, settings),
             batch: $.config.batch,
             auxiliary_transforms: null,
             aws: $.config.aws,
@@ -748,6 +770,7 @@
         },
         sns(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.send.aws.sns.type, settings),
             batch: $.config.batch,
             auxiliary_transforms: null,
             aws: $.config.aws,
@@ -765,6 +788,7 @@
         },
         sqs(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.send.aws.sqs.type, settings),
             batch: $.config.batch,
             auxiliary_transforms: null,
             aws: $.config.aws,
@@ -783,6 +807,7 @@
       },
       file(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.send.file.type, settings),
           batch: $.config.batch,
           auxiliary_transforms: null,
           file_path: $.file_path,
@@ -799,6 +824,7 @@
       http: {
         post(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.send.http.post.type, settings),
             batch: $.config.batch,
             auxiliary_transforms: null,
             url: null,
@@ -818,6 +844,7 @@
       },
       stdout(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.send_stdout.type, settings),
           batch: $.config.batch,
           auxiliary_transforms: null,
         },
@@ -835,6 +862,7 @@
     string: {
       append(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.string.append.type, settings),
           object: $.config.object,
           suffix: null,
         },
@@ -844,6 +872,7 @@
       },
       capture(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.string.capture.type, settings),
           object: $.config.object,
           pattern: null,
           count: 0,
@@ -855,6 +884,7 @@
       repl: $.transform.string.replace,
       replace(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.string.replace.type, settings),
           object: $.config.object,
           pattern: null,
           replacement: null,
@@ -871,6 +901,7 @@
       },
       split(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.string.split.type, settings),
           object: $.config.object,
           separator: null,
         },
@@ -888,19 +919,19 @@
           object: $.config.object,
         },
         lower(settings={}): {
-          local default = $.transform.string.to.default,
+          local default = $.transform.string.to.default { id: $.helpers.id($.transform.string.to.lower.type, settings) },
 
           type: 'string_to_lower',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         upper(settings={}): {
-          local default = $.transform.string.to.default,
+          local default = $.transform.string.to.default { id: $.helpers.id($.transform.string.to.upper.type, settings) },
 
           type: 'string_to_upper',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         snake(settings={}): {
-          local default = $.transform.string.to.default,
+          local default = $.transform.string.to.default { id: $.helpers.id($.transform.string.to.snake.type, settings) },
 
           type: 'string_to_snake',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -908,6 +939,7 @@
       },
       uuid(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.string.uuid.type, settings),
           object: $.config.object,
         },
 
@@ -920,6 +952,7 @@
         str(settings={}): $.transform.time.from.string(settings=settings),
         string(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.time.from.string.type, settings),
             object: $.config.object,
             format: null,
             location: null,
@@ -930,6 +963,7 @@
         },
         unix(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.time.from.unix.type, settings),
             object: $.config.object,
           },
 
@@ -938,6 +972,7 @@
         },
         unix_milli(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.time.from.unix_milli.type, settings),
             object: $.config.object,
           },
 
@@ -947,6 +982,7 @@
       },
       now(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.time.now.type, settings),
           object: $.config.object,
         },
 
@@ -957,6 +993,7 @@
         str(settings={}): $.transform.time.to.string(settings=settings),
         string(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.time.to.string.type, settings),
             object: $.config.object,
             format: null,
             location: null,
@@ -968,6 +1005,7 @@
       },
       unix(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.time.unix.type, settings),
           object: $.config.object,
         },
 
@@ -976,6 +1014,7 @@
       },
       unix_milli(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.time.unix_milli.type, settings),
           object: $.config.object,
         },
 
@@ -987,6 +1026,7 @@
     utility: {
       control(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.utility.control.type, settings),
           batch: $.config.batch,
         },
 
@@ -995,6 +1035,7 @@
       },
       delay(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.utility.delay.type, settings),
           duration: null,
         },
 
@@ -1006,6 +1047,7 @@
       },
       err(settings={}): {
         local default = {
+          id: $.helpers.id($.transform.utility.err.type, settings),
           message: null,
         },
 
@@ -1015,6 +1057,7 @@
       metric: {
         bytes(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.utility.metric.bytes.type, settings),
             metric: $.config.metric,
           },
 
@@ -1023,6 +1066,7 @@
         },
         count(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.utility.metric.count.type, settings),
             metric: $.config.metric,
           },
 
@@ -1031,6 +1075,7 @@
         },
         freshness(settings={}): {
           local default = {
+            id: $.helpers.id($.transform.utility.metric.freshness.type, settings),
             threshold: null,
             metric: $.config.metric,
             object: $.config.object,
@@ -1041,7 +1086,10 @@
         },
       },
       secret(settings={}): {
-        local default = { secret: null },
+        local default = { 
+          id: $.helpers.id($.transform.utility.secret.type, settings),
+          secret: null 
+        },
 
         type: 'utility_secret',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
@@ -1223,5 +1271,6 @@
       trg: null,
       batch_key: if std.objectHas(s, 'btch') then s.batch else if std.objectHas(s, 'batch_key') then s.batch_key else null,
     },
+    id(type, settings): std.join("-", [std.md5(type)[:8], std.md5(std.toString(settings))[:8]])
   },
 }

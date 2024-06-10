@@ -43,6 +43,7 @@ type metaKVStoreLockConfig struct {
 	// This is optional and defaults to using no TTL when setting values into the store.
 	TTLOffset string `json:"ttl_offset"`
 
+	ID        string                     `json:"id"`
 	Transform config.Config              `json:"transform"`
 	Object    metaVStoreLockObjectConfig `json:"object"`
 	KVStore   config.Config              `json:"kv_store"`
@@ -67,25 +68,29 @@ func (c *metaKVStoreLockConfig) Validate() error {
 func newMetaKVStoreLock(ctx context.Context, cfg config.Config) (*metaKVStoreLock, error) {
 	conf := metaKVStoreLockConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: meta_kv_store_lock: %v", err)
+		return nil, fmt.Errorf("transform meta_kv_store_lock: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "meta_kv_store_lock"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: meta_kv_store_lock: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tff, err := New(ctx, conf.Transform)
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_kv_store_lock: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	locker, err := kv.GetLocker(conf.KVStore)
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_kv_store_lock: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	if err := locker.Setup(ctx); err != nil {
-		return nil, fmt.Errorf("transform: meta_kv_store_lock: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	if conf.TTLOffset == "" {
@@ -94,7 +99,7 @@ func newMetaKVStoreLock(ctx context.Context, cfg config.Config) (*metaKVStoreLoc
 
 	dur, err := time.ParseDuration(conf.TTLOffset)
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_kv_store_lock: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := metaKVStoreLock{
@@ -133,7 +138,7 @@ func (tf *metaKVStoreLock) Transform(ctx context.Context, msg *message.Message) 
 				_ = tf.locker.Unlock(ctx, key)
 			}
 
-			return nil, fmt.Errorf("transform: meta_kv_store_lock: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		tf.keys = tf.keys[:0]
@@ -177,7 +182,7 @@ func (tf *metaKVStoreLock) Transform(ctx context.Context, msg *message.Message) 
 			_ = tf.locker.Unlock(ctx, key)
 		}
 
-		return nil, fmt.Errorf("transform: meta_kv_store_lock: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	tf.keys = append(tf.keys, lockKey)
@@ -187,7 +192,7 @@ func (tf *metaKVStoreLock) Transform(ctx context.Context, msg *message.Message) 
 			_ = tf.locker.Unlock(ctx, key)
 		}
 
-		return nil, fmt.Errorf("transform: meta_kv_store_lock: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return msgs, nil

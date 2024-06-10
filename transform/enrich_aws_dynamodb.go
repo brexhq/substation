@@ -40,6 +40,7 @@ type enrichAWSDynamoDBConfig struct {
 	// This is optional and defaults to true.
 	ScanIndexForward bool `json:"scan_index_forward"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 	AWS    iconfig.AWS    `json:"aws"`
 	Retry  iconfig.Retry  `json:"retry"`
@@ -71,11 +72,15 @@ func (c *enrichAWSDynamoDBConfig) Validate() error {
 func newEnrichAWSDynamoDB(_ context.Context, cfg config.Config) (*enrichAWSDynamoDB, error) {
 	conf := enrichAWSDynamoDBConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", err)
+		return nil, fmt.Errorf("transform enrich_aws_dynamodb: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "enrich_aws_dynamodb"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := enrichAWSDynamoDB{
@@ -114,7 +119,7 @@ func (tf *enrichAWSDynamoDB) Transform(ctx context.Context, msg *message.Message
 	}
 
 	if !json.Valid(tmp.Data()) {
-		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", errMsgInvalidObject)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errMsgInvalidObject)
 	}
 
 	pk := tmp.GetValue(tf.conf.PartitionKey)
@@ -125,7 +130,7 @@ func (tf *enrichAWSDynamoDB) Transform(ctx context.Context, msg *message.Message
 	sk := tmp.GetValue(tf.conf.SortKey)
 	value, err := tf.dynamodb(ctx, pk.String(), sk.String())
 	if err != nil {
-		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	// No match.
@@ -134,7 +139,7 @@ func (tf *enrichAWSDynamoDB) Transform(ctx context.Context, msg *message.Message
 	}
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, value); err != nil {
-		return nil, fmt.Errorf("transform: enrich_aws_dynamodb: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

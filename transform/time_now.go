@@ -12,6 +12,7 @@ import (
 )
 
 type timeNowConfig struct {
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -26,11 +27,15 @@ func (c *timeNowConfig) Validate() error {
 func newTimeNow(_ context.Context, cfg config.Config) (*timeNow, error) {
 	conf := timeNowConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: time_now: %v", err)
+		return nil, fmt.Errorf("transform time_now: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "time_now"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: time_now: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := timeNow{
@@ -55,7 +60,7 @@ func (tf *timeNow) Transform(ctx context.Context, msg *message.Message) ([]*mess
 
 	if tf.hasObjectSetKey {
 		if err := msg.SetValue(tf.conf.Object.TargetKey, date.UnixNano()); err != nil {
-			return nil, fmt.Errorf("time: now: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		return []*message.Message{msg}, nil

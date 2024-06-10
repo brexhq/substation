@@ -36,6 +36,7 @@ type sendAWSKinesisDataStreamConfig struct {
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 	AWS    iconfig.AWS    `json:"aws"`
@@ -57,11 +58,15 @@ func (c *sendAWSKinesisDataStreamConfig) Validate() error {
 func newSendAWSKinesisDataStream(_ context.Context, cfg config.Config) (*sendAWSKinesisDataStream, error) {
 	conf := sendAWSKinesisDataStreamConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+		return nil, fmt.Errorf("transform send_aws_kinesis_data_stream: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "send_aws_kinesis_data_stream"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := sendAWSKinesisDataStream{
@@ -75,7 +80,7 @@ func newSendAWSKinesisDataStream(_ context.Context, cfg config.Config) (*sendAWS
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 	tf.agg = agg
 
@@ -84,7 +89,7 @@ func newSendAWSKinesisDataStream(_ context.Context, cfg config.Config) (*sendAWS
 		for i, c := range conf.AuxTransforms {
 			t, err := New(context.Background(), c)
 			if err != nil {
-				return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 			}
 
 			tf.tforms[i] = t
@@ -124,7 +129,7 @@ func (tf *sendAWSKinesisDataStream) Transform(ctx context.Context, msg *message.
 			}
 
 			if err := tf.send(ctx, key); err != nil {
-				return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}
 		}
 
@@ -133,7 +138,7 @@ func (tf *sendAWSKinesisDataStream) Transform(ctx context.Context, msg *message.
 	}
 
 	if len(msg.Data()) > sendAWSKinesisDataStreamMessageSizeLimit {
-		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", errSendAWSKinesisDataStreamMessageSizeLimit)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendAWSKinesisDataStreamMessageSizeLimit)
 	}
 
 	// If this value does not exist, then all data is batched together.
@@ -143,13 +148,13 @@ func (tf *sendAWSKinesisDataStream) Transform(ctx context.Context, msg *message.
 	}
 
 	if err := tf.send(ctx, key); err != nil {
-		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform: send_aws_kinesis_data_stream: %v", errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
 	}
 
 	return []*message.Message{msg}, nil

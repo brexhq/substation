@@ -18,6 +18,8 @@ var errObjectJQNoOutputGenerated = fmt.Errorf("no output generated")
 type objectJQConfig struct {
 	// Filter is the jq filter applied to data.
 	Filter string `json:"filter"`
+
+	ID string `json:"id"`
 }
 
 func (c *objectJQConfig) Decode(in interface{}) error {
@@ -35,11 +37,15 @@ func (c *objectJQConfig) Validate() error {
 func newObjectJQ(_ context.Context, cfg config.Config) (*objectJQ, error) {
 	conf := objectJQConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: object_jq: %v", err)
+		return nil, fmt.Errorf("transform object_jq: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "object_jq"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: object_jq: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	q, err := gojq.Parse(conf.Filter)
@@ -68,7 +74,7 @@ func (tf *objectJQ) Transform(ctx context.Context, msg *message.Message) ([]*mes
 
 	var i interface{}
 	if err := json.Unmarshal(msg.Data(), &i); err != nil {
-		return nil, fmt.Errorf("transform: object_jq: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	var arr []interface{}
@@ -80,7 +86,7 @@ func (tf *objectJQ) Transform(ctx context.Context, msg *message.Message) ([]*mes
 			break
 		}
 		if err, ok := v.(error); ok {
-			return nil, fmt.Errorf("transform: object_jq: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		arr = append(arr, v)
@@ -90,7 +96,7 @@ func (tf *objectJQ) Transform(ctx context.Context, msg *message.Message) ([]*mes
 	var b []byte
 	switch len(arr) {
 	case 0:
-		return nil, fmt.Errorf("transform: object_jq: %v", errObjectJQNoOutputGenerated)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errObjectJQNoOutputGenerated)
 	case 1:
 		b, err = json.Marshal(arr[0])
 	default:
@@ -98,7 +104,7 @@ func (tf *objectJQ) Transform(ctx context.Context, msg *message.Message) ([]*mes
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("transform: object_jq: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	msg.SetData(b)

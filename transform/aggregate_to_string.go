@@ -14,11 +14,15 @@ import (
 func newAggregateToString(_ context.Context, cfg config.Config) (*aggregateToString, error) {
 	conf := aggregateStrConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: aggregate_to_string: %v", err)
+		return nil, fmt.Errorf("transform aggregate_to_string: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "aggregate_to_string"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: aggregate_to_string: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := aggregateToString{
@@ -32,7 +36,7 @@ func newAggregateToString(_ context.Context, cfg config.Config) (*aggregateToStr
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: aggregate_to_string: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 	tf.agg = agg
 
@@ -80,7 +84,7 @@ func (tf *aggregateToString) Transform(ctx context.Context, msg *message.Message
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform: send_stdout: %v", errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
 	}
 
 	return []*message.Message{outMsg}, nil

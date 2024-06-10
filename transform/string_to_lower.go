@@ -14,11 +14,15 @@ import (
 func newStringToLower(_ context.Context, cfg config.Config) (*stringToLower, error) {
 	conf := strCaseConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: string_to_lower: %v", err)
+		return nil, fmt.Errorf("transform string_to_lower: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "string_to_lower"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: string_to_lower: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := stringToLower{
@@ -53,7 +57,7 @@ func (tf *stringToLower) Transform(ctx context.Context, msg *message.Message) ([
 
 	s := strings.ToLower(value.String())
 	if err := msg.SetValue(tf.conf.Object.TargetKey, s); err != nil {
-		return nil, fmt.Errorf("transform: string_to_lower: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

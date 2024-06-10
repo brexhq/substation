@@ -10,7 +10,9 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type utilityDropConfig struct{}
+type utilityDropConfig struct {
+	ID string `json:"id"`
+}
 
 func (c *utilityDropConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
@@ -19,7 +21,11 @@ func (c *utilityDropConfig) Decode(in interface{}) error {
 func newUtilityDrop(_ context.Context, cfg config.Config) (*utilityDrop, error) {
 	conf := utilityDropConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: utility_drop: %v", err)
+		return nil, fmt.Errorf("transform utility_drop: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "utility_drop"
 	}
 
 	tf := utilityDrop{

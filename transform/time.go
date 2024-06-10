@@ -13,6 +13,7 @@ const (
 )
 
 type timeUnixConfig struct {
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -33,6 +34,7 @@ func (c *timeUnixConfig) Validate() error {
 }
 
 type timePatternConfig struct {
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 
 	Format   string `json:"format"`

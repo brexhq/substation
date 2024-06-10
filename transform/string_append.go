@@ -15,6 +15,7 @@ type stringAppendConfig struct {
 	// Suffix is the string appended to the end of the string.
 	Suffix string `json:"suffix"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -48,11 +49,15 @@ type stringAppend struct {
 func newStringAppend(_ context.Context, cfg config.Config) (*stringAppend, error) {
 	conf := stringAppendConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: string_append: %v", err)
+		return nil, fmt.Errorf("transform string_append: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "string_append"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: string_append: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := stringAppend{
@@ -85,7 +90,7 @@ func (tf *stringAppend) Transform(ctx context.Context, msg *message.Message) ([]
 	str := value.String() + tf.conf.Suffix
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, str); err != nil {
-		return nil, fmt.Errorf("transform: string_append: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

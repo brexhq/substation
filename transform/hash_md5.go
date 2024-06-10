@@ -13,11 +13,15 @@ import (
 func newHashMD5(_ context.Context, cfg config.Config) (*hashMD5, error) {
 	conf := hashConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: hash_md5: %v", err)
+		return nil, fmt.Errorf("transform hash_md5: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "hash_md5"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: hash_md5: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := hashMD5{

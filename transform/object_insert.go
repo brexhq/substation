@@ -15,6 +15,7 @@ type objectInsertConfig struct {
 	// Value inserted into the object.
 	Value interface{} `json:"value"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -37,11 +38,15 @@ func (c *objectInsertConfig) Validate() error {
 func newObjectInsert(_ context.Context, cfg config.Config) (*objectInsert, error) {
 	conf := objectInsertConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: object_insert: %v", err)
+		return nil, fmt.Errorf("transform object_insert: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "object_insert"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: object_insert: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := objectInsert{
@@ -61,7 +66,7 @@ func (tf *objectInsert) Transform(ctx context.Context, msg *message.Message) ([]
 	}
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, tf.conf.Value); err != nil {
-		return nil, fmt.Errorf("transform: object_insert: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

@@ -14,11 +14,15 @@ import (
 func newNumberMathAddition(_ context.Context, cfg config.Config) (*numberMathAddition, error) {
 	conf := numberMathConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: number_math_addition: %v", err)
+		return nil, fmt.Errorf("transform number_math_addition: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "number_math_addition"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: number_math_addition: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := numberMathAddition{
@@ -73,11 +77,11 @@ func (tf *numberMathAddition) Transform(ctx context.Context, msg *message.Messag
 
 	f, err := strconv.ParseFloat(strFloat64, 64)
 	if err != nil {
-		return nil, fmt.Errorf("transform: number_math_addition: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, f); err != nil {
-		return nil, fmt.Errorf("transform: number_math_addition: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", err)
 	}
 
 	return []*message.Message{msg}, nil

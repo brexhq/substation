@@ -15,6 +15,8 @@ import (
 type utilityDelayConfig struct {
 	// Duration is the amount of time to delay.
 	Duration string `json:"duration"`
+
+	ID string `json:"id"`
 }
 
 func (c *utilityDelayConfig) Decode(in interface{}) error {
@@ -32,16 +34,20 @@ func (c *utilityDelayConfig) Validate() error {
 func newUtilityDelay(_ context.Context, cfg config.Config) (*utilityDelay, error) {
 	conf := utilityDelayConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: utility_delay: %v", err)
+		return nil, fmt.Errorf("transform utility_delay: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "utility_delay"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: utility_delay: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	dur, err := time.ParseDuration(conf.Duration)
 	if err != nil {
-		return nil, fmt.Errorf("transform: utility_delay: duration: %v", err)
+		return nil, fmt.Errorf("transform %s: duration: %v", conf.ID, err)
 	}
 
 	tf := utilityDelay{

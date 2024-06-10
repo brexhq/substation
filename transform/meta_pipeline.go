@@ -21,6 +21,7 @@ type metaPipelineConfig struct {
 	// Transforms that is applied in series to the data.
 	Transforms []config.Config `json:"transforms"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -47,11 +48,15 @@ func (c *metaPipelineConfig) Validate() error {
 func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, error) {
 	conf := metaPipelineConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+		return nil, fmt.Errorf("transform meta_pipeline: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "meta_pipeline"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := metaPipeline{
@@ -63,7 +68,7 @@ func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, err
 	for _, c := range conf.Transforms {
 		t, err := New(ctx, c)
 		if err != nil {
-			return nil, fmt.Errorf("transform: meta_pipeline: transform %+v: %v", c, err)
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 		}
 
 		tform = append(tform, t)
@@ -84,7 +89,7 @@ func (tf *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]
 	if msg.IsControl() {
 		msgs, err := Apply(ctx, tf.tf, msg)
 		if err != nil {
-			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		return msgs, nil
@@ -93,7 +98,7 @@ func (tf *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]
 	if !tf.isObject {
 		msgs, err := Apply(ctx, tf.tf, msg)
 		if err != nil {
-			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		return msgs, nil
@@ -105,18 +110,18 @@ func (tf *metaPipeline) Transform(ctx context.Context, msg *message.Message) ([]
 	}
 
 	if value.IsArray() {
-		return nil, fmt.Errorf("transform: meta_pipeline: key %s: %v", tf.conf.Object.SourceKey, errMetaPipelineArrayInput)
+		return nil, fmt.Errorf("transform %s: key %s: %v", tf.conf.ID, tf.conf.Object.SourceKey, errMetaPipelineArrayInput)
 	}
 
 	res, err := Apply(ctx, tf.tf, message.New().SetData(value.Bytes()))
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	var output []*message.Message
 	for _, msg := range res {
 		if err := msg.SetValue(tf.conf.Object.TargetKey, msg.Data()); err != nil {
-			return nil, fmt.Errorf("transform: meta_pipeline: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		output = append(output, msg)

@@ -25,6 +25,7 @@ type stringCaptureConfig struct {
 	// is ignored.
 	Count int `json:"count"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -58,11 +59,15 @@ func (c *stringCaptureConfig) Validate() error {
 func newStringCapture(_ context.Context, cfg config.Config) (*stringCapture, error) {
 	conf := stringCaptureConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: string_capture: %v", err)
+		return nil, fmt.Errorf("transform string_capture: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "string_capture"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: string_capture: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := stringCapture{
@@ -98,7 +103,7 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 				}
 
 				if err := outMsg.SetValue(tf.conf.re.SubexpNames()[i], m); err != nil {
-					return nil, fmt.Errorf("transform: string_capture: %v", err)
+					return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 				}
 			}
 
@@ -117,7 +122,7 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 			for _, s := range subs {
 				m := strCaptureGetBytesMatch(s)
 				if err := tmpMsg.SetValue("key.-1", m); err != nil {
-					return nil, fmt.Errorf("transform: string_capture: %v", err)
+					return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 				}
 			}
 
@@ -149,7 +154,7 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 			// {"d":"e"} then the output is {"a":{"b":"c","d":"e"}}.
 			setKey := tf.conf.Object.TargetKey + "." + tf.conf.re.SubexpNames()[i]
 			if err := msg.SetValue(setKey, match); err != nil {
-				return nil, fmt.Errorf("transform: string_capture: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}
 		}
 
@@ -158,7 +163,7 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 	case tf.conf.Count == 0:
 		matches := tf.conf.re.FindStringSubmatch(value.String())
 		if err := msg.SetValue(tf.conf.Object.TargetKey, strCaptureGetStringMatch(matches)); err != nil {
-			return nil, fmt.Errorf("transform: string_capture: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		return []*message.Message{msg}, nil
@@ -173,7 +178,7 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 		}
 
 		if err := msg.SetValue(tf.conf.Object.TargetKey, matches); err != nil {
-			return nil, fmt.Errorf("transform: string_capture: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		return []*message.Message{msg}, nil

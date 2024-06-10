@@ -12,7 +12,11 @@ import (
 func newFormatFromGzip(_ context.Context, cfg config.Config) (*formatFromGzip, error) {
 	conf := formatGzipConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: format_from_gzip: %v", err)
+		return nil, fmt.Errorf("transform format_from_gzip: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "format_from_gzip"
 	}
 
 	tf := formatFromGzip{
@@ -35,7 +39,7 @@ func (tf *formatFromGzip) Transform(ctx context.Context, msg *message.Message) (
 
 	gz, err := fmtFromGzip(msg.Data())
 	if err != nil {
-		return nil, fmt.Errorf("transform: format_from_gzip: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	msg.SetData(gz)

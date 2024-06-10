@@ -14,6 +14,8 @@ import (
 type utilitySecretConfig struct {
 	// Secret is the secret to retrieve.
 	Secret config.Config `json:"secret"`
+
+	ID string `json:"id"`
 }
 
 func (c *utilitySecretConfig) Decode(in interface{}) error {
@@ -24,12 +26,16 @@ func newUtilitySecret(ctx context.Context, cfg config.Config) (*utilitySecret, e
 	// conf gets validated when calling secrets.New.
 	conf := utilitySecretConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: utility_secret: %v", err)
+		return nil, fmt.Errorf("transform utility_secret: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "utility_secret"
 	}
 
 	ret, err := secrets.New(ctx, conf.Secret)
 	if err != nil {
-		return nil, fmt.Errorf("transform: utility_secret: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := utilitySecret{
@@ -38,7 +44,7 @@ func newUtilitySecret(ctx context.Context, cfg config.Config) (*utilitySecret, e
 	}
 
 	if err := tf.secret.Retrieve(ctx); err != nil {
-		return nil, fmt.Errorf("transform: utility_secret: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	return &tf, nil
@@ -58,7 +64,7 @@ func (tf *utilitySecret) Transform(ctx context.Context, msg *message.Message) ([
 
 	if tf.secret.Expired() {
 		if err := tf.secret.Retrieve(ctx); err != nil {
-			return nil, fmt.Errorf("transform: utility_secret: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	}
 

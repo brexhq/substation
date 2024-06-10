@@ -8,6 +8,7 @@ import (
 )
 
 type hashConfig struct {
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 

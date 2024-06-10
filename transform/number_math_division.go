@@ -14,11 +14,15 @@ import (
 func newNumberMathDivision(_ context.Context, cfg config.Config) (*numberMathDivision, error) {
 	conf := numberMathConfig{}
 	if err := iconfig.Decode(cfg.Settings, &conf); err != nil {
-		return nil, fmt.Errorf("transform: number_math_division: %v", err)
+		return nil, fmt.Errorf("transform number_math_division: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "number_math_division"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: number_math_division: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := numberMathDivision{
@@ -73,11 +77,11 @@ func (tf *numberMathDivision) Transform(ctx context.Context, msg *message.Messag
 
 	f, err := strconv.ParseFloat(strFloat64, 64)
 	if err != nil {
-		return nil, fmt.Errorf("transform: number_math_division: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, f); err != nil {
-		return nil, fmt.Errorf("transform: number_math_division: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

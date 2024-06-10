@@ -12,6 +12,7 @@ import (
 )
 
 type objectToBooleanConfig struct {
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -34,11 +35,15 @@ func (c *objectToBooleanConfig) Validate() error {
 func newObjectToBoolean(_ context.Context, cfg config.Config) (*objectToBoolean, error) {
 	conf := objectToBooleanConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: object_to_boolean: %v", err)
+		return nil, fmt.Errorf("transform object_to_boolean: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "object_to_boolean"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: object_to_boolean: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := objectToBoolean{
@@ -68,7 +73,7 @@ func (tf *objectToBoolean) Transform(ctx context.Context, msg *message.Message) 
 	}
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, value.Bool()); err != nil {
-		return nil, fmt.Errorf("transform: object_to_boolean: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

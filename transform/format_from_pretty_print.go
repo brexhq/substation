@@ -16,7 +16,9 @@ const (
 	formatFromPPCloseCurlyBracket = 125 // }
 )
 
-type formatFromPrettyPrintConfig struct{}
+type formatFromPrettyPrintConfig struct {
+	ID string `json:"id"`
+}
 
 func (c *formatFromPrettyPrintConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
@@ -25,7 +27,11 @@ func (c *formatFromPrettyPrintConfig) Decode(in interface{}) error {
 func newFormatFromPrettyPrint(_ context.Context, cfg config.Config) (*formatFromPrettyPrint, error) {
 	conf := formatFromPrettyPrintConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: format_from_pretty_print: %v", err)
+		return nil, fmt.Errorf("transform format_from_pretty_print: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "format_from_pretty_print"
 	}
 
 	tf := formatFromPrettyPrint{
@@ -61,7 +67,7 @@ func (tf *formatFromPrettyPrint) Transform(ctx context.Context, msg *message.Mes
 		if tf.count == 0 {
 			var buf bytes.Buffer
 			if err := json.Compact(&buf, tf.stack); err != nil {
-				return nil, fmt.Errorf("transform: format_from_pretty_print: json compact: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}
 
 			tf.stack = []byte{}
@@ -70,7 +76,7 @@ func (tf *formatFromPrettyPrint) Transform(ctx context.Context, msg *message.Mes
 				return []*message.Message{msg}, nil
 			}
 
-			return nil, fmt.Errorf("transform: format_from_pretty_print: invalid json")
+			return nil, fmt.Errorf("transform %s: invalid json", tf.conf.ID)
 		}
 	}
 

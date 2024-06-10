@@ -14,7 +14,11 @@ import (
 func newAggregateToArray(_ context.Context, cfg config.Config) (*aggregateToArray, error) {
 	conf := aggregateArrayConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
+		return nil, fmt.Errorf("transform aggregate_to_array: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "aggregate_to_array"
 	}
 
 	tf := aggregateToArray{
@@ -28,7 +32,7 @@ func newAggregateToArray(_ context.Context, cfg config.Config) (*aggregateToArra
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 	tf.agg = *agg
 
@@ -56,7 +60,7 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 			outMsg := message.New()
 			if tf.hasObjTrg {
 				if err := outMsg.SetValue(tf.conf.Object.TargetKey, array); err != nil {
-					return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
+					return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 				}
 			} else {
 				outMsg.SetData(array)
@@ -81,7 +85,7 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 	outMsg := message.New()
 	if tf.hasObjTrg {
 		if err := outMsg.SetValue(tf.conf.Object.TargetKey, array); err != nil {
-			return nil, fmt.Errorf("transform: aggregate_to_array: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	} else {
 		outMsg.SetData(array)
@@ -90,7 +94,7 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform: send_stdout: %v", errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
 	}
 
 	return []*message.Message{outMsg}, nil

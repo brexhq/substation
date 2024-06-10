@@ -14,11 +14,15 @@ import (
 func newNetworkDomainRegisteredDomain(_ context.Context, cfg config.Config) (*networkDomainRegisteredDomain, error) {
 	conf := networkDomainConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: network_domain_registered_domain: %v", err)
+		return nil, fmt.Errorf("transform network_domain_registered_domain: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "network_domain_registered_domain"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: network_domain_registered_domain: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := networkDomainRegisteredDomain{
@@ -43,7 +47,7 @@ func (tf *networkDomainRegisteredDomain) Transform(ctx context.Context, msg *mes
 		str := string(msg.Data())
 		domain, err := publicsuffix.EffectiveTLDPlusOne(str)
 		if err != nil {
-			return nil, fmt.Errorf("transform: network_domain_registered_domain: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		msg.SetData([]byte(domain))
@@ -57,11 +61,11 @@ func (tf *networkDomainRegisteredDomain) Transform(ctx context.Context, msg *mes
 
 	domain, err := publicsuffix.EffectiveTLDPlusOne(value.String())
 	if err != nil {
-		return nil, fmt.Errorf("transform: network_domain_registered_domain: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, domain); err != nil {
-		return nil, fmt.Errorf("transform: network_domain_registered_domain: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

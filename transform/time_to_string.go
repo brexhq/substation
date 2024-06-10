@@ -12,11 +12,15 @@ import (
 func newTimeToString(_ context.Context, cfg config.Config) (*timeToString, error) {
 	conf := timePatternConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: time_to_string: %v", err)
+		return nil, fmt.Errorf("transform time_to_string: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "time_to_string"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: time_to_string: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := timeToString{
@@ -50,12 +54,12 @@ func (tf *timeToString) Transform(ctx context.Context, msg *message.Message) ([]
 
 	pattern, err := timeUnixToStr(value.Int(), tf.conf.Format, tf.conf.Location)
 	if err != nil {
-		return nil, fmt.Errorf("transform: time_to_string: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	if tf.isObject {
 		if err := msg.SetValue(tf.conf.Object.TargetKey, pattern); err != nil {
-			return nil, fmt.Errorf("transform: time_to_string: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	} else {
 		msg.SetData([]byte(pattern))

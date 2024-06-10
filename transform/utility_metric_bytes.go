@@ -14,6 +14,8 @@ import (
 
 type utilityMetricBytesConfig struct {
 	Metric iconfig.Metric `json:"metric"`
+
+	ID string `json:"id"`
 }
 
 func (c *utilityMetricBytesConfig) Decode(in interface{}) error {
@@ -24,12 +26,16 @@ func newUtilityMetricBytes(ctx context.Context, cfg config.Config) (*utilityMetr
 	// conf gets validated when calling metrics.New.
 	conf := utilityMetricBytesConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: utility_metric_bytes: %v", err)
+		return nil, fmt.Errorf("transform utility_metric_bytes: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "utility_metric_bytes"
 	}
 
 	m, err := metrics.New(ctx, conf.Metric.Destination)
 	if err != nil {
-		return nil, fmt.Errorf("transform: utility_metric_bytes: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := utilityMetricBytes{
@@ -54,7 +60,7 @@ func (tf *utilityMetricBytes) Transform(ctx context.Context, msg *message.Messag
 			Value:      tf.bytes,
 			Attributes: tf.conf.Metric.Attributes,
 		}); err != nil {
-			return nil, fmt.Errorf("transform: utility_metric_bytes: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		atomic.StoreUint32(&tf.bytes, 0)

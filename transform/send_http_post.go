@@ -27,6 +27,7 @@ type sendHTTPPostConfig struct {
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 }
@@ -46,11 +47,15 @@ func (c *sendHTTPPostConfig) Validate() error {
 func newSendHTTPPost(_ context.Context, cfg config.Config) (*sendHTTPPost, error) {
 	conf := sendHTTPPostConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: send_http_post: %v", err)
+		return nil, fmt.Errorf("transform send_http_post: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "send_http_post"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: send_http_post: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := sendHTTPPost{
@@ -77,7 +82,7 @@ func newSendHTTPPost(_ context.Context, cfg config.Config) (*sendHTTPPost, error
 		for i, c := range conf.AuxTransforms {
 			t, err := New(context.Background(), c)
 			if err != nil {
-				return nil, fmt.Errorf("transform: send_http_post: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 			}
 
 			tf.tforms[i] = t
@@ -109,7 +114,7 @@ func (tf *sendHTTPPost) Transform(ctx context.Context, msg *message.Message) ([]
 			}
 
 			if err := tf.send(ctx, key); err != nil {
-				return nil, fmt.Errorf("transform: send_http_post: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}
 		}
 
@@ -124,13 +129,13 @@ func (tf *sendHTTPPost) Transform(ctx context.Context, msg *message.Message) ([]
 	}
 
 	if err := tf.send(ctx, key); err != nil {
-		return nil, fmt.Errorf("transform: send_http_post: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform: send_http_post: %v", errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
 	}
 
 	return []*message.Message{msg}, nil

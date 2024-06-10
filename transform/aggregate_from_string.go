@@ -12,11 +12,15 @@ import (
 func newAggregateFromString(_ context.Context, cfg config.Config) (*aggregateFromString, error) {
 	conf := aggregateStrConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: aggregate_from_string: %v", err)
+		return nil, fmt.Errorf("transform aggregate_from_string: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "aggregate_from_string"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: aggregate_from_string: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := aggregateFromString{

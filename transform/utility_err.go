@@ -13,6 +13,8 @@ import (
 type utilityErrConfig struct {
 	// Message is the error message to return.
 	Message string `json:"message"`
+
+	ID string `json:"id"`
 }
 
 func (c *utilityErrConfig) Decode(in interface{}) error {
@@ -22,7 +24,11 @@ func (c *utilityErrConfig) Decode(in interface{}) error {
 func newUtilityErr(_ context.Context, cfg config.Config) (*utilityErr, error) {
 	conf := utilityErrConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: utility_err: %v", err)
+		return nil, fmt.Errorf("transform utility_err: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "utility_err"
 	}
 
 	tf := utilityErr{

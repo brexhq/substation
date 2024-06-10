@@ -13,11 +13,15 @@ import (
 func newTimeToUnixMilli(_ context.Context, cfg config.Config) (*timeToUnixMilli, error) {
 	conf := timeUnixConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: time_to_unix_milli: %v", err)
+		return nil, fmt.Errorf("transform time_to_unix_milli: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "time_to_unix_milli"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: time_to_unix_milli: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := timeToUnixMilli{
@@ -55,7 +59,7 @@ func (tf *timeToUnixMilli) Transform(ctx context.Context, msg *message.Message) 
 
 	if tf.isObject {
 		if err := msg.SetValue(tf.conf.Object.TargetKey, ms); err != nil {
-			return nil, fmt.Errorf("transform: time_to_unix_milli: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	} else {
 		value := []byte(fmt.Sprintf("%d", ms))

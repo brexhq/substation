@@ -4,7 +4,7 @@ local sub = import '../../build/config/substation.libsonnet';
   // Substation application configs always contain an array named `transforms`.
   transforms: [
     // Each transform function is defined in the `substation` library.
-    sub.transform.object.insert({ object: { target_key: 'a' }, value: 'z' }),
+    sub.transform.object.insert({ id: 'insert-z', object: { target_key: 'a' }, value: 'z' }),
     // Transform functions can be conditionally applied using the
     // `meta.switch` function.
     sub.transform.meta.switch({ cases: [

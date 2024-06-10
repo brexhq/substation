@@ -18,6 +18,7 @@ type enrichAWSLambdaConfig struct {
 	// FunctionName is the AWS Lambda function to synchronously invoke.
 	FunctionName string `json:"function_name"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 	AWS    iconfig.AWS    `json:"aws"`
 	Retry  iconfig.Retry  `json:"retry"`
@@ -46,11 +47,15 @@ func (c *enrichAWSLambdaConfig) Validate() error {
 func newEnrichAWSLambda(_ context.Context, cfg config.Config) (*enrichAWSLambda, error) {
 	conf := enrichAWSLambdaConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", err)
+		return nil, fmt.Errorf("transform enrich_aws_lambda: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "enrich_aws_lambda"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := enrichAWSLambda{
@@ -86,21 +91,21 @@ func (tf *enrichAWSLambda) Transform(ctx context.Context, msg *message.Message) 
 	}
 
 	if !json.Valid(value.Bytes()) {
-		return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", errMsgInvalidObject)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errMsgInvalidObject)
 	}
 
 	resp, err := tf.client.Invoke(ctx, tf.conf.FunctionName, value.Bytes())
 	if err != nil {
-		return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	if resp.FunctionError != nil {
 		resErr := gjson.GetBytes(resp.Payload, "errorMessage").String()
-		return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", resErr)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, resErr)
 	}
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, resp.Payload); err != nil {
-		return nil, fmt.Errorf("transform: enrich_aws_lambda: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

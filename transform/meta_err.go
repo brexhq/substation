@@ -20,6 +20,8 @@ type metaErrConfig struct {
 	//
 	// This is optional and defaults to an empty list (all errors are caught).
 	ErrorMessages []string `json:"error_messages"`
+
+	ID string `json:"id"`
 }
 
 func (c *metaErrConfig) Decode(in interface{}) error {
@@ -37,23 +39,27 @@ func (c *metaErrConfig) Validate() error {
 func newMetaErr(ctx context.Context, cfg config.Config) (*metaErr, error) {
 	conf := metaErrConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: meta_err: %v", err)
+		return nil, fmt.Errorf("transform meta_err: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "meta_err"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: meta_err: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf, err := New(ctx, conf.Transform)
 	if err != nil {
-		return nil, fmt.Errorf("transform: meta_err: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	errMsgs := make([]*regexp.Regexp, len(conf.ErrorMessages))
 	for i, eMsg := range conf.ErrorMessages {
 		r, err := regexp.Compile(eMsg)
 		if err != nil {
-			return nil, fmt.Errorf("transform: meta_err: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 		}
 
 		errMsgs[i] = r
@@ -88,7 +94,7 @@ func (tf *metaErr) Transform(ctx context.Context, msg *message.Message) ([]*mess
 			}
 		}
 
-		return nil, fmt.Errorf("transform: meta_err: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return msgs, nil

@@ -16,6 +16,7 @@ type sendStdoutConfig struct {
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 }
@@ -27,7 +28,11 @@ func (c *sendStdoutConfig) Decode(in interface{}) error {
 func newSendStdout(_ context.Context, cfg config.Config) (*sendStdout, error) {
 	conf := sendStdoutConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: send_stdout: %v", err)
+		return nil, fmt.Errorf("transform send_stdout: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "send_stdout"
 	}
 
 	tf := sendStdout{
@@ -40,7 +45,7 @@ func newSendStdout(_ context.Context, cfg config.Config) (*sendStdout, error) {
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: send_stdout: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 	tf.agg = agg
 
@@ -49,7 +54,7 @@ func newSendStdout(_ context.Context, cfg config.Config) (*sendStdout, error) {
 		for i, c := range conf.AuxTransforms {
 			t, err := New(context.Background(), c)
 			if err != nil {
-				return nil, fmt.Errorf("transform: send_stdout: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 			}
 
 			tf.tforms[i] = t
@@ -78,7 +83,7 @@ func (tf *sendStdout) Transform(ctx context.Context, msg *message.Message) ([]*m
 			}
 
 			if err := tf.send(ctx, key); err != nil {
-				return nil, fmt.Errorf("transform: send_stdout: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}
 		}
 
@@ -93,13 +98,13 @@ func (tf *sendStdout) Transform(ctx context.Context, msg *message.Message) ([]*m
 	}
 
 	if err := tf.send(ctx, key); err != nil {
-		return nil, fmt.Errorf("transform: send_stdout: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform: send_stdout: %v", errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
 	}
 
 	return []*message.Message{msg}, nil

@@ -11,6 +11,7 @@ import (
 )
 
 type formatBase64Config struct {
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -30,7 +31,9 @@ func (c *formatBase64Config) Validate() error {
 	return nil
 }
 
-type formatGzipConfig struct{}
+type formatGzipConfig struct {
+	ID string `json:"id"`
+}
 
 func (c *formatGzipConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)

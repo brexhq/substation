@@ -24,6 +24,7 @@ type sendFileConfig struct {
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 }
@@ -39,11 +40,15 @@ func (c *sendFileConfig) Validate() error {
 func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 	conf := sendFileConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: send_file: %v", err)
+		return nil, fmt.Errorf("transform send_file: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "send_file"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: send_file: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := sendFile{
@@ -56,7 +61,7 @@ func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: send_file: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 	tf.agg = agg
 
@@ -65,7 +70,7 @@ func newSendFile(_ context.Context, cfg config.Config) (*sendFile, error) {
 		for i, c := range conf.AuxTransforms {
 			t, err := New(context.Background(), c)
 			if err != nil {
-				return nil, fmt.Errorf("transform: send_file: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 			}
 
 			tf.tforms[i] = t
@@ -94,7 +99,7 @@ func (tf *sendFile) Transform(ctx context.Context, msg *message.Message) ([]*mes
 			}
 
 			if err := tf.send(ctx, key); err != nil {
-				return nil, fmt.Errorf("transform: send_file: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}
 		}
 
@@ -109,13 +114,13 @@ func (tf *sendFile) Transform(ctx context.Context, msg *message.Message) ([]*mes
 	}
 
 	if err := tf.send(ctx, key); err != nil {
-		return nil, fmt.Errorf("transform: send_file: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform: send_file: %v", errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
 	}
 
 	return []*message.Message{msg}, nil
@@ -151,7 +156,7 @@ func (tf *sendFile) send(ctx context.Context, key string) error {
 
 	data, err := withTransforms(ctx, tf.tforms, tf.agg.Get(key))
 	if err != nil {
-		return fmt.Errorf("transform: send_file: %v", err)
+		return err
 	}
 
 	for _, d := range data {

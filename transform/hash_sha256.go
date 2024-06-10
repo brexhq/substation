@@ -13,11 +13,15 @@ import (
 func newHashSHA256(_ context.Context, cfg config.Config) (*hashSHA256, error) {
 	conf := hashConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: hash_sha256: %v", err)
+		return nil, fmt.Errorf("transform hash_sha256: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "hash_sha256"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: hash_sha256: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := hashSHA256{

@@ -15,10 +15,11 @@ import (
 )
 
 type utilityMetricFreshnessConfig struct {
-	Threshold string `json:"threshold"`
+	Threshold string         `json:"threshold"`
+	Metric    iconfig.Metric `json:"metric"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
-	Metric iconfig.Metric `json:"metric"`
 }
 
 func (c *utilityMetricFreshnessConfig) Decode(in interface{}) error {
@@ -40,21 +41,25 @@ func (c *utilityMetricFreshnessConfig) Validate() error {
 func newUtilityMetricFreshness(ctx context.Context, cfg config.Config) (*utilityMetricFreshness, error) {
 	conf := utilityMetricFreshnessConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: utility_metric_freshness: %v", err)
+		return nil, fmt.Errorf("transform utility_metric_freshness: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "utility_metric_freshness"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: utility_metric_freshness: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	m, err := metrics.New(ctx, conf.Metric.Destination)
 	if err != nil {
-		return nil, fmt.Errorf("transform: utility_metric_freshness: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	dur, err := time.ParseDuration(conf.Threshold)
 	if err != nil {
-		return nil, fmt.Errorf("transform: utility_metric_freshness: duration: %v", err)
+		return nil, fmt.Errorf("transform %s: duration: %v", conf.ID, err)
 	}
 
 	tf := utilityMetricFreshness{
@@ -85,7 +90,7 @@ func (tf *utilityMetricFreshness) Transform(ctx context.Context, msg *message.Me
 			Value:      tf.success,
 			Attributes: tf.conf.Metric.Attributes,
 		}); err != nil {
-			return nil, fmt.Errorf("transform: utility_metric_freshness: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		tf.conf.Metric.Attributes["FreshnessType"] = "Failure"
@@ -94,7 +99,7 @@ func (tf *utilityMetricFreshness) Transform(ctx context.Context, msg *message.Me
 			Value:      tf.failure,
 			Attributes: tf.conf.Metric.Attributes,
 		}); err != nil {
-			return nil, fmt.Errorf("transform: utility_metric_freshness: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		atomic.StoreUint32(&tf.success, 0)

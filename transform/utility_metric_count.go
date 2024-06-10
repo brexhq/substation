@@ -14,6 +14,8 @@ import (
 
 type utilityMetricsCountConfig struct {
 	Metric iconfig.Metric `json:"metric"`
+
+	ID string `json:"id"`
 }
 
 func (c *utilityMetricsCountConfig) Decode(in interface{}) error {
@@ -24,12 +26,16 @@ func newUtilityMetricCount(ctx context.Context, cfg config.Config) (*utilityMetr
 	// conf gets validated when calling metrics.New.
 	conf := utilityMetricsCountConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: utility_metric_count: %v", err)
+		return nil, fmt.Errorf("transform utility_metric_count: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "utility_metric_count"
 	}
 
 	m, err := metrics.New(ctx, conf.Metric.Destination)
 	if err != nil {
-		return nil, fmt.Errorf("transform: utility_metric_count: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := utilityMetricsCount{
@@ -54,7 +60,7 @@ func (tf *utilityMetricsCount) Transform(ctx context.Context, msg *message.Messa
 			Value:      tf.count,
 			Attributes: tf.conf.Metric.Attributes,
 		}); err != nil {
-			return nil, fmt.Errorf("transform: utility_metric_count: %v", err)
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		atomic.StoreUint32(&tf.count, 0)

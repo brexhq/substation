@@ -13,7 +13,11 @@ import (
 func newAggregateFromArray(_ context.Context, cfg config.Config) (*aggregateFromArray, error) {
 	conf := aggregateArrayConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: aggregate_from_array: %v", err)
+		return nil, fmt.Errorf("transform aggregate_from_array: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "aggregate_from_array"
 	}
 
 	tf := aggregateFromArray{
@@ -43,7 +47,7 @@ func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Messag
 	if tf.hasObjSrc {
 		value = msg.GetValue(tf.conf.Object.SourceKey)
 		if err := msg.DeleteValue(tf.conf.Object.SourceKey); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	} else {
 		value = bytesToValue(msg.Data())
@@ -59,14 +63,14 @@ func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Messag
 		if tf.hasObjSrc {
 			for key, val := range msg.GetValue("@this").Map() {
 				if err := outMsg.SetValue(key, val.Value()); err != nil {
-					return nil, err
+					return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 				}
 			}
 		}
 
 		if tf.hasObjTrg {
 			if err := outMsg.SetValue(tf.conf.Object.TargetKey, res); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}
 
 			output = append(output, outMsg)

@@ -30,6 +30,7 @@ type sendAWSLambdaConfig struct {
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 	AWS    iconfig.AWS    `json:"aws"`
@@ -51,11 +52,15 @@ func (c *sendAWSLambdaConfig) Validate() error {
 func newSendAWSLambda(_ context.Context, cfg config.Config) (*sendAWSLambda, error) {
 	conf := sendAWSLambdaConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: send_aws_lambda: %v", err)
+		return nil, fmt.Errorf("transform send_aws_lambda: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "send_aws_lambda"
 	}
 
 	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform: send_aws_lambda: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := sendAWSLambda{
@@ -69,7 +74,7 @@ func newSendAWSLambda(_ context.Context, cfg config.Config) (*sendAWSLambda, err
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("transform: send_aws_lambda: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 	tf.agg = agg
 
@@ -78,7 +83,7 @@ func newSendAWSLambda(_ context.Context, cfg config.Config) (*sendAWSLambda, err
 		for i, c := range conf.AuxTransforms {
 			t, err := New(context.Background(), c)
 			if err != nil {
-				return nil, fmt.Errorf("transform: send_aws_lambda: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 			}
 
 			tf.tforms[i] = t
@@ -119,7 +124,7 @@ func (tf *sendAWSLambda) Transform(ctx context.Context, msg *message.Message) ([
 			}
 
 			if err := tf.send(ctx, key); err != nil {
-				return nil, fmt.Errorf("transform: send_aws_lambda: %v", err)
+				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}
 		}
 
@@ -128,7 +133,7 @@ func (tf *sendAWSLambda) Transform(ctx context.Context, msg *message.Message) ([
 	}
 
 	if len(msg.Data()) > sendLambdaPayloadSizeLimit {
-		return nil, fmt.Errorf("transform: send_aws_lambda: %v", errSendLambdaPayloadSizeLimit)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendLambdaPayloadSizeLimit)
 	}
 
 	// If this value does not exist, then all data is batched together.
@@ -138,13 +143,13 @@ func (tf *sendAWSLambda) Transform(ctx context.Context, msg *message.Message) ([
 	}
 
 	if err := tf.send(ctx, key); err != nil {
-		return nil, fmt.Errorf("transform: send_aws_lambda: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform: send_aws_lambda: %v", errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
 	}
 
 	return []*message.Message{msg}, nil

@@ -12,6 +12,7 @@ import (
 )
 
 type objectToFloatConfig struct {
+	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 }
 
@@ -34,7 +35,11 @@ func (c *objectToFloatConfig) Validate() error {
 func newObjectToFloat(_ context.Context, cfg config.Config) (*objectToFloat, error) {
 	conf := objectToFloatConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform: object_to_float: %v", err)
+		return nil, fmt.Errorf("transform object_to_float: %v", err)
+	}
+
+	if conf.ID == "" {
+		conf.ID = "object_to_float"
 	}
 
 	tf := objectToFloat{
@@ -59,7 +64,7 @@ func (tf *objectToFloat) Transform(ctx context.Context, msg *message.Message) ([
 	}
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, value.Float()); err != nil {
-		return nil, fmt.Errorf("transform: object_to_float: %v", err)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	return []*message.Message{msg}, nil

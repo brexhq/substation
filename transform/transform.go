@@ -193,7 +193,7 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "utility_secret":
 		return newUtilitySecret(ctx, cfg)
 	default:
-		return nil, fmt.Errorf("transform: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("transform %s: %w", cfg.Type, errors.ErrInvalidFactoryInput)
 	}
 }
 

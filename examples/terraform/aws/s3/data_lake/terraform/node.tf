@@ -18,7 +18,7 @@ module "lambda_node" {
   config = {
     name        = "node"
     description = "Substation node that writes data to S3"
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
 
     env = {

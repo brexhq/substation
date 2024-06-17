@@ -6,7 +6,7 @@ module "lambda_node" {
   config = {
     name        = "node"
     description = "Substation node that reads data from S3 via SNS."
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
 
     env = {

@@ -6,7 +6,7 @@ module "lambda_subscriber" {
   config = {
     name        = "subscriber"
     description = "Substation node subscribes to Kinesis"
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
 
     env = {

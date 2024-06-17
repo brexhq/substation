@@ -23,7 +23,7 @@ module "edr_transform" {
   config = {
     name        = "edr_transform"
     description = "Substation node that transforms EDR data."
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/edr_transform"
@@ -55,7 +55,7 @@ module "edr_enrichment" {
   config = {
     name        = "edr_enrichment"
     description = "Substation node that enriches EDR data."
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/edr_enrichment"

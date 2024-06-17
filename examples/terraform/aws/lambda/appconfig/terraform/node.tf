@@ -7,7 +7,7 @@ module "node" {
   config = {
     name        = "node"
     description = "Substation node that never receives a configuration."
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
 
     memory  = 128

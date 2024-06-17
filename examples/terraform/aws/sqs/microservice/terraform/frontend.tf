@@ -5,7 +5,7 @@ module "frontend" {
   config = {
     name        = "frontend"
     description = "Substation node that acts as a frontend to an asynchronous microservice"
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/frontend"

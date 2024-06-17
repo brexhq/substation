@@ -2,11 +2,11 @@
 
 ![Substation Banner](.github/media/substation_banner.png)
 
-<p align="center">Substation is a cloud-native, event-driven data pipeline toolkit built for security teams.</p>
+<p align="center">Substation is a toolkit for routing, normalizing, and enriching security event and audit logs.</p>
 
 <div align="center">
 
-[Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Docs][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Quickstart][quickstart]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement Post (2022)][announcement]
+[Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Docs][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Quickstart][quickstart]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement (2022)][announcement]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[v1.0 Release (2024)][v1_release]
 
 </div>
 
@@ -26,59 +26,13 @@ All of these data pipeline and microservice systems, and many more, can be built
 
 ![Example Substation architectures](.github/media/substation_architecture.png)
 
-## Getting Started
-
-You can run Substation on these platforms:
-
-- [Docker](https://substation.readme.io/v1.0.0/docs/try-substation-on-docker)
-- [macOS / Linux](https://substation.readme.io/v1.0.0/docs/try-substation-on-macos-linux)
-- [AWS](https://substation.readme.io/v1.0.0/docs/try-substation-on-aws)
-
-### Development
-
-[VS Code](https://code.visualstudio.com/docs/devcontainers/containers) is the recommended development environment for Substation. The project includes a [development container](.devcontainer/Dockerfile) that can be used to develop and test the system. Refer to the [development guide](CONTRIBUTING.md) for more information.
-
-### Testing
-
-The development container can be used to test the system locally and in the cloud. If you're not using VS Code, then you should run the development container from the command line:
-
-```sh
-git clone https://github.com/brexhq/substation.git && cd substation && \
-docker build -t substation-dev .devcontainer/ && \
-docker run -v $(pwd):/workspaces/substation/  -w /workspaces/substation -v /var/run/docker.sock:/var/run/docker.sock -it substation-dev
-```
-
-To try the system locally, run this from the [examples](examples) directory:
-```sh
-sh .devcontainer/post_start.sh && \
-cd examples && \
-make -s quickstart
-```
-
-To try the system in the cloud, choose an [AWS example](examples/terraform/aws) to deploy:
-```sh
-sh .devcontainer/post_start.sh && \
-cd examples && \
-aws configure && \
-make -s check && \
-make -s build && \
-make -s deploy EXAMPLE=terraform/aws/dynamodb/cdc
-```
-
-After testing is complete, the cloud deployment should be destroyed:
-```sh
-make -s destroy EXAMPLE=terraform/aws/dynamodb/cdc
-```
-
-**We do not recommend managing cloud deployments from a local machine using the examples Makefile. Production deployments should use a CI/CD pipeline with a remote state backend to manage infrastructure.**
-
 ## Transforming Event Logs
 
 Substation excels at formatting, normalizing, and enriching event logs. For example, Zeek connection logs can be transformed to comply with the Elastic Common Schema:
 
 <table>
 <tr>
-<th><code>Raw Event</code></th>
+<th><code>Original Event</code></th>
 <th><code>Transformed Event</code></th>
 </tr>
 <tr>
@@ -212,12 +166,12 @@ In this configuration, data is:
 local sub = import 'substation.libsonnet';
 
 // This filters events based on the value of field3.
-local is_false = sub.cnd.str.eq(settings={ object: { source_key: 'field3' }, value: 'false' });
+local is_false = sub.cnd.str.eq({ object: { source_key: 'field3' }, value: 'false' });
 
 {
   transforms: [
     // Pre-transformed data is written to an object in AWS S3 for long-term storage.
-    sub.tf.send.aws.s3(settings={ bucket_name: 'example-bucket-name' }),
+    sub.tf.send.aws.s3({ bucket_name: 'example-bucket-name' }),
     // The JSON array is split into individual events that go through 
     // the remaining transforms. Each event is printed to stdout.
     sub.tf.agg.from.array(),
@@ -225,7 +179,7 @@ local is_false = sub.cnd.str.eq(settings={ object: { source_key: 'field3' }, val
     // Events where field3 is false are removed from the pipeline.
     sub.pattern.tf.conditional(condition=is_false, transform=sub.tf.util.drop()),
     // The remaining events are sent to an HTTPS endpoint.
-    sub.tf.send.http.post(settings={ url: 'https://example-http-endpoint.com' }),
+    sub.tf.send.http.post({ url: 'https://example-http-endpoint.com' }),
   ],
 }
 ```
@@ -239,13 +193,13 @@ local sub = import 'substation.libsonnet';
   transforms: [
     // If field3 is false, then the event is sent to an HTTPS endpoint; otherwise,
     // the event is written to an object in AWS S3.
-    sub.tf.meta.switch(settings={ cases: [
+    sub.tf.meta.switch({ cases: [
       {
-        condition: sub.cnd.any(sub.cnd.str.eq(settings={ object: { source_key: 'field3' }, value: 'false' })),
-        transform: sub.tf.send.http.post(settings={ url: 'https://example-http-endpoint.com' }),
+        condition: sub.cnd.any(sub.cnd.str.eq({ object: { source_key: 'field3' }, value: 'false' })),
+        transform: sub.tf.send.http.post({ url: 'https://example-http-endpoint.com' }),
       },
       {
-        transform: sub.tf.send.aws.s3(settings={ bucket_name: 'example-bucket-name' }),
+        transform: sub.tf.send.aws.s3({ bucket_name: 'example-bucket-name' }),
       },
     ] }),
     // The event is always available to any remaining transforms.
@@ -274,14 +228,10 @@ local sub = import 'substation.libsonnet';
 
 {
   transforms: [
-    sub.tf.obj.cp(
-      settings={ object: { source_key: 'src_field_1', target_key: 'dest_field_1' } }
-    ),
+    sub.tf.obj.cp({ object: { source_key: 'src_field_1', target_key: 'dest_field_1' } }),
     sub.tf.obj.cp({ obj: { src: 'src_field_2', trg: 'dest_field_2' } }),
     sub.tf.send.stdout(),
-    sub.tf.send.http.post(
-      settings={ url: 'https://example-http-endpoint.com' }
-    ),
+    sub.tf.send.http.post({ url: 'https://example-http-endpoint.com' }),
   ],
 }
 ```
@@ -392,9 +342,7 @@ module "appconfig" {
 
   config = {
     name = "substation"
-    environments = [{
-        name = "example"
-    }]
+    environments = [{ name = "example" }]
   }
 }
 
@@ -477,6 +425,51 @@ module "node" {
 </tr>
 </table>
 
+## Getting Started
+
+You can run Substation on:
+
+- [Docker](https://substation.readme.io/docs/try-substation-on-docker)
+- [macOS / Linux](https://substation.readme.io/docs/try-substation-on-macos-linux)
+- [AWS](https://substation.readme.io/docs/try-substation-on-aws)
+
+### Development
+
+[VS Code](https://code.visualstudio.com/docs/devcontainers/containers) is the recommended development environment for Substation. The project includes a [development container](.devcontainer/Dockerfile) that should be used to develop and test the system. Refer to the [development guide](CONTRIBUTING.md) for more information.
+
+### Testing
+
+The development container is used to test the system locally and in the cloud. If don't use VS Code, then you should run the development container from the command line:
+
+```sh
+git clone https://github.com/brexhq/substation.git && cd substation && \
+docker build -t substation-dev .devcontainer/ && \
+docker run -v $(pwd):/workspaces/substation/  -w /workspaces/substation -v /var/run/docker.sock:/var/run/docker.sock -it substation-dev
+```
+
+To try the system locally, run this from the [examples](examples) directory:
+```sh
+sh .devcontainer/post_start.sh && \
+cd examples && \
+make -s quickstart
+```
+
+To try the system in the cloud, choose an [AWS example](examples/terraform/aws) to deploy:
+```sh
+sh .devcontainer/post_start.sh && \
+cd examples && \
+aws configure && \
+make -s check && \
+make -s build && \
+make -s deploy EXAMPLE=terraform/aws/dynamodb/cdc
+```
+
+After testing is complete, the cloud deployment should be destroyed:
+```sh
+make -s destroy EXAMPLE=terraform/aws/dynamodb/cdc
+```
+
+**We do not recommend managing cloud deployments from a local machine using the examples Makefile. Production deployments should use a CI/CD pipeline with a remote state backend, such as Terraform, to manage infrastructure.**
 
 ## Licensing
 
@@ -487,3 +480,4 @@ Substation and its associated code is released under the terms of the [MIT Licen
 [docs]:https://substation.readme.io/docs "Substation Documentation"
 [quickstart]:https://substation.readme.io/recipes/1-minute-quickstart "Substation Quickstart"
 [announcement]:https://medium.com/brexeng/announcing-substation-188d049d979b "Substation Announcement Post"
+[v1_release]:https://medium.com/brexeng/releasing-substation-v1-0-4d0314cbc45b "Substation v1.0 Release Post"

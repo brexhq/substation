@@ -22,7 +22,7 @@ module "dvc_mgmt_enrichment" {
   config = {
     name        = "dvc_mgmt_enrichment"
     description = "Substation node that enriches device management data."
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
     env = {
       "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/dvc_mgmt_enrichment"

@@ -5,7 +5,7 @@ module "lambda_enrichment" {
   config = {
     name        = "enrichment"
     description = "Substation node that enriches data from Kinesis and writes it to DynamoDB"
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
 
     env = {

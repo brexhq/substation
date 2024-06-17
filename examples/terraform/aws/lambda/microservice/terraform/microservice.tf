@@ -5,7 +5,7 @@ module "microservice" {
   config = {
     name        = "microservice"
     description = "Substation node that acts as a synchronous microservice"
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
 
     memory  = 128

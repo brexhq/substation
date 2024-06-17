@@ -8,7 +8,7 @@ module "lambda_consumer" {
   config = {
     name        = "consumer"
     description = "Substation node that is invoked by CloudWatch"
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
 
     env = {

@@ -168,7 +168,7 @@ module "transform" {
   config = {
     name        = "transform_node"
     description = "Transforms Kinesis Data Firehose records."
-    image_uri   = "${module.ecr.url}:v1.2.0"
+    image_uri   = "${module.ecr.url}:v1.3.0"
     image_arm   = true
 
     memory  = 128

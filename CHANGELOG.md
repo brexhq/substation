@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.3.0](https://github.com/brexhq/substation/compare/v1.2.2...v1.3.0) (2024-06-17)
+
+
+### Features
+
+* **transform:** Add Customizable Errors to MetaErr ([#174](https://github.com/brexhq/substation/issues/174)) ([3759ccc](https://github.com/brexhq/substation/commit/3759ccc5224abe7a9ae6b736ff9c64a62479eb00))
+* **transform:** Add ID Settings Field ([#181](https://github.com/brexhq/substation/issues/181)) ([ab1a4ff](https://github.com/brexhq/substation/commit/ab1a4ff7b1f7b9a7e216e3794bbbf325206ef927))
+* **transform:** Add Meta KV Store Lock Transform ([#177](https://github.com/brexhq/substation/issues/177)) ([34d2ffb](https://github.com/brexhq/substation/commit/34d2ffb97afbc52fdeed1a1ffcd190ca374553c2))
+* **transform:** Add Metric Freshness Transform ([#178](https://github.com/brexhq/substation/issues/178)) ([04ed699](https://github.com/brexhq/substation/commit/04ed699000ed52605b99176aebf9b15b70203c19))
+* **transform:** Add UtilityControl Transform for Generating Ctrl Messages ([#175](https://github.com/brexhq/substation/issues/175)) ([93b64cd](https://github.com/brexhq/substation/commit/93b64cd888df593937b921e2ae998ef455b1fa0c))
+
+
+### Bug Fixes
+
+* **metrics:** AWS CloudWatch Embedded Metrics Dimensions ([#179](https://github.com/brexhq/substation/issues/179)) ([d6b6c42](https://github.com/brexhq/substation/commit/d6b6c429ccbe341a041a609dc778785b004eb1e7))
+
 ## [1.2.2](https://github.com/brexhq/substation/compare/v1.2.1...v1.2.2) (2024-05-06)
 
 

@@ -32,7 +32,7 @@ Substation excels at formatting, normalizing, and enriching event logs. For exam
 
 <table>
 <tr>
-<th><code>Raw Event</code></th>
+<th><code>Original Event</code></th>
 <th><code>Transformed Event</code></th>
 </tr>
 <tr>
@@ -231,9 +231,7 @@ local sub = import 'substation.libsonnet';
     sub.tf.obj.cp({ object: { source_key: 'src_field_1', target_key: 'dest_field_1' } }),
     sub.tf.obj.cp({ obj: { src: 'src_field_2', trg: 'dest_field_2' } }),
     sub.tf.send.stdout(),
-    sub.tf.send.http.post(
-      { url: 'https://example-http-endpoint.com' }
-    ),
+    sub.tf.send.http.post({ url: 'https://example-http-endpoint.com' }),
   ],
 }
 ```

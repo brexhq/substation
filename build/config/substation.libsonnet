@@ -24,6 +24,17 @@
     },
     num: $.condition.number,
     number: {
+      default: {
+        object: $.config.object,
+        value: null,
+      },
+      gt(settings={}): $.condition.number.greater_than(settings=settings),
+      greater_than(settings={}): {
+        local default = $.condition.number.default,
+
+        type: 'number_greater_than',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
       bitwise: {
         and(settings={}): {
           local default = {

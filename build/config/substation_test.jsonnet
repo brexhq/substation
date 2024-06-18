@@ -7,6 +7,11 @@ local transform = sub.transform.object.copy(settings={ obj: { src: src, trg: trg
 local inspector = sub.condition.format.json();
 
 {
+  condition: {
+    number: {
+      greater_than: sub.condition.number.greater_than({obj: {src: src}, value: 1}),
+    }
+  },
   transform: {
     send: {
       http: {

@@ -16,6 +16,7 @@ var numberGreaterThanTests = []struct {
 	test     []byte
 	expected bool
 }{
+	// Integers
 	{
 		"pass",
 		config.Config{
@@ -57,6 +58,50 @@ var numberGreaterThanTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"value": 10,
+			},
+		},
+		[]byte(`1`),
+		false,
+	},
+	// Floats
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"value": 1,
+			},
+		},
+		[]byte(`1.5`),
+		true,
+	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"value": 1.1,
+			},
+		},
+		[]byte(`1.5`),
+		true,
+	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+				},
+				"value": 1.5,
+			},
+		},
+		[]byte(`{"foo":1.1}`),
+		false,
+	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"value": 1.5,
 			},
 		},
 		[]byte(`1`),

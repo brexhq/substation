@@ -44,8 +44,8 @@ func (insp *numberGreaterThan) Inspect(ctx context.Context, msg *message.Message
 	return insp.match(v.Float()), nil
 }
 
-func (c *numberGreaterThan) match(length float64) bool {
-	return length > c.conf.Value
+func (c *numberGreaterThan) match(f float64) bool {
+	return f > c.conf.Value
 }
 
 func (c *numberGreaterThan) String() string {

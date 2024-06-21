@@ -28,12 +28,19 @@
       object: $.config.object,
       value: null,
       },
-    lt(settings={}): $.condition.number.less_than(settings=settings),
-    less_than(settings={}): {
-          local default = $.condition.number.default,
+      lt(settings={}): $.condition.number.less_than(settings=settings),
+      less_than(settings={}): {
+        local default = $.condition.number.default,
 
-          type: 'number_less_than',
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        type: 'number_less_than',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      gt(settings={}): $.condition.number.greater_than(settings=settings),
+      greater_than(settings={}): {
+        local default = $.condition.number.default,
+
+        type: 'number_greater_than',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
       bitwise: {
         and(settings={}): {

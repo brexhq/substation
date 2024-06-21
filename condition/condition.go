@@ -60,6 +60,10 @@ func newInspector(ctx context.Context, cfg config.Config) (inspector, error) { /
 	// Number inspectors.
 	case "number_equal_to":
 		return newNumberEqualTo(ctx, cfg)
+	case "number_less_than":
+		return newNumberLessThan(ctx, cfg)
+	case "number_greater_than":
+		return newNumberGreaterThan(ctx, cfg)
 	case "number_bitwise_and":
 		return newNumberBitwiseAND(ctx, cfg)
 	case "number_bitwise_or":

@@ -27,14 +27,28 @@
       default: {
         object: $.config.object,
         value: null,
-        },
+      },
       eq(settings={}): $.condition.number.equal_to(settings=settings),
       equal_to(settings={}): {
-            local default = $.condition.number.default,
+        local default = $.condition.number.default,
 
-            type: 'number_equal_to',
-            settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
-        },
+        type: 'number_equal_to',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      lt(settings={}): $.condition.number.less_than(settings=settings),
+      less_than(settings={}): {
+        local default = $.condition.number.default,
+
+        type: 'number_less_than',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
+      gt(settings={}): $.condition.number.greater_than(settings=settings),
+      greater_than(settings={}): {
+        local default = $.condition.number.default,
+
+        type: 'number_greater_than',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
       bitwise: {
         and(settings={}): {
           local default = {

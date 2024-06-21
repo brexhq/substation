@@ -10,7 +10,9 @@ local inspector = sub.condition.format.json();
   condition: {
     number: {
       equal_to: sub.condition.number.equal_to({obj: {src: src}, value: 1}),
-    }
+      less_than: sub.condition.number.less_than({obj: {src: src}, value: 1}),
+      greater_than: sub.condition.number.greater_than({obj: {src: src}, value: 1}),
+    },
   },
   transform: {
     send: {

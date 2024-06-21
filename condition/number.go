@@ -49,3 +49,14 @@ func numberLengthMeasurement(b []byte, measurement string) int {
 		return len(b)
 	}
 }
+
+type numberConfig struct {
+	// Value used for comparison during inspection.
+	Value float64 `json:"value"`
+
+	Object iconfig.Object `json:"object"`
+}
+
+func (c *numberConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
+}

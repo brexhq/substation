@@ -32,7 +32,7 @@
     less_than(settings={}): {
           local default = $.condition.number.default,
 
-          type: 'number_equal_to',
+          type: 'number_less_than',
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
       bitwise: {

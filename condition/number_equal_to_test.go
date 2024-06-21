@@ -27,17 +27,17 @@ var numberEqualToTests = []struct {
 				"value": 14,
 			},
 		},
-		[]byte(`{"foo":10}`),
+		[]byte(`{"foo":14}`),
 		true,
 	},
 	{
 		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
-				"value": 1,
+				"value": 10,
 			},
 		},
-		[]byte(`10`),
+		[]byte(`1`),
 		false,
 	},
 	{
@@ -47,10 +47,10 @@ var numberEqualToTests = []struct {
 				"object": map[string]interface{}{
 					"source_key": "foo",
 				},
-				"value": 10,
+				"value": 0,
 			},
 		},
-		[]byte(`{"foo":1}`),
+		[]byte(`{"foo":0}`),
 		true,
 	},
 	{
@@ -91,7 +91,7 @@ var numberEqualToTests = []struct {
 				"object": map[string]interface{}{
 					"source_key": "foo",
 				},
-				"value": 1.5,
+				"value": 1.1,
 			},
 		},
 		[]byte(`{"foo":1.1}`),
@@ -101,10 +101,10 @@ var numberEqualToTests = []struct {
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"value": 1.5,
+				"value": 1.4,
 			},
 		},
-		[]byte(`1`),
+		[]byte(`1.4`),
 		true,
 	},
 }

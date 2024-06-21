@@ -42,7 +42,7 @@ func (insp *numberEqualTo) Inspect(ctx context.Context, msg *message.Message) (o
 }
 
 func (c *numberEqualTo) match(f float64) bool {
-	return f < c.conf.Value
+	return f == c.conf.Value
 }
 
 func (c *numberEqualTo) String() string {

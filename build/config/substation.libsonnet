@@ -24,6 +24,17 @@
     },
     num: $.condition.number,
     number: {
+      default: {
+        object: $.config.object,
+        value: null,
+        },
+      eq(settings={}): $.condition.number.equal_to(settings=settings),
+      equal_to(settings={}): {
+            local default = $.condition.number.default,
+
+            type: 'number_equal_to',
+            settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
       bitwise: {
         and(settings={}): {
           local default = {

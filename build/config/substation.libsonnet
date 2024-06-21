@@ -25,8 +25,15 @@
     num: $.condition.number,
     number: {
       default: {
-      object: $.config.object,
-      value: null,
+        object: $.config.object,
+        value: null,
+      },
+      eq(settings={}): $.condition.number.equal_to(settings=settings),
+      equal_to(settings={}): {
+        local default = $.condition.number.default,
+
+        type: 'number_equal_to',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
       lt(settings={}): $.condition.number.less_than(settings=settings),
       less_than(settings={}): {

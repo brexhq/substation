@@ -24,7 +24,7 @@ type inspector interface {
 }
 
 // newInspector returns a configured Inspector from an Inspector configuration.
-func newInspector(ctx context.Context, cfg config.Config) (inspector, error) { //nolint: cyclop // ignore cyclomatic complexity
+func newInspector(ctx context.Context, cfg config.Config) (inspector, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
 	// Format inspectors.
 	case "format_mime":

@@ -9,7 +9,7 @@ require (
 	github.com/awslabs/kinesis-aggregation/go v0.0.0-20230808105340-e631fe742486
 	github.com/golang/protobuf v1.5.3
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/go-retryablehttp v0.7.5
+	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/iancoleman/strcase v0.3.0
 	github.com/itchyny/gojq v0.12.14
 	github.com/klauspost/compress v1.17.7

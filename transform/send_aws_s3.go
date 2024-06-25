@@ -21,6 +21,8 @@ import (
 type sendAWSS3Config struct {
 	// BucketName is the AWS S3 bucket that data is written to.
 	BucketName string `json:"bucket_name"`
+	// StorageClass is the storage class of the object.
+	StorageClass string `json:"storage_class"`
 	// FilePath determines how the name of the uploaded object is constructed.
 	// See filePath.New for more information.
 	FilePath file.Path `json:"file_path"`
@@ -60,6 +62,10 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 
 	if err := conf.Validate(); err != nil {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	if conf.StorageClass == "" {
+		conf.StorageClass = "STANDARD"
 	}
 
 	tf := sendAWSS3{
@@ -192,7 +198,7 @@ func (tf *sendAWSS3) send(ctx context.Context, key string) error {
 	}
 	defer f.Close()
 
-	if _, err := tf.client.Upload(ctx, tf.conf.BucketName, filePath, f); err != nil {
+	if _, err := tf.client.Upload(ctx, tf.conf.BucketName, filePath, tf.conf.StorageClass, f); err != nil {
 		return err
 	}
 

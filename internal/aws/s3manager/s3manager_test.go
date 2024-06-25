@@ -106,7 +106,7 @@ func TestUpload(t *testing.T) {
 		}
 
 		src := strings.NewReader("foo")
-		resp, err := a.Upload(ctx, test.input.bucket, test.input.key, src)
+		resp, err := a.Upload(ctx, test.input.bucket, test.input.key, "", src)
 		if err != nil {
 			t.Fatalf("%d, unexpected error", err)
 		}

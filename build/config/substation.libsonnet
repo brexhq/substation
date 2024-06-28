@@ -1140,7 +1140,7 @@
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
       drop(settings={}): {
-        local type = 'utility_delay',
+        local type = 'utility_drop',
         local default = {
           id: $.helpers.id(type, settings),
         },

@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.4.0](https://github.com/brexhq/substation/compare/v1.3.0...v1.4.0) (2024-06-27)
+
+
+### Features
+
+* **condition:** Add Number Equal To Inspector ([#187](https://github.com/brexhq/substation/issues/187)) ([aa1d54e](https://github.com/brexhq/substation/commit/aa1d54e11209708aa3374861c41ec68c674441b9))
+* **condition:** Add Number Greater Than Inspector ([#183](https://github.com/brexhq/substation/issues/183)) ([ff966ba](https://github.com/brexhq/substation/commit/ff966baf3543f21f87d71073338c21ba98f03088))
+* **condition:** Add Number Less Than Inspector ([#186](https://github.com/brexhq/substation/issues/186)) ([b949014](https://github.com/brexhq/substation/commit/b9490145c9f8e913f10c044d91c244e82bda3127))
+
+
+### Bug Fixes
+
+* update goretryablehttp and other packages ([#193](https://github.com/brexhq/substation/issues/193)) ([57874df](https://github.com/brexhq/substation/commit/57874df889f0b34012c4bcf6e517ceba7def6365))
+
 ## [1.3.0](https://github.com/brexhq/substation/compare/v1.2.2...v1.3.0) (2024-06-17)
 
 

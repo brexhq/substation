@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"sync"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/message"
 
@@ -47,6 +49,10 @@ func (c *sendAWSS3Config) Validate() error {
 		return fmt.Errorf("bucket_name: %v", errors.ErrMissingRequiredOption)
 	}
 
+	if !slices.Contains(s3.StorageClass_Values(), c.StorageClass) {
+		return fmt.Errorf("storage_class: %v", errors.ErrInvalidOption)
+	}
+
 	return nil
 }
 
@@ -60,12 +66,12 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 		conf.ID = "send_aws_s3"
 	}
 
-	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
-	}
-
 	if conf.StorageClass == "" {
 		conf.StorageClass = "STANDARD"
+	}
+
+	if err := conf.Validate(); err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := sendAWSS3{

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/brexhq/substation/compare/v1.4.0...v1.5.0) (2024-07-01)
+
+
+### Features
+
+* **transform:** Add Storage Class Support to AWS S3 ([#189](https://github.com/brexhq/substation/issues/189)) ([63b96be](https://github.com/brexhq/substation/commit/63b96be941f374bed36d37f3ea01dc0eee7449ba))
+
 ## [1.4.0](https://github.com/brexhq/substation/compare/v1.3.0...v1.4.0) (2024-06-27)
 
 

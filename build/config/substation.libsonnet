@@ -417,9 +417,9 @@
         },
         get(settings={}): {
           local type = 'enrich_http_get',
-          local default = $.transform.enrich.http.default { id: $.helpers.id(type, settings)},
+          local default = $.transform.enrich.http.default { id: $.helpers.id(type, settings) },
 
-          type:  type,
+          type: type,
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         post(settings={}): {
@@ -439,9 +439,9 @@
         },
         get(settings={}): {
           local type = 'enrich_kv_store_get',
-          local default = $.transform.enrich.kv_store.default {id: $.helpers.id(type, settings)},
+          local default = $.transform.enrich.kv_store.default { id: $.helpers.id(type, settings) },
 
-          type:   type,
+          type: type,
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         set(settings={}): {
@@ -564,10 +564,10 @@
     meta: {
       err(settings={}): {
         local type = 'meta_err',
-        local default = {         
+        local default = {
           id: $.helpers.id(type, settings),
-          transform: null, 
-          error_messages: null, 
+          transform: null,
+          error_messages: null,
         },
 
         type: type,
@@ -627,9 +627,9 @@
       },
       switch(settings={}): {
         local type = 'meta_switch',
-        local default = { 
+        local default = {
           id: $.helpers.id(type, settings),
-          cases: null 
+          cases: null,
         },
 
         type: type,
@@ -696,9 +696,9 @@
       },
       jq(settings={}): {
         local type = 'object_jq',
-        local default = { 
+        local default = {
           id: $.helpers.id(type, settings),
-          filter: null 
+          filter: null,
         },
 
         type: type,
@@ -831,6 +831,7 @@
             aws: $.config.aws,
             retry: $.config.retry,
             bucket_name: null,
+            storage_class: 'STANDARD',
             file_path: $.file_path,
           },
 
@@ -1012,7 +1013,7 @@
           local type = 'string_to_upper',
           local default = $.transform.string.to.default { id: $.helpers.id(type, settings) },
 
-          type:  type,
+          type: type,
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
         snake(settings={}): {
@@ -1193,9 +1194,9 @@
       },
       secret(settings={}): {
         local type = 'utility_secret',
-        local default = { 
+        local default = {
           id: $.helpers.id(type, settings),
-          secret: null 
+          secret: null,
         },
 
         type: type,
@@ -1378,6 +1379,6 @@
       trg: null,
       batch_key: if std.objectHas(s, 'btch') then s.batch else if std.objectHas(s, 'batch_key') then s.batch_key else null,
     },
-    id(type, settings): std.join("-", [std.md5(type)[:8], std.md5(std.toString(settings))[:8]])
+    id(type, settings): std.join('-', [std.md5(type)[:8], std.md5(std.toString(settings))[:8]]),
   },
 }

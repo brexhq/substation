@@ -85,7 +85,7 @@ func (a *UploaderAPI) IsEnabled() bool {
 }
 
 // Upload is a convenience wrapper for uploading an object to S3.
-func (a *UploaderAPI) Upload(ctx aws.Context, bucket, key string, src io.Reader) (*s3manager.UploadOutput, error) {
+func (a *UploaderAPI) Upload(ctx aws.Context, bucket, key, storageClass string, src io.Reader) (*s3manager.UploadOutput, error) {
 	// temporary file is used so that the src can have its content identified and be uploaded to S3
 	dst, err := os.CreateTemp("", "substation")
 	if err != nil {
@@ -106,11 +106,17 @@ func (a *UploaderAPI) Upload(ctx aws.Context, bucket, key string, src io.Reader)
 	if _, err := dst.Seek(0, 0); err != nil {
 		return nil, fmt.Errorf("s3manager upload bucket %s key %s: %v", bucket, key, err)
 	}
+
+	if storageClass == "" {
+		storageClass = "STANDARD"
+	}
+
 	input := &s3manager.UploadInput{
-		Bucket:      aws.String(bucket),
-		Key:         aws.String(key),
-		Body:        dst,
-		ContentType: aws.String(mediaType),
+		Bucket:       aws.String(bucket),
+		Key:          aws.String(key),
+		Body:         dst,
+		ContentType:  aws.String(mediaType),
+		StorageClass: aws.String(storageClass),
 	}
 
 	ctx = context.WithoutCancel(ctx)

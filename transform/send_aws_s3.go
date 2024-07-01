@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"sync"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/message"
 
@@ -21,6 +23,8 @@ import (
 type sendAWSS3Config struct {
 	// BucketName is the AWS S3 bucket that data is written to.
 	BucketName string `json:"bucket_name"`
+	// StorageClass is the storage class of the object.
+	StorageClass string `json:"storage_class"`
 	// FilePath determines how the name of the uploaded object is constructed.
 	// See filePath.New for more information.
 	FilePath file.Path `json:"file_path"`
@@ -45,6 +49,10 @@ func (c *sendAWSS3Config) Validate() error {
 		return fmt.Errorf("bucket_name: %v", errors.ErrMissingRequiredOption)
 	}
 
+	if !slices.Contains(s3.StorageClass_Values(), c.StorageClass) {
+		return fmt.Errorf("storage_class: %v", errors.ErrInvalidOption)
+	}
+
 	return nil
 }
 
@@ -56,6 +64,10 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 
 	if conf.ID == "" {
 		conf.ID = "send_aws_s3"
+	}
+
+	if conf.StorageClass == "" {
+		conf.StorageClass = "STANDARD"
 	}
 
 	if err := conf.Validate(); err != nil {
@@ -192,7 +204,7 @@ func (tf *sendAWSS3) send(ctx context.Context, key string) error {
 	}
 	defer f.Close()
 
-	if _, err := tf.client.Upload(ctx, tf.conf.BucketName, filePath, f); err != nil {
+	if _, err := tf.client.Upload(ctx, tf.conf.BucketName, filePath, tf.conf.StorageClass, f); err != nil {
 		return err
 	}
 

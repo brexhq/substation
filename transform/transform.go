@@ -88,6 +88,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "meta_switch":
 		return newMetaSwitch(ctx, cfg)
 	// Number transforms.
+	case "number_maximum":
+		return newNumberMaximum(ctx, cfg)
 	case "number_math_addition":
 		return newNumberMathAddition(ctx, cfg)
 	case "number_math_division":

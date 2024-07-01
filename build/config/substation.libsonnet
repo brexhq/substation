@@ -523,6 +523,18 @@
     },
     num: $.transform.number,
     number: {
+      max(settings={}): $.transform.number.maximum(settings=settings),
+      maximum(settings={}): {
+        local type = 'number_maximum',
+        local default = {
+          id: $.helpers.id(type, settings),
+          object: $.config.object,
+          value: null,
+        },
+
+        type: type,
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
       math: {
         default: {
           object: $.config.object,

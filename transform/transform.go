@@ -90,6 +90,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	// Number transforms.
 	case "number_maximum":
 		return newNumberMaximum(ctx, cfg)
+	case "number_minimum":
+		return newNumberMinimum(ctx, cfg)
 	case "number_math_addition":
 		return newNumberMathAddition(ctx, cfg)
 	case "number_math_division":

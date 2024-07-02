@@ -8,6 +8,31 @@ import (
 	"github.com/brexhq/substation/internal/errors"
 )
 
+// Use this config for any Number transform that only requires a single value.
+type numberValConfig struct {
+	Value float64 `json:"value"`
+
+	ID     string         `json:"id"`
+	Object iconfig.Object `json:"object"`
+}
+
+func (c *numberValConfig) Decode(in interface{}) error {
+	return iconfig.Decode(in, c)
+}
+
+// 0.0 is a valid value and should not be checked.
+func (c *numberValConfig) Validate() error {
+	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
+		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+	}
+
+	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
+		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+	}
+
+	return nil
+}
+
 type numberMathConfig struct {
 	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`

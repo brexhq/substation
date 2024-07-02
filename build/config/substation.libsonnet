@@ -535,6 +535,18 @@
         type: type,
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
+      min(settings={}): $.transform.number.minimum(settings=settings),
+      minimum(settings={}): {
+        local type = 'number_minimum',
+        local default = {
+          id: $.helpers.id(type, settings),
+          object: $.config.object,
+          value: null,
+        },
+
+        type: type,
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
       math: {
         default: {
           object: $.config.object,
@@ -1362,6 +1374,13 @@
           ),
           $.tf.agg.to.string({ separator: '\n' }),
           $.tf.str.append({ suffix: '\n' }),
+        ],
+      },
+      num: $.pattern.transform.number,
+      number: {
+        clamp(source_key, target_key, min, max): [
+          $.tf.number.maximum({ object: { source_key: source_key, target_key: target_key }, value: min }),
+          $.tf.number.minimum({ object: { source_key: target_key, target_key: target_key }, value: max }),
         ],
       },
     },

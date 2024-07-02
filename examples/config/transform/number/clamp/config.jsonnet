@@ -5,8 +5,7 @@ local sub = import '../../../../../build/config/substation.libsonnet';
 {
   concurrency: 1,
   // Use `null` for object keys to operate on the entire message.
-  transforms: sub.pattern.tf.num.clamp(null, null, 0, 100) +
-              [
-                sub.tf.send.stdout(),
-              ],
+  transforms: sub.pattern.tf.num.clamp(null, null, 0, 100) + [
+    sub.tf.send.stdout(),
+  ],
 }

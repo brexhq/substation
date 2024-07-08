@@ -6,10 +6,6 @@ This directory contains applications that run Substation. Applications are organ
 
 Applications that run on AWS Lambda.
 
-## client/
-
-Applications that run on a client machine.
-
 ## development/
 
 Applications that are used for development.

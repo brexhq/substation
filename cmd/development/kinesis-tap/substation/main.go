@@ -1,11 +1,10 @@
-// Used as a development tool to test Substation configurations against live data
-// by "tapping" an AWS Kinesis stream.
 package main
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -63,9 +62,9 @@ func getConfig(ctx context.Context, cfg string) (io.Reader, error) {
 func main() {
 	var opts options
 
-	flag.StringVar(&opts.Config, "config", "", "The Substation configuration file used to transform records")
-	flag.StringVar(&opts.StreamName, "stream-name", "", "The AWS Kinesis Data Stream to read records from")
-	flag.StringVar(&opts.StreamOffset, "stream-offset", "earliest", "Determines the read offset of the stream (earliest, latest)")
+	flag.StringVar(&opts.Config, "config", "./config.json", "The Substation configuration file used to transform records")
+	flag.StringVar(&opts.StreamName, "stream-name", "", "The AWS Kinesis Data Stream to fetch records from")
+	flag.StringVar(&opts.StreamOffset, "stream-offset", "earliest", "Determines the offset of the stream (earliest, latest)")
 	flag.Parse()
 
 	if err := run(context.Background(), opts); err != nil {
@@ -73,35 +72,16 @@ func main() {
 	}
 }
 
+//nolint:gocognit // Ignore cognitive complexity.
 func run(ctx context.Context, opts options) error {
-	// If no config file is provided, then the app prints Kinesis
-	// record data to stdout every 100 records or 5 seconds, whichever
-	// happens first.
 	cfg := substation.Config{}
-	if opts.Config != "" {
-		c, err := getConfig(ctx, opts.Config)
-		if err != nil {
-			return err
-		}
+	c, err := getConfig(ctx, opts.Config)
+	if err != nil {
+		return err
+	}
 
-		if err := json.NewDecoder(c).Decode(&cfg); err != nil {
-			return err
-		}
-	} else {
-		c := []byte(`{"transforms":[
-			{
-				"type": "send_stdout",
-				"settings": {
-					"batch": {
-						"count": 100,
-						"duration": "5s"
-					}
-				}
-			}	
-		]}`)
-		if err := json.Unmarshal(c, &cfg); err != nil {
-			panic(err)
-		}
+	if err := json.NewDecoder(c).Decode(&cfg); err != nil {
+		return err
 	}
 
 	sub, err := substation.New(ctx, cfg)
@@ -112,13 +92,9 @@ func run(ctx context.Context, opts options) error {
 	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
-	// This group is responsible for transforming records using the Substation
-	// configuration. The group finishes when the channel is closed and all
-	// messages have been processed, including flushing the pipeline with a ctrl
-	// message.
+	// Consumer group that transforms records using Substation
+	// until the channel is closed by the producer group.
 	group.Go(func() error {
-		defer log.Info("Closing Substation transforms.")
-
 		tfGroup, tfCtx := errgroup.WithContext(ctx)
 		tfGroup.SetLimit(runtime.NumCPU())
 
@@ -143,6 +119,8 @@ func run(ctx context.Context, opts options) error {
 			return err
 		}
 
+		log.Debug("Closed Substation pipeline.")
+
 		// ctrl messages flush the pipeline. This must be done
 		// after all messages have been processed.
 		ctrl := message.New().AsControl()
@@ -150,42 +128,28 @@ func run(ctx context.Context, opts options) error {
 			return err
 		}
 
+		log.Debug("Flushed Substation pipeline.")
+
 		return nil
 	})
 
-	// This group is responsible for retrieving records from the Kinesis stream.
-	//
-	// When the user sends a SIGINT signal (CTRL+C in the terminal) to the app,
-	// the workers in this group are interrupted by cancelling the context. This
-	// allows the app to gracefully shutdown by continuing to process in-progress
-	// messages until the channel is empty (see the transform group above).
+	// Producer group that fetches records from each shard in the
+	// Kinesis stream until the context is cancelled by an interrupt
+	// signal.
 	group.Go(func() error {
-		defer ch.Close() // Producing goroutines must close the channel when they are done.
+		defer ch.Close() // Producer goroutines must close the channel when they are done.
 
-		// The client uses settings from environment variables.
-		//
-		// This can be made configurable in the future.
+		// The AWS client is configured using environment variables
+		// or the default credentials file.
 		client := kinesis.API{}
 		client.Setup(aws.Config{})
-
-		ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT)
-		defer cancel()
-
-		recvGroup, recvCtx := errgroup.WithContext(ctx)
-		defer log.Info("Closing connections to the Kinesis stream.")
 
 		res, err := client.ListShards(ctx, opts.StreamName)
 		if err != nil {
 			return err
 		}
 
-		log.WithField("stream", opts.StreamName).WithField("count", len(res.Shards)).Info("Retrieved active shards from Kinesis stream.")
-
-		// This iterates over a snapshot of active shards in the stream and will not
-		// be updated if shard changes (opened, closed) occur. New shards can be identified
-		// in the response from GetRecords.
-		//
-		// Reminder that this is a development tool and is not meant for production use.
+		log.WithField("stream", opts.StreamName).WithField("count", len(res.Shards)).Debug("Retrieved active shards from Kinesis stream.")
 
 		var iType string
 		switch opts.StreamOffset {
@@ -197,6 +161,22 @@ func run(ctx context.Context, opts options) error {
 			return fmt.Errorf("invalid offset: %s", opts.StreamOffset)
 		}
 
+		// Each shard is read concurrently using a worker
+		// pool managed by an errgroup that can be cancelled
+		// by an interrupt signal.
+		notifyCtx, cancel := signal.NotifyContext(ctx, syscall.SIGINT)
+		defer cancel()
+
+		recvGroup, recvCtx := errgroup.WithContext(notifyCtx)
+		defer log.Debug("Closed connections to the Kinesis stream.")
+
+		// This iterates over a snapshot of active shards in the
+		// stream and will not be updated if shards are split or
+		// merged. New shards can be identified in the response
+		// from GetRecords, but this isn't implemented.
+		//
+		// Each shard is paginated until the end of the shard is
+		// reached or the context is cancelled.
 		for _, shard := range res.Shards {
 			iterator, err := client.GetShardIterator(ctx, opts.StreamName, *shard.ShardId, iType)
 			if err != nil {
@@ -213,56 +193,58 @@ func run(ctx context.Context, opts options) error {
 					default:
 					}
 
+					// GetRecords has a limit of 5 transactions per second
+					// per shard, so this loop is designed to not overload
+					// the API in case other consumers are reading from the
+					// same shard.
 					res, err := client.GetRecords(recvCtx, shardIterator)
 					if err != nil {
 						return err
 					}
 
-					// This paginates through the shard until it's closed.
 					if res.NextShardIterator == nil {
 						log.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).Debug("Reached end of Kinesis shard.")
 
 						break
-					} else {
-						shardIterator = *res.NextShardIterator
 					}
-
-					log.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).WithField("count", len(res.Records)).Debug("Retrieved records from Kinesis shard.")
+					shardIterator = *res.NextShardIterator
 
 					if len(res.Records) == 0 {
-						// GetRecords has a limit of 5 transactions per second
-						// per shard. This sleep is configured to not overload
-						// the API, in case other consumers are reading from the
-						// same shard.
-						//
-						// This can be made configurable in the future.
 						time.Sleep(500 * time.Millisecond)
 
 						continue
 					}
 
-					deaggregated, err := deaggregator.DeaggregateRecords(res.Records)
+					deagg, err := deaggregator.DeaggregateRecords(res.Records)
 					if err != nil {
 						return err
 					}
 
-					log.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).WithField("count", len(deaggregated)).Debug("Parsed deaggregated records from Kinesis shard.")
+					log.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).WithField("count", len(deagg)).Debug("Retrieved records from Kinesis shard.")
 
-					for _, record := range deaggregated {
+					for _, record := range deagg {
 						msg := message.New().SetData(record.Data)
 						ch.Send(msg)
 					}
+
+					time.Sleep(500 * time.Millisecond)
 				}
 
 				return nil
 			})
 		}
 
-		// AWS errors are expected when the context is cancelled
-		// by the user. All other errors are unexpected and returned
-		// to the caller.
+		// Cancellation errors are expected when the errgroup
+		// is interrupted. All other errors are returned to
+		// the caller.
 		if err := recvGroup.Wait(); err != nil {
-			if _, ok := err.(awserr.Error); ok {
+			if awsErr, ok := err.(awserr.Error); ok {
+				if awsErr.Code() == "RequestCanceled" {
+					return nil
+				}
+			}
+
+			if errors.Is(err, context.Canceled) {
 				return nil
 			}
 
@@ -272,7 +254,8 @@ func run(ctx context.Context, opts options) error {
 		return nil
 	})
 
-	// Wait for all goroutines to complete.
+	// Wait for the producer and consumer groups to finish,
+	// or an error from either group.
 	if err := group.Wait(); err != nil {
 		return err
 	}

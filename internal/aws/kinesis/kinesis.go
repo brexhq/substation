@@ -170,6 +170,29 @@ func (a *API) IsEnabled() bool {
 	return a.Client != nil
 }
 
+// ListShards wraps the ListShardsWithContext API.
+func (a *API) ListShards(ctx aws.Context, stream string) (*kinesis.ListShardsOutput, error) {
+	return a.Client.ListShardsWithContext(ctx, &kinesis.ListShardsInput{
+		StreamName: aws.String(stream),
+	})
+}
+
+// GetShardIterator wraps the GetShardIteratorWithContext API.
+func (a *API) GetShardIterator(ctx aws.Context, stream, shard, iteratorType string) (*kinesis.GetShardIteratorOutput, error) {
+	return a.Client.GetShardIteratorWithContext(ctx, &kinesis.GetShardIteratorInput{
+		ShardId:           aws.String(shard),
+		ShardIteratorType: aws.String(iteratorType),
+		StreamName:        aws.String(stream),
+	})
+}
+
+// GetRecords wraps the GetRecordsWithContext API.
+func (a *API) GetRecords(ctx aws.Context, iterator string) (*kinesis.GetRecordsOutput, error) {
+	return a.Client.GetRecordsWithContext(ctx, &kinesis.GetRecordsInput{
+		ShardIterator: aws.String(iterator),
+	})
+}
+
 // PutRecords is a convenience wrapper for putting multiple records into a Kinesis stream.
 func (a *API) PutRecords(ctx aws.Context, stream, partitionKey string, data [][]byte) (*kinesis.PutRecordsOutput, error) {
 	var records []*kinesis.PutRecordsRequestEntry

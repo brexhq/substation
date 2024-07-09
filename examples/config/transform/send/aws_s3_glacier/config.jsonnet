@@ -9,7 +9,7 @@ local sub = import '../../../../../build/config/substation.libsonnet';
   transforms: [
     sub.tf.send.aws.s3({
       // Glacier Instant Retrieval charges a minimum of 128KB per object, otherwise
-      // the other values are set to impossibly high values to ensure all events are 
+      // the other values are set to impossibly high values to ensure all events are
       // written to the same file.
       batch: { size: 128 * 1000, count: 1000 * 1000, duration: '60m' },
       bucket_name: 'substation',

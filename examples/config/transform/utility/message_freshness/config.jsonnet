@@ -5,7 +5,7 @@
 // time and determining if the difference is less than a threshold:
 // - Success: current time - timestamp < threshold
 // - Failure: current time - timestamp >= threshold
-// 
+//
 // The transform emits two metrics that describe success and failure, annotated
 // in the `FreshnessType` attribute.
 local sub = import '../../../../../build/config/substation.libsonnet';
@@ -15,10 +15,10 @@ local dest = { type: 'aws_cloudwatch_embedded_metrics' };
 
 {
   transforms: [
-    sub.transform.utility.metric.freshness({ 
+    sub.transform.utility.metric.freshness({
       threshold: '5s',  // Amount of time spent in the system before considered stale.
       object: { source_key: 'timestamp' },  // Used as the reference to determine freshness.
-      metric: { name: 'MessageFreshness', attributes: attr, destination: dest } 
+      metric: { name: 'MessageFreshness', attributes: attr, destination: dest },
     }),
   ],
 }

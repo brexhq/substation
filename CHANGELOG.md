@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.0](https://github.com/brexhq/substation/compare/v1.4.0...v1.5.0) (2024-07-09)
+
+
+### Features
+
+* **transform:** Add Number Maximum Transform ([#195](https://github.com/brexhq/substation/issues/195)) ([8b391de](https://github.com/brexhq/substation/commit/8b391de966bf9672b1c7f1d1728761b475067927))
+* **transform:** Add Number Minimum Transform ([#196](https://github.com/brexhq/substation/issues/196)) ([ea5a592](https://github.com/brexhq/substation/commit/ea5a592d0ca7f02b442d7915ed08eb500dc26c4f))
+* **transform:** Add Storage Class Support to AWS S3 ([#189](https://github.com/brexhq/substation/issues/189)) ([63b96be](https://github.com/brexhq/substation/commit/63b96be941f374bed36d37f3ea01dc0eee7449ba))
+
 ## [1.4.0](https://github.com/brexhq/substation/compare/v1.3.0...v1.4.0) (2024-06-27)
 
 

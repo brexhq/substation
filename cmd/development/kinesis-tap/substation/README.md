@@ -39,9 +39,12 @@ DEBU[0004] Flushed Substation pipeline.
 
 ## Build
 
+Download, configure, and build the `kinesis-tap` binary with these commands:
+
 ```
-git clone github.com/brexhq/substation && \
+git clone https://github.com/brexhq/substation.git && \
 cd substation/cmd/development/kinesis-tap/substation && \
+jsonnet config.jsonnet > config.json && \
 go build .
 ```
 

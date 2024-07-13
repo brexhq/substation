@@ -2,6 +2,8 @@ resource "aws_cloudwatch_event_rule" "rule" {
   name                = var.config.name
   description         = var.config.description
   schedule_expression = var.config.schedule
+  event_bus_name      = var.config.event.bus_name
+  event_pattern       = var.config.event.pattern
   tags                = var.tags
 }
 

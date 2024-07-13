@@ -28,7 +28,7 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_config"></a> [config](#input\_config) | Configuration for the EventBridge Lambda rule:<br><br>    * name:         The name of the rule.<br>    * description:  The description of the rule.<br>    * schedule:     The schedule expression for the rule.<br>    * function:     The Lambda function to invoke when the rule is triggered. | <pre>object({<br>    name        = string<br>    description = string<br>    schedule    = string<br>    function = object({<br>      arn  = string<br>      name = string<br>    })<br>  })</pre> | n/a | yes |
+| <a name="input_config"></a> [config](#input\_config) | Configuration for the EventBridge Lambda rule:<br><br>    * name:         The name of the rule.<br>    * description:  The description of the rule.<br>    * function:     The Lambda function to invoke when the rule is triggered.<br>    * schedule:     The schedule expression for the rule.<br>    * event:        The event route settings for the rule. | <pre>object({<br>    name        = string<br>    description = string<br>    function = object({<br>      arn  = string<br>      name = string<br>    })<br>    # Optional<br>    schedule = optional(string, null)<br>    event = optional(object({<br>      bus_name = optional(string, null)<br>      pattern  = optional(string, null)<br>    }))<br>  })</pre> | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to all resources. | `map(any)` | `{}` | no |
 
 ## Outputs

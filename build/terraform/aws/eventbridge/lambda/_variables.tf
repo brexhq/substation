@@ -6,11 +6,11 @@ variable "config" {
       arn  = string
       name = string
     })
-    
+
     # Optional
     event_bus_arn = optional(string, null)
     event_pattern = optional(string, null)
-    schedule = optional(string, null)
+    schedule      = optional(string, null)
   })
   description = <<EOH
     Configuration for the EventBridge Lambda rule:

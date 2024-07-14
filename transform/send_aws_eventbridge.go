@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	"github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
+
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
 	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/eventbridge"
 	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/message"
 )
 
@@ -25,15 +26,10 @@ const sendAWSEventBridgeMessageSizeLimit = 1024 * 1024 * 256
 var errSendAWSEventBridgeMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSEventBridgeConfig struct {
-	// ARN is the EventBridge ARN to send messages to.
+	// ARN is the EventBridge bus to send messages to.
 	ARN string `json:"arn"`
-	// DetailType describes the type of the message sent to EventBridge.
-	//
-	// This value is required by EventBridge, but is not required by
-	// the transform. Defaults to the internal ID of the transform,
-	// which represents the producer of the message.
-	DetailType string `json:"detail_type"`
-
+	// Describes the type of the messages sent to EventBridge.
+	Description string `json:"description"`
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
@@ -48,15 +44,7 @@ func (c *sendAWSEventBridgeConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *sendAWSEventBridgeConfig) Validate() error {
-	if c.ARN == "" {
-		return fmt.Errorf("arn: %v", errors.ErrMissingRequiredOption)
-	}
-
-	return nil
-}
-
-func newSendAWSEventBridge(_ context.Context, cfg config.Config) (*sendAWSEventBridge, error) {
+func newSendAWSEventBridge(ctx context.Context, cfg config.Config) (*sendAWSEventBridge, error) {
 	conf := sendAWSEventBridgeConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform send_aws_eventbridge: %v", err)
@@ -66,12 +54,8 @@ func newSendAWSEventBridge(_ context.Context, cfg config.Config) (*sendAWSEventB
 		conf.ID = "send_aws_eventbridge"
 	}
 
-	if conf.DetailType == "" {
-		conf.DetailType = conf.ID
-	}
-
-	if err := conf.Validate(); err != nil {
-		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	if conf.Description == "" {
+		conf.Description = "Substation Transform" // BREAKING CHANGE.
 	}
 
 	tf := sendAWSEventBridge{
@@ -79,13 +63,19 @@ func newSendAWSEventBridge(_ context.Context, cfg config.Config) (*sendAWSEventB
 	}
 
 	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
+	awsCfg, err := aws.NewV2(ctx, aws.Config{
 		Region:          conf.AWS.Region,
 		RoleARN:         conf.AWS.RoleARN,
 		MaxRetries:      conf.Retry.Count,
 		RetryableErrors: conf.Retry.ErrorMessages,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
 
+	tf.client = eventbridge.NewFromConfig(awsCfg)
+
+	// Setup the batch.
 	agg, err := aggregate.New(aggregate.Config{
 		Count:    conf.Batch.Count,
 		Size:     conf.Batch.Size,
@@ -115,7 +105,7 @@ type sendAWSEventBridge struct {
 	conf sendAWSEventBridgeConfig
 
 	// client is safe for concurrent use.
-	client eventbridge.API
+	client *eventbridge.Client
 
 	mu     sync.Mutex
 	agg    *aggregate.Aggregate
@@ -174,7 +164,31 @@ func (tf *sendAWSEventBridge) send(ctx context.Context, key string) error {
 		return err
 	}
 
-	if _, err := tf.client.PutEvents(ctx, data, tf.conf.DetailType, tf.conf.ARN); err != nil {
+	entries := make([]types.PutEventsRequestEntry, len(data))
+	for i, d := range data {
+		source := fmt.Sprintf("substation.%s", tf.conf.ID) // BREAKING CHANGE.
+		detail := string(d)
+
+		entry := types.PutEventsRequestEntry{
+			Source:     &source,
+			Detail:     &detail,
+			DetailType: &tf.conf.Description,
+		}
+
+		// If empty, this is the default event bus.
+		if tf.conf.ARN != "" {
+			entry.EventBusName = &tf.conf.ARN
+		}
+
+		entries[i] = entry
+	}
+
+	ctx = context.WithoutCancel(ctx)
+	input := &eventbridge.PutEventsInput{
+		Entries: entries,
+	}
+
+	if _, err = tf.client.PutEvents(ctx, input); err != nil {
 		return err
 	}
 

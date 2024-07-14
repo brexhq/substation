@@ -792,7 +792,7 @@
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
         },
         eventbridge(settings={}): {
-          local type = 'send_aws_event_bridge',
+          local type = 'send_aws_eventbridge',
           local default = {
             id: $.helpers.id(type, settings),
             batch: $.config.batch,
@@ -800,7 +800,7 @@
             aws: $.config.aws,
             retry: $.config.retry,
             arn: null,
-            detail_type: null,
+            description: null,
           },
           local s = std.mergePatch(settings, {
             auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,

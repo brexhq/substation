@@ -56,7 +56,10 @@ func newSendAWSEventBridge(ctx context.Context, cfg config.Config) (*sendAWSEven
 	}
 
 	if conf.Description == "" {
-		conf.Description = "Substation Transform" // BREAKING CHANGE.
+		// The AWS EventBridge service relies on this value for
+		// event routing, so any update to the `conf.Description`
+		// variable is considered a BREAKING CHANGE.
+		conf.Description = "Substation Transform"
 	}
 
 	tf := sendAWSEventBridge{
@@ -167,7 +170,10 @@ func (tf *sendAWSEventBridge) send(ctx context.Context, key string) error {
 
 	entries := make([]types.PutEventsRequestEntry, len(data))
 	for i, d := range data {
-		source := fmt.Sprintf("substation.%s", tf.conf.ID) // BREAKING CHANGE.
+		// The AWS EventBridge service relies on this value for
+		// event routing, so any update to the `source` variable
+		// is considered a BREAKING CHANGE.
+		source := fmt.Sprintf("substation.%s", tf.conf.ID)
 		detail := string(d)
 
 		entry := types.PutEventsRequestEntry{

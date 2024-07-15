@@ -17,12 +17,13 @@ import (
 )
 
 // Records greater than 256 KB in size cannot be
-// put into an Event Bridge pipe.
+// put into an EventBridge bus.
 const sendAWSEventBridgeMessageSizeLimit = 1024 * 1024 * 256
 
-// errSendAWSEventBridgeMessageSizeLimit is returned when data exceeds the SQS msg
-// size limit. If this error occurs, then conditions or transforms
-// should be applied to either drop or reduce the size of the data.
+// errSendAWSEventBridgeMessageSizeLimit is returned when data
+// exceeds  the EventBridge message size limit. If this error
+// occurs, then conditions or transforms should be applied to
+// either drop or reduce the size of the data.
 var errSendAWSEventBridgeMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSEventBridgeConfig struct {

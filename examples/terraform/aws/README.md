@@ -139,6 +139,38 @@ flowchart LR
     mdEnrichmentTransforms --- dynamodb
 ```
 
+# EventBridge
+
+## Lambda Bus
+
+Deploys a data pipeline that sends data from an EventBridge event bus to a Lambda function.
+
+```mermaid
+flowchart LR
+    %% resources
+    ebb([EventBridge Bus])
+    ebs([EventBridge Scheduler])
+
+    producerHandler[[Handler]]
+    producerTransforms[Transforms]
+
+    consumerHandler[[Handler]]
+    consumerTransforms[Transforms]
+
+    %% connections
+    ebs --> ebs
+    ebs --> producerHandler
+    subgraph Substation Producer Node 
+    producerHandler --> producerTransforms
+    end
+
+    producerTransforms --> ebb --> consumerHandler
+
+    subgraph Substation Consumer Node 
+    consumerHandler  --> consumerTransforms
+    end
+```
+
 # Firehose
 
 ## Data Transform

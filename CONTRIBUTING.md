@@ -99,6 +99,10 @@ Substation commonly uses these io compatible containers:
 
 ### Naming Conventions
 
+#### Breaking Changes
+
+Any change that modifies the public API of Go packages and applications is a breaking change, and any source code that has non-obvious impact on the public API should be tagged with `BREAKING CHANGE` in a comment.
+
 #### Errors
 
 Errors should always start with `err` (or `Err`, if they are public). Commonly used errors are defined in [internal/errors.go](internal/errors.go).

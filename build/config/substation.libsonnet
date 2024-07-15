@@ -791,6 +791,25 @@
           type: type,
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
         },
+        eventbridge(settings={}): {
+          local type = 'send_aws_eventbridge',
+          local default = {
+            id: $.helpers.id(type, settings),
+            batch: $.config.batch,
+            auxiliary_transforms: null,
+            aws: $.config.aws,
+            retry: $.config.retry,
+            arn: null,
+            description: null,
+          },
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
+          type: type,
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(s))),
+        },
         firehose(settings={}): $.transform.send.aws.kinesis_data_firehose(settings=settings),
         kinesis_data_firehose(settings={}): {
           local type = 'send_aws_kinesis_data_firehose',

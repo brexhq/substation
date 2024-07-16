@@ -180,6 +180,7 @@ func (tf *sendAWSS3) send(ctx context.Context, key string) error {
 	if err != nil {
 		return err
 	}
+	defer os.Remove(temp.Name())
 	defer temp.Close()
 
 	data, err := withTransforms(ctx, tf.tforms, tf.agg.Get(key))

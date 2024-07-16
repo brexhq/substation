@@ -43,7 +43,6 @@ func Get(ctx context.Context, location string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("get %s: %v", location, err)
 	}
-	defer os.Remove(dst.Name())
 	defer dst.Close()
 
 	if _, err := os.Stat(location); err == nil {

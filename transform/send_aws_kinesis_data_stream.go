@@ -16,9 +16,9 @@ import (
 	"github.com/google/uuid"
 )
 
-// Records greater than 1 MiB in size cannot be
+// Records greater than 1 MB in size cannot be
 // put into a Kinesis Data Stream.
-const sendAWSKinesisDataStreamMessageSizeLimit = 1024 * 1024 * 1
+const sendAWSKinesisDataStreamMessageSizeLimit = 1000 * 1000
 
 // errSendAWSKinesisDataStreamMessageSizeLimit is returned when data
 // exceeds the Kinesis record size limit. If this error occurs, then

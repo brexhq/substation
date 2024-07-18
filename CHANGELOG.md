@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.6.0](https://github.com/brexhq/substation/compare/v1.5.0...v1.6.0) (2024-07-17)
+
+
+### Features
+
+* **transform:** Add Send to AWS EventBridge ([#203](https://github.com/brexhq/substation/issues/203)) ([80370e7](https://github.com/brexhq/substation/commit/80370e7e4045a372769344ab01e3da8bacb426c2))
+
+
+### Bug Fixes
+
+* **transform:** Change Kinesis Payload Limit to MB ([#206](https://github.com/brexhq/substation/issues/206)) ([16baaa0](https://github.com/brexhq/substation/commit/16baaa001737be13c5bcf4cda59661cc6136155a))
+* **transform:** Remove Temporary Files from AWS S3 ([#205](https://github.com/brexhq/substation/issues/205)) ([b52078d](https://github.com/brexhq/substation/commit/b52078dacec503f0803d6f46aa87ebce34febd12))
+
 ## [1.5.0](https://github.com/brexhq/substation/compare/v1.4.0...v1.5.0) (2024-07-09)
 
 

@@ -1378,10 +1378,11 @@
       // the condition does not contain a valid operator, then it is assumed
       // to be an ANY operator.
       conditional(condition, transform): {
+        local type = 'meta_switch',
         local c = if std.objectHas(condition, 'type') then { operator: 'any', inspectors: [condition] } else condition,
-
-        type: 'meta_switch',
-        settings: { cases: [{ condition: c, transform: transform }] },
+        
+        type: type,
+        settings: { id: $.helpers.id(type, transform),  cases: [{ condition: c, transform: transform }] },
       },
       fmt: $.pattern.transform.format,
       format: {

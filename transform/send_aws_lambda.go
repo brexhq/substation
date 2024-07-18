@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
+	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aggregate"
 	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/lambda"
 	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/message"
@@ -49,7 +50,7 @@ func (c *sendAWSLambdaConfig) Validate() error {
 	return nil
 }
 
-func newSendAWSLambda(_ context.Context, cfg config.Config) (*sendAWSLambda, error) {
+func newSendAWSLambda(ctx context.Context, cfg config.Config) (*sendAWSLambda, error) {
 	conf := sendAWSLambdaConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform send_aws_lambda: %v", err)
@@ -67,6 +68,19 @@ func newSendAWSLambda(_ context.Context, cfg config.Config) (*sendAWSLambda, err
 		conf:     conf,
 		function: conf.FunctionName,
 	}
+
+	// Setup the AWS client.
+	awsCfg, err := aws.NewV2(ctx, aws.Config{
+		Region:          conf.AWS.Region,
+		RoleARN:         conf.AWS.RoleARN,
+		MaxRetries:      conf.Retry.Count,
+		RetryableErrors: conf.Retry.ErrorMessages,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	tf.client = lambda.NewFromConfig(awsCfg)
 
 	agg, err := aggregate.New(aggregate.Config{
 		Count:    conf.Batch.Count,
@@ -90,14 +104,6 @@ func newSendAWSLambda(_ context.Context, cfg config.Config) (*sendAWSLambda, err
 		}
 	}
 
-	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
-		Region:          conf.AWS.Region,
-		RoleARN:         conf.AWS.RoleARN,
-		MaxRetries:      conf.Retry.Count,
-		RetryableErrors: conf.Retry.ErrorMessages,
-	})
-
 	return &tf, nil
 }
 
@@ -106,7 +112,7 @@ type sendAWSLambda struct {
 	function string
 
 	// client is safe for concurrent use.
-	client lambda.API
+	client *lambda.Client
 
 	mu     sync.Mutex
 	agg    *aggregate.Aggregate
@@ -161,8 +167,15 @@ func (tf *sendAWSLambda) send(ctx context.Context, key string) error {
 		return err
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	for _, b := range data {
-		if _, err := tf.client.InvokeAsync(ctx, tf.function, b); err != nil {
+		input := &lambda.InvokeInput{
+			FunctionName:   &tf.function,
+			InvocationType: types.InvocationTypeEvent,
+			Payload:        b,
+		}
+
+		if _, err := tf.client.Invoke(ctx, input); err != nil {
 			return err
 		}
 	}

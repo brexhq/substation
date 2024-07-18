@@ -7,10 +7,12 @@ import (
 
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/lambda"
 	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/message"
+
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
+	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/tidwall/gjson"
 )
 
@@ -44,7 +46,7 @@ func (c *enrichAWSLambdaConfig) Validate() error {
 	return nil
 }
 
-func newEnrichAWSLambda(_ context.Context, cfg config.Config) (*enrichAWSLambda, error) {
+func newEnrichAWSLambda(ctx context.Context, cfg config.Config) (*enrichAWSLambda, error) {
 	conf := enrichAWSLambdaConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform enrich_aws_lambda: %v", err)
@@ -63,12 +65,17 @@ func newEnrichAWSLambda(_ context.Context, cfg config.Config) (*enrichAWSLambda,
 	}
 
 	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
+	awsCfg, err := aws.NewV2(ctx, aws.Config{
 		Region:          conf.AWS.Region,
 		RoleARN:         conf.AWS.RoleARN,
 		MaxRetries:      conf.Retry.Count,
 		RetryableErrors: conf.Retry.ErrorMessages,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	tf.client = lambda.NewFromConfig(awsCfg)
 
 	return &tf, nil
 }
@@ -76,8 +83,7 @@ func newEnrichAWSLambda(_ context.Context, cfg config.Config) (*enrichAWSLambda,
 type enrichAWSLambda struct {
 	conf enrichAWSLambdaConfig
 
-	// client is safe for concurrent access.
-	client lambda.API
+	client *lambda.Client
 }
 
 func (tf *enrichAWSLambda) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -94,7 +100,13 @@ func (tf *enrichAWSLambda) Transform(ctx context.Context, msg *message.Message) 
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errMsgInvalidObject)
 	}
 
-	resp, err := tf.client.Invoke(ctx, tf.conf.FunctionName, value.Bytes())
+	input := &lambda.InvokeInput{
+		FunctionName:   &tf.conf.FunctionName,
+		InvocationType: types.InvocationTypeRequestResponse,
+		Payload:        value.Bytes(),
+	}
+
+	resp, err := tf.client.Invoke(ctx, input)
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}

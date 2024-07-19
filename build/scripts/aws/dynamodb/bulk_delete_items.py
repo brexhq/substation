@@ -22,8 +22,8 @@ def main():
     parser.add_argument("file")
     args = parser.parse_args()
 
-    TABLE = DDB.Table(args.table_name)
-    with open(args.file, "rb") as f, TABLE.batch_writer() as batch:
+    t = DDB.Table(args.table_name)
+    with open(args.file, "rb") as f, t.batch_writer() as batch:
         for item in f.readlines():
             item = item.decode("utf-8").strip()
             batch.delete_item(Key=json.loads(item))

@@ -7,7 +7,6 @@ Example usage:
     python3 bulk_delete_items.py my-table my-file.jsonl
 """
 
-
 import argparse
 import boto3
 import json

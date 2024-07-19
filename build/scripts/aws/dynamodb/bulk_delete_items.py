@@ -2,8 +2,8 @@
 Bulk delete items from a DynamoDB table.
 
 The file should contain a list of items, in JSON Lines format, to delete
-and each item must match the schema of the table. For example, the primary
-key of the table is "id":
+and each item must match the schema of the table. For example, if the 
+primary key of the table is "id" then the file should contain items like:
     {"id": "1"}
     {"id": "2"}
     {"id": "3"}

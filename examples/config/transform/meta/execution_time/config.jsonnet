@@ -12,7 +12,9 @@ local dest = { type: 'aws_cloudwatch_embedded_metrics' };
     sub.transform.meta.metric.duration(
       settings={
         metric: { name: 'ObjectCopyDuration', attributes: attr, destination: dest },
-        transform: sub.transform.object.copy({ object: { source_key: 'foo', target_key: 'baz' } }),
+        transforms: [
+          sub.transform.object.copy({ object: { source_key: 'foo', target_key: 'baz' } }),
+        ],
       },
     ),
     // This can be useful for measuring the execution time of transforms that
@@ -21,7 +23,9 @@ local dest = { type: 'aws_cloudwatch_embedded_metrics' };
     sub.transform.meta.metric.duration(
       settings={
         metric: { name: 'UtilityDelayDuration', attributes: attr, destination: dest },
-        transform: sub.transform.utility.delay({ duration: '100ms' }),
+        transforms: [
+          sub.transform.utility.delay({ duration: '100ms' }),
+        ],
       },
     ),
     // Multiple transforms can be measured at once by wrapping them in a
@@ -29,13 +33,11 @@ local dest = { type: 'aws_cloudwatch_embedded_metrics' };
     sub.transform.meta.metric.duration(
       settings={
         metric: { name: 'UtilityMultiDuration', attributes: attr, destination: dest },
-        transform: sub.transform.meta.pipeline(
-          settings={ transforms: [
-            sub.transform.utility.delay({ duration: '100ms' }),
-            sub.transform.utility.delay({ duration: '100ms' }),
-            sub.transform.utility.delay({ duration: '100ms' }),
-          ] }
-        ),
+        transforms: [
+          sub.transform.utility.delay({ duration: '100ms' }),
+          sub.transform.utility.delay({ duration: '100ms' }),
+          sub.transform.utility.delay({ duration: '100ms' }),
+        ] 
       },
     ),
   ],

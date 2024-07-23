@@ -12,7 +12,9 @@ local kv = sub.kv_store.memory();
       kv_store: kv,
       prefix: 'eo_consumer',
       ttl_offset: '1m',
-      transform: sub.tf.obj.insert({ object: { target_key: 'meta eo_consumer' }, value: 'locked' }),
+      transforms: [
+        sub.tf.obj.insert({ object: { target_key: 'meta eo_consumer' }, value: 'locked' }),
+      ],
     }),
     // Messages that are not locked are dropped from the pipeline.
     sub.tf.meta.switch({ cases: [
@@ -20,7 +22,9 @@ local kv = sub.kv_store.memory();
         condition: sub.cnd.none([
           sub.cnd.str.eq({ object: { source_key: 'meta eo_consumer' }, value: 'locked' }),
         ]),
-        transform: sub.tf.utility.drop(),
+        transforms: [
+          sub.tf.utility.drop(),
+        ],
       },
     ] }),
     // At this point only locked messages exist in the pipeline.

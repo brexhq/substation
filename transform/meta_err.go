@@ -14,7 +14,12 @@ import (
 
 type metaErrConfig struct {
 	// Transform that is applied with error handling.
+	//
+	// This is deprecated and will be removed in a future release.
 	Transform config.Config `json:"transform"`
+	// Transforms that are applied in series with error handling.
+	Transforms []config.Config `json:"transforms"`
+
 	// ErrorMessages are regular expressions that match error messages and determine
 	// if the error should be caught.
 	//
@@ -29,7 +34,7 @@ func (c *metaErrConfig) Decode(in interface{}) error {
 }
 
 func (c *metaErrConfig) Validate() error {
-	if c.Transform.Type == "" {
+	if c.Transform.Type == "" && len(c.Transforms) == 0 {
 		return fmt.Errorf("transform: %v", errors.ErrMissingRequiredOption)
 	}
 
@@ -50,39 +55,60 @@ func newMetaErr(ctx context.Context, cfg config.Config) (*metaErr, error) {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
-	tf, err := New(ctx, conf.Transform)
-	if err != nil {
-		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	tf := metaErr{
+		conf: conf,
 	}
 
-	errMsgs := make([]*regexp.Regexp, len(conf.ErrorMessages))
+	if conf.Transform.Type != "" {
+		tfer, err := New(ctx, conf.Transform)
+		if err != nil {
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+		}
+
+		tf.tf = tfer
+	}
+
+	tf.tfs = make([]Transformer, len(conf.Transforms))
+	for i, t := range conf.Transforms {
+		tfer, err := New(ctx, t)
+		if err != nil {
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+		}
+
+		tf.tfs[i] = tfer
+	}
+
+	tf.errorMessages = make([]*regexp.Regexp, len(conf.ErrorMessages))
 	for i, eMsg := range conf.ErrorMessages {
 		r, err := regexp.Compile(eMsg)
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 		}
 
-		errMsgs[i] = r
+		tf.errorMessages[i] = r
 	}
 
-	meta := metaErr{
-		conf:          conf,
-		tf:            tf,
-		errorMessages: errMsgs,
-	}
-
-	return &meta, nil
+	return &tf, nil
 }
 
 type metaErr struct {
 	conf metaErrConfig
 
 	tf            Transformer
+	tfs           []Transformer
 	errorMessages []*regexp.Regexp
 }
 
 func (tf *metaErr) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	msgs, err := tf.tf.Transform(ctx, msg)
+	var msgs []*message.Message
+	var err error
+
+	if len(tf.tfs) > 0 {
+		msgs, err = Apply(ctx, tf.tfs, msg)
+	} else {
+		msgs, err = tf.tf.Transform(ctx, msg)
+	}
+
 	if err != nil {
 		if len(tf.errorMessages) == 0 {
 			return []*message.Message{msg}, nil

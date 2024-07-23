@@ -43,10 +43,16 @@ type metaKVStoreLockConfig struct {
 	// This is optional and defaults to using no TTL when setting values into the store.
 	TTLOffset string `json:"ttl_offset"`
 
-	ID        string                     `json:"id"`
-	Transform config.Config              `json:"transform"`
-	Object    metaVStoreLockObjectConfig `json:"object"`
-	KVStore   config.Config              `json:"kv_store"`
+	// Transform that is applied after the lock is acquired.
+	//
+	// This is deprecated and will be removed in a future release.
+	Transform config.Config `json:"transform"`
+	// Transforms that are applied in series after the lock is acquired.
+	Transforms []config.Config `json:"transforms"`
+
+	ID      string                     `json:"id"`
+	Object  metaVStoreLockObjectConfig `json:"object"`
+	KVStore config.Config              `json:"kv_store"`
 }
 
 func (c *metaKVStoreLockConfig) Decode(in interface{}) error {
@@ -54,7 +60,7 @@ func (c *metaKVStoreLockConfig) Decode(in interface{}) error {
 }
 
 func (c *metaKVStoreLockConfig) Validate() error {
-	if c.Transform.Type == "" {
+	if c.Transform.Type == "" && len(c.Transforms) == 0 {
 		return fmt.Errorf("transform: %v", errors.ErrMissingRequiredOption)
 	}
 
@@ -79,9 +85,27 @@ func newMetaKVStoreLock(ctx context.Context, cfg config.Config) (*metaKVStoreLoc
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
-	tff, err := New(ctx, conf.Transform)
-	if err != nil {
-		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	tf := metaKVStoreLock{
+		conf: conf,
+	}
+
+	if conf.Transform.Type != "" {
+		tfer, err := New(ctx, conf.Transform)
+		if err != nil {
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+		}
+
+		tf.tf = tfer
+	}
+
+	tf.tfs = make([]Transformer, len(conf.Transforms))
+	for i, t := range conf.Transforms {
+		tfer, err := New(ctx, t)
+		if err != nil {
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+		}
+
+		tf.tfs[i] = tfer
 	}
 
 	locker, err := kv.GetLocker(conf.KVStore)
@@ -92,6 +116,7 @@ func newMetaKVStoreLock(ctx context.Context, cfg config.Config) (*metaKVStoreLoc
 	if err := locker.Setup(ctx); err != nil {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
+	tf.locker = locker
 
 	if conf.TTLOffset == "" {
 		conf.TTLOffset = "0s"
@@ -101,13 +126,7 @@ func newMetaKVStoreLock(ctx context.Context, cfg config.Config) (*metaKVStoreLoc
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
-
-	tf := metaKVStoreLock{
-		tf:     tff,
-		conf:   conf,
-		locker: locker,
-		ttl:    int64(dur.Seconds()),
-	}
+	tf.ttl = int64(dur.Seconds())
 
 	return &tf, nil
 }
@@ -116,7 +135,9 @@ func newMetaKVStoreLock(ctx context.Context, cfg config.Config) (*metaKVStoreLoc
 // held, then an error is returned. The lock is applied with a time-to-live (TTL) value, which is
 // used to determine when the lock is automatically released.
 type metaKVStoreLock struct {
-	tf     Transformer
+	tf  Transformer
+	tfs []Transformer
+
 	conf   metaKVStoreLockConfig
 	locker kv.Locker
 	ttl    int64
@@ -132,7 +153,15 @@ func (tf *metaKVStoreLock) Transform(ctx context.Context, msg *message.Message) 
 	defer tf.mu.Unlock()
 
 	if msg.IsControl() {
-		msgs, err := tf.tf.Transform(ctx, msg)
+		var msgs []*message.Message
+		var err error
+
+		if len(tf.tfs) > 0 {
+			msgs, err = Apply(ctx, tf.tfs, msg)
+		} else {
+			msgs, err = tf.tf.Transform(ctx, msg)
+		}
+
 		if err != nil {
 			for _, key := range tf.keys {
 				_ = tf.locker.Unlock(ctx, key)
@@ -186,7 +215,16 @@ func (tf *metaKVStoreLock) Transform(ctx context.Context, msg *message.Message) 
 	}
 
 	tf.keys = append(tf.keys, lockKey)
-	msgs, err := tf.tf.Transform(ctx, msg)
+
+	var msgs []*message.Message
+	var err error
+
+	if len(tf.tfs) > 0 {
+		msgs, err = Apply(ctx, tf.tfs, msg)
+	} else {
+		msgs, err = tf.tf.Transform(ctx, msg)
+	}
+
 	if err != nil {
 		for _, key := range tf.keys {
 			_ = tf.locker.Unlock(ctx, key)

@@ -45,6 +45,7 @@ func (c *metaPipelineConfig) Validate() error {
 	return nil
 }
 
+// This is deprecated and will be removed in a future release.
 func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, error) {
 	conf := metaPipelineConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {

@@ -16,7 +16,9 @@ local files_key = 'meta files';
     // are added to a new array.
     sub.tf.meta.for_each({
       object: { source_key: sub.helpers.object.get_element(files_key, 'file_name'), target_key: sub.helpers.object.append(files_key, 'file_extension') },
-      transform: sub.tf.string.capture(settings={ pattern: '\\.([^\\.]+)$' }),
+      transforms: [
+        sub.tf.string.capture(settings={ pattern: '\\.([^\\.]+)$' }),
+      ],
     }),
     // The arrays grouped into an array of objects, then copied to the message's data field.
     // For example:

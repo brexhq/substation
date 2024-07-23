@@ -35,6 +35,25 @@ var metaErrTests = []struct {
 		},
 	},
 	{
+		"utility_err",
+		config.Config{
+			Settings: map[string]interface{}{
+				"transforms": []config.Config{
+					{
+						Settings: map[string]interface{}{
+							"message": "test error",
+						},
+						Type: "utility_err",
+					},
+				},
+			},
+		},
+		[]byte(`{"a":"b"}`),
+		[][]byte{
+			[]byte(`{"a":"b"}`),
+		},
+	},
+	{
 		"error_messages string",
 		config.Config{
 			Settings: map[string]interface{}{
@@ -55,6 +74,28 @@ var metaErrTests = []struct {
 		},
 	},
 	{
+		"error_messages string",
+		config.Config{
+			Settings: map[string]interface{}{
+				"transforms": []config.Config{
+					{
+						Settings: map[string]interface{}{
+							"message": "test error",
+						},
+						Type: "utility_err",
+					},
+				},
+				"error_messages": []string{
+					"test error",
+				},
+			},
+		},
+		[]byte(`{"a":"b"}`),
+		[][]byte{
+			[]byte(`{"a":"b"}`),
+		},
+	},
+	{
 		"error_messages regex",
 		config.Config{
 			Settings: map[string]interface{}{
@@ -63,6 +104,28 @@ var metaErrTests = []struct {
 						"message": "test error",
 					},
 					Type: "utility_err",
+				},
+				"error_messages": []string{
+					"^test",
+				},
+			},
+		},
+		[]byte(`{"a":"b"}`),
+		[][]byte{
+			[]byte(`{"a":"b"}`),
+		},
+	},
+	{
+		"error_messages regex",
+		config.Config{
+			Settings: map[string]interface{}{
+				"transforms": []config.Config{
+					{
+						Settings: map[string]interface{}{
+							"message": "test error",
+						},
+						Type: "utility_err",
+					},
 				},
 				"error_messages": []string{
 					"^test",

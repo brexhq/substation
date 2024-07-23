@@ -18,9 +18,15 @@ local key = 'c';
     sub.tf.meta.switch(settings={ cases: [
       {
         condition: sub.cnd.any(sub.cnd.num.len.eq(settings={ object: { source_key: key }, value: 0 })),
-        transform: sub.tf.util.err(settings={ message: 'transform produced no output' }),
+        transforms: [
+          sub.tf.util.err(settings={ message: 'transform produced no output' })
+        ],
       },
-      { transform: sub.tf.send.stdout() },
+      { 
+        transforms: [
+          sub.tf.send.stdout() 
+        ],
+      },
     ] }),
   ],
 }

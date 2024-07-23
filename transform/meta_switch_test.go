@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/brexhq/substation/condition"
 	"github.com/brexhq/substation/config"
 	"github.com/brexhq/substation/message"
 )
@@ -18,23 +17,20 @@ var metaSwitchTests = []struct {
 	data     []byte
 	expected [][]byte
 }{
+	// This test simulates an if block by having the condition always
+	// succeed.
 	{
-		// This test simulates an if block by having the condition always
-		// succeed.
 		"if",
 		config.Config{
 			Settings: map[string]interface{}{
-				"cases": []struct {
-					Condition condition.Config `json:"condition"`
-					Transform config.Config    `json:"transform"`
-				}{
+				"cases": []map[string]interface{}{
 					{
-						Condition: condition.Config{
-							Operator: "any",
-							Inspectors: []config.Config{
+						"condition": map[string]interface{}{
+							"operator": "any",
+							"inspectors": []map[string]interface{}{
 								{
-									Type: "string_contains",
-									Settings: map[string]interface{}{
+									"type": "string_contains",
+									"settings": map[string]interface{}{
 										"object": map[string]interface{}{
 											"source_key": "a",
 										},
@@ -43,9 +39,9 @@ var metaSwitchTests = []struct {
 								},
 							},
 						},
-						Transform: config.Config{
-							Type: "object_copy",
-							Settings: map[string]interface{}{
+						"transform": map[string]interface{}{
+							"type": "object_copy",
+							"settings": map[string]interface{}{
 								"object": map[string]interface{}{
 									"source_key": "a",
 									"target_key": "c",
@@ -62,24 +58,61 @@ var metaSwitchTests = []struct {
 		},
 	},
 	{
-		// This test simulates an if/else block by having the first condition
-		// always fail and the second condition always succeed by not having
-		// any conditions (the condition package will always return true if
-		// there are no conditions).
+		"if",
+		config.Config{
+			Settings: map[string]interface{}{
+				"cases": []map[string]interface{}{
+					{
+						"condition": map[string]interface{}{
+							"operator": "any",
+							"inspectors": []map[string]interface{}{
+								{
+									"type": "string_contains",
+									"settings": map[string]interface{}{
+										"object": map[string]interface{}{
+											"source_key": "a",
+										},
+										"value": "b",
+									},
+								},
+							},
+						},
+						"transforms": []map[string]interface{}{
+							{
+								"type": "object_copy",
+								"settings": map[string]interface{}{
+									"object": map[string]interface{}{
+										"source_key": "a",
+										"target_key": "c",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		[]byte(`{"a":"b"}`),
+		[][]byte{
+			[]byte(`{"a":"b","c":"b"}`),
+		},
+	},
+	// This test simulates an if/else block by having the first condition
+	// always fail and the second condition always succeed by not having
+	// any conditions (the condition package will always return true if
+	// there are no conditions).
+	{
 		"if_else",
 		config.Config{
 			Settings: map[string]interface{}{
-				"cases": []struct {
-					Condition condition.Config `json:"condition"`
-					Transform config.Config    `json:"transform"`
-				}{
+				"cases": []map[string]interface{}{
 					{
-						Condition: condition.Config{
-							Operator: "any",
-							Inspectors: []config.Config{
+						"condition": map[string]interface{}{
+							"operator": "any",
+							"inspectors": []map[string]interface{}{
 								{
-									Type: "string_contains",
-									Settings: map[string]interface{}{
+									"type": "string_contains",
+									"settings": map[string]interface{}{
 										"object": map[string]interface{}{
 											"source_key": "a",
 										},
@@ -88,9 +121,9 @@ var metaSwitchTests = []struct {
 								},
 							},
 						},
-						Transform: config.Config{
-							Type: "object_copy",
-							Settings: map[string]interface{}{
+						"transform": map[string]interface{}{
+							"type": "object_copy",
+							"settings": map[string]interface{}{
 								"object": map[string]interface{}{
 									"source_key": "a",
 									"target_key": "c",
@@ -99,10 +132,9 @@ var metaSwitchTests = []struct {
 						},
 					},
 					{
-						Condition: condition.Config{},
-						Transform: config.Config{
-							Type: "object_copy",
-							Settings: map[string]interface{}{
+						"transform": map[string]interface{}{
+							"type": "object_copy",
+							"settings": map[string]interface{}{
 								"object": map[string]interface{}{
 									"source_key": "a",
 									"target_key": "x",
@@ -119,22 +151,17 @@ var metaSwitchTests = []struct {
 		},
 	},
 	{
-		// This test simulates an if/else if block by having all conditions
-		// fail. The data should be unchanged.
-		"if_else_if",
+		"if_else",
 		config.Config{
 			Settings: map[string]interface{}{
-				"cases": []struct {
-					Condition condition.Config `json:"condition"`
-					Transform config.Config    `json:"transform"`
-				}{
+				"cases": []map[string]interface{}{
 					{
-						Condition: condition.Config{
-							Operator: "any",
-							Inspectors: []config.Config{
+						"condition": map[string]interface{}{
+							"operator": "any",
+							"inspectors": []map[string]interface{}{
 								{
-									Type: "string_contains",
-									Settings: map[string]interface{}{
+									"type": "string_contains",
+									"settings": map[string]interface{}{
 										"object": map[string]interface{}{
 											"source_key": "a",
 										},
@@ -143,9 +170,64 @@ var metaSwitchTests = []struct {
 								},
 							},
 						},
-						Transform: config.Config{
-							Type: "object_copy",
-							Settings: map[string]interface{}{
+						"transforms": []map[string]interface{}{
+							{
+								"type": "object_copy",
+								"settings": map[string]interface{}{
+									"object": map[string]interface{}{
+										"source_key": "a",
+										"target_key": "c",
+									},
+								},
+							},
+						},
+					},
+					{
+						"transforms": []map[string]interface{}{
+							{
+								"type": "object_copy",
+								"settings": map[string]interface{}{
+									"object": map[string]interface{}{
+										"source_key": "a",
+										"target_key": "x",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		[]byte(`{"a":"b"}`),
+		[][]byte{
+			[]byte(`{"a":"b","x":"b"}`),
+		},
+	},
+	// This test simulates an if/else if block by having all conditions
+	// fail. The data should be unchanged.
+	{
+		"if_else_if",
+		config.Config{
+			Settings: map[string]interface{}{
+				"cases": []map[string]interface{}{
+					{
+						"condition": map[string]interface{}{
+							"operator": "any",
+							"inspectors": []map[string]interface{}{
+								{
+									"type": "string_contains",
+									"settings": map[string]interface{}{
+										"object": map[string]interface{}{
+											"source_key": "a",
+										},
+										"value": "c",
+									},
+								},
+							},
+						},
+						"transform": map[string]interface{}{
+							"type": "object_copy",
+							"settings": map[string]interface{}{
 								"object": map[string]interface{}{
 									"source_key": "a",
 									"target_key": "c",
@@ -154,12 +236,12 @@ var metaSwitchTests = []struct {
 						},
 					},
 					{
-						Condition: condition.Config{
-							Operator: "any",
-							Inspectors: []config.Config{
+						"condition": map[string]interface{}{
+							"operator": "any",
+							"inspectors": []map[string]interface{}{
 								{
-									Type: "string_contains",
-									Settings: map[string]interface{}{
+									"type": "string_contains",
+									"settings": map[string]interface{}{
 										"object": map[string]interface{}{
 											"source_key": "a",
 										},
@@ -168,11 +250,80 @@ var metaSwitchTests = []struct {
 								},
 							},
 						},
-						Transform: config.Config{
-							Type: "object_copy",
-							Settings: map[string]interface{}{
-								"source_key": "a",
-								"target_key": "d",
+						"transform": map[string]interface{}{
+							"type": "object_copy",
+							"settings": map[string]interface{}{
+								"object": map[string]interface{}{
+									"source_key": "a",
+									"target_key": "d",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		[]byte(`{"a":"b"}`),
+		[][]byte{
+			[]byte(`{"a":"b"}`),
+		},
+	},
+	{
+		"if_else_if",
+		config.Config{
+			Settings: map[string]interface{}{
+				"cases": []map[string]interface{}{
+					{
+						"condition": map[string]interface{}{
+							"operator": "any",
+							"inspectors": []map[string]interface{}{
+								{
+									"type": "string_contains",
+									"settings": map[string]interface{}{
+										"object": map[string]interface{}{
+											"source_key": "a",
+										},
+										"value": "c",
+									},
+								},
+							},
+						},
+						"transforms": []map[string]interface{}{
+							{
+								"type": "object_copy",
+								"settings": map[string]interface{}{
+									"object": map[string]interface{}{
+										"source_key": "a",
+										"target_key": "c",
+									},
+								},
+							},
+						},
+					},
+					{
+						"condition": map[string]interface{}{
+							"operator": "any",
+							"inspectors": []map[string]interface{}{
+								{
+									"type": "string_contains",
+									"settings": map[string]interface{}{
+										"object": map[string]interface{}{
+											"source_key": "a",
+										},
+										"value": "d",
+									},
+								},
+							},
+						},
+						"transforms": []map[string]interface{}{
+							{
+								"type": "object_copy",
+								"settings": map[string]interface{}{
+									"object": map[string]interface{}{
+										"source_key": "a",
+										"target_key": "d",
+									},
+								},
 							},
 						},
 					},

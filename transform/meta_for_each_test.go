@@ -17,34 +17,34 @@ var metaForEachTests = []struct {
 	test     []byte
 	expected [][]byte
 }{
-	// {
-	// 	"meta_pipeline",
-	// 	config.Config{
-	// 		Settings: map[string]interface{}{
-	// 			"object": map[string]interface{}{
-	// 				"source_key": "a",
-	// 				"target_key": "b",
-	// 			},
-	// 			"transform": config.Config{
-	// 				Type: "meta_pipeline",
-	// 				Settings: map[string]interface{}{
-	// 					"transforms": []config.Config{
-	// 						{
-	// 							Type: "format_from_base64",
-	// 						},
-	// 						{
-	// 							Type: "format_from_gzip",
-	// 						},
-	// 					},
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// 	[]byte(`{"a":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA","H4sIAI/bzmIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="]}`),
-	// 	[][]byte{
-	// 		[]byte(`{"a":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA","H4sIAI/bzmIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="],"b":["foo","bar"]}`),
-	// 	},
-	// },
+	{
+		"meta_pipeline",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "b",
+				},
+				"transform": config.Config{
+					Type: "meta_pipeline",
+					Settings: map[string]interface{}{
+						"transforms": []config.Config{
+							{
+								Type: "format_from_base64",
+							},
+							{
+								Type: "format_from_gzip",
+							},
+						},
+					},
+				},
+			},
+		},
+		[]byte(`{"a":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA","H4sIAI/bzmIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="]}`),
+		[][]byte{
+			[]byte(`{"a":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA","H4sIAI/bzmIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="],"b":["foo","bar"]}`),
+		},
+	},
 	{
 		"format_from_base64",
 		config.Config{
@@ -61,6 +61,148 @@ var metaForEachTests = []struct {
 		[]byte(`{"secrets":["ZHJpbms=","eW91cg==","b3ZhbHRpbmU="]}`),
 		[][]byte{
 			[]byte(`{"secrets":["ZHJpbms=","eW91cg==","b3ZhbHRpbmU="],"decoded":["drink","your","ovaltine"]}`),
+		},
+	},
+	{
+		"string_capture",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "user_email",
+					"target_key": "user_name",
+				},
+				"transform": config.Config{
+					Type: "string_capture",
+					Settings: map[string]interface{}{
+						"pattern": "^([^@]*)@.*$",
+					},
+				},
+			},
+		},
+		[]byte(`{"user_email":["john.d@example.com","jane.d@example.com"]}`),
+		[][]byte{
+			[]byte(`{"user_email":["john.d@example.com","jane.d@example.com"],"user_name":["john.d","jane.d"]}`),
+		},
+	},
+	{
+		"string_to_lower",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "upcase",
+					"target_key": "downcase",
+				},
+				"transform": config.Config{
+					Type: "string_to_lower",
+				},
+			},
+		},
+		[]byte(`{"upcase":["ABC","DEF"]}`),
+		[][]byte{
+			[]byte(`{"upcase":["ABC","DEF"],"downcase":["abc","def"]}`),
+		},
+	},
+	{
+		"network_domain_subdomain",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "domain",
+					"target_key": "subdomain",
+				},
+				"transform": config.Config{
+					Type: "network_domain_subdomain",
+				},
+			},
+		},
+		[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
+		[][]byte{
+			[]byte(`{"domain":["www.example.com","mail.example.top"],"subdomain":["www","mail"]}`),
+		},
+	},
+	{
+		"hash_sha256",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "b",
+				},
+				"transform": config.Config{
+					Type: "hash_sha256",
+				},
+			},
+		},
+		[]byte(`{"a":["foo","bar","baz"]}`),
+		[][]byte{
+			[]byte(`{"a":["foo","bar","baz"],"b":["2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae","fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9","baa5a0964d3320fbc0c6a922140453c8513ea24ab8fd0577034804a967248096"]}`),
+		},
+	},
+	{
+		"object_insert",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "b",
+				},
+				"transform": config.Config{
+					Type: "object_insert",
+					Settings: map[string]interface{}{
+						"object": map[string]interface{}{
+							"target_key": "baz",
+						},
+						"value": "qux",
+					},
+				},
+			},
+		},
+		[]byte(`{"a":[{"foo":"bar"},{"baz":"quux"}]}`),
+		[][]byte{
+			[]byte(`{"a":[{"foo":"bar"},{"baz":"quux"}],"b":[{"baz":"qux","foo":"bar"},{"baz":"qux"}]}`),
+		},
+	},
+	{
+		"string_replace",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "b",
+				},
+				"transform": config.Config{
+					Type: "string_replace",
+					Settings: map[string]interface{}{
+						"pattern":     "r",
+						"replacement": "z",
+					},
+				},
+			},
+		},
+		[]byte(`{"a":["bar","bard"]}`),
+		[][]byte{
+			[]byte(`{"a":["bar","bard"],"b":["baz","bazd"]}`),
+		},
+	},
+	{
+		"time_from_string",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "b",
+				},
+				"transform": config.Config{
+					Type: "time_from_string",
+					Settings: map[string]interface{}{
+						"format": "2006-01-02T15:04:05Z",
+					},
+				},
+			},
+		},
+		[]byte(`{"a":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"]}`),
+		[][]byte{
+			[]byte(`{"a":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"],"b":["1614988977000000000","1614989037000000000","1614989097000000000"]}`),
 		},
 	},
 	{
@@ -83,148 +225,6 @@ var metaForEachTests = []struct {
 			[]byte(`{"secrets":["ZHJpbms=","eW91cg==","b3ZhbHRpbmU="],"decoded":["drink","your","ovaltine"]}`),
 		},
 	},
-	// {
-	// 	"string_capture",
-	// 	config.Config{
-	// 		Settings: map[string]interface{}{
-	// 			"object": map[string]interface{}{
-	// 				"source_key": "user_email",
-	// 				"target_key": "user_name",
-	// 			},
-	// 			"transform": config.Config{
-	// 				Type: "string_capture",
-	// 				Settings: map[string]interface{}{
-	// 					"pattern": "^([^@]*)@.*$",
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// 	[]byte(`{"user_email":["john.d@example.com","jane.d@example.com"]}`),
-	// 	[][]byte{
-	// 		[]byte(`{"user_email":["john.d@example.com","jane.d@example.com"],"user_name":["john.d","jane.d"]}`),
-	// 	},
-	// },
-	// {
-	// 	"string_to_lower",
-	// 	config.Config{
-	// 		Settings: map[string]interface{}{
-	// 			"object": map[string]interface{}{
-	// 				"source_key": "upcase",
-	// 				"target_key": "downcase",
-	// 			},
-	// 			"transform": config.Config{
-	// 				Type: "string_to_lower",
-	// 			},
-	// 		},
-	// 	},
-	// 	[]byte(`{"upcase":["ABC","DEF"]}`),
-	// 	[][]byte{
-	// 		[]byte(`{"upcase":["ABC","DEF"],"downcase":["abc","def"]}`),
-	// 	},
-	// },
-	// {
-	// 	"network_domain_subdomain",
-	// 	config.Config{
-	// 		Settings: map[string]interface{}{
-	// 			"object": map[string]interface{}{
-	// 				"source_key": "domain",
-	// 				"target_key": "subdomain",
-	// 			},
-	// 			"transform": config.Config{
-	// 				Type: "network_domain_subdomain",
-	// 			},
-	// 		},
-	// 	},
-	// 	[]byte(`{"domain":["www.example.com","mail.example.top"]}`),
-	// 	[][]byte{
-	// 		[]byte(`{"domain":["www.example.com","mail.example.top"],"subdomain":["www","mail"]}`),
-	// 	},
-	// },
-	// {
-	// 	"hash_sha256",
-	// 	config.Config{
-	// 		Settings: map[string]interface{}{
-	// 			"object": map[string]interface{}{
-	// 				"source_key": "a",
-	// 				"target_key": "b",
-	// 			},
-	// 			"transform": config.Config{
-	// 				Type: "hash_sha256",
-	// 			},
-	// 		},
-	// 	},
-	// 	[]byte(`{"a":["foo","bar","baz"]}`),
-	// 	[][]byte{
-	// 		[]byte(`{"a":["foo","bar","baz"],"b":["2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae","fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9","baa5a0964d3320fbc0c6a922140453c8513ea24ab8fd0577034804a967248096"]}`),
-	// 	},
-	// },
-	// {
-	// 	"object_insert",
-	// 	config.Config{
-	// 		Settings: map[string]interface{}{
-	// 			"object": map[string]interface{}{
-	// 				"source_key": "a",
-	// 				"target_key": "b",
-	// 			},
-	// 			"transform": config.Config{
-	// 				Type: "object_insert",
-	// 				Settings: map[string]interface{}{
-	// 					"object": map[string]interface{}{
-	// 						"target_key": "baz",
-	// 					},
-	// 					"value": "qux",
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// 	[]byte(`{"a":[{"foo":"bar"},{"baz":"quux"}]}`),
-	// 	[][]byte{
-	// 		[]byte(`{"a":[{"foo":"bar"},{"baz":"quux"}],"b":[{"baz":"qux","foo":"bar"},{"baz":"qux"}]}`),
-	// 	},
-	// },
-	// {
-	// 	"string_replace",
-	// 	config.Config{
-	// 		Settings: map[string]interface{}{
-	// 			"object": map[string]interface{}{
-	// 				"source_key": "a",
-	// 				"target_key": "b",
-	// 			},
-	// 			"transform": config.Config{
-	// 				Type: "string_replace",
-	// 				Settings: map[string]interface{}{
-	// 					"pattern":     "r",
-	// 					"replacement": "z",
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// 	[]byte(`{"a":["bar","bard"]}`),
-	// 	[][]byte{
-	// 		[]byte(`{"a":["bar","bard"],"b":["baz","bazd"]}`),
-	// 	},
-	// },
-	// {
-	// 	"time_from_string",
-	// 	config.Config{
-	// 		Settings: map[string]interface{}{
-	// 			"object": map[string]interface{}{
-	// 				"source_key": "a",
-	// 				"target_key": "b",
-	// 			},
-	// 			"transform": config.Config{
-	// 				Type: "time_from_string",
-	// 				Settings: map[string]interface{}{
-	// 					"format": "2006-01-02T15:04:05Z",
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// 	[]byte(`{"a":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"]}`),
-	// 	[][]byte{
-	// 		[]byte(`{"a":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"],"b":["1614988977000000000","1614989037000000000","1614989097000000000"]}`),
-	// 	},
-	// },
 }
 
 func TestMetaForEach(t *testing.T) {

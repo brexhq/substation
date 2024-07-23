@@ -18,7 +18,7 @@ import (
 var errMetaPipelineArrayInput = fmt.Errorf("input is an array")
 
 type metaPipelineConfig struct {
-	// Transforms that is applied in series to the data.
+	// Transforms that are applied in series to the data.
 	Transforms []config.Config `json:"transforms"`
 
 	ID     string         `json:"id"`

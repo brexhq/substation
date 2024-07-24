@@ -18,7 +18,8 @@ type metaMetricDurationConfig struct {
 
 	// Transform that has its duration measured.
 	//
-	// This is deprecated and will be removed in a future release.
+	// Deprecated: Transform exists for backwards compatibility and will be
+	// removed in a future release. Use Transforms instead.
 	Transform config.Config `json:"transform"`
 	// Transforms that have their total duration measured.
 	Transforms []config.Config `json:"transforms"`

@@ -14,7 +14,8 @@ import (
 type metaForEachConfig struct {
 	// Transform that is applied to each item in the array.
 	//
-	// This is deprecated and will be removed in a future release.
+	// Deprecated: Transform exists for backwards compatibility and will be
+	// removed in a future release. Use Transforms instead.
 	Transform config.Config `json:"transform"`
 	// Transforms that are applied in series to the data in the array.
 	Transforms []config.Config

@@ -18,7 +18,8 @@ type metaSwitchCaseConfig struct {
 
 	// Transform that is applied when the condition is true.
 	//
-	// This is deprecated and will be removed in a future release.
+	// Deprecated: Transform exists for backwards compatibility and will be
+	// removed in a future release. Use Transforms instead.
 	Transform config.Config `json:"transform"`
 	// Transforms that are applied in series when the condition is true.
 	Transforms []config.Config `json:"transforms"`

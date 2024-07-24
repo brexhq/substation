@@ -15,7 +15,8 @@ import (
 type metaErrConfig struct {
 	// Transform that is applied with error handling.
 	//
-	// This is deprecated and will be removed in a future release.
+	// Deprecated: Transform exists for backwards compatibility and will be
+	// removed in a future release. Use Transforms instead.
 	Transform config.Config `json:"transform"`
 	// Transforms that are applied in series with error handling.
 	Transforms []config.Config `json:"transforms"`

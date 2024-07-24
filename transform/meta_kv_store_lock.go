@@ -45,7 +45,8 @@ type metaKVStoreLockConfig struct {
 
 	// Transform that is applied after the lock is acquired.
 	//
-	// This is deprecated and will be removed in a future release.
+	// Deprecated: Transform exists for backwards compatibility and will be
+	// removed in a future release. Use Transforms instead.
 	Transform config.Config `json:"transform"`
 	// Transforms that are applied in series after the lock is acquired.
 	Transforms []config.Config `json:"transforms"`

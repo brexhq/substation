@@ -45,7 +45,9 @@ func (c *metaPipelineConfig) Validate() error {
 	return nil
 }
 
-// This is deprecated and will be removed in a future release.
+// Deprecated: newMetaPipeline exists for backwards compatibility and will be
+// removed in a future release. Use the Transforms fields on other meta transforms
+// instead.
 func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, error) {
 	conf := metaPipelineConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {

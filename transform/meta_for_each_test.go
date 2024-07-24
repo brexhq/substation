@@ -205,6 +205,26 @@ var metaForEachTests = []struct {
 			[]byte(`{"a":["2021-03-06T00:02:57Z","2021-03-06T00:03:57Z","2021-03-06T00:04:57Z"],"b":["1614988977000000000","1614989037000000000","1614989097000000000"]}`),
 		},
 	},
+	{
+		"format_from_base64",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "secrets",
+					"target_key": "decoded",
+				},
+				"transforms": []config.Config{
+					{
+						Type: "format_from_base64",
+					},
+				},
+			},
+		},
+		[]byte(`{"secrets":["ZHJpbms=","eW91cg==","b3ZhbHRpbmU="]}`),
+		[][]byte{
+			[]byte(`{"secrets":["ZHJpbms=","eW91cg==","b3ZhbHRpbmU="],"decoded":["drink","your","ovaltine"]}`),
+		},
+	},
 }
 
 func TestMetaForEach(t *testing.T) {

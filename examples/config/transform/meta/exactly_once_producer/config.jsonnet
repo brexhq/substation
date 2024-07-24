@@ -15,7 +15,9 @@ local kv = sub.kv_store.memory();
       kv_store: kv,
       prefix: 'eo_producer',
       ttl_offset: '1m',
-      transform: sub.tf.send.stdout(),
+      transforms: [
+        sub.tf.send.stdout(),
+      ],
     }) }),
   ],
 }

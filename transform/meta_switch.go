@@ -12,14 +12,24 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+type metaSwitchCaseConfig struct {
+	// Condition that must be true for the transforms to be applied.
+	Condition condition.Config `json:"condition"`
+
+	// Transform that is applied when the condition is true.
+	//
+	// Deprecated: Transform exists for backwards compatibility and will be
+	// removed in a future release. Use Transforms instead.
+	Transform config.Config `json:"transform"`
+	// Transforms that are applied in series when the condition is true.
+	Transforms []config.Config `json:"transforms"`
+}
+
 type metaSwitchConfig struct {
 	// Cases are the transforms that are conditionally applied. If
 	// no condition is configured, then the transform is always
 	// applied.
-	Cases []struct {
-		Condition condition.Config `json:"condition"`
-		Transform config.Config    `json:"transform"`
-	} `json:"cases"`
+	Cases []metaSwitchCaseConfig `json:"cases"`
 
 	ID string `json:"id"`
 }
@@ -33,7 +43,19 @@ func (c *metaSwitchConfig) Validate() error {
 		return fmt.Errorf("cases: %v", errors.ErrMissingRequiredOption)
 	}
 
+	for _, c := range c.Cases {
+		if c.Transform.Type == "" && len(c.Transforms) == 0 {
+			return fmt.Errorf("transform: %v", errors.ErrMissingRequiredOption)
+		}
+	}
+
 	return nil
+}
+
+type metaSwitchConditional struct {
+	operator     condition.Operator
+	transformer  Transformer
+	transformers []Transformer
 }
 
 func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) {
@@ -50,33 +72,40 @@ func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) 
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
-	var conditional []struct {
-		op condition.Operator
-		tf Transformer
-	}
-	for _, s := range conf.Cases {
+	conditionals := make([]metaSwitchConditional, len(conf.Cases))
+	for i, s := range conf.Cases {
+		conditional := metaSwitchConditional{}
+
 		op, err := condition.New(ctx, s.Condition)
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 		}
+		conditional.operator = op
 
-		tf, err := New(ctx, s.Transform)
-		if err != nil {
-			return nil, fmt.Errorf("transform meta_switch: %v", err)
+		if s.Transform.Type != "" {
+			tf, err := New(ctx, s.Transform)
+			if err != nil {
+				return nil, fmt.Errorf("transform meta_switch: %v", err)
+			}
+
+			conditional.transformer = tf
 		}
 
-		conditional = append(conditional, struct {
-			op condition.Operator
-			tf Transformer
-		}{
-			op: op,
-			tf: tf,
-		})
+		for _, c := range s.Transforms {
+			tf, err := New(ctx, c)
+			if err != nil {
+				return nil, fmt.Errorf("transform meta_switch: %v", err)
+			}
+
+			conditional.transformers = append(conditional.transformers, tf)
+		}
+
+		conditionals[i] = conditional
 	}
 
 	tf := metaSwitch{
 		conf:        conf,
-		conditional: conditional,
+		conditional: conditionals,
 	}
 
 	return &tf, nil
@@ -85,22 +114,27 @@ func newMetaSwitch(ctx context.Context, cfg config.Config) (*metaSwitch, error) 
 type metaSwitch struct {
 	conf metaSwitchConfig
 
-	conditional []struct {
-		op condition.Operator
-		tf Transformer
-	}
+	conditional []metaSwitchConditional
 }
 
 func (tf *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		var messages []*message.Message
 		for _, c := range tf.conditional {
-			res, err := c.tf.Transform(ctx, msg)
+			var msgs []*message.Message
+			var err error
+
+			if len(c.transformers) > 0 {
+				msgs, err = Apply(ctx, c.transformers, msg)
+			} else {
+				msgs, err = c.transformer.Transform(ctx, msg)
+			}
+
 			if err != nil {
 				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}
 
-			messages = append(messages, res...)
+			messages = append(messages, msgs...)
 		}
 
 		// This is required to deduplicate the control messages that
@@ -119,7 +153,7 @@ func (tf *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*m
 	}
 
 	for _, c := range tf.conditional {
-		ok, err := c.op.Operate(ctx, msg)
+		ok, err := c.operator.Operate(ctx, msg)
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
@@ -128,7 +162,13 @@ func (tf *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*m
 			continue
 		}
 
-		msgs, err := c.tf.Transform(ctx, msg)
+		var msgs []*message.Message
+		if len(c.transformers) > 0 {
+			msgs, err = Apply(ctx, c.transformers, msg)
+		} else {
+			msgs, err = c.transformer.Transform(ctx, msg)
+		}
+
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}

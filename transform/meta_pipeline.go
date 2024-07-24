@@ -18,7 +18,7 @@ import (
 var errMetaPipelineArrayInput = fmt.Errorf("input is an array")
 
 type metaPipelineConfig struct {
-	// Transforms that is applied in series to the data.
+	// Transforms that are applied in series to the data.
 	Transforms []config.Config `json:"transforms"`
 
 	ID     string         `json:"id"`
@@ -45,6 +45,9 @@ func (c *metaPipelineConfig) Validate() error {
 	return nil
 }
 
+// Deprecated: newMetaPipeline exists for backwards compatibility and will be
+// removed in a future release. Use the Transforms fields on other meta transforms
+// instead.
 func newMetaPipeline(ctx context.Context, cfg config.Config) (*metaPipeline, error) {
 	conf := metaPipelineConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {

@@ -13,7 +13,12 @@ import (
 
 type metaForEachConfig struct {
 	// Transform that is applied to each item in the array.
+	//
+	// Deprecated: Transform exists for backwards compatibility and will be
+	// removed in a future release. Use Transforms instead.
 	Transform config.Config `json:"transform"`
+	// Transforms that are applied in series to the data in the array.
+	Transforms []config.Config
 
 	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
@@ -32,7 +37,7 @@ func (c *metaForEachConfig) Validate() error {
 		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
 	}
 
-	if c.Transform.Type == "" {
+	if c.Transform.Type == "" && len(c.Transforms) == 0 {
 		return fmt.Errorf("type: %v", errors.ErrMissingRequiredOption)
 	}
 
@@ -57,20 +62,23 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 		conf: conf,
 	}
 
-	tfConf, err := json.Marshal(conf.Transform)
-	if err != nil {
-		return nil, err
+	if conf.Transform.Type != "" {
+		tfer, err := New(ctx, conf.Transform)
+		if err != nil {
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+		}
+		tf.tf = tfer
 	}
 
-	if err := json.Unmarshal(tfConf, &tf.tfCfg); err != nil {
-		return nil, err
-	}
+	tf.tfs = make([]Transformer, len(conf.Transforms))
+	for i, t := range conf.Transforms {
+		tfer, err := New(ctx, t)
+		if err != nil {
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+		}
 
-	tfer, err := New(ctx, tf.tfCfg)
-	if err != nil {
-		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+		tf.tfs[i] = tfer
 	}
-	tf.tf = tfer
 
 	return &tf, nil
 }
@@ -78,13 +86,21 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 type metaForEach struct {
 	conf metaForEachConfig
 
-	tf    Transformer
-	tfCfg config.Config
+	tf  Transformer
+	tfs []Transformer
 }
 
 func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	var msgs []*message.Message
+	var err error
+
 	if msg.IsControl() {
-		msgs, err := tf.tf.Transform(ctx, msg)
+		if len(tf.tfs) > 0 {
+			msgs, err = Apply(ctx, tf.tfs, msg)
+		} else {
+			msgs, err = tf.tf.Transform(ctx, msg)
+		}
+
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
@@ -104,12 +120,17 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 	var arr []interface{}
 	for _, res := range value.Array() {
 		tmpMsg := message.New().SetData(res.Bytes())
-		tfMsgs, err := tf.tf.Transform(ctx, tmpMsg)
+		if len(tf.tfs) > 0 {
+			msgs, err = Apply(ctx, tf.tfs, tmpMsg)
+		} else {
+			msgs, err = tf.tf.Transform(ctx, tmpMsg)
+		}
+
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
-		for _, m := range tfMsgs {
+		for _, m := range msgs {
 			v := bytesToValue(m.Data())
 			arr = append(arr, v.Value())
 		}

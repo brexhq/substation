@@ -13,9 +13,16 @@ import (
 )
 
 type metaMetricDurationConfig struct {
-	ID        string         `json:"id"`
-	Metric    iconfig.Metric `json:"metric"`
-	Transform config.Config  `json:"transform"`
+	ID     string         `json:"id"`
+	Metric iconfig.Metric `json:"metric"`
+
+	// Transform that has its duration measured.
+	//
+	// Deprecated: Transform exists for backwards compatibility and will be
+	// removed in a future release. Use Transforms instead.
+	Transform config.Config `json:"transform"`
+	// Transforms that have their total duration measured.
+	Transforms []config.Config `json:"transforms"`
 }
 
 func (c *metaMetricDurationConfig) Decode(in interface{}) error {
@@ -43,21 +50,22 @@ func newMetaMetricsDuration(ctx context.Context, cfg config.Config) (*metaMetric
 		metric: m,
 	}
 
-	tfConf, err := json.Marshal(conf.Transform)
-	if err != nil {
-		return nil, err
+	if conf.Transform.Type != "" {
+		tfer, err := New(ctx, conf.Transform)
+		if err != nil {
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+		}
+		tf.tf = tfer
 	}
 
-	var tfCfg config.Config
-	if err := json.Unmarshal(tfConf, &tfCfg); err != nil {
-		return nil, err
+	tf.tfs = make([]Transformer, len(conf.Transforms))
+	for i, t := range conf.Transforms {
+		tfer, err := New(ctx, t)
+		if err != nil {
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+		}
+		tf.tfs[i] = tfer
 	}
-
-	tfer, err := New(ctx, tfCfg)
-	if err != nil {
-		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
-	}
-	tf.tf = tfer
 
 	return &tf, nil
 }
@@ -65,7 +73,8 @@ func newMetaMetricsDuration(ctx context.Context, cfg config.Config) (*metaMetric
 type metaMetricDuration struct {
 	conf metaMetricDurationConfig
 
-	tf Transformer
+	tf  Transformer
+	tfs []Transformer
 
 	// This is measured in nanoseconds.
 	metric   metrics.Generator
@@ -82,7 +91,15 @@ func (tf *metaMetricDuration) Transform(ctx context.Context, msg *message.Messag
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
-		msgs, err := tf.tf.Transform(ctx, msg)
+		var msgs []*message.Message
+		var err error
+
+		if len(tf.tfs) > 0 {
+			msgs, err = Apply(ctx, tf.tfs, msg)
+		} else {
+			msgs, err = tf.tf.Transform(ctx, msg)
+		}
+
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
@@ -94,6 +111,10 @@ func (tf *metaMetricDuration) Transform(ctx context.Context, msg *message.Messag
 	defer func() {
 		tf.duration += time.Since(start)
 	}()
+
+	if len(tf.tfs) > 0 {
+		return Apply(ctx, tf.tfs, msg)
+	}
 
 	return tf.tf.Transform(ctx, msg)
 }

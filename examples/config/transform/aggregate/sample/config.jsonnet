@@ -15,11 +15,15 @@ local sub = import '../../../../../build/config/substation.libsonnet';
     sub.tf.meta.switch(settings={ cases: [
       {
         condition: sub.cnd.any(sub.cnd.num.len.eq({ object: { source_key: 'sample' }, value: 10 })),
-        transform: sub.tf.object.copy({ object: { source_key: 'sample.0' } }),
+        transforms: [
+          sub.tf.object.copy({ object: { source_key: 'sample.0' } }),
+        ],
       },
       {
         condition: sub.cnd.any(sub.cnd.num.len.gt({ object: { source_key: 'sample' }, value: 0 })),
-        transform: sub.tf.util.drop(),
+        transforms: [
+          sub.tf.util.drop(),
+        ],
       },
     ] }),
     sub.tf.send.stdout(),

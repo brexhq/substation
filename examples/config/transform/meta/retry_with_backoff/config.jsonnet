@@ -42,9 +42,15 @@ local retries = ['0s', '1s', '2s', '4s'];
       sub.tf.meta.switch({ cases: [
         {
           condition: sub.cnd.any(key_is_empty),
-          transform: sub.tf.util.err({ message: std.format('failed to transform after retrying %d times', std.length(retries) - 1) }),
+          transforms: [
+            sub.tf.util.err({ message: std.format('failed to transform after retrying %d times', std.length(retries) - 1) }),
+          ],
         },
-        { transform: sub.tf.send.stdout() },
+        { 
+          transforms: [
+            sub.tf.send.stdout() 
+          ],       
+        },
       ] }),
     ],
 }

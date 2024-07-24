@@ -591,6 +591,7 @@
         local default = {
           id: $.helpers.id(type, settings),
           transform: null,
+          transforms: null,
           error_messages: null,
         },
 
@@ -603,6 +604,7 @@
           id: $.helpers.id(type, settings),
           object: $.config.object,
           transform: null,
+          transforms: null,
         },
 
         type: type,
@@ -615,6 +617,7 @@
             id: $.helpers.id(type, settings),
             object: $.config.object { ttl_key: null },
             transform: null,
+            transforms: null,
             kv_store: null,
             prefix: null,
             ttl_offset: '0s',
@@ -631,6 +634,7 @@
             id: $.helpers.id(type, settings),
             metric: $.config.metric,
             transform: null,
+            transforms: null,
           },
 
           type: type,

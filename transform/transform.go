@@ -54,12 +54,18 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newEnrichHTTPGet(ctx, cfg)
 	case "enrich_http_post":
 		return newEnrichHTTPPost(ctx, cfg)
+		// Deprecated: Use enrich_kv_store_item_get instead.
 	case "enrich_kv_store_get":
-		return newEnrichKVStoreGet(ctx, cfg)
+		fallthrough
+	case "enrich_kv_store_item_get":
+		return newEnrichKVStoreItemGet(ctx, cfg)
+		// Deprecated: Use enrich_kv_store_item_set instead.
 	case "enrich_kv_store_set":
-		return newEnrichKVStoreSet(ctx, cfg)
-	case "enrich_kv_store_append":
-		return newEnrichKVStoreAppend(ctx, cfg)
+		fallthrough
+	case "enrich_kv_store_item_set":
+		return newEnrichKVStoreItemSet(ctx, cfg)
+	case "enrich_kv_store_set_add":
+		return newenrichKVStoreItemSetAdd(ctx, cfg)
 	// Format transforms.
 	case "format_from_base64":
 		return newFormatFromBase64(ctx, cfg)

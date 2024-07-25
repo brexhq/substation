@@ -220,10 +220,10 @@ func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val inte
 	return nil
 }
 
-// AppendWithTTL appends a list value to the DynamoDB table. If the value doesn't exist,
-// then a new list is created. If a non-zero TTL is provided, then the TTL attribute is
+// SetAddWithTTL adds a value to a set in the DynamoDB table. If the set doesn't exist,
+// then a new set is created. If a non-zero TTL is provided, then the TTL attribute is
 // updated with the new value.
-func (store *kvAWSDynamoDB) AppendWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
+func (store *kvAWSDynamoDB) SetAddWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
 	if store.Attributes.Value == "" {
 		return errors.ErrMissingRequiredOption
 	}
@@ -238,12 +238,8 @@ func (store *kvAWSDynamoDB) AppendWithTTL(ctx context.Context, key string, val i
 		ExpressionAttributeNames: map[string]*string{
 			"#v": aws.String(store.Attributes.Value),
 		},
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":empty_list": {
-				L: []*dynamodb.AttributeValue{},
-			},
-		},
-		UpdateExpression: aws.String("SET #v = list_append(if_not_exists(#v, :empty_list), :value)"),
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{},
+		UpdateExpression:          aws.String("ADD #v :value"),
 	}
 
 	if store.Attributes.SortKey != "" {
@@ -259,55 +255,39 @@ func (store *kvAWSDynamoDB) AppendWithTTL(ctx context.Context, key string, val i
 		}
 		input.ExpressionAttributeNames["#ttl"] = aws.String(store.Attributes.TTL)
 
-		// Concatenates the TTL attribute to the UpdateExpression.
-		input.UpdateExpression = aws.String(fmt.Sprintf("%s, #ttl = :ttl", *input.UpdateExpression))
+		// Concatenates the TTL attribute to the UpdateExpression. This produces
+		// the string " ADD #v :value SET #ttl = :ttl".
+		input.UpdateExpression = aws.String(fmt.Sprintf("%s SET #ttl = :ttl", *input.UpdateExpression))
 	}
 
-	// TODO: This needs to be tested with the output of the messages package.
-	var l []*dynamodb.AttributeValue
+	// DynamoDB supports string, number, and binary data types for sets, and
+	// numbers are represented as strings.
+	var av dynamodb.AttributeValue
 	switch v := val.(type) {
 	case string:
-		l = append(l, &dynamodb.AttributeValue{
-			S: aws.String(v),
-		})
+		av.SS = []*string{aws.String(v)}
 	case []string:
 		for _, s := range v {
-			l = append(l, &dynamodb.AttributeValue{
-				S: aws.String(s),
-			})
+			av.SS = append(av.SS, aws.String(s))
 		}
-	case int, float32, float64:
-		l = append(l, &dynamodb.AttributeValue{
-			N: aws.String(fmt.Sprintf("%v", v)),
-		})
+	case int, float64:
+		av.NS = []*string{aws.String(fmt.Sprintf("%d", v))}
 	case []int:
 		for _, n := range v {
-			l = append(l, &dynamodb.AttributeValue{
-				N: aws.String(fmt.Sprintf("%d", n)),
-			})
+			av.NS = append(av.NS, aws.String(fmt.Sprintf("%d", n)))
 		}
 	case []float64:
 		for _, n := range v {
-			l = append(l, &dynamodb.AttributeValue{
-				N: aws.String(fmt.Sprintf("%f", n)),
-			})
+			av.NS = append(av.NS, aws.String(fmt.Sprintf("%f", n)))
 		}
-	case bool:
-		l = append(l, &dynamodb.AttributeValue{
-			BOOL: aws.Bool(v),
-		})
-	case []bool:
-		for _, b := range v {
-			l = append(l, &dynamodb.AttributeValue{
-				BOOL: aws.Bool(b),
-			})
-		}
+	case []byte:
+		av.BS = [][]byte{v}
+	case [][]byte:
+		av.BS = append(av.BS, v...)
 	}
 
 	// Referenced in the UpdateExpression list_append function.
-	input.ExpressionAttributeValues[":value"] = &dynamodb.AttributeValue{
-		L: l,
-	}
+	input.ExpressionAttributeValues[":value"] = &av
 
 	if _, err := store.client.UpdateItem(ctx, input); err != nil {
 		return err

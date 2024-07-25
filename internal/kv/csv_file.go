@@ -102,8 +102,8 @@ func (store *kvCSVFile) SetWithTTL(ctx context.Context, key string, val interfac
 	return errSetNotSupported
 }
 
-// AppendWithTTL is unused because this is a read-only store.
-func (store *kvCSVFile) AppendWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
+// SetAddWithTTL is unused because this is a read-only store.
+func (store *kvCSVFile) SetAddWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
 	return errSetNotSupported
 }
 

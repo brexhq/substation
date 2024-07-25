@@ -437,26 +437,33 @@
           kv_store: null,
           close_kv_store: false,
         },
-        get(settings={}): {
-          local type = 'enrich_kv_store_get',
-          local default = $.transform.enrich.kv_store.default { id: $.helpers.id(type, settings) },
+        iget: $.transform.enrich.kv_store.item.get,
+        iset: $.transform.enrich.kv_store.item.set,
+        item: {
+          get(settings={}): {
+            local type = 'enrich_kv_store_get',
+            local default = $.transform.enrich.kv_store.default { id: $.helpers.id(type, settings) },
 
-          type: type,
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+            type: type,
+            settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+          },
+          set(settings={}): {
+            local type = 'enrich_kv_store_set',
+            local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s', id: $.helpers.id(type, settings) },
+
+            type: type,
+            settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+          },
         },
-        set(settings={}): {
-          local type = 'enrich_kv_store_set',
-          local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s', id: $.helpers.id(type, settings) },
+        sadd: $.transform.enrich.kv_store.iset.add,
+        set: {
+          add(settings={}): {
+            local type = 'enrich_kv_store_set_add',
+            local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s', id: $.helpers.id(type, settings) },
 
-          type: type,
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
-        },
-        append(settings={}): {
-          local type = 'enrich_kv_store_append',
-          local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s', id: $.helpers.id(type, settings) },
-
-          type: type,
-          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+            type: type,
+            settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+          },
         },
       },
     },

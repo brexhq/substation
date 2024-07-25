@@ -14,7 +14,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type enrichKVStoreGetConfig struct {
+type enrichKVStoreItemGetConfig struct {
 	// Prefix is prepended to the key and can be used to simplify
 	// data management within a KV store.
 	//
@@ -31,11 +31,11 @@ type enrichKVStoreGetConfig struct {
 	KVStore config.Config  `json:"kv_store"`
 }
 
-func (c *enrichKVStoreGetConfig) Decode(in interface{}) error {
+func (c *enrichKVStoreItemGetConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *enrichKVStoreGetConfig) Validate() error {
+func (c *enrichKVStoreItemGetConfig) Validate() error {
 	if c.Object.SourceKey == "" {
 		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
@@ -51,8 +51,8 @@ func (c *enrichKVStoreGetConfig) Validate() error {
 	return nil
 }
 
-func newEnrichKVStoreGet(_ context.Context, cfg config.Config) (*enrichKVStoreGet, error) {
-	conf := enrichKVStoreGetConfig{}
+func newEnrichKVStoreItemGet(_ context.Context, cfg config.Config) (*enrichKVStoreItemGet, error) {
+	conf := enrichKVStoreItemGetConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform enrich_kv_store_get: %v", err)
 	}
@@ -70,7 +70,7 @@ func newEnrichKVStoreGet(_ context.Context, cfg config.Config) (*enrichKVStoreGe
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
-	tf := enrichKVStoreGet{
+	tf := enrichKVStoreItemGet{
 		conf:    conf,
 		kvStore: kvStore,
 	}
@@ -78,12 +78,12 @@ func newEnrichKVStoreGet(_ context.Context, cfg config.Config) (*enrichKVStoreGe
 	return &tf, nil
 }
 
-type enrichKVStoreGet struct {
-	conf    enrichKVStoreGetConfig
+type enrichKVStoreItemGet struct {
+	conf    enrichKVStoreItemGetConfig
 	kvStore kv.Storer
 }
 
-func (tf *enrichKVStoreGet) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *enrichKVStoreItemGet) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		if !tf.conf.CloseKVStore {
 			return []*message.Message{msg}, nil
@@ -124,7 +124,7 @@ func (tf *enrichKVStoreGet) Transform(ctx context.Context, msg *message.Message)
 	return []*message.Message{msg}, nil
 }
 
-func (tf *enrichKVStoreGet) String() string {
+func (tf *enrichKVStoreItemGet) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

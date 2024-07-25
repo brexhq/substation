@@ -15,7 +15,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type enrichKVStoreAppendObjectConfig struct {
+type enrichKVStoreItemSetAddObjectConfig struct {
 	// TTLKey retrieves a value from an object that is used as the time-to-live (TTL)
 	// of the item set into the KV store. This value must be an integer that represents
 	// the Unix time when the item will be evicted from the store. Any precision greater
@@ -27,7 +27,7 @@ type enrichKVStoreAppendObjectConfig struct {
 	iconfig.Object
 }
 
-type enrichKVStoreAppendConfig struct {
+type enrichKVStoreItemSetAddConfig struct {
 	// Prefix is prepended to the key and can be used to simplify
 	// data management within a KV store.
 	//
@@ -49,16 +49,16 @@ type enrichKVStoreAppendConfig struct {
 	// This is optional and defaults to false (KV store is not closed).
 	CloseKVStore bool `json:"close_kv_store"`
 
-	ID      string                          `json:"id"`
-	Object  enrichKVStoreAppendObjectConfig `json:"object"`
-	KVStore config.Config                   `json:"kv_store"`
+	ID      string                              `json:"id"`
+	Object  enrichKVStoreItemSetAddObjectConfig `json:"object"`
+	KVStore config.Config                       `json:"kv_store"`
 }
 
-func (c *enrichKVStoreAppendConfig) Decode(in interface{}) error {
+func (c *enrichKVStoreItemSetAddConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *enrichKVStoreAppendConfig) Validate() error {
+func (c *enrichKVStoreItemSetAddConfig) Validate() error {
 	if c.Object.SourceKey == "" {
 		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
@@ -74,8 +74,8 @@ func (c *enrichKVStoreAppendConfig) Validate() error {
 	return nil
 }
 
-func newEnrichKVStoreAppend(_ context.Context, cfg config.Config) (*enrichKVStoreAppend, error) {
-	conf := enrichKVStoreAppendConfig{}
+func newenrichKVStoreItemSetAdd(_ context.Context, cfg config.Config) (*enrichKVStoreItemSetAdd, error) {
+	conf := enrichKVStoreItemSetAddConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform enrich_kv_store_set: %v", err)
 	}
@@ -102,7 +102,7 @@ func newEnrichKVStoreAppend(_ context.Context, cfg config.Config) (*enrichKVStor
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
-	tf := enrichKVStoreAppend{
+	tf := enrichKVStoreItemSetAdd{
 		conf:    conf,
 		kvStore: kvStore,
 		ttl:     int64(dur.Seconds()),
@@ -111,13 +111,13 @@ func newEnrichKVStoreAppend(_ context.Context, cfg config.Config) (*enrichKVStor
 	return &tf, nil
 }
 
-type enrichKVStoreAppend struct {
-	conf    enrichKVStoreAppendConfig
+type enrichKVStoreItemSetAdd struct {
+	conf    enrichKVStoreItemSetAddConfig
 	kvStore kv.Storer
 	ttl     int64
 }
 
-func (tf *enrichKVStoreAppend) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *enrichKVStoreItemSetAdd) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		if !tf.conf.CloseKVStore {
 			return []*message.Message{msg}, nil
@@ -151,24 +151,24 @@ func (tf *enrichKVStoreAppend) Transform(ctx context.Context, msg *message.Messa
 		value := msg.GetValue(tf.conf.Object.TTLKey)
 		ttl := truncateTTL(value) + tf.ttl
 
-		if err := tf.kvStore.AppendWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetAddWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).Value(), ttl); err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	} else if tf.conf.Object.TTLKey != "" {
 		value := msg.GetValue(tf.conf.Object.TTLKey)
 		ttl := truncateTTL(value)
 
-		if err := tf.kvStore.AppendWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetAddWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).Value(), ttl); err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	} else if tf.ttl != 0 {
 		ttl := time.Now().Add(time.Duration(tf.ttl) * time.Second).Unix()
 
-		if err := tf.kvStore.AppendWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetAddWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).Value(), ttl); err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	} else {
-		if err := tf.kvStore.AppendWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), 0); err != nil {
+		if err := tf.kvStore.SetAddWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).Value(), 0); err != nil {
 			return nil, fmt.Errorf("transform	%s: %v", tf.conf.ID, err)
 		}
 	}
@@ -176,7 +176,7 @@ func (tf *enrichKVStoreAppend) Transform(ctx context.Context, msg *message.Messa
 	return []*message.Message{msg}, nil
 }
 
-func (tf *enrichKVStoreAppend) String() string {
+func (tf *enrichKVStoreItemSetAdd) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

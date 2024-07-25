@@ -15,7 +15,7 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
-type enrichKVStoreSetObjectConfig struct {
+type enrichKVStoreItemSetObjectConfig struct {
 	// TTLKey retrieves a value from an object that is used as the time-to-live (TTL)
 	// of the item set into the KV store. This value must be an integer that represents
 	// the Unix time when the item will be evicted from the store. Any precision greater
@@ -27,7 +27,7 @@ type enrichKVStoreSetObjectConfig struct {
 	iconfig.Object
 }
 
-type enrichKVStoreSetConfig struct {
+type enrichKVStoreItemSetConfig struct {
 	// Prefix is prepended to the key and can be used to simplify
 	// data management within a KV store.
 	//
@@ -49,16 +49,16 @@ type enrichKVStoreSetConfig struct {
 	// This is optional and defaults to false (KV store is not closed).
 	CloseKVStore bool `json:"close_kv_store"`
 
-	ID      string                       `json:"id"`
-	Object  enrichKVStoreSetObjectConfig `json:"object"`
-	KVStore config.Config                `json:"kv_store"`
+	ID      string                           `json:"id"`
+	Object  enrichKVStoreItemSetObjectConfig `json:"object"`
+	KVStore config.Config                    `json:"kv_store"`
 }
 
-func (c *enrichKVStoreSetConfig) Decode(in interface{}) error {
+func (c *enrichKVStoreItemSetConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *enrichKVStoreSetConfig) Validate() error {
+func (c *enrichKVStoreItemSetConfig) Validate() error {
 	if c.Object.SourceKey == "" {
 		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
 	}
@@ -74,8 +74,8 @@ func (c *enrichKVStoreSetConfig) Validate() error {
 	return nil
 }
 
-func newEnrichKVStoreSet(_ context.Context, cfg config.Config) (*enrichKVStoreSet, error) {
-	conf := enrichKVStoreSetConfig{}
+func newEnrichKVStoreItemSet(_ context.Context, cfg config.Config) (*enrichKVStoreItemSet, error) {
+	conf := enrichKVStoreItemSetConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform enrich_kv_store_set: %v", err)
 	}
@@ -102,7 +102,7 @@ func newEnrichKVStoreSet(_ context.Context, cfg config.Config) (*enrichKVStoreSe
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
-	tf := enrichKVStoreSet{
+	tf := enrichKVStoreItemSet{
 		conf:    conf,
 		kvStore: kvStore,
 		ttl:     int64(dur.Seconds()),
@@ -111,13 +111,13 @@ func newEnrichKVStoreSet(_ context.Context, cfg config.Config) (*enrichKVStoreSe
 	return &tf, nil
 }
 
-type enrichKVStoreSet struct {
-	conf    enrichKVStoreSetConfig
+type enrichKVStoreItemSet struct {
+	conf    enrichKVStoreItemSetConfig
 	kvStore kv.Storer
 	ttl     int64
 }
 
-func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *enrichKVStoreItemSet) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		if !tf.conf.CloseKVStore {
 			return []*message.Message{msg}, nil
@@ -176,7 +176,7 @@ func (tf *enrichKVStoreSet) Transform(ctx context.Context, msg *message.Message)
 	return []*message.Message{msg}, nil
 }
 
-func (tf *enrichKVStoreSet) String() string {
+func (tf *enrichKVStoreItemSet) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

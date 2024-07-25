@@ -65,7 +65,7 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "enrich_kv_store_item_set":
 		return newEnrichKVStoreItemSet(ctx, cfg)
 	case "enrich_kv_store_set_add":
-		return newenrichKVStoreItemSetAdd(ctx, cfg)
+		return newenrichKVStoreSetAdd(ctx, cfg)
 	// Format transforms.
 	case "format_from_base64":
 		return newFormatFromBase64(ctx, cfg)

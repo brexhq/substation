@@ -126,6 +126,40 @@ func (store *kvMemory) Lock(ctx context.Context, key string, ttl int64) error {
 	return store.SetWithTTL(ctx, key, nil, ttl)
 }
 
+// AppendWithTTL appends a value to a list in the store. If the list does not exist, then
+// it is created. If a non-zero TTL is provided, then the TTL value is also updated.
+func (store *kvMemory) AppendWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	// List already exists for the key.
+	if node, ok := store.items[key]; ok {
+		// Resetting the position of the node prevents recently accessed items from being evicted
+		store.lru.MoveToFront(node)
+
+		node.Value = kvMemoryElement{
+			key:   key,
+			value: append(node.Value.(kvMemoryElement).value.([]interface{}), val),
+			ttl:   ttl, // Always update the TTL value. Zero values are ignored on retrieval.
+		}
+
+		return nil
+	}
+
+	// No list exists for the key.
+	store.lru.PushFront(kvMemoryElement{key, []interface{}{val}, ttl})
+	store.items[key] = store.lru.Front()
+
+	if store.lru.Len() > store.Capacity {
+		node := store.lru.Back()
+
+		store.lru.Remove(node)
+		delete(store.items, node.Value.(kvMemoryElement).key)
+	}
+
+	return nil
+}
+
 // Unlock removes an item from the store.
 func (store *kvMemory) Unlock(ctx context.Context, key string) error {
 	store.lockMu.Lock()

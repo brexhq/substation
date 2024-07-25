@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/dynamodb"
+	iaws "github.com/brexhq/substation/internal/aws"
+	idynamodb "github.com/brexhq/substation/internal/aws/dynamodb"
 	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/internal/errors"
 )
@@ -47,7 +49,7 @@ type kvAWSDynamoDB struct {
 	//
 	// This is optional and defaults to false (eventually consistent reads).
 	ConsistentRead bool `json:"consistent_read"`
-	client         dynamodb.API
+	client         idynamodb.API
 }
 
 // Create a new AWS DynamoDB KV store.
@@ -218,6 +220,99 @@ func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val inte
 	return nil
 }
 
+// AppendWithTTL appends a list value to the DynamoDB table. If the value doesn't exist,
+// then a new list is created. If a non-zero TTL is provided, then the TTL attribute is
+// updated with the new value.
+func (store *kvAWSDynamoDB) AppendWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
+	if store.Attributes.Value == "" {
+		return errors.ErrMissingRequiredOption
+	}
+
+	input := &dynamodb.UpdateItemInput{
+		TableName: aws.String(store.TableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			store.Attributes.PartitionKey: {
+				S: aws.String(key),
+			},
+		},
+		ExpressionAttributeNames: map[string]*string{
+			"#v": aws.String(store.Attributes.Value),
+		},
+		UpdateExpression: aws.String("SET #v = list_append(#v, :value)"),
+	}
+
+	if store.Attributes.SortKey != "" {
+		input.Key[store.Attributes.SortKey] = &dynamodb.AttributeValue{
+			S: aws.String("substation:kv_store"),
+		}
+	}
+
+	// Overwrite the TTL value if the attribute exists.
+	if store.Attributes.TTL != "" {
+		input.ExpressionAttributeValues = map[string]*dynamodb.AttributeValue{
+			":ttl": {
+				N: aws.String(fmt.Sprintf("%d", ttl)),
+			},
+		}
+		input.ExpressionAttributeNames["#ttl"] = aws.String(store.Attributes.TTL)
+
+		// Concatnates the TTL attribute to the UpdateExpression.
+		input.UpdateExpression = aws.String(fmt.Sprintf("%s, #ttl = :ttl", *input.UpdateExpression))
+	}
+
+	var l []*dynamodb.AttributeValue
+	switch v := val.(type) {
+	case string:
+		l = append(l, &dynamodb.AttributeValue{
+			S: aws.String(v),
+		})
+	case []string:
+		for _, s := range v {
+			l = append(l, &dynamodb.AttributeValue{
+				S: aws.String(s),
+			})
+		}
+	case int, float32, float64:
+		l = append(l, &dynamodb.AttributeValue{
+			N: aws.String(fmt.Sprintf("%v", v)),
+		})
+	case []int:
+		for _, n := range v {
+			l = append(l, &dynamodb.AttributeValue{
+				N: aws.String(fmt.Sprintf("%d", n)),
+			})
+		}
+	case []float64:
+		for _, n := range v {
+			l = append(l, &dynamodb.AttributeValue{
+				N: aws.String(fmt.Sprintf("%f", n)),
+			})
+		}
+	case bool:
+		l = append(l, &dynamodb.AttributeValue{
+			BOOL: aws.Bool(v),
+		})
+	case []bool:
+		for _, b := range v {
+			l = append(l, &dynamodb.AttributeValue{
+				BOOL: aws.Bool(b),
+			})
+		}
+	}
+
+	input.ExpressionAttributeValues = map[string]*dynamodb.AttributeValue{
+		":value": { // Referenced in the UpdateExpression list_append function.
+			L: l,
+		},
+	}
+
+	if _, err := store.client.UpdateItem(ctx, input); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // IsEnabled returns true if the DynamoDB client is ready for use.
 func (store *kvAWSDynamoDB) IsEnabled() bool {
 	return store.client.IsEnabled()
@@ -234,7 +329,7 @@ func (store *kvAWSDynamoDB) Setup(ctx context.Context) error {
 		return nil
 	}
 
-	store.client.Setup(aws.Config{
+	store.client.Setup(iaws.Config{
 		Region:          store.AWS.Region,
 		RoleARN:         store.AWS.RoleARN,
 		MaxRetries:      store.Retry.Count,

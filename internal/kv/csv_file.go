@@ -102,6 +102,11 @@ func (store *kvCSVFile) SetWithTTL(ctx context.Context, key string, val interfac
 	return errSetNotSupported
 }
 
+// AppendWithTTL is unused because this is a read-only store.
+func (store *kvCSVFile) AppendWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
+	return errSetNotSupported
+}
+
 // IsEnabled returns true if the store is ready for use.
 func (store *kvCSVFile) IsEnabled() bool {
 	store.mu.Lock()

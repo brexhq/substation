@@ -25,6 +25,7 @@ type Storer interface {
 	Get(context.Context, string) (interface{}, error)
 	Set(context.Context, string, interface{}) error
 	SetWithTTL(context.Context, string, interface{}, int64) error
+	AppendWithTTL(context.Context, string, interface{}, int64) error
 	Setup(context.Context) error
 	Close() error
 	IsEnabled() bool

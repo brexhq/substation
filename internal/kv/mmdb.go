@@ -83,6 +83,11 @@ func (store *kvMMDB) SetWithTTL(ctx context.Context, key string, val interface{}
 	return errSetNotSupported
 }
 
+// AppendWithTTL is unused because this is a read-only store.
+func (store *kvMMDB) AppendWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
+	return errSetNotSupported
+}
+
 // IsEnabled returns true if the store is ready for use.
 func (store *kvMMDB) IsEnabled() bool {
 	store.mu.Lock()

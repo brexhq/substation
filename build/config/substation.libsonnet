@@ -451,6 +451,13 @@
           type: type,
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
+        append(settings={}): {
+          local type = 'enrich_kv_store_append',
+          local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s', id: $.helpers.id(type, settings) },
+
+          type: type,
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
       },
     },
     fmt: $.transform.format,

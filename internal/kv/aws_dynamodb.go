@@ -256,7 +256,7 @@ func (store *kvAWSDynamoDB) AppendWithTTL(ctx context.Context, key string, val i
 		}
 		input.ExpressionAttributeNames["#ttl"] = aws.String(store.Attributes.TTL)
 
-		// Concatnates the TTL attribute to the UpdateExpression.
+		// Concatenates the TTL attribute to the UpdateExpression.
 		input.UpdateExpression = aws.String(fmt.Sprintf("%s, #ttl = :ttl", *input.UpdateExpression))
 	}
 

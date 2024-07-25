@@ -238,7 +238,12 @@ func (store *kvAWSDynamoDB) AppendWithTTL(ctx context.Context, key string, val i
 		ExpressionAttributeNames: map[string]*string{
 			"#v": aws.String(store.Attributes.Value),
 		},
-		UpdateExpression: aws.String("SET #v = list_append(#v, :value)"),
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":empty_list": {
+				L: []*dynamodb.AttributeValue{},
+			},
+		},
+		UpdateExpression: aws.String("SET #v = list_append(if_not_exists(#v, :empty_list), :value)"),
 	}
 
 	if store.Attributes.SortKey != "" {
@@ -249,10 +254,8 @@ func (store *kvAWSDynamoDB) AppendWithTTL(ctx context.Context, key string, val i
 
 	// Overwrite the TTL value if the attribute exists.
 	if store.Attributes.TTL != "" {
-		input.ExpressionAttributeValues = map[string]*dynamodb.AttributeValue{
-			":ttl": {
-				N: aws.String(fmt.Sprintf("%d", ttl)),
-			},
+		input.ExpressionAttributeValues[":ttl"] = &dynamodb.AttributeValue{
+			N: aws.String(fmt.Sprintf("%d", ttl)),
 		}
 		input.ExpressionAttributeNames["#ttl"] = aws.String(store.Attributes.TTL)
 
@@ -260,6 +263,7 @@ func (store *kvAWSDynamoDB) AppendWithTTL(ctx context.Context, key string, val i
 		input.UpdateExpression = aws.String(fmt.Sprintf("%s, #ttl = :ttl", *input.UpdateExpression))
 	}
 
+	// TODO: This needs to be tested with the output of the messages package.
 	var l []*dynamodb.AttributeValue
 	switch v := val.(type) {
 	case string:
@@ -300,10 +304,9 @@ func (store *kvAWSDynamoDB) AppendWithTTL(ctx context.Context, key string, val i
 		}
 	}
 
-	input.ExpressionAttributeValues = map[string]*dynamodb.AttributeValue{
-		":value": { // Referenced in the UpdateExpression list_append function.
-			L: l,
-		},
+	// Referenced in the UpdateExpression list_append function.
+	input.ExpressionAttributeValues[":value"] = &dynamodb.AttributeValue{
+		L: l,
 	}
 
 	if _, err := store.client.UpdateItem(ctx, input); err != nil {

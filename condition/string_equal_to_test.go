@@ -46,6 +46,33 @@ var stringEqualToTests = []struct {
 		[]byte("\"\""),
 		true,
 	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "bar",
+				},
+			},
+		},
+		[]byte(`{"foo":"abc", "bar":"abc"}`),
+		true,
+	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "bar",
+				},
+				"value": "abc",
+			},
+		},
+		[]byte(`{"foo":"abc", "bar":"def"}`),
+		false,
+	},
 }
 
 func TestStringEqualTo(t *testing.T) {

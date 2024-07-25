@@ -34,12 +34,20 @@ func (insp *stringEqualTo) Inspect(ctx context.Context, msg *message.Message) (o
 		return false, nil
 	}
 
+	compare := insp.b
+
+	target := msg.GetValue(insp.conf.Object.TargetKey)
+
+	if target.Exists() {
+		compare = target.Bytes()
+	}
+
 	if insp.conf.Object.SourceKey == "" {
-		return bytes.Equal(msg.Data(), insp.b), nil
+		return bytes.Equal(msg.Data(), compare), nil
 	}
 
 	value := msg.GetValue(insp.conf.Object.SourceKey)
-	return bytes.Equal(value.Bytes(), insp.b), nil
+	return bytes.Equal(value.Bytes(), compare), nil
 }
 
 func (c *stringEqualTo) String() string {

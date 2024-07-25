@@ -36,6 +36,33 @@ var stringLessThanTests = []struct {
 		[]byte(`2023-01-01T00:00:00Z`),
 		true,
 	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "bar",
+				},
+			},
+		},
+		[]byte(`{"foo":"2022-01-01T00:00:00Z", "bar":"2023-01-01T00:00:00Z"}`),
+		true,
+	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "bar",
+				},
+				"value": "2025-01-01",
+			},
+		},
+		[]byte(`{"foo":"2024-01-01T00:00:00Z", "bar":"2023-01-01"}`),
+		false,
+	},
 }
 
 func TestStringLessThan(t *testing.T) {

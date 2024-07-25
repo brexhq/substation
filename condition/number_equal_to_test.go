@@ -107,6 +107,33 @@ var numberEqualToTests = []struct {
 		[]byte(`1.4`),
 		true,
 	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "bar",
+				},
+			},
+		},
+		[]byte(`{"foo": 10, "bar": 10}`),
+		true,
+	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "bar",
+				},
+				"value": 100,
+			},
+		},
+		[]byte(`{"foo": 100, "bar": 200}`),
+		false,
+	},
 }
 
 func TestNumberEqualTo(t *testing.T) {

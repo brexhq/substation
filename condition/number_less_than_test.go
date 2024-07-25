@@ -107,6 +107,33 @@ var numberLessThanTests = []struct {
 		[]byte(`1`),
 		true,
 	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "bar",
+				},
+			},
+		},
+		[]byte(`{"foo": 10, "bar": 100}`),
+		true,
+	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "bar",
+				},
+				"value": 10,
+			},
+		},
+		[]byte(`{"foo": 2, "bar": 1}`),
+		false,
+	},
 }
 
 func TestNumberLessThan(t *testing.T) {

@@ -11,7 +11,7 @@ local const = import '../const.libsonnet';
         condition: sub.cnd.all([
           sub.cnd.num.len.gt({ obj: { src: 'host.name' }, value: 0 }),
         ]),
-        transform: sub.tf.enrich.kv_store.set({ obj: { src: 'host.id', trg: 'host' }, prefix: 'edr_host', kv_store: const.kv_store }),
+        transform: sub.tf.enrich.kv_store.iset({ obj: { src: 'host.id', trg: 'host' }, prefix: 'edr_host', kv_store: const.kv_store }),
       },
     ] }),
   ],

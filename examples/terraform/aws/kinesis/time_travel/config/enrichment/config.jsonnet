@@ -10,7 +10,7 @@ local const = import '../const.libsonnet';
     // indexed by the PID. The data is stored in the KV store for 90 days.
     sub.pattern.tf.conditional(
       condition=sub.cnd.all(const.is_process),
-      transform=sub.tf.enrich.kv_store.set({ obj: { src: 'process.pid', trg: 'process' }, prefix: 'process', ttl_offset: std.format('%dh', 24 * 90), kv_store: const.kv_store, close_kv_store: false }),
+      transform=sub.tf.enrich.kv_store.iset({ obj: { src: 'process.pid', trg: 'process' }, prefix: 'process', ttl_offset: std.format('%dh', 24 * 90), kv_store: const.kv_store, close_kv_store: false }),
     ),
   ],
 }

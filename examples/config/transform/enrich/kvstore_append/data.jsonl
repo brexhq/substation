@@ -1,0 +1,7 @@
+{"domain":"example.com","type":"A"}
+{"domain":"mx.example.com","type":"MX"}
+{"domain":"ns.example.com","type":"NS"}
+{"domain":"www.example.com","type":"CNAME"}
+{"domain":"example.com","type":"SOA"}
+{"domain":"example.com","type":"TXT"}
+{"domain":"example.com","type":"AAAA"}

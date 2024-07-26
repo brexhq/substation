@@ -455,7 +455,7 @@
             settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
           },
         },
-        sadd: $.transform.enrich.kv_store.iset.add,
+        sadd: $.transform.enrich.kv_store.set.add,
         set: {
           add(settings={}): {
             local type = 'enrich_kv_store_set_add',

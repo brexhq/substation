@@ -28,6 +28,7 @@ func (insp *numberEqualTo) Inspect(ctx context.Context, msg *message.Message) (o
 	if msg.IsControl() {
 		return false, nil
 	}
+	compare := insp.conf.Value
 
 	if insp.conf.Object.SourceKey == "" {
 		f, err := strconv.ParseFloat(string(msg.Data()), 64)
@@ -35,14 +36,21 @@ func (insp *numberEqualTo) Inspect(ctx context.Context, msg *message.Message) (o
 			return false, err
 		}
 
-		return insp.match(f), nil
+		return insp.match(f, compare), nil
 	}
+
+	target := msg.GetValue(insp.conf.Object.TargetKey)
+
+	if target.Exists() {
+		compare = target.Float()
+	}
+
 	v := msg.GetValue(insp.conf.Object.SourceKey)
-	return insp.match(v.Float()), nil
+	return insp.match(v.Float(), compare), nil
 }
 
-func (c *numberEqualTo) match(f float64) bool {
-	return f == c.conf.Value
+func (c *numberEqualTo) match(f float64, t float64) bool {
+	return f == t
 }
 
 func (c *numberEqualTo) String() string {

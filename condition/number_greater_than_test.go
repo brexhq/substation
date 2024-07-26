@@ -107,6 +107,33 @@ var numberGreaterThanTests = []struct {
 		[]byte(`1`),
 		false,
 	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "bar",
+				},
+			},
+		},
+		[]byte(`{"foo": 100, "bar": 10}`),
+		true,
+	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "bar",
+				},
+				"value": 10,
+			},
+		},
+		[]byte(`{"foo": 100, "bar": 2000}`),
+		false,
+	},
 }
 
 func TestNumberGreaterThan(t *testing.T) {

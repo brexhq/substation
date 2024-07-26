@@ -31,12 +31,6 @@ func (insp *numberLessThan) Inspect(ctx context.Context, msg *message.Message) (
 
 	compare := insp.conf.Value
 
-	target := msg.GetValue(insp.conf.Object.TargetKey)
-
-	if target.Exists() {
-		compare = target.Float()
-	}
-
 	if insp.conf.Object.SourceKey == "" {
 		f, err := strconv.ParseFloat(string(msg.Data()), 64)
 		if err != nil {
@@ -44,6 +38,12 @@ func (insp *numberLessThan) Inspect(ctx context.Context, msg *message.Message) (
 		}
 
 		return insp.match(f, compare), nil
+	}
+
+	target := msg.GetValue(insp.conf.Object.TargetKey)
+
+	if target.Exists() {
+		compare = target.Float()
 	}
 
 	v := msg.GetValue(insp.conf.Object.SourceKey)

@@ -36,14 +36,14 @@ func (insp *stringGreaterThan) Inspect(ctx context.Context, msg *message.Message
 
 	compare := insp.b
 
+	if insp.conf.Object.SourceKey == "" {
+		return bytes.Compare(msg.Data(), compare) > 0, nil
+	}
+
 	target := msg.GetValue(insp.conf.Object.TargetKey)
 
 	if target.Exists() {
 		compare = target.Bytes()
-	}
-
-	if insp.conf.Object.SourceKey == "" {
-		return bytes.Compare(msg.Data(), compare) > 0, nil
 	}
 
 	value := msg.GetValue(insp.conf.Object.SourceKey)

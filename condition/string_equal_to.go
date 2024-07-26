@@ -36,14 +36,14 @@ func (insp *stringEqualTo) Inspect(ctx context.Context, msg *message.Message) (o
 
 	compare := insp.b
 
+	if insp.conf.Object.SourceKey == "" {
+		return bytes.Equal(msg.Data(), compare), nil
+	}
+
 	target := msg.GetValue(insp.conf.Object.TargetKey)
 
 	if target.Exists() {
 		compare = target.Bytes()
-	}
-
-	if insp.conf.Object.SourceKey == "" {
-		return bytes.Equal(msg.Data(), compare), nil
 	}
 
 	value := msg.GetValue(insp.conf.Object.SourceKey)

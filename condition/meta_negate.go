@@ -41,7 +41,7 @@ func newMetaNegate(ctx context.Context, cfg config.Config) (*metaNegate, error) 
 
 	i, err := newInspector(ctx, conf.Inspector)
 	if err != nil {
-		return nil, fmt.Errorf("condition: meta_for_each: %v", err)
+		return nil, fmt.Errorf("condition: meta_negate: %v", err)
 	}
 
 	meta := metaNegate{

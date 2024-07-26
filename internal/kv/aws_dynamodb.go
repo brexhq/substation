@@ -286,7 +286,7 @@ func (store *kvAWSDynamoDB) SetAddWithTTL(ctx context.Context, key string, val i
 		av.BS = append(av.BS, v...)
 	}
 
-	// Referenced in the UpdateExpression list_append function.
+	// Referenced in the UpdateExpression ADD operator.
 	input.ExpressionAttributeValues[":value"] = &av
 
 	if _, err := store.client.UpdateItem(ctx, input); err != nil {

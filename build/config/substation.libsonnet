@@ -123,6 +123,15 @@
         type: 'meta_condition',
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
+      err(settings={}): {
+        local default = {
+          inspector: null,
+          error_messages: null,
+        },
+
+        type: 'meta_err',
+        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      },
       for_each(settings={}): {
         local default = {
           object: $.config.object,
@@ -1384,9 +1393,9 @@
       conditional(condition, transform): {
         local type = 'meta_switch',
         local c = if std.objectHas(condition, 'type') then { operator: 'any', inspectors: [condition] } else condition,
-        
+
         type: type,
-        settings: { id: $.helpers.id(type, transform),  cases: [{ condition: c, transform: transform }] },
+        settings: { id: $.helpers.id(type, transform), cases: [{ condition: c, transform: transform }] },
       },
       fmt: $.pattern.transform.format,
       format: {

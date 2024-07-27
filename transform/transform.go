@@ -85,6 +85,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newMetaMetricsDuration(ctx, cfg)
 	case "meta_pipeline":
 		return newMetaPipeline(ctx, cfg)
+	case "meta_retry":
+		return newMetaRetry(ctx, cfg)
 	case "meta_switch":
 		return newMetaSwitch(ctx, cfg)
 	// Number transforms.

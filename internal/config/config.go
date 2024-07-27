@@ -44,6 +44,8 @@ type Request struct {
 type Retry struct {
 	// Count is the maximum number of times that the action will be retried.
 	Count int `json:"count"`
+	// Duration is the maximum amount of time to wait between retries.
+	Duration string `json:"duration"`
 	// ErrorMessages are regular expressions that match error messages and determine
 	// if the action should be retried.
 	ErrorMessages []string `json:"error_messages"`

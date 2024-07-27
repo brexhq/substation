@@ -13,6 +13,16 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
+// MediaTypes natively supported by the bufio
+// scanner.
+var MediaTypes = []string{
+	"application/x-bzip2",
+	"application/x-gzip",
+	"application/x-zstd",
+	"application/x-snappy-framed",
+	"text/plain; charset=utf-8",
+}
+
 // NewScanner returns a new
 func NewScanner() *scanner {
 	return &scanner{}

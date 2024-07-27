@@ -38,14 +38,6 @@ func (c *enrichHTTPGetConfig) Decode(in interface{}) error {
 }
 
 func (c *enrichHTTPGetConfig) Validate() error {
-	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
-	}
-
-	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
-	}
-
 	if c.URL == "" {
 		return fmt.Errorf("url: %v", errors.ErrMissingRequiredOption)
 	}
@@ -111,7 +103,7 @@ func (tf *enrichHTTPGet) Transform(ctx context.Context, msg *message.Message) ([
 	// - Data-based interpolation, the URL is interpolated
 	// using the data handling pattern.
 	//
-	// The URL is always interpolated with the substring ${data}.
+	// The URL is always interpolated with the substring ${DATA}.
 	url := tf.conf.URL
 	if strings.Contains(url, enrichHTTPInterp) {
 		if tf.conf.Object.SourceKey != "" {
@@ -143,6 +135,8 @@ func (tf *enrichHTTPGet) Transform(ctx context.Context, msg *message.Message) ([
 		return nil, fmt.Errorf("transform	%s: %v", tf.conf.ID, err)
 	}
 
+	// If TargetKey is set, then the response body is stored in the message.
+	// Otherwise, the response body overwrites the message data.
 	if tf.conf.Object.TargetKey != "" {
 		if err := msg.SetValue(tf.conf.Object.TargetKey, parsed); err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)

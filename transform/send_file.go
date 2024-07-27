@@ -150,7 +150,6 @@ func (tf *sendFile) send(ctx context.Context, key string) error {
 
 	f, err := os.Create(path)
 	if err != nil {
-		fmt.Println(path)
 		return err
 	}
 

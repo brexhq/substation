@@ -104,11 +104,12 @@ func (tf *metaRetry) Transform(ctx context.Context, msg *message.Message) ([]*me
 LOOP:
 	// The first iteration is not a retry, so 1 is added to the
 	// configured count. If this isn't done, then the retries will
-	// be off by one.
+	// be off by one. The first iteration should never sleep.
 	for i := 0; i < tf.conf.Retry.Count+1; i++ {
-		// Implements linear backoff. The first iteration
-		// is a no-op and does not sleep.
-		time.Sleep(tf.delay * time.Duration(i))
+		// Implements constant backoff.
+		if i > 0 {
+			time.Sleep(tf.delay)
+		}
 
 		// This must operate on a copy of the message to avoid
 		// modifying the original message in case the transform

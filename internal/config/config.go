@@ -1,7 +1,17 @@
 // package config provides configuration types and functions for Substation.
 //
 // Any non-backwards compatible changes to the configuration types should be
-// accompanied by a version bump.
+// accompanied by a version bump. Use the guidance below for choosing the
+// appropriate fields for configurations:
+//
+// For time-based configurations:
+//
+//   - Use `Delay` for the amount of time to wait before executing.
+//
+//   - Use `Timeout` for the amount of time to wait before interrupting
+//     an execution.
+//
+//   - Use `Duration` for the total amount of time over many executions.
 package config
 
 import (
@@ -42,10 +52,12 @@ type Request struct {
 }
 
 type Retry struct {
-	// Count is the maximum number of times that the action will be retried.
+	// Count is the maximum number of times that the action will be retried. This
+	// can be combined with the Delay field to create a backoff strategy.
 	Count int `json:"count"`
-	// Duration is the maximum amount of time to wait between retries.
-	Duration string `json:"duration"`
+	// Delay is the amount of time to wait before retrying the action. This can be
+	// combined with the Count field to create a backoff strategy.
+	Delay string `json:"delay"`
 	// ErrorMessages are regular expressions that match error messages and determine
 	// if the action should be retried.
 	ErrorMessages []string `json:"error_messages"`

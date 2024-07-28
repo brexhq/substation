@@ -13,6 +13,11 @@ import (
 	"github.com/brexhq/substation/message"
 )
 
+// errMetaRetryLimitReached is returned when the configured retry
+// limit is reached. Other transforms may try to catch this error, so
+// any update to the variable's value is considered a BREAKING CHANGE.
+var errMetaRetryLimitReached = fmt.Errorf("retry limit reached")
+
 type metaRetryConfig struct {
 	// Transforms that are applied in series, then checked for success
 	// based on the condition or errors.
@@ -72,16 +77,16 @@ func newMetaRetry(ctx context.Context, cfg config.Config) (*metaRetry, error) {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
-	dur, err := time.ParseDuration(conf.Retry.Duration)
+	del, err := time.ParseDuration(conf.Retry.Delay)
 	if err != nil {
-		return nil, fmt.Errorf("transform %s: duration: %v", conf.ID, err)
+		return nil, fmt.Errorf("transform %s: delay: %v", conf.ID, err)
 	}
 
 	tf := metaRetry{
 		conf:       conf,
 		transforms: tforms,
 		condition:  cnd,
-		duration:   dur,
+		delay:      del,
 	}
 
 	return &tf, nil
@@ -92,46 +97,48 @@ type metaRetry struct {
 
 	condition  condition.Operator
 	transforms []Transformer
-	duration   time.Duration
+	delay      time.Duration
 }
 
 func (tf *metaRetry) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	// This handles both data and ctrl messages.
-	return tf.retryTransform(ctx, msg, 0)
-}
+LOOP:
+	// The first iteration is not a retry, so 1 is added to the
+	// configured count. If this isn't done, then the retries will
+	// be off by one.
+	for i := 0; i < tf.conf.Retry.Count+1; i++ {
+		// Implements linear backoff. The first iteration
+		// is a no-op and does not sleep.
+		time.Sleep(tf.delay * time.Duration(i))
 
-func (tf *metaRetry) retryTransform(ctx context.Context, msg *message.Message, count int) ([]*message.Message, error) {
-	if count > tf.conf.Retry.Count {
-		return nil, fmt.Errorf("transform %s: limit exceeded", tf.conf.ID)
-	}
-
-	// This implements exponential backoff.
-	for i := 0; i < count; i++ {
-		time.Sleep(tf.duration)
-	}
-
-	msgs, err := Apply(ctx, tf.transforms, msg)
-	if err != nil {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
-	}
-
-	// Every message must pass the condition or else it gets retried.
-	for _, m := range msgs {
-		if m.IsControl() {
-			continue
-		}
-
-		ok, err := tf.condition.Operate(ctx, m)
+		// This must operate on a copy of the message to avoid
+		// modifying the original message in case the transform
+		// fails.
+		cMsg := *msg
+		msgs, err := Apply(ctx, tf.transforms, &cMsg)
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
-		if !ok {
-			return tf.retryTransform(ctx, msg, count+1)
+		for _, m := range msgs {
+			if m.IsControl() {
+				continue
+			}
+
+			ok, err := tf.condition.Operate(ctx, m)
+			if err != nil {
+				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
+			}
+
+			// Any condition failure immediately restarts the loop.
+			if !ok {
+				continue LOOP
+			}
 		}
+
+		return msgs, nil
 	}
 
-	return msgs, nil
+	return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errMetaRetryLimitReached)
 }
 
 func (tf *metaRetry) String() string {

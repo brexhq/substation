@@ -1324,7 +1324,7 @@
     metric: { name: null, attributes: null, destination: null },
     object: { source_key: null, target_key: null, batch_key: null },
     request: { timeout: '1s' },
-    retry: { count: 3, duration: '1s', error_messages: null },
+    retry: { count: 3, delay: '1s', error_messages: null },
   },
   // Mirrors config from the internal/file package.
   file_path: { prefix: null, time_format: '2006/01/02', uuid: true, suffix: null },

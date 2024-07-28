@@ -19,7 +19,7 @@ local cnd = sub.cnd.all([
         sub.tf.obj.insert({ object: { target_key: key }, value: true }),
       ],
       condition: cnd,  // If this returns false, then the transforms are retried.
-      retry: { delay: '1s', count: 4 },  // Retry up to 4 times with a 1 second backoff (1s, 2s, 3s, 4s).
+      retry: { delay: '1s', count: 4 },  // Retry up to 4 times with a 1 second backoff (1s, 1s, 1s, 1s).
     }),
     sub.tf.send.stdout(),
   ],

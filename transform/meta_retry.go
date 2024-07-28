@@ -101,15 +101,21 @@ type metaRetry struct {
 }
 
 func (tf *metaRetry) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+	var counter int
+
 LOOP:
-	// The first iteration is not a retry, so 1 is added to the
-	// configured count. If this isn't done, then the retries will
-	// be off by one. The first iteration should never sleep.
-	for i := 0; i < tf.conf.Retry.Count+1; i++ {
-		// Implements constant backoff.
-		if i > 0 {
+	for {
+		// If the retry count is set to 0, then this will retry forever.
+		if tf.conf.Retry.Count > 0 && counter > tf.conf.Retry.Count {
+			break
+		}
+
+		// Implements constant backoff. The first iteration is skipped.
+		if counter > 0 {
 			time.Sleep(tf.delay)
 		}
+
+		counter++
 
 		// This must operate on a copy of the message to avoid
 		// modifying the original message in case the transform

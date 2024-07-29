@@ -126,7 +126,7 @@
       err(settings={}): {
         local default = {
           inspector: null,
-          error_messages: null,
+          error_messages: [".*"],
         },
 
         type: 'meta_err',
@@ -269,7 +269,7 @@
         settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
       },
     },
-    util: $.transform.utility,
+    util: $.condition.utility,
     utility: {
       random(settings={}): {
         type: 'utility_random',
@@ -666,7 +666,7 @@
         local type = 'meta_retry',
         local default = {
           id: $.helpers.id(type, settings),
-          retry: $.config.retry,
+          retry: $.config.retry { error_messages: [".*"] },
           condition: null,
           transforms: null,
         },

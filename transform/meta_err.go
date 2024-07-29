@@ -111,6 +111,7 @@ func (tf *metaErr) Transform(ctx context.Context, msg *message.Message) ([]*mess
 	}
 
 	if err != nil {
+		// Deprecated: Remove this block in a future release.
 		if len(tf.errorMessages) == 0 {
 			return []*message.Message{msg}, nil
 		}

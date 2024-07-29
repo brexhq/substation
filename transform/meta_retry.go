@@ -132,10 +132,6 @@ LOOP:
 		cMsg := *msg
 		msgs, err := Apply(ctx, tf.transforms, &cMsg)
 		if err != nil {
-			if len(tf.errorMessages) == 0 {
-				continue LOOP
-			}
-
 			for _, r := range tf.errorMessages {
 				if r.MatchString(err.Error()) {
 					continue LOOP

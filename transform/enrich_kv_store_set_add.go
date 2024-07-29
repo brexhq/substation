@@ -72,7 +72,7 @@ func (c *enrichKVStoreSetAddConfig) Validate() error {
 	return nil
 }
 
-func newenrichKVStoreSetAdd(_ context.Context, cfg config.Config) (*enrichKVStoreSetAdd, error) {
+func newEnrichKVStoreSetAdd(_ context.Context, cfg config.Config) (*enrichKVStoreSetAdd, error) {
 	conf := enrichKVStoreSetAddConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform enrich_kv_store_set: %v", err)

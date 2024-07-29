@@ -84,7 +84,7 @@ func (s *scanner) ReadFile(file *os.File) error {
 	// (defaults to 128 MB).
 	b := make([]byte, bufio.MaxScanTokenSize)
 	if mem, ok := os.LookupEnv("AWS_LAMBDA_FUNCTION_MEMORY_SIZE"); !ok {
-		s.Scanner.Buffer(b, (1024^2)*128)
+		s.Scanner.Buffer(b, (1000 * 1000 * 128))
 	} else {
 		m, _ := strconv.ParseFloat(mem, 64)
 		// For AWS Lambda, the max capacity is 80% of the function's memory.

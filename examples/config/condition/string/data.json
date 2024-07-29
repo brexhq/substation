@@ -1,0 +1,11 @@
+{
+  "eventId": "123461",
+  "timestamp": "2024-07-29T10:00:00Z",
+  "sourceIP": "192.168.1.6",
+  "destinationIP": "172.16.0.7",
+  "sourcePort": "80",
+  "destinationPort": "443",
+  "protocol": "TCP",
+  "action": "ACCEPT",
+  "vpcId": "vpc-2b3c4d5e"
+}

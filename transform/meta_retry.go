@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/brexhq/substation/condition"
@@ -35,10 +36,6 @@ func (c *metaRetryConfig) Decode(in interface{}) error {
 }
 
 func (c *metaRetryConfig) Validate() error {
-	if c.Condition.Operator == "" {
-		return fmt.Errorf("condition: %v", errors.ErrMissingRequiredOption)
-	}
-
 	for _, t := range c.Transforms {
 		if t.Type == "" {
 			return fmt.Errorf("transform: %v", errors.ErrMissingRequiredOption)
@@ -82,11 +79,22 @@ func newMetaRetry(ctx context.Context, cfg config.Config) (*metaRetry, error) {
 		return nil, fmt.Errorf("transform %s: delay: %v", conf.ID, err)
 	}
 
+	errs := make([]*regexp.Regexp, len(conf.Retry.ErrorMessages))
+	for i, e := range conf.Retry.ErrorMessages {
+		r, err := regexp.Compile(e)
+		if err != nil {
+			return nil, fmt.Errorf("transform %s: error_messages: %v", conf.ID, err)
+		}
+
+		errs[i] = r
+	}
+
 	tf := metaRetry{
-		conf:       conf,
-		transforms: tforms,
-		condition:  cnd,
-		delay:      del,
+		conf:          conf,
+		transforms:    tforms,
+		condition:     cnd,
+		delay:         del,
+		errorMessages: errs,
 	}
 
 	return &tf, nil
@@ -95,9 +103,10 @@ func newMetaRetry(ctx context.Context, cfg config.Config) (*metaRetry, error) {
 type metaRetry struct {
 	conf metaRetryConfig
 
-	condition  condition.Operator
-	transforms []Transformer
-	delay      time.Duration
+	condition     condition.Operator
+	transforms    []Transformer
+	delay         time.Duration
+	errorMessages []*regexp.Regexp
 }
 
 func (tf *metaRetry) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -123,6 +132,16 @@ LOOP:
 		cMsg := *msg
 		msgs, err := Apply(ctx, tf.transforms, &cMsg)
 		if err != nil {
+			if len(tf.errorMessages) == 0 {
+				continue LOOP
+			}
+
+			for _, r := range tf.errorMessages {
+				if r.MatchString(err.Error()) {
+					continue LOOP
+				}
+			}
+
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 

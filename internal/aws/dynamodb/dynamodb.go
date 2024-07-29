@@ -102,6 +102,12 @@ func (a *API) BatchPutItem(ctx aws.Context, table string, items []map[string]*dy
 	return resp, nil
 }
 
+// UpdateItem
+func (a *API) UpdateItem(ctx aws.Context, input *dynamodb.UpdateItemInput) (resp *dynamodb.UpdateItemOutput, err error) {
+	ctx = context.WithoutCancel(ctx)
+	return a.Client.UpdateItemWithContext(ctx, input)
+}
+
 // PutItem is a convenience wrapper for putting items into a DynamoDB table.
 func (a *API) PutItem(ctx aws.Context, table string, item map[string]*dynamodb.AttributeValue) (resp *dynamodb.PutItemOutput, err error) {
 	ctx = context.WithoutCancel(ctx)

@@ -3,6 +3,7 @@ package kv
 import (
 	"container/list"
 	"context"
+	"slices"
 	"sync"
 	"time"
 
@@ -124,6 +125,48 @@ func (store *kvMemory) Lock(ctx context.Context, key string, ttl int64) error {
 	}
 
 	return store.SetWithTTL(ctx, key, nil, ttl)
+}
+
+// SetAddWithTTL appends a value to a set (unique list) in the store. If the list does not
+// exist, then it is created.
+//
+// If the TTL value is zero, then the item will not expire (this behavior is managed by the
+// Get method).
+func (store *kvMemory) SetAddWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	// List already exists for the key.
+	if node, ok := store.items[key]; ok {
+		// Resetting the position of the node prevents recently accessed items from being evicted
+		store.lru.MoveToFront(node)
+
+		// This implements the behavior of a set (unique list).
+		if slices.Contains(node.Value.(kvMemoryElement).value.([]interface{}), val) {
+			return nil
+		}
+
+		node.Value = kvMemoryElement{
+			key:   key,
+			value: append(node.Value.(kvMemoryElement).value.([]interface{}), val),
+			ttl:   ttl, // Always update the TTL value. Zero values are ignored on retrieval.
+		}
+
+		return nil
+	}
+
+	// No list exists for the key.
+	store.lru.PushFront(kvMemoryElement{key, []interface{}{val}, ttl})
+	store.items[key] = store.lru.Front()
+
+	if store.lru.Len() > store.Capacity {
+		node := store.lru.Back()
+
+		store.lru.Remove(node)
+		delete(store.items, node.Value.(kvMemoryElement).key)
+	}
+
+	return nil
 }
 
 // Unlock removes an item from the store.

@@ -446,6 +446,7 @@
           kv_store: null,
           close_kv_store: false,
         },
+        // Deprecated: Use `item.get` or `iget` instead.
         get(settings={}): {
           local type = 'enrich_kv_store_get',
           local default = $.transform.enrich.kv_store.default { id: $.helpers.id(type, settings) },
@@ -453,8 +454,23 @@
           type: type,
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
+        // Deprecated: Use `item.set` or `iset` instead.
         set(settings={}): {
           local type = 'enrich_kv_store_set',
+          local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s', id: $.helpers.id(type, settings) },
+
+          type: type,
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        },
+        iget: $.transform.enrich.kv_store.item.get,
+        iset: $.transform.enrich.kv_store.item.set,
+        item: {
+          get: $.transform.enrich.kv_store.item.get,   
+          set: $.transform.enrich.kv_store.item.set,       
+        },
+        // In future releases this will also be `set.add`.
+        sadd(settings={}): {
+          local type = 'enrich_kv_store_set_add',
           local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s', id: $.helpers.id(type, settings) },
 
           type: type,

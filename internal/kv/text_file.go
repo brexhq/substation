@@ -72,6 +72,11 @@ func (store *kvTextFile) SetWithTTL(ctx context.Context, key string, val interfa
 	return errSetNotSupported
 }
 
+// SetAddWithTTL is unused because this is a read-only store.
+func (store *kvTextFile) SetAddWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
+	return errSetNotSupported
+}
+
 // IsEnabled returns true if the store is ready for use.
 func (store *kvTextFile) IsEnabled() bool {
 	store.mu.Lock()

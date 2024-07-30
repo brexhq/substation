@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.7.0](https://github.com/brexhq/substation/compare/v1.6.0...v1.7.0) (2024-07-30)
+
+
+### Features
+
+* **condition:** Add MetaErr Inspector ([#217](https://github.com/brexhq/substation/issues/217)) ([b9c685e](https://github.com/brexhq/substation/commit/b9c685eb32e89dd86227a562764735517f28110b))
+* **condition:** Update conditions to support source and target key comparisons ([#214](https://github.com/brexhq/substation/issues/214)) ([dfbc678](https://github.com/brexhq/substation/commit/dfbc678409c720fff1382a47180dd7587a231368))
+* **transform:** Add FormatFromZip Transform ([#221](https://github.com/brexhq/substation/issues/221)) ([d9304ca](https://github.com/brexhq/substation/commit/d9304cad6130a18037c7bf459910a0219d6eace1))
+* **transform:** Add KV Store Set Add Transform ([#215](https://github.com/brexhq/substation/issues/215)) ([b293b79](https://github.com/brexhq/substation/commit/b293b79518248f2d2e132ad9be76568861f5b6a3))
+* **transform:** Add MetaRetry Transform ([#222](https://github.com/brexhq/substation/issues/222)) ([eff9a98](https://github.com/brexhq/substation/commit/eff9a98416aa84aac28b8b0861e6b98cf6c6fac6))
+* **transform:** Add Multi-Transform Support to Meta Transforms ([#213](https://github.com/brexhq/substation/issues/213)) ([af44e66](https://github.com/brexhq/substation/commit/af44e6676f49323d21d6010e5b5cd4d59f00d497))
+
+
+### Bug Fixes
+
+* **build/config:** add ID to conditional pattern ([#207](https://github.com/brexhq/substation/issues/207)) ([227a5d9](https://github.com/brexhq/substation/commit/227a5d9eea01545cec2a5039de832611efbdabe0))
+* **condition:** Update Wrapped Error in MetaNegate Inspector ([#216](https://github.com/brexhq/substation/issues/216)) ([9ac1bd1](https://github.com/brexhq/substation/commit/9ac1bd123adbf33935392903c4e1229ec8fc412e))
+* **internal/bufio:** Default Max Token Size ([#220](https://github.com/brexhq/substation/issues/220)) ([e3dfa47](https://github.com/brexhq/substation/commit/e3dfa47a90432e00687fa4bd0565d85b2d1457f8))
+* **transform:** Remove Print in SendFile Transform ([5e93e52](https://github.com/brexhq/substation/commit/5e93e5281e757f8bdf5d5031af260f1f4d2e312b))
+* **transform:** Update Validation for EnrichHTTP Transforms ([2fde138](https://github.com/brexhq/substation/commit/2fde13857679a9e111540cc6b5b0818d3930beff))
+
 ## [1.6.0](https://github.com/brexhq/substation/compare/v1.5.0...v1.6.0) (2024-07-17)
 
 

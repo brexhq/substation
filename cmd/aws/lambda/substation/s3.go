@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/url"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -13,6 +15,7 @@ import (
 	"github.com/brexhq/substation/internal/aws/s3manager"
 	"github.com/brexhq/substation/internal/bufio"
 	"github.com/brexhq/substation/internal/channel"
+	"github.com/brexhq/substation/internal/media"
 	"github.com/brexhq/substation/message"
 	"golang.org/x/sync/errgroup"
 )
@@ -25,6 +28,7 @@ type s3Metadata struct {
 	ObjectSize int64     `json:"objectSize"`
 }
 
+//nolint:gocognit
 func s3Handler(ctx context.Context, event events.S3Event) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
@@ -91,25 +95,24 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 		client := s3manager.DownloaderAPI{}
 		client.Setup(aws.Config{})
 
-		// Create Message metadata.
-		m := s3Metadata{
-			EventTime:  event.Records[0].EventTime,
-			BucketArn:  event.Records[0].S3.Bucket.Arn,
-			BucketName: event.Records[0].S3.Bucket.Name,
-			ObjectKey:  event.Records[0].S3.Object.Key,
-			ObjectSize: event.Records[0].S3.Object.Size,
-		}
-
-		metadata, err := json.Marshal(m)
-		if err != nil {
-			return err
-		}
-
 		for _, record := range event.Records {
 			// The S3 object key is URL encoded.
 			//
 			// https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
 			objectKey, err := url.QueryUnescape(record.S3.Object.Key)
+			if err != nil {
+				return err
+			}
+
+			m := s3Metadata{
+				EventTime:  record.EventTime,
+				BucketArn:  record.S3.Bucket.Arn,
+				BucketName: record.S3.Bucket.Name,
+				ObjectKey:  objectKey,
+				ObjectSize: record.S3.Object.Size,
+			}
+
+			metadata, err := json.Marshal(m)
 			if err != nil {
 				return err
 			}
@@ -123,6 +126,32 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 
 			if _, err := client.Download(ctx, record.S3.Bucket.Name, objectKey, dst); err != nil {
 				return err
+			}
+
+			// Determines if the file should be treated as text.
+			// Text files are decompressed by the bufio package
+			// (if necessary) and each line is sent as a separate
+			// message. All other files are sent as a single message.
+			mediaType, err := media.File(dst)
+			if err != nil {
+				return err
+			}
+
+			if _, err := dst.Seek(0, 0); err != nil {
+				return err
+			}
+
+			// Unsupported media types are sent as binary data.
+			if !slices.Contains(bufio.MediaTypes, mediaType) {
+				r, err := io.ReadAll(dst)
+				if err != nil {
+					return err
+				}
+
+				msg := message.New().SetData(r).SetMetadata(metadata)
+				ch.Send(msg)
+
+				return nil
 			}
 
 			scanner := bufio.NewScanner()
@@ -245,6 +274,18 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					return err
 				}
 
+				m := s3Metadata{
+					record.EventTime,
+					record.S3.Bucket.Arn,
+					record.S3.Bucket.Name,
+					objectKey,
+					record.S3.Object.Size,
+				}
+				metadata, err := json.Marshal(m)
+				if err != nil {
+					return err
+				}
+
 				dst, err := os.CreateTemp("", "substation")
 				if err != nil {
 					return err
@@ -256,22 +297,36 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					return err
 				}
 
+				// Determines if the file should be treated as text.
+				// Text files are decompressed by the bufio package
+				// (if necessary) and each line is sent as a separate
+				// message. All other files are sent as a single message.
+				mediaType, err := media.File(dst)
+				if err != nil {
+					return err
+				}
+
+				if _, err := dst.Seek(0, 0); err != nil {
+					return err
+				}
+
+				// Unsupported media types are sent as binary data.
+				if !slices.Contains(bufio.MediaTypes, mediaType) {
+					r, err := io.ReadAll(dst)
+					if err != nil {
+						return err
+					}
+
+					msg := message.New().SetData(r).SetMetadata(metadata)
+					ch.Send(msg)
+
+					return nil
+				}
+
 				scanner := bufio.NewScanner()
 				defer scanner.Close()
 
 				if err := scanner.ReadFile(dst); err != nil {
-					return err
-				}
-
-				m := s3Metadata{
-					record.EventTime,
-					record.S3.Bucket.Arn,
-					record.S3.Bucket.Name,
-					objectKey,
-					record.S3.Object.Size,
-				}
-				metadata, err := json.Marshal(m)
-				if err != nil {
 					return err
 				}
 

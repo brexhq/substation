@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"slices"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -17,6 +18,7 @@ import (
 	"github.com/brexhq/substation/internal/bufio"
 	"github.com/brexhq/substation/internal/channel"
 	"github.com/brexhq/substation/internal/file"
+	"github.com/brexhq/substation/internal/media"
 	"github.com/brexhq/substation/message"
 )
 
@@ -133,6 +135,28 @@ func run(ctx context.Context, opts options) error {
 			return err
 		}
 		defer f.Close()
+
+		mediaType, err := media.File(f)
+		if err != nil {
+			return err
+		}
+
+		if _, err := f.Seek(0, 0); err != nil {
+			return err
+		}
+
+		// Unsupported media types are sent as binary data.
+		if !slices.Contains(bufio.MediaTypes, mediaType) {
+			r, err := io.ReadAll(f)
+			if err != nil {
+				return err
+			}
+
+			msg := message.New().SetData(r)
+			ch.Send(msg)
+
+			return nil
+		}
 
 		scanner := bufio.NewScanner()
 		defer scanner.Close()

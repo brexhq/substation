@@ -507,6 +507,13 @@
           type: type,
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
         },
+        zip(settings={}): {
+          local type = 'format_from_zip',
+          local default = { id: $.helpers.id(type, settings) },
+
+          type: type,
+          settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        }
       },
       to: {
         b64(settings={}): $.transform.format.to.base64(settings=settings),

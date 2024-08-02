@@ -2,7 +2,7 @@
 // to lookup data in a KV store backed by a JSON file.
 local sub = import '../../../../../build/config/substation.libsonnet';
 
-// This JSON file must be local to Substation app. Absolute paths are
+// This JSON file must be local to the Substation app. Absolute paths are
 // recommended. Files accessible over HTTPS and hosted in AWS S3 also work.
 local kv = sub.kv_store.json_file({ file: 'kv.json' });
 

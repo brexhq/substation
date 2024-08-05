@@ -10,7 +10,7 @@ local mem = sub.kv_store.memory();
   transforms: [
     // Each order is stored in memory indexed by the customer's email
     // address and printed to stdout. Only unique orders are stored.
-    sub.tf.enrich.kv_store.set.add({
+    sub.tf.enrich.kv_store.sadd({
       object: { source_key: 'customer', target_key: 'order'},
       kv_store: mem,
       ttl_offset: '10s',

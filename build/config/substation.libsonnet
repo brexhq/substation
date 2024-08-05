@@ -465,8 +465,8 @@
         iget: $.transform.enrich.kv_store.item.get,
         iset: $.transform.enrich.kv_store.item.set,
         item: {
-          get: $.transform.enrich.kv_store.item.get,   
-          set: $.transform.enrich.kv_store.item.set,       
+          get: $.transform.enrich.kv_store.get,   
+          set: $.transform.enrich.kv_store.set,       
         },
         // In future releases this will also be `set.add`.
         sadd(settings={}): {

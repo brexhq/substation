@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/brexhq/substation/compare/v1.7.0...v1.7.1) (2024-08-05)
+
+
+### Bug Fixes
+
+* **build/config:** Self-Referential Jsonnet Function ([#225](https://github.com/brexhq/substation/issues/225)) ([f58665a](https://github.com/brexhq/substation/commit/f58665af6100f8e1f23f96d6866507b7da43474f))
+
 ## [1.7.0](https://github.com/brexhq/substation/compare/v1.6.0...v1.7.0) (2024-07-30)
 
 

@@ -3,8 +3,8 @@ package condition
 import (
 	"context"
 
-	"github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newMetaAny(ctx context.Context, cfg config.Config) (*metaAny, error) {

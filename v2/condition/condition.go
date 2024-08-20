@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/message"
 	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/internal/errors"
+	"github.com/brexhq/substation/v2/message"
 )
 
 type Inspector interface {

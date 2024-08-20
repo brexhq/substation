@@ -65,12 +65,12 @@ func (c *metaAll) Inspect(ctx context.Context, msg *message.Message) (bool, erro
 				return false, err
 			}
 
-			if ok {
-				return true, nil
+			if !ok {
+				return false, nil
 			}
 		}
 
-		return false, nil
+		return true, nil
 	}
 
 	for _, v := range value.Array() {

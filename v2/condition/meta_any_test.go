@@ -24,32 +24,13 @@ var metaAnyTests = []struct {
 					{
 						Type: "string_contains",
 						Settings: map[string]interface{}{
-							"value": "d",
-						},
-					},
-					{
-						Type: "meta_all",
-						Settings: map[string]interface{}{
-							"conditions": []config.Config{
-								{
-									Type: "string_contains",
-									Settings: map[string]interface{}{
-										"value": "b",
-									},
-								},
-								{
-									Type: "string_contains",
-									Settings: map[string]interface{}{
-										"value": "c",
-									},
-								},
-							},
+							"value": "c",
 						},
 					},
 				},
 			},
 		},
-		[]byte("bcd"),
+		[]byte("abc"),
 		true,
 	},
 	{
@@ -63,14 +44,57 @@ var metaAnyTests = []struct {
 					{
 						Type: "string_contains",
 						Settings: map[string]interface{}{
+							"value": "c",
+						},
+					},
+				},
+			},
+		},
+		[]byte(`{"z":"abc"}`),
+		true,
+	},
+	// In this test the data is interpreted as a JSON array, as specified
+	// by the source_key. This test passes because at least one element in
+	// the array contains "c".
+	{
+		"array",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "@this",
+				},
+				"inspectors": []config.Config{
+					{
+						Type: "string_contains",
+						Settings: map[string]interface{}{
+							"value": "c",
+						},
+					},
+				},
+			},
+		},
+		[]byte(`["a","b","c"]`),
+		true,
+	},
+	{
+		"array",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "@this",
+				},
+				"inspectors": []config.Config{
+					{
+						Type: "string_contains",
+						Settings: map[string]interface{}{
 							"value": "d",
 						},
 					},
 				},
 			},
 		},
-		[]byte(`{"z":"bcd"}`),
-		true,
+		[]byte(`["a","b","c"]`),
+		false,
 	},
 	{
 		"object_array",
@@ -83,31 +107,49 @@ var metaAnyTests = []struct {
 					{
 						Type: "string_contains",
 						Settings: map[string]interface{}{
-							"value": "d",
+							"value": "c",
 						},
 					},
 				},
 			},
 		},
-		[]byte(`{"z":["b","c","d"]}`),
+		[]byte(`{"z":["a","b","c"]}`),
 		true,
 	},
-
+	// This test passes because at least one inspector matches the input.
 	{
-		"array",
+		"object_mixed",
 		config.Config{
 			Settings: map[string]interface{}{
 				"inspectors": []config.Config{
+					// This inspector fails because no element in the array contains "d".
 					{
-						Type: "string_contains",
+						Type: "any",
 						Settings: map[string]interface{}{
-							"value": "d",
+							"object": map[string]interface{}{
+								"source_key": "z",
+							},
+							"inspectors": []config.Config{
+								{
+									Type: "string_contains",
+									Settings: map[string]interface{}{
+										"pattern": "d",
+									},
+								},
+							},
+						},
+					},
+					// This inspector passes because the data matches the pattern "^{.*}$".
+					{
+						Type: "string_match",
+						Settings: map[string]interface{}{
+							"pattern": "^{.*}$",
 						},
 					},
 				},
 			},
 		},
-		[]byte(`["b","c","d"]`),
+		[]byte(`{"z":["a","b","c"]}`),
 		true,
 	},
 }

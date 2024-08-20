@@ -81,6 +81,7 @@ func (c *metaAny) Inspect(ctx context.Context, msg *message.Message) (bool, erro
 				return false, err
 			}
 
+			// If any of the values in the array match, then this returns true.
 			if ok {
 				return true, nil
 			}

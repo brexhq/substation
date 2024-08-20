@@ -81,11 +81,13 @@ func (c *metaAll) Inspect(ctx context.Context, msg *message.Message) (bool, erro
 				return false, err
 			}
 
-			if ok {
-				return true, nil
+			// If any of the values in the array do not match, then this returns false.
+			if !ok {
+				return false, nil
 			}
 		}
 	}
 
-	return false, nil
+	// At this point every value in the array matched, so this returns true.
+	return true, nil
 }

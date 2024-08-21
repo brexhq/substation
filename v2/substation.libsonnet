@@ -29,7 +29,7 @@ local helpers = {
           inspectors: [],
         },
 
-        type: 'all',
+        type: 'meta_all',
         settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
       },
       any(settings={}): {
@@ -38,7 +38,7 @@ local helpers = {
           inspectors: [],
         },
 
-        type: 'any',
+        type: 'meta_any',
         settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
       },
       none(settings={}): {
@@ -47,7 +47,7 @@ local helpers = {
           inspectors: [],
         },
 
-        type: 'none',
+        type: 'meta_none',
         settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
       },
     },

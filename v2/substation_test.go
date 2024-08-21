@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/brexhq/substation"
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
-	"github.com/brexhq/substation/transform"
+	"github.com/brexhq/substation/v2"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+	"github.com/brexhq/substation/v2/transform"
 )
 
 func ExampleSubstation() {

@@ -160,8 +160,6 @@ func (tf *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*m
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
-		fmt.Println(msgs)
-
 		return msgs, nil
 	}
 

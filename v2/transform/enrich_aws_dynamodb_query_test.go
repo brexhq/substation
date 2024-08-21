@@ -66,7 +66,7 @@ var enrichAWSDynamoDBQueryTests = []struct {
 	},
 }
 
-func TestenrichAWSDynamoDBQuery(t *testing.T) {
+func TestEnrichAWSDynamoDBQuery(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range enrichAWSDynamoDBQueryTests {
 		tf, err := newEnrichAWSDynamoDBQuery(ctx, test.cfg)
@@ -100,7 +100,7 @@ func benchmarkenrichAWSDynamoDBQuery(b *testing.B, tf *enrichAWSDynamoDBQuery, d
 	}
 }
 
-func BenchmarkenrichAWSDynamoDBQuery(b *testing.B) {
+func BenchmarkEnrichAWSDynamoDBQuery(b *testing.B) {
 	ctx := context.TODO()
 	for _, test := range enrichAWSDynamoDBQueryTests {
 		b.Run(test.name,

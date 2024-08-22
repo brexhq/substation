@@ -1,0 +1,3 @@
+{"_aws":{"Timestamp":1724300928469,"CloudWatchMetrics":[{"Namespace":"Substation","Dimensions":[["AppName"]],"Metrics":[{"Name":"ObjectCopyDuration"}]}]},"AppName":"example","ObjectCopyDuration":28209}
+{"_aws":{"Timestamp":1724300928469,"CloudWatchMetrics":[{"Namespace":"Substation","Dimensions":[["AppName"]],"Metrics":[{"Name":"UtilityDelayDuration"}]}]},"AppName":"example","UtilityDelayDuration":101036000}
+{"_aws":{"Timestamp":1724300928470,"CloudWatchMetrics":[{"Namespace":"Substation","Dimensions":[["AppName"]],"Metrics":[{"Name":"UtilityMultiDuration"}]}]},"AppName":"example","UtilityMultiDuration":303265541}

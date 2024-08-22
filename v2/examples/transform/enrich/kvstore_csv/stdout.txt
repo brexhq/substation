@@ -1,0 +1,7 @@
+{
+  "product": "churro",
+  "info": {
+    "calories": "500",
+    "price": "9.99"
+  }
+}

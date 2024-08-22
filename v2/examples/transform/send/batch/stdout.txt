@@ -1,0 +1,64 @@
+{
+  "a": "b",
+  "group_id": 1
+}
+
+{
+  "e": "f",
+  "group_id": 1
+}
+
+{
+  "i": "j",
+  "group_id": 1
+}
+
+{
+  "m": "n",
+  "group_id": 1
+}
+
+{
+  "q": "r",
+  "group_id": 1
+}
+
+{
+  "u": "v",
+  "group_id": 1
+}
+
+{
+  "y": "z",
+  "group_id": 1
+}
+
+{
+  "c": "d",
+  "group_id": 2
+}
+
+{
+  "g": "h",
+  "group_id": 2
+}
+
+{
+  "k": "l",
+  "group_id": 2
+}
+
+{
+  "o": "p",
+  "group_id": 2
+}
+
+{
+  "s": "t",
+  "group_id": 2
+}
+
+{
+  "w": "x",
+  "group_id": 2
+}

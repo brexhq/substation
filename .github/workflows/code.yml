@@ -5,36 +5,64 @@ on:
     branches: [ main ]
 
 jobs:
-  go:
+  go-v1:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 1
-  
-    - name: setup
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.22
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+          with:
+            fetch-depth: 1
+    
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.22
 
-    - name: tests
-      run: go test -timeout 30s -v ./... 
+      - name: Testing
+        run: go test -timeout 30s -v ./... 
+        working-directory: ./v1/
 
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        version: latest
+      - name: Linting
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: ./v1/
+
+  go-v2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+          with:
+            fetch-depth: 1
+    
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.22
+
+      - name: Testing
+        run: go test -timeout 30s -v ./... 
+        working-directory: ./v2/
+
+      - name: Linting
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: ./v2/
 
   python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: setup
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
 
+      - name: Linting
       - run: |
           pip3 install black
           find -name *.py | xargs black --check
@@ -42,17 +70,17 @@ jobs:
   jsonnet:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
+      - name: Checkout Repository
         uses: actions/checkout@v2
         with:
           fetch-depth: 1
 
-      - name: setup
+      - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.22
 
-      - name: compile
+      - name: Compiling
         run: |
           go install github.com/google/go-jsonnet/cmd/jsonnet@latest
           sh build/scripts/config/compile.sh

@@ -77,7 +77,7 @@ func (tf *utilityControl) Transform(_ context.Context, msg *message.Message) ([]
 	}
 
 	ctrl := message.New().AsControl()
-	return []*message.Message{msg, ctrl}, nil
+	return []*message.Message{ctrl, msg}, nil
 }
 
 func (tf *utilityControl) String() string {

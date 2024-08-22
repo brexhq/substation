@@ -1122,7 +1122,7 @@ local helpers = {
             id: helpers.id(type, settings),
             object: $.config.object,
             format: null,
-            location: null,
+            location: 'UTC',
           },
 
           type: type,
@@ -1167,7 +1167,7 @@ local helpers = {
             id: helpers.id(type, settings),
             object: $.config.object,
             format: null,
-            location: null,
+            location: 'UTC',
           },
 
           type: type,
@@ -1294,38 +1294,38 @@ local helpers = {
         },
 
         type: 'aws_dynamodb',
-        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
       },
     },
     csv_file(settings={}): {
       local default = { file: null, column: null, delimiter: ',', header: null },
 
       type: 'csv_file',
-      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
     },
     json_file(settings=$.defaults.kv_store.json_file.settings): {
       local default = { file: null, is_lines: false },
 
       type: 'json_file',
-      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
     },
     memory(settings={}): {
       local default = { capacity: 1024 },
 
       type: 'memory',
-      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
     },
     mmdb(settings={}): {
       local default = { file: null },
 
       type: 'mmdb',
-      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
     },
     text_file(settings={}): {
       local default = { file: null },
 
       type: 'text_file',
-      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
     },
   },
   // Mirrors interfaces from the internal/secrets package.
@@ -1341,14 +1341,14 @@ local helpers = {
         },
 
         type: 'aws_secrets_manager',
-        settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+        settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
       },
     },
     environment_variable(settings={}): {
       local default = { id: null, name: null, ttl_offset: null },
 
       type: 'environment_variable',
-      settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
+      settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
     },
   },
   // Mirrors structs from the internal/config package.
@@ -1360,4 +1360,6 @@ local helpers = {
     request: { timeout: '1s' },
     retry: { count: 3, delay: '1s', error_messages: [".*"] },
   },
+  // Mirrors config from the internal/file package.
+  file_path: { prefix: null, time_format: '2006/01/02', uuid: true, suffix: null },
 }

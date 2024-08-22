@@ -2,7 +2,7 @@ name: code
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   go-v1:
@@ -12,14 +12,14 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 1
-    
+
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.22
 
       - name: Testing
-        run: go test -timeout 30s -v ./... 
+        run: go test -timeout 30s -v ./...
         working-directory: ./v1/
 
       - name: Linting
@@ -35,14 +35,14 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 1
-    
+
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.22
 
       - name: Testing
-        run: go test -timeout 30s -v ./... 
+        run: go test -timeout 30s -v ./...
         working-directory: ./v2/
 
       - name: Linting
@@ -60,10 +60,10 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Linting
-      - run: |
+        run: |
           pip3 install black
           find -name *.py | xargs black --check
 

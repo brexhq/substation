@@ -1,4 +1,5 @@
 ARG ARCH=x86_64
+ARG SOURCE="."  # default to local source
 
 FROM golang:1.22 as build
 ENV GO111MODULE=on 
@@ -12,12 +13,12 @@ RUN apt-get update && \
 
 # install deps
 WORKDIR /usr/local/go/src/substation/
-COPY ./go.mod .
-COPY ./go.sum .
+COPY ${SOURCE}/go.mod .
+COPY ${SOURCE}/go.sum .
 RUN go mod download
 
 # copy src, unit test, build app
-COPY . /usr/local/go/src/substation/
+COPY ${SOURCE} /usr/local/go/src/substation/
 RUN go test -timeout 30s -v ./... 
 WORKDIR /usr/local/go/src/substation/cmd/aws/lambda/substation
 RUN go build -ldflags "-w -s" -o /var/task/main

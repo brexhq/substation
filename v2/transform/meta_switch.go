@@ -15,12 +15,6 @@ import (
 type metaSwitchCaseConfig struct {
 	// Condition that must be true for the transforms to be applied.
 	Condition config.Config `json:"condition"`
-
-	// Transform that is applied when the condition is true.
-	//
-	// Deprecated: Transform exists for backwards compatibility and will be
-	// removed in a future release. Use Transforms instead.
-	Transform config.Config `json:"transform"`
 	// Transforms that are applied in series when the condition is true.
 	Transforms []config.Config `json:"transforms"`
 }
@@ -44,8 +38,14 @@ func (c *metaSwitchConfig) Validate() error {
 	}
 
 	for _, c := range c.Cases {
-		if c.Transform.Type == "" && len(c.Transforms) == 0 {
+		if len(c.Transforms) == 0 {
 			return fmt.Errorf("transform: %v", errors.ErrMissingRequiredOption)
+		}
+
+		for _, t := range c.Transforms {
+			if t.Type == "" {
+				return fmt.Errorf("type: %v", errors.ErrMissingRequiredOption)
+			}
 		}
 	}
 

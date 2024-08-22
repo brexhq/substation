@@ -64,11 +64,11 @@ func main() {
 	switch h := handler; h {
 	case "AWS_API_GATEWAY":
 		lambda.Start(gatewayHandler)
-	case "AWS_DYNAMODB_STREAM", "AWS_DYNAMODB": // AWS_DYNAMODB is deprecated
+	case "AWS_DYNAMODB_STREAM":
 		lambda.Start(dynamodbHandler)
 	case "AWS_KINESIS_DATA_FIREHOSE":
 		lambda.Start(firehoseHandler)
-	case "AWS_KINESIS_DATA_STREAM", "AWS_KINESIS": // AWS_KINESIS is deprecated
+	case "AWS_KINESIS_DATA_STREAM":
 		lambda.Start(kinesisStreamHandler)
 	case "AWS_LAMBDA":
 		lambda.Start(lambdaHandler)

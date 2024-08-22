@@ -19,9 +19,9 @@ local helpers = {
   // Mirrors interfaces from the condition package.
   cnd: $.condition,
   condition: {
-    all(i): $.condition.meta.all(settings={inspectors: helpers.make_array(i)}),
-    any(i): $.condition.meta.any(settings={inspectors: helpers.make_array(i)}),
-    none(i): $.condition.meta.none(settings={inspectors: helpers.make_array(i)}),
+    all(i): $.condition.meta.all(settings={ inspectors: helpers.make_array(i) }),
+    any(i): $.condition.meta.any(settings={ inspectors: helpers.make_array(i) }),
+    none(i): $.condition.meta.none(settings={ inspectors: helpers.make_array(i) }),
     meta: {
       all(settings={}): {
         local default = {
@@ -386,7 +386,7 @@ local helpers = {
 
             type: type,
             settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
-          },          
+          },
         },
         lambda(settings={}): {
           local type = 'enrich_aws_lambda',
@@ -522,7 +522,7 @@ local helpers = {
 
           type: type,
           settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
-        }
+        },
       },
       to: {
         b64(settings={}): $.transform.format.to.base64(settings=settings),
@@ -1358,7 +1358,7 @@ local helpers = {
     metric: { name: null, attributes: null, destination: null },
     object: { source_key: null, target_key: null, batch_key: null },
     request: { timeout: '1s' },
-    retry: { count: 3, delay: '1s', error_messages: [".*"] },
+    retry: { count: 3, delay: '1s', error_messages: ['.*'] },
   },
   // Mirrors config from the internal/file package.
   file_path: { prefix: null, time_format: '2006/01/02', uuid: true, suffix: null },

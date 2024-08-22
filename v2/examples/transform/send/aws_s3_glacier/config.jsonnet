@@ -20,7 +20,7 @@ local sub = import '../../../../substation.libsonnet';
       aux_tforms: [
         sub.tf.agg.to.string({ separator: '\n' }),
         sub.tf.str.append({ suffix: '\n' }),
-        sub.tf.fmt.to.gzip()
+        sub.tf.fmt.to.gzip(),
       ],
     }),
   ],

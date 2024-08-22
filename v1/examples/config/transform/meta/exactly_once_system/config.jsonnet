@@ -21,6 +21,6 @@ local kv = sub.kv_store.memory();
           sub.tf.send.stdout(),
         ],
       }),
-    ]}),
+    ] }),
   ],
 }

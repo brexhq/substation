@@ -37,7 +37,7 @@ local dest = { type: 'aws_cloudwatch_embedded_metrics' };
           sub.transform.utility.delay({ duration: '100ms' }),
           sub.transform.utility.delay({ duration: '100ms' }),
           sub.transform.utility.delay({ duration: '100ms' }),
-        ] 
+        ],
       },
     ),
   ],

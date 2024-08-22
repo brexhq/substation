@@ -8,16 +8,16 @@ local sub = import '../../../../build/config/substation.libsonnet';
     sub.tf.meta.switch(
       settings={ cases: [
         {
-          condition: sub.cnd.str.eq({obj: {src: 'action'}, value: 'ACCEPT'}),
-          transform: sub.tf.obj.insert({ obj: {trg: 'action'}, value: 'Allow' }),
+          condition: sub.cnd.str.eq({ obj: { src: 'action' }, value: 'ACCEPT' }),
+          transform: sub.tf.obj.insert({ obj: { trg: 'action' }, value: 'Allow' }),
         },
       ] }
     ),
     sub.tf.meta.switch(
       settings={ cases: [
         {
-          condition: sub.cnd.str.gt({obj: {src: 'vpcId'}, value: 'vpc-1a2b3c4d'}),
-          transform: sub.tf.obj.insert({ obj: {trg: 'priority'}, value: 'high' }),
+          condition: sub.cnd.str.gt({ obj: { src: 'vpcId' }, value: 'vpc-1a2b3c4d' }),
+          transform: sub.tf.obj.insert({ obj: { trg: 'priority' }, value: 'high' }),
         },
       ] }
     ),

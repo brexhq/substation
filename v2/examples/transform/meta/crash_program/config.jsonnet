@@ -16,19 +16,19 @@ local key = 'c';
         transforms: [
           sub.tf.obj.insert({ object: { target_key: key }, value: true }),
         ],
-      }
-    ]}),
+      },
+    ] }),
     // If there is no output from the transform, then an error is thrown to crash the program.
     sub.tf.meta.switch({ cases: [
       {
         condition: sub.cnd.num.len.eq(settings={ object: { source_key: key }, value: 0 }),
         transforms: [
-          sub.tf.util.err(settings={ message: 'transform produced no output' })
+          sub.tf.util.err(settings={ message: 'transform produced no output' }),
         ],
       },
-      { 
+      {
         transforms: [
-          sub.tf.send.stdout() 
+          sub.tf.send.stdout(),
         ],
       },
     ] }),

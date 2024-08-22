@@ -1,4 +1,4 @@
-// This example creates a JSON Lines document that can be sent to a 
+// This example creates a JSON Lines document that can be sent to a
 // Sumo Logic HTTPS endpoint.
 //
 // More information about Sumo Logic HTTP upload can be found here:

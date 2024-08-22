@@ -13,12 +13,12 @@ local sub = import '../../../substation.libsonnet';
     sub.tf.meta.switch(
       settings={ cases: [
         {
-          condition: sub.cnd.meta.any({ 
+          condition: sub.cnd.meta.any({
             object: { source_key: '@this' },  // Required to interpret the input as a JSON array.
-            inspectors: [sub.cnd.str.ends_with(settings={ value: '@brex.com' })] 
+            inspectors: [sub.cnd.str.ends_with(settings={ value: '@brex.com' })],
           }),
           transforms: [
-            sub.tf.obj.insert({ object: { target_key: 'meta result' }, value: true })
+            sub.tf.obj.insert({ object: { target_key: 'meta result' }, value: true }),
           ],
         },
         {

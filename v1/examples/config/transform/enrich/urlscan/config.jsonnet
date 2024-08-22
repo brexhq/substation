@@ -9,13 +9,13 @@ local headers = { 'API-Key': '${SECRET:URLSCAN}', 'Content-Type': 'application/j
     // Retrieve the urlscan API key from the secrets store.
     // (Never put a secret directly into a configuration.)
     sub.transform.utility.secret({
-      // The API key is stored in an environment variable named 
+      // The API key is stored in an environment variable named
       // `URLSCAN_API_KEY`.
       secret: sub.secrets.environment_variable({ id: 'URLSCAN', name: 'URLSCAN_API_KEY' }),
     }),
     // Sends a scan request and waits for the result. This
     // follows recommended practices from the urlscan API docs,
-    // and will try to fetch the result up to 3 times over 15s. 
+    // and will try to fetch the result up to 3 times over 15s.
     // If there are no results after retrying, then the unmodified
     // message is sent to stdout.
     sub.tf.enrich.http.post({
@@ -28,7 +28,7 @@ local headers = { 'API-Key': '${SECRET:URLSCAN}', 'Content-Type': 'application/j
     sub.tf.meta.err({ transforms: [  // Errors are caught in case the retry limit is reached.
       sub.tf.meta.retry({
         // This condition runs on the result of the transforms. If
-        // it returns false, then the transforms are retried until 
+        // it returns false, then the transforms are retried until
         // it returns true or the retry settings are exhausted.
         condition: sub.cnd.all([
           sub.cnd.num.len.gt({ object: { source_key: 'meta result.task.time' }, value: 0 }),
@@ -41,8 +41,8 @@ local headers = { 'API-Key': '${SECRET:URLSCAN}', 'Content-Type': 'application/j
           }),
         ],
         retry: { delay: '5s', count: 3 },  // Retry up to 3 times with a 5 second delay (5s, 5s, 5s).
-      })
-    ]}),
+      }),
+    ] }),
     sub.tf.obj.cp({ object: { source_key: 'meta result' } }),
     sub.tf.send.stdout({ batch: { size: 1000 * 1000 * 5 } }),  // 5MB (the results can be large).
   ],

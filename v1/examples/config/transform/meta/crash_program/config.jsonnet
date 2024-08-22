@@ -19,12 +19,12 @@ local key = 'c';
       {
         condition: sub.cnd.any(sub.cnd.num.len.eq(settings={ object: { source_key: key }, value: 0 })),
         transforms: [
-          sub.tf.util.err(settings={ message: 'transform produced no output' })
+          sub.tf.util.err(settings={ message: 'transform produced no output' }),
         ],
       },
-      { 
+      {
         transforms: [
-          sub.tf.send.stdout() 
+          sub.tf.send.stdout(),
         ],
       },
     ] }),

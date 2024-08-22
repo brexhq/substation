@@ -20,7 +20,7 @@ local kv = sub.kv_store.memory();
           sub.tf.object.copy({ object: { source_key: '@pretty' } }),
           sub.tf.send.stdout(),
         ],
-      }) 
+      }),
     ] }),
   ],
 }

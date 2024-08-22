@@ -126,7 +126,7 @@
       err(settings={}): {
         local default = {
           inspector: null,
-          error_messages: [".*"],
+          error_messages: ['.*'],
         },
 
         type: 'meta_err',
@@ -465,8 +465,8 @@
         iget: $.transform.enrich.kv_store.item.get,
         iset: $.transform.enrich.kv_store.item.set,
         item: {
-          get: $.transform.enrich.kv_store.get,   
-          set: $.transform.enrich.kv_store.set,       
+          get: $.transform.enrich.kv_store.get,
+          set: $.transform.enrich.kv_store.set,
         },
         // In future releases this will also be `set.add`.
         sadd(settings={}): {
@@ -513,7 +513,7 @@
 
           type: type,
           settings: std.prune(std.mergePatch(default, $.helpers.abbv(settings))),
-        }
+        },
       },
       to: {
         b64(settings={}): $.transform.format.to.base64(settings=settings),
@@ -689,7 +689,7 @@
         local type = 'meta_retry',
         local default = {
           id: $.helpers.id(type, settings),
-          retry: $.config.retry { error_messages: [".*"] },
+          retry: $.config.retry { error_messages: ['.*'] },
           condition: null,
           transforms: null,
         },

@@ -1,2 +1,0 @@
-{"event":{"category":"authentication","outcome":"success","type":"access"},"user":{"email":"alice@brex.com","roles":["Manager", "Security", "Engineering"]}}
-{"event":{"category":"authentication","outcome":"success","type":"deletion"},"user":{"email":"bob@brex.com","roles":["Manager", "Security", "Engineering"]}}

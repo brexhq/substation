@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs:
-  go-v1:
+  go:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -20,36 +20,11 @@ jobs:
 
       - name: Testing
         run: go test -timeout 30s -v ./...
-        working-directory: ./v1/
 
       - name: Linting
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          working-directory: ./v1/
-
-  go-v2:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
-
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.22
-
-      - name: Testing
-        run: go test -timeout 30s -v ./...
-        working-directory: ./v2/
-
-      - name: Linting
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
-          working-directory: ./v2/
 
   python:
     runs-on: ubuntu-latest

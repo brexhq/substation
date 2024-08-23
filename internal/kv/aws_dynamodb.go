@@ -313,10 +313,8 @@ func (store *kvAWSDynamoDB) Setup(ctx context.Context) error {
 	}
 
 	store.client.Setup(iaws.Config{
-		Region:          store.AWS.Region,
-		RoleARN:         store.AWS.RoleARN,
-		MaxRetries:      store.Retry.Count,
-		RetryableErrors: store.Retry.ErrorMessages,
+		Region:  store.AWS.Region,
+		RoleARN: store.AWS.RoleARN,
 	})
 
 	return nil

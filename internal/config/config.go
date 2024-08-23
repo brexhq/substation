@@ -58,9 +58,6 @@ type Retry struct {
 	// Delay is the amount of time to wait before retrying the action. This can be
 	// combined with the Count field to create a backoff strategy.
 	Delay string `json:"delay"`
-	// ErrorMessages are regular expressions that match error messages and determine
-	// if the action should be retried.
-	ErrorMessages []string `json:"error_messages"`
 }
 
 type Batch struct {

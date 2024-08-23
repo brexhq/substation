@@ -3,7 +3,6 @@ package aws
 import (
 	"context"
 	"os"
-	"regexp"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -39,9 +38,7 @@ func NewV2(ctx context.Context, cfg Config) (aws.Config, error) {
 	}
 
 	maxRetry := 3 // Matches the standard retryer.
-	if cfg.MaxRetries != 0 {
-		maxRetry = cfg.MaxRetries
-	} else if v, ok := os.LookupEnv("AWS_MAX_ATTEMPTS"); ok {
+	if v, ok := os.LookupEnv("AWS_MAX_ATTEMPTS"); ok {
 		max, err := strconv.Atoi(v)
 		if err != nil {
 			return aws.Config{}, err
@@ -50,27 +47,12 @@ func NewV2(ctx context.Context, cfg Config) (aws.Config, error) {
 		maxRetry = max
 	}
 
-	errMsg := make([]*regexp.Regexp, len(cfg.RetryableErrors))
-	for i, err := range cfg.RetryableErrors {
-		errMsg[i] = regexp.MustCompile(err)
-	}
-
 	conf, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(region),
 		config.WithCredentialsProvider(creds),
 		config.WithRetryer(func() aws.Retryer {
 			return retry.NewStandard(func(o *retry.StandardOptions) {
 				o.MaxAttempts = maxRetry
-				// Additional retryable errors ~must be appended~ to not overwrite the defaults.
-				o.Retryables = append(o.Retryables, retry.IsErrorRetryableFunc(func(err error) aws.Ternary {
-					for _, msg := range errMsg {
-						if msg.MatchString(err.Error()) {
-							return aws.TrueTernary
-						}
-					}
-
-					return aws.FalseTernary
-				}))
 			})
 		}),
 	)

@@ -457,8 +457,9 @@ local helpers = {
           kv_store: null,
           close_kv_store: false,
         },
+        iget: $.transform.enrich.kv_store.item.get,
+        iset: $.transform.enrich.kv_store.item.set,
         item: {
-          iget: $.transform.enrich.kv_store.item.get,
           get(settings={}): {
             local type = 'enrich_kv_store_get',
             local default = $.transform.enrich.kv_store.default { id: helpers.id(type, settings) },
@@ -466,7 +467,6 @@ local helpers = {
             type: type,
             settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
           },
-          iset: $.transform.enrich.kv_store.item.set,
           set(settings={}): {
             local type = 'enrich_kv_store_set',
             local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s', id: helpers.id(type, settings) },
@@ -475,8 +475,8 @@ local helpers = {
             settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
           },
         },
+        sadd: $.transform.enrich.kv_store.set.add,
         set: {
-          sadd: $.transform.enrich.kv_store.set.add,
           add(settings={}): {
             local type = 'enrich_kv_store_set_add',
             local default = $.transform.enrich.kv_store.default { ttl_key: null, ttl_offset: '0s', id: helpers.id(type, settings) },
@@ -632,7 +632,7 @@ local helpers = {
         local default = {
           id: helpers.id(type, settings),
           transforms: null,
-          error_messages: null,
+          error_messages: ['.*'],
         },
 
         type: type,

@@ -447,29 +447,15 @@ docker build -t substation-dev .devcontainer/ && \
 docker run -v $(pwd):/workspaces/substation/  -w /workspaces/substation -v /var/run/docker.sock:/var/run/docker.sock -it substation-dev
 ```
 
-To try the system locally, run this from the [examples](examples) directory:
-```sh
-sh .devcontainer/post_start.sh && \
-cd examples && \
-make -s quickstart
+To test the system locally, run this from the project root:
+
+```bash
+sh build/scripts/config/compile.sh
+go build -o ./examples/substation ./examples/
+./examples/substation -config ./examples/transform/aggregate/summarize/config.json -file ./examples/transform/aggregate/summarize/data.jsonl
 ```
 
-To try the system in the cloud, choose an [AWS example](examples/terraform/aws) to deploy:
-```sh
-sh .devcontainer/post_start.sh && \
-cd examples && \
-aws configure && \
-make -s check && \
-make -s build && \
-make -s deploy EXAMPLE=terraform/aws/dynamodb/cdc
-```
-
-After testing is complete, the cloud deployment should be destroyed:
-```sh
-make -s destroy EXAMPLE=terraform/aws/dynamodb/cdc
-```
-
-**We do not recommend managing cloud deployments from a local machine using the examples Makefile. Production deployments should use a CI/CD pipeline with a remote state backend, such as Terraform, to manage infrastructure.**
+See the [Terraform documentation](build/terraform/aws/) for more an example of how to deploy Substation to AWS.
 
 ## Licensing
 

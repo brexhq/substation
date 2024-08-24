@@ -8,7 +8,7 @@
 //
 // The transform emits two metrics that describe success and failure, annotated
 // in the `FreshnessType` attribute.
-local sub = import '../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../substation.libsonnet';
 
 local attr = { AppName: 'example' };
 local dest = { type: 'aws_cloudwatch_embedded_metrics' };

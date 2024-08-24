@@ -2,7 +2,7 @@
 // Add the two data files in this directory to a Zip file and send it to
 // Substation. You can use this command to create the Zip file:
 //  zip data.zip data.jsonl data.csv
-local sub = import '../../../../../build/config/substation.libsonnet';
+local sub = import '../../../../substation.libsonnet';
 
 {
   transforms: [

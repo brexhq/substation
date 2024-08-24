@@ -683,8 +683,9 @@ local helpers = {
         local default = {
           id: helpers.id(type, settings),
           retry: $.config.retry,
-          condition: null,
           transforms: null,
+          condition: null,
+          error_messages: ['.*']
         },
 
         type: type,
@@ -1358,7 +1359,7 @@ local helpers = {
     metric: { name: null, attributes: null, destination: null },
     object: { source_key: null, target_key: null, batch_key: null },
     request: { timeout: '1s' },
-    retry: { count: 3, delay: '1s', error_messages: ['.*'] },
+    retry: { count: 3, delay: '1s' },
   },
   // Mirrors config from the internal/file package.
   file_path: { prefix: null, time_format: '2006/01/02', uuid: true, suffix: null },

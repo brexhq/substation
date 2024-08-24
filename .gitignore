@@ -18,9 +18,9 @@ CHANGELOG.md
 # allow Visual Studio Code settings config file
 !.vscode/settings.json
 # allow specific JSON files in the examples/ directory
-!*/examples/**/data*.json
-!*/examples/**/data*.jsonl
-!*/examples/**/stdout.jsonl
+!examples/**/data*.json
+!examples/**/data*.jsonl
+!examples/**/stdout.jsonl
 
 # Go profiling files
 *.prof

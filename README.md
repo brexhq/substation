@@ -455,7 +455,7 @@ go build -o ./examples/substation ./examples/
 ./examples/substation -config ./examples/transform/aggregate/summarize/config.json -file ./examples/transform/aggregate/summarize/data.jsonl
 ```
 
-See the [Terraform documentation](build/terraform/aws/) for more an example of how to deploy Substation to AWS.
+The [Terraform documentation](build/terraform/aws/) includes guidance for deploying Substation to AWS.
 
 ## Licensing
 

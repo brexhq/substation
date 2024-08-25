@@ -111,29 +111,9 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 	}
 	log.WithField("alarm", alarmName).WithField("stream", stream).Debug("Parsed Kinesis stream.")
 
-	var shards int32
-	input := kinesis.ListShardsInput{
-		StreamName: aws.String(stream),
-	}
-
-LOOP:
-	for {
-		resp, err := kinesisC.ListShards(ctx, &input)
-		if err != nil {
-			return fmt.Errorf("handler: %v", err)
-		}
-
-		for _, s := range resp.Shards {
-			if end := s.SequenceNumberRange.EndingSequenceNumber; end == nil {
-				shards++
-			}
-		}
-
-		if resp.NextToken != nil {
-			input.NextToken = resp.NextToken
-		} else {
-			break LOOP
-		}
+	shards, err := listShards(ctx, stream)
+	if err != nil {
+		return fmt.Errorf("handler: %v", err)
 	}
 
 	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", shards).
@@ -149,33 +129,9 @@ LOOP:
 
 	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", newShards).Info("Calculated new shard count.")
 
-	var tags []ktypes.Tag
-	var lastTag string
-
-	for {
-		input := kinesis.ListTagsForStreamInput{
-			StreamName: aws.String(stream),
-		}
-
-		if lastTag != "" {
-			input.ExclusiveStartTagKey = aws.String(lastTag)
-		}
-
-		resp, err := kinesisC.ListTagsForStream(ctx, &input)
-		if err != nil {
-			return fmt.Errorf("handler: %v", err)
-		}
-
-		if len(resp.Tags) == 0 {
-			break
-		}
-
-		tags = append(tags, resp.Tags...)
-		lastTag = *resp.Tags[len(resp.Tags)-1].Key
-
-		if !*resp.HasMoreTags {
-			break
-		}
+	tags, err := listTags(ctx, stream)
+	if err != nil {
+		return fmt.Errorf("handler: %v", err)
 	}
 
 	var minShard, maxShard int32
@@ -241,34 +197,7 @@ LOOP:
 		return nil
 	}
 
-	if _, err := kinesisC.UpdateShardCount(ctx, &kinesis.UpdateShardCountInput{
-		StreamName:       aws.String(stream),
-		TargetShardCount: aws.Int32(newShards),
-		ScalingType:      ktypes.ScalingTypeUniformScaling,
-	}); err != nil {
-		return fmt.Errorf("handler: %v", err)
-	}
-
-	for {
-		resp, err := kinesisC.DescribeStreamSummary(ctx, &kinesis.DescribeStreamSummaryInput{
-			StreamName: aws.String(stream),
-		})
-		if err != nil {
-			return fmt.Errorf("describestream stream %s: %v", stream, err)
-		}
-
-		if resp.StreamDescriptionSummary.StreamStatus != ktypes.StreamStatusUpdating {
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
-
-	if _, err := kinesisC.AddTagsToStream(ctx, &kinesis.AddTagsToStreamInput{
-		StreamName: aws.String(stream),
-		Tags: map[string]string{
-			"LastScalingEvent": time.Now().Format(time.RFC3339),
-		},
-	}); err != nil {
+	if err := updateStream(ctx, stream, newShards); err != nil {
 		return fmt.Errorf("handler: %v", err)
 	}
 
@@ -350,52 +279,14 @@ LOOP:
 	}
 
 	downscaleThreshold := kinesisThreshold - 0.35
-	if _, err := cloudwatchC.PutMetricAlarm(ctx, &cloudwatch.PutMetricAlarmInput{
-		AlarmName:          aws.String(stream + "_downscale"),
-		AlarmDescription:   aws.String(stream),
-		ActionsEnabled:     aws.Bool(true),
-		AlarmActions:       []string{topicArn},
-		EvaluationPeriods:  aws.Int32(kinesisDownscaleDatapoints),
-		DatapointsToAlarm:  aws.Int32(kinesisDownscaleDatapoints),
-		Threshold:          aws.Float64(downscaleThreshold),
-		ComparisonOperator: ctypes.ComparisonOperatorLessThanOrEqualToThreshold,
-		TreatMissingData:   aws.String("ignore"),
-		Metrics:            metrics,
-	}); err != nil {
-		return fmt.Errorf("handler: %v", err)
-	}
-
-	if _, err := cloudwatchC.SetAlarmState(ctx, &cloudwatch.SetAlarmStateInput{
-		AlarmName:   aws.String(stream + "_downscale"),
-		StateValue:  ctypes.StateValueInsufficientData,
-		StateReason: aws.String("Threshold updated"),
-	}); err != nil {
+	if err := updateDownscaleAlarm(ctx, stream, topicArn, downscaleThreshold, metrics); err != nil {
 		return fmt.Errorf("handler: %v", err)
 	}
 
 	log.WithField("alarm", stream+"_downscale").WithField("stream", stream).WithField("count", newShards).Debug("Reset CloudWatch alarm.")
 
 	upscaleThreshold := kinesisThreshold
-	if _, err := cloudwatchC.PutMetricAlarm(ctx, &cloudwatch.PutMetricAlarmInput{
-		AlarmName:          aws.String(stream + "_upscale"),
-		AlarmDescription:   aws.String(stream),
-		ActionsEnabled:     aws.Bool(true),
-		AlarmActions:       []string{topicArn},
-		EvaluationPeriods:  aws.Int32(kinesisUpscaleDatapoints),
-		DatapointsToAlarm:  aws.Int32(kinesisUpscaleDatapoints),
-		Threshold:          aws.Float64(upscaleThreshold),
-		ComparisonOperator: ctypes.ComparisonOperatorGreaterThanOrEqualToThreshold,
-		TreatMissingData:   aws.String("ignore"),
-		Metrics:            metrics,
-	}); err != nil {
-		return fmt.Errorf("handler: %v", err)
-	}
-
-	if _, err := cloudwatchC.SetAlarmState(ctx, &cloudwatch.SetAlarmStateInput{
-		AlarmName:   aws.String(stream + "_upscale"),
-		StateValue:  ctypes.StateValueInsufficientData,
-		StateReason: aws.String("Threshold updated"),
-	}); err != nil {
+	if err := updateUpscaleAlarm(ctx, stream, topicArn, upscaleThreshold, metrics); err != nil {
 		return fmt.Errorf("handler: %v", err)
 	}
 
@@ -428,4 +319,156 @@ func upscale(shards float64) int32 {
 	default:
 		return int32(math.Floor(shards * 1.25))
 	}
+}
+
+func listShards(ctx context.Context, stream string) (int32, error) {
+	var shards int32
+	input := kinesis.ListShardsInput{
+		StreamName: aws.String(stream),
+	}
+
+LOOP:
+	for {
+		resp, err := kinesisC.ListShards(ctx, &input)
+		if err != nil {
+			return 0, err
+		}
+
+		for _, s := range resp.Shards {
+			if end := s.SequenceNumberRange.EndingSequenceNumber; end == nil {
+				shards++
+			}
+		}
+
+		if resp.NextToken != nil {
+			input.NextToken = resp.NextToken
+		} else {
+			break LOOP
+		}
+	}
+
+	return shards, nil
+}
+
+func listTags(ctx context.Context, stream string) ([]ktypes.Tag, error) {
+	var tags []ktypes.Tag
+	var lastTag string
+
+	for {
+		input := kinesis.ListTagsForStreamInput{
+			StreamName: aws.String(stream),
+		}
+
+		if lastTag != "" {
+			input.ExclusiveStartTagKey = aws.String(lastTag)
+		}
+
+		resp, err := kinesisC.ListTagsForStream(ctx, &input)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(resp.Tags) == 0 {
+			break
+		}
+
+		tags = append(tags, resp.Tags...)
+		lastTag = *resp.Tags[len(resp.Tags)-1].Key
+
+		if !*resp.HasMoreTags {
+			break
+		}
+	}
+
+	return tags, nil
+}
+
+func updateStream(ctx context.Context, stream string, shards int32) error {
+	_, err := kinesisC.UpdateShardCount(ctx, &kinesis.UpdateShardCountInput{
+		StreamName:       aws.String(stream),
+		TargetShardCount: aws.Int32(shards),
+		ScalingType:      ktypes.ScalingTypeUniformScaling,
+	})
+	if err != nil {
+		return err
+	}
+
+	for {
+		resp, err := kinesisC.DescribeStreamSummary(ctx, &kinesis.DescribeStreamSummaryInput{
+			StreamName: aws.String(stream),
+		})
+		if err != nil {
+			return err
+		}
+
+		if resp.StreamDescriptionSummary.StreamStatus != ktypes.StreamStatusUpdating {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	if _, err := kinesisC.AddTagsToStream(ctx, &kinesis.AddTagsToStreamInput{
+		StreamName: aws.String(stream),
+		Tags: map[string]string{
+			"LastScalingEvent": time.Now().Format(time.RFC3339),
+		},
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func updateDownscaleAlarm(ctx context.Context, stream, topic string, threshold float64, metrics []ctypes.MetricDataQuery) error {
+	if _, err := cloudwatchC.PutMetricAlarm(ctx, &cloudwatch.PutMetricAlarmInput{
+		AlarmName:          aws.String(stream + "_downscale"),
+		AlarmDescription:   aws.String(stream),
+		ActionsEnabled:     aws.Bool(true),
+		AlarmActions:       []string{topic},
+		EvaluationPeriods:  aws.Int32(kinesisDownscaleDatapoints),
+		DatapointsToAlarm:  aws.Int32(kinesisDownscaleDatapoints),
+		Threshold:          aws.Float64(threshold),
+		ComparisonOperator: ctypes.ComparisonOperatorLessThanOrEqualToThreshold,
+		TreatMissingData:   aws.String("ignore"),
+		Metrics:            metrics,
+	}); err != nil {
+		return err
+	}
+
+	if _, err := cloudwatchC.SetAlarmState(ctx, &cloudwatch.SetAlarmStateInput{
+		AlarmName:   aws.String(stream + "_downscale"),
+		StateValue:  ctypes.StateValueInsufficientData,
+		StateReason: aws.String("Threshold updated"),
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func updateUpscaleAlarm(ctx context.Context, stream, topic string, threshold float64, metrics []ctypes.MetricDataQuery) error {
+	if _, err := cloudwatchC.PutMetricAlarm(ctx, &cloudwatch.PutMetricAlarmInput{
+		AlarmName:          aws.String(stream + "_upscale"),
+		AlarmDescription:   aws.String(stream),
+		ActionsEnabled:     aws.Bool(true),
+		AlarmActions:       []string{topic},
+		EvaluationPeriods:  aws.Int32(kinesisUpscaleDatapoints),
+		DatapointsToAlarm:  aws.Int32(kinesisUpscaleDatapoints),
+		Threshold:          aws.Float64(threshold),
+		ComparisonOperator: ctypes.ComparisonOperatorGreaterThanOrEqualToThreshold,
+		TreatMissingData:   aws.String("ignore"),
+		Metrics:            metrics,
+	}); err != nil {
+		return err
+	}
+
+	if _, err := cloudwatchC.SetAlarmState(ctx, &cloudwatch.SetAlarmStateInput{
+		AlarmName:   aws.String(stream + "_upscale"),
+		StateValue:  ctypes.StateValueInsufficientData,
+		StateReason: aws.String("Threshold updated"),
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }

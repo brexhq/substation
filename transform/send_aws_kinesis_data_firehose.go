@@ -165,6 +165,7 @@ func (tf *sendAWSKinesisDataFirehose) send(ctx context.Context, key string) erro
 		return err
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	return tf.putRecords(ctx, data)
 }
 
@@ -181,7 +182,6 @@ func (tf *sendAWSKinesisDataFirehose) putRecords(ctx context.Context, data [][]b
 		Records:            records,
 	}
 
-	ctx = context.WithoutCancel(ctx)
 	resp, err := tf.client.PutRecordBatch(ctx, &input)
 	if resp.FailedPutCount != nil && *resp.FailedPutCount > 0 {
 		var retry [][]byte

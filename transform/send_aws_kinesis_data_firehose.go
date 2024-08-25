@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/service/firehose"
+	"github.com/aws/aws-sdk-go-v2/service/firehose/types"
+
 	"github.com/brexhq/substation/v2/config"
-	"github.com/brexhq/substation/v2/internal/aggregate"
-	"github.com/brexhq/substation/v2/internal/aws"
-	"github.com/brexhq/substation/v2/internal/aws/firehose"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/message"
+
+	iaggregate "github.com/brexhq/substation/v2/internal/aggregate"
+	iaws "github.com/brexhq/substation/v2/internal/aws"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	ierrors "github.com/brexhq/substation/v2/internal/errors"
 )
 
 // Records greater than 1000 KiB in size cannot be put into Kinesis Firehose.
@@ -25,8 +28,6 @@ const sendAWSKinesisDataFirehoseMessageSizeLimit = 1024 * 1000
 var errSendAWSKinesisDataFirehoseRecordSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSKinesisDataFirehoseConfig struct {
-	// StreamName is the Firehose Delivery Stream that records are sent to.
-	StreamName string `json:"stream_name"`
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
@@ -41,14 +42,14 @@ func (c *sendAWSKinesisDataFirehoseConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSKinesisDataFirehoseConfig) Validate() error {
-	if c.StreamName == "" {
-		return fmt.Errorf("stream_name: %v", errors.ErrMissingRequiredOption)
+	if c.AWS.ARN == "" {
+		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
 	}
 
 	return nil
 }
 
-func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendAWSKinesisDataFirehose, error) {
+func newSendAWSKinesisDataFirehose(ctx context.Context, cfg config.Config) (*sendAWSKinesisDataFirehose, error) {
 	conf := sendAWSKinesisDataFirehoseConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform send_aws_kinesis_data_firehose: %v", err)
@@ -66,13 +67,17 @@ func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendA
 		conf: conf,
 	}
 
-	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
-		Region:  conf.AWS.Region,
-		RoleARN: conf.AWS.RoleARN,
+	awsCfg, err := iaws.New(ctx, iaws.Config{
+		Region:  iaws.ParseRegion(conf.AWS.ARN),
+		RoleARN: conf.AWS.AssumeRoleARN,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
 
-	agg, err := aggregate.New(aggregate.Config{
+	tf.client = firehose.NewFromConfig(awsCfg)
+
+	agg, err := iaggregate.New(iaggregate.Config{
 		// Firehose limits batch operations to 500 records and 4 MiB.
 		Count:    500,
 		Size:     sendAWSKinesisDataFirehoseMessageSizeLimit * 4,
@@ -99,13 +104,11 @@ func newSendAWSKinesisDataFirehose(_ context.Context, cfg config.Config) (*sendA
 }
 
 type sendAWSKinesisDataFirehose struct {
-	conf sendAWSKinesisDataFirehoseConfig
-
-	// client is safe for concurrent use.
-	client firehose.API
+	conf   sendAWSKinesisDataFirehoseConfig
+	client *firehose.Client
 
 	mu     sync.Mutex
-	agg    *aggregate.Aggregate
+	agg    *iaggregate.Aggregate
 	tforms []Transformer
 }
 
@@ -162,7 +165,39 @@ func (tf *sendAWSKinesisDataFirehose) send(ctx context.Context, key string) erro
 		return err
 	}
 
-	if _, err := tf.client.PutRecordBatch(ctx, tf.conf.StreamName, data); err != nil {
+	return tf.putRecords(ctx, data)
+}
+
+func (tf *sendAWSKinesisDataFirehose) putRecords(ctx context.Context, data [][]byte) error {
+	var records []types.Record
+	for _, d := range data {
+		records = append(records, types.Record{
+			Data: d,
+		})
+	}
+
+	input := firehose.PutRecordBatchInput{
+		DeliveryStreamName: &tf.conf.AWS.ARN,
+		Records:            records,
+	}
+
+	ctx = context.WithoutCancel(ctx)
+	resp, err := tf.client.PutRecordBatch(ctx, &input)
+	if resp.FailedPutCount != nil && *resp.FailedPutCount > 0 {
+		var retry [][]byte
+
+		for i, r := range resp.RequestResponses {
+			if r.ErrorCode != nil {
+				retry = append(retry, data[i])
+			}
+		}
+
+		if len(retry) > 0 {
+			return tf.putRecords(ctx, retry)
+		}
+	}
+
+	if err != nil {
 		return err
 	}
 

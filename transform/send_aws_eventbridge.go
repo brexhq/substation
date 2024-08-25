@@ -10,10 +10,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 
 	"github.com/brexhq/substation/v2/config"
-	"github.com/brexhq/substation/v2/internal/aggregate"
-	"github.com/brexhq/substation/v2/internal/aws"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/message"
+
+	iaggregate "github.com/brexhq/substation/v2/internal/aggregate"
+	iaws "github.com/brexhq/substation/v2/internal/aws"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 // Records greater than 256 KB in size cannot be
@@ -27,8 +28,6 @@ const sendAWSEventBridgeMessageSizeLimit = 1024 * 1024 * 256
 var errSendAWSEventBridgeMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSEventBridgeConfig struct {
-	// ARN is the EventBridge bus to send messages to.
-	ARN string `json:"arn"`
 	// Describes the type of the messages sent to EventBridge.
 	Description string `json:"description"`
 	// AuxTransforms are applied to batched data before it is sent.
@@ -66,9 +65,9 @@ func newSendAWSEventBridge(ctx context.Context, cfg config.Config) (*sendAWSEven
 	}
 
 	// Setup the AWS client.
-	awsCfg, err := aws.NewV2(ctx, aws.Config{
-		Region:  conf.AWS.Region,
-		RoleARN: conf.AWS.RoleARN,
+	awsCfg, err := iaws.New(ctx, iaws.Config{
+		Region:  iaws.ParseRegion(conf.AWS.ARN),
+		RoleARN: conf.AWS.AssumeRoleARN,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
@@ -77,7 +76,7 @@ func newSendAWSEventBridge(ctx context.Context, cfg config.Config) (*sendAWSEven
 	tf.client = eventbridge.NewFromConfig(awsCfg)
 
 	// Setup the batch.
-	agg, err := aggregate.New(aggregate.Config{
+	agg, err := iaggregate.New(iaggregate.Config{
 		Count:    conf.Batch.Count,
 		Size:     conf.Batch.Size,
 		Duration: conf.Batch.Duration,
@@ -109,7 +108,7 @@ type sendAWSEventBridge struct {
 	client *eventbridge.Client
 
 	mu     sync.Mutex
-	agg    *aggregate.Aggregate
+	agg    *iaggregate.Aggregate
 	tforms []Transformer
 }
 
@@ -180,8 +179,8 @@ func (tf *sendAWSEventBridge) send(ctx context.Context, key string) error {
 		}
 
 		// If empty, this is the default event bus.
-		if tf.conf.ARN != "" {
-			entry.EventBusName = &tf.conf.ARN
+		if tf.conf.AWS.ARN != "" {
+			entry.EventBusName = &tf.conf.AWS.ARN
 		}
 
 		entries[i] = entry

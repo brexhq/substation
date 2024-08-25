@@ -3,18 +3,21 @@ package transform
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+
 	"github.com/brexhq/substation/v2/config"
-	"github.com/brexhq/substation/v2/internal/aggregate"
-	"github.com/brexhq/substation/v2/internal/aws"
-	idynamodb "github.com/brexhq/substation/v2/internal/aws/dynamodb"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/message"
+
+	iaggregate "github.com/brexhq/substation/v2/internal/aggregate"
+	iaws "github.com/brexhq/substation/v2/internal/aws"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	ierrors "github.com/brexhq/substation/v2/internal/errors"
 )
 
 // Items greater than 400 KB in size cannot be put into DynamoDB.
@@ -32,15 +35,13 @@ var errSendAWSDynamoDBItemSizeLimit = fmt.Errorf("data exceeded size limit")
 var errSendAWSDynamoDBNonObject = fmt.Errorf("input must be object")
 
 type sendAWSDynamoDBConfig struct {
-	// TableName is the DynamoDB table that items are written to.
-	TableName string `json:"table_name"`
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
 	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
-	Batch  iconfig.Batch  `json:"batch"`
 	AWS    iconfig.AWS    `json:"aws"`
+	Batch  iconfig.Batch  `json:"batch"`
 }
 
 func (c *sendAWSDynamoDBConfig) Decode(in interface{}) error {
@@ -48,14 +49,14 @@ func (c *sendAWSDynamoDBConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSDynamoDBConfig) Validate() error {
-	if c.TableName == "" {
-		return fmt.Errorf("table_name: %v", errors.ErrMissingRequiredOption)
+	if c.AWS.ARN == "" {
+		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
 	}
 
 	return nil
 }
 
-func newSendAWSDynamoDBPut(_ context.Context, cfg config.Config) (*sendAWSDynamoDBPut, error) {
+func newSendAWSDynamoDBPut(ctx context.Context, cfg config.Config) (*sendAWSDynamoDBPut, error) {
 	conf := sendAWSDynamoDBConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform send_aws_dynamodb_put: %v", err)
@@ -73,12 +74,17 @@ func newSendAWSDynamoDBPut(_ context.Context, cfg config.Config) (*sendAWSDynamo
 		conf: conf,
 	}
 
-	tf.client.Setup(aws.Config{
-		Region:  conf.AWS.Region,
-		RoleARN: conf.AWS.RoleARN,
+	awsCfg, err := iaws.New(ctx, iaws.Config{
+		Region:  iaws.ParseRegion(conf.AWS.ARN),
+		RoleARN: conf.AWS.AssumeRoleARN,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
 
-	agg, err := aggregate.New(aggregate.Config{
+	tf.client = dynamodb.NewFromConfig(awsCfg)
+
+	agg, err := iaggregate.New(iaggregate.Config{
 		// DynamoDB limits batch operations to 25 records and 16 MiB.
 		Count:    25,
 		Size:     1000 * 1000 * 16,
@@ -105,13 +111,11 @@ func newSendAWSDynamoDBPut(_ context.Context, cfg config.Config) (*sendAWSDynamo
 }
 
 type sendAWSDynamoDBPut struct {
-	conf sendAWSDynamoDBConfig
-
-	// client is safe for concurrent use.
-	client idynamodb.API
+	conf   sendAWSDynamoDBConfig
+	client *dynamodb.Client
 
 	mu     sync.Mutex
-	agg    *aggregate.Aggregate
+	agg    *iaggregate.Aggregate
 	tforms []Transformer
 }
 
@@ -172,23 +176,57 @@ func (tf *sendAWSDynamoDBPut) send(ctx context.Context, key string) error {
 		return err
 	}
 
-	var items []map[string]*dynamodb.AttributeValue
+	var attrs []map[string]types.AttributeValue
 	for _, b := range data {
-		m := make(map[string]any)
-		for k, v := range bytesToValue(b).Map() {
-			m[k] = v.Value()
+		var item map[string]interface{}
+		if err := json.Unmarshal(b, &item); err != nil {
+			return fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
-		i, err := dynamodbattribute.MarshalMap(m)
+		m, err := attributevalue.MarshalMap(item)
 		if err != nil {
-			return err
+			return fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
-		items = append(items, i)
+		attrs = append(attrs, m)
 	}
 
-	if _, err := tf.client.BatchPutItem(ctx, tf.conf.TableName, items); err != nil {
-		return err
+	ctx = context.WithoutCancel(ctx)
+	return tf.putItems(ctx, attrs)
+}
+
+func (tf *sendAWSDynamoDBPut) putItems(ctx context.Context, attrs []map[string]types.AttributeValue) error {
+	var items []types.WriteRequest
+	for _, attr := range attrs {
+		items = append(items, types.WriteRequest{
+			PutRequest: &types.PutRequest{
+				Item: attr,
+			},
+		})
+	}
+
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			tf.conf.AWS.ARN: items,
+		},
+	}
+
+	resp, err := tf.client.BatchWriteItem(ctx, input)
+	if err != nil {
+		var e *types.ProvisionedThroughputExceededException
+		if errors.As(err, &e) {
+			var retry []map[string]types.AttributeValue
+
+			for _, item := range resp.UnprocessedItems[tf.conf.AWS.ARN] {
+				retry = append(retry, item.PutRequest.Item)
+			}
+
+			if len(retry) > 0 {
+				return tf.putItems(ctx, retry)
+			}
+		} else {
+			return fmt.Errorf("transform %s: %v", tf.conf.ID, err)
+		}
 	}
 
 	return nil

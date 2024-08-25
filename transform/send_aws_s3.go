@@ -5,29 +5,30 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"slices"
+	"strings"
 	"sync"
 
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
 
-	"github.com/brexhq/substation/v2/internal/aggregate"
-	"github.com/brexhq/substation/v2/internal/aws"
-	"github.com/brexhq/substation/v2/internal/aws/s3manager"
+	iaggregate "github.com/brexhq/substation/v2/internal/aggregate"
+	iaws "github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
-	"github.com/brexhq/substation/v2/internal/file"
+	ierrors "github.com/brexhq/substation/v2/internal/errors"
+	ifile "github.com/brexhq/substation/v2/internal/file"
+	"github.com/brexhq/substation/v2/internal/media"
 )
 
 type sendAWSS3Config struct {
-	// BucketName is the AWS S3 bucket that data is written to.
-	BucketName string `json:"bucket_name"`
 	// StorageClass is the storage class of the object.
 	StorageClass string `json:"storage_class"`
 	// FilePath determines how the name of the uploaded object is constructed.
 	// See filePath.New for more information.
-	FilePath file.Path `json:"file_path"`
+	FilePath ifile.Path `json:"file_path"`
 	// UseBatchKeyAsPrefix determines if the batch key should be used as the prefix.
 	UseBatchKeyAsPrefix bool `json:"use_batch_key_as_prefix"`
 	// AuxTransforms are applied to batched data before it is sent.
@@ -44,18 +45,18 @@ func (c *sendAWSS3Config) Decode(in interface{}) error {
 }
 
 func (c *sendAWSS3Config) Validate() error {
-	if c.BucketName == "" {
-		return fmt.Errorf("bucket_name: %v", errors.ErrMissingRequiredOption)
+	if c.AWS.ARN == "" {
+		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
 	}
 
-	if !slices.Contains(s3.StorageClass_Values(), c.StorageClass) {
-		return fmt.Errorf("storage_class: %v", errors.ErrInvalidOption)
+	if types.StorageClass(c.StorageClass) == "" {
+		return fmt.Errorf("storage class: %v", ierrors.ErrInvalidOption)
 	}
 
 	return nil
 }
 
-func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
+func newSendAWSS3(ctx context.Context, cfg config.Config) (*sendAWSS3, error) {
 	conf := sendAWSS3Config{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform send_aws_s3: %v", err)
@@ -63,10 +64,6 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 
 	if conf.ID == "" {
 		conf.ID = "send_aws_s3"
-	}
-
-	if conf.StorageClass == "" {
-		conf.StorageClass = "STANDARD"
 	}
 
 	if err := conf.Validate(); err != nil {
@@ -77,7 +74,17 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 		conf: conf,
 	}
 
-	agg, err := aggregate.New(aggregate.Config{
+	// Extracts the bucket name from the ARN.
+	// The ARN is in the format: arn:aws:s3:::bucket-name
+	tf.bucket = strings.Split(conf.AWS.ARN, ":")[5]
+
+	if conf.StorageClass == "" {
+		tf.sclass = types.StorageClassStandard
+	} else {
+		tf.sclass = types.StorageClass(conf.StorageClass)
+	}
+
+	agg, err := iaggregate.New(iaggregate.Config{
 		Count:    conf.Batch.Count,
 		Size:     conf.Batch.Size,
 		Duration: conf.Batch.Duration,
@@ -100,22 +107,28 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 	}
 
 	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
-		Region:  conf.AWS.Region,
-		RoleARN: conf.AWS.RoleARN,
+	awsCfg, err := iaws.New(ctx, iaws.Config{
+		Region:  iaws.ParseRegion(conf.AWS.ARN),
+		RoleARN: conf.AWS.AssumeRoleARN,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	c := s3.NewFromConfig(awsCfg)
+	tf.client = manager.NewUploader(c)
 
 	return &tf, nil
 }
 
 type sendAWSS3 struct {
-	conf sendAWSS3Config
-
-	// client is safe for concurrent use.
-	client s3manager.UploaderAPI
+	conf   sendAWSS3Config
+	client *manager.Uploader
+	bucket string
+	sclass types.StorageClass
 
 	mu     sync.Mutex
-	agg    *aggregate.Aggregate
+	agg    *iaggregate.Aggregate
 	tforms []Transformer
 }
 
@@ -202,7 +215,25 @@ func (tf *sendAWSS3) send(ctx context.Context, key string) error {
 	}
 	defer f.Close()
 
-	if _, err := tf.client.Upload(ctx, tf.conf.BucketName, filePath, tf.conf.StorageClass, f); err != nil {
+	mediaType, err := media.File(f)
+	if err != nil {
+		return err
+	}
+
+	if _, err := f.Seek(0, 0); err != nil {
+		return err
+	}
+
+	input := s3.PutObjectInput{
+		Bucket:       &tf.bucket,
+		Key:          &filePath,
+		Body:         f,
+		StorageClass: tf.sclass,
+		ContentType:  &mediaType,
+	}
+
+	ctx = context.WithoutCancel(ctx)
+	if _, err := tf.client.Upload(ctx, &input); err != nil {
 		return err
 	}
 

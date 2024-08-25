@@ -5,32 +5,30 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
 	"github.com/brexhq/substation/v2/config"
-	"github.com/brexhq/substation/v2/internal/aws"
-	"github.com/brexhq/substation/v2/internal/aws/dynamodb"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/message"
+
+	iaws "github.com/brexhq/substation/v2/internal/aws"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	ierrors "github.com/brexhq/substation/v2/internal/errors"
 )
 
 type enrichAWSDynamoDBQueryQueryConfig struct {
-	// TableName is the DynamoDB table that is queried.
-	TableName string `json:"table_name"`
 	// PartitionKey is the DynamoDB partition key.
 	PartitionKey string `json:"partition_key"`
 	// SortKey is the DynamoDB sort key.
 	//
 	// This is optional and has no default.
 	SortKey string `json:"sort_key"`
-	// KeyConditionExpression is the DynamoDB key condition
-	// expression string (see documentation).
-	KeyConditionExpression string `json:"key_condition_expression"`
 	// Limits determines the maximum number of items to evalute.
 	//
 	// This is optional and defaults to evaluating all items.
-	Limit int64 `json:"limit"`
+	Limit int32 `json:"limit"`
 	// ScanIndexForward specifies the order of index traversal.
 	//
 	// Must be one of:
@@ -51,24 +49,21 @@ func (c *enrichAWSDynamoDBQueryQueryConfig) Decode(in interface{}) error {
 
 func (c *enrichAWSDynamoDBQueryQueryConfig) Validate() error {
 	if c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", ierrors.ErrMissingRequiredOption)
 	}
 
 	if c.PartitionKey == "" {
-		return fmt.Errorf("partition_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("partition_key: %v", ierrors.ErrMissingRequiredOption)
 	}
 
-	if c.TableName == "" {
-		return fmt.Errorf("table_name: %v", errors.ErrMissingRequiredOption)
+	if c.AWS.ARN == "" {
+		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
 	}
 
-	if c.KeyConditionExpression == "" {
-		return fmt.Errorf("key_condition_expression: %v", errors.ErrMissingRequiredOption)
-	}
 	return nil
 }
 
-func newEnrichAWSDynamoDBQuery(_ context.Context, cfg config.Config) (*enrichAWSDynamoDBQuery, error) {
+func newEnrichAWSDynamoDBQuery(ctx context.Context, cfg config.Config) (*enrichAWSDynamoDBQuery, error) {
 	conf := enrichAWSDynamoDBQueryQueryConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform enrich_aws_dynamodb_query: %v", err)
@@ -86,20 +81,22 @@ func newEnrichAWSDynamoDBQuery(_ context.Context, cfg config.Config) (*enrichAWS
 		conf: conf,
 	}
 
-	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
-		Region:  conf.AWS.Region,
-		RoleARN: conf.AWS.RoleARN,
+	awsCfg, err := iaws.New(ctx, iaws.Config{
+		Region:  iaws.ParseRegion(conf.AWS.ARN),
+		RoleARN: conf.AWS.AssumeRoleARN,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	tf.client = dynamodb.NewFromConfig(awsCfg)
 
 	return &tf, nil
 }
 
 type enrichAWSDynamoDBQuery struct {
-	conf enrichAWSDynamoDBQueryQueryConfig
-
-	// client is safe for concurrent access.
-	client dynamodb.API
+	conf   enrichAWSDynamoDBQueryQueryConfig
+	client *dynamodb.Client
 }
 
 func (tf *enrichAWSDynamoDBQuery) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -107,65 +104,65 @@ func (tf *enrichAWSDynamoDBQuery) Transform(ctx context.Context, msg *message.Me
 		return []*message.Message{msg}, nil
 	}
 
-	var tmp *message.Message
-	if tf.conf.Object.SourceKey != "" {
-		value := msg.GetValue(tf.conf.Object.SourceKey)
-		tmp = message.New().SetData(value.Bytes())
+	value := msg.GetValue(tf.conf.Object.SourceKey)
+	if !value.Exists() {
+		return []*message.Message{msg}, nil
+	}
+
+	var PK, SK string
+	if value.IsArray() {
+		if len(value.Array()) != 2 {
+			return nil, fmt.Errorf("transform %s: expected array of 2 elements, got %d", tf.conf.ID, len(value.Array()))
+		}
+
+		PK = value.Array()[0].String()
+		SK = value.Array()[1].String()
 	} else {
-		tmp = msg
+		PK = value.String()
 	}
 
-	if !json.Valid(tmp.Data()) {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errMsgInvalidObject)
+	keyEx := expression.Key(tf.conf.PartitionKey).Equal(expression.Value(PK))
+	if tf.conf.SortKey != "" {
+		keyEx = keyEx.And(expression.Key(tf.conf.SortKey).Equal(expression.Value(SK)))
 	}
 
-	pk := tmp.GetValue(tf.conf.PartitionKey)
-	if !pk.Exists() {
-		return []*message.Message{msg}, nil
-	}
-
-	sk := tmp.GetValue(tf.conf.SortKey)
-	value, err := tf.dynamodb(ctx, pk.String(), sk.String())
+	expr, err := expression.NewBuilder().WithKeyCondition(keyEx).Build()
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
-
-	// No match.
-	if len(value) == 0 {
-		return []*message.Message{msg}, nil
+	input := &dynamodb.QueryInput{
+		TableName:                 &tf.conf.AWS.ARN,
+		KeyConditionExpression:    expr.KeyCondition(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		Limit:                     aws.Int32(tf.conf.Limit),
+		ScanIndexForward:          aws.Bool(tf.conf.ScanIndexForward),
 	}
 
-	if err := msg.SetValue(tf.conf.Object.TargetKey, value); err != nil {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
-	}
-
-	return []*message.Message{msg}, nil
-}
-
-func (tf *enrichAWSDynamoDBQuery) dynamodb(ctx context.Context, pk, sk string) ([]map[string]interface{}, error) {
-	resp, err := tf.client.Query(
-		ctx,
-		tf.conf.TableName,
-		pk, sk,
-		tf.conf.KeyConditionExpression,
-		tf.conf.Limit,
-		tf.conf.ScanIndexForward,
-	)
+	resp, err := tf.client.Query(ctx, input)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
 	var items []map[string]interface{}
 	for _, i := range resp.Items {
 		var item map[string]interface{}
-		err = dynamodbattribute.UnmarshalMap(i, &item)
-		if err != nil {
-			return nil, err
+		if err := attributevalue.UnmarshalMap(i, &item); err != nil {
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 
 		items = append(items, item)
 	}
-	return items, nil
+
+	if len(items) == 0 {
+		return []*message.Message{msg}, nil
+	}
+
+	if err := msg.SetValue(tf.conf.Object.TargetKey, items); err != nil {
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
+	}
+
+	return []*message.Message{msg}, nil
 }
 
 func (tf *enrichAWSDynamoDBQuery) String() string {

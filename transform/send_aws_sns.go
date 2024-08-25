@@ -4,15 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/service/sns"
+	"github.com/aws/aws-sdk-go-v2/service/sns/types"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/google/uuid"
+
 	"github.com/brexhq/substation/v2/config"
-	"github.com/brexhq/substation/v2/internal/aggregate"
-	"github.com/brexhq/substation/v2/internal/aws"
-	"github.com/brexhq/substation/v2/internal/aws/sns"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/message"
+
+	iaggregate "github.com/brexhq/substation/v2/internal/aggregate"
+	iaws "github.com/brexhq/substation/v2/internal/aws"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	ierrors "github.com/brexhq/substation/v2/internal/errors"
 )
 
 // Records greater than 256 KB in size cannot be
@@ -25,8 +32,6 @@ const sendAWSSNSMessageSizeLimit = 1024 * 1024 * 256
 var errSendAWSSNSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSNSConfig struct {
-	// ARN is the AWS SNS topic ARN that messages are sent to.
-	ARN string `json:"arn"`
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
@@ -41,14 +46,14 @@ func (c *sendAWSSNSConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSSNSConfig) Validate() error {
-	if c.ARN == "" {
-		return fmt.Errorf("topic: %v", errors.ErrMissingRequiredOption)
+	if c.AWS.ARN == "" {
+		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
 	}
 
 	return nil
 }
 
-func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
+func newSendAWSSNS(ctx context.Context, cfg config.Config) (*sendAWSSNS, error) {
 	conf := sendAWSSNSConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform send_aws_sns: %v", err)
@@ -67,12 +72,17 @@ func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 	}
 
 	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
-		Region:  conf.AWS.Region,
-		RoleARN: conf.AWS.RoleARN,
+	awsCfg, err := iaws.New(ctx, iaws.Config{
+		Region:  iaws.ParseRegion(conf.AWS.ARN),
+		RoleARN: conf.AWS.AssumeRoleARN,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
 
-	agg, err := aggregate.New(aggregate.Config{
+	tf.client = sns.NewFromConfig(awsCfg)
+
+	agg, err := iaggregate.New(iaggregate.Config{
 		// SQS limits batch operations to 10 messages.
 		Count: 10,
 		// SNS limits batch operations to 256 KB.
@@ -100,13 +110,11 @@ func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 }
 
 type sendAWSSNS struct {
-	conf sendAWSSNSConfig
-
-	// client is safe for concurrent use.
-	client sns.API
+	conf   sendAWSSNSConfig
+	client *sns.Client
 
 	mu     sync.Mutex
-	agg    *aggregate.Aggregate
+	agg    *iaggregate.Aggregate
 	tforms []Transformer
 }
 
@@ -162,7 +170,51 @@ func (tf *sendAWSSNS) send(ctx context.Context, key string) error {
 		return err
 	}
 
-	if _, err := tf.client.PublishBatch(ctx, tf.conf.ARN, data); err != nil {
+	ctx = context.WithoutCancel(ctx)
+	return tf.sendMessages(ctx, data)
+}
+
+func (tf *sendAWSSNS) sendMessages(ctx context.Context, data [][]byte) error {
+	mgid := uuid.New().String()
+
+	entries := make([]types.PublishBatchRequestEntry, 0, len(data))
+	for idx, d := range data {
+		entry := types.PublishBatchRequestEntry{
+			Id:      aws.String(strconv.Itoa(idx)),
+			Message: aws.String(string(d)),
+		}
+
+		if strings.HasSuffix(tf.conf.AWS.ARN, ".fifo") {
+			entry.MessageGroupId = aws.String(mgid)
+		}
+
+		entries = append(entries, entry)
+	}
+
+	input := &sns.PublishBatchInput{
+		PublishBatchRequestEntries: entries,
+		TopicArn:                   aws.String(tf.conf.AWS.ARN),
+	}
+
+	ctx = context.WithoutCancel(ctx)
+	resp, err := tf.client.PublishBatch(ctx, input)
+	if resp.Failed != nil {
+		var retry [][]byte
+		for _, r := range resp.Failed {
+			idx, err := strconv.Atoi(aws.StringValue(r.Id))
+			if err != nil {
+				return err
+			}
+
+			retry = append(retry, data[idx])
+		}
+
+		if len(retry) > 0 {
+			return tf.sendMessages(ctx, retry)
+		}
+	}
+
+	if err != nil {
 		return err
 	}
 

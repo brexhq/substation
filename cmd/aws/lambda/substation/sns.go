@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/brexhq/substation/v2"
-	"github.com/brexhq/substation/v2/internal/channel"
-	"github.com/brexhq/substation/v2/message"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/brexhq/substation/v2"
+	"github.com/brexhq/substation/v2/message"
+
+	ichannel "github.com/brexhq/substation/v2/internal/channel"
 )
 
 type snsMetadata struct {
@@ -37,7 +39,7 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 		return fmt.Errorf("sns handler: %v", err)
 	}
 
-	ch := channel.New[*message.Message]()
+	ch := ichannel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool

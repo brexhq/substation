@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/awslabs/kinesis-aggregation/go/deaggregator"
-	"github.com/brexhq/substation/v2"
-	"github.com/brexhq/substation/v2/internal/aws/kinesis"
-	"github.com/brexhq/substation/v2/internal/channel"
-	"github.com/brexhq/substation/v2/message"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
+	"github.com/awslabs/kinesis-aggregation/go/v2/deaggregator"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/brexhq/substation/v2"
+	"github.com/brexhq/substation/v2/message"
+
+	ichannel "github.com/brexhq/substation/v2/internal/channel"
 )
 
 type kinesisStreamMetadata struct {
@@ -38,7 +40,7 @@ func kinesisStreamHandler(ctx context.Context, event events.KinesisEvent) error 
 		return err
 	}
 
-	ch := channel.New[*message.Message]()
+	ch := ichannel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
@@ -85,7 +87,7 @@ func kinesisStreamHandler(ctx context.Context, event events.KinesisEvent) error 
 		defer ch.Close()
 
 		eventSourceArn := event.Records[len(event.Records)-1].EventSourceArn
-		converted := kinesis.ConvertEventsRecords(event.Records)
+		converted := convertEventsRecords(event.Records)
 		deaggregated, err := deaggregator.DeaggregateRecords(converted)
 		if err != nil {
 			return err
@@ -125,4 +127,22 @@ func kinesisStreamHandler(ctx context.Context, event events.KinesisEvent) error 
 	}
 
 	return nil
+}
+
+func convertEventsRecords(records []events.KinesisEventRecord) []types.Record {
+	output := make([]types.Record, 0)
+
+	for _, r := range records {
+		// ApproximateArrivalTimestamp is events.SecondsEpochTime which serializes time.Time
+		ts := r.Kinesis.ApproximateArrivalTimestamp.UTC()
+		output = append(output, types.Record{
+			ApproximateArrivalTimestamp: &ts,
+			Data:                        r.Kinesis.Data,
+			EncryptionType:              types.EncryptionType(r.Kinesis.EncryptionType),
+			PartitionKey:                &r.Kinesis.PartitionKey,
+			SequenceNumber:              &r.Kinesis.SequenceNumber,
+		})
+	}
+
+	return output
 }

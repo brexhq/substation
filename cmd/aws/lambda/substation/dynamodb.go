@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/brexhq/substation/v2"
-	"github.com/brexhq/substation/v2/internal/aws/dynamodb"
-	"github.com/brexhq/substation/v2/internal/channel"
-	"github.com/brexhq/substation/v2/message"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/brexhq/substation/v2"
+	"github.com/brexhq/substation/v2/message"
+
+	ichannel "github.com/brexhq/substation/v2/internal/channel"
 )
 
 type dynamodbMetadata struct {
@@ -41,7 +43,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 		return err
 	}
 
-	ch := channel.New[*message.Message]()
+	ch := ichannel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
@@ -184,8 +186,8 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 				}
 			} else {
 				var before map[string]interface{}
-				if err = dynamodbattribute.UnmarshalMap(
-					dynamodb.ConvertEventsAttributeValueMap(record.Change.OldImage),
+				if err = attributevalue.UnmarshalMap(
+					convertEventsAttributeValueMap(record.Change.OldImage),
 					&before,
 				); err != nil {
 					return err
@@ -202,8 +204,8 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 				}
 			} else {
 				var after map[string]interface{}
-				if err = dynamodbattribute.UnmarshalMap(
-					dynamodb.ConvertEventsAttributeValueMap(record.Change.NewImage),
+				if err = attributevalue.UnmarshalMap(
+					convertEventsAttributeValueMap(record.Change.NewImage),
 					&after,
 				); err != nil {
 					return err
@@ -227,4 +229,53 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 	}
 
 	return nil
+}
+
+// convertEventsAttributeValue converts events.DynamoDBAttributeValue to types.AttributeValue.
+func convertEventsAttributeValue(v events.DynamoDBAttributeValue) types.AttributeValue {
+	switch v.DataType() {
+	case events.DataTypeNull:
+		return &types.AttributeValueMemberNULL{}
+	case events.DataTypeBoolean:
+		return &types.AttributeValueMemberBOOL{Value: v.Boolean()}
+	case events.DataTypeString:
+		return &types.AttributeValueMemberS{Value: v.String()}
+	case events.DataTypeNumber:
+		return &types.AttributeValueMemberN{Value: v.Number()}
+	case events.DataTypeBinary:
+		return &types.AttributeValueMemberB{Value: v.Binary()}
+	case events.DataTypeStringSet:
+		return &types.AttributeValueMemberSS{Value: v.StringSet()}
+	case events.DataTypeNumberSet:
+		return &types.AttributeValueMemberNS{Value: v.NumberSet()}
+	case events.DataTypeBinarySet:
+		return &types.AttributeValueMemberBS{Value: v.BinarySet()}
+	case events.DataTypeList:
+		var l []types.AttributeValue
+		for _, e := range v.List() {
+			l = append(l, convertEventsAttributeValue(e))
+		}
+
+		return &types.AttributeValueMemberL{Value: l}
+	case events.DataTypeMap:
+		m := make(map[string]types.AttributeValue)
+		for k, e := range v.Map() {
+			m[k] = convertEventsAttributeValue(e)
+		}
+
+		return &types.AttributeValueMemberM{Value: m}
+	default:
+		return nil
+	}
+}
+
+// convertEventsAttributeValueMap converts a map of events.DynamoDBAttributeValue to a map of dynamodb.AttributeValue.
+func convertEventsAttributeValueMap(m map[string]events.DynamoDBAttributeValue) map[string]types.AttributeValue {
+	av := make(map[string]types.AttributeValue)
+
+	for k, v := range m {
+		av[k] = convertEventsAttributeValue(v)
+	}
+
+	return av
 }

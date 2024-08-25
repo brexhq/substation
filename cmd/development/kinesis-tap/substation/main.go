@@ -14,17 +14,19 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/awslabs/kinesis-aggregation/go/v2/deaggregator"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/awslabs/kinesis-aggregation/go/deaggregator"
 	"github.com/brexhq/substation/v2"
-	"github.com/brexhq/substation/v2/internal/aws"
-	"github.com/brexhq/substation/v2/internal/aws/kinesis"
-	"github.com/brexhq/substation/v2/internal/channel"
-	"github.com/brexhq/substation/v2/internal/file"
-	"github.com/brexhq/substation/v2/internal/log"
 	"github.com/brexhq/substation/v2/message"
+
+	iaws "github.com/brexhq/substation/v2/internal/aws"
+	ichannel "github.com/brexhq/substation/v2/internal/channel"
+	ifile "github.com/brexhq/substation/v2/internal/file"
+	ilog "github.com/brexhq/substation/v2/internal/log"
 )
 
 type options struct {
@@ -38,7 +40,7 @@ type options struct {
 
 // getConfig contextually retrieves a Substation configuration.
 func getConfig(ctx context.Context, cfg string) (io.Reader, error) {
-	path, err := file.Get(ctx, cfg)
+	path, err := ifile.Get(ctx, cfg)
 	defer os.Remove(path)
 
 	if err != nil {
@@ -89,7 +91,7 @@ func run(ctx context.Context, opts options) error {
 		return err
 	}
 
-	ch := channel.New[*message.Message]()
+	ch := ichannel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Consumer group that transforms records using Substation
@@ -119,7 +121,7 @@ func run(ctx context.Context, opts options) error {
 			return err
 		}
 
-		log.Debug("Closed Substation pipeline.")
+		ilog.Debug("Closed Substation pipeline.")
 
 		// ctrl messages flush the pipeline. This must be done
 		// after all messages have been processed.
@@ -128,7 +130,7 @@ func run(ctx context.Context, opts options) error {
 			return err
 		}
 
-		log.Debug("Flushed Substation pipeline.")
+		ilog.Debug("Flushed Substation pipeline.")
 
 		return nil
 	})
@@ -141,15 +143,21 @@ func run(ctx context.Context, opts options) error {
 
 		// The AWS client is configured using environment variables
 		// or the default credentials file.
-		client := kinesis.API{}
-		client.Setup(aws.Config{})
-
-		res, err := client.ListShards(ctx, opts.StreamName)
+		awsCfg, err := iaws.New(ctx, iaws.Config{})
 		if err != nil {
 			return err
 		}
 
-		log.WithField("stream", opts.StreamName).WithField("count", len(res.Shards)).Debug("Retrieved active shards from Kinesis stream.")
+		client := kinesis.NewFromConfig(awsCfg)
+
+		resp, err := client.ListShards(ctx, &kinesis.ListShardsInput{
+			StreamName: &opts.StreamName,
+		})
+		if err != nil {
+			return err
+		}
+
+		ilog.WithField("stream", opts.StreamName).WithField("count", len(resp.Shards)).Debug("Retrieved active shards from Kinesis stream.")
 
 		var iType string
 		switch opts.StreamOffset {
@@ -168,7 +176,7 @@ func run(ctx context.Context, opts options) error {
 		defer cancel()
 
 		recvGroup, recvCtx := errgroup.WithContext(notifyCtx)
-		defer log.Debug("Closed connections to the Kinesis stream.")
+		defer ilog.Debug("Closed connections to the Kinesis stream.")
 
 		// This iterates over a snapshot of active shards in the
 		// stream and will not be updated if shards are split or
@@ -177,8 +185,12 @@ func run(ctx context.Context, opts options) error {
 		//
 		// Each shard is paginated until the end of the shard is
 		// reached or the context is cancelled.
-		for _, shard := range res.Shards {
-			iterator, err := client.GetShardIterator(ctx, opts.StreamName, *shard.ShardId, iType)
+		for _, shard := range resp.Shards {
+			iterator, err := client.GetShardIterator(ctx, &kinesis.GetShardIteratorInput{
+				StreamName:        &opts.StreamName,
+				ShardId:           shard.ShardId,
+				ShardIteratorType: types.ShardIteratorType(iType),
+			})
 			if err != nil {
 				return err
 			}
@@ -197,30 +209,32 @@ func run(ctx context.Context, opts options) error {
 					// per shard, so this loop is designed to not overload
 					// the API in case other consumers are reading from the
 					// same shard.
-					res, err := client.GetRecords(recvCtx, shardIterator)
+					resp, err := client.GetRecords(recvCtx, &kinesis.GetRecordsInput{
+						ShardIterator: &shardIterator,
+					})
 					if err != nil {
 						return err
 					}
 
-					if res.NextShardIterator == nil {
-						log.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).Debug("Reached end of Kinesis shard.")
+					if resp.NextShardIterator == nil {
+						ilog.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).Debug("Reached end of Kinesis shard.")
 
 						break
 					}
-					shardIterator = *res.NextShardIterator
+					shardIterator = *resp.NextShardIterator
 
-					if len(res.Records) == 0 {
+					if len(resp.Records) == 0 {
 						time.Sleep(500 * time.Millisecond)
 
 						continue
 					}
 
-					deagg, err := deaggregator.DeaggregateRecords(res.Records)
+					deagg, err := deaggregator.DeaggregateRecords(resp.Records)
 					if err != nil {
 						return err
 					}
 
-					log.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).WithField("count", len(deagg)).Debug("Retrieved records from Kinesis shard.")
+					ilog.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).WithField("count", len(deagg)).Debug("Retrieved records from Kinesis shard.")
 
 					for _, record := range deagg {
 						msg := message.New().SetData(record.Data)

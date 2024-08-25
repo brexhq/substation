@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
+
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/message"
 )

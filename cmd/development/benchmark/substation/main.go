@@ -15,10 +15,11 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/brexhq/substation/v2"
-	"github.com/brexhq/substation/v2/internal/bufio"
-	"github.com/brexhq/substation/v2/internal/channel"
-	"github.com/brexhq/substation/v2/internal/file"
 	"github.com/brexhq/substation/v2/message"
+
+	ibufio "github.com/brexhq/substation/v2/internal/bufio"
+	ichannel "github.com/brexhq/substation/v2/internal/channel"
+	ifile "github.com/brexhq/substation/v2/internal/file"
 )
 
 type options struct {
@@ -52,7 +53,7 @@ func main() {
 	var conf []byte
 	// If no config file is provided, then an empty config is used.
 	if opts.ConfigFile != "" {
-		path, err := file.Get(ctx, opts.ConfigFile)
+		path, err := ifile.Get(ctx, opts.ConfigFile)
 		defer os.Remove(path)
 
 		if err != nil {
@@ -78,7 +79,7 @@ func main() {
 	}
 
 	// Collect the sample data for the benchmark.
-	path, err := file.Get(ctx, opts.DataFile)
+	path, err := ifile.Get(ctx, opts.DataFile)
 	defer os.Remove(path)
 
 	if err != nil {
@@ -91,7 +92,7 @@ func main() {
 	}
 	defer f.Close()
 
-	scanner := bufio.NewScanner()
+	scanner := ibufio.NewScanner()
 	defer scanner.Close()
 
 	if err := scanner.ReadFile(f); err != nil {
@@ -127,7 +128,7 @@ func main() {
 
 	fmt.Printf("%s: Starting benchmark\n", time.Now().Format(time.RFC3339Nano))
 	start := time.Now()
-	ch := channel.New[*message.Message]()
+	ch := ichannel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {

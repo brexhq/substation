@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/v2/config"
+
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 )
 
 type environmentVariableConfig struct {
@@ -23,11 +23,11 @@ func (c *environmentVariableConfig) Decode(in interface{}) error {
 
 func (c *environmentVariableConfig) Validate() error {
 	if c.ID == "" {
-		return fmt.Errorf("id: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("id: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Name == "" {
-		return fmt.Errorf("name: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("name: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

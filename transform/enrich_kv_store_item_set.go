@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/v2/config"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
-	"github.com/brexhq/substation/v2/internal/kv"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/kv"
 )
 
 type enrichKVStoreItemSetObjectConfig struct {
@@ -60,15 +60,15 @@ func (c *enrichKVStoreItemSetConfig) Decode(in interface{}) error {
 
 func (c *enrichKVStoreItemSetConfig) Validate() error {
 	if c.Object.SourceKey == "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.KVStore.Type == "" {
-		return fmt.Errorf("kv_store: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("kv_store: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -151,24 +151,24 @@ func (tf *enrichKVStoreItemSet) Transform(ctx context.Context, msg *message.Mess
 		value := msg.GetValue(tf.conf.Object.TTLKey)
 		ttl := truncateTTL(value) + tf.ttl
 
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).Value(), ttl); err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	} else if tf.conf.Object.TTLKey != "" {
 		value := msg.GetValue(tf.conf.Object.TTLKey)
 		ttl := truncateTTL(value)
 
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).Value(), ttl); err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	} else if tf.ttl != 0 {
 		ttl := time.Now().Add(time.Duration(tf.ttl) * time.Second).Unix()
 
-		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String(), ttl); err != nil {
+		if err := tf.kvStore.SetWithTTL(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).Value(), ttl); err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
 	} else {
-		if err := tf.kvStore.Set(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).String()); err != nil {
+		if err := tf.kvStore.Set(ctx, key, msg.GetValue(tf.conf.Object.TargetKey).Value()); err != nil {
 			return nil, fmt.Errorf("transform	%s: %v", tf.conf.ID, err)
 		}
 	}

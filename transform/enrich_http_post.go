@@ -9,11 +9,11 @@ import (
 	"strings"
 
 	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/internal/http"
 	"github.com/brexhq/substation/v2/internal/secrets"
-	"github.com/brexhq/substation/v2/message"
 )
 
 type enrichHTTPPostObjectConfig struct {
@@ -47,11 +47,11 @@ func (c *enrichHTTPPostConfig) Decode(in interface{}) error {
 
 func (c *enrichHTTPPostConfig) Validate() error {
 	if c.URL == "" {
-		return fmt.Errorf("url: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("url: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.BodyKey == "" {
-		return fmt.Errorf("body_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("body_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

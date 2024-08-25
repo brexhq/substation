@@ -7,8 +7,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/brexhq/substation/v2/config"
-	ibase64 "github.com/brexhq/substation/v2/internal/base64"
 	"github.com/brexhq/substation/v2/message"
+
+	ibase64 "github.com/brexhq/substation/v2/internal/base64"
 )
 
 // errFormatFromBase64DecodeBinary is returned when the Base64 transform is configured

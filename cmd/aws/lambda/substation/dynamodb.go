@@ -14,7 +14,7 @@ import (
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/message"
 
-	ichannel "github.com/brexhq/substation/v2/internal/channel"
+	"github.com/brexhq/substation/v2/internal/channel"
 )
 
 type dynamodbMetadata struct {
@@ -43,7 +43,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 		return err
 	}
 
-	ch := ichannel.New[*message.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool

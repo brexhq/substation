@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"github.com/brexhq/substation/v2/config"
-	"github.com/brexhq/substation/v2/internal/errors"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/internal/kv"
 )
 
@@ -35,7 +36,7 @@ func New(ctx context.Context, cfg config.Config) (Retriever, error) {
 	case "environment_variable":
 		return newEnvironmentVariable(ctx, cfg)
 	default:
-		return nil, fmt.Errorf("secrets: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("secrets: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, iconfig.ErrInvalidFactoryInput)
 	}
 }
 

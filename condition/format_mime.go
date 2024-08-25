@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/media"
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/media"
 )
 
 type formatMIMEConfig struct {
@@ -25,7 +25,7 @@ func (c *formatMIMEConfig) Decode(in interface{}) error {
 
 func (c *formatMIMEConfig) Validate() error {
 	if c.Type == "" {
-		return fmt.Errorf("type: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("type: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

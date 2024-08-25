@@ -16,7 +16,6 @@ import (
 
 	iaws "github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	ierrors "github.com/brexhq/substation/v2/internal/errors"
 )
 
 // kvAWSDynamoDB is a read-write key-value store that is backed by an AWS DynamoDB table.
@@ -60,7 +59,7 @@ func newKVAWSDynamoDB(cfg config.Config) (*kvAWSDynamoDB, error) {
 	}
 
 	if store.AWS.ARN == "" {
-		return nil, fmt.Errorf("kv: aws_dynamodb: aws.arn %+v: %v", &store, ierrors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("kv: aws_dynamodb: aws.arn %+v: %v", &store, iconfig.ErrMissingRequiredOption)
 	}
 
 	return &store, nil
@@ -219,7 +218,7 @@ func (store *kvAWSDynamoDB) Set(ctx context.Context, key string, val interface{}
 // SetWithTTL adds an item to the DynamoDB table with a time-to-live (TTL) attribute.
 func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
 	if store.Attributes.TTL == "" {
-		return ierrors.ErrMissingRequiredOption
+		return iconfig.ErrMissingRequiredOption
 	}
 
 	m := map[string]interface{}{
@@ -255,7 +254,7 @@ func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val inte
 // updated with the new value.
 func (store *kvAWSDynamoDB) SetAddWithTTL(ctx context.Context, key string, val interface{}, ttl int64) error {
 	if store.Attributes.Value == "" {
-		return ierrors.ErrMissingRequiredOption
+		return iconfig.ErrMissingRequiredOption
 	}
 
 	// DynamoDB supports string, number, and binary data types for sets, and
@@ -356,7 +355,7 @@ func (store *kvAWSDynamoDB) IsEnabled() bool {
 // Setup creates a new DynamoDB client.
 func (store *kvAWSDynamoDB) Setup(ctx context.Context) error {
 	if store.AWS.ARN == "" || store.Attributes.PartitionKey == "" {
-		return ierrors.ErrMissingRequiredOption
+		return iconfig.ErrMissingRequiredOption
 	}
 
 	// Avoids unnecessary setup.

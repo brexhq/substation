@@ -5,8 +5,9 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/v2/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type Inspector interface {
@@ -86,6 +87,6 @@ func New(ctx context.Context, cfg config.Config) (Inspector, error) { //nolint: 
 	case "utility_random":
 		return newUtilityRandom(ctx, cfg)
 	default:
-		return nil, fmt.Errorf("condition %s: %w", cfg.Type, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("condition %s: %w", cfg.Type, iconfig.ErrInvalidFactoryInput)
 	}
 }

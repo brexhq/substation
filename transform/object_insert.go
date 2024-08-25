@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/v2/config"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type objectInsertConfig struct {
@@ -25,11 +25,11 @@ func (c *objectInsertConfig) Decode(in interface{}) error {
 
 func (c *objectInsertConfig) Validate() error {
 	if c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Value == nil {
-		return fmt.Errorf("value: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("value: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

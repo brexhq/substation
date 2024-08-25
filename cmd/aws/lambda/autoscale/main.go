@@ -13,13 +13,13 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
-	cwtypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
+	ctypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 	ktypes "github.com/aws/aws-sdk-go-v2/service/kinesis/types"
 	"github.com/tidwall/gjson"
 
 	iaws "github.com/brexhq/substation/v2/internal/aws"
-	ilog "github.com/brexhq/substation/v2/internal/log"
+	"github.com/brexhq/substation/v2/internal/log"
 )
 
 const (
@@ -99,7 +99,7 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 	alarmName := gjson.Get(message, "AlarmName").String()
 	triggerMetrics := gjson.Get(message, "Trigger.Metrics")
 
-	ilog.WithField("alarm", alarmName).Debug("Received autoscale notification.")
+	log.WithField("alarm", alarmName).Debug("Received autoscale notification.")
 
 	var stream string
 	for _, v := range triggerMetrics.Array() {
@@ -109,7 +109,7 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 			break
 		}
 	}
-	ilog.WithField("alarm", alarmName).WithField("stream", stream).Debug("Parsed Kinesis stream.")
+	log.WithField("alarm", alarmName).WithField("stream", stream).Debug("Parsed Kinesis stream.")
 
 	var shards int32
 	input := kinesis.ListShardsInput{
@@ -136,7 +136,7 @@ LOOP:
 		}
 	}
 
-	ilog.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", shards).
+	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", shards).
 		Info("Retrieved active shard count.")
 
 	var newShards int32
@@ -147,7 +147,7 @@ LOOP:
 		newShards = downscale(float64(shards))
 	}
 
-	ilog.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", newShards).Info("Calculated new shard count.")
+	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", newShards).Info("Calculated new shard count.")
 
 	var tags []ktypes.Tag
 	var lastTag string
@@ -186,7 +186,7 @@ LOOP:
 				return fmt.Errorf("handler: %v", err)
 			}
 
-			ilog.WithField("stream", stream).WithField("count", minShard).Debug("Retrieved minimum shard count.")
+			log.WithField("stream", stream).WithField("count", minShard).Debug("Retrieved minimum shard count.")
 		}
 
 		if *tag.Key == "MaximumShards" {
@@ -195,7 +195,7 @@ LOOP:
 				return fmt.Errorf("handler: %v", err)
 			}
 
-			ilog.WithField("stream", stream).WithField("count", maxShard).Debug("Retrieved maximum shard count.")
+			log.WithField("stream", stream).WithField("count", maxShard).Debug("Retrieved maximum shard count.")
 		}
 
 		// Tracking the last scaling event prevents scaling from occurring too frequently.
@@ -209,11 +209,11 @@ LOOP:
 
 			if (time.Since(lastScalingEvent) < 3*time.Minute && strings.Contains(alarmName, "upscale")) ||
 				(time.Since(lastScalingEvent) < 30*time.Minute && strings.Contains(alarmName, "downscale")) {
-				ilog.WithField("stream", stream).WithField("time", lastScalingEvent).Info("Last scaling event is too recent.")
+				log.WithField("stream", stream).WithField("time", lastScalingEvent).Info("Last scaling event is too recent.")
 
 				if _, err := cloudwatchC.SetAlarmState(ctx, &cloudwatch.SetAlarmStateInput{
 					AlarmName:   aws.String(alarmName),
-					StateValue:  cwtypes.StateValueInsufficientData,
+					StateValue:  ctypes.StateValueInsufficientData,
 					StateReason: aws.String("Last scaling event is too recent"),
 				}); err != nil {
 					return fmt.Errorf("handler: %v", err)
@@ -237,7 +237,7 @@ LOOP:
 	}
 
 	if newShards == shards {
-		ilog.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", shards).Info("Active shard count is at minimum threshold, no change is required.")
+		log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", shards).Info("Active shard count is at minimum threshold, no change is required.")
 		return nil
 	}
 
@@ -272,16 +272,16 @@ LOOP:
 		return fmt.Errorf("handler: %v", err)
 	}
 
-	ilog.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", newShards).Info("Updated shard count.")
+	log.WithField("alarm", alarmName).WithField("stream", stream).WithField("count", newShards).Info("Updated shard count.")
 
-	metrics := []cwtypes.MetricDataQuery{
+	metrics := []ctypes.MetricDataQuery{
 		{
 			Id: aws.String("m1"),
-			MetricStat: &cwtypes.MetricStat{
-				Metric: &cwtypes.Metric{
+			MetricStat: &ctypes.MetricStat{
+				Metric: &ctypes.Metric{
 					Namespace:  aws.String("AWS/Kinesis"),
 					MetricName: aws.String("IncomingRecords"),
-					Dimensions: []cwtypes.Dimension{
+					Dimensions: []ctypes.Dimension{
 						{
 							Name:  aws.String("StreamName"),
 							Value: aws.String(stream),
@@ -296,11 +296,11 @@ LOOP:
 		},
 		{
 			Id: aws.String("m2"),
-			MetricStat: &cwtypes.MetricStat{
-				Metric: &cwtypes.Metric{
+			MetricStat: &ctypes.MetricStat{
+				Metric: &ctypes.Metric{
 					Namespace:  aws.String("AWS/KINESIS"),
 					MetricName: aws.String("IncomingBytes"),
-					Dimensions: []cwtypes.Dimension{
+					Dimensions: []ctypes.Dimension{
 						{
 							Name:  aws.String("StreamName"),
 							Value: aws.String(stream),
@@ -358,7 +358,7 @@ LOOP:
 		EvaluationPeriods:  aws.Int32(kinesisDownscaleDatapoints),
 		DatapointsToAlarm:  aws.Int32(kinesisDownscaleDatapoints),
 		Threshold:          aws.Float64(downscaleThreshold),
-		ComparisonOperator: cwtypes.ComparisonOperatorLessThanOrEqualToThreshold,
+		ComparisonOperator: ctypes.ComparisonOperatorLessThanOrEqualToThreshold,
 		TreatMissingData:   aws.String("ignore"),
 		Metrics:            metrics,
 	}); err != nil {
@@ -367,13 +367,13 @@ LOOP:
 
 	if _, err := cloudwatchC.SetAlarmState(ctx, &cloudwatch.SetAlarmStateInput{
 		AlarmName:   aws.String(stream + "_downscale"),
-		StateValue:  cwtypes.StateValueInsufficientData,
+		StateValue:  ctypes.StateValueInsufficientData,
 		StateReason: aws.String("Threshold updated"),
 	}); err != nil {
 		return fmt.Errorf("handler: %v", err)
 	}
 
-	ilog.WithField("alarm", stream+"_downscale").WithField("stream", stream).WithField("count", newShards).Debug("Reset CloudWatch alarm.")
+	log.WithField("alarm", stream+"_downscale").WithField("stream", stream).WithField("count", newShards).Debug("Reset CloudWatch alarm.")
 
 	upscaleThreshold := kinesisThreshold
 	if _, err := cloudwatchC.PutMetricAlarm(ctx, &cloudwatch.PutMetricAlarmInput{
@@ -384,7 +384,7 @@ LOOP:
 		EvaluationPeriods:  aws.Int32(kinesisUpscaleDatapoints),
 		DatapointsToAlarm:  aws.Int32(kinesisUpscaleDatapoints),
 		Threshold:          aws.Float64(upscaleThreshold),
-		ComparisonOperator: cwtypes.ComparisonOperatorGreaterThanOrEqualToThreshold,
+		ComparisonOperator: ctypes.ComparisonOperatorGreaterThanOrEqualToThreshold,
 		TreatMissingData:   aws.String("ignore"),
 		Metrics:            metrics,
 	}); err != nil {
@@ -393,13 +393,13 @@ LOOP:
 
 	if _, err := cloudwatchC.SetAlarmState(ctx, &cloudwatch.SetAlarmStateInput{
 		AlarmName:   aws.String(stream + "_upscale"),
-		StateValue:  cwtypes.StateValueInsufficientData,
+		StateValue:  ctypes.StateValueInsufficientData,
 		StateReason: aws.String("Threshold updated"),
 	}); err != nil {
 		return fmt.Errorf("handler: %v", err)
 	}
 
-	ilog.WithField("alarm", stream+"_upscale").WithField("stream", stream).WithField("count", newShards).Debug("Reset CloudWatch alarm.")
+	log.WithField("alarm", stream+"_upscale").WithField("stream", stream).WithField("count", newShards).Debug("Reset CloudWatch alarm.")
 
 	return nil
 }

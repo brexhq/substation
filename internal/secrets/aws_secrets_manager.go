@@ -9,9 +9,8 @@ import (
 
 	"github.com/brexhq/substation/v2/config"
 
-	iaws "github.com/brexhq/substation/v2/internal/aws"
+	"github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	ierrors "github.com/brexhq/substation/v2/internal/errors"
 )
 
 type awsSecretsManagerConfig struct {
@@ -26,11 +25,11 @@ func (c *awsSecretsManagerConfig) Decode(in interface{}) error {
 
 func (c *awsSecretsManagerConfig) Validate() error {
 	if c.ID == "" {
-		return fmt.Errorf("id: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("id: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.AWS.ARN == "" {
-		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -68,8 +67,8 @@ func newAWSSecretsManager(ctx context.Context, cfg config.Config) (*awsSecretsMa
 		ttl:  time.Now().Add(dur).Unix(),
 	}
 
-	awsCfg, err := iaws.New(ctx, iaws.Config{
-		Region:  iaws.ParseRegion(conf.AWS.ARN),
+	awsCfg, err := aws.New(ctx, aws.Config{
+		Region:  aws.ParseRegion(conf.AWS.ARN),
 		RoleARN: conf.AWS.AssumeRoleARN,
 	})
 	if err != nil {

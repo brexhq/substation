@@ -6,7 +6,6 @@ import (
 	"slices"
 
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 )
 
 type aggregateArrayConfig struct {
@@ -42,7 +41,7 @@ func (c *aggregateStrConfig) Decode(in interface{}) error {
 
 func (c *aggregateStrConfig) Validate() error {
 	if c.Separator == "" {
-		return fmt.Errorf("separator: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("separator: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

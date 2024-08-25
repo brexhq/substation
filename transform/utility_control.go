@@ -7,9 +7,10 @@ import (
 	"sync"
 
 	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
 	"github.com/brexhq/substation/v2/internal/aggregate"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/message"
 )
 
 type utilityControlConfig struct {

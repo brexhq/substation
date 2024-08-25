@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	iconfig "github.com/brexhq/substation/internal/config"
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/internal/config"
 )
 
 type formatJSONConfig struct{}

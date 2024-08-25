@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/v2/config"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
-	"github.com/brexhq/substation/v2/internal/kv"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/kv"
 )
 
 type metaVStoreLockObjectConfig struct {
@@ -56,17 +56,17 @@ func (c *metaKVStoreLockConfig) Decode(in interface{}) error {
 
 func (c *metaKVStoreLockConfig) Validate() error {
 	if len(c.Transforms) == 0 {
-		return fmt.Errorf("transform: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("transform: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	for _, t := range c.Transforms {
 		if t.Type == "" {
-			return fmt.Errorf("transform: %v", errors.ErrMissingRequiredOption)
+			return fmt.Errorf("transform: %v", iconfig.ErrMissingRequiredOption)
 		}
 	}
 
 	if c.KVStore.Type == "" {
-		return fmt.Errorf("kv_store: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("kv_store: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

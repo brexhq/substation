@@ -7,9 +7,9 @@ import (
 	"regexp"
 
 	"github.com/brexhq/substation/v2/config"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type metaErrConfig struct {
@@ -29,7 +29,7 @@ func (c *metaErrConfig) Decode(in interface{}) error {
 func (c *metaErrConfig) Validate() error {
 	for _, t := range c.Transforms {
 		if t.Type == "" {
-			return fmt.Errorf("transform: %v", errors.ErrMissingRequiredOption)
+			return fmt.Errorf("transform: %v", iconfig.ErrMissingRequiredOption)
 		}
 	}
 

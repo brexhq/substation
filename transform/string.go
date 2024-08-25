@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 )
 
 type strCaseConfig struct {
@@ -18,11 +17,11 @@ func (c *strCaseConfig) Decode(in interface{}) error {
 
 func (c *strCaseConfig) Validate() error {
 	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

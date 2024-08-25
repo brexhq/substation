@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/brexhq/substation/v2/config"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type utilityDelayConfig struct {
@@ -25,7 +25,7 @@ func (c *utilityDelayConfig) Decode(in interface{}) error {
 
 func (c *utilityDelayConfig) Validate() error {
 	if c.Duration == "" {
-		return fmt.Errorf("duration: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("duration: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

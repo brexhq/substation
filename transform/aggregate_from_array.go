@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/tidwall/gjson"
+
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
-	"github.com/tidwall/gjson"
 )
 
 func newAggregateFromArray(_ context.Context, cfg config.Config) (*aggregateFromArray, error) {

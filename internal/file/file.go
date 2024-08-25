@@ -14,12 +14,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 
-	iaws "github.com/brexhq/substation/v2/internal/aws"
-	ihttp "github.com/brexhq/substation/v2/internal/http"
+	"github.com/brexhq/substation/v2/internal/aws"
+	"github.com/brexhq/substation/v2/internal/http"
 )
 
 var (
-	httpClient   ihttp.HTTP
+	httpClient   http.HTTP
 	s3downloader *manager.Downloader
 )
 
@@ -92,7 +92,7 @@ func Get(ctx context.Context, location string) (string, error) {
 	//nolint: nestif // ignore nesting complexity
 	if strings.HasPrefix(location, "s3://") {
 		if s3downloader == nil {
-			cfg, err := iaws.New(ctx, iaws.Config{})
+			cfg, err := aws.New(ctx, aws.Config{})
 			if err != nil {
 				return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 			}

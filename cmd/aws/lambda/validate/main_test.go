@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/brexhq/substation/v2/internal/errors"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 var testCfgs = []struct {
@@ -25,7 +25,7 @@ var testCfgs = []struct {
 			]
 		 }
 		 `),
-		errors.ErrInvalidFactoryInput,
+		iconfig.ErrInvalidFactoryInput,
 	},
 	{
 		"invalid processor settings",
@@ -38,7 +38,7 @@ var testCfgs = []struct {
 			]
 		}					
 		 `),
-		errors.ErrInvalidOption,
+		iconfig.ErrInvalidOption,
 	},
 	{
 		"valid config",

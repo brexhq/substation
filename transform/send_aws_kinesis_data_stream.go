@@ -18,10 +18,9 @@ import (
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
 
-	iaggregate "github.com/brexhq/substation/v2/internal/aggregate"
-	iaws "github.com/brexhq/substation/v2/internal/aws"
+	"github.com/brexhq/substation/v2/internal/aggregate"
+	"github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	ierrors "github.com/brexhq/substation/v2/internal/errors"
 )
 
 // Records greater than 1 MB in size cannot be
@@ -54,7 +53,7 @@ func (c *sendAWSKinesisDataStreamConfig) Decode(in interface{}) error {
 
 func (c *sendAWSKinesisDataStreamConfig) Validate() error {
 	if c.AWS.ARN == "" {
-		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -78,7 +77,7 @@ func newSendAWSKinesisDataStream(ctx context.Context, cfg config.Config) (*sendA
 		conf: conf,
 	}
 
-	agg, err := iaggregate.New(iaggregate.Config{
+	agg, err := aggregate.New(aggregate.Config{
 		// Kinesis Data Streams limits batch operations to 500 records and 5MiB.
 		Count:    500,
 		Size:     sendAWSKinesisDataStreamMessageSizeLimit * 5,
@@ -101,8 +100,8 @@ func newSendAWSKinesisDataStream(ctx context.Context, cfg config.Config) (*sendA
 		}
 	}
 
-	awsCfg, err := iaws.New(ctx, iaws.Config{
-		Region:  iaws.ParseRegion(conf.AWS.ARN),
+	awsCfg, err := aws.New(ctx, aws.Config{
+		Region:  aws.ParseRegion(conf.AWS.ARN),
 		RoleARN: conf.AWS.AssumeRoleARN,
 	})
 	if err != nil {
@@ -119,7 +118,7 @@ type sendAWSKinesisDataStream struct {
 	client *kinesis.Client
 
 	mu     sync.Mutex
-	agg    *iaggregate.Aggregate
+	agg    *aggregate.Aggregate
 	tforms []Transformer
 }
 

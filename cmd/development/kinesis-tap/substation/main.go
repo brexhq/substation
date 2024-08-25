@@ -23,10 +23,10 @@ import (
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/message"
 
-	iaws "github.com/brexhq/substation/v2/internal/aws"
-	ichannel "github.com/brexhq/substation/v2/internal/channel"
-	ifile "github.com/brexhq/substation/v2/internal/file"
-	ilog "github.com/brexhq/substation/v2/internal/log"
+	"github.com/brexhq/substation/v2/internal/aws"
+	"github.com/brexhq/substation/v2/internal/channel"
+	"github.com/brexhq/substation/v2/internal/file"
+	"github.com/brexhq/substation/v2/internal/log"
 )
 
 type options struct {
@@ -40,7 +40,7 @@ type options struct {
 
 // getConfig contextually retrieves a Substation configuration.
 func getConfig(ctx context.Context, cfg string) (io.Reader, error) {
-	path, err := ifile.Get(ctx, cfg)
+	path, err := file.Get(ctx, cfg)
 	defer os.Remove(path)
 
 	if err != nil {
@@ -91,7 +91,7 @@ func run(ctx context.Context, opts options) error {
 		return err
 	}
 
-	ch := ichannel.New[*message.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Consumer group that transforms records using Substation
@@ -121,7 +121,7 @@ func run(ctx context.Context, opts options) error {
 			return err
 		}
 
-		ilog.Debug("Closed Substation pipeline.")
+		log.Debug("Closed Substation pipeline.")
 
 		// ctrl messages flush the pipeline. This must be done
 		// after all messages have been processed.
@@ -130,7 +130,7 @@ func run(ctx context.Context, opts options) error {
 			return err
 		}
 
-		ilog.Debug("Flushed Substation pipeline.")
+		log.Debug("Flushed Substation pipeline.")
 
 		return nil
 	})
@@ -143,7 +143,7 @@ func run(ctx context.Context, opts options) error {
 
 		// The AWS client is configured using environment variables
 		// or the default credentials file.
-		awsCfg, err := iaws.New(ctx, iaws.Config{})
+		awsCfg, err := aws.New(ctx, aws.Config{})
 		if err != nil {
 			return err
 		}
@@ -157,7 +157,7 @@ func run(ctx context.Context, opts options) error {
 			return err
 		}
 
-		ilog.WithField("stream", opts.StreamName).WithField("count", len(resp.Shards)).Debug("Retrieved active shards from Kinesis stream.")
+		log.WithField("stream", opts.StreamName).WithField("count", len(resp.Shards)).Debug("Retrieved active shards from Kinesis stream.")
 
 		var iType string
 		switch opts.StreamOffset {
@@ -176,7 +176,7 @@ func run(ctx context.Context, opts options) error {
 		defer cancel()
 
 		recvGroup, recvCtx := errgroup.WithContext(notifyCtx)
-		defer ilog.Debug("Closed connections to the Kinesis stream.")
+		defer log.Debug("Closed connections to the Kinesis stream.")
 
 		// This iterates over a snapshot of active shards in the
 		// stream and will not be updated if shards are split or
@@ -217,7 +217,7 @@ func run(ctx context.Context, opts options) error {
 					}
 
 					if resp.NextShardIterator == nil {
-						ilog.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).Debug("Reached end of Kinesis shard.")
+						log.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).Debug("Reached end of Kinesis shard.")
 
 						break
 					}
@@ -234,7 +234,7 @@ func run(ctx context.Context, opts options) error {
 						return err
 					}
 
-					ilog.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).WithField("count", len(deagg)).Debug("Retrieved records from Kinesis shard.")
+					log.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).WithField("count", len(deagg)).Debug("Retrieved records from Kinesis shard.")
 
 					for _, record := range deagg {
 						msg := message.New().SetData(record.Data)

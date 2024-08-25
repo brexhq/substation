@@ -7,8 +7,9 @@ import (
 	"strconv"
 
 	"github.com/brexhq/substation/v2/config"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 func newNumberMathAddition(_ context.Context, cfg config.Config) (*numberMathAddition, error) {

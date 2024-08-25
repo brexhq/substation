@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/brexhq/substation/v2/config"
-	_config "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/internal/file"
 )
 
@@ -39,12 +39,12 @@ type kvTextFile struct {
 // Create a new text file KV store.
 func newKVTextFile(cfg config.Config) (*kvTextFile, error) {
 	var store kvTextFile
-	if err := _config.Decode(cfg.Settings, &store); err != nil {
+	if err := iconfig.Decode(cfg.Settings, &store); err != nil {
 		return nil, err
 	}
 
 	if store.File == "" {
-		return nil, fmt.Errorf("kv: text_file: options %+v: %v", &store, errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("kv: text_file: options %+v: %v", &store, iconfig.ErrMissingRequiredOption)
 	}
 
 	return &store, nil

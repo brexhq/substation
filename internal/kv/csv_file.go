@@ -12,8 +12,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/brexhq/substation/v2/config"
-	_config "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/internal/file"
 )
 
@@ -65,12 +65,12 @@ type kvCSVFile struct {
 // Create a new CSV file KV store.
 func newKVCSVFile(cfg config.Config) (*kvCSVFile, error) {
 	var store kvCSVFile
-	if err := _config.Decode(cfg.Settings, &store); err != nil {
+	if err := iconfig.Decode(cfg.Settings, &store); err != nil {
 		return nil, err
 	}
 
 	if store.File == "" || store.Column == "" {
-		return nil, fmt.Errorf("kv: csv: options %+v: %v", &store, errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("kv: csv: options %+v: %v", &store, iconfig.ErrMissingRequiredOption)
 	}
 
 	return &store, nil

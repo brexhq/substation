@@ -9,9 +9,9 @@ import (
 
 	"github.com/brexhq/substation/v2/condition"
 	"github.com/brexhq/substation/v2/config"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 // errMetaRetryLimitReached is returned when the configured retry
@@ -21,7 +21,7 @@ var errMetaRetryLimitReached = fmt.Errorf("retry limit reached")
 
 type metaRetryConfig struct {
 	// Transforms that are applied in series, then checked for success
-	// based on the condition or errors.
+	// based on the condition or iconfig.
 	Transforms []config.Config `json:"transforms"`
 	// Condition that must be true for the transforms to be considered
 	// a success, otherwise the transforms are retried.
@@ -41,7 +41,7 @@ func (c *metaRetryConfig) Decode(in interface{}) error {
 func (c *metaRetryConfig) Validate() error {
 	for _, t := range c.Transforms {
 		if t.Type == "" {
-			return fmt.Errorf("transform: %v", errors.ErrMissingRequiredOption)
+			return fmt.Errorf("transform: %v", iconfig.ErrMissingRequiredOption)
 		}
 	}
 

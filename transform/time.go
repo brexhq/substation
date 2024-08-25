@@ -5,7 +5,6 @@ import (
 	"time"
 
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 )
 
 const (
@@ -23,11 +22,11 @@ func (c *timeUnixConfig) Decode(in interface{}) error {
 
 func (c *timeUnixConfig) Validate() error {
 	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -47,15 +46,15 @@ func (c *timePatternConfig) Decode(in interface{}) error {
 
 func (c *timePatternConfig) Validate() error {
 	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Format == "" {
-		return fmt.Errorf("format: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("format: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

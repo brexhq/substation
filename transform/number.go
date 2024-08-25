@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 )
 
 // Use this config for any Number transform that only requires a single value.
@@ -23,11 +22,11 @@ func (c *numberValConfig) Decode(in interface{}) error {
 // 0.0 is a valid value and should not be checked.
 func (c *numberValConfig) Validate() error {
 	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -44,11 +43,11 @@ func (c *numberMathConfig) Decode(in interface{}) error {
 
 func (c *numberMathConfig) Validate() error {
 	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

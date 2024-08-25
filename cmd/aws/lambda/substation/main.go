@@ -10,8 +10,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/brexhq/substation/v2"
-
-	ifile "github.com/brexhq/substation/v2/internal/file"
+	"github.com/brexhq/substation/v2/internal/file"
 )
 
 var (
@@ -42,7 +41,7 @@ func getConfig(ctx context.Context) (io.Reader, error) {
 		return nil, fmt.Errorf("no config found")
 	}
 
-	path, err := ifile.Get(ctx, cfg)
+	path, err := file.Get(ctx, cfg)
 	defer os.Remove(path)
 
 	if err != nil {

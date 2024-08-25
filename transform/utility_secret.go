@@ -6,9 +6,10 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
 	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/internal/secrets"
-	"github.com/brexhq/substation/v2/message"
 )
 
 type utilitySecretConfig struct {

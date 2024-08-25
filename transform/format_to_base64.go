@@ -6,8 +6,9 @@ import (
 	"fmt"
 
 	"github.com/brexhq/substation/v2/config"
-	ibase64 "github.com/brexhq/substation/v2/internal/base64"
 	"github.com/brexhq/substation/v2/message"
+
+	ibase64 "github.com/brexhq/substation/v2/internal/base64"
 )
 
 func newFormatToBase64(_ context.Context, cfg config.Config) (*formatToBase64, error) {

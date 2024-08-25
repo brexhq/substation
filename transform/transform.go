@@ -7,8 +7,9 @@ import (
 	"math"
 
 	"github.com/brexhq/substation/v2/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 var errMsgInvalidObject = fmt.Errorf("message must be JSON object")
@@ -209,7 +210,7 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "utility_secret":
 		return newUtilitySecret(ctx, cfg)
 	default:
-		return nil, fmt.Errorf("transform %s: %w", cfg.Type, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("transform %s: %w", cfg.Type, iconfig.ErrInvalidFactoryInput)
 	}
 }
 

@@ -7,9 +7,9 @@ import (
 
 	"github.com/brexhq/substation/v2/condition"
 	"github.com/brexhq/substation/v2/config"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/errors"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type metaSwitchCaseConfig struct {
@@ -34,17 +34,17 @@ func (c *metaSwitchConfig) Decode(in interface{}) error {
 
 func (c *metaSwitchConfig) Validate() error {
 	if len(c.Cases) == 0 {
-		return fmt.Errorf("cases: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("cases: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	for _, c := range c.Cases {
 		if len(c.Transforms) == 0 {
-			return fmt.Errorf("transform: %v", errors.ErrMissingRequiredOption)
+			return fmt.Errorf("transform: %v", iconfig.ErrMissingRequiredOption)
 		}
 
 		for _, t := range c.Transforms {
 			if t.Type == "" {
-				return fmt.Errorf("type: %v", errors.ErrMissingRequiredOption)
+				return fmt.Errorf("type: %v", iconfig.ErrMissingRequiredOption)
 			}
 		}
 	}

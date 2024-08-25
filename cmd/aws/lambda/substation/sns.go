@@ -12,7 +12,7 @@ import (
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/message"
 
-	ichannel "github.com/brexhq/substation/v2/internal/channel"
+	"github.com/brexhq/substation/v2/internal/channel"
 )
 
 type snsMetadata struct {
@@ -39,7 +39,7 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 		return fmt.Errorf("sns handler: %v", err)
 	}
 
-	ch := ichannel.New[*message.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool

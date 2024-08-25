@@ -15,7 +15,6 @@ import (
 
 	iaws "github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	ierrors "github.com/brexhq/substation/v2/internal/errors"
 )
 
 type enrichAWSDynamoDBQueryQueryConfig struct {
@@ -49,15 +48,15 @@ func (c *enrichAWSDynamoDBQueryQueryConfig) Decode(in interface{}) error {
 
 func (c *enrichAWSDynamoDBQueryQueryConfig) Validate() error {
 	if c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.PartitionKey == "" {
-		return fmt.Errorf("partition_key: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("partition_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.AWS.ARN == "" {
-		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

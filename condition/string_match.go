@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/brexhq/substation/internal/errors"
 	"github.com/brexhq/substation/v2/config"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type stringMatchConfig struct {
@@ -25,7 +25,7 @@ func (c *stringMatchConfig) Decode(in interface{}) error {
 
 func (c *stringMatchConfig) Validate() error {
 	if c.Pattern == "" {
-		return fmt.Errorf("pattern: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("pattern: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

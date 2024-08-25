@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brexhq/substation/v2/config"
-	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/tidwall/sjson"
+
+	"github.com/brexhq/substation/v2/config"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type awsCloudWatchEmbeddedMetricsConfig struct{}

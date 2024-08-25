@@ -15,11 +15,10 @@ import (
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
 
-	iaggregate "github.com/brexhq/substation/v2/internal/aggregate"
-	iaws "github.com/brexhq/substation/v2/internal/aws"
+	"github.com/brexhq/substation/v2/internal/aggregate"
+	"github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	ierrors "github.com/brexhq/substation/v2/internal/errors"
-	ifile "github.com/brexhq/substation/v2/internal/file"
+	"github.com/brexhq/substation/v2/internal/file"
 	"github.com/brexhq/substation/v2/internal/media"
 )
 
@@ -28,7 +27,7 @@ type sendAWSS3Config struct {
 	StorageClass string `json:"storage_class"`
 	// FilePath determines how the name of the uploaded object is constructed.
 	// See filePath.New for more information.
-	FilePath ifile.Path `json:"file_path"`
+	FilePath file.Path `json:"file_path"`
 	// UseBatchKeyAsPrefix determines if the batch key should be used as the prefix.
 	UseBatchKeyAsPrefix bool `json:"use_batch_key_as_prefix"`
 	// AuxTransforms are applied to batched data before it is sent.
@@ -46,11 +45,11 @@ func (c *sendAWSS3Config) Decode(in interface{}) error {
 
 func (c *sendAWSS3Config) Validate() error {
 	if c.AWS.ARN == "" {
-		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if types.StorageClass(c.StorageClass) == "" {
-		return fmt.Errorf("storage class: %v", ierrors.ErrInvalidOption)
+		return fmt.Errorf("storage class: %v", iconfig.ErrInvalidOption)
 	}
 
 	return nil
@@ -84,7 +83,7 @@ func newSendAWSS3(ctx context.Context, cfg config.Config) (*sendAWSS3, error) {
 		tf.sclass = types.StorageClass(conf.StorageClass)
 	}
 
-	agg, err := iaggregate.New(iaggregate.Config{
+	agg, err := aggregate.New(aggregate.Config{
 		Count:    conf.Batch.Count,
 		Size:     conf.Batch.Size,
 		Duration: conf.Batch.Duration,
@@ -107,8 +106,8 @@ func newSendAWSS3(ctx context.Context, cfg config.Config) (*sendAWSS3, error) {
 	}
 
 	// Setup the AWS client.
-	awsCfg, err := iaws.New(ctx, iaws.Config{
-		Region:  iaws.ParseRegion(conf.AWS.ARN),
+	awsCfg, err := aws.New(ctx, aws.Config{
+		Region:  aws.ParseRegion(conf.AWS.ARN),
 		RoleARN: conf.AWS.AssumeRoleARN,
 	})
 	if err != nil {
@@ -128,7 +127,7 @@ type sendAWSS3 struct {
 	sclass types.StorageClass
 
 	mu     sync.Mutex
-	agg    *iaggregate.Aggregate
+	agg    *aggregate.Aggregate
 	tforms []Transformer
 }
 

@@ -16,10 +16,9 @@ import (
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
 
-	iaggregate "github.com/brexhq/substation/v2/internal/aggregate"
+	"github.com/brexhq/substation/v2/internal/aggregate"
 	iaws "github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	ierrors "github.com/brexhq/substation/v2/internal/errors"
 )
 
 // Records greater than 256 KB in size cannot be
@@ -47,7 +46,7 @@ func (c *sendAWSSNSConfig) Decode(in interface{}) error {
 
 func (c *sendAWSSNSConfig) Validate() error {
 	if c.AWS.ARN == "" {
-		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -82,7 +81,7 @@ func newSendAWSSNS(ctx context.Context, cfg config.Config) (*sendAWSSNS, error) 
 
 	tf.client = sns.NewFromConfig(awsCfg)
 
-	agg, err := iaggregate.New(iaggregate.Config{
+	agg, err := aggregate.New(aggregate.Config{
 		// SQS limits batch operations to 10 messages.
 		Count: 10,
 		// SNS limits batch operations to 256 KB.
@@ -114,7 +113,7 @@ type sendAWSSNS struct {
 	client *sns.Client
 
 	mu     sync.Mutex
-	agg    *iaggregate.Aggregate
+	agg    *aggregate.Aggregate
 	tforms []Transformer
 }
 

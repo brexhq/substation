@@ -17,10 +17,10 @@ import (
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/message"
 
-	iaws "github.com/brexhq/substation/v2/internal/aws"
-	ibufio "github.com/brexhq/substation/v2/internal/bufio"
-	ichannel "github.com/brexhq/substation/v2/internal/channel"
-	imedia "github.com/brexhq/substation/v2/internal/media"
+	"github.com/brexhq/substation/v2/internal/aws"
+	"github.com/brexhq/substation/v2/internal/bufio"
+	"github.com/brexhq/substation/v2/internal/channel"
+	"github.com/brexhq/substation/v2/internal/media"
 )
 
 type s3Metadata struct {
@@ -49,7 +49,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 		return err
 	}
 
-	ch := ichannel.New[*message.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
@@ -95,7 +95,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	group.Go(func() error {
 		defer ch.Close()
 
-		cfg, err := iaws.New(ctx, iaws.Config{})
+		cfg, err := aws.New(ctx, aws.Config{})
 		if err != nil {
 			return err
 		}
@@ -144,7 +144,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			// Text files are decompressed by the bufio package
 			// (if necessary) and each line is sent as a separate
 			// message. All other files are sent as a single message.
-			mediaType, err := imedia.File(dst)
+			mediaType, err := media.File(dst)
 			if err != nil {
 				return err
 			}
@@ -154,7 +154,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			}
 
 			// Unsupported media types are sent as binary data.
-			if !slices.Contains(ibufio.MediaTypes, mediaType) {
+			if !slices.Contains(bufio.MediaTypes, mediaType) {
 				r, err := io.ReadAll(dst)
 				if err != nil {
 					return err
@@ -166,7 +166,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				return nil
 			}
 
-			scanner := ibufio.NewScanner()
+			scanner := bufio.NewScanner()
 			defer scanner.Close()
 
 			if err := scanner.ReadFile(dst); err != nil {
@@ -221,7 +221,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 		return err
 	}
 
-	ch := ichannel.New[*message.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool
@@ -267,7 +267,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	group.Go(func() error {
 		defer ch.Close()
 
-		cfg, err := iaws.New(ctx, iaws.Config{})
+		cfg, err := aws.New(ctx, aws.Config{})
 		if err != nil {
 			return err
 		}
@@ -322,7 +322,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 				// Text files are decompressed by the bufio package
 				// (if necessary) and each line is sent as a separate
 				// message. All other files are sent as a single message.
-				mediaType, err := imedia.File(dst)
+				mediaType, err := media.File(dst)
 				if err != nil {
 					return err
 				}
@@ -332,7 +332,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 				}
 
 				// Unsupported media types are sent as binary data.
-				if !slices.Contains(ibufio.MediaTypes, mediaType) {
+				if !slices.Contains(bufio.MediaTypes, mediaType) {
 					r, err := io.ReadAll(dst)
 					if err != nil {
 						return err
@@ -344,7 +344,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					return nil
 				}
 
-				scanner := ibufio.NewScanner()
+				scanner := bufio.NewScanner()
 				defer scanner.Close()
 
 				if err := scanner.ReadFile(dst); err != nil {

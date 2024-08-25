@@ -14,10 +14,9 @@ import (
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
 
-	iaggregate "github.com/brexhq/substation/v2/internal/aggregate"
-	iaws "github.com/brexhq/substation/v2/internal/aws"
+	"github.com/brexhq/substation/v2/internal/aggregate"
+	"github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	ierrors "github.com/brexhq/substation/v2/internal/errors"
 )
 
 // Items greater than 400 KB in size cannot be put into DynamoDB.
@@ -50,7 +49,7 @@ func (c *sendAWSDynamoDBConfig) Decode(in interface{}) error {
 
 func (c *sendAWSDynamoDBConfig) Validate() error {
 	if c.AWS.ARN == "" {
-		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -74,8 +73,8 @@ func newSendAWSDynamoDBPut(ctx context.Context, cfg config.Config) (*sendAWSDyna
 		conf: conf,
 	}
 
-	awsCfg, err := iaws.New(ctx, iaws.Config{
-		Region:  iaws.ParseRegion(conf.AWS.ARN),
+	awsCfg, err := aws.New(ctx, aws.Config{
+		Region:  aws.ParseRegion(conf.AWS.ARN),
 		RoleARN: conf.AWS.AssumeRoleARN,
 	})
 	if err != nil {
@@ -84,7 +83,7 @@ func newSendAWSDynamoDBPut(ctx context.Context, cfg config.Config) (*sendAWSDyna
 
 	tf.client = dynamodb.NewFromConfig(awsCfg)
 
-	agg, err := iaggregate.New(iaggregate.Config{
+	agg, err := aggregate.New(aggregate.Config{
 		// DynamoDB limits batch operations to 25 records and 16 MiB.
 		Count:    25,
 		Size:     1000 * 1000 * 16,
@@ -115,7 +114,7 @@ type sendAWSDynamoDBPut struct {
 	client *dynamodb.Client
 
 	mu     sync.Mutex
-	agg    *iaggregate.Aggregate
+	agg    *aggregate.Aggregate
 	tforms []Transformer
 }
 

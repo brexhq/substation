@@ -11,9 +11,8 @@ import (
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
 
-	iaws "github.com/brexhq/substation/v2/internal/aws"
+	"github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	ierrors "github.com/brexhq/substation/v2/internal/errors"
 )
 
 type enrichAWSLambdaConfig struct {
@@ -28,15 +27,15 @@ func (c *enrichAWSLambdaConfig) Decode(in interface{}) error {
 
 func (c *enrichAWSLambdaConfig) Validate() error {
 	if c.Object.SourceKey == "" {
-		return fmt.Errorf("object_source_key: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.AWS.ARN == "" {
-		return fmt.Errorf("aws.arn: %v", ierrors.ErrMissingRequiredOption)
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -61,8 +60,8 @@ func newEnrichAWSLambda(ctx context.Context, cfg config.Config) (*enrichAWSLambd
 	}
 
 	// Setup the AWS client.
-	awsCfg, err := iaws.New(ctx, iaws.Config{
-		Region:  iaws.ParseRegion(conf.AWS.ARN),
+	awsCfg, err := aws.New(ctx, aws.Config{
+		Region:  aws.ParseRegion(conf.AWS.ARN),
 		RoleARN: conf.AWS.AssumeRoleARN,
 	})
 	if err != nil {

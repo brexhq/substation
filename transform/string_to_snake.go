@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/iancoleman/strcase"
+
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
-	"github.com/iancoleman/strcase"
 )
 
 func newStringToSnake(_ context.Context, cfg config.Config) (*stringToSnake, error) {

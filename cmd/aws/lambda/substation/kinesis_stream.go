@@ -13,7 +13,7 @@ import (
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/message"
 
-	ichannel "github.com/brexhq/substation/v2/internal/channel"
+	"github.com/brexhq/substation/v2/internal/channel"
 )
 
 type kinesisStreamMetadata struct {
@@ -40,7 +40,7 @@ func kinesisStreamHandler(ctx context.Context, event events.KinesisEvent) error 
 		return err
 	}
 
-	ch := ichannel.New[*message.Message]()
+	ch := channel.New[*message.Message]()
 	group, ctx := errgroup.WithContext(ctx)
 
 	// Data transformation. Transforms are executed concurrently using a worker pool

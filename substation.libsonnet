@@ -376,7 +376,6 @@ local helpers = {
               id: helpers.id(type, settings),
               object: $.config.object,
               aws: $.config.aws,
-              table_name: null,
               partition_key: null,
               sort_key: null,
               key_condition_expression: null,
@@ -394,7 +393,6 @@ local helpers = {
             id: helpers.id(type, settings),
             object: $.config.object,
             aws: $.config.aws,
-            function_name: null,
           },
 
           type: type,
@@ -820,9 +818,8 @@ local helpers = {
             local default = {
               id: helpers.id(type, settings),
               batch: $.config.batch,
-              auxiliary_transforms: null,
               aws: $.config.aws,
-              table_name: null,
+              auxiliary_transforms: null,
             },
 
             local s = std.mergePatch(settings, {
@@ -839,9 +836,8 @@ local helpers = {
           local default = {
             id: helpers.id(type, settings),
             batch: $.config.batch,
-            auxiliary_transforms: null,
             aws: $.config.aws,
-            arn: null,
+            auxiliary_transforms: null,
             description: null,
           },
           local s = std.mergePatch(settings, {
@@ -858,9 +854,8 @@ local helpers = {
           local default = {
             id: helpers.id(type, settings),
             batch: $.config.batch,
-            auxiliary_transforms: null,
             aws: $.config.aws,
-            stream_name: null,
+            auxiliary_transforms: null,
           },
 
           local s = std.mergePatch(settings, {
@@ -876,9 +871,8 @@ local helpers = {
           local default = {
             id: helpers.id(type, settings),
             batch: $.config.batch,
-            auxiliary_transforms: null,
             aws: $.config.aws,
-            stream_name: null,
+            auxiliary_transforms: null,
             use_batch_key_as_partition_key: false,
             enable_record_aggregation: false,
           },
@@ -896,9 +890,8 @@ local helpers = {
           local default = {
             id: helpers.id(type, settings),
             batch: $.config.batch,
-            auxiliary_transforms: null,
             aws: $.config.aws,
-            function_name: null,
+            auxiliary_transforms: null,
           },
 
           type: type,
@@ -909,11 +902,10 @@ local helpers = {
           local default = {
             id: helpers.id(type, settings),
             batch: $.config.batch,
-            auxiliary_transforms: null,
             aws: $.config.aws,
-            bucket_name: null,
-            storage_class: 'STANDARD',
             file_path: $.file_path,
+            auxiliary_transforms: null,
+            storage_class: 'STANDARD',
           },
 
           local s = std.mergePatch(settings, {
@@ -929,9 +921,8 @@ local helpers = {
           local default = {
             id: helpers.id(type, settings),
             batch: $.config.batch,
-            auxiliary_transforms: null,
             aws: $.config.aws,
-            arn: null,
+            auxiliary_transforms: null,
           },
 
           local s = std.mergePatch(settings, {
@@ -947,9 +938,8 @@ local helpers = {
           local default = {
             id: helpers.id(type, settings),
             batch: $.config.batch,
-            auxiliary_transforms: null,
             aws: $.config.aws,
-            arn: null,
+            auxiliary_transforms: null,
           },
 
           local s = std.mergePatch(settings, {
@@ -1289,7 +1279,6 @@ local helpers = {
       dynamodb(settings={}): {
         local default = {
           aws: $.config.aws,
-          table_name: null,
           attributes: { partition_key: null, sort_key: null, value: null, ttl: null },
           consistent_read: false,
         },
@@ -1335,10 +1324,9 @@ local helpers = {
     aws: {
       secrets_manager(settings={}): {
         local default = {
-          id: null,
-          name: null,
-          ttl_offset: null,
           aws: $.config.aws,
+          id: null,
+          ttl_offset: null,
         },
 
         type: 'aws_secrets_manager',
@@ -1354,7 +1342,7 @@ local helpers = {
   },
   // Mirrors structs from the internal/config package.
   config: {
-    aws: { region: null, role_arn: null },
+    aws: { arn: null, assume_role_arn: null },
     batch: { count: 1000, size: 1000 * 1000, duration: '1m' },
     metric: { name: null, attributes: null, destination: null },
     object: { source_key: null, target_key: null, batch_key: null },

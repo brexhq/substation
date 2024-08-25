@@ -31,10 +31,10 @@ type Object struct {
 }
 
 type AWS struct {
-	// Region is the AWS region that the AWS client will use.
-	Region string `json:"region"`
-	// RoleARN is the AWS IAM role that the AWS client will assume.
-	RoleARN string `json:"role_arn"`
+	// ARN is the AWS resource that the action will interact with.
+	ARN string `json:"arn"`
+	// AssumeRoleARN is the ARN of the role that the action will assume.
+	AssumeRoleARN string `json:"role_arn"`
 }
 
 type Metric struct {

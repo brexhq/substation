@@ -93,7 +93,6 @@ resource "aws_cloudwatch_metric_alarm" "metric_alarm_downscale" {
 
   lifecycle {
     # These are managed by the Autoscale application.
-    # https://github.com/brexhq/substation/blob/main/internal/aws/cloudwatch/cloudwatch.go
     ignore_changes = [metric_query, datapoints_to_alarm, evaluation_periods, threshold]
   }
 

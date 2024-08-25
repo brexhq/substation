@@ -1,13 +1,16 @@
 package aws
 
 import (
+	"context"
 	"os"
 	"strconv"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/client"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/aws/aws-xray-sdk-go/instrumentation/awsv2"
 )
 
 type Config struct {
@@ -15,38 +18,53 @@ type Config struct {
 	RoleARN string `json:"role_arn"`
 }
 
-// New returns a new AWS configuration and session.
-func New(cfg Config) (*aws.Config, *session.Session) {
-	conf := aws.NewConfig()
-
+// New returns an SDK v2 configuration.
+func New(ctx context.Context, cfg Config) (aws.Config, error) {
+	var region string
 	if cfg.Region != "" {
-		conf = conf.WithRegion(cfg.Region)
+		region = cfg.Region
 	} else if v, ok := os.LookupEnv("AWS_REGION"); ok {
-		conf = conf.WithRegion(v)
+		region = v
 	} else if v, ok := os.LookupEnv("AWS_DEFAULT_REGION"); ok {
-		conf = conf.WithRegion(v)
+		region = v
 	}
 
-	r := client.DefaultRetryer{}
+	var creds aws.CredentialsProvider // nil is a valid default.
+	if cfg.RoleARN != "" {
+		conf, err := config.LoadDefaultConfig(ctx,
+			config.WithRegion(region),
+		)
+		if err != nil {
+			return aws.Config{}, err
+		}
+
+		stsSvc := sts.NewFromConfig(conf)
+		creds = stscreds.NewAssumeRoleProvider(stsSvc, cfg.RoleARN)
+	}
+
+	maxRetry := 3 // Matches the standard retryer.
 	if v, ok := os.LookupEnv("AWS_MAX_ATTEMPTS"); ok {
 		max, err := strconv.Atoi(v)
 		if err != nil {
-			panic(err)
+			return aws.Config{}, err
 		}
 
-		r.NumMaxRetries = max
+		maxRetry = max
 	}
 
-	conf.Retryer = r
-	sess := session.Must(session.NewSession())
-	if cfg.RoleARN != "" {
-		conf = conf.WithCredentials(stscreds.NewCredentials(sess, cfg.RoleARN))
+	conf, err := config.LoadDefaultConfig(ctx,
+		config.WithRegion(region),
+		config.WithCredentialsProvider(creds),
+		config.WithRetryer(func() aws.Retryer {
+			return retry.NewStandard(func(o *retry.StandardOptions) {
+				o.MaxAttempts = maxRetry
+			})
+		}),
+	)
+
+	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
+		awsv2.AWSV2Instrumentor(&conf.APIOptions)
 	}
 
-	return conf, sess
-}
-
-// NewDefault returns a new AWS configuration and session with default values.
-func NewDefault() (*aws.Config, *session.Session) {
-	return New(Config{})
+	return conf, err
 }

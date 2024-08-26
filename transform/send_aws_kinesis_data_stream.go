@@ -19,7 +19,6 @@ import (
 	"github.com/brexhq/substation/v2/message"
 
 	"github.com/brexhq/substation/v2/internal/aggregate"
-	"github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
@@ -100,10 +99,7 @@ func newSendAWSKinesisDataStream(ctx context.Context, cfg config.Config) (*sendA
 		}
 	}
 
-	awsCfg, err := aws.New(ctx, aws.Config{
-		Region:  aws.ParseRegion(conf.AWS.ARN),
-		RoleARN: conf.AWS.AssumeRoleARN,
-	})
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}

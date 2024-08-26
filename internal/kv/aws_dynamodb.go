@@ -14,7 +14,6 @@ import (
 
 	"github.com/brexhq/substation/v2/config"
 
-	iaws "github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
@@ -363,10 +362,7 @@ func (store *kvAWSDynamoDB) Setup(ctx context.Context) error {
 		return nil
 	}
 
-	awsCfg, err := iaws.New(ctx, iaws.Config{
-		Region:  iaws.ParseRegion(store.AWS.ARN),
-		RoleARN: store.AWS.AssumeRoleARN,
-	})
+	awsCfg, err := iconfig.NewAWS(ctx, store.AWS)
 	if err != nil {
 		return err
 	}

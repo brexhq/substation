@@ -23,8 +23,8 @@ import (
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/message"
 
-	"github.com/brexhq/substation/v2/internal/aws"
 	"github.com/brexhq/substation/v2/internal/channel"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/internal/file"
 	"github.com/brexhq/substation/v2/internal/log"
 )
@@ -143,7 +143,7 @@ func run(ctx context.Context, opts options) error {
 
 		// The AWS client is configured using environment variables
 		// or the default credentials file.
-		awsCfg, err := aws.New(ctx, aws.Config{})
+		awsCfg, err := iconfig.NewAWS(ctx, iconfig.AWS{})
 		if err != nil {
 			return err
 		}

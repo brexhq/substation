@@ -9,7 +9,6 @@ import (
 
 	"github.com/brexhq/substation/v2/config"
 
-	"github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
@@ -67,10 +66,7 @@ func newAWSSecretsManager(ctx context.Context, cfg config.Config) (*awsSecretsMa
 		ttl:  time.Now().Add(dur).Unix(),
 	}
 
-	awsCfg, err := aws.New(ctx, aws.Config{
-		Region:  aws.ParseRegion(conf.AWS.ARN),
-		RoleARN: conf.AWS.AssumeRoleARN,
-	})
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
 	if err != nil {
 		return nil, fmt.Errorf("secrets: aws_secrets_manager: %v", err)
 	}

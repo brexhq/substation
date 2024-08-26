@@ -14,7 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 
-	"github.com/brexhq/substation/v2/internal/aws"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/internal/http"
 )
 
@@ -92,12 +92,12 @@ func Get(ctx context.Context, location string) (string, error) {
 	//nolint: nestif // ignore nesting complexity
 	if strings.HasPrefix(location, "s3://") {
 		if s3downloader == nil {
-			cfg, err := aws.New(ctx, aws.Config{})
+			awsCfg, err := iconfig.NewAWS(ctx, iconfig.AWS{})
 			if err != nil {
 				return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 			}
 
-			c := s3.NewFromConfig(cfg)
+			c := s3.NewFromConfig(awsCfg)
 			s3downloader = manager.NewDownloader(c)
 		}
 

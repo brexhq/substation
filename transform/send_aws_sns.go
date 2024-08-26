@@ -17,7 +17,6 @@ import (
 	"github.com/brexhq/substation/v2/message"
 
 	"github.com/brexhq/substation/v2/internal/aggregate"
-	iaws "github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
@@ -70,11 +69,7 @@ func newSendAWSSNS(ctx context.Context, cfg config.Config) (*sendAWSSNS, error) 
 		conf: conf,
 	}
 
-	// Setup the AWS client.
-	awsCfg, err := iaws.New(ctx, iaws.Config{
-		Region:  iaws.ParseRegion(conf.AWS.ARN),
-		RoleARN: conf.AWS.AssumeRoleARN,
-	})
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}

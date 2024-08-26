@@ -18,7 +18,7 @@ import (
 	ktypes "github.com/aws/aws-sdk-go-v2/service/kinesis/types"
 	"github.com/tidwall/gjson"
 
-	iaws "github.com/brexhq/substation/v2/internal/aws"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/internal/log"
 )
 
@@ -47,9 +47,9 @@ var (
 )
 
 func init() {
-	// These must run in the same AWS account and region as the Lambda function.
 	ctx := context.Background()
-	awsCfg, err := iaws.New(ctx, iaws.Config{})
+
+	awsCfg, err := iconfig.NewAWS(ctx, iconfig.AWS{})
 	if err != nil {
 		panic(fmt.Errorf("init: %v", err))
 	}

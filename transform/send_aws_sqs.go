@@ -11,13 +11,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/google/uuid"
 
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
 
 	"github.com/brexhq/substation/v2/internal/aggregate"
-	iaws "github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
@@ -66,23 +66,23 @@ func newSendAWSSQS(ctx context.Context, cfg config.Config) (*sendAWSSQS, error) 
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
-	// arn:aws:sqs:region:account_id:queue_name
-	arn := strings.Split(conf.AWS.ARN, ":")
 	tf := sendAWSSQS{
 		conf: conf,
-		queueURL: fmt.Sprintf(
-			"https://sqs.%s.amazonaws.com/%s/%s",
-			arn[3],
-			arn[4],
-			arn[5],
-		),
 	}
 
-	// Setup the AWS client.
-	awsCfg, err := iaws.New(ctx, iaws.Config{
-		Region:  iaws.ParseRegion(conf.AWS.ARN),
-		RoleARN: conf.AWS.AssumeRoleARN,
-	})
+	arn, err := arn.Parse(conf.AWS.ARN)
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	tf.queueURL = fmt.Sprintf(
+		"https://sqs.%s.amazonaws.com/%s/%s",
+		arn.Region,
+		arn.AccountID,
+		arn.Resource,
+	)
+
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}

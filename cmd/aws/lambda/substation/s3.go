@@ -17,9 +17,9 @@ import (
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/message"
 
-	"github.com/brexhq/substation/v2/internal/aws"
 	"github.com/brexhq/substation/v2/internal/bufio"
 	"github.com/brexhq/substation/v2/internal/channel"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/internal/media"
 )
 
@@ -95,12 +95,12 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	group.Go(func() error {
 		defer ch.Close()
 
-		cfg, err := aws.New(ctx, aws.Config{})
+		awsCfg, err := iconfig.NewAWS(ctx, iconfig.AWS{})
 		if err != nil {
 			return err
 		}
 
-		c := s3.NewFromConfig(cfg)
+		c := s3.NewFromConfig(awsCfg)
 		client := manager.NewDownloader(c)
 
 		for _, record := range event.Records {
@@ -267,12 +267,12 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	group.Go(func() error {
 		defer ch.Close()
 
-		cfg, err := aws.New(ctx, aws.Config{})
+		awsCfg, err := iconfig.NewAWS(ctx, iconfig.AWS{})
 		if err != nil {
 			return err
 		}
 
-		c := s3.NewFromConfig(cfg)
+		c := s3.NewFromConfig(awsCfg)
 		client := manager.NewDownloader(c)
 
 		for _, record := range event.Records {

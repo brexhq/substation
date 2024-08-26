@@ -13,17 +13,21 @@ import (
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
 
-	iaws "github.com/brexhq/substation/v2/internal/aws"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type enrichAWSDynamoDBQueryQueryConfig struct {
-	// PartitionKey is the DynamoDB partition key.
-	PartitionKey string `json:"partition_key"`
-	// SortKey is the DynamoDB sort key.
-	//
-	// This is optional and has no default.
-	SortKey string `json:"sort_key"`
+	Attributes struct {
+		// PartitionKey is the table's parition key attribute.
+		//
+		// This is required for all tables.
+		PartitionKey string `json:"partition_key"`
+		// SortKey is the table's sort (range) key attribute.
+		//
+		// This must be used if the table uses a composite primary key schema
+		// (partition key and sort key). Only string types are supported.
+		SortKey string `json:"sort_key"`
+	} `json:"attributes"`
 	// Limits determines the maximum number of items to evalute.
 	//
 	// This is optional and defaults to evaluating all items.
@@ -48,11 +52,11 @@ func (c *enrichAWSDynamoDBQueryQueryConfig) Decode(in interface{}) error {
 
 func (c *enrichAWSDynamoDBQueryQueryConfig) Validate() error {
 	if c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
+		return fmt.Errorf("object.target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
-	if c.PartitionKey == "" {
-		return fmt.Errorf("partition_key: %v", iconfig.ErrMissingRequiredOption)
+	if c.Attributes.PartitionKey == "" {
+		return fmt.Errorf("attributes.partition_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.AWS.ARN == "" {
@@ -80,10 +84,7 @@ func newEnrichAWSDynamoDBQuery(ctx context.Context, cfg config.Config) (*enrichA
 		conf: conf,
 	}
 
-	awsCfg, err := iaws.New(ctx, iaws.Config{
-		Region:  iaws.ParseRegion(conf.AWS.ARN),
-		RoleARN: conf.AWS.AssumeRoleARN,
-	})
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
@@ -108,37 +109,34 @@ func (tf *enrichAWSDynamoDBQuery) Transform(ctx context.Context, msg *message.Me
 		return []*message.Message{msg}, nil
 	}
 
-	var PK, SK string
-	if value.IsArray() {
-		if len(value.Array()) != 2 {
-			return nil, fmt.Errorf("transform %s: expected array of 2 elements, got %d", tf.conf.ID, len(value.Array()))
-		}
-
-		PK = value.Array()[0].String()
-		SK = value.Array()[1].String()
-	} else {
-		PK = value.String()
-	}
-
-	keyEx := expression.Key(tf.conf.PartitionKey).Equal(expression.Value(PK))
-	if tf.conf.SortKey != "" {
-		keyEx = keyEx.And(expression.Key(tf.conf.SortKey).Equal(expression.Value(SK)))
+	// This supports one of two states:
+	//	- A single partition key, captured as a string.
+	//	- A composite key (partition key and sort key), captured as an array of two strings.
+	//
+	// If the value is an array, we assume it is a composite key.
+	var keyEx expression.KeyConditionBuilder
+	if value.IsArray() && len(value.Array()) == 2 && tf.conf.Attributes.SortKey != "" {
+		keyEx = expression.Key(tf.conf.Attributes.PartitionKey).Equal(expression.Value(value.Array()[0].String())).
+			And(expression.Key(tf.conf.Attributes.SortKey).Equal(expression.Value(value.Array()[1].String())))
+	} else if !value.IsArray() {
+		keyEx = expression.Key(tf.conf.Attributes.PartitionKey).Equal(expression.Value(value.String()))
+	} else { // This is invalid, so we return the original message.
+		return []*message.Message{msg}, nil
 	}
 
 	expr, err := expression.NewBuilder().WithKeyCondition(keyEx).Build()
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
-	input := &dynamodb.QueryInput{
+
+	resp, err := tf.client.Query(ctx, &dynamodb.QueryInput{
 		TableName:                 &tf.conf.AWS.ARN,
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		Limit:                     aws.Int32(tf.conf.Limit),
 		ScanIndexForward:          aws.Bool(tf.conf.ScanIndexForward),
-	}
-
-	resp, err := tf.client.Query(ctx, input)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}

@@ -67,7 +67,7 @@ func main() {
 		lambda.Start(gatewayHandler)
 	case "AWS_DYNAMODB_STREAM":
 		lambda.Start(dynamodbHandler)
-	case "AWS_KINESIS_DATA_FIREHOSE":
+	case "AWS_DATA_FIREHOSE":
 		lambda.Start(firehoseHandler)
 	case "AWS_KINESIS_DATA_STREAM":
 		lambda.Start(kinesisStreamHandler)

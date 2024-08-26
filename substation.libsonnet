@@ -377,7 +377,6 @@ local helpers = {
               object: $.config.object,
               aws: $.config.aws,
               attributes: { partition_key: null, sort_key: null },
-              key_condition_expression: null,
               limit: 1,
               scan_index_forward: false,
             },

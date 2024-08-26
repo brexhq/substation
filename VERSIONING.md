@@ -11,8 +11,6 @@ Substation uses [Semantic Versioning 2.0](https://semver.org/). Versions are man
 - substation.libsonnet
 - go.mod
 
-Each major version of the project has a folder in the repository. For example, version 1.0.0 is in the `v1` folder and version 2.0.0 is in the `v2` folder.
-
 Some features may be labeled as "experimental" in the documentation. These features are not subject to the same versioning guarantees as the rest of the project and may be changed or removed at any time.
 
 ## Go Versioning

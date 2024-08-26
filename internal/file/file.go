@@ -105,13 +105,11 @@ func Get(ctx context.Context, location string) (string, error) {
 		paths := strings.SplitN(strings.TrimPrefix(location, "s3://"), "/", 2)
 
 		// Download the file from S3.
-		input := &s3.GetObjectInput{
+		ctx = context.WithoutCancel(ctx)
+		size, err := s3downloader.Download(ctx, dst, &s3.GetObjectInput{
 			Bucket: &paths[0],
 			Key:    &paths[1],
-		}
-
-		ctx = context.WithoutCancel(ctx)
-		size, err := s3downloader.Download(ctx, dst, input)
+		})
 		if err != nil {
 			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 		}

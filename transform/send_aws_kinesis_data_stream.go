@@ -229,12 +229,14 @@ func (tf *sendAWSKinesisDataStream) putRecords(ctx context.Context, streamName, 
 		})
 	}
 
-	input := &kinesis.PutRecordsInput{
+	resp, err := tf.client.PutRecords(ctx, &kinesis.PutRecordsInput{
 		Records:   entries,
 		StreamARN: &streamName,
+	})
+	if err != nil {
+		return err
 	}
 
-	resp, err := tf.client.PutRecords(ctx, input)
 	if resp.FailedRecordCount != nil && *resp.FailedRecordCount > 0 {
 		var retry [][]byte
 
@@ -247,10 +249,6 @@ func (tf *sendAWSKinesisDataStream) putRecords(ctx context.Context, streamName, 
 		if len(retry) > 0 {
 			return tf.putRecords(ctx, streamName, partitionKey, retry)
 		}
-	}
-
-	if err != nil {
-		return err
 	}
 
 	return nil

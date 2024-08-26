@@ -132,11 +132,10 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			defer os.Remove(dst.Name())
 			defer dst.Close()
 
-			input := &s3.GetObjectInput{
+			if _, err := client.Download(ctx, dst, &s3.GetObjectInput{
 				Bucket: &record.S3.Bucket.Name,
 				Key:    &objectKey,
-			}
-			if _, err := client.Download(ctx, dst, input); err != nil {
+			}); err != nil {
 				return err
 			}
 
@@ -310,11 +309,10 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 				defer os.Remove(dst.Name())
 				defer dst.Close()
 
-				input := &s3.GetObjectInput{
+				if _, err := client.Download(ctx, dst, &s3.GetObjectInput{
 					Bucket: &record.S3.Bucket.Name,
 					Key:    &objectKey,
-				}
-				if _, err := client.Download(ctx, dst, input); err != nil {
+				}); err != nil {
 					return err
 				}
 

@@ -199,12 +199,14 @@ func (tf *sendAWSSQS) sendMessages(ctx context.Context, data [][]byte) error {
 		entries = append(entries, entry)
 	}
 
-	input := &sqs.SendMessageBatchInput{
+	resp, err := tf.client.SendMessageBatch(ctx, &sqs.SendMessageBatchInput{
 		Entries:  entries,
 		QueueUrl: aws.String(tf.queueURL),
+	})
+	if err != nil {
+		return err
 	}
 
-	resp, err := tf.client.SendMessageBatch(ctx, input)
 	if resp.Failed != nil {
 		var retry [][]byte
 		for _, r := range resp.Failed {
@@ -219,10 +221,6 @@ func (tf *sendAWSSQS) sendMessages(ctx context.Context, data [][]byte) error {
 		if len(retry) > 0 {
 			return tf.sendMessages(ctx, retry)
 		}
-	}
-
-	if err != nil {
-		return err
 	}
 
 	return nil

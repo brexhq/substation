@@ -185,13 +185,15 @@ func (tf *sendAWSSNS) sendMessages(ctx context.Context, data [][]byte) error {
 		entries = append(entries, entry)
 	}
 
-	input := &sns.PublishBatchInput{
+	ctx = context.WithoutCancel(ctx)
+	resp, err := tf.client.PublishBatch(ctx, &sns.PublishBatchInput{
 		PublishBatchRequestEntries: entries,
 		TopicArn:                   aws.String(tf.conf.AWS.ARN),
+	})
+	if err != nil {
+		return err
 	}
 
-	ctx = context.WithoutCancel(ctx)
-	resp, err := tf.client.PublishBatch(ctx, input)
 	if resp.Failed != nil {
 		var retry [][]byte
 		for _, r := range resp.Failed {
@@ -206,10 +208,6 @@ func (tf *sendAWSSNS) sendMessages(ctx context.Context, data [][]byte) error {
 		if len(retry) > 0 {
 			return tf.sendMessages(ctx, retry)
 		}
-	}
-
-	if err != nil {
-		return err
 	}
 
 	return nil

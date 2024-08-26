@@ -129,6 +129,7 @@ func (tf *enrichAWSDynamoDBQuery) Transform(ctx context.Context, msg *message.Me
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
+	ctx = context.WithoutCancel(ctx)
 	resp, err := tf.client.Query(ctx, &dynamodb.QueryInput{
 		TableName:                 &tf.conf.AWS.ARN,
 		KeyConditionExpression:    expr.KeyCondition(),

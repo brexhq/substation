@@ -182,11 +182,9 @@ func (tf *sendAWSEventBridge) send(ctx context.Context, key string) error {
 	}
 
 	ctx = context.WithoutCancel(ctx)
-	input := &eventbridge.PutEventsInput{
+	if _, err = tf.client.PutEvents(ctx, &eventbridge.PutEventsInput{
 		Entries: entries,
-	}
-
-	if _, err = tf.client.PutEvents(ctx, input); err != nil {
+	}); err != nil {
 		return err
 	}
 

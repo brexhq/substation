@@ -172,12 +172,10 @@ func (tf *sendAWSKinesisDataFirehose) putRecords(ctx context.Context, data [][]b
 		})
 	}
 
-	input := firehose.PutRecordBatchInput{
+	resp, err := tf.client.PutRecordBatch(ctx, &firehose.PutRecordBatchInput{
 		DeliveryStreamName: &tf.conf.AWS.ARN,
 		Records:            records,
-	}
-
-	resp, err := tf.client.PutRecordBatch(ctx, &input)
+	})
 	if resp.FailedPutCount != nil && *resp.FailedPutCount > 0 {
 		var retry [][]byte
 

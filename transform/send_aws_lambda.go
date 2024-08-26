@@ -153,15 +153,13 @@ func (tf *sendAWSLambda) send(ctx context.Context, key string) error {
 		return err
 	}
 
-	input := &lambda.InvokeInput{
-		FunctionName:   &tf.conf.AWS.ARN,
-		InvocationType: "Event", // Asynchronous invocation.
-	}
-
 	ctx = context.WithoutCancel(ctx)
 	for _, d := range data {
-		input.Payload = d
-		if _, err := tf.client.Invoke(ctx, input); err != nil {
+		if _, err := tf.client.Invoke(ctx, &lambda.InvokeInput{
+			FunctionName:   &tf.conf.AWS.ARN,
+			Payload:        d,
+			InvocationType: "Event", // Asynchronous invocation.
+		}); err != nil {
 			return err
 		}
 	}

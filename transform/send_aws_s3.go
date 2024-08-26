@@ -223,16 +223,14 @@ func (tf *sendAWSS3) send(ctx context.Context, key string) error {
 		return err
 	}
 
-	input := s3.PutObjectInput{
+	ctx = context.WithoutCancel(ctx)
+	if _, err := tf.client.Upload(ctx, &s3.PutObjectInput{
 		Bucket:       &tf.bucket,
 		Key:          &filePath,
 		Body:         f,
 		StorageClass: tf.sclass,
 		ContentType:  &mediaType,
-	}
-
-	ctx = context.WithoutCancel(ctx)
-	if _, err := tf.client.Upload(ctx, &input); err != nil {
+	}); err != nil {
 		return err
 	}
 

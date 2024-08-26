@@ -200,13 +200,11 @@ func (tf *sendAWSDynamoDBPut) putItems(ctx context.Context, attrs []map[string]t
 		})
 	}
 
-	input := &dynamodb.BatchWriteItemInput{
+	resp, err := tf.client.BatchWriteItem(ctx, &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
 			tf.conf.AWS.ARN: items,
 		},
-	}
-
-	resp, err := tf.client.BatchWriteItem(ctx, input)
+	})
 	if err != nil {
 		var e *types.ProvisionedThroughputExceededException
 		if errors.As(err, &e) {

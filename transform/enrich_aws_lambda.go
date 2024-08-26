@@ -87,12 +87,11 @@ func (tf *enrichAWSLambda) Transform(ctx context.Context, msg *message.Message) 
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errMsgInvalidObject)
 	}
 
-	input := &lambda.InvokeInput{
+	ctx = context.WithoutCancel(ctx)
+	resp, err := tf.client.Invoke(ctx, &lambda.InvokeInput{
 		FunctionName: &tf.conf.AWS.ARN,
 		Payload:      value.Bytes(),
-	}
-
-	resp, err := tf.client.Invoke(ctx, input)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}

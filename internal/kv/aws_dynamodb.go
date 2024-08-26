@@ -95,16 +95,14 @@ func (kv *kvAWSDynamoDB) Lock(ctx context.Context, key string, ttl int64) error 
 
 	// If the item already exists and the TTL has not expired, then this returns ErrNoLock. The
 	// caller is expected to handle this error and retry the call if necessary.
-	input := &dynamodb.PutItemInput{
+	ctx = context.WithoutCancel(ctx)
+	if _, err := kv.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName:                 aws.String(kv.AWS.ARN),
 		Item:                      i,
 		ConditionExpression:       expr.Condition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
-	}
-
-	ctx = context.WithoutCancel(ctx)
-	if _, err := kv.client.PutItem(ctx, input); err != nil {
+	}); err != nil {
 		var ccf *types.ConditionalCheckFailedException
 		if errors.As(err, &ccf) {
 			return ErrNoLock
@@ -130,13 +128,11 @@ func (store *kvAWSDynamoDB) Unlock(ctx context.Context, key string) error {
 		return err
 	}
 
-	input := &dynamodb.DeleteItemInput{
+	ctx = context.WithoutCancel(ctx)
+	if _, err := store.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
 		TableName: aws.String(store.AWS.ARN),
 		Key:       item,
-	}
-
-	ctx = context.WithoutCancel(ctx)
-	if _, err := store.client.DeleteItem(ctx, input); err != nil {
+	}); err != nil {
 		return err
 	}
 
@@ -163,13 +159,11 @@ func (store *kvAWSDynamoDB) Get(ctx context.Context, key string) (interface{}, e
 		return nil, err
 	}
 
-	input := &dynamodb.GetItemInput{
+	ctx = context.WithoutCancel(ctx)
+	resp, err := store.client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(store.AWS.ARN),
 		Key:       item,
-	}
-
-	ctx = context.WithoutCancel(ctx)
-	resp, err := store.client.GetItem(ctx, input)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -201,13 +195,11 @@ func (store *kvAWSDynamoDB) Set(ctx context.Context, key string, val interface{}
 		return err
 	}
 
-	input := &dynamodb.PutItemInput{
+	ctx = context.WithoutCancel(ctx)
+	if _, err := store.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(store.AWS.ARN),
 		Item:      item,
-	}
-
-	ctx = context.WithoutCancel(ctx)
-	if _, err := store.client.PutItem(ctx, input); err != nil {
+	}); err != nil {
 		return err
 	}
 
@@ -235,13 +227,11 @@ func (store *kvAWSDynamoDB) SetWithTTL(ctx context.Context, key string, val inte
 		return err
 	}
 
-	input := &dynamodb.PutItemInput{
+	ctx = context.WithoutCancel(ctx)
+	if _, err := store.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(store.AWS.ARN),
 		Item:      item,
-	}
-
-	ctx = context.WithoutCancel(ctx)
-	if _, err := store.client.PutItem(ctx, input); err != nil {
+	}); err != nil {
 		return err
 	}
 
@@ -330,16 +320,14 @@ func (store *kvAWSDynamoDB) SetAddWithTTL(ctx context.Context, key string, val i
 		return err
 	}
 
-	input := &dynamodb.UpdateItemInput{
+	ctx = context.WithoutCancel(ctx)
+	if _, err := store.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName:                 aws.String(store.AWS.ARN),
 		Key:                       item,
 		UpdateExpression:          expr.Update(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
-	}
-
-	ctx = context.WithoutCancel(ctx)
-	if _, err := store.client.UpdateItem(ctx, input); err != nil {
+	}); err != nil {
 		return err
 	}
 

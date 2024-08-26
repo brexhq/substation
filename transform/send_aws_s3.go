@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/aws-sdk-go/aws/arn"
 
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
@@ -74,7 +74,12 @@ func newSendAWSS3(ctx context.Context, cfg config.Config) (*sendAWSS3, error) {
 
 	// Extracts the bucket name from the ARN.
 	// The ARN is in the format: arn:aws:s3:::bucket-name
-	tf.bucket = strings.Split(conf.AWS.ARN, ":")[5]
+	a, err := arn.Parse(conf.AWS.ARN)
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	tf.bucket = a.Resource
 
 	if conf.StorageClass == "" {
 		tf.sclass = types.StorageClassStandard
@@ -158,7 +163,7 @@ func (tf *sendAWSS3) Transform(ctx context.Context, msg *message.Message) ([]*me
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errBatchNoMoreData)
 	}
 
 	return []*message.Message{msg}, nil

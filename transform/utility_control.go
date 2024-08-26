@@ -74,7 +74,7 @@ func (tf *utilityControl) Transform(_ context.Context, msg *message.Message) ([]
 
 	tf.agg.Reset("")
 	if ok := tf.agg.Add("", msg.Data()); !ok {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errBatchNoMoreData)
 	}
 
 	ctrl := message.New().AsControl()

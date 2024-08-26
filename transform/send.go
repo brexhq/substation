@@ -7,10 +7,10 @@ import (
 	"github.com/brexhq/substation/v2/message"
 )
 
-// errSendBatchMisconfigured is returned when data cannot be successfully added
+// errBatchNoMoreData is returned when data cannot be successfully added
 // to a batch. This is usually due to a misconfiguration, such as a size, count,
 // or duration limit.
-var errSendBatchMisconfigured = fmt.Errorf("data could not be added to batch")
+var errBatchNoMoreData = fmt.Errorf("data could not be added to batch")
 
 func withTransforms(ctx context.Context, tf []Transformer, items [][]byte) ([][]byte, error) {
 	if tf == nil {

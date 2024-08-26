@@ -142,8 +142,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newSendAWSDynamoDBPut(ctx, cfg)
 	case "send_aws_eventbridge":
 		return newSendAWSEventBridge(ctx, cfg)
-	case "send_aws_kinesis_data_firehose":
-		return newSendAWSKinesisDataFirehose(ctx, cfg)
+	case "send_aws_data_firehose":
+		return newSendAWSDataFirehose(ctx, cfg)
 	case "send_aws_kinesis_data_stream":
 		return newSendAWSKinesisDataStream(ctx, cfg)
 	case "send_aws_lambda":

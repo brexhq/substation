@@ -17,15 +17,15 @@ import (
 )
 
 // Records greater than 1000 KiB in size cannot be put into Kinesis Firehose.
-const sendAWSKinesisDataFirehoseMessageSizeLimit = 1024 * 1000
+const sendAWSDataFirehoseMessageSizeLimit = 1024 * 1000
 
-// errSendAWSKinesisDataFirehoseRecordSizeLimit is returned when data exceeds the
+// errSendAWSDataFirehoseRecordSizeLimit is returned when data exceeds the
 // Kinesis Firehose record size limit. If this error occurs,
 // then drop or reduce the size of the data before attempting to
 // send it to Kinesis Firehose.
-var errSendAWSKinesisDataFirehoseRecordSizeLimit = fmt.Errorf("data exceeded size limit")
+var errSendAWSDataFirehoseRecordSizeLimit = fmt.Errorf("data exceeded size limit")
 
-type sendAWSKinesisDataFirehoseConfig struct {
+type sendAWSDataFirehoseConfig struct {
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
@@ -35,11 +35,11 @@ type sendAWSKinesisDataFirehoseConfig struct {
 	AWS    iconfig.AWS    `json:"aws"`
 }
 
-func (c *sendAWSKinesisDataFirehoseConfig) Decode(in interface{}) error {
+func (c *sendAWSDataFirehoseConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func (c *sendAWSKinesisDataFirehoseConfig) Validate() error {
+func (c *sendAWSDataFirehoseConfig) Validate() error {
 	if c.AWS.ARN == "" {
 		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
@@ -47,8 +47,8 @@ func (c *sendAWSKinesisDataFirehoseConfig) Validate() error {
 	return nil
 }
 
-func newSendAWSKinesisDataFirehose(ctx context.Context, cfg config.Config) (*sendAWSKinesisDataFirehose, error) {
-	conf := sendAWSKinesisDataFirehoseConfig{}
+func newSendAWSDataFirehose(ctx context.Context, cfg config.Config) (*sendAWSDataFirehose, error) {
+	conf := sendAWSDataFirehoseConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform send_aws_kinesis_data_firehose: %v", err)
 	}
@@ -61,7 +61,7 @@ func newSendAWSKinesisDataFirehose(ctx context.Context, cfg config.Config) (*sen
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
-	tf := sendAWSKinesisDataFirehose{
+	tf := sendAWSDataFirehose{
 		conf: conf,
 	}
 
@@ -75,7 +75,7 @@ func newSendAWSKinesisDataFirehose(ctx context.Context, cfg config.Config) (*sen
 	agg, err := aggregate.New(aggregate.Config{
 		// Firehose limits batch operations to 500 records and 4 MiB.
 		Count:    500,
-		Size:     sendAWSKinesisDataFirehoseMessageSizeLimit * 4,
+		Size:     sendAWSDataFirehoseMessageSizeLimit * 4,
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
@@ -98,8 +98,8 @@ func newSendAWSKinesisDataFirehose(ctx context.Context, cfg config.Config) (*sen
 	return &tf, nil
 }
 
-type sendAWSKinesisDataFirehose struct {
-	conf   sendAWSKinesisDataFirehoseConfig
+type sendAWSDataFirehose struct {
+	conf   sendAWSDataFirehoseConfig
 	client *firehose.Client
 
 	mu     sync.Mutex
@@ -107,7 +107,7 @@ type sendAWSKinesisDataFirehose struct {
 	tforms []Transformer
 }
 
-func (tf *sendAWSKinesisDataFirehose) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *sendAWSDataFirehose) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
 
@@ -126,8 +126,8 @@ func (tf *sendAWSKinesisDataFirehose) Transform(ctx context.Context, msg *messag
 		return []*message.Message{msg}, nil
 	}
 
-	if len(msg.Data()) > sendAWSKinesisDataFirehoseMessageSizeLimit {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendAWSKinesisDataFirehoseRecordSizeLimit)
+	if len(msg.Data()) > sendAWSDataFirehoseMessageSizeLimit {
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendAWSDataFirehoseRecordSizeLimit)
 	}
 
 	// If this value does not exist, then all data is batched together.
@@ -149,12 +149,12 @@ func (tf *sendAWSKinesisDataFirehose) Transform(ctx context.Context, msg *messag
 	return []*message.Message{msg}, nil
 }
 
-func (tf *sendAWSKinesisDataFirehose) String() string {
+func (tf *sendAWSDataFirehose) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }
 
-func (tf *sendAWSKinesisDataFirehose) send(ctx context.Context, key string) error {
+func (tf *sendAWSDataFirehose) send(ctx context.Context, key string) error {
 	data, err := withTransforms(ctx, tf.tforms, tf.agg.Get(key))
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func (tf *sendAWSKinesisDataFirehose) send(ctx context.Context, key string) erro
 	return tf.putRecords(ctx, data)
 }
 
-func (tf *sendAWSKinesisDataFirehose) putRecords(ctx context.Context, data [][]byte) error {
+func (tf *sendAWSDataFirehose) putRecords(ctx context.Context, data [][]byte) error {
 	var records []types.Record
 	for _, d := range data {
 		records = append(records, types.Record{

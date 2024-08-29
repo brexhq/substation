@@ -154,7 +154,7 @@ v1.x.x:
 
 ```jsonnet
 sub.tf.send.aws.sqs({
-  arn: 'arn:aws:sqs:us-east-1:123456789012:my-queue',
+  arn: 'arn:aws:sqs:us-east-1:123456789012:substation',
   retry: { count: 3 },
 })
 ```
@@ -166,7 +166,7 @@ sub.tf.meta.retry({
   retry: { count: 3, delay: '1s' },
   transforms: [
     sub.tf.send.aws.sqs({
-      aws: { arn: 'arn:aws:sqs:us-east-1:123456789012:my-queue' },
+      aws: { arn: 'arn:aws:sqs:us-east-1:123456789012:substation' },
     }),
   ],
 })
@@ -207,10 +207,10 @@ v1.x.x:
 
 ```jsonnet
 // In v1.x.x, the DynamoDB column names must always be 'PK' and/or 'SK'.
-sub.tf.obj.cp({ object: { src: key, trg: 'meta ddb.PK' } }),
+sub.tf.obj.cp({ object: { src: 'id', trg: 'meta ddb.PK' } }),
 sub.transform.enrich.aws.dynamodb({
   object: { source_key: 'meta ddb', target_key: 'user' },
-  table_name: 'users_table',
+  table_name: 'substation',
   partition_key: 'PK',
   key_condition_expression: 'PK = :PK',
 }),
@@ -221,7 +221,7 @@ v2.x.x:
 ```jsonnet
 sub.transform.enrich.aws.dynamodb.query({
   object: { source_key: 'id', target_key: 'user' },
-  aws: { arn: 'arn:aws:dynamodb:us-east-1:123456789012:table/users_table' },
+  aws: { arn: 'arn:aws:dynamodb:us-east-1:123456789012:table/substation' },
   attributes: {
     partition_key: 'PK',
   },

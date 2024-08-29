@@ -171,7 +171,7 @@ local is_false = sub.cnd.str.eq({ object: { source_key: 'field3' }, value: 'fals
 {
   transforms: [
     // Pre-transformed data is written to an object in AWS S3 for long-term storage.
-    sub.tf.send.aws.s3({ bucket_name: 'example-bucket-name' }),
+    sub.tf.send.aws.s3({ aws: { arn: 'arn:aws:s3:::example-bucket-name' } }),
     // The JSON array is split into individual events that go through 
     // the remaining transforms. Each event is printed to stdout.
     sub.tf.agg.from.array(),
@@ -195,11 +195,15 @@ local sub = import 'substation.libsonnet';
     // the event is written to an object in AWS S3.
     sub.tf.meta.switch({ cases: [
       {
-        condition: sub.cnd.any(sub.cnd.str.eq({ object: { source_key: 'field3' }, value: 'false' })),
-        transform: sub.tf.send.http.post({ url: 'https://example-http-endpoint.com' }),
+        condition: sub.cnd.str.eq({ object: { source_key: 'field3' }, value: 'false' }),
+        transforms: [
+          sub.tf.send.http.post({ url: 'https://example-http-endpoint.com' }),
+        ],
       },
       {
-        transform: sub.tf.send.aws.s3({ bucket_name: 'example-bucket-name' }),
+        transforms: [
+          sub.tf.send.aws.s3({ aws: { arn: 'arn:aws:s3:::example-bucket-name' } }),
+        ],
       },
     ] }),
     // The event is always available to any remaining transforms.
@@ -450,8 +454,8 @@ docker run -v $(pwd):/workspaces/substation/  -w /workspaces/substation -v /var/
 To test the system locally, run this from the project root:
 
 ```bash
-sh build/scripts/config/compile.sh
-go build -o ./examples/substation ./examples/
+sh build/scripts/config/compile.sh && \
+go build -o ./examples/substation ./examples/ && \
 ./examples/substation -config ./examples/transform/aggregate/summarize/config.json -file ./examples/transform/aggregate/summarize/data.jsonl
 ```
 

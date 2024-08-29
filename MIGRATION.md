@@ -4,15 +4,56 @@ Use this as a guide for migrating between major versions of Substation.
 
 ## v2.0.0
 
-### Cmd
+### Applications (cmd/)
 
-#### AWS Lambda Triggers
+#### AWS Lambda Handlers
 
+Multiple AWS Lambda handlers were renamed to better reflect the AWS service they interact with:
 - Renamed `AWS_KINESIS_DATA_FIREHOSE` to `AWS_DATA_FIREHOSE`.
-- Removed `AWS_KINESIS` (replaced by `AWS_KINESIS_DATA_STREAM`).
-- Removed `AWS_DYNAMODB` (replaced by `AWS_DYNAMODB_STREAM`).
+- Renamed `AWS_KINESIS` to `AWS_KINESIS_DATA_STREAM`.
+- Renamed `AWS_DYNAMODB` to `AWS_DYNAMODB_STREAM`.
 
-### Conditions
+v1.x.x:
+
+```hcl
+module "node" {
+  source    = "build/terraform/aws/lambda"
+
+  config = {
+    name        = "node"
+    description = "Substation node that is invoked by a Kinesis Data Stream."
+    image_uri   = "123456789012.dkr.ecr.us-east-1.amazonaws.com/substation:v1.0.0"
+    image_arm   = true
+
+    env = {
+      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/node"
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_KINESIS"
+    }
+  }
+}
+```
+
+v2.x.x:
+
+```hcl
+module "node" {
+  source    = "build/terraform/aws/lambda"
+
+  config = {
+    name        = "node"
+    description = "Substation node that is invoked by a Kinesis Data Stream."
+    image_uri   = "123456789012.dkr.ecr.us-east-1.amazonaws.com/substation:v2.0.0"
+    image_arm   = true
+
+    env = {
+      "SUBSTATION_CONFIG" : "http://localhost:2772/applications/substation/environments/example/configurations/node"
+      "SUBSTATION_LAMBDA_HANDLER" : "AWS_KINESIS_DATA_STREAM"
+    }
+  }
+}
+```
+
+### Conditions (condition/)
 
 #### `meta.condition` Inspector
 
@@ -90,7 +131,7 @@ sub.cnd.none([ sub.cnd.str.eq({ value: 'FOO' }) ])
 
 This is removed and was not replaced. Remove any references to this inspector.
 
-### Transforms
+### Transforms (transforms/)
 
 #### `send.aws.*` Transforms
 

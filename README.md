@@ -455,8 +455,8 @@ To test the system locally, run this from the project root:
 
 ```bash
 sh build/scripts/config/compile.sh && \
-go build -o ./examples/substation ./cmd/development/file/substation/ && \
-./examples/substation -config ./examples/transform/aggregate/summarize/config.json -file ./examples/transform/aggregate/summarize/data.jsonl
+go build -o ./examples/substation-file ./cmd/development/substation-file/ && \
+./examples/substation-file -config ./examples/transform/aggregate/summarize/config.json -file ./examples/transform/aggregate/summarize/data.jsonl
 ```
 
 The [Terraform documentation](build/terraform/aws/) includes guidance for deploying Substation to AWS.

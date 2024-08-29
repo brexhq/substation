@@ -1,6 +1,6 @@
-# kinesis-tap/substation
+# substation-kinesis-tap
 
-`kinesis-tap` is a tool for tapping into and transforming data from an AWS Kinesis Data Stream in real-time with Substation.
+`substation-kinesis-tap` is a tool for tapping into and transforming data from an AWS Kinesis Data Stream in real-time with Substation.
 
 This is intended as a Substation development aid, but it has other uses as well, such as:
 - Previewing live data in a stream by printing it to the console (default behavior)
@@ -12,7 +12,7 @@ Warning: This is a development tool intended to provide temporary access to live
 ## Usage
 
 ```
-% ./substation -h
+% ./substation-kinesis-tap -h
 Usage of ./substation:
   -config string
         The Substation configuration file used to transform records (default "./config.json")
@@ -24,7 +24,7 @@ Usage of ./substation:
 
 Use the `SUBSTATION_DEBUG=1` environment variable to enable debug logging:
 ```
-% SUBSTATION_DEBUG=1 ./substation -stream-name my-stream
+% SUBSTATION_DEBUG=1 ./substation-kinesis-tap -stream-name my-stream
 DEBU[0000] Retrieved active shards from Kinesis stream.  count=2 stream=my-stream
 DEBU[0001] Retrieved records from Kinesis shard.         count=981 shard=0x140004a6f80 stream=my-stream
 DEBU[0002] Retrieved records from Kinesis shard.         count=1055 shard=0x140004a6fe0 stream=my-stream
@@ -32,24 +32,24 @@ DEBU[0003] Retrieved records from Kinesis shard.         count=2333 shard=0x1400
 DEBU[0003] Retrieved records from Kinesis shard.         count=1110 shard=0x140004a6fe0 stream=my-stream
 DEBU[0004] Retrieved records from Kinesis shard.         count=2109 shard=0x140004a6f80 stream=my-stream
 DEBU[0004] Retrieved records from Kinesis shard.         count=1094 shard=0x140004a6fe0 stream=my-stream
-^CDEBU[0004] Closed connections to the Kinesis stream.    
-DEBU[0004] Closed Substation pipeline.                  
+^CDEBU[0004] Closed connections to the Kinesis stream.
+DEBU[0004] Closed Substation pipeline.
 DEBU[0004] Flushed Substation pipeline.
 ```
 
 ## Build
 
-Download, configure, and build the `kinesis-tap` binary with these commands:
+Download, configure, and build the `substation-kinesis-tap` binary with these commands:
 
 ```
 git clone https://github.com/brexhq/substation.git && \
-cd substation/cmd/development/kinesis-tap/substation && \
+cd substation/cmd/development/substation-kinesis-tap && \
 jsonnet config.jsonnet > config.json && \
 go build .
 ```
 
 ## Authentication
 
-`kinesis-tap` uses the AWS SDK for Go to authenticate with AWS. The SDK uses the same authentication methods as the AWS CLI, so you can use the same environment variables or configuration files to authenticate.
+`substation-kinesis-tap` uses the AWS SDK for Go to authenticate with AWS. The SDK uses the same authentication methods as the AWS CLI, so you can use the same environment variables or configuration files to authenticate.
 
 For more information, see the [AWS CLI documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).

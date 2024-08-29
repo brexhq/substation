@@ -166,7 +166,7 @@ sub.tf.meta.retry({
   retry: { count: 3, delay: '1s' },
   transforms: [
     sub.tf.send.aws.sqs({
-      arn: 'arn:aws:sqs:us-east-1:123456789012:my-queue',
+      aws: { arn: 'arn:aws:sqs:us-east-1:123456789012:my-queue' },
     }),
   ],
 })

@@ -149,7 +149,7 @@ Substation excels at formatting, normalizing, and enriching event logs. For exam
 Substation can route data to several destinations from a single process and, unlike most other data pipeline systems,
 data transformation and routing are functionally equivalent -- this means that data can be transformed or routed in any order.
 
-In this configuration, data is: 
+In this configuration, data is:
 
 - Written to AWS S3
 - Printed to stdout
@@ -172,7 +172,7 @@ local is_false = sub.cnd.str.eq({ object: { source_key: 'field3' }, value: 'fals
   transforms: [
     // Pre-transformed data is written to an object in AWS S3 for long-term storage.
     sub.tf.send.aws.s3({ aws: { arn: 'arn:aws:s3:::example-bucket-name' } }),
-    // The JSON array is split into individual events that go through 
+    // The JSON array is split into individual events that go through
     // the remaining transforms. Each event is printed to stdout.
     sub.tf.agg.from.array(),
     sub.tf.send.stdout(),
@@ -413,7 +413,7 @@ module "node" {
     env = {
       "SUBSTATION_CONFIG" : "https://localhost:2772/applications/substation/environments/example/configurations/node"
       "SUBSTATION_DEBUG" : true
-      # This Substation node will ingest data from API Gateway. More nodes can be 
+      # This Substation node will ingest data from API Gateway. More nodes can be
       # deployed to ingest data from other sources, such as Kinesis or SQS.
       "SUBSTATION_LAMBDA_HANDLER" : "AWS_API_GATEWAY"
     }
@@ -455,7 +455,7 @@ To test the system locally, run this from the project root:
 
 ```bash
 sh build/scripts/config/compile.sh && \
-go build -o ./examples/substation ./examples/ && \
+go build -o ./examples/substation ./cmd/development/file/substation/ && \
 ./examples/substation -config ./examples/transform/aggregate/summarize/config.json -file ./examples/transform/aggregate/summarize/data.jsonl
 ```
 

@@ -92,7 +92,7 @@ This is removed and was not replaced. Remove any references to this inspector.
 
 ### Transforms
 
-#### `send.aws.*` transforms
+#### `send.aws.*` Transforms
 
 The AWS resource fields were replaced by an `aws` object field that contains the sub-fields `arn` and `assume_role_arn`. The region for each AWS client is derived from either the resource ARN or assumed role ARN.
 
@@ -116,7 +116,7 @@ sub.tf.send.aws.s3({
 
 **NOTE: This change also applies to every configuration that relies on an AWS resource.**
 
-#### `meta.*` transforms
+#### `meta.*` Transforms
 
 The `transform` field is removed from all transforms and was replaced with the `transforms` field.
 

@@ -14,7 +14,7 @@ Use this as a guide for migrating between major versions of Substation.
 
 ### Conditions
 
-#### `meta.condition` inspector
+#### `meta.condition` Inspector
 
 This is replaced by the `meta.all`, `meta.any`, and `meta.none` inspectors.
 
@@ -42,7 +42,7 @@ sub.cnd.all([
 ]),
 ```
 
-#### `meta.for_each` inspector
+#### `meta.for_each` Inspector
 
 This is replaced by the `meta.all`, `meta.any`, and `meta.none` inspectors. If the `object.source_key` value is an array, then the data is treated as a list of elements. 
 
@@ -65,7 +65,7 @@ sub.cnd.meta.any([{
 }])
 ```
 
-#### `meta.negate` inspector
+#### `meta.negate` Inspector
 
 This is replaced by the `meta.none` inspector.
 
@@ -86,7 +86,7 @@ sub.cnd.meta.none({inspectors: [ sub.cnd.str.eq({ value: 'FOO' }) ]})
 sub.cnd.none([ sub.cnd.str.eq({ value: 'FOO' }) ])
 ```
 
-#### `meta.err` inspector
+#### `meta.err` Inspector
 
 This is removed and was not replaced. Remove any references to this inspector.
 
@@ -146,7 +146,7 @@ sub.tf.meta.switch({ cases: [
 ]})
 ```
 
-#### `meta.retry` transform
+#### `meta.retry` Transform
 
 Retry settings were removed from all transforms and replaced by the `meta.retry` transform. It is recommended to create a reusable pattern for common retry scenarios.
 
@@ -154,7 +154,7 @@ v1.x.x:
 
 ```jsonnet
 sub.tf.send.aws.sqs({
-  arn: 'arn:aws:sqs:us-east-1:123456789012:my-queue',
+  aws: { arn: 'arn:aws:sqs:us-east-1:123456789012:my-queue' },
   retry: { count: 3 },
 })
 ```
@@ -172,11 +172,11 @@ sub.tf.meta.retry({
 })
 ```
 
-#### `meta.pipeline` transform
+#### `meta.pipeline` Transform
 
 This is removed and was not replaced. Remove any references to this transform and replace it with the `transforms` field used in other meta transforms.
 
-#### `send.aws.dynamodb` transform
+#### `send.aws.dynamodb` Transform
 
 The `send.aws.dynamodb` transform was renamed to `send.aws.dynamodb.put`.
 
@@ -196,7 +196,7 @@ sub.tf.send.aws.dynamodb.put({
 }),
 ```
 
-#### `enrich.aws.dynamodb` transform
+#### `enrich.aws.dynamodb` Transform
 
 The `enrich.aws.dynamodb` transform was renamed to `enrich.aws.dynamodb.query`, and had these additional changes:
 - `PartitionKey` and `SortKey` now reference the column names in the DynamoDB table and are nested under the `Attributes` field.
@@ -228,7 +228,7 @@ sub.transform.enrich.aws.dynamodb.query({
 }),
 ```
 
-#### `send.aws.kinesis_data_firehose` transform
+#### `send.aws.kinesis_data_firehose` Transform
 
 The `send.aws.kinesis_data_firehose` transform was renamed to `send.aws.data_firehose`.
 

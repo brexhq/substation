@@ -154,7 +154,7 @@ v1.x.x:
 
 ```jsonnet
 sub.tf.send.aws.sqs({
-  aws: { arn: 'arn:aws:sqs:us-east-1:123456789012:my-queue' },
+  arn: 'arn:aws:sqs:us-east-1:123456789012:my-queue',
   retry: { count: 3 },
 })
 ```

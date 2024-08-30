@@ -55,9 +55,9 @@ module "node" {
 
 ### Conditions (condition/)
 
-#### `meta.condition` Inspector
+#### `meta.condition` Condition
 
-This is replaced by the `meta.all`, `meta.any`, and `meta.none` inspectors.
+This is replaced by the `meta.all`, `meta.any`, and `meta.none` conditions.
 
 v1.x.x:
 
@@ -83,9 +83,9 @@ sub.cnd.all([
 ]),
 ```
 
-#### `meta.for_each` Inspector
+#### `meta.for_each` Condition
 
-This is replaced by the `meta.all`, `meta.any`, and `meta.none` inspectors. If the `object.source_key` value is an array, then the data is treated as a list of elements. 
+This is replaced by the `meta.all`, `meta.any`, and `meta.none` conditions. If the `object.source_key` value is an array, then the data is treated as a list of elements. 
 
 v1.x.x:
 
@@ -102,13 +102,13 @@ v2.x.x:
 ```jsonnet
 sub.cnd.meta.any([{
   object: { source_key: 'field' },
-  inspectors: [ sub.cnd.str.eq({ value: 'FOO' }) ],
+  conditions: [ sub.cnd.str.eq({ value: 'FOO' }) ],
 }])
 ```
 
-#### `meta.negate` Inspector
+#### `meta.negate` Condition
 
-This is replaced by the `meta.none` inspector.
+This is replaced by the `meta.none` Condition.
 
 v1.x.x:
 
@@ -119,7 +119,7 @@ sub.cnd.meta.negate({ inspector: sub.cnd.str.eq({ value: 'FOO' }) })
 v2.x.x:
 
 ```jsonnet
-sub.cnd.meta.none({inspectors: [ sub.cnd.str.eq({ value: 'FOO' }) ]})
+sub.cnd.meta.none({ conditions: [ sub.cnd.str.eq({ value: 'FOO' }) ] })
 ```
 
 
@@ -127,11 +127,11 @@ sub.cnd.meta.none({inspectors: [ sub.cnd.str.eq({ value: 'FOO' }) ]})
 sub.cnd.none([ sub.cnd.str.eq({ value: 'FOO' }) ])
 ```
 
-#### `meta.err` Inspector
+#### `meta.err` Condition
 
 This is removed and was not replaced. Remove any references to this inspector.
 
-### Transforms (transforms/)
+### Transforms (transforms)
 
 #### `send.aws.*` Transforms
 

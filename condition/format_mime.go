@@ -52,7 +52,7 @@ type formatMIME struct {
 	conf formatMIMEConfig
 }
 
-func (c *formatMIME) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (c *formatMIME) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

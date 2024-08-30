@@ -53,13 +53,13 @@ func (c *metaSwitchConfig) Validate() error {
 }
 
 type metaSwitchConditional struct {
-	condition    condition.Inspector
+	condition    condition.Conditioner
 	transformers []Transformer
 }
 
 type metaSwitchDefaultInspector struct{}
 
-func (i *metaSwitchDefaultInspector) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (i *metaSwitchDefaultInspector) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	return true, nil
 }
 
@@ -146,7 +146,7 @@ func (tf *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*m
 	}
 
 	for _, c := range tf.conditional {
-		ok, err := c.condition.Inspect(ctx, msg)
+		ok, err := c.condition.Condition(ctx, msg)
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}

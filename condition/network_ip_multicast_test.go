@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/v2/message"
 )
 
-var _ Inspector = &networkIPMulticast{}
+var _ Conditioner = &networkIPMulticast{}
 
 var networkIPMulticastTests = []struct {
 	name     string
@@ -35,7 +35,7 @@ func TestNetworkIPMulticast(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			check, err := insp.Inspect(ctx, message)
+			check, err := insp.Condition(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}
@@ -50,7 +50,7 @@ func TestNetworkIPMulticast(t *testing.T) {
 func benchmarkNetworkIPMulticastByte(b *testing.B, insp *networkIPMulticast, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = insp.Inspect(ctx, message)
+		_, _ = insp.Condition(ctx, message)
 	}
 }
 

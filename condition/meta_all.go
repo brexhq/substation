@@ -17,14 +17,14 @@ func newMetaAll(ctx context.Context, cfg config.Config) (*metaAll, error) {
 		conf: conf,
 	}
 
-	cnd.inspectors = make([]Inspector, len(conf.Inspectors))
-	for i, c := range conf.Inspectors {
+	cnd.cnds = make([]Conditioner, len(conf.Conditions))
+	for i, c := range conf.Conditions {
 		cond, err := New(ctx, c)
 		if err != nil {
 			return nil, err
 		}
 
-		cnd.inspectors[i] = cond
+		cnd.cnds[i] = cond
 	}
 
 	return &cnd, nil
@@ -33,13 +33,13 @@ func newMetaAll(ctx context.Context, cfg config.Config) (*metaAll, error) {
 type metaAll struct {
 	conf metaConfig
 
-	inspectors []Inspector
+	cnds []Conditioner
 }
 
-func (c *metaAll) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (c *metaAll) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if c.conf.Object.SourceKey == "" {
-		for _, cnd := range c.inspectors {
-			ok, err := cnd.Inspect(ctx, msg)
+		for _, cnd := range c.cnds {
+			ok, err := cnd.Condition(ctx, msg)
 			if err != nil {
 				return false, err
 			}
@@ -59,8 +59,8 @@ func (c *metaAll) Inspect(ctx context.Context, msg *message.Message) (bool, erro
 
 	if !value.IsArray() {
 		m := message.New().SetData(value.Bytes()).SetMetadata(msg.Metadata())
-		for _, cnd := range c.inspectors {
-			ok, err := cnd.Inspect(ctx, m)
+		for _, cnd := range c.cnds {
+			ok, err := cnd.Condition(ctx, m)
 			if err != nil {
 				return false, err
 			}
@@ -75,8 +75,8 @@ func (c *metaAll) Inspect(ctx context.Context, msg *message.Message) (bool, erro
 
 	for _, v := range value.Array() {
 		m := message.New().SetData(v.Bytes()).SetMetadata(msg.Metadata())
-		for _, cnd := range c.inspectors {
-			ok, err := cnd.Inspect(ctx, m)
+		for _, cnd := range c.cnds {
+			ok, err := cnd.Condition(ctx, m)
 			if err != nil {
 				return false, err
 			}

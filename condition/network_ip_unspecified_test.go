@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/v2/message"
 )
 
-var _ Inspector = &networkIPUnspecified{}
+var _ Conditioner = &networkIPUnspecified{}
 
 var networkIPUnspecifiedTests = []struct {
 	name     string
@@ -35,7 +35,7 @@ func TestNetworkIPUnspecified(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			check, err := insp.Inspect(ctx, message)
+			check, err := insp.Condition(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}
@@ -50,7 +50,7 @@ func TestNetworkIPUnspecified(t *testing.T) {
 func benchmarkNetworkIPUnspecifiedByte(b *testing.B, insp *networkIPUnspecified, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = insp.Inspect(ctx, message)
+		_, _ = insp.Condition(ctx, message)
 	}
 }
 

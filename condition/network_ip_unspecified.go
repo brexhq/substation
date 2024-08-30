@@ -26,7 +26,7 @@ type networkIPUnspecified struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPUnspecified) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPUnspecified) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/v2/message"
 )
 
-var _ Inspector = &stringGreaterThan{}
+var _ Conditioner = &stringGreaterThan{}
 
 var stringGreaterThanTests = []struct {
 	name     string
@@ -77,7 +77,7 @@ func TestStringGreaterThan(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			check, err := insp.Inspect(ctx, message)
+			check, err := insp.Condition(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}
@@ -92,7 +92,7 @@ func TestStringGreaterThan(t *testing.T) {
 func benchmarkStringGreaterThan(b *testing.B, insp *stringGreaterThan, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = insp.Inspect(ctx, message)
+		_, _ = insp.Condition(ctx, message)
 	}
 }
 

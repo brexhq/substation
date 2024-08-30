@@ -25,7 +25,7 @@ type numberBitwiseXOR struct {
 	conf numberBitwiseConfig
 }
 
-func (insp *numberBitwiseXOR) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberBitwiseXOR) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

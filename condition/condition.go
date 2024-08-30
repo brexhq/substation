@@ -10,11 +10,11 @@ import (
 	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
-type Inspector interface {
-	Inspect(context.Context, *message.Message) (bool, error)
+type Conditioner interface {
+	Condition(context.Context, *message.Message) (bool, error)
 }
 
-func New(ctx context.Context, cfg config.Config) (Inspector, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
+func New(ctx context.Context, cfg config.Config) (Conditioner, error) { //nolint: cyclop, gocyclo // ignore cyclomatic complexity
 	switch cfg.Type {
 	// Meta inspectors.
 	case "all", "meta_all":

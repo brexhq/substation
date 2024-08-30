@@ -19,14 +19,14 @@ local helpers = {
   // Mirrors interfaces from the condition package.
   cnd: $.condition,
   condition: {
-    all(i): $.condition.meta.all(settings={ inspectors: helpers.make_array(i) }),
-    any(i): $.condition.meta.any(settings={ inspectors: helpers.make_array(i) }),
-    none(i): $.condition.meta.none(settings={ inspectors: helpers.make_array(i) }),
+    all(i): $.condition.meta.all({ conditions: helpers.make_array(i) }),
+    any(i): $.condition.meta.any({ conditions: helpers.make_array(i) }),
+    none(i): $.condition.meta.none({ conditions: helpers.make_array(i) }),
     meta: {
       all(settings={}): {
         local default = {
           object: $.config.object,
-          inspectors: [],
+          conditions: [],
         },
 
         type: 'meta_all',
@@ -35,7 +35,7 @@ local helpers = {
       any(settings={}): {
         local default = {
           object: $.config.object,
-          inspectors: [],
+          conditions: [],
         },
 
         type: 'meta_any',
@@ -44,7 +44,7 @@ local helpers = {
       none(settings={}): {
         local default = {
           object: $.config.object,
-          inspectors: [],
+          conditions: [],
         },
 
         type: 'meta_none',

@@ -109,7 +109,7 @@ func newMetaRetry(ctx context.Context, cfg config.Config) (*metaRetry, error) {
 type metaRetry struct {
 	conf metaRetryConfig
 
-	condition     condition.Inspector
+	condition     condition.Conditioner
 	transforms    []Transformer
 	delay         time.Duration
 	errorMessages []*regexp.Regexp
@@ -152,7 +152,7 @@ LOOP:
 				continue
 			}
 
-			ok, err := tf.condition.Inspect(ctx, m)
+			ok, err := tf.condition.Condition(ctx, m)
 			if err != nil {
 				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}

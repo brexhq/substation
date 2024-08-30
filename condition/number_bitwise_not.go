@@ -25,7 +25,7 @@ type numberBitwiseNOT struct {
 	conf numberBitwiseConfig
 }
 
-func (insp *numberBitwiseNOT) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberBitwiseNOT) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

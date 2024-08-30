@@ -60,7 +60,7 @@ type stringMatch struct {
 	re *regexp.Regexp
 }
 
-func (insp *stringMatch) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *stringMatch) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

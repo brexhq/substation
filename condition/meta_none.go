@@ -13,33 +13,37 @@ func newMetaNone(ctx context.Context, cfg config.Config) (*metaNone, error) {
 		return nil, err
 	}
 
-	insp := metaNone{
+	if err := conf.Validate(); err != nil {
+		return nil, err
+	}
+
+	cnd := metaNone{
 		conf: conf,
 	}
 
-	insp.inspectors = make([]Inspector, len(conf.Inspectors))
-	for i, c := range conf.Inspectors {
+	cnd.cnds = make([]Conditioner, len(conf.Conditions))
+	for i, c := range conf.Conditions {
 		cond, err := New(ctx, c)
 		if err != nil {
 			return nil, err
 		}
 
-		insp.inspectors[i] = cond
+		cnd.cnds[i] = cond
 	}
 
-	return &insp, nil
+	return &cnd, nil
 }
 
 type metaNone struct {
 	conf metaConfig
 
-	inspectors []Inspector
+	cnds []Conditioner
 }
 
-func (c *metaNone) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (c *metaNone) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if c.conf.Object.SourceKey == "" {
-		for _, cnd := range c.inspectors {
-			ok, err := cnd.Inspect(ctx, msg)
+		for _, cnd := range c.cnds {
+			ok, err := cnd.Condition(ctx, msg)
 			if err != nil {
 				return false, err
 			}
@@ -59,8 +63,8 @@ func (c *metaNone) Inspect(ctx context.Context, msg *message.Message) (bool, err
 
 	if !value.IsArray() {
 		m := message.New().SetData(msg.Data()).SetMetadata(msg.Metadata())
-		for _, cnd := range c.inspectors {
-			ok, err := cnd.Inspect(ctx, m)
+		for _, cnd := range c.cnds {
+			ok, err := cnd.Condition(ctx, m)
 			if err != nil {
 				return false, err
 			}
@@ -75,8 +79,8 @@ func (c *metaNone) Inspect(ctx context.Context, msg *message.Message) (bool, err
 
 	for _, v := range value.Array() {
 		m := message.New().SetData(v.Bytes()).SetMetadata(msg.Metadata())
-		for _, cnd := range c.inspectors {
-			ok, err := cnd.Inspect(ctx, m)
+		for _, cnd := range c.cnds {
+			ok, err := cnd.Condition(ctx, m)
 			if err != nil {
 				return false, err
 			}

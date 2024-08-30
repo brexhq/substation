@@ -33,7 +33,7 @@ type formatJSON struct {
 	conf formatJSONConfig
 }
 
-func (c *formatJSON) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (c *formatJSON) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

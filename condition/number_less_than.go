@@ -24,7 +24,7 @@ type numberLessThan struct {
 	conf numberConfig
 }
 
-func (insp *numberLessThan) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberLessThan) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

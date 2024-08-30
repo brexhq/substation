@@ -26,7 +26,7 @@ type numberGreaterThan struct {
 	conf numberConfig
 }
 
-func (insp *numberGreaterThan) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberGreaterThan) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

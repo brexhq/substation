@@ -29,7 +29,7 @@ type stringContains struct {
 	b []byte
 }
 
-func (insp *stringContains) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *stringContains) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

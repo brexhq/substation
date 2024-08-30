@@ -26,7 +26,7 @@ type networkIPLinkLocalMulticast struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPLinkLocalMulticast) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPLinkLocalMulticast) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

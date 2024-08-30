@@ -28,7 +28,7 @@ var metaSwitchTests = []struct {
 						"condition": map[string]interface{}{
 							"type": "any",
 							"settings": map[string]interface{}{
-								"inspectors": []map[string]interface{}{
+								"conditions": []map[string]interface{}{
 									{
 										"type": "string_contains",
 										"settings": map[string]interface{}{
@@ -70,7 +70,7 @@ var metaSwitchTests = []struct {
 						"condition": map[string]interface{}{
 							"type": "any",
 							"settings": map[string]interface{}{
-								"inspectors": []map[string]interface{}{
+								"conditions": []map[string]interface{}{
 									{
 										"type": "string_contains",
 										"settings": map[string]interface{}{
@@ -164,7 +164,7 @@ var metaSwitchTests = []struct {
 						"condition": map[string]interface{}{
 							"type": "any",
 							"settings": map[string]interface{}{
-								"inspectors": []map[string]interface{}{
+								"conditions": []map[string]interface{}{
 									{
 										"type": "string_contains",
 										"settings": map[string]interface{}{
@@ -193,7 +193,7 @@ var metaSwitchTests = []struct {
 						"condition": map[string]interface{}{
 							"type": "any",
 							"settings": map[string]interface{}{
-								"inspectors": []map[string]interface{}{
+								"conditions": []map[string]interface{}{
 									{
 										"type": "string_contains",
 										"settings": map[string]interface{}{

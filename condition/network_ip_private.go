@@ -26,7 +26,7 @@ type networkIPPrivate struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPPrivate) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPPrivate) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

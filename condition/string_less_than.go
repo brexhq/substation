@@ -29,7 +29,7 @@ type stringLessThan struct {
 	b []byte
 }
 
-func (insp *stringLessThan) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *stringLessThan) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

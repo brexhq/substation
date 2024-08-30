@@ -26,7 +26,7 @@ type networkIPUnicast struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPUnicast) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPUnicast) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

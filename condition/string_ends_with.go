@@ -29,7 +29,7 @@ type stringEndsWith struct {
 	b []byte
 }
 
-func (insp *stringEndsWith) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *stringEndsWith) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

@@ -26,7 +26,7 @@ type networkIPMulticast struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPMulticast) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPMulticast) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

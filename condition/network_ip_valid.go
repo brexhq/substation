@@ -26,7 +26,7 @@ type networkIPValid struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPValid) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPValid) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

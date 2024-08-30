@@ -25,7 +25,7 @@ type numberBitwiseAND struct {
 	conf numberBitwiseConfig
 }
 
-func (insp *numberBitwiseAND) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberBitwiseAND) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

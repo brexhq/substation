@@ -8,7 +8,7 @@ import (
 	"github.com/brexhq/substation/v2/message"
 )
 
-var _ Inspector = &metaAny{}
+var _ Conditioner = &metaAny{}
 
 var metaAnyTests = []struct {
 	name     string
@@ -20,7 +20,7 @@ var metaAnyTests = []struct {
 		"data",
 		config.Config{
 			Settings: map[string]interface{}{
-				"inspectors": []config.Config{
+				"conditions": []config.Config{
 					{
 						Type: "string_contains",
 						Settings: map[string]interface{}{
@@ -40,7 +40,7 @@ var metaAnyTests = []struct {
 				"object": map[string]interface{}{
 					"source_key": "z",
 				},
-				"inspectors": []config.Config{
+				"conditions": []config.Config{
 					{
 						Type: "string_contains",
 						Settings: map[string]interface{}{
@@ -63,7 +63,7 @@ var metaAnyTests = []struct {
 				"object": map[string]interface{}{
 					"source_key": "@this",
 				},
-				"inspectors": []config.Config{
+				"conditions": []config.Config{
 					{
 						Type: "string_contains",
 						Settings: map[string]interface{}{
@@ -83,7 +83,7 @@ var metaAnyTests = []struct {
 				"object": map[string]interface{}{
 					"source_key": "@this",
 				},
-				"inspectors": []config.Config{
+				"conditions": []config.Config{
 					{
 						Type: "string_contains",
 						Settings: map[string]interface{}{
@@ -103,7 +103,7 @@ var metaAnyTests = []struct {
 				"object": map[string]interface{}{
 					"source_key": "z",
 				},
-				"inspectors": []config.Config{
+				"conditions": []config.Config{
 					{
 						Type: "string_contains",
 						Settings: map[string]interface{}{
@@ -121,7 +121,7 @@ var metaAnyTests = []struct {
 		"object_mixed",
 		config.Config{
 			Settings: map[string]interface{}{
-				"inspectors": []config.Config{
+				"conditions": []config.Config{
 					// This inspector fails because no element in the array contains "d".
 					{
 						Type: "any",
@@ -129,7 +129,7 @@ var metaAnyTests = []struct {
 							"object": map[string]interface{}{
 								"source_key": "z",
 							},
-							"inspectors": []config.Config{
+							"conditions": []config.Config{
 								{
 									Type: "string_contains",
 									Settings: map[string]interface{}{
@@ -166,7 +166,7 @@ func TestAnyCondition(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			check, err := insp.Inspect(ctx, message)
+			check, err := insp.Condition(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}

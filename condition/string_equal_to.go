@@ -29,7 +29,7 @@ type stringEqualTo struct {
 	b []byte
 }
 
-func (insp *stringEqualTo) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *stringEqualTo) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

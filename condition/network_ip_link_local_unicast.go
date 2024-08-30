@@ -26,7 +26,7 @@ type networkIPLinkLocalUnicast struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPLinkLocalUnicast) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPLinkLocalUnicast) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

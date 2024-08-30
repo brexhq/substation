@@ -25,7 +25,7 @@ type numberLengthEqualTo struct {
 	conf numberLengthConfig
 }
 
-func (insp *numberLengthEqualTo) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberLengthEqualTo) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

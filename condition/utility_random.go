@@ -38,7 +38,7 @@ type utilityRandom struct {
 	r *rand.Rand
 }
 
-func (insp *utilityRandom) Inspect(_ context.Context, msg *message.Message) (bool, error) {
+func (insp *utilityRandom) Condition(_ context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

@@ -25,7 +25,7 @@ type numberBitwiseOR struct {
 	conf numberBitwiseConfig
 }
 
-func (insp *numberBitwiseOR) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberBitwiseOR) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

@@ -55,6 +55,10 @@ module "node" {
 
 ### Conditions (condition/)
 
+#### Conditioner Interface
+
+The `Inspector` interface was renamed to `Conditioner` to standardize the naming convention used across the project.
+
 #### `meta.condition` Condition
 
 This is replaced by the `meta.all`, `meta.any`, and `meta.none` conditions.

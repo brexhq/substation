@@ -134,12 +134,12 @@ func NewAWS(ctx context.Context, cfg AWS) (aws.Config, error) {
 
 	maxRetry := 3 // Matches the standard retryer.
 	if v, ok := os.LookupEnv("AWS_MAX_ATTEMPTS"); ok {
-		max, err := strconv.Atoi(v)
+		m, err := strconv.Atoi(v)
 		if err != nil {
 			return aws.Config{}, err
 		}
 
-		maxRetry = max
+		maxRetry = m
 	}
 
 	conf, err := awsconfig.LoadDefaultConfig(ctx,

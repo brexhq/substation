@@ -227,7 +227,7 @@ func handler(ctx context.Context, snsEvent events.SNSEvent) error {
 			Id: aws.String("m2"),
 			MetricStat: &ctypes.MetricStat{
 				Metric: &ctypes.Metric{
-					Namespace:  aws.String("AWS/KINESIS"),
+					Namespace:  aws.String("AWS/Kinesis"),
 					MetricName: aws.String("IncomingBytes"),
 					Dimensions: []ctypes.Dimension{
 						{

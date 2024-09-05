@@ -76,10 +76,21 @@ func newSendAWSKinesisDataStream(ctx context.Context, cfg config.Config) (*sendA
 		conf: conf,
 	}
 
+	// Kinesis Data Streams limits batch operations to 500 records.
+	count := 500
+	if conf.Batch.Count > 0 && conf.Batch.Count <= count {
+		count = conf.Batch.Count
+	}
+
+	// Kinesis Data Streams limits batch operations to 5MiB.
+	size := sendAWSKinesisDataStreamMessageSizeLimit * 5
+	if conf.Batch.Size > 0 && conf.Batch.Size <= size {
+		size = conf.Batch.Size
+	}
+
 	agg, err := aggregate.New(aggregate.Config{
-		// Kinesis Data Streams limits batch operations to 500 records and 5MiB.
-		Count:    500,
-		Size:     sendAWSKinesisDataStreamMessageSizeLimit * 5,
+		Count:    count,
+		Size:     size,
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {

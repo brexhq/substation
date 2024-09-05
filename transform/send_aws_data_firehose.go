@@ -72,10 +72,21 @@ func newSendAWSDataFirehose(ctx context.Context, cfg config.Config) (*sendAWSDat
 
 	tf.client = firehose.NewFromConfig(awsCfg)
 
+	// Data Firehose limits batch operations to 500 records.
+	count := 500
+	if conf.Batch.Count > 0 && conf.Batch.Count <= count {
+		count = conf.Batch.Count
+	}
+
+	// Data Firehose limits batch operations to 4 MiB.
+	size := sendAWSDataFirehoseMessageSizeLimit * 4
+	if conf.Batch.Size > 0 && conf.Batch.Size <= size {
+		size = conf.Batch.Size
+	}
+
 	agg, err := aggregate.New(aggregate.Config{
-		// Firehose limits batch operations to 500 records and 4 MiB.
-		Count:    500,
-		Size:     sendAWSDataFirehoseMessageSizeLimit * 4,
+		Count:    count,
+		Size:     size,
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {

@@ -79,10 +79,21 @@ func newSendAWSDynamoDBPut(ctx context.Context, cfg config.Config) (*sendAWSDyna
 
 	tf.client = dynamodb.NewFromConfig(awsCfg)
 
+	// DynamoDB limits batch operations to 25 records.
+	count := 25
+	if conf.Batch.Count > 0 && conf.Batch.Count <= count {
+		count = conf.Batch.Count
+	}
+
+	// DynamoDB limits batch operations to 16 MiB.
+	size := 1000 * 1000 * 16
+	if conf.Batch.Size > 0 && conf.Batch.Size <= size {
+		size = conf.Batch.Size
+	}
+
 	agg, err := aggregate.New(aggregate.Config{
-		// DynamoDB limits batch operations to 25 records and 16 MiB.
-		Count:    25,
-		Size:     1000 * 1000 * 16,
+		Count:    count,
+		Size:     size,
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {

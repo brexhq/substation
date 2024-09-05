@@ -89,11 +89,21 @@ func newSendAWSSQS(ctx context.Context, cfg config.Config) (*sendAWSSQS, error) 
 
 	tf.client = sqs.NewFromConfig(awsCfg)
 
+	// SQS limits batch operations to 10 messages.
+	count := 10
+	if conf.Batch.Count > 0 && conf.Batch.Count <= count {
+		count = conf.Batch.Count
+	}
+
+	// SQS limits batch operations to 256 KB.
+	size := sendSQSMessageSizeLimit
+	if conf.Batch.Size > 0 && conf.Batch.Size <= size {
+		size = conf.Batch.Size
+	}
+
 	agg, err := aggregate.New(aggregate.Config{
-		// SQS limits batch operations to 10 messages.
-		Count: 10,
-		// SQS limits batch operations to 256 KB.
-		Size:     sendSQSMessageSizeLimit,
+		Count:    count,
+		Size:     size,
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {

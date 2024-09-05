@@ -76,11 +76,21 @@ func newSendAWSSNS(ctx context.Context, cfg config.Config) (*sendAWSSNS, error) 
 
 	tf.client = sns.NewFromConfig(awsCfg)
 
+	// SNS limits batch operations to 10 messages.
+	count := 10
+	if conf.Batch.Count > 0 && conf.Batch.Count <= count {
+		count = conf.Batch.Count
+	}
+
+	// SNS limits batch operations to 256 KB.
+	size := sendAWSSNSMessageSizeLimit
+	if conf.Batch.Size > 0 && conf.Batch.Size <= size {
+		size = conf.Batch.Size
+	}
+
 	agg, err := aggregate.New(aggregate.Config{
-		// SQS limits batch operations to 10 messages.
-		Count: 10,
-		// SNS limits batch operations to 256 KB.
-		Size:     sendAWSSNSMessageSizeLimit,
+		Count:    count,
+		Size:     size,
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {

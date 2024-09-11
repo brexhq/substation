@@ -323,6 +323,7 @@ func upscale(shards float64) int32 {
 
 func listShards(ctx context.Context, stream string) (int32, error) {
 	var shards int32
+
 	input := kinesis.ListShardsInput{
 		StreamName: aws.String(stream),
 	}
@@ -341,7 +342,9 @@ LOOP:
 		}
 
 		if resp.NextToken != nil {
-			input.NextToken = resp.NextToken
+			input = kinesis.ListShardsInput{
+				NextToken: resp.NextToken,
+			}
 		} else {
 			break LOOP
 		}

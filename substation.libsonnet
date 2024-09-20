@@ -681,7 +681,7 @@ local helpers = {
           retry: $.config.retry,
           transforms: null,
           condition: null,
-          error_messages: ['.*']
+          error_messages: ['.*'],
         },
 
         type: type,

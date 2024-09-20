@@ -40,6 +40,6 @@ body:
     id: use-case
     attributes:
       label: Description of Use
-      description: Write 1 to 2 sentences about how your organization is using Substation.
+      description: Write one or two sentences about how your organization is using Substation.
     validations:
       required: true

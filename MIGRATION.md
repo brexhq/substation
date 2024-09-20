@@ -217,6 +217,8 @@ sub.tf.meta.retry({
 })
 ```
 
+**NOTE: For AWS services, retries for the client can be configured in Terraform by using the AWS_MAX_ATTEMPTS environment variable. This is used _in addition_ the `meta.retry` transform.**
+
 #### `meta.pipeline` Transform
 
 This is removed and was not replaced. Remove any references to this transform and replace it with the `transforms` field used in other meta transforms.

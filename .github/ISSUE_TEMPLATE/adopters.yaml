@@ -1,9 +1,6 @@
 name: Become an Adopter
-about: Add the name of your organization to the list of adopters.
-title: ''
-labels: ''
-assignees: ''
-
+description: Add the name of your organization to the list of adopters.
+title: '[organization] has adopted Substation!'
 body:
   - type: markdown
     attributes:
@@ -27,18 +24,18 @@ body:
     validations:
       required: true
   - type: dropdown
-      id: stage
-      attributes:
-        label: Stage of Adoption
-        description: What is your current stage of adoption?
-        options:
-          - We're learning about Substation
-          - We're testing Substation
-          - We're using Substation in production
-          - We're driving broad adoption of Substation
-        default: 0
-      validations:
-        required: true
+    id: stage
+    attributes:
+      label: Stage of Adoption
+      description: What is your current stage of adoption?
+      options:
+        - We're learning about Substation
+        - We're testing Substation
+        - We're using Substation in production
+        - We're driving broad adoption of Substation
+      default: 0
+    validations:
+      required: true
   - type: textarea
     id: use-case
     attributes:

@@ -6,10 +6,10 @@
 
 <div align="center">
 
-[Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Docs][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Quickstart][quickstart]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement (2022)][announcement]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[v1.0 Release (2024)][v1_release] 
+[Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Quickstart][quickstart]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Adopters][adopters]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement (2022)][announcement]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[v1.0 Release (2024)][v1_release] 
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/brexhq/substation/code.yml?style=for-the-badge) 
-![GitHub Release](https://img.shields.io/github/v/release/brexhq/substation?sort=semver&style=for-the-badge&link=!%5BGitHub%20Actions%20Workflow%20Status%5D(https%3A%2F%2Fimg.shields.io%2Fgithub%2Factions%2Fworkflow%2Fstatus%2Fbrexhq%2Fsubstation%2Fcode.yml%3Fstyle%3Dfor-the-badge%26link%3Dhttps%253A%252F%252Fgithub.com%252Fbrexhq%252Fsubstation%252Freleases%252Flatest))
+![GitHub Release](https://img.shields.io/github/v/release/brexhq/substation?sort=semver&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fbrexhq%2Fsubstation%2Freleases%2Flatest)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/brexhq/substation?style=for-the-badge)
 ![GitHub Created At](https://img.shields.io/github/created-at/brexhq/substation?style=for-the-badge&label=created)
 ![GitHub License](https://img.shields.io/github/license/brexhq/substation?style=for-the-badge)
@@ -475,5 +475,6 @@ Substation and its associated code is released under the terms of the [MIT Licen
 [releases]:https://github.com/brexhq/substation/releases "Substation Releases"
 [docs]:https://substation.readme.io/docs "Substation Documentation"
 [quickstart]:https://substation.readme.io/recipes/1-minute-quickstart "Substation Quickstart"
+[adopters]:https://github.com/brexhq/substation/blob/main/ADOPTERS.md "Substation Adopters"
 [announcement]:https://medium.com/brexeng/announcing-substation-188d049d979b "Substation Announcement Post"
 [v1_release]:https://medium.com/brexeng/releasing-substation-v1-0-4d0314cbc45b "Substation v1.0 Release Post"

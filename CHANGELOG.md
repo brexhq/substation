@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/brexhq/substation/compare/v1.7.1...v2.0.0) (2024-09-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* Release v2.0.0 ([#228](https://github.com/brexhq/substation/issues/228))
+
+### Features
+
+* Release v2.0.0 ([#228](https://github.com/brexhq/substation/issues/228)) ([c4d8849](https://github.com/brexhq/substation/commit/c4d88491e1d9eee302a49c427e7d9e52b6a31fde))
+
 ## [1.7.1](https://github.com/brexhq/substation/compare/v1.7.0...v1.7.1) (2024-08-05)
 
 

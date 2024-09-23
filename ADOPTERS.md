@@ -4,4 +4,5 @@ If you're using Substation in your organization, please try to add your company 
 
 | Organization | Contact | Description of Use |
 |--------------|---------|--------------------|
-| [Brex](https://www.brex.com) | [@jshlbrd](https://github.com/jshlbrd) | All security event and audit logs (~5 TB/day) used by Security are handled by Substation. |
+| [Brex](https://www.brex.com) | [@jshlbrd](https://github.com/jshlbrd) | All security event and audit logs (~5 TB/day) used by the security org are handled by Substation. |
+| [Verkada](https://www.verkada.com) | [@chencaoverkada](https://github.com/chencaoverkada) | Substation enriches and normalizes **all** of Verkada's logging pipelines, and filters logs before they are ingested into an in-house SIEM. |

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newNumberGreaterThan(_ context.Context, cfg config.Config) (*numberGreaterThan, error) {
@@ -26,7 +26,7 @@ type numberGreaterThan struct {
 	conf numberConfig
 }
 
-func (insp *numberGreaterThan) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberGreaterThan) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

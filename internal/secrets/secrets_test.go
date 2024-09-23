@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/v2/config"
 )
 
 func TestCollect(t *testing.T) {

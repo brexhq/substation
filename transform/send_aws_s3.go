@@ -5,24 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"slices"
 	"sync"
 
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/aws-sdk-go/aws/arn"
 
-	"github.com/brexhq/substation/internal/aggregate"
-	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/s3manager"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/file"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	"github.com/brexhq/substation/v2/internal/aggregate"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/file"
+	"github.com/brexhq/substation/v2/internal/media"
 )
 
 type sendAWSS3Config struct {
-	// BucketName is the AWS S3 bucket that data is written to.
-	BucketName string `json:"bucket_name"`
 	// StorageClass is the storage class of the object.
 	StorageClass string `json:"storage_class"`
 	// FilePath determines how the name of the uploaded object is constructed.
@@ -37,7 +36,6 @@ type sendAWSS3Config struct {
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 	AWS    iconfig.AWS    `json:"aws"`
-	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *sendAWSS3Config) Decode(in interface{}) error {
@@ -45,18 +43,18 @@ func (c *sendAWSS3Config) Decode(in interface{}) error {
 }
 
 func (c *sendAWSS3Config) Validate() error {
-	if c.BucketName == "" {
-		return fmt.Errorf("bucket_name: %v", errors.ErrMissingRequiredOption)
+	if c.AWS.ARN == "" {
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
-	if !slices.Contains(s3.StorageClass_Values(), c.StorageClass) {
-		return fmt.Errorf("storage_class: %v", errors.ErrInvalidOption)
+	if types.StorageClass(c.StorageClass) == "" {
+		return fmt.Errorf("storage class: %v", iconfig.ErrInvalidOption)
 	}
 
 	return nil
 }
 
-func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
+func newSendAWSS3(ctx context.Context, cfg config.Config) (*sendAWSS3, error) {
 	conf := sendAWSS3Config{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform send_aws_s3: %v", err)
@@ -66,16 +64,27 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 		conf.ID = "send_aws_s3"
 	}
 
-	if conf.StorageClass == "" {
-		conf.StorageClass = "STANDARD"
-	}
-
 	if err := conf.Validate(); err != nil {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
 	tf := sendAWSS3{
 		conf: conf,
+	}
+
+	// Extracts the bucket name from the ARN.
+	// The ARN is in the format: arn:aws:s3:::bucket-name
+	a, err := arn.Parse(conf.AWS.ARN)
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	tf.bucket = a.Resource
+
+	if conf.StorageClass == "" {
+		tf.sclass = types.StorageClassStandard
+	} else {
+		tf.sclass = types.StorageClass(conf.StorageClass)
 	}
 
 	agg, err := aggregate.New(aggregate.Config{
@@ -100,22 +109,22 @@ func newSendAWSS3(_ context.Context, cfg config.Config) (*sendAWSS3, error) {
 		}
 	}
 
-	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
-		Region:          conf.AWS.Region,
-		RoleARN:         conf.AWS.RoleARN,
-		MaxRetries:      conf.Retry.Count,
-		RetryableErrors: conf.Retry.ErrorMessages,
-	})
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	c := s3.NewFromConfig(awsCfg)
+	tf.client = manager.NewUploader(c)
 
 	return &tf, nil
 }
 
 type sendAWSS3 struct {
-	conf sendAWSS3Config
-
-	// client is safe for concurrent use.
-	client s3manager.UploaderAPI
+	conf   sendAWSS3Config
+	client *manager.Uploader
+	bucket string
+	sclass types.StorageClass
 
 	mu     sync.Mutex
 	agg    *aggregate.Aggregate
@@ -154,7 +163,7 @@ func (tf *sendAWSS3) Transform(ctx context.Context, msg *message.Message) ([]*me
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errBatchNoMoreData)
 	}
 
 	return []*message.Message{msg}, nil
@@ -205,7 +214,23 @@ func (tf *sendAWSS3) send(ctx context.Context, key string) error {
 	}
 	defer f.Close()
 
-	if _, err := tf.client.Upload(ctx, tf.conf.BucketName, filePath, tf.conf.StorageClass, f); err != nil {
+	mediaType, err := media.File(f)
+	if err != nil {
+		return err
+	}
+
+	if _, err := f.Seek(0, 0); err != nil {
+		return err
+	}
+
+	ctx = context.WithoutCancel(ctx)
+	if _, err := tf.client.Upload(ctx, &s3.PutObjectInput{
+		Bucket:       &tf.bucket,
+		Key:          &filePath,
+		Body:         f,
+		StorageClass: tf.sclass,
+		ContentType:  &mediaType,
+	}); err != nil {
 		return err
 	}
 

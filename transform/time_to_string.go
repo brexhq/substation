@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newTimeToString(_ context.Context, cfg config.Config) (*timeToString, error) {

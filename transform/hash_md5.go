@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newHashMD5(_ context.Context, cfg config.Config) (*hashMD5, error) {

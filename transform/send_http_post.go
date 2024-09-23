@@ -8,13 +8,13 @@ import (
 	"os"
 	"sync"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aggregate"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/http"
-	"github.com/brexhq/substation/internal/secrets"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	"github.com/brexhq/substation/v2/internal/aggregate"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/http"
+	"github.com/brexhq/substation/v2/internal/secrets"
 )
 
 type sendHTTPPostConfig struct {
@@ -38,7 +38,7 @@ func (c *sendHTTPPostConfig) Decode(in interface{}) error {
 
 func (c *sendHTTPPostConfig) Validate() error {
 	if c.URL == "" {
-		return fmt.Errorf("url: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("url: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
@@ -135,7 +135,7 @@ func (tf *sendHTTPPost) Transform(ctx context.Context, msg *message.Message) ([]
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errBatchNoMoreData)
 	}
 
 	return []*message.Message{msg}, nil

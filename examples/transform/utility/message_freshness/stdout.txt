@@ -1,0 +1,2 @@
+{"_aws":{"Timestamp":1724299370516,"CloudWatchMetrics":[{"Namespace":"Substation","Dimensions":[["AppName","FreshnessType"]],"Metrics":[{"Name":"MessageFreshness"}]}]},"AppName":"example","FreshnessType":"Success","MessageFreshness":0}
+{"_aws":{"Timestamp":1724299370516,"CloudWatchMetrics":[{"Namespace":"Substation","Dimensions":[["FreshnessType","AppName"]],"Metrics":[{"Name":"MessageFreshness"}]}]},"FreshnessType":"Failure","AppName":"example","MessageFreshness":1}

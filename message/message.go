@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/brexhq/substation/internal/base64"
+	"github.com/brexhq/substation/v2/internal/base64"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )

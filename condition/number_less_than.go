@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newNumberLessThan(_ context.Context, cfg config.Config) (*numberLessThan, error) {
@@ -24,7 +24,7 @@ type numberLessThan struct {
 	conf numberConfig
 }
 
-func (insp *numberLessThan) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberLessThan) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

@@ -7,11 +7,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/brexhq/substation/config"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/metrics"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/metrics"
 )
 
 type utilityMetricFreshnessConfig struct {
@@ -28,11 +28,11 @@ func (c *utilityMetricFreshnessConfig) Decode(in interface{}) error {
 
 func (c *utilityMetricFreshnessConfig) Validate() error {
 	if c.Threshold == "" {
-		return fmt.Errorf("threshold: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("threshold: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.SourceKey == "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

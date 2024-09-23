@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/brexhq/substation/internal/file"
+	"github.com/brexhq/substation/v2/internal/file"
 )
 
 func ExampleGet_local() {

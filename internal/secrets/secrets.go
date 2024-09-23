@@ -7,9 +7,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/kv"
+	"github.com/brexhq/substation/v2/config"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/kv"
 )
 
 var (
@@ -35,7 +36,7 @@ func New(ctx context.Context, cfg config.Config) (Retriever, error) {
 	case "environment_variable":
 		return newEnvironmentVariable(ctx, cfg)
 	default:
-		return nil, fmt.Errorf("secrets: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("secrets: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, iconfig.ErrInvalidFactoryInput)
 	}
 }
 

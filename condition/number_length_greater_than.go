@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newNumberLengthGreaterThan(_ context.Context, cfg config.Config) (*numberLengthGreaterThan, error) {
@@ -25,7 +25,7 @@ type numberLengthGreaterThan struct {
 	conf numberLengthConfig
 }
 
-func (insp *numberLengthGreaterThan) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberLengthGreaterThan) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/brexhq/substation"
-	"github.com/brexhq/substation/message"
+
+	"github.com/brexhq/substation/v2"
+	"github.com/brexhq/substation/v2/message"
 )
 
 var gateway500Response = events.APIGatewayProxyResponse{StatusCode: 500}

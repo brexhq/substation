@@ -10,14 +10,17 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/brexhq/substation"
-	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/s3manager"
-	"github.com/brexhq/substation/internal/bufio"
-	"github.com/brexhq/substation/internal/channel"
-	"github.com/brexhq/substation/internal/media"
-	"github.com/brexhq/substation/message"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/brexhq/substation/v2"
+	"github.com/brexhq/substation/v2/message"
+
+	"github.com/brexhq/substation/v2/internal/bufio"
+	"github.com/brexhq/substation/v2/internal/channel"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/media"
 )
 
 type s3Metadata struct {
@@ -92,8 +95,13 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	group.Go(func() error {
 		defer ch.Close()
 
-		client := s3manager.DownloaderAPI{}
-		client.Setup(aws.Config{})
+		awsCfg, err := iconfig.NewAWS(ctx, iconfig.AWS{})
+		if err != nil {
+			return err
+		}
+
+		c := s3.NewFromConfig(awsCfg)
+		client := manager.NewDownloader(c)
 
 		for _, record := range event.Records {
 			// The S3 object key is URL encoded.
@@ -124,7 +132,10 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 			defer os.Remove(dst.Name())
 			defer dst.Close()
 
-			if _, err := client.Download(ctx, record.S3.Bucket.Name, objectKey, dst); err != nil {
+			if _, err := client.Download(ctx, dst, &s3.GetObjectInput{
+				Bucket: &record.S3.Bucket.Name,
+				Key:    &objectKey,
+			}); err != nil {
 				return err
 			}
 
@@ -255,8 +266,13 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	group.Go(func() error {
 		defer ch.Close()
 
-		client := s3manager.DownloaderAPI{}
-		client.Setup(aws.Config{})
+		awsCfg, err := iconfig.NewAWS(ctx, iconfig.AWS{})
+		if err != nil {
+			return err
+		}
+
+		c := s3.NewFromConfig(awsCfg)
+		client := manager.NewDownloader(c)
 
 		for _, record := range event.Records {
 			var s3Event events.S3Event
@@ -293,7 +309,10 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 				defer os.Remove(dst.Name())
 				defer dst.Close()
 
-				if _, err := client.Download(ctx, record.S3.Bucket.Name, objectKey, dst); err != nil {
+				if _, err := client.Download(ctx, dst, &s3.GetObjectInput{
+					Bucket: &record.S3.Bucket.Name,
+					Key:    &objectKey,
+				}); err != nil {
 					return err
 				}
 

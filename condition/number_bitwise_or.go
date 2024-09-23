@@ -4,8 +4,8 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newNumberBitwiseOR(_ context.Context, cfg config.Config) (*numberBitwiseOR, error) {
@@ -25,7 +25,7 @@ type numberBitwiseOR struct {
 	conf numberBitwiseConfig
 }
 
-func (insp *numberBitwiseOR) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberBitwiseOR) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

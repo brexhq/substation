@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/brexhq/substation/config"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
 	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/message"
 )
 
 type formatJSONConfig struct{}
@@ -32,7 +33,7 @@ type formatJSON struct {
 	conf formatJSONConfig
 }
 
-func (c *formatJSON) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (c *formatJSON) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

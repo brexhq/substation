@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"unicode/utf8"
 
-	"github.com/brexhq/substation/config"
-	ibase64 "github.com/brexhq/substation/internal/base64"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	ibase64 "github.com/brexhq/substation/v2/internal/base64"
 )
 
 // errFormatFromBase64DecodeBinary is returned when the Base64 transform is configured

@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
-var _ inspector = &numberBitwiseXOR{}
+var _ Conditioner = &numberBitwiseXOR{}
 
 var numberBitwiseXORTests = []struct {
 	name     string
@@ -39,7 +39,7 @@ func TestNumberBitwiseXOR(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			check, err := insp.Inspect(ctx, message)
+			check, err := insp.Condition(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}
@@ -56,7 +56,7 @@ func TestNumberBitwiseXOR(t *testing.T) {
 func benchmarkNumberBitwiseXOR(b *testing.B, insp *numberBitwiseXOR, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = insp.Inspect(ctx, message)
+		_, _ = insp.Condition(ctx, message)
 	}
 }
 

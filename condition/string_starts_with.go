@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newStringStartsWith(_ context.Context, cfg config.Config) (*stringStartsWith, error) {
@@ -29,7 +29,7 @@ type stringStartsWith struct {
 	b []byte
 }
 
-func (insp *stringStartsWith) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *stringStartsWith) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

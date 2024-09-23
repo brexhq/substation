@@ -5,23 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/lambda"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/message"
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/tidwall/gjson"
+
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type enrichAWSLambdaConfig struct {
-	// FunctionName is the AWS Lambda function to synchronously invoke.
-	FunctionName string `json:"function_name"`
-
 	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
 	AWS    iconfig.AWS    `json:"aws"`
-	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *enrichAWSLambdaConfig) Decode(in interface{}) error {
@@ -30,21 +26,21 @@ func (c *enrichAWSLambdaConfig) Decode(in interface{}) error {
 
 func (c *enrichAWSLambdaConfig) Validate() error {
 	if c.Object.SourceKey == "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
-	if c.FunctionName == "" {
-		return fmt.Errorf("function_name: %v", errors.ErrMissingRequiredOption)
+	if c.AWS.ARN == "" {
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
 }
 
-func newEnrichAWSLambda(_ context.Context, cfg config.Config) (*enrichAWSLambda, error) {
+func newEnrichAWSLambda(ctx context.Context, cfg config.Config) (*enrichAWSLambda, error) {
 	conf := enrichAWSLambdaConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform enrich_aws_lambda: %v", err)
@@ -62,22 +58,19 @@ func newEnrichAWSLambda(_ context.Context, cfg config.Config) (*enrichAWSLambda,
 		conf: conf,
 	}
 
-	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
-		Region:          conf.AWS.Region,
-		RoleARN:         conf.AWS.RoleARN,
-		MaxRetries:      conf.Retry.Count,
-		RetryableErrors: conf.Retry.ErrorMessages,
-	})
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	tf.client = lambda.NewFromConfig(awsCfg)
 
 	return &tf, nil
 }
 
 type enrichAWSLambda struct {
-	conf enrichAWSLambdaConfig
-
-	// client is safe for concurrent access.
-	client lambda.API
+	conf   enrichAWSLambdaConfig
+	client *lambda.Client
 }
 
 func (tf *enrichAWSLambda) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
@@ -94,7 +87,11 @@ func (tf *enrichAWSLambda) Transform(ctx context.Context, msg *message.Message) 
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errMsgInvalidObject)
 	}
 
-	resp, err := tf.client.Invoke(ctx, tf.conf.FunctionName, value.Bytes())
+	ctx = context.WithoutCancel(ctx)
+	resp, err := tf.client.Invoke(ctx, &lambda.InvokeInput{
+		FunctionName: &tf.conf.AWS.ARN,
+		Payload:      value.Bytes(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}

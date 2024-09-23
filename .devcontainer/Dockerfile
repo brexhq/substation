@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64 mcr.microsoft.com/vscode/devcontainers/go:dev-1.22
+FROM --platform=linux/arm64 mcr.microsoft.com/vscode/devcontainers/go:dev-1.23
 RUN apt-get update -y && \
     # Docker
     curl -fsSL https://get.docker.com | sh && \

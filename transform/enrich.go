@@ -7,8 +7,7 @@ import (
 	"io"
 	gohttp "net/http"
 
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 // enrichHTTPInterp is used for interpolating data into URLs.
@@ -26,11 +25,11 @@ func (c *enrichDNSConfig) Decode(in interface{}) error {
 
 func (c *enrichDNSConfig) Validate() error {
 	if c.Object.SourceKey == "" && c.Object.TargetKey != "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.SourceKey != "" && c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Request.Timeout == "" {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/brexhq/substation"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func lambdaHandler(ctx context.Context, event json.RawMessage) ([]json.RawMessage, error) {

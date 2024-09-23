@@ -1,0 +1,4 @@
+{
+  "product": "churro",
+  "price": 9.99
+}

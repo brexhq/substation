@@ -7,8 +7,8 @@ import (
 
 	"golang.org/x/net/publicsuffix"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newNetworkDomainRegisteredDomain(_ context.Context, cfg config.Config) (*networkDomainRegisteredDomain, error) {

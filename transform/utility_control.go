@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aggregate"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	"github.com/brexhq/substation/v2/internal/aggregate"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type utilityControlConfig struct {
@@ -73,11 +74,11 @@ func (tf *utilityControl) Transform(_ context.Context, msg *message.Message) ([]
 
 	tf.agg.Reset("")
 	if ok := tf.agg.Add("", msg.Data()); !ok {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errBatchNoMoreData)
 	}
 
 	ctrl := message.New().AsControl()
-	return []*message.Message{msg, ctrl}, nil
+	return []*message.Message{ctrl, msg}, nil
 }
 
 func (tf *utilityControl) String() string {

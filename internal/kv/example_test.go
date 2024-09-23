@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/kv"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/internal/kv"
 )
 
 func Example_memory() {

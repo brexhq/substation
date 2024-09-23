@@ -7,11 +7,11 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/brexhq/substation/condition"
-	"github.com/brexhq/substation/config"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/condition"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 // errMetaRetryLimitReached is returned when the configured retry
@@ -21,11 +21,14 @@ var errMetaRetryLimitReached = fmt.Errorf("retry limit reached")
 
 type metaRetryConfig struct {
 	// Transforms that are applied in series, then checked for success
-	// based on the condition or errors.
+	// based on the condition or iconfig.
 	Transforms []config.Config `json:"transforms"`
 	// Condition that must be true for the transforms to be considered
-	// a success.
-	Condition condition.Config `json:"condition"`
+	// a success, otherwise the transforms are retried.
+	Condition config.Config `json:"condition"`
+	// ErrorMessages are regular expressions that match error messages
+	// and determine if the transforms should be retried.
+	ErrorMessages []string `json:"error_messages"`
 
 	Retry iconfig.Retry `json:"retry"`
 	ID    string        `json:"id"`
@@ -38,7 +41,7 @@ func (c *metaRetryConfig) Decode(in interface{}) error {
 func (c *metaRetryConfig) Validate() error {
 	for _, t := range c.Transforms {
 		if t.Type == "" {
-			return fmt.Errorf("transform: %v", errors.ErrMissingRequiredOption)
+			return fmt.Errorf("transform: %v", iconfig.ErrMissingRequiredOption)
 		}
 	}
 
@@ -59,42 +62,45 @@ func newMetaRetry(ctx context.Context, cfg config.Config) (*metaRetry, error) {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
-	tforms := make([]Transformer, len(conf.Transforms))
+	tf := metaRetry{
+		conf: conf,
+	}
+
+	tf.transforms = make([]Transformer, len(conf.Transforms))
 	for i, t := range conf.Transforms {
 		tfer, err := New(ctx, t)
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 		}
 
-		tforms[i] = tfer
+		tf.transforms[i] = tfer
 	}
 
-	cnd, err := condition.New(ctx, conf.Condition)
-	if err != nil {
-		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	// If no condition is configured, then the transforms are always
+	// successful.
+	tf.condition = &metaSwitchDefaultInspector{}
+	if conf.Condition.Type != "" {
+		cnd, err := condition.New(ctx, conf.Condition)
+		if err != nil {
+			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+		}
+		tf.condition = cnd
 	}
 
 	del, err := time.ParseDuration(conf.Retry.Delay)
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: delay: %v", conf.ID, err)
 	}
+	tf.delay = del
 
-	errs := make([]*regexp.Regexp, len(conf.Retry.ErrorMessages))
-	for i, e := range conf.Retry.ErrorMessages {
+	tf.errorMessages = make([]*regexp.Regexp, len(conf.ErrorMessages))
+	for i, e := range conf.ErrorMessages {
 		r, err := regexp.Compile(e)
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: error_messages: %v", conf.ID, err)
 		}
 
-		errs[i] = r
-	}
-
-	tf := metaRetry{
-		conf:          conf,
-		transforms:    tforms,
-		condition:     cnd,
-		delay:         del,
-		errorMessages: errs,
+		tf.errorMessages[i] = r
 	}
 
 	return &tf, nil
@@ -103,7 +109,7 @@ func newMetaRetry(ctx context.Context, cfg config.Config) (*metaRetry, error) {
 type metaRetry struct {
 	conf metaRetryConfig
 
-	condition     condition.Operator
+	condition     condition.Conditioner
 	transforms    []Transformer
 	delay         time.Duration
 	errorMessages []*regexp.Regexp
@@ -146,7 +152,7 @@ LOOP:
 				continue
 			}
 
-			ok, err := tf.condition.Operate(ctx, m)
+			ok, err := tf.condition.Condition(ctx, m)
 			if err != nil {
 				return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 			}

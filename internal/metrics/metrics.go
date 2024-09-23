@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/errors"
+	"github.com/brexhq/substation/v2/config"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 const (
@@ -44,6 +45,6 @@ func New(ctx context.Context, cfg config.Config) (Generator, error) {
 	case "aws_cloudwatch_embedded_metrics":
 		return newAWSCloudWatchEmbeddedMetrics(ctx, cfg)
 	default:
-		return nil, fmt.Errorf("metrics: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("metrics: new: type %q settings %+v: %v", cfg.Type, cfg.Settings, iconfig.ErrInvalidFactoryInput)
 	}
 }

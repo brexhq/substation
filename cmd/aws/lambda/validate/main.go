@@ -8,7 +8,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 
-	"github.com/brexhq/substation"
+	"github.com/brexhq/substation/v2"
 )
 
 func main() {

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newNetworkIPLinkLocalMulticast(_ context.Context, cfg config.Config) (*networkIPLinkLocalMulticast, error) {
@@ -26,7 +26,7 @@ type networkIPLinkLocalMulticast struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPLinkLocalMulticast) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPLinkLocalMulticast) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

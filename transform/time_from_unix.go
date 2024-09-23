@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newTimeFromUnix(_ context.Context, cfg config.Config) (*timeFromUnix, error) {

@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/brexhq/substation/config"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/message"
 	"github.com/itchyny/gojq"
+
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 // errObjectJQNoOutputGenerated is returned when jq generates no output.
@@ -28,7 +29,7 @@ func (c *objectJQConfig) Decode(in interface{}) error {
 
 func (c *objectJQConfig) Validate() error {
 	if c.Filter == "" {
-		return fmt.Errorf("query: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("query: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

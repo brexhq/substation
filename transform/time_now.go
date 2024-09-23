@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brexhq/substation/config"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type timeNowConfig struct {

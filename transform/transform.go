@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 var errMsgInvalidObject = fmt.Errorf("message must be JSON object")
@@ -40,8 +41,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "array_zip":
 		return newArrayZip(ctx, cfg)
 	// Enrichment transforms.
-	case "enrich_aws_dynamodb":
-		return newEnrichAWSDynamoDB(ctx, cfg)
+	case "enrich_aws_dynamodb_query":
+		return newEnrichAWSDynamoDBQuery(ctx, cfg)
 	case "enrich_aws_lambda":
 		return newEnrichAWSLambda(ctx, cfg)
 	case "enrich_dns_ip_lookup":
@@ -93,8 +94,6 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newMetaKVStoreLock(ctx, cfg)
 	case "meta_metric_duration":
 		return newMetaMetricsDuration(ctx, cfg)
-	case "meta_pipeline":
-		return newMetaPipeline(ctx, cfg)
 	case "meta_retry":
 		return newMetaRetry(ctx, cfg)
 	case "meta_switch":
@@ -139,12 +138,12 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "object_to_unsigned_integer":
 		return newObjectToUnsignedInteger(ctx, cfg)
 	// Send transforms.
-	case "send_aws_dynamodb":
-		return newSendAWSDynamoDB(ctx, cfg)
+	case "send_aws_dynamodb_put":
+		return newSendAWSDynamoDBPut(ctx, cfg)
 	case "send_aws_eventbridge":
 		return newSendAWSEventBridge(ctx, cfg)
-	case "send_aws_kinesis_data_firehose":
-		return newSendAWSKinesisDataFirehose(ctx, cfg)
+	case "send_aws_data_firehose":
+		return newSendAWSDataFirehose(ctx, cfg)
 	case "send_aws_kinesis_data_stream":
 		return newSendAWSKinesisDataStream(ctx, cfg)
 	case "send_aws_lambda":
@@ -211,7 +210,7 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 	case "utility_secret":
 		return newUtilitySecret(ctx, cfg)
 	default:
-		return nil, fmt.Errorf("transform %s: %w", cfg.Type, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("transform %s: %w", cfg.Type, iconfig.ErrInvalidFactoryInput)
 	}
 }
 

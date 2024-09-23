@@ -15,9 +15,32 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"os"
+	"strconv"
 
-	"github.com/brexhq/substation/config"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/aws/aws-sdk-go/aws/arn"
+	"github.com/aws/aws-xray-sdk-go/instrumentation/awsv2"
+
+	"github.com/brexhq/substation/v2/config"
+)
+
+var (
+	// ErrInvalidFactoryInput is returned when an unsupported input is referenced in any factory function.
+	ErrInvalidFactoryInput = fmt.Errorf("invalid factory input")
+
+	// ErrMissingRequiredOption is returned when a component does not have the required options to properly run.
+	ErrMissingRequiredOption = fmt.Errorf("missing required option")
+
+	// ErrInvalidOption is returned when an invalid option is received in a constructor.
+	ErrInvalidOption = fmt.Errorf("invalid option")
 )
 
 type Object struct {
@@ -28,13 +51,6 @@ type Object struct {
 	// BatchKey retrieves a value from a JSON object that is used to organize
 	// batched data (internal/aggregate).
 	BatchKey string `json:"batch_key"`
-}
-
-type AWS struct {
-	// Region is the AWS region that the AWS client will use.
-	Region string `json:"region"`
-	// RoleARN is the AWS IAM role that the AWS client will assume.
-	RoleARN string `json:"role_arn"`
 }
 
 type Metric struct {
@@ -58,9 +74,6 @@ type Retry struct {
 	// Delay is the amount of time to wait before retrying the action. This can be
 	// combined with the Count field to create a backoff strategy.
 	Delay string `json:"delay"`
-	// ErrorMessages are regular expressions that match error messages and determine
-	// if the action should be retried.
-	ErrorMessages []string `json:"error_messages"`
 }
 
 type Batch struct {
@@ -81,4 +94,67 @@ func Decode(input, output interface{}) error {
 		return err
 	}
 	return json.Unmarshal(b, output)
+}
+
+type AWS struct {
+	// ARN is the AWS resource that the action will interact with.
+	ARN string `json:"arn"`
+	// AssumeRoleARN is the ARN of the role that the action will assume.
+	AssumeRoleARN string `json:"assume_role_arn"`
+}
+
+// NewAWS returns a valid AWS SDK v2 configuration.
+func NewAWS(ctx context.Context, cfg AWS) (aws.Config, error) {
+	arnx, _ := arn.Parse(cfg.ARN)           // Ignore missing ARN errors.
+	arny, _ := arn.Parse(cfg.AssumeRoleARN) // Ignore missing ARN errors.
+
+	var region string
+	if arnx.Region != "" {
+		region = arnx.Region
+	} else if arny.Region != "" {
+		region = arny.Region
+	} else if v, ok := os.LookupEnv("AWS_REGION"); ok {
+		region = v
+	} else if v, ok := os.LookupEnv("AWS_DEFAULT_REGION"); ok {
+		region = v
+	}
+
+	var creds aws.CredentialsProvider // nil is a valid default.
+	if cfg.AssumeRoleARN != "" {
+		conf, err := awsconfig.LoadDefaultConfig(ctx,
+			awsconfig.WithRegion(region),
+		)
+		if err != nil {
+			return aws.Config{}, err
+		}
+
+		stsSvc := sts.NewFromConfig(conf)
+		creds = stscreds.NewAssumeRoleProvider(stsSvc, cfg.AssumeRoleARN)
+	}
+
+	maxRetry := 3 // Matches the standard retryer.
+	if v, ok := os.LookupEnv("AWS_MAX_ATTEMPTS"); ok {
+		m, err := strconv.Atoi(v)
+		if err != nil {
+			return aws.Config{}, err
+		}
+
+		maxRetry = m
+	}
+
+	conf, err := awsconfig.LoadDefaultConfig(ctx,
+		awsconfig.WithRegion(region),
+		awsconfig.WithCredentialsProvider(creds),
+		awsconfig.WithRetryer(func() aws.Retryer {
+			return retry.NewStandard(func(o *retry.StandardOptions) {
+				o.MaxAttempts = maxRetry
+			})
+		}),
+	)
+
+	if _, ok := os.LookupEnv("AWS_XRAY_DAEMON_ADDRESS"); ok {
+		awsv2.AWSV2Instrumentor(&conf.APIOptions)
+	}
+
+	return conf, err
 }

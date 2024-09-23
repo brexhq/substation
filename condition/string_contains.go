@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newStringContains(_ context.Context, cfg config.Config) (*stringContains, error) {
@@ -29,7 +29,7 @@ type stringContains struct {
 	b []byte
 }
 
-func (insp *stringContains) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *stringContains) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

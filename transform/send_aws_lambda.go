@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aggregate"
-	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/lambda"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/message"
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
+
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	"github.com/brexhq/substation/v2/internal/aggregate"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 // Payloads greater than 256 KB in size cannot be
@@ -25,8 +25,6 @@ const sendLambdaPayloadSizeLimit = 1024 * 1024 * 256
 var errSendLambdaPayloadSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSLambdaConfig struct {
-	// FunctionName is the AWS Lambda function to asynchronously invoke.
-	FunctionName string `json:"function_name"`
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
@@ -34,7 +32,6 @@ type sendAWSLambdaConfig struct {
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 	AWS    iconfig.AWS    `json:"aws"`
-	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *sendAWSLambdaConfig) Decode(in interface{}) error {
@@ -42,14 +39,14 @@ func (c *sendAWSLambdaConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSLambdaConfig) Validate() error {
-	if c.FunctionName == "" {
-		return fmt.Errorf("function_name: %v", errors.ErrMissingRequiredOption)
+	if c.AWS.ARN == "" {
+		return fmt.Errorf("arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
 }
 
-func newSendAWSLambda(_ context.Context, cfg config.Config) (*sendAWSLambda, error) {
+func newSendAWSLambda(ctx context.Context, cfg config.Config) (*sendAWSLambda, error) {
 	conf := sendAWSLambdaConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform send_aws_lambda: %v", err)
@@ -64,8 +61,7 @@ func newSendAWSLambda(_ context.Context, cfg config.Config) (*sendAWSLambda, err
 	}
 
 	tf := sendAWSLambda{
-		conf:     conf,
-		function: conf.FunctionName,
+		conf: conf,
 	}
 
 	agg, err := aggregate.New(aggregate.Config{
@@ -90,23 +86,19 @@ func newSendAWSLambda(_ context.Context, cfg config.Config) (*sendAWSLambda, err
 		}
 	}
 
-	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
-		Region:          conf.AWS.Region,
-		RoleARN:         conf.AWS.RoleARN,
-		MaxRetries:      conf.Retry.Count,
-		RetryableErrors: conf.Retry.ErrorMessages,
-	})
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	tf.client = lambda.NewFromConfig(awsCfg)
 
 	return &tf, nil
 }
 
 type sendAWSLambda struct {
-	conf     sendAWSLambdaConfig
-	function string
-
-	// client is safe for concurrent use.
-	client lambda.API
+	conf   sendAWSLambdaConfig
+	client *lambda.Client
 
 	mu     sync.Mutex
 	agg    *aggregate.Aggregate
@@ -149,7 +141,7 @@ func (tf *sendAWSLambda) Transform(ctx context.Context, msg *message.Message) ([
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errBatchNoMoreData)
 	}
 
 	return []*message.Message{msg}, nil
@@ -161,8 +153,13 @@ func (tf *sendAWSLambda) send(ctx context.Context, key string) error {
 		return err
 	}
 
-	for _, b := range data {
-		if _, err := tf.client.InvokeAsync(ctx, tf.function, b); err != nil {
+	ctx = context.WithoutCancel(ctx)
+	for _, d := range data {
+		if _, err := tf.client.Invoke(ctx, &lambda.InvokeInput{
+			FunctionName:   &tf.conf.AWS.ARN,
+			Payload:        d,
+			InvocationType: "Event", // Asynchronous invocation.
+		}); err != nil {
 			return err
 		}
 	}

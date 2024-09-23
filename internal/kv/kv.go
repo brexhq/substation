@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/errors"
+	"github.com/brexhq/substation/v2/config"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 var (
@@ -77,7 +78,7 @@ func New(cfg config.Config) (Storer, error) {
 	case "text_file":
 		return newKVTextFile(cfg)
 	default:
-		return nil, fmt.Errorf("kv_store: %s: %v", t, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("kv_store: %s: %v", t, iconfig.ErrInvalidFactoryInput)
 	}
 }
 
@@ -119,7 +120,7 @@ func NewLocker(cfg config.Config) (Locker, error) {
 	case "memory":
 		return newKVMemory(cfg)
 	default:
-		return nil, fmt.Errorf("kv_store locker: %s: %v", t, errors.ErrInvalidFactoryInput)
+		return nil, fmt.Errorf("kv_store locker: %s: %v", t, iconfig.ErrInvalidFactoryInput)
 	}
 }
 

@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 var _ Transformer = &objectInsert{}

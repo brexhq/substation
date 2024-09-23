@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newStringToUpper(_ context.Context, cfg config.Config) (*stringToUpper, error) {

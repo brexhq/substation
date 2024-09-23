@@ -9,11 +9,12 @@ import (
 	"os"
 	"sync"
 
-	"github.com/brexhq/substation/config"
-	_config "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/file"
 	"github.com/oschwald/maxminddb-golang"
+
+	"github.com/brexhq/substation/v2/config"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/file"
 )
 
 // errMMDBKeyMustBeAddr is returned when the key used in a Get call is not a valid
@@ -37,12 +38,12 @@ type kvMMDB struct {
 // Create a new MMDB KV store.
 func newKVMMDB(cfg config.Config) (*kvMMDB, error) {
 	var store kvMMDB
-	if err := _config.Decode(cfg.Settings, &store); err != nil {
+	if err := iconfig.Decode(cfg.Settings, &store); err != nil {
 		return nil, err
 	}
 
 	if store.File == "" {
-		return nil, fmt.Errorf("kv: mmdb: options %+v: %v", &store, errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("kv: mmdb: options %+v: %v", &store, iconfig.ErrMissingRequiredOption)
 	}
 
 	return &store, nil

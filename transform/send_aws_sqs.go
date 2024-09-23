@@ -4,16 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aggregate"
-	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/sqs"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/message"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/arn"
+	"github.com/google/uuid"
+
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	"github.com/brexhq/substation/v2/internal/aggregate"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 // Records greater than 256 KB in size cannot be
@@ -26,8 +31,6 @@ const sendSQSMessageSizeLimit = 1024 * 1024 * 256
 var errSendSQSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSQSConfig struct {
-	// ARN is the AWS SNS topic ARN that messages are sent to.
-	ARN string `json:"arn"`
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
@@ -35,7 +38,6 @@ type sendAWSSQSConfig struct {
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 	AWS    iconfig.AWS    `json:"aws"`
-	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *sendAWSSQSConfig) Decode(in interface{}) error {
@@ -43,14 +45,14 @@ func (c *sendAWSSQSConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSSQSConfig) Validate() error {
-	if c.ARN == "" {
-		return fmt.Errorf("arn: %v", errors.ErrMissingRequiredOption)
+	if c.AWS.ARN == "" {
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
 }
 
-func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
+func newSendAWSSQS(ctx context.Context, cfg config.Config) (*sendAWSSQS, error) {
 	conf := sendAWSSQSConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform send_aws_sqs: %v", err)
@@ -64,31 +66,44 @@ func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
-	// arn:aws:sqs:region:account_id:queue_name
-	arn := strings.Split(conf.ARN, ":")
 	tf := sendAWSSQS{
 		conf: conf,
-		queueURL: fmt.Sprintf(
-			"https://sqs.%s.amazonaws.com/%s/%s",
-			arn[3],
-			arn[4],
-			arn[5],
-		),
 	}
 
-	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
-		Region:          conf.AWS.Region,
-		RoleARN:         conf.AWS.RoleARN,
-		MaxRetries:      conf.Retry.Count,
-		RetryableErrors: conf.Retry.ErrorMessages,
-	})
+	arn, err := arn.Parse(conf.AWS.ARN)
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	tf.queueURL = fmt.Sprintf(
+		"https://sqs.%s.amazonaws.com/%s/%s",
+		arn.Region,
+		arn.AccountID,
+		arn.Resource,
+	)
+
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	tf.client = sqs.NewFromConfig(awsCfg)
+
+	// SQS limits batch operations to 10 messages.
+	count := 10
+	if conf.Batch.Count > 0 && conf.Batch.Count <= count {
+		count = conf.Batch.Count
+	}
+
+	// SQS limits batch operations to 256 KB.
+	size := sendSQSMessageSizeLimit
+	if conf.Batch.Size > 0 && conf.Batch.Size <= size {
+		size = conf.Batch.Size
+	}
 
 	agg, err := aggregate.New(aggregate.Config{
-		// SQS limits batch operations to 10 messages.
-		Count: 10,
-		// SQS limits batch operations to 256 KB.
-		Size:     sendSQSMessageSizeLimit,
+		Count:    count,
+		Size:     size,
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
@@ -114,9 +129,7 @@ func newSendAWSSQS(_ context.Context, cfg config.Config) (*sendAWSSQS, error) {
 type sendAWSSQS struct {
 	conf     sendAWSSQSConfig
 	queueURL string
-
-	// client is safe for concurrent use.
-	client sqs.API
+	client   *sqs.Client
 
 	mu     sync.Mutex
 	agg    *aggregate.Aggregate
@@ -159,7 +172,7 @@ func (tf *sendAWSSQS) Transform(ctx context.Context, msg *message.Message) ([]*m
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errBatchNoMoreData)
 	}
 	return []*message.Message{msg}, nil
 }
@@ -175,8 +188,49 @@ func (tf *sendAWSSQS) send(ctx context.Context, key string) error {
 		return err
 	}
 
-	if _, err := tf.client.SendMessageBatch(ctx, tf.queueURL, data); err != nil {
+	ctx = context.WithoutCancel(ctx)
+	return tf.sendMessages(ctx, data)
+}
+
+func (tf *sendAWSSQS) sendMessages(ctx context.Context, data [][]byte) error {
+	mgid := uuid.New().String()
+
+	entries := make([]types.SendMessageBatchRequestEntry, 0, len(data))
+	for idx, d := range data {
+		entry := types.SendMessageBatchRequestEntry{
+			Id:          aws.String(strconv.Itoa(idx)),
+			MessageBody: aws.String(string(d)),
+		}
+
+		if strings.HasSuffix(tf.queueURL, ".fifo") {
+			entry.MessageGroupId = aws.String(mgid)
+		}
+
+		entries = append(entries, entry)
+	}
+
+	resp, err := tf.client.SendMessageBatch(ctx, &sqs.SendMessageBatchInput{
+		Entries:  entries,
+		QueueUrl: aws.String(tf.queueURL),
+	})
+	if err != nil {
 		return err
+	}
+
+	if resp.Failed != nil {
+		var retry [][]byte
+		for _, r := range resp.Failed {
+			idx, err := strconv.Atoi(aws.StringValue(r.Id))
+			if err != nil {
+				return err
+			}
+
+			retry = append(retry, data[idx])
+		}
+
+		if len(retry) > 0 {
+			return tf.sendMessages(ctx, retry)
+		}
 	}
 
 	return nil

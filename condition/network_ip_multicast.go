@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newNetworkIPMulticast(_ context.Context, cfg config.Config) (*networkIPMulticast, error) {
@@ -26,7 +26,7 @@ type networkIPMulticast struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPMulticast) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPMulticast) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

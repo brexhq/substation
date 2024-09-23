@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/net/publicsuffix"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 // errFmtSubdomainNoSubdomain is returned when a domain without a subdomain is

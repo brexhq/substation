@@ -10,15 +10,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/s3manager"
-	"github.com/brexhq/substation/internal/http"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/http"
 )
 
 var (
 	httpClient   http.HTTP
-	s3downloader s3manager.DownloaderAPI
+	s3downloader *manager.Downloader
 )
 
 // errEmptyFile is returned when Get is called but finds an empty file.
@@ -87,15 +89,27 @@ func Get(ctx context.Context, location string) (string, error) {
 		return dst.Name(), nil
 	}
 
+	//nolint: nestif // ignore nesting complexity
 	if strings.HasPrefix(location, "s3://") {
-		if !s3downloader.IsEnabled() {
-			s3downloader.Setup(aws.Config{})
+		if s3downloader == nil {
+			awsCfg, err := iconfig.NewAWS(ctx, iconfig.AWS{})
+			if err != nil {
+				return dst.Name(), fmt.Errorf("get %s: %v", location, err)
+			}
+
+			c := s3.NewFromConfig(awsCfg)
+			s3downloader = manager.NewDownloader(c)
 		}
 
 		// "s3://bucket/key" becomes ["bucket" "key"]
 		paths := strings.SplitN(strings.TrimPrefix(location, "s3://"), "/", 2)
 
-		size, err := s3downloader.Download(ctx, paths[0], paths[1], dst)
+		// Download the file from S3.
+		ctx = context.WithoutCancel(ctx)
+		size, err := s3downloader.Download(ctx, dst, &s3.GetObjectInput{
+			Bucket: &paths[0],
+			Key:    &paths[1],
+		})
 		if err != nil {
 			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 		}

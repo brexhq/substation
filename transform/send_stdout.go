@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aggregate"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	"github.com/brexhq/substation/v2/internal/aggregate"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type sendStdoutConfig struct {
@@ -104,7 +105,7 @@ func (tf *sendStdout) Transform(ctx context.Context, msg *message.Message) ([]*m
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errBatchNoMoreData)
 	}
 
 	return []*message.Message{msg}, nil

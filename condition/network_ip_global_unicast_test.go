@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
-var _ inspector = &networkIPGlobalUnicast{}
+var _ Conditioner = &networkIPGlobalUnicast{}
 
 var networkIPGlobalUnicastTests = []struct {
 	name     string
@@ -35,7 +35,7 @@ func TestNetworkIPGlobalUnicast(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			check, err := insp.Inspect(ctx, message)
+			check, err := insp.Condition(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}
@@ -50,7 +50,7 @@ func TestNetworkIPGlobalUnicast(t *testing.T) {
 func benchmarkNetworkIPGlobalUnicastByte(b *testing.B, insp *networkIPGlobalUnicast, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = insp.Inspect(ctx, message)
+		_, _ = insp.Condition(ctx, message)
 	}
 }
 

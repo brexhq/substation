@@ -7,10 +7,10 @@ import (
 	"os"
 	"sync"
 
-	"github.com/brexhq/substation/config"
-	_config "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/file"
+	"github.com/brexhq/substation/v2/config"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/file"
 )
 
 // kvTextFile is a read-only key-value store that is derived from a newline delimited
@@ -39,12 +39,12 @@ type kvTextFile struct {
 // Create a new text file KV store.
 func newKVTextFile(cfg config.Config) (*kvTextFile, error) {
 	var store kvTextFile
-	if err := _config.Decode(cfg.Settings, &store); err != nil {
+	if err := iconfig.Decode(cfg.Settings, &store); err != nil {
 		return nil, err
 	}
 
 	if store.File == "" {
-		return nil, fmt.Errorf("kv: text_file: options %+v: %v", &store, errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("kv: text_file: options %+v: %v", &store, iconfig.ErrMissingRequiredOption)
 	}
 
 	return &store, nil

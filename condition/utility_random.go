@@ -6,9 +6,10 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/brexhq/substation/config"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type utilityRandomConfig struct{}
@@ -37,7 +38,7 @@ type utilityRandom struct {
 	r *rand.Rand
 }
 
-func (insp *utilityRandom) Inspect(_ context.Context, msg *message.Message) (bool, error) {
+func (insp *utilityRandom) Condition(_ context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

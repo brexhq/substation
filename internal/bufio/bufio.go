@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/brexhq/substation/internal/media"
+	"github.com/brexhq/substation/v2/internal/media"
 	"github.com/klauspost/compress/snappy"
 	"github.com/klauspost/compress/zstd"
 )

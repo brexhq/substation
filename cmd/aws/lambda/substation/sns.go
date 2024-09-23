@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/brexhq/substation"
-	"github.com/brexhq/substation/internal/channel"
-	"github.com/brexhq/substation/message"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/brexhq/substation/v2"
+	"github.com/brexhq/substation/v2/message"
+
+	"github.com/brexhq/substation/v2/internal/channel"
 )
 
 type snsMetadata struct {

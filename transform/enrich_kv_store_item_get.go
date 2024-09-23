@@ -7,11 +7,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/brexhq/substation/config"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/kv"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/kv"
 )
 
 type enrichKVStoreItemGetConfig struct {
@@ -37,15 +37,15 @@ func (c *enrichKVStoreItemGetConfig) Decode(in interface{}) error {
 
 func (c *enrichKVStoreItemGetConfig) Validate() error {
 	if c.Object.SourceKey == "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.KVStore.Type == "" {
-		return fmt.Errorf("kv_store: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("kv_store: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil

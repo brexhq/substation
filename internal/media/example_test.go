@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/brexhq/substation/internal/media"
+	"github.com/brexhq/substation/v2/internal/media"
 )
 
 func ExampleBytes() {

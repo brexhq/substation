@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newNetworkIPGlobalUnicast(_ context.Context, cfg config.Config) (*networkIPGlobalUnicast, error) {
@@ -26,7 +26,7 @@ type networkIPGlobalUnicast struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPGlobalUnicast) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPGlobalUnicast) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

@@ -2,11 +2,17 @@
 
 ![Substation Banner](.github/media/substation_banner.png)
 
-<p align="center">Substation is a toolkit for routing, normalizing, and enriching security event and audit logs.</p>
+<p align="center"><b>Substation is a toolkit for routing, normalizing, and enriching security event and audit logs.</b></p>
 
 <div align="center">
 
-[Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Docs][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Quickstart][quickstart]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement (2022)][announcement]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[v1.0 Release (2024)][v1_release]
+[Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Quickstart][quickstart]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Adopters][adopters]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement (2022)][announcement]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[v1.0 Release (2024)][v1_release] 
+
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/brexhq/substation/code.yml?style=for-the-badge) 
+![GitHub Release](https://img.shields.io/github/v/release/brexhq/substation?sort=semver&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fbrexhq%2Fsubstation%2Freleases%2Flatest)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/brexhq/substation?style=for-the-badge)
+![GitHub Created At](https://img.shields.io/github/created-at/brexhq/substation?style=for-the-badge&label=created)
+![GitHub License](https://img.shields.io/github/license/brexhq/substation?style=for-the-badge)
 
 </div>
 
@@ -149,7 +155,7 @@ Substation excels at formatting, normalizing, and enriching event logs. For exam
 Substation can route data to several destinations from a single process and, unlike most other data pipeline systems,
 data transformation and routing are functionally equivalent -- this means that data can be transformed or routed in any order.
 
-In this configuration, data is: 
+In this configuration, data is:
 
 - Written to AWS S3
 - Printed to stdout
@@ -171,8 +177,8 @@ local is_false = sub.cnd.str.eq({ object: { source_key: 'field3' }, value: 'fals
 {
   transforms: [
     // Pre-transformed data is written to an object in AWS S3 for long-term storage.
-    sub.tf.send.aws.s3({ bucket_name: 'example-bucket-name' }),
-    // The JSON array is split into individual events that go through 
+    sub.tf.send.aws.s3({ aws: { arn: 'arn:aws:s3:::example-bucket-name' } }),
+    // The JSON array is split into individual events that go through
     // the remaining transforms. Each event is printed to stdout.
     sub.tf.agg.from.array(),
     sub.tf.send.stdout(),
@@ -195,11 +201,15 @@ local sub = import 'substation.libsonnet';
     // the event is written to an object in AWS S3.
     sub.tf.meta.switch({ cases: [
       {
-        condition: sub.cnd.any(sub.cnd.str.eq({ object: { source_key: 'field3' }, value: 'false' })),
-        transform: sub.tf.send.http.post({ url: 'https://example-http-endpoint.com' }),
+        condition: sub.cnd.str.eq({ object: { source_key: 'field3' }, value: 'false' }),
+        transforms: [
+          sub.tf.send.http.post({ url: 'https://example-http-endpoint.com' }),
+        ],
       },
       {
-        transform: sub.tf.send.aws.s3({ bucket_name: 'example-bucket-name' }),
+        transforms: [
+          sub.tf.send.aws.s3({ aws: { arn: 'arn:aws:s3:::example-bucket-name' } }),
+        ],
       },
     ] }),
     // The event is always available to any remaining transforms.
@@ -409,7 +419,7 @@ module "node" {
     env = {
       "SUBSTATION_CONFIG" : "https://localhost:2772/applications/substation/environments/example/configurations/node"
       "SUBSTATION_DEBUG" : true
-      # This Substation node will ingest data from API Gateway. More nodes can be 
+      # This Substation node will ingest data from API Gateway. More nodes can be
       # deployed to ingest data from other sources, such as Kinesis or SQS.
       "SUBSTATION_LAMBDA_HANDLER" : "AWS_API_GATEWAY"
     }
@@ -447,29 +457,15 @@ docker build -t substation-dev .devcontainer/ && \
 docker run -v $(pwd):/workspaces/substation/  -w /workspaces/substation -v /var/run/docker.sock:/var/run/docker.sock -it substation-dev
 ```
 
-To try the system locally, run this from the [examples](examples) directory:
-```sh
-sh .devcontainer/post_start.sh && \
-cd examples && \
-make -s quickstart
+To test the system locally, run this from the project root:
+
+```bash
+sh build/scripts/config/compile.sh && \
+go build -o ./examples/substation-file ./cmd/development/substation-file/ && \
+./examples/substation-file -config ./examples/transform/aggregate/summarize/config.json -file ./examples/transform/aggregate/summarize/data.jsonl
 ```
 
-To try the system in the cloud, choose an [AWS example](examples/terraform/aws) to deploy:
-```sh
-sh .devcontainer/post_start.sh && \
-cd examples && \
-aws configure && \
-make -s check && \
-make -s build && \
-make -s deploy EXAMPLE=terraform/aws/dynamodb/cdc
-```
-
-After testing is complete, the cloud deployment should be destroyed:
-```sh
-make -s destroy EXAMPLE=terraform/aws/dynamodb/cdc
-```
-
-**We do not recommend managing cloud deployments from a local machine using the examples Makefile. Production deployments should use a CI/CD pipeline with a remote state backend, such as Terraform, to manage infrastructure.**
+The [Terraform documentation](build/terraform/aws/) includes guidance for deploying Substation to AWS.
 
 ## Licensing
 
@@ -479,5 +475,6 @@ Substation and its associated code is released under the terms of the [MIT Licen
 [releases]:https://github.com/brexhq/substation/releases "Substation Releases"
 [docs]:https://substation.readme.io/docs "Substation Documentation"
 [quickstart]:https://substation.readme.io/recipes/1-minute-quickstart "Substation Quickstart"
+[adopters]:https://github.com/brexhq/substation/blob/main/ADOPTERS.md "Substation Adopters"
 [announcement]:https://medium.com/brexeng/announcing-substation-188d049d979b "Substation Announcement Post"
 [v1_release]:https://medium.com/brexeng/releasing-substation-v1-0-4d0314cbc45b "Substation v1.0 Release Post"

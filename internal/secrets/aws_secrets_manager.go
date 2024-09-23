@@ -5,19 +5,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/secretsmanager"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+
+	"github.com/brexhq/substation/v2/config"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type awsSecretsManagerConfig struct {
-	ID        string        `json:"id"`
-	Name      string        `json:"name"`
-	TTLOffset string        `json:"ttl_offset"`
-	AWS       iconfig.AWS   `json:"aws"`
-	Retry     iconfig.Retry `json:"retry"`
+	ID        string      `json:"id"`
+	TTLOffset string      `json:"ttl_offset"`
+	AWS       iconfig.AWS `json:"aws"`
 }
 
 func (c *awsSecretsManagerConfig) Decode(in interface{}) error {
@@ -26,25 +24,24 @@ func (c *awsSecretsManagerConfig) Decode(in interface{}) error {
 
 func (c *awsSecretsManagerConfig) Validate() error {
 	if c.ID == "" {
-		return fmt.Errorf("id: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("id: %v", iconfig.ErrMissingRequiredOption)
 	}
 
-	if c.Name == "" {
-		return fmt.Errorf("name: %v", errors.ErrMissingRequiredOption)
+	if c.AWS.ARN == "" {
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
 }
 
 type awsSecretsManager struct {
-	conf awsSecretsManagerConfig
+	conf   awsSecretsManagerConfig
+	client *secretsmanager.Client
 
 	ttl int64
-	// client is safe for concurrent access.
-	client secretsmanager.API
 }
 
-func newAWSSecretsManager(_ context.Context, cfg config.Config) (*awsSecretsManager, error) {
+func newAWSSecretsManager(ctx context.Context, cfg config.Config) (*awsSecretsManager, error) {
 	conf := awsSecretsManagerConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("secrets: aws_secrets_manager: %v", err)
@@ -61,7 +58,7 @@ func newAWSSecretsManager(_ context.Context, cfg config.Config) (*awsSecretsMana
 
 	dur, err := time.ParseDuration(ttl)
 	if err != nil {
-		return nil, fmt.Errorf("secrets: environment_variable: %v", err)
+		return nil, fmt.Errorf("secrets: aws_secrets_manager: %v", err)
 	}
 
 	c := &awsSecretsManager{
@@ -69,26 +66,29 @@ func newAWSSecretsManager(_ context.Context, cfg config.Config) (*awsSecretsMana
 		ttl:  time.Now().Add(dur).Unix(),
 	}
 
-	c.client.Setup(aws.Config{
-		Region:          conf.AWS.Region,
-		RoleARN:         conf.AWS.RoleARN,
-		MaxRetries:      conf.Retry.Count,
-		RetryableErrors: conf.Retry.ErrorMessages,
-	})
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
+	if err != nil {
+		return nil, fmt.Errorf("secrets: aws_secrets_manager: %v", err)
+	}
+
+	c.client = secretsmanager.NewFromConfig(awsCfg)
 
 	return c, nil
 }
 
 func (c *awsSecretsManager) Retrieve(ctx context.Context) error {
-	v, err := c.client.GetSecret(ctx, c.conf.Name)
+	ctx = context.WithoutCancel(ctx)
+	v, err := c.client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
+		SecretId: &c.conf.AWS.ARN,
+	})
 	if err != nil {
-		return fmt.Errorf("secrets: environment_variable: name %s: %v", c.conf.Name, err)
+		return fmt.Errorf("secrets: aws_secrets_manager: %v", err)
 	}
 
 	// SetWithTTL isn't used here because the TTL is managed by
 	// transform/utility_secret.go.
-	if err := cache.Set(ctx, c.conf.ID, v); err != nil {
-		return fmt.Errorf("secrets: environment_variable: id %s: %v", c.conf.ID, err)
+	if err := cache.Set(ctx, c.conf.ID, v.SecretString); err != nil {
+		return fmt.Errorf("secrets: aws_secrets_manager: id %s: %v", c.conf.ID, err)
 	}
 
 	return nil

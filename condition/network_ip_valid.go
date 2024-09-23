@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newNetworkIPValid(_ context.Context, cfg config.Config) (*networkIPValid, error) {
@@ -26,7 +26,7 @@ type networkIPValid struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPValid) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPValid) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

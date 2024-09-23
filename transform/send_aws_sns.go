@@ -4,15 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aggregate"
-	"github.com/brexhq/substation/internal/aws"
-	"github.com/brexhq/substation/internal/aws/sns"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/message"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
+	"github.com/aws/aws-sdk-go-v2/service/sns/types"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/google/uuid"
+
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	"github.com/brexhq/substation/v2/internal/aggregate"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 // Records greater than 256 KB in size cannot be
@@ -25,8 +30,6 @@ const sendAWSSNSMessageSizeLimit = 1024 * 1024 * 256
 var errSendAWSSNSMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSSNSConfig struct {
-	// ARN is the AWS SNS topic ARN that messages are sent to.
-	ARN string `json:"arn"`
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
@@ -34,7 +37,6 @@ type sendAWSSNSConfig struct {
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 	AWS    iconfig.AWS    `json:"aws"`
-	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *sendAWSSNSConfig) Decode(in interface{}) error {
@@ -42,14 +44,14 @@ func (c *sendAWSSNSConfig) Decode(in interface{}) error {
 }
 
 func (c *sendAWSSNSConfig) Validate() error {
-	if c.ARN == "" {
-		return fmt.Errorf("topic: %v", errors.ErrMissingRequiredOption)
+	if c.AWS.ARN == "" {
+		return fmt.Errorf("aws.arn: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	return nil
 }
 
-func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
+func newSendAWSSNS(ctx context.Context, cfg config.Config) (*sendAWSSNS, error) {
 	conf := sendAWSSNSConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
 		return nil, fmt.Errorf("transform send_aws_sns: %v", err)
@@ -67,19 +69,28 @@ func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 		conf: conf,
 	}
 
-	// Setup the AWS client.
-	tf.client.Setup(aws.Config{
-		Region:          conf.AWS.Region,
-		RoleARN:         conf.AWS.RoleARN,
-		MaxRetries:      conf.Retry.Count,
-		RetryableErrors: conf.Retry.ErrorMessages,
-	})
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
+	if err != nil {
+		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
+	}
+
+	tf.client = sns.NewFromConfig(awsCfg)
+
+	// SNS limits batch operations to 10 messages.
+	count := 10
+	if conf.Batch.Count > 0 && conf.Batch.Count <= count {
+		count = conf.Batch.Count
+	}
+
+	// SNS limits batch operations to 256 KB.
+	size := sendAWSSNSMessageSizeLimit
+	if conf.Batch.Size > 0 && conf.Batch.Size <= size {
+		size = conf.Batch.Size
+	}
 
 	agg, err := aggregate.New(aggregate.Config{
-		// SQS limits batch operations to 10 messages.
-		Count: 10,
-		// SNS limits batch operations to 256 KB.
-		Size:     sendAWSSNSMessageSizeLimit,
+		Count:    count,
+		Size:     size,
 		Duration: conf.Batch.Duration,
 	})
 	if err != nil {
@@ -103,10 +114,8 @@ func newSendAWSSNS(_ context.Context, cfg config.Config) (*sendAWSSNS, error) {
 }
 
 type sendAWSSNS struct {
-	conf sendAWSSNSConfig
-
-	// client is safe for concurrent use.
-	client sns.API
+	conf   sendAWSSNSConfig
+	client *sns.Client
 
 	mu     sync.Mutex
 	agg    *aggregate.Aggregate
@@ -149,7 +158,7 @@ func (tf *sendAWSSNS) Transform(ctx context.Context, msg *message.Message) ([]*m
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errBatchNoMoreData)
 	}
 	return []*message.Message{msg}, nil
 }
@@ -165,8 +174,50 @@ func (tf *sendAWSSNS) send(ctx context.Context, key string) error {
 		return err
 	}
 
-	if _, err := tf.client.PublishBatch(ctx, tf.conf.ARN, data); err != nil {
+	ctx = context.WithoutCancel(ctx)
+	return tf.sendMessages(ctx, data)
+}
+
+func (tf *sendAWSSNS) sendMessages(ctx context.Context, data [][]byte) error {
+	mgid := uuid.New().String()
+
+	entries := make([]types.PublishBatchRequestEntry, 0, len(data))
+	for idx, d := range data {
+		entry := types.PublishBatchRequestEntry{
+			Id:      aws.String(strconv.Itoa(idx)),
+			Message: aws.String(string(d)),
+		}
+
+		if strings.HasSuffix(tf.conf.AWS.ARN, ".fifo") {
+			entry.MessageGroupId = aws.String(mgid)
+		}
+
+		entries = append(entries, entry)
+	}
+
+	ctx = context.WithoutCancel(ctx)
+	resp, err := tf.client.PublishBatch(ctx, &sns.PublishBatchInput{
+		PublishBatchRequestEntries: entries,
+		TopicArn:                   aws.String(tf.conf.AWS.ARN),
+	})
+	if err != nil {
 		return err
+	}
+
+	if resp.Failed != nil {
+		var retry [][]byte
+		for _, r := range resp.Failed {
+			idx, err := strconv.Atoi(aws.StringValue(r.Id))
+			if err != nil {
+				return err
+			}
+
+			retry = append(retry, data[idx])
+		}
+
+		if len(retry) > 0 {
+			return tf.sendMessages(ctx, retry)
+		}
 	}
 
 	return nil

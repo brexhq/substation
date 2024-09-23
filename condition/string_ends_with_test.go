@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
-var _ inspector = &stringEndsWith{}
+var _ Conditioner = &stringEndsWith{}
 
 var stringEndsWithTests = []struct {
 	name     string
@@ -63,7 +63,7 @@ func TestStringEndsWith(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			check, err := insp.Inspect(ctx, message)
+			check, err := insp.Condition(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}
@@ -78,7 +78,7 @@ func TestStringEndsWith(t *testing.T) {
 func benchmarkStringEndsWith(b *testing.B, insp *stringEndsWith, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = insp.Inspect(ctx, message)
+		_, _ = insp.Condition(ctx, message)
 	}
 }
 

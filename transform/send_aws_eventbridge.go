@@ -9,11 +9,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/internal/aggregate"
-	"github.com/brexhq/substation/internal/aws"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	"github.com/brexhq/substation/v2/internal/aggregate"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 // Records greater than 256 KB in size cannot be
@@ -27,8 +27,6 @@ const sendAWSEventBridgeMessageSizeLimit = 1024 * 1024 * 256
 var errSendAWSEventBridgeMessageSizeLimit = fmt.Errorf("data exceeded size limit")
 
 type sendAWSEventBridgeConfig struct {
-	// ARN is the EventBridge bus to send messages to.
-	ARN string `json:"arn"`
 	// Describes the type of the messages sent to EventBridge.
 	Description string `json:"description"`
 	// AuxTransforms are applied to batched data before it is sent.
@@ -38,7 +36,6 @@ type sendAWSEventBridgeConfig struct {
 	Object iconfig.Object `json:"object"`
 	Batch  iconfig.Batch  `json:"batch"`
 	AWS    iconfig.AWS    `json:"aws"`
-	Retry  iconfig.Retry  `json:"retry"`
 }
 
 func (c *sendAWSEventBridgeConfig) Decode(in interface{}) error {
@@ -66,13 +63,7 @@ func newSendAWSEventBridge(ctx context.Context, cfg config.Config) (*sendAWSEven
 		conf: conf,
 	}
 
-	// Setup the AWS client.
-	awsCfg, err := aws.NewV2(ctx, aws.Config{
-		Region:          conf.AWS.Region,
-		RoleARN:         conf.AWS.RoleARN,
-		MaxRetries:      conf.Retry.Count,
-		RetryableErrors: conf.Retry.ErrorMessages,
-	})
+	awsCfg, err := iconfig.NewAWS(ctx, conf.AWS)
 	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
@@ -152,7 +143,7 @@ func (tf *sendAWSEventBridge) Transform(ctx context.Context, msg *message.Messag
 	// If data cannot be added after reset, then the batch is misconfgured.
 	tf.agg.Reset(key)
 	if ok := tf.agg.Add(key, msg.Data()); !ok {
-		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errSendBatchMisconfigured)
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errBatchNoMoreData)
 	}
 	return []*message.Message{msg}, nil
 }
@@ -183,19 +174,17 @@ func (tf *sendAWSEventBridge) send(ctx context.Context, key string) error {
 		}
 
 		// If empty, this is the default event bus.
-		if tf.conf.ARN != "" {
-			entry.EventBusName = &tf.conf.ARN
+		if tf.conf.AWS.ARN != "" {
+			entry.EventBusName = &tf.conf.AWS.ARN
 		}
 
 		entries[i] = entry
 	}
 
 	ctx = context.WithoutCancel(ctx)
-	input := &eventbridge.PutEventsInput{
+	if _, err = tf.client.PutEvents(ctx, &eventbridge.PutEventsInput{
 		Entries: entries,
-	}
-
-	if _, err = tf.client.PutEvents(ctx, input); err != nil {
+	}); err != nil {
 		return err
 	}
 

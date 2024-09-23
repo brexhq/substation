@@ -5,18 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/brexhq/substation/config"
-	iconfig "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type metaForEachConfig struct {
-	// Transform that is applied to each item in the array.
-	//
-	// Deprecated: Transform exists for backwards compatibility and will be
-	// removed in a future release. Use Transforms instead.
-	Transform config.Config `json:"transform"`
 	// Transforms that are applied in series to the data in the array.
 	Transforms []config.Config
 
@@ -30,15 +25,21 @@ func (c *metaForEachConfig) Decode(in interface{}) error {
 
 func (c *metaForEachConfig) Validate() error {
 	if c.Object.SourceKey == "" {
-		return fmt.Errorf("object_source_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_source_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
 	if c.Object.TargetKey == "" {
-		return fmt.Errorf("object_target_key: %v", errors.ErrMissingRequiredOption)
+		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
-	if c.Transform.Type == "" && len(c.Transforms) == 0 {
-		return fmt.Errorf("type: %v", errors.ErrMissingRequiredOption)
+	if len(c.Transforms) == 0 {
+		return fmt.Errorf("transforms: %v", iconfig.ErrMissingRequiredOption)
+	}
+
+	for _, t := range c.Transforms {
+		if t.Type == "" {
+			return fmt.Errorf("transform: %v", iconfig.ErrMissingRequiredOption)
+		}
 	}
 
 	return nil
@@ -62,14 +63,6 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 		conf: conf,
 	}
 
-	if conf.Transform.Type != "" {
-		tfer, err := New(ctx, conf.Transform)
-		if err != nil {
-			return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
-		}
-		tf.tf = tfer
-	}
-
 	tf.tfs = make([]Transformer, len(conf.Transforms))
 	for i, t := range conf.Transforms {
 		tfer, err := New(ctx, t)
@@ -86,21 +79,12 @@ func newMetaForEach(ctx context.Context, cfg config.Config) (*metaForEach, error
 type metaForEach struct {
 	conf metaForEachConfig
 
-	tf  Transformer
 	tfs []Transformer
 }
 
 func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	var msgs []*message.Message
-	var err error
-
 	if msg.IsControl() {
-		if len(tf.tfs) > 0 {
-			msgs, err = Apply(ctx, tf.tfs, msg)
-		} else {
-			msgs, err = tf.tf.Transform(ctx, msg)
-		}
-
+		msgs, err := Apply(ctx, tf.tfs, msg)
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}
@@ -119,13 +103,8 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 
 	var arr []interface{}
 	for _, res := range value.Array() {
-		tmpMsg := message.New().SetData(res.Bytes())
-		if len(tf.tfs) > 0 {
-			msgs, err = Apply(ctx, tf.tfs, tmpMsg)
-		} else {
-			msgs, err = tf.tf.Transform(ctx, tmpMsg)
-		}
-
+		m := message.New().SetData(res.Bytes()).SetMetadata(msg.Metadata())
+		msgs, err := Apply(ctx, tf.tfs, m)
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 		}

@@ -8,11 +8,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/brexhq/substation/config"
-	_config "github.com/brexhq/substation/internal/config"
-	"github.com/brexhq/substation/internal/errors"
-	"github.com/brexhq/substation/internal/file"
 	"github.com/tidwall/gjson"
+
+	"github.com/brexhq/substation/v2/config"
+
+	iconfig "github.com/brexhq/substation/v2/internal/config"
+	"github.com/brexhq/substation/v2/internal/file"
 )
 
 // errJSONFileInvalid is returned when the file contains invalid JSON.
@@ -35,13 +36,13 @@ type kvJSONFile struct {
 // Create a new JSON file KV store.
 func newKVJSONFile(cfg config.Config) (*kvJSONFile, error) {
 	var store kvJSONFile
-	if err := _config.Decode(cfg.Settings, &store); err != nil {
+	if err := iconfig.Decode(cfg.Settings, &store); err != nil {
 		return nil, err
 	}
 	store.mu = new(sync.Mutex)
 
 	if store.File == "" {
-		return nil, fmt.Errorf("kv: json: options %+v: %v", &store, errors.ErrMissingRequiredOption)
+		return nil, fmt.Errorf("kv: json: options %+v: %v", &store, iconfig.ErrMissingRequiredOption)
 	}
 
 	return &store, nil

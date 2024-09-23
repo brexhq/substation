@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/brexhq/substation/internal/bufio"
+	"github.com/brexhq/substation/v2/internal/bufio"
 )
 
 func ExampleNewScanner_setup() {

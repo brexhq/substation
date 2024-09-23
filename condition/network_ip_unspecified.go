@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newNetworkIPUnspecified(_ context.Context, cfg config.Config) (*networkIPUnspecified, error) {
@@ -26,7 +26,7 @@ type networkIPUnspecified struct {
 	conf networkIPConfig
 }
 
-func (insp *networkIPUnspecified) Inspect(ctx context.Context, msg *message.Message) (bool, error) {
+func (insp *networkIPUnspecified) Condition(ctx context.Context, msg *message.Message) (bool, error) {
 	if msg.IsControl() {
 		return false, nil
 	}

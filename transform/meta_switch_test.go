@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 var _ Transformer = &metaSwitch{}
@@ -26,25 +26,29 @@ var metaSwitchTests = []struct {
 				"cases": []map[string]interface{}{
 					{
 						"condition": map[string]interface{}{
-							"operator": "any",
-							"inspectors": []map[string]interface{}{
-								{
-									"type": "string_contains",
-									"settings": map[string]interface{}{
-										"object": map[string]interface{}{
-											"source_key": "a",
+							"type": "any",
+							"settings": map[string]interface{}{
+								"conditions": []map[string]interface{}{
+									{
+										"type": "string_contains",
+										"settings": map[string]interface{}{
+											"object": map[string]interface{}{
+												"source_key": "a",
+											},
+											"value": "b",
 										},
-										"value": "b",
 									},
 								},
 							},
 						},
-						"transform": map[string]interface{}{
-							"type": "object_copy",
-							"settings": map[string]interface{}{
-								"object": map[string]interface{}{
-									"source_key": "a",
-									"target_key": "c",
+						"transforms": []map[string]interface{}{
+							{
+								"type": "object_copy",
+								"settings": map[string]interface{}{
+									"object": map[string]interface{}{
+										"source_key": "a",
+										"target_key": "c",
+									},
 								},
 							},
 						},
@@ -64,15 +68,17 @@ var metaSwitchTests = []struct {
 				"cases": []map[string]interface{}{
 					{
 						"condition": map[string]interface{}{
-							"operator": "any",
-							"inspectors": []map[string]interface{}{
-								{
-									"type": "string_contains",
-									"settings": map[string]interface{}{
-										"object": map[string]interface{}{
-											"source_key": "a",
+							"type": "any",
+							"settings": map[string]interface{}{
+								"conditions": []map[string]interface{}{
+									{
+										"type": "string_contains",
+										"settings": map[string]interface{}{
+											"object": map[string]interface{}{
+												"source_key": "a",
+											},
+											"value": "b",
 										},
-										"value": "b",
 									},
 								},
 							},
@@ -108,66 +114,12 @@ var metaSwitchTests = []struct {
 				"cases": []map[string]interface{}{
 					{
 						"condition": map[string]interface{}{
-							"operator": "any",
-							"inspectors": []map[string]interface{}{
-								{
-									"type": "string_contains",
-									"settings": map[string]interface{}{
-										"object": map[string]interface{}{
-											"source_key": "a",
-										},
-										"value": "c",
-									},
-								},
-							},
-						},
-						"transform": map[string]interface{}{
-							"type": "object_copy",
+							"type": "string_contains",
 							"settings": map[string]interface{}{
 								"object": map[string]interface{}{
 									"source_key": "a",
-									"target_key": "c",
 								},
-							},
-						},
-					},
-					{
-						"transform": map[string]interface{}{
-							"type": "object_copy",
-							"settings": map[string]interface{}{
-								"object": map[string]interface{}{
-									"source_key": "a",
-									"target_key": "x",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		[]byte(`{"a":"b"}`),
-		[][]byte{
-			[]byte(`{"a":"b","x":"b"}`),
-		},
-	},
-	{
-		"if_else",
-		config.Config{
-			Settings: map[string]interface{}{
-				"cases": []map[string]interface{}{
-					{
-						"condition": map[string]interface{}{
-							"operator": "any",
-							"inspectors": []map[string]interface{}{
-								{
-									"type": "string_contains",
-									"settings": map[string]interface{}{
-										"object": map[string]interface{}{
-											"source_key": "a",
-										},
-										"value": "c",
-									},
-								},
+								"value": "c",
 							},
 						},
 						"transforms": []map[string]interface{}{
@@ -189,7 +141,7 @@ var metaSwitchTests = []struct {
 								"settings": map[string]interface{}{
 									"object": map[string]interface{}{
 										"source_key": "a",
-										"target_key": "x",
+										"target_key": "z",
 									},
 								},
 							},
@@ -200,72 +152,7 @@ var metaSwitchTests = []struct {
 		},
 		[]byte(`{"a":"b"}`),
 		[][]byte{
-			[]byte(`{"a":"b","x":"b"}`),
-		},
-	},
-	// This test simulates an if/else if block by having all conditions
-	// fail. The data should be unchanged.
-	{
-		"if_else_if",
-		config.Config{
-			Settings: map[string]interface{}{
-				"cases": []map[string]interface{}{
-					{
-						"condition": map[string]interface{}{
-							"operator": "any",
-							"inspectors": []map[string]interface{}{
-								{
-									"type": "string_contains",
-									"settings": map[string]interface{}{
-										"object": map[string]interface{}{
-											"source_key": "a",
-										},
-										"value": "c",
-									},
-								},
-							},
-						},
-						"transform": map[string]interface{}{
-							"type": "object_copy",
-							"settings": map[string]interface{}{
-								"object": map[string]interface{}{
-									"source_key": "a",
-									"target_key": "c",
-								},
-							},
-						},
-					},
-					{
-						"condition": map[string]interface{}{
-							"operator": "any",
-							"inspectors": []map[string]interface{}{
-								{
-									"type": "string_contains",
-									"settings": map[string]interface{}{
-										"object": map[string]interface{}{
-											"source_key": "a",
-										},
-										"value": "d",
-									},
-								},
-							},
-						},
-						"transform": map[string]interface{}{
-							"type": "object_copy",
-							"settings": map[string]interface{}{
-								"object": map[string]interface{}{
-									"source_key": "a",
-									"target_key": "d",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		[]byte(`{"a":"b"}`),
-		[][]byte{
-			[]byte(`{"a":"b"}`),
+			[]byte(`{"a":"b","z":"b"}`),
 		},
 	},
 	{
@@ -275,15 +162,17 @@ var metaSwitchTests = []struct {
 				"cases": []map[string]interface{}{
 					{
 						"condition": map[string]interface{}{
-							"operator": "any",
-							"inspectors": []map[string]interface{}{
-								{
-									"type": "string_contains",
-									"settings": map[string]interface{}{
-										"object": map[string]interface{}{
-											"source_key": "a",
+							"type": "any",
+							"settings": map[string]interface{}{
+								"conditions": []map[string]interface{}{
+									{
+										"type": "string_contains",
+										"settings": map[string]interface{}{
+											"object": map[string]interface{}{
+												"source_key": "a",
+											},
+											"value": "c",
 										},
-										"value": "c",
 									},
 								},
 							},
@@ -302,15 +191,17 @@ var metaSwitchTests = []struct {
 					},
 					{
 						"condition": map[string]interface{}{
-							"operator": "any",
-							"inspectors": []map[string]interface{}{
-								{
-									"type": "string_contains",
-									"settings": map[string]interface{}{
-										"object": map[string]interface{}{
-											"source_key": "a",
+							"type": "any",
+							"settings": map[string]interface{}{
+								"conditions": []map[string]interface{}{
+									{
+										"type": "string_contains",
+										"settings": map[string]interface{}{
+											"object": map[string]interface{}{
+												"source_key": "a",
+											},
+											"value": "d",
 										},
-										"value": "d",
 									},
 								},
 							},

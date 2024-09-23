@@ -2,12 +2,11 @@
 .git
 .github
 .vscode
-build/config
 build/container
 build/scripts
 !build/scripts/aws/lambda/extension.zip
 build/terraform
-examples
+**/examples
 .dockerignore
 .gitignore
 .golangci.yml

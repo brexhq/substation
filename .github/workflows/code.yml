@@ -2,57 +2,60 @@ name: code
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   go:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 1
-  
-    - name: setup
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.22
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
 
-    - name: tests
-      run: go test -timeout 30s -v ./... 
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.22
 
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        version: latest
+      - name: Testing
+        run: go test -timeout 30s -v ./...
+
+      - name: Linting
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
 
   python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: setup
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
-      - run: |
+      - name: Linting
+        run: |
           pip3 install black
           find -name *.py | xargs black --check
 
   jsonnet:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
+      - name: Checkout Repository
         uses: actions/checkout@v2
         with:
           fetch-depth: 1
 
-      - name: setup
+      - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.22
 
-      - name: compile
+      - name: Compiling
         run: |
           go install github.com/google/go-jsonnet/cmd/jsonnet@latest
           sh build/scripts/config/compile.sh

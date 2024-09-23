@@ -4,8 +4,8 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newNumberBitwiseXOR(_ context.Context, cfg config.Config) (*numberBitwiseXOR, error) {
@@ -25,7 +25,7 @@ type numberBitwiseXOR struct {
 	conf numberBitwiseConfig
 }
 
-func (insp *numberBitwiseXOR) Inspect(ctx context.Context, msg *message.Message) (output bool, err error) {
+func (insp *numberBitwiseXOR) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
 	if msg.IsControl() {
 		return false, nil
 	}

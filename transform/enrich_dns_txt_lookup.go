@@ -9,8 +9,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func newEnrichDNSTxtLookup(_ context.Context, cfg config.Config) (*enrichDNSTxtLookup, error) {

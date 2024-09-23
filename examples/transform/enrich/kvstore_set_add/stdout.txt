@@ -1,0 +1,41 @@
+{
+  "date": "2021-01-07",
+  "customer": "alice@brex.com",
+  "order": "pizza",
+  "kv_store": ["pizza"]
+}
+
+{
+  "date": "2021-01-01",
+  "customer": "alice@brex.com",
+  "order": "pizza",
+  "kv_store": ["pizza"]
+}
+
+{
+  "date": "2021-01-03",
+  "customer": "bob@brex.com",
+  "order": "pizza",
+  "kv_store": ["burger", "pizza"]
+}
+
+{
+  "date": "2021-01-07",
+  "customer": "bob@brex.com",
+  "order": "burger",
+  "kv_store": ["burger", "pizza"]
+}
+
+{
+  "date": "2021-01-01",
+  "customer": "bob@brex.com",
+  "order": "burger",
+  "kv_store": ["burger", "pizza"]
+}
+
+{
+  "date": "2021-01-13",
+  "customer": "alice@brex.com",
+  "order": "pizza",
+  "kv_store": ["pizza"]
+}

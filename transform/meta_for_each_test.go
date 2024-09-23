@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
 var _ Transformer = &metaForEach{}
@@ -18,34 +18,6 @@ var metaForEachTests = []struct {
 	expected [][]byte
 }{
 	{
-		"meta_pipeline",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"source_key": "a",
-					"target_key": "b",
-				},
-				"transform": config.Config{
-					Type: "meta_pipeline",
-					Settings: map[string]interface{}{
-						"transforms": []config.Config{
-							{
-								Type: "format_from_base64",
-							},
-							{
-								Type: "format_from_gzip",
-							},
-						},
-					},
-				},
-			},
-		},
-		[]byte(`{"a":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA","H4sIAI/bzmIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="]}`),
-		[][]byte{
-			[]byte(`{"a":["H4sIAMpcy2IA/wXAIQ0AAACAsLbY93csBiFlc4wDAAAA","H4sIAI/bzmIA/wXAMQ0AAADCMK1MAv6Pph2qjP92AwAAAA=="],"b":["foo","bar"]}`),
-		},
-	},
-	{
 		"format_from_base64",
 		config.Config{
 			Settings: map[string]interface{}{
@@ -53,8 +25,10 @@ var metaForEachTests = []struct {
 					"source_key": "secrets",
 					"target_key": "decoded",
 				},
-				"transform": config.Config{
-					Type: "format_from_base64",
+				"transforms": []config.Config{
+					{
+						Type: "format_from_base64",
+					},
 				},
 			},
 		},
@@ -71,10 +45,12 @@ var metaForEachTests = []struct {
 					"source_key": "user_email",
 					"target_key": "user_name",
 				},
-				"transform": config.Config{
-					Type: "string_capture",
-					Settings: map[string]interface{}{
-						"pattern": "^([^@]*)@.*$",
+				"transforms": []config.Config{
+					{
+						Type: "string_capture",
+						Settings: map[string]interface{}{
+							"pattern": "^([^@]*)@.*$",
+						},
 					},
 				},
 			},
@@ -92,8 +68,10 @@ var metaForEachTests = []struct {
 					"source_key": "upcase",
 					"target_key": "downcase",
 				},
-				"transform": config.Config{
-					Type: "string_to_lower",
+				"transforms": []config.Config{
+					{
+						Type: "string_to_lower",
+					},
 				},
 			},
 		},
@@ -110,8 +88,10 @@ var metaForEachTests = []struct {
 					"source_key": "domain",
 					"target_key": "subdomain",
 				},
-				"transform": config.Config{
-					Type: "network_domain_subdomain",
+				"transforms": []config.Config{
+					{
+						Type: "network_domain_subdomain",
+					},
 				},
 			},
 		},
@@ -128,8 +108,10 @@ var metaForEachTests = []struct {
 					"source_key": "a",
 					"target_key": "b",
 				},
-				"transform": config.Config{
-					Type: "hash_sha256",
+				"transforms": []config.Config{
+					{
+						Type: "hash_sha256",
+					},
 				},
 			},
 		},
@@ -146,13 +128,15 @@ var metaForEachTests = []struct {
 					"source_key": "a",
 					"target_key": "b",
 				},
-				"transform": config.Config{
-					Type: "object_insert",
-					Settings: map[string]interface{}{
-						"object": map[string]interface{}{
-							"target_key": "baz",
+				"transforms": []config.Config{
+					{
+						Type: "object_insert",
+						Settings: map[string]interface{}{
+							"object": map[string]interface{}{
+								"target_key": "baz",
+							},
+							"value": "qux",
 						},
-						"value": "qux",
 					},
 				},
 			},
@@ -170,11 +154,13 @@ var metaForEachTests = []struct {
 					"source_key": "a",
 					"target_key": "b",
 				},
-				"transform": config.Config{
-					Type: "string_replace",
-					Settings: map[string]interface{}{
-						"pattern":     "r",
-						"replacement": "z",
+				"transforms": []config.Config{
+					{
+						Type: "string_replace",
+						Settings: map[string]interface{}{
+							"pattern":     "r",
+							"replacement": "z",
+						},
 					},
 				},
 			},
@@ -192,10 +178,12 @@ var metaForEachTests = []struct {
 					"source_key": "a",
 					"target_key": "b",
 				},
-				"transform": config.Config{
-					Type: "time_from_string",
-					Settings: map[string]interface{}{
-						"format": "2006-01-02T15:04:05Z",
+				"transforms": []config.Config{
+					{
+						Type: "time_from_string",
+						Settings: map[string]interface{}{
+							"format": "2006-01-02T15:04:05Z",
+						},
 					},
 				},
 			},

@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/brexhq/substation/config"
-	"github.com/brexhq/substation/message"
+	"github.com/brexhq/substation/v2/config"
+	"github.com/brexhq/substation/v2/message"
 )
 
-var _ inspector = &numberEqualTo{}
+var _ Conditioner = &numberEqualTo{}
 
 var numberEqualToTests = []struct {
 	name     string
@@ -147,7 +147,7 @@ func TestNumberEqualTo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			check, err := insp.Inspect(ctx, message)
+			check, err := insp.Condition(ctx, message)
 			if err != nil {
 				t.Error(err)
 			}
@@ -164,7 +164,7 @@ func TestNumberEqualTo(t *testing.T) {
 func benchmarkNumberEqualTo(b *testing.B, insp *numberEqualTo, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
-		_, _ = insp.Inspect(ctx, message)
+		_, _ = insp.Condition(ctx, message)
 	}
 }
 

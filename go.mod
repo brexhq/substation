@@ -1,6 +1,6 @@
 module github.com/brexhq/substation/v2
 
-go 1.22
+go 1.22.0
 
 require (
 	github.com/aws/aws-lambda-go v1.47.0

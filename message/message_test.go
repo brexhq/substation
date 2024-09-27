@@ -341,3 +341,29 @@ func BenchmarkTestMessageSetMetadata(b *testing.B) {
 		)
 	}
 }
+
+func FuzzMessageSetValue(f *testing.F) {
+	f.Add("key", "value")
+	f.Fuzz(func(t *testing.T, key, value string) {
+		msg := New().SetData([]byte(`{}`))
+		if err := msg.SetValue(key, value); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+}
+
+func FuzzMessageGetValue(f *testing.F) {
+	f.Add("key")
+	f.Fuzz(func(t *testing.T, key string) {
+		msg := New().SetData([]byte(`{"key":"value"}`))
+		_ = msg.GetValue(key)
+	})
+}
+
+func FuzzMessageDeleteValue(f *testing.F) {
+	f.Add("key")
+	f.Fuzz(func(t *testing.T, key string) {
+		msg := New().SetData([]byte(`{"key":"value"}`))
+		_ = msg.DeleteValue(key)
+	})
+}

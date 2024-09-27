@@ -11,7 +11,6 @@
 ![OSSF-Scorecard Score](https://img.shields.io/ossf-scorecard/github.com/brexhq/substation?style=for-the-badge)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/brexhq/substation/code.yml?style=for-the-badge)
 ![GitHub Release](https://img.shields.io/github/v/release/brexhq/substation?sort=semver&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fbrexhq%2Fsubstation%2Freleases%2Flatest)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/brexhq/substation?style=for-the-badge)
 ![GitHub Created At](https://img.shields.io/github/created-at/brexhq/substation?style=for-the-badge&label=created)
 ![GitHub License](https://img.shields.io/github/license/brexhq/substation?style=for-the-badge)
 

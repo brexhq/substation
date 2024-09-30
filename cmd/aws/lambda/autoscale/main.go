@@ -63,6 +63,10 @@ func init() {
 			panic(err)
 		}
 
+		if dps > math.MaxInt32 || dps < math.MinInt32 {
+			panic(fmt.Errorf("value %d out of bounds for int32", dps))
+		}
+
 		kinesisDownscaleDatapoints = int32(dps)
 	}
 
@@ -70,6 +74,10 @@ func init() {
 		dps, err := strconv.Atoi(v)
 		if err != nil {
 			panic(err)
+		}
+
+		if dps > math.MaxInt32 || dps < math.MinInt32 {
+			panic(fmt.Errorf("value %d out of bounds for int32", dps))
 		}
 
 		kinesisUpscaleDatapoints = int32(dps)

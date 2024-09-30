@@ -68,7 +68,6 @@ func init() {
 		} else {
 			log.Info("init downscale: Provided AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS is outside of range 1-360, using default value of 60")
 		}
-
 	}
 
 	if v, found := os.LookupEnv("AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS"); found {

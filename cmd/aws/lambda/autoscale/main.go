@@ -63,7 +63,11 @@ func init() {
 			panic(err)
 		}
 
-		kinesisDownscaleDatapoints = int32(dps)
+		if dps <= math.MaxInt32 && dps >= 1 {
+			kinesisDownscaleDatapoints = int32(dps)
+		} else {
+			log.Info("init downscale: Provided AUTOSCALE_KINESIS_DOWNSCALE_DATAPOINTS is outside of valid range, using default value of 60")
+		}
 	}
 
 	if v, found := os.LookupEnv("AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS"); found {
@@ -72,7 +76,11 @@ func init() {
 			panic(err)
 		}
 
-		kinesisUpscaleDatapoints = int32(dps)
+		if dps <= math.MaxInt32 && dps >= 1 {
+			kinesisUpscaleDatapoints = int32(dps)
+		} else {
+			log.Info("init upscale: Provided AUTOSCALE_KINESIS_UPSCALE_DATAPOINTS is outside of valid range, using default value of 5")
+		}
 	}
 
 	if v, found := os.LookupEnv("AUTOSCALE_KINESIS_THRESHOLD"); found {
@@ -83,6 +91,8 @@ func init() {
 
 		if threshold >= 0.4 && threshold <= 0.9 {
 			kinesisThreshold = threshold
+		} else {
+			log.Info("init threshold: Provided AUTOSCALE_KINESIS_THRESHOLD is outside of range 0.4-0.9, using default value of 0.7")
 		}
 	}
 }

@@ -177,3 +177,43 @@ func TestNoneCondition(t *testing.T) {
 		})
 	}
 }
+
+func FuzzTestMetaNone(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"z":"a"}`),
+		[]byte(`["b","b","b"]`),
+		[]byte(`["a","b","c"]`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newMetaNone(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "@this",
+				},
+				"conditions": []config.Config{
+					{
+						Type: "string_contains",
+						Settings: map[string]interface{}{
+							"value": "a",
+						},
+					},
+				},
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

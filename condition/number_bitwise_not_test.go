@@ -8,32 +8,22 @@ import (
 	"github.com/brexhq/substation/v2/message"
 )
 
-var _ Conditioner = &stringLessThan{}
-
-var stringLessThanTests = []struct {
+var numberBitwiseNOTTests = []struct {
 	name     string
 	cfg      config.Config
-	data     []byte
+	test     []byte
 	expected bool
 }{
 	{
 		"pass",
 		config.Config{
 			Settings: map[string]interface{}{
-				"value": "b",
+				"object": map[string]interface{}{
+					"value": "",
+				},
 			},
 		},
-		[]byte("a"),
-		true,
-	},
-	{
-		"pass",
-		config.Config{
-			Settings: map[string]interface{}{
-				"value": "2024-01",
-			},
-		},
-		[]byte(`2023-01-01T00:00:00Z`),
+		[]byte(`570506001`),
 		true,
 	},
 	{
@@ -41,12 +31,23 @@ var stringLessThanTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"source_key": "foo",
-					"target_key": "bar",
+					"value": "",
 				},
 			},
 		},
-		[]byte(`{"foo":"2022-01-01T00:00:00Z", "bar":"2023-01-01T00:00:00Z"}`),
+		[]byte(`123456789`),
+		true,
+	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"value": "",
+				},
+			},
+		},
+		[]byte(`0`),
 		true,
 	},
 	{
@@ -54,25 +55,22 @@ var stringLessThanTests = []struct {
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
-					"source_key": "foo",
-					"target_key": "bar",
+					"value": "",
 				},
-				"value": "2025-01-01",
 			},
 		},
-		[]byte(`{"foo":"2024-01-01T00:00:00Z", "bar":"2023-01-01"}`),
+		[]byte(`-1`),
 		false,
 	},
 }
 
-func TestStringLessThan(t *testing.T) {
+func TestNumberBitwiseNOT(t *testing.T) {
 	ctx := context.TODO()
 
-	for _, test := range stringLessThanTests {
+	for _, test := range numberBitwiseNOTTests {
 		t.Run(test.name, func(t *testing.T) {
-			message := message.New().SetData(test.data)
-
-			insp, err := newStringLessThan(ctx, test.cfg)
+			message := message.New().SetData(test.test)
+			insp, err := newNumberBitwiseNOT(ctx, test.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -83,43 +81,42 @@ func TestStringLessThan(t *testing.T) {
 			}
 
 			if test.expected != check {
-				t.Errorf("expected %v, got %v", test.expected, check)
+				t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.test))
 			}
 		})
 	}
 }
 
-func benchmarkStringLessThan(b *testing.B, insp *stringLessThan, message *message.Message) {
+func benchmarkNumberBitwiseNOT(b *testing.B, insp *numberBitwiseNOT, message *message.Message) {
 	ctx := context.TODO()
 	for i := 0; i < b.N; i++ {
 		_, _ = insp.Condition(ctx, message)
 	}
 }
 
-func BenchmarkStringLessThan(b *testing.B) {
-	for _, test := range stringLessThanTests {
-		insp, err := newStringLessThan(context.TODO(), test.cfg)
+func BenchmarkNumberBitwiseNOT(b *testing.B) {
+	for _, test := range numberBitwiseNOTTests {
+		insp, err := newNumberBitwiseNOT(context.TODO(), test.cfg)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		b.Run(test.name,
 			func(b *testing.B) {
-				message := message.New().SetData(test.data)
-				benchmarkStringLessThan(b, insp, message)
+				message := message.New().SetData(test.test)
+				benchmarkNumberBitwiseNOT(b, insp, message)
 			},
 		)
 	}
 }
 
-func FuzzTestStringLessThan(f *testing.F) {
+func FuzzTestNumberBitwiseNOT(f *testing.F) {
 	testcases := [][]byte{
-		[]byte(`"a"`),
-		[]byte(`"2022-01-01T00:00:00Z"`),
-		[]byte(`{"foo":"2022-01-01T00:00:00Z", "bar":"2023-01-01T00:00:00Z"}`),
-		[]byte(`"b"`),
-		[]byte(`" "`),
-		[]byte(`"z"`),
+		[]byte(`570506001`),
+		[]byte(`123456789`),
+		[]byte(`0`),
+		[]byte(`-1`),
+		[]byte(`18446744073709551615`), // Max uint64 value
 	}
 
 	for _, tc := range testcases {
@@ -129,9 +126,11 @@ func FuzzTestStringLessThan(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		ctx := context.TODO()
 		message := message.New().SetData(data)
-		insp, err := newStringLessThan(ctx, config.Config{
+		insp, err := newNumberBitwiseNOT(ctx, config.Config{
 			Settings: map[string]interface{}{
-				"value": "b",
+				"object": map[string]interface{}{
+					"source_key": "",
+				},
 			},
 		})
 		if err != nil {

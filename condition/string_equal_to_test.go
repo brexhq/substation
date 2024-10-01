@@ -121,3 +121,36 @@ func BenchmarkStringEqualTo(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestStringEqualTo(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`"abcde"`),
+		[]byte(`"abcdef"`),
+		[]byte(`""`),
+		[]byte(`"abcd"`),
+		[]byte(`"12345"`),
+		[]byte(`"abc"`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newStringEqualTo(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"value": "abcde",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

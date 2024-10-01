@@ -69,3 +69,30 @@ func BenchmarkNetworkIPUnicastByte(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNetworkIPUnicast(f *testing.F) {
+	testcases := [][]byte{
+		[]byte("223.255.255.255"),
+		[]byte("192.168.1.1"),
+		[]byte("10.0.0.1"),
+		[]byte("8.8.8.8"),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newNetworkIPUnicast(ctx, config.Config{})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

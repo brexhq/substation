@@ -183,3 +183,37 @@ func BenchmarkNumberLessThan(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNumberLessThan(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"foo":1}`),
+		[]byte(`1`),
+		[]byte(`1.5`),
+		[]byte(`{"foo":0.5}`),
+		[]byte(`10`),
+		[]byte(`-5`),
+		[]byte(`0`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newNumberLessThan(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"value": 5,
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

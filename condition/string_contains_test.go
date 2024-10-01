@@ -84,3 +84,36 @@ func BenchmarkStringContains(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestStringContains(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`bar`),
+		[]byte(`{"foo":"baz"}`),
+		[]byte(`baz`),
+		[]byte(`{"foo":""}`),
+		[]byte(`""`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newStringContains(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"value": "bar",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

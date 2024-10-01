@@ -69,3 +69,30 @@ func BenchmarkNetworkIPGlobalUnicastByte(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNetworkIPGlobalUnicast(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"ip":"192.168.1.1"}`),
+		[]byte(`{"ip":"2001:0db8:85a3:0000:0000:8a2e:0370:7334"}`),
+		[]byte(`{"ip":"255.255.255.255"}`),
+		[]byte(`{"ip":"::1"}`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newNetworkIPGlobalUnicast(ctx, config.Config{})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

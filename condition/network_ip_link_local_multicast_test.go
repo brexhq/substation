@@ -69,3 +69,30 @@ func BenchmarkNetworkIPLinkLocalMulticastByte(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNetworkIPLinkLocalMulticast(f *testing.F) {
+	testcases := [][]byte{
+		[]byte("224.0.0.12"),
+		[]byte("224.0.0.1"),
+		[]byte("239.255.255.255"),
+		[]byte("192.168.1.1"),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newNetworkIPLinkLocalMulticast(ctx, config.Config{})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

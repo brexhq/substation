@@ -111,3 +111,39 @@ func BenchmarkNumberLengthEqualTo(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNumberLengthEqualTo(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"a":"bcd"}`),
+		[]byte(`bcd`),
+		[]byte(`{"a":"bcde"}`),
+		[]byte(`abcd`),
+		[]byte(`{"a":""}`),
+		[]byte(`""`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newNumberLengthEqualTo(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+				},
+				"value": 3,
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

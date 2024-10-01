@@ -87,3 +87,30 @@ func BenchmarkFormatJSONByte(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestFormatJSON(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"hello":"world"}`),
+		[]byte(`["a","b","c"]`),
+		[]byte(`{hello:"world"}`),
+		[]byte(`a`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newFormatJSON(ctx, config.Config{})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

@@ -75,3 +75,35 @@ func BenchmarkNumberBitwiseOR(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNumberBitwiseOR(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`570506001`),
+		[]byte(`123456789`),
+		[]byte(`0`),
+		[]byte(`-1`),
+		[]byte(`18446744073709551615`), // Max uint64 value
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newNumberBitwiseOR(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"value": 0x0001,
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

@@ -83,3 +83,35 @@ func BenchmarkStringMatchByte(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestStringMatch(f *testing.F) {
+	testcases := [][]byte{
+		[]byte("Test"),
+		[]byte("-Test"),
+		[]byte("AnotherTest"),
+		[]byte("123Test"),
+		[]byte(""),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newStringMatch(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"pattern": "^Test",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

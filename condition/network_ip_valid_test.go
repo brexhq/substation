@@ -69,3 +69,31 @@ func BenchmarkNetworkIPValidByte(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNetworkIPValid(f *testing.F) {
+	testcases := [][]byte{
+		[]byte("192.168.1.1"),
+		[]byte("8.8.8.8"),
+		[]byte("255.255.255.255"),
+		[]byte("::1"),
+		[]byte("2001:0db8:85a3:0000:0000:8a2e:0370:7334"),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newNetworkIPValid(ctx, config.Config{})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

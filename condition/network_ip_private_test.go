@@ -81,3 +81,36 @@ func BenchmarkNetworkIPPrivateByte(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNetworkIPPrivate(f *testing.F) {
+	testcases := [][]byte{
+		[]byte("8.8.8.8"),
+		[]byte(`{"ip_address":"192.168.1.2"}`),
+		[]byte("10.0.0.1"),
+		[]byte("172.16.0.1"),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newNetworkIPPrivate(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "ip_address",
+				},
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

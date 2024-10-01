@@ -183,3 +183,35 @@ func BenchmarkNumberEqualTo(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNumberEqualTo(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`123`),
+		[]byte(`456`),
+		[]byte(`789`),
+		[]byte(`0`),
+		[]byte(`-123`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newNumberEqualTo(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"value": 123,
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

@@ -111,3 +111,36 @@ func BenchmarkStringGreaterThan(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestStringGreaterThan(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`"b"`),
+		[]byte(`"2023-01-01T00:00:00Z"`),
+		[]byte(`{"foo":"2023-01-01T00:00:00Z", "bar":"2022-01-01T00:00:00Z"}`),
+		[]byte(`"a"`),
+		[]byte(`"z"`),
+		[]byte(`" "`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newStringGreaterThan(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"value": "a",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

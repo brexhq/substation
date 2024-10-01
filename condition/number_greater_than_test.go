@@ -183,3 +183,37 @@ func BenchmarkNumberGreaterThan(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNumberGreaterThan(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"foo":1}`),
+		[]byte(`1`),
+		[]byte(`1.5`),
+		[]byte(`{"foo":1.1}`),
+		[]byte(`10`),
+		[]byte(`-5`),
+		[]byte(`0`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newNumberGreaterThan(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"value": 1,
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

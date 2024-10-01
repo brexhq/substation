@@ -97,3 +97,36 @@ func BenchmarkStringEndsWith(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestStringEndsWith(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"a":"bcde"}`),
+		[]byte(`bcde`),
+		[]byte(`{"a":"abcd"}`),
+		[]byte(`abcd`),
+		[]byte(`{"a":""}`),
+		[]byte(`""`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		message := message.New().SetData(data)
+		insp, err := newStringEndsWith(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"value": "de",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = insp.Condition(ctx, message)
+		if err != nil {
+			return
+		}
+	})
+}

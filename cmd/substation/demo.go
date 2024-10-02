@@ -118,6 +118,7 @@ partially normalized to the Elastic Common Schema (ECS).
 			message.New().AsControl(),
 		}
 
+		// Make the input pretty before printing to the console.
 		fmt.Printf("input:\n%s\n", gjson.Get(evt, "@this|@pretty").String())
 		fmt.Printf("output:\n")
 
@@ -125,8 +126,7 @@ partially normalized to the Elastic Common Schema (ECS).
 			return err
 		}
 
-		fmt.Printf("\n")
-		fmt.Printf("config:%s\n", demoConf)
+		fmt.Printf("\nconfig:%s\n", demoConf)
 
 		return nil
 	},

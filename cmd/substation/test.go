@@ -213,9 +213,9 @@ production resources, such as any enrichment or send transforms.
 	// Examples:
 	//  substation test [-R]
 	//  substation test [-R] /path/to/configs
-	// 	substation test /path/to/config.json
-	// 	substation test /path/to/config.jsonnet
-	// 	substation test /path/to/my.libsonnet
+	//  substation test /path/to/config.json
+	//  substation test /path/to/config.jsonnet
+	//  substation test /path/to/my.libsonnet
 	Example: `  substation test [-R]
   substation test [-R] /path/to/configs
   substation test /path/to/config.json
@@ -247,8 +247,7 @@ production resources, such as any enrichment or send transforms.
 			return err
 		}
 
-		// If the arg is a file, then test that file. If the
-		// arg is also not a directory, then return a warning.
+		// If the arg is a file, then test only that file.
 		if !fi.IsDir() {
 			var cfg customConfig
 
@@ -280,9 +279,10 @@ production resources, such as any enrichment or send transforms.
 		}
 
 		var entries []string
-		// Walk to get all files in the directory that end with `.json`.
-		// These are assumed to be Substation configuration files, and
-		// are validated before attempting to run tests.
+		// Walk to get all valid files in the directory.
+		//
+		// These are assumed to be Substation configuration files,
+		// and are validated before attempting to run tests.
 		if err := filepath.WalkDir(arg, func(path string, d os.DirEntry, err error) error {
 			if err != nil {
 				return err

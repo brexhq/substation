@@ -216,8 +216,8 @@ For example, this config contains two tests:
 	Example: `  substation test [-R]
   substation test [-R] /path/to/configs
   substation test /path/to/config.json
-	substation test /path/to/config.jsonnet
-	substation test /path/to/my.libsonnet
+  substation test /path/to/config.jsonnet
+  substation test /path/to/my.libsonnet
 `,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -254,13 +254,11 @@ For example, this config contains two tests:
 				if err != nil {
 					return err
 				}
-
 			case ".json":
 				cfg, err = fiConfig(arg)
 				if err != nil {
 					return err
 				}
-
 			default:
 				fmt.Printf("warning: \"%s\" matched no files\n", arg)
 			}

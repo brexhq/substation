@@ -68,7 +68,7 @@ func test(ctx context.Context, file string) error {
 
 		sMsgs, err := setup.Transform(ctx, message.New().AsControl())
 		if err != nil {
-			fmt.Printf("?\t%s\t[tf err]\n", file)
+			fmt.Printf("FAIL\t%s\t[transform error]\n", file)
 
 			//nolint:nilerr  // config errors should not disrupt the test.
 			return nil
@@ -94,7 +94,7 @@ func test(ctx context.Context, file string) error {
 
 			tMsgs, err := tester.Transform(ctx, msg)
 			if err != nil {
-				fmt.Printf("?\t%s\t[tf err]\n", file)
+				fmt.Printf("FAIL\t%s\t[transform error]\n", file)
 
 				//nolint:nilerr  // config errors should not disrupt the test.
 				return nil
@@ -107,7 +107,7 @@ func test(ctx context.Context, file string) error {
 
 				ok, err := cnd.Condition(ctx, msg)
 				if err != nil {
-					fmt.Printf("?\t%s\t[cnd err]\n", file)
+					fmt.Printf("FAIL\t%s\t[condition error]\n", file)
 
 					//nolint:nilerr  // config errors should not disrupt the test.
 					return nil
@@ -165,9 +165,7 @@ For example, this config contains two tests:
         sub.tf.test.message({ value: {a: true} }),
       ],
       // Checks if key 'x' == 'true'.
-      condition: sub.cnd.all([
-        sub.cnd.str.eq({ object: {source_key: 'x'}, value: 'true' }),
-      ])
+      condition: sub.cnd.str.eq({ object: {source_key: 'x'}, value: 'true' }),
     },
     {
       name: 'my-failing-test',

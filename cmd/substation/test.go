@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/condition"
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
-	"github.com/spf13/cobra"
 )
 
 // customConfig wraps the Substation config with support for tests.

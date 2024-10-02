@@ -30,6 +30,7 @@ type customConfig struct {
 func init() {
 	rootCmd.AddCommand(testCmd)
 	testCmd.PersistentFlags().BoolP("recursive", "R", false, "recursively test all files")
+	testCmd.PersistentFlags().StringToString("ext-str", nil, "set external variables")
 }
 
 func fiConfig(f string) (customConfig, error) {
@@ -253,7 +254,12 @@ production resources, such as any enrichment or send transforms.
 
 			switch filepath.Ext(arg) {
 			case ".jsonnet", ".libsonnet":
-				mem, err := buildFile(arg)
+				m, err := cmd.PersistentFlags().GetStringToString("ext-str")
+				if err != nil {
+					return err
+				}
+
+				mem, err := buildFile(arg, m)
 				if err != nil {
 					return err
 				}
@@ -316,7 +322,12 @@ production resources, such as any enrichment or send transforms.
 
 			switch filepath.Ext(entry) {
 			case ".jsonnet", ".libsonnet":
-				mem, err := buildFile(entry)
+				m, err := cmd.PersistentFlags().GetStringToString("ext-str")
+				if err != nil {
+					return err
+				}
+
+				mem, err := buildFile(entry, m)
 				if err != nil {
 					return err
 				}

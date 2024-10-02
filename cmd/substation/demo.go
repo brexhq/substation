@@ -7,6 +7,7 @@ import (
 
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/message"
+	"github.com/google/go-jsonnet"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
 )
@@ -97,6 +98,8 @@ partially normalized to the Elastic Common Schema (ECS).
 	Args: cobra.MaximumNArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg := substation.Config{}
+
+		vm := jsonnet.MakeVM()
 		res, err := vm.EvaluateAnonymousSnippet("demo", demoConf)
 		if err != nil {
 			return err

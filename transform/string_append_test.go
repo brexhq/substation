@@ -98,3 +98,56 @@ func BenchmarkStringAppend(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestStringAppend(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`ab`),
+		[]byte(`{"a":"b"}`),
+		[]byte(``),
+		[]byte(`{"a":""}`),
+		[]byte(`{"a":123}`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Test with default settings
+		tf, err := newStringAppend(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"suffix": "c",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with object settings
+		tf, err = newStringAppend(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+				"suffix": "c",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

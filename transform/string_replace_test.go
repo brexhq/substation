@@ -129,3 +129,60 @@ func BenchmarkStringReplace(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestStringReplace(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`abc`),
+		[]byte(`def`),
+		[]byte(`ghi`),
+		[]byte(`{"a":"abc"}`),
+		[]byte(`{"a":"def"}`),
+		[]byte(`{"a":"ghi"}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Test with default settings
+		tf, err := newStringReplace(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"pattern":     "c",
+				"replacement": "b",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with object settings
+		tf, err = newStringReplace(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+				"pattern":     "c",
+				"replacement": "b",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

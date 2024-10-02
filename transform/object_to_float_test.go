@@ -85,3 +85,48 @@ func BenchmarkObjectToFloat(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestObjectToFloat(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"a":"1.1"}`),
+		[]byte(`{"a":"0.0"}`),
+		[]byte(`{"a":"-1.1"}`),
+		[]byte(`{"a":"1234567890.123456789"}`),
+		[]byte(`{"a":"NaN"}`),
+		[]byte(`{"a":"Infinity"}`),
+		[]byte(`{"a":"-Infinity"}`),
+		[]byte(`{"a":1}`),
+		[]byte(`{"a":true}`),
+		[]byte(`{"a":null}`),
+		[]byte(`{"a":""}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Use a sample configuration for the transformer
+		tf, err := newObjectToFloat(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+				"type": "float",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

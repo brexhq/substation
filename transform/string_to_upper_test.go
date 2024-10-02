@@ -93,3 +93,51 @@ func BenchmarkStringToUpper(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestStringToUpper(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`b`),
+		[]byte(`{"a":"b"}`),
+		[]byte(`hello world`),
+		[]byte(`{"a":"hello world"}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Test with default settings
+		tf, err := newStringToUpper(ctx, config.Config{})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with object settings
+		tf, err = newStringToUpper(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

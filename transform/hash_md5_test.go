@@ -96,3 +96,55 @@ func BenchmarkHashMD5(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestHashMD5(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`a`),
+		[]byte(`{"a":"b"}`),
+		[]byte(``),
+		[]byte(`{"a":""}`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Test with default settings
+		tf, err := newHashMD5(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"algorithm": "MD5",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with object settings
+		tf, err = newHashMD5(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+				"algorithm": "MD5",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

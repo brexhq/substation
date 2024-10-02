@@ -98,3 +98,57 @@ func BenchmarkArrayJoin(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestArrayJoin(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`["b","c","d"]`),
+		[]byte(`{"a":["b","c","d"]}`),
+		[]byte(`["a","b","c"]`),
+		[]byte(`{"a":["x","y","z"]}`),
+		[]byte(`[]`),
+		[]byte(`{}`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Test with a simple separator
+		tf, err := newArrayJoin(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"separator": ".",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with object settings
+		tf, err = newArrayJoin(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+				"separator": ".",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

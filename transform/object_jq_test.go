@@ -154,3 +154,37 @@ func BenchmarkObjectJQ(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestObjectJQ(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"a":"b"}`),
+		[]byte(`{"a":{"b":"c"}}`),
+		[]byte(`{"array":[1,2,3]}`),
+		[]byte(`{"a":"{\"b\":\"c\"}"}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Use a sample configuration for the transformer
+		tf, err := newObjectJQ(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"filter": `.a`,
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

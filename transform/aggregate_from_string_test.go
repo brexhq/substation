@@ -80,3 +80,43 @@ func TestAggregateFromString(t *testing.T) {
 		})
 	}
 }
+
+func FuzzTestAggregateFromString(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"a":"b"}\n{"c":"d"}\n{"e":"f"}`),
+		[]byte(`{"a":"b"}\n{"c":"d"}`),
+		[]byte(`{"a":"b"}`),
+		[]byte(`{"a":"b"}\n`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		var messages []*message.Message
+		msg := message.New().SetData(data)
+		messages = append(messages, msg)
+
+		// aggregateFromString relies on an interrupt message to flush the buffer,
+		// so it's always added and then removed from the output.
+		ctrl := message.New().AsControl()
+		messages = append(messages, ctrl)
+
+		tf, err := newAggregateFromString(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"separator": `\n`,
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = Apply(ctx, []Transformer{tf}, messages...)
+		if err != nil {
+			return
+		}
+	})
+}

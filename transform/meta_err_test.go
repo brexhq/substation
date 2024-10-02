@@ -112,3 +112,38 @@ func BenchmarkMetaErr(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestMetaErr(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"a":"b"}`),
+		[]byte(`{"c":"d"}`),
+		[]byte(`{"e":"f"}`),
+		[]byte(`{"a":{"b":"c"}}`),
+		[]byte(`{"array":[1,2,3]}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Use a sample configuration for the transformer
+		tf, err := newMetaErr(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"error": "sample error",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

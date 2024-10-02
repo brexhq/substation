@@ -98,3 +98,53 @@ func BenchmarkTimeFromUnixMilli(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestTimeFromUnixMilli(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`1639895490000`),
+		[]byte(`{"a":1639877490000}`),
+		[]byte(`"1639895490000"`),
+		[]byte(`{"a":"1639877490000"}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Test with default settings
+		tf, err := newTimeFromUnixMilli(ctx, config.Config{
+			Settings: map[string]interface{}{},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with object settings
+		tf, err = newTimeFromUnixMilli(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

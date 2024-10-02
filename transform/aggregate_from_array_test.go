@@ -134,3 +134,43 @@ func TestAggregateFromArray(t *testing.T) {
 		})
 	}
 }
+
+func FuzzTestAggregateFromArray(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"foo":"bar"}`),
+		[]byte(`{"foo":"baz"}`),
+		[]byte(`{"foo":"qux"}`),
+		[]byte(`{"foo":""}`),
+		[]byte(`""`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		var messages []*message.Message
+		msg := message.New().SetData(data)
+		messages = append(messages, msg)
+
+		// aggregateFromArray relies on an interrupt message to flush the buffer,
+		// so it's always added and then removed from the output.
+		ctrl := message.New().AsControl()
+		messages = append(messages, ctrl)
+
+		tf, err := newAggregateFromArray(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"key": "foo",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = Apply(ctx, []Transformer{tf}, messages...)
+		if err != nil {
+			return
+		}
+	})
+}

@@ -206,6 +206,9 @@ For example, this config contains two tests:
     sub.tf.obj.cp({ object: { source_key: 'a', target_key: 'x' } }),
   ],
 }
+
+WARNING: It is not recommended to test any configs that mutate
+production resources, such as any enrichment or send transforms.
 `,
 	// Examples:
 	//  substation test [-R]
@@ -231,6 +234,12 @@ For example, this config contains two tests:
 
 		if len(args) > 0 {
 			arg = args[0]
+		}
+
+		// Catches an edge case where the user is looking for help.
+		if arg == "help" {
+			fmt.Printf("warning: \"%s\" matched no files\n", arg)
+			return nil
 		}
 
 		fi, err := os.Stat(arg)

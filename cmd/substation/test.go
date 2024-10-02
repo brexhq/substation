@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -36,6 +37,10 @@ func init() {
 func fiConfig(f string) (customConfig, error) {
 	fi, err := os.Open(f)
 	if err != nil {
+		if err == io.EOF {
+			return customConfig{}, nil
+		}
+
 		return customConfig{}, err
 	}
 
@@ -259,9 +264,12 @@ production resources, such as any enrichment or send transforms.
 					return err
 				}
 
+				// If the Jsonnet cannot compile, then the file is invalid.
 				mem, err := buildFile(arg, m)
 				if err != nil {
-					return err
+					fmt.Printf("?\t%s\t[config error]\n", arg)
+
+					return nil
 				}
 
 				cfg, err = memConfig(mem)
@@ -294,16 +302,16 @@ production resources, such as any enrichment or send transforms.
 				return err
 			}
 
-			// Skip directories, except the one provided as an argument, if
-			// the 'recursive' flag is not set.
-			if d.IsDir() && path != arg && !cmd.Flag("recursive").Changed {
-				return filepath.SkipDir
-			}
-
 			if filepath.Ext(path) == ".json" ||
 				filepath.Ext(path) == ".jsonnet" ||
 				filepath.Ext(path) == ".libsonnet" {
 				entries = append(entries, path)
+			}
+
+			// Skip directories, except the one provided as an argument, if
+			// the 'recursive' flag is not set.
+			if d.IsDir() && path != arg && !cmd.Flag("recursive").Changed {
+				return filepath.SkipDir
 			}
 
 			return nil
@@ -327,9 +335,12 @@ production resources, such as any enrichment or send transforms.
 					return err
 				}
 
+				// If the Jsonnet cannot compile, then the file is invalid.
 				mem, err := buildFile(entry, m)
 				if err != nil {
-					return err
+					fmt.Printf("?\t%s\t[config error]\n", entry)
+
+					continue
 				}
 
 				cfg, err = memConfig(mem)

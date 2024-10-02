@@ -93,3 +93,51 @@ func BenchmarkStringToLower(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestStringToLower(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`B`),
+		[]byte(`{"a":"B"}`),
+		[]byte(`HELLO WORLD`),
+		[]byte(`{"a":"HELLO WORLD"}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Test with default settings
+		tf, err := newStringToLower(ctx, config.Config{})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with object settings
+		tf, err = newStringToLower(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

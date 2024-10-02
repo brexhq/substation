@@ -125,3 +125,39 @@ func BenchmarkObjectDelete(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestObjectDelete(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"a":"b","c":{"d":"e"}}`),
+		[]byte(`{"a":"b","c":["d","e"]}`),
+		[]byte(`{"a":"b","c":"d"}`),
+		[]byte(`{"a":"b"}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Use a sample configuration for the transformer
+		tf, err := newObjectDelete(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "c",
+				},
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

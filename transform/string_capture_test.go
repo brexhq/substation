@@ -186,3 +186,53 @@ func BenchmarkStringCapture(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestStringCapture(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`b@c`),
+		[]byte(`bcd`),
+		[]byte(`example@example.com`),
+		[]byte(`123-456-7890`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Test with default settings
+		tf, err := newStringCapture(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"pattern": "^([^@]*)@.*$",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with count settings
+		tf, err = newStringCapture(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"count":   3,
+				"pattern": "(.{1})",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

@@ -156,3 +156,62 @@ func BenchmarkNumberMaximum(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNumberMaximum(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`0`),
+		[]byte(`1`),
+		[]byte(`-1`),
+		[]byte(`1.1`),
+		[]byte(`-1.1`),
+		[]byte(`{"a":0}`),
+		[]byte(`{"a":1}`),
+		[]byte(`{"a":-1}`),
+		[]byte(`{"a":1.1}`),
+		[]byte(`{"a":-1.1}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Test with default settings
+		tf, err := newNumberMaximum(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"value": 1,
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with object settings
+		tf, err = newNumberMaximum(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"value": 1,
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

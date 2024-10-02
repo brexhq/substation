@@ -264,3 +264,46 @@ func BenchmarkMetaForEach(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestMetaForEach(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"secrets":["ZHJpbms=","eW91cg==","b3ZhbHRpbmU="]}`),
+		[]byte(`{"user_email":"test@example.com"}`),
+		[]byte(`{"a":"b"}`),
+		[]byte(`{"c":"d"}`),
+		[]byte(`{"e":"f"}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Use a sample configuration for the transformer
+		tf, err := newMetaForEach(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "secrets",
+					"target_key": "decoded",
+				},
+				"transforms": []config.Config{
+					{
+						Type: "format_from_base64",
+					},
+				},
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

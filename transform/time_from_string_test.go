@@ -112,3 +112,38 @@ func BenchmarkTimeFromString(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestTimeFromString(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`"2023-01-01T00:00:00Z"`),
+		[]byte(`"2023-01-01 00:00:00"`),
+		[]byte(`"01/01/2023"`),
+		[]byte(`"2023-01-01"`),
+		[]byte(`"2023-01-01T00:00:00+00:00"`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Use a sample configuration for the transformer
+		tf, err := newTimeFromString(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"layout": "2006-01-02T15:04:05Z07:00",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

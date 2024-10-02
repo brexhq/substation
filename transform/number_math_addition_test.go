@@ -116,3 +116,51 @@ func BenchmarkNumberMathAddition(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestNumberMathAddition(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`[6,2]`),
+		[]byte(`[0.123456789,10]`),
+		[]byte(`{"a":[6,2]}`),
+		[]byte(`{"a":[0.123456789,10]}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Test with default settings
+		tf, err := newNumberMathAddition(ctx, config.Config{})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with object settings
+		tf, err = newNumberMathAddition(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

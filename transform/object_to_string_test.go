@@ -114,3 +114,43 @@ func BenchmarkObjectToString(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestObjectToString(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"a":true}`),
+		[]byte(`{"a":1.1}`),
+		[]byte(`{"a":123}`),
+		[]byte(`{"a":"string"}`),
+		[]byte(`{"a":null}`),
+		[]byte(`{"a":{"b":"c"}}`),
+		[]byte(`{"a":[1,2,3]}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Use a sample configuration for the transformer
+		tf, err := newObjectToString(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

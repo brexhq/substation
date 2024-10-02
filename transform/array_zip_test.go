@@ -93,3 +93,54 @@ func BenchmarkArrayZip(b *testing.B) {
 		)
 	}
 }
+
+func FuzzTestArrayZip(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`[["b","c"],[1,2]]`),
+		[]byte(`{"a":[["b","c"],[1,2]]}`),
+		[]byte(`[["x","y","z"],[3,4,5]]`),
+		[]byte(`{"a":[["x","y","z"],[3,4,5]]}`),
+		[]byte(`[]`),
+		[]byte(`{}`),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		msg := message.New().SetData(data)
+
+		// Test with default settings
+		tf, err := newArrayZip(ctx, config.Config{
+			Settings: map[string]interface{}{},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with object settings
+		tf, err = newArrayZip(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
+}

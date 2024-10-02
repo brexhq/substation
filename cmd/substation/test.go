@@ -32,18 +32,31 @@ func init() {
 	testCmd.PersistentFlags().BoolP("recursive", "R", false, "recursively test all files")
 }
 
-func test(ctx context.Context, file string) error {
-	start := time.Now()
-
-	fi, err := os.Open(file)
+func fiConfig(f string) (customConfig, error) {
+	fi, err := os.Open(f)
 	if err != nil {
-		return err
+		return customConfig{}, err
 	}
 
 	cfg := customConfig{}
 	if err := json.NewDecoder(fi).Decode(&cfg); err != nil {
-		return err
+		return customConfig{}, err
 	}
+
+	return cfg, nil
+}
+
+func memConfig(m string) (customConfig, error) {
+	cfg := customConfig{}
+	if err := json.Unmarshal([]byte(m), &cfg); err != nil {
+		return customConfig{}, err
+	}
+
+	return cfg, nil
+}
+
+func test(ctx context.Context, file string, cfg customConfig) error {
+	start := time.Now()
 
 	// These configurations are not valid.
 	if len(cfg.Transforms) == 0 {
@@ -63,20 +76,26 @@ func test(ctx context.Context, file string) error {
 			Transforms: test.Transforms,
 		})
 		if err != nil {
-			return err
+			fmt.Printf("?\t%s\t[test error]\n", file)
+
+			//nolint:nilerr  // errors should not disrupt the test.
+			return nil
 		}
 
 		sMsgs, err := setup.Transform(ctx, message.New().AsControl())
 		if err != nil {
-			fmt.Printf("FAIL\t%s\t[transform error]\n", file)
+			fmt.Printf("?\t%s\t[test error]\n", file)
 
-			//nolint:nilerr  // config errors should not disrupt the test.
+			//nolint:nilerr  // errors should not disrupt the test.
 			return nil
 		}
 
 		cnd, err := condition.New(ctx, test.Condition)
 		if err != nil {
-			return err
+			fmt.Printf("FAIL\t%s\t[test error]\n", file)
+
+			//nolint:nilerr  // errors should not disrupt the test.
+			return nil
 		}
 
 		for _, msg := range sMsgs {
@@ -89,14 +108,17 @@ func test(ctx context.Context, file string) error {
 			// that there is no state shared between tests.
 			tester, err := substation.New(ctx, cfg.Config)
 			if err != nil {
-				return err
+				fmt.Printf("?\t%s\t[config error]\n", file)
+
+				//nolint:nilerr  // errors should not disrupt the test.
+				return nil
 			}
 
 			tMsgs, err := tester.Transform(ctx, msg)
 			if err != nil {
-				fmt.Printf("FAIL\t%s\t[transform error]\n", file)
+				fmt.Printf("?\t%s\t[config error]\n", file)
 
-				//nolint:nilerr  // config errors should not disrupt the test.
+				//nolint:nilerr  // errors should not disrupt the test.
 				return nil
 			}
 
@@ -107,9 +129,9 @@ func test(ctx context.Context, file string) error {
 
 				ok, err := cnd.Condition(ctx, msg)
 				if err != nil {
-					fmt.Printf("FAIL\t%s\t[condition error]\n", file)
+					fmt.Printf("?\t%s\t[test error]\n", file)
 
-					//nolint:nilerr  // config errors should not disrupt the test.
+					//nolint:nilerr  // errors should not disrupt the test.
 					return nil
 				}
 
@@ -146,7 +168,10 @@ It prints a summary of the test results in the format:
   FAIL 	path/to/config3.json 	349µs
   ...
 
-The current directory is used if no arg is provided.
+If the file is not already compiled, then it is compiled before
+testing ('.jsonnet', '.libsonnet' files are compiled to JSON).
+The 'recursive' flag can be used to test all files in a directory,
+and the current directory is used if no arg is provided.
 
 Tests are executed individually against configured transforms. 
 Each test executes on user-defined messages and is considered
@@ -186,9 +211,13 @@ For example, this config contains two tests:
 	//  substation test [-R]
 	//  substation test [-R] /path/to/configs
 	// 	substation test /path/to/config.json
+	// 	substation test /path/to/config.jsonnet
+	// 	substation test /path/to/my.libsonnet
 	Example: `  substation test [-R]
   substation test [-R] /path/to/configs
   substation test /path/to/config.json
+	substation test /path/to/config.jsonnet
+	substation test /path/to/my.libsonnet
 `,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -211,14 +240,34 @@ For example, this config contains two tests:
 
 		// If the arg is a file, then test that file. If the
 		// arg is also not a directory, then return a warning.
-		if !fi.IsDir() && filepath.Ext(arg) == ".json" {
-			if err := test(ctx, arg); err != nil {
-				return err
+		if !fi.IsDir() {
+			var cfg customConfig
+
+			switch filepath.Ext(arg) {
+			case ".jsonnet", ".libsonnet":
+				mem, err := buildFile(arg)
+				if err != nil {
+					return err
+				}
+
+				cfg, err = memConfig(mem)
+				if err != nil {
+					return err
+				}
+
+			case ".json":
+				cfg, err = fiConfig(arg)
+				if err != nil {
+					return err
+				}
+
+			default:
+				fmt.Printf("warning: \"%s\" matched no files\n", arg)
 			}
 
-			return nil
-		} else if !fi.IsDir() {
-			fmt.Printf("warning: \"%s\" matched no files\n", arg)
+			if err := test(ctx, arg, cfg); err != nil {
+				return err
+			}
 
 			return nil
 		}
@@ -238,7 +287,9 @@ For example, this config contains two tests:
 				return filepath.SkipDir
 			}
 
-			if filepath.Ext(path) == ".json" {
+			if filepath.Ext(path) == ".json" ||
+				filepath.Ext(path) == ".jsonnet" ||
+				filepath.Ext(path) == ".libsonnet" {
 				entries = append(entries, path)
 			}
 
@@ -254,7 +305,27 @@ For example, this config contains two tests:
 		}
 
 		for _, entry := range entries {
-			if err := test(ctx, entry); err != nil {
+			var cfg customConfig
+
+			switch filepath.Ext(entry) {
+			case ".jsonnet", ".libsonnet":
+				mem, err := buildFile(entry)
+				if err != nil {
+					return err
+				}
+
+				cfg, err = memConfig(mem)
+				if err != nil {
+					return err
+				}
+			case ".json":
+				cfg, err = fiConfig(entry)
+				if err != nil {
+					return err
+				}
+			}
+
+			if err := test(ctx, entry, cfg); err != nil {
 				return err
 			}
 		}

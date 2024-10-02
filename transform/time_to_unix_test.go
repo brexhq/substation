@@ -96,7 +96,7 @@ func BenchmarkTimeToUnix(b *testing.B) {
 	}
 }
 
-func FuzzTestTimeToUnix(f *testing.F) {
+func FuzzTestTimeToUnixSeconds(f *testing.F) {
 	testcases := [][]byte{
 		[]byte(`"2023-01-01T00:00:00Z"`),
 		[]byte(`"2023-01-01 00:00:00"`),

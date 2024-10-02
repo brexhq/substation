@@ -177,7 +177,10 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newStringSplit(ctx, cfg)
 	case "string_uuid":
 		return newStringUUID(ctx, cfg)
-	// Time transforms.
+		// Test transforms.
+	case "test_message":
+		return newTestMessage(ctx, cfg)
+		// Time transforms.
 	case "time_from_string":
 		return newTimeFromString(ctx, cfg)
 	case "time_from_unix":
@@ -201,8 +204,6 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newUtilityDrop(ctx, cfg)
 	case "utility_err":
 		return newUtilityErr(ctx, cfg)
-	case "utility_message":
-		return newUtilityMessage(ctx, cfg)
 	case "utility_metric_bytes":
 		return newUtilityMetricBytes(ctx, cfg)
 	case "utility_metric_count":

@@ -1102,6 +1102,18 @@ local helpers = {
         settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
       },
     },
+    test: {
+      message(settings={}): {
+        local type = 'test_message',
+        local default = {
+          id: helpers.id(type, settings),
+          value: null,
+        },
+
+        type: type,
+        settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
+      },
+    },
     time: {
       from: {
         str(settings={}): $.transform.time.from.string(settings=settings),
@@ -1220,16 +1232,6 @@ local helpers = {
         local default = {
           id: helpers.id(type, settings),
           message: null,
-        },
-
-        type: type,
-        settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
-      },
-      message(settings={}): {
-        local type = 'utility_message',
-        local default = {
-          id: helpers.id(type, settings),
-          value: null,
         },
 
         type: type,

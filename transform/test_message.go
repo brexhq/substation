@@ -11,38 +11,38 @@ import (
 	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
-type utilityMessageConfig struct {
+type testMessageConfig struct {
 	Value interface{} `json:"value"`
 
 	ID string `json:"id"`
 }
 
-func (c *utilityMessageConfig) Decode(in interface{}) error {
+func (c *testMessageConfig) Decode(in interface{}) error {
 	return iconfig.Decode(in, c)
 }
 
-func newUtilityMessage(_ context.Context, cfg config.Config) (*utilityMessage, error) {
-	conf := utilityMessageConfig{}
+func newTestMessage(_ context.Context, cfg config.Config) (*testMessage, error) {
+	conf := testMessageConfig{}
 	if err := conf.Decode(cfg.Settings); err != nil {
-		return nil, fmt.Errorf("transform utility_message: %v", err)
+		return nil, fmt.Errorf("transform test_message: %v", err)
 	}
 
 	if conf.ID == "" {
-		conf.ID = "utility_message"
+		conf.ID = "test_message"
 	}
 
-	tf := utilityMessage{
+	tf := testMessage{
 		conf: conf,
 	}
 
 	return &tf, nil
 }
 
-type utilityMessage struct {
-	conf utilityMessageConfig
+type testMessage struct {
+	conf testMessageConfig
 }
 
-func (tf *utilityMessage) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
+func (tf *testMessage) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
 	if msg.IsControl() {
 		m := message.New().SetData(anyToBytes(tf.conf.Value))
 		return []*message.Message{m, msg}, nil
@@ -51,7 +51,7 @@ func (tf *utilityMessage) Transform(_ context.Context, msg *message.Message) ([]
 	return []*message.Message{msg}, nil
 }
 
-func (tf *utilityMessage) String() string {
+func (tf *testMessage) String() string {
 	b, _ := json.Marshal(tf.conf)
 	return string(b)
 }

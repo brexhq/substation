@@ -1225,6 +1225,16 @@ local helpers = {
         type: type,
         settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
       },
+      message(settings={}): {
+        local type = 'utility_message',
+        local default = {
+          id: helpers.id(type, settings),
+          value: null,
+        },
+
+        type: type,
+        settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
+      },
       metric: {
         bytes(settings={}): {
           local type = 'utility_metric_bytes',

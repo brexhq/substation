@@ -94,3 +94,25 @@ func BenchmarkBase64Encode(b *testing.B) {
 		)
 	}
 }
+
+func FuzzBase64Encode(f *testing.F) {
+	// Seed the fuzzer with initial test cases
+	for _, test := range encodeTests {
+		f.Add(test.test)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		// Encode the input data
+		result := Encode(data)
+
+		// Decode the result to verify it matches the original input
+		decoded, err := Decode(result)
+		if err != nil {
+			t.Errorf("failed to decode: %v", err)
+		}
+
+		if !bytes.Equal(data, decoded) {
+			t.Errorf("expected %s, got %s", data, decoded)
+		}
+	})
+}

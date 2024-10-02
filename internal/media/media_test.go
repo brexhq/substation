@@ -104,3 +104,39 @@ func BenchmarkFile(b *testing.B) {
 		)
 	}
 }
+
+func FuzzFile(f *testing.F) {
+	// Seed the fuzzer with initial test cases
+	f.Add([]byte("foo"))
+	f.Add([]byte(""))
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		temp, err := os.CreateTemp("", "substation")
+		if err != nil {
+			t.Fatalf("failed to create temp file: %v", err)
+		}
+		defer os.Remove(temp.Name())
+		defer temp.Close()
+
+		_, err = temp.Write(data)
+		if err != nil {
+			t.Fatalf("failed to write to temp file: %v", err)
+		}
+
+		_, err = temp.Seek(0, 0)
+		if err != nil {
+			t.Fatalf("failed to seek to beginning of file: %v", err)
+		}
+
+		mediaType, err := File(temp)
+		if err != nil {
+			if err.Error() == "media file: EOF" && len(data) == 0 {
+				return
+			}
+			t.Errorf("got error %v", err)
+		}
+
+		// Optionally, you can add more checks on mediaType here
+		_ = mediaType
+	})
+}

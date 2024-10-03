@@ -177,6 +177,9 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newStringSplit(ctx, cfg)
 	case "string_uuid":
 		return newStringUUID(ctx, cfg)
+	// Test transforms.
+	case "test_message":
+		return newTestMessage(ctx, cfg)
 	// Time transforms.
 	case "time_from_string":
 		return newTimeFromString(ctx, cfg)

@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/brexhq/substation/v2"
-	"github.com/brexhq/substation/v2/message"
-	"github.com/google/go-jsonnet"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
+
+	"github.com/brexhq/substation/v2"
+	"github.com/brexhq/substation/v2/message"
 )
 
 func init() {
@@ -83,6 +83,222 @@ local sub = import '../../substation.libsonnet';
 }		
 `
 
+const demoCompiled = `
+{
+   "transforms": [
+      {
+         "settings": {
+            "id": "2bbe3748-28c56e0b",
+            "object": {
+               "source_key": "@this",
+               "target_key": "meta event.original"
+            }
+         },
+         "type": "object_copy"
+      },
+      {
+         "settings": {
+            "id": "2bbe3748-61e51827",
+            "object": {
+               "source_key": "meta @this"
+            }
+         },
+         "type": "object_copy"
+      },
+      {
+         "settings": {
+            "id": "324f1035-f49e5682",
+            "object": {
+               "source_key": "event.original",
+               "target_key": "event.hash"
+            }
+         },
+         "type": "hash_sha256"
+      },
+      {
+         "settings": {
+            "id": "5f4ae672-0478e109",
+            "object": {
+               "target_key": "event.dataset"
+            },
+            "value": "aws.cloudtrail"
+         },
+         "type": "object_insert"
+      },
+      {
+         "settings": {
+            "id": "5f4ae672-7de9f731",
+            "object": {
+               "target_key": "event.kind"
+            },
+            "value": "event"
+         },
+         "type": "object_insert"
+      },
+      {
+         "settings": {
+            "id": "5f4ae672-2c1fa54f",
+            "object": {
+               "target_key": "event.category.-1"
+            },
+            "value": "configuration"
+         },
+         "type": "object_insert"
+      },
+      {
+         "settings": {
+            "id": "5f4ae672-e97ed8b8",
+            "object": {
+               "target_key": "event.type.-1"
+            },
+            "value": "change"
+         },
+         "type": "object_insert"
+      },
+      {
+         "settings": {
+            "cases": [
+               {
+                  "condition": {
+                     "settings": {
+                        "measurement": "byte",
+                        "object": {
+                           "source_key": "errorCode"
+                        },
+                        "value": 0
+                     },
+                     "type": "number_length_greater_than"
+                  },
+                  "transforms": [
+                     {
+                        "settings": {
+                           "id": "5f4ae672-c3cc893e",
+                           "object": {
+                              "target_key": "event.outcome"
+                           },
+                           "value": "failure"
+                        },
+                        "type": "object_insert"
+                     }
+                  ]
+               },
+               {
+                  "transforms": [
+                     {
+                        "settings": {
+                           "id": "5f4ae672-87ff6d17",
+                           "object": {
+                              "target_key": "event.outcome"
+                           },
+                           "value": "success"
+                        },
+                        "type": "object_insert"
+                     }
+                  ]
+               }
+            ],
+            "id": "b3a47dd1-fddb5674"
+         },
+         "type": "meta_switch"
+      },
+      {
+         "settings": {
+            "id": "2bbe3748-e3640864",
+            "object": {
+               "source_key": "event.original.eventTime",
+               "target_key": "\\@timestamp"
+            }
+         },
+         "type": "object_copy"
+      },
+      {
+         "settings": {
+            "id": "2bbe3748-63faf2a6",
+            "object": {
+               "source_key": "event.original.sourceIPAddress",
+               "target_key": "source.ip"
+            }
+         },
+         "type": "object_copy"
+      },
+      {
+         "settings": {
+            "id": "2bbe3748-3b7dfda5",
+            "object": {
+               "source_key": "event.original.userAgent",
+               "target_key": "user_agent.original"
+            }
+         },
+         "type": "object_copy"
+      },
+      {
+         "settings": {
+            "id": "2bbe3748-626bded4",
+            "object": {
+               "source_key": "event.original.awsRegion",
+               "target_key": "cloud.region"
+            }
+         },
+         "type": "object_copy"
+      },
+      {
+         "settings": {
+            "id": "2bbe3748-061dfac7",
+            "object": {
+               "source_key": "event.original.userIdentity.accountId",
+               "target_key": "cloud.account.id"
+            }
+         },
+         "type": "object_copy"
+      },
+      {
+         "settings": {
+            "id": "5f4ae672-5c9e5d3a",
+            "object": {
+               "target_key": "cloud.provider"
+            },
+            "value": "aws"
+         },
+         "type": "object_insert"
+      },
+      {
+         "settings": {
+            "count": 0,
+            "id": "e3bd5484-53bd3692",
+            "object": {
+               "source_key": "event.original.eventSource",
+               "target_key": "cloud.service.name"
+            },
+            "pattern": "^(.*)\\.amazonaws\\.com$"
+         },
+         "type": "string_capture"
+      },
+      {
+         "settings": {
+            "id": "2bbe3748-15552062",
+            "object": {
+               "source_key": "@this|@pretty"
+            }
+         },
+         "type": "object_copy"
+      },
+      {
+         "settings": {
+            "batch": {
+               "count": 1000,
+               "duration": "1m",
+               "size": 1000000
+            },
+            "id": "de19b3c9-67c1890d"
+         },
+         "type": "send_stdout"
+      }
+   ]
+}
+`
+
+const demoEvt = `{"eventVersion":"1.08","userIdentity":{"type":"IAMUser","principalId":"EXAMPLE123456789","arn":"arn:aws:iam::123456789012:user/Alice","accountId":"123456789012","accessKeyId":"ASIAEXAMPLE123","sessionContext":{"attributes":{"mfaAuthenticated":"false","creationDate":"2024-10-01T12:00:00Z"},"sessionIssuer":{"type":"AWS","principalId":"EXAMPLE123456","arn":"arn:aws:iam::123456789012:role/Admin","accountId":"123456789012","userName":"Admin"}}},"eventTime":"2024-10-01T12:30:45Z","eventSource":"s3.amazonaws.com","eventName":"PutBucketPolicy","awsRegion":"us-west-2","sourceIPAddress":"203.0.113.0","userAgent":"aws-sdk-python/1.0.0 Python/3.8.0 Linux/4.15.0","requestParameters":{"bucketName":"example-bucket","policy":"{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::example-bucket/*\"}]}"}},"responseElements":{"location":"http://example-bucket.s3.amazonaws.com/"},"requestID":"EXAMPLE123456789","eventID":"EXAMPLE-1-2-3-4-5-6","readOnly":false,"resources":[{"ARN":"arn:aws:s3:::example-bucket","accountId":"123456789012","type":"AWS::S3::Bucket"}],"eventType":"AwsApiCall","managementEvent":true,"recipientAccountId":"123456789012"}`
+
 var demoCmd = &cobra.Command{
 	Use:   "demo",
 	Short: "demo substation",
@@ -99,13 +315,7 @@ partially normalized to the Elastic Common Schema (ECS).
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg := substation.Config{}
 
-		vm := jsonnet.MakeVM()
-		res, err := vm.EvaluateAnonymousSnippet("demo", demoConf)
-		if err != nil {
-			return err
-		}
-
-		if err := json.Unmarshal([]byte(res), &cfg); err != nil {
+		if err := json.Unmarshal([]byte(demoCompiled), &cfg); err != nil {
 			return err
 		}
 
@@ -115,14 +325,13 @@ partially normalized to the Elastic Common Schema (ECS).
 			return err
 		}
 
-		evt := `{"eventVersion":"1.08","userIdentity":{"type":"IAMUser","principalId":"EXAMPLE123456789","arn":"arn:aws:iam::123456789012:user/Alice","accountId":"123456789012","accessKeyId":"ASIAEXAMPLE123","sessionContext":{"attributes":{"mfaAuthenticated":"false","creationDate":"2024-10-01T12:00:00Z"},"sessionIssuer":{"type":"AWS","principalId":"EXAMPLE123456","arn":"arn:aws:iam::123456789012:role/Admin","accountId":"123456789012","userName":"Admin"}}},"eventTime":"2024-10-01T12:30:45Z","eventSource":"s3.amazonaws.com","eventName":"PutBucketPolicy","awsRegion":"us-west-2","sourceIPAddress":"203.0.113.0","userAgent":"aws-sdk-python/1.0.0 Python/3.8.0 Linux/4.15.0","requestParameters":{"bucketName":"example-bucket","policy":"{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::example-bucket/*\"}]}"}},"responseElements":{"location":"http://example-bucket.s3.amazonaws.com/"},"requestID":"EXAMPLE123456789","eventID":"EXAMPLE-1-2-3-4-5-6","readOnly":false,"resources":[{"ARN":"arn:aws:s3:::example-bucket","accountId":"123456789012","type":"AWS::S3::Bucket"}],"eventType":"AwsApiCall","managementEvent":true,"recipientAccountId":"123456789012"}`
 		msgs := []*message.Message{
-			message.New().SetData([]byte(evt)),
+			message.New().SetData([]byte(demoEvt)),
 			message.New().AsControl(),
 		}
 
 		// Make the input pretty before printing to the console.
-		fmt.Printf("input:\n%s\n", gjson.Get(evt, "@this|@pretty").String())
+		fmt.Printf("input:\n%s\n", gjson.Get(demoEvt, "@this|@pretty").String())
 		fmt.Printf("output:\n")
 
 		if _, err := sub.Transform(ctx, msgs...); err != nil {

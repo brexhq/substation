@@ -5,7 +5,6 @@
 local sub = import '../../../../substation.libsonnet';
 
 {
-  concurrency: 1,
   transforms: [
     sub.tf.send.aws.s3({
       // Glacier Instant Retrieval charges a minimum of 128KB per object, otherwise

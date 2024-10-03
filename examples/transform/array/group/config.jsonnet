@@ -5,11 +5,30 @@ local sub = import '../../../../substation.libsonnet';
 local files_key = 'meta files';
 
 {
-  concurrency: 1,
+  tests: [
+    {
+      name: 'group',
+      transforms: [
+        sub.tf.test.message({ value: {"file_name":["foo.txt","bar.html"],"file_type":["text/plain","text/html"],"file_size":[100,500]} }),
+        sub.tf.send.stdout(),
+      ],
+      // Asserts that each element in the array contains these keys:
+      //  - file_name
+      //  - file_type
+      //  - file_size
+      //  - file_extension
+      condition: sub.cnd.meta.all({
+        object: { source_key: '@this' },
+        conditions: [
+          sub.cnd.num.len.greater_than({ obj: { src: 'file_type' }, value: 0 }),
+          sub.cnd.num.len.greater_than({ obj: { src: 'file_size' }, value: 0 }),
+          sub.cnd.num.len.greater_than({ obj: { src: 'file_name' }, value: 0 }),
+          sub.cnd.num.len.greater_than({ obj: { src: 'file_extension' }, value: 0 }),
+        ],
+      })
+    }
+  ],
   transforms: [
-    // This example sends data to stdout at each step to iteratively show
-    // how the data is transformed.
-    sub.tf.send.stdout(),
     // Copy the object to metadata, where it is grouped.
     sub.tf.obj.cp({ object: { target_key: files_key } }),
     // Elements from the file_name array are transformed and derived file extensions

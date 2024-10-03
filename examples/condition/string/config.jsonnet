@@ -2,14 +2,27 @@
 local sub = import '../../../substation.libsonnet';
 
 {
-  concurrency: 1,
+  tests: [
+    {
+      name: 'string',
+      transforms: [
+        sub.tf.test.message({ value: {"action":"ACCEPT","vpcId":"vpc-2b3c4d5e"} }),
+        sub.tf.send.stdout(),
+      ],
+      // Asserts that the conditional transforms were applied.
+      condition: sub.cnd.all([
+        sub.cnd.str.eq({ obj: {src: 'outcome'}, value: 'Allow' }),
+        sub.cnd.str.eq({ obj: {src: 'priority'}, value: 'high' }),
+      ])
+    }
+  ],
   transforms: [
     sub.tf.meta.switch({ cases: [
       {
         condition: sub.cnd.str.eq({ obj: { src: 'action' }, value: 'ACCEPT' }),
         transforms: [
           // This overwrites the value of the 'action' key.
-          sub.tf.obj.insert({ obj: { trg: 'action' }, value: 'Allow' }),
+          sub.tf.obj.insert({ obj: { trg: 'outcome' }, value: 'Allow' }),
         ],
       },
     ] }),

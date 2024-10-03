@@ -6,6 +6,23 @@ local sub = import '../../../../substation.libsonnet';
 local kv = sub.kv_store.memory();
 
 {
+  tests: [
+    {
+      name: 'exactly_once_consumer',
+      transforms: [
+        sub.tf.test.message({ value: {"a":"b"} }),
+        sub.tf.test.message({ value: {"a":"b"} }),
+        sub.tf.test.message({ value: {"c":"d"} }),
+        sub.tf.test.message({ value: {"a":"b"} }),
+        sub.tf.test.message({ value: {"c":"d"} }),
+        sub.tf.test.message({ value: {"c":"d"} }),
+        sub.tf.test.message({ value: {"e":"f"} }),
+        sub.tf.test.message({ value: {"a":"b"} }),
+      ],
+      // Asserts that each message is not empty.
+      condition: sub.cnd.num.len.gt({ value: 0 }),
+    }
+  ],
   transforms: [
     // If a message acquires a lock, then it is tagged for inspection.
     sub.tf.meta.kv_store.lock(settings={
@@ -28,7 +45,6 @@ local kv = sub.kv_store.memory();
       },
     ] }),
     // At this point only locked messages exist in the pipeline.
-    sub.tf.object.copy({ object: { source_key: '@pretty' } }),
     sub.tf.send.stdout(),
   ],
 }

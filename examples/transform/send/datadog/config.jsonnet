@@ -13,7 +13,6 @@ local max_size = 1000 * 1000 * 5;
 local max_count = 1000;
 
 {
-  concurrency: 1,
   transforms: [
     // Connections to the Datadog Logs API are authenticated using an API key.
     sub.transform.utility.secret({ secret: sub.secrets.environment_variable({ id: 'DD', name: 'DATADOG_API_KEY' }) }),

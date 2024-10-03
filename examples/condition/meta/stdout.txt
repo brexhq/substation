@@ -1,2 +1,0 @@
-["alice@brex.com","bob@brex.com"]
-true

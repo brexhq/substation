@@ -4,7 +4,6 @@
 local sub = import '../../../../substation.libsonnet';
 
 {
-  concurrency: 1,
   transforms: [
     sub.tf.object.copy({ object: { source_key: '@pretty' } }),
     // Each object is organized by the value retrieved from the `group_id` key.

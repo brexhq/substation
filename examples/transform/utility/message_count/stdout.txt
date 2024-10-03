@@ -1,2 +1,0 @@
-{"_aws":{"Timestamp":1724299095089,"CloudWatchMetrics":[{"Namespace":"Substation","Dimensions":[["AppName"]],"Metrics":[{"Name":"MessagesReceived"}]}]},"AppName":"example","MessagesReceived":13}
-{"_aws":{"Timestamp":1724299095089,"CloudWatchMetrics":[{"Namespace":"Substation","Dimensions":[["AppName"]],"Metrics":[{"Name":"MessagesTransformed"}]}]},"AppName":"example","MessagesTransformed":0}

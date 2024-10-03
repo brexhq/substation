@@ -6,6 +6,23 @@ local sub = import '../../../../substation.libsonnet';
 local kv = sub.kv_store.memory();
 
 {
+  tests: [
+    {
+      name: 'exactly_once_producer',
+      transforms: [
+        sub.tf.test.message({ value: {"a":"b"} }),
+        sub.tf.test.message({ value: {"a":"b"} }),
+        sub.tf.test.message({ value: {"c":"d"} }),
+        sub.tf.test.message({ value: {"a":"b"} }),
+        sub.tf.test.message({ value: {"c":"d"} }),
+        sub.tf.test.message({ value: {"c":"d"} }),
+        sub.tf.test.message({ value: {"e":"f"} }),
+        sub.tf.test.message({ value: {"a":"b"} }),
+      ],
+      // Asserts that each message is not empty.
+      condition: sub.cnd.num.len.gt({ value: 0 }),
+    }
+  ],
   transforms: [
     // This only prints messages that acquire a lock. Any message
     // that fails to acquire a lock will be skipped. An error in the
@@ -17,7 +34,6 @@ local kv = sub.kv_store.memory();
         prefix: 'eo_producer',
         ttl_offset: '1m',
         transforms: [
-          sub.tf.object.copy({ object: { source_key: '@pretty' } }),
           sub.tf.send.stdout(),
         ],
       }),

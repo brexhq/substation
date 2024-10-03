@@ -9,7 +9,6 @@ local sub = import '../../../../substation.libsonnet';
 local max_size = 1000 * 1000;
 
 {
-  concurrency: 1,
   transforms: [
     sub.tf.send.http.post({
       batch: { size: max_size },

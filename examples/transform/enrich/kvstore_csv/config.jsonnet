@@ -10,6 +10,17 @@ local sub = import '../../../../substation.libsonnet';
 local kv = sub.kv_store.csv_file({ file: 'kv.csv', column: 'product' });
 
 {
+  tests: [
+    {
+      name: 'kvstore_csv',
+      transforms: [
+        sub.tf.test.message({ value: {"product":"churro"} }),
+        sub.tf.send.stdout(),
+      ],
+      // Asserts that the message contains product info.
+      condition: sub.cnd.num.len.gt({ object: { source_key: 'info' }, value: 0 }),
+    }
+  ],
   transforms: [
     // The CSV file KV store returns the entire row minus the key column.
     // For example, this returns {"price":"9.99","calories":"500"} for "churro".
@@ -17,7 +28,6 @@ local kv = sub.kv_store.csv_file({ file: 'kv.csv', column: 'product' });
       object: { source_key: 'product', target_key: 'info' },
       kv_store: kv,
     }),
-    sub.tf.obj.cp({ object: { source_key: '@pretty' } }),
     sub.tf.send.stdout(),
   ],
 }

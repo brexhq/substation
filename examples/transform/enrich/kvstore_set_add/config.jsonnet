@@ -7,6 +7,22 @@ local sub = import '../../../../substation.libsonnet';
 local mem = sub.kv_store.memory();
 
 {
+  tests: [
+    {
+      name: 'kvstore_set_add',
+      transforms: [
+        sub.tf.test.message({ value: {"date": "2021-01-01","customer":"alice@brex.com","order":"pizza"} }),
+        sub.tf.test.message({ value: {"date": "2021-01-01","customer":"bob@brex.com","order":"burger"} }),
+        sub.tf.test.message({ value: {"date": "2021-01-03","customer":"bob@brex.com","order":"pizza"} }),
+        sub.tf.test.message({ value: {"date": "2021-01-07","customer":"alice@brex.com","order":"pizza"} }),
+        sub.tf.test.message({ value: {"date": "2021-01-07","customer":"bob@brex.com","order":"burger"} }),
+        sub.tf.test.message({ value: {"date": "2021-01-13","customer":"alice@brex.com","order":"pizza"} }),
+        sub.tf.send.stdout(),
+      ],
+      // Asserts that each message is not empty.
+      condition: sub.cnd.num.len.gt({ value: 0 }),
+    }
+  ],
   transforms: [
     // Each order is stored in memory indexed by the customer's email
     // address and printed to stdout. Only unique orders are stored.
@@ -21,7 +37,6 @@ local mem = sub.kv_store.memory();
       object: { source_key: 'customer', target_key: 'kv_store' },
       kv_store: mem,
     }),
-    sub.tf.obj.cp({ object: { source_key: '@pretty' } }),
     sub.tf.send.stdout(),
   ],
 }

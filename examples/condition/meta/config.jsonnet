@@ -4,9 +4,18 @@
 local sub = import '../../../substation.libsonnet';
 
 {
-  concurrency: 1,
+  tests: [
+    {
+      name: 'meta',
+      transforms: [
+        sub.tf.test.message({ value: ["alice@brex.com","bob@brex.com"] }),
+        sub.tf.send.stdout(),
+      ],
+      // Asserts that the message is equal to 'true'.
+      condition: sub.cnd.str.eq({ value: 'true' }),
+    }
+  ],
   transforms: [
-    sub.tf.send.stdout(),
     // In real-world deployments, the match decision is typically used
     // to summarize an array of values. For this example, the decision
     // is represented as a boolean value and printed to stdout.
@@ -15,7 +24,9 @@ local sub = import '../../../substation.libsonnet';
         {
           condition: sub.cnd.meta.any({
             object: { source_key: '@this' },  // Required to interpret the input as a JSON array.
-            inspectors: [sub.cnd.str.ends_with(settings={ value: '@brex.com' })],
+            conditions: [
+              sub.cnd.str.ends_with({ value: 'brex.com' }),
+            ],
           }),
           transforms: [
             sub.tf.obj.insert({ object: { target_key: 'meta result' }, value: true }),

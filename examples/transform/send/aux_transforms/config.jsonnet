@@ -5,7 +5,6 @@
 local sub = import '../../../../substation.libsonnet';
 
 {
-  concurrency: 1,
   transforms: [
     // By default all data is buffered before it is sent.
     sub.tf.send.stdout({

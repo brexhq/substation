@@ -2,7 +2,20 @@
 local sub = import '../../../substation.libsonnet';
 
 {
-  concurrency: 1,
+  tests: [
+    {
+      name: 'number',
+      transforms: [
+        sub.tf.test.message({ value: {"sourcePort":22,"bytes":20000} }),
+        sub.tf.send.stdout(),
+      ],
+      // Asserts that the conditional transforms were applied.
+      condition: sub.cnd.all([
+        sub.cnd.str.eq({ obj: {src: 'service'}, value: 'SSH' }),
+        sub.cnd.str.eq({ obj: {src: 'severity'}, value: 'high' }),
+      ])
+    }
+  ],
   transforms: [
     sub.tf.meta.switch({ cases: [
       {

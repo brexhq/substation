@@ -1,5 +1,0 @@
-{"client":"10.1.1.2","server":"8.8.8.8","timestamp":1674429067,"count":4,"bytes_total":72}
-{"client":"10.1.1.3","server":"8.8.8.8","timestamp":1674429066,"count":6,"bytes_total":52}
-{"client":"10.1.1.2","server":"8.8.4.4","timestamp":1674429065,"count":6,"bytes_total":112}
-{"client":"10.1.1.4","server":"1.2.3.4","timestamp":1674429054,"count":1,"bytes_total":2400}
-{"client":"10.1.1.3","server":"8.8.4.4","timestamp":1674429064,"count":2,"bytes_total":40}

@@ -13,6 +13,16 @@ local cnd = sub.cnd.all([
 ]);
 
 {
+  tests: [
+    {
+      name: 'retry_with_backoff',
+      transforms: [
+        sub.tf.test.message({ value: {"a":"b"} }),
+      ],
+      // Asserts that the target key 'c' exists.
+      condition: sub.cnd.num.len.greater_than({ object: { source_key: key }, value: 1 }),
+    }
+  ],
   transforms: [
     sub.tf.meta.retry({
       transforms: [
@@ -21,7 +31,6 @@ local cnd = sub.cnd.all([
       condition: cnd,  // If this returns false, then the transforms are retried.
       retry: { delay: '1s', count: 4 },  // Retry up to 4 times with a 1 second backoff (1s, 1s, 1s, 1s).
     }),
-    sub.tf.object.copy({ object: { source_key: '@pretty' } }),
     sub.tf.send.stdout(),
   ],
 }

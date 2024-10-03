@@ -1,6 +1,0 @@
-foo,bar
-baz,qux
-quux,corge
-{"foo":"bar"}
-{"baz":"qux"}
-{"quux":"corge"}

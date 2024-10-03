@@ -7,12 +7,22 @@ local sub = import '../../../../substation.libsonnet';
 local kv = sub.kv_store.json_file({ file: 'kv.json' });
 
 {
+  tests: [
+    {
+      name: 'kvstore_json',
+      transforms: [
+        sub.tf.test.message({ value: {"product":"churro"} }),
+        sub.tf.send.stdout(),
+      ],
+      // Asserts that the message contains product info.
+      condition: sub.cnd.num.len.gt({ object: { source_key: 'price' }, value: 0 }),
+    }
+  ],
   transforms: [
     sub.tf.enrich.kv_store.item.get({
       object: { source_key: 'product', target_key: 'price' },
       kv_store: kv,
     }),
-    sub.tf.obj.cp({ object: { source_key: '@pretty' } }),
     sub.tf.send.stdout(),
   ],
 }

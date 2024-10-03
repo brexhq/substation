@@ -11,7 +11,6 @@ local sub = import '../../../../substation.libsonnet';
 local max_size = 1000 * 1000;
 
 {
-  concurrency: 1,
   transforms: [
     // Connections to the Splunk HEC are authenticated using a token.
     sub.transform.utility.secret({ secret: sub.secrets.environment_variable({ id: 'SPLUNK', name: 'SPLUNK_TOKEN_ID' }) }),

@@ -3,7 +3,7 @@ package condition
 import (
 	"unicode/utf8"
 
-	iconfig "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type numberBitwiseConfig struct {

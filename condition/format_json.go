@@ -7,7 +7,7 @@ import (
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
 
-	iconfig "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type formatJSONConfig struct{}

@@ -77,12 +77,32 @@ func test(ctx context.Context, file string, cfg customConfig) error {
 
 	var failedFile bool // Tracks if any test in a file failed.
 	for _, test := range cfg.Tests {
-		// setup creates the test environment.
+		// cnd asserts that the test is successful.
+		cnd, err := condition.New(ctx, test.Condition)
+		if err != nil {
+			fmt.Printf("FAIL\t%s\t[test error]\n", file)
+
+			//nolint:nilerr  // errors should not disrupt the test.
+			return nil
+		}
+
+		// setup creates the test messages that are tested.
 		setup, err := substation.New(ctx, substation.Config{
 			Transforms: test.Transforms,
 		})
 		if err != nil {
 			fmt.Printf("?\t%s\t[test error]\n", file)
+
+			//nolint:nilerr  // errors should not disrupt the test.
+			return nil
+		}
+
+		// tester contains the config that will be tested.
+		// This has to be done for each test to ensure
+		// that there is no state shared between tests.
+		tester, err := substation.New(ctx, cfg.Config)
+		if err != nil {
+			fmt.Printf("?\t%s\t[config error]\n", file)
 
 			//nolint:nilerr  // errors should not disrupt the test.
 			return nil
@@ -96,60 +116,36 @@ func test(ctx context.Context, file string, cfg customConfig) error {
 			return nil
 		}
 
-		cnd, err := condition.New(ctx, test.Condition)
+		tMsgs, err := tester.Transform(ctx, sMsgs...)
 		if err != nil {
-			fmt.Printf("FAIL\t%s\t[test error]\n", file)
+			fmt.Printf("?\t%s\t[config error]\n", file)
 
 			//nolint:nilerr  // errors should not disrupt the test.
 			return nil
 		}
 
-		for _, msg := range sMsgs {
+		for _, msg := range tMsgs {
+			// Skip control messages because they contain no data.
 			if msg.IsControl() {
 				continue
 			}
 
-			// tester contains the config that will be tested.
-			// This has to be done for every message to ensure
-			// that there is no state shared between tests.
-			tester, err := substation.New(ctx, cfg.Config)
+			ok, err := cnd.Condition(ctx, msg)
 			if err != nil {
-				fmt.Printf("?\t%s\t[config error]\n", file)
+				fmt.Printf("?\t%s\t[test error]\n", file)
 
 				//nolint:nilerr  // errors should not disrupt the test.
 				return nil
 			}
 
-			tMsgs, err := tester.Transform(ctx, msg)
-			if err != nil {
-				fmt.Printf("?\t%s\t[config error]\n", file)
+			if !ok {
+				fmt.Printf("%s\n%s\n%s\n",
+					fmt.Sprintf("--- FAIL: %s", test.Name),
+					fmt.Sprintf("    message:\t%s", msg),
+					fmt.Sprintf("    condition:\t%s", cnd),
+				)
 
-				//nolint:nilerr  // errors should not disrupt the test.
-				return nil
-			}
-
-			for _, msg := range tMsgs {
-				if msg.IsControl() {
-					continue
-				}
-
-				ok, err := cnd.Condition(ctx, msg)
-				if err != nil {
-					fmt.Printf("?\t%s\t[test error]\n", file)
-
-					//nolint:nilerr  // errors should not disrupt the test.
-					return nil
-				}
-
-				if !ok {
-					fmt.Printf("%s\n%s\n%s\n",
-						fmt.Sprintf("--- FAIL: %s", test.Name),
-						fmt.Sprintf("    message:\t%s", msg),
-						fmt.Sprintf("    condition:\t%s", cnd),
-					)
-
-					failedFile = true
-				}
+				failedFile = true
 			}
 		}
 	}

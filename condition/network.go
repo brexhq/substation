@@ -1,7 +1,7 @@
 package condition
 
 import (
-	iconfig "github.com/brexhq/substation/internal/config"
+	iconfig "github.com/brexhq/substation/v2/internal/config"
 )
 
 type networkIPConfig struct {

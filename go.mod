@@ -24,8 +24,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.5
 	github.com/aws/aws-xray-sdk-go v1.8.4
 	github.com/awslabs/kinesis-aggregation/go/v2 v2.0.0-20230808105340-e631fe742486
-	github.com/brexhq/substation v1.7.1
 	github.com/golang/protobuf v1.5.4
+	github.com/google/go-jsonnet v0.20.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/iancoleman/strcase v0.3.0
@@ -58,7 +58,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.22.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.5 // indirect
 	github.com/aws/smithy-go v1.20.4 // indirect
-	github.com/google/go-jsonnet v0.20.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/itchyny/timefmt-go v0.1.6 // indirect

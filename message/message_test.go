@@ -343,10 +343,28 @@ func BenchmarkTestMessageSetMetadata(b *testing.B) {
 }
 
 func FuzzMessageSetValue(f *testing.F) {
-	f.Add("key", "value")
-	f.Fuzz(func(t *testing.T, key, value string) {
-		msg := New().SetData([]byte(`{}`))
-		if err := msg.SetValue(key, value); err != nil {
+	testcases := []struct {
+		path  string
+		value string
+	}{
+		{"a", "b"},
+		{"a.b", "123"},
+		{"a.b.c", "true"},
+		{"", "empty path"},
+		{"a.b.c.d", ""},
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc.path, tc.value)
+	}
+
+	f.Fuzz(func(t *testing.T, path string, value string) {
+		msg := New()
+		err := msg.SetValue(path, value)
+		if err != nil {
+			if err.Error() == "path cannot be empty" {
+				return
+			}
 			t.Errorf("unexpected error: %v", err)
 		}
 	})

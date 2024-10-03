@@ -99,7 +99,7 @@ func BenchmarkTimeFromUnix(b *testing.B) {
 	}
 }
 
-func FuzzTestTimeFromUnix(f *testing.F) {
+func FuzzTestTimeFromUnixSeconds(f *testing.F) {
 	testcases := [][]byte{
 		[]byte(`1639895490`),
 		[]byte(`{"a":1639877490}`),

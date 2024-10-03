@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"testing"
 
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/config"
@@ -199,4 +200,38 @@ func (t *utilityDuplicate) Transform(ctx context.Context, msg *message.Message) 
 	}
 
 	return output, nil
+}
+
+func FuzzTestSubstation(f *testing.F) {
+	testcases := [][]byte{
+		[]byte(`{"transforms":[{"type":"utility_duplicate"}]}`),
+		[]byte(`{"transforms":[{"type":"utility_duplicate", "count":2}]}`),
+		[]byte(`{"transforms":[{"type":"unknown_type"}]}`),
+		[]byte(`{"transforms":[{"type":"utility_duplicate", "count":"invalid"}]}`),
+		[]byte(``),
+	}
+
+	for _, tc := range testcases {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ctx := context.TODO()
+		var cfg substation.Config
+		err := json.Unmarshal(data, &cfg)
+		if err != nil {
+			return
+		}
+
+		sub, err := substation.New(ctx, cfg)
+		if err != nil {
+			return
+		}
+
+		msg := message.New().SetData(data)
+		_, err = sub.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+	})
 }

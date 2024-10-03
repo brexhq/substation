@@ -169,7 +169,7 @@ func FuzzTestTransform(f *testing.F) {
 	})
 }
 
-func FuzzTestTransformApply(f *testing.F) {
+func FuzzTestApply(f *testing.F) {
 	testcases := [][]byte{
 		[]byte(`{"a":"b"}`),
 		[]byte(`{"a":{"b":"c"}}`),

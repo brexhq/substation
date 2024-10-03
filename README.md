@@ -6,7 +6,7 @@
 
 <div align="center">
 
-[Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Quickstart][quickstart]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Adopters][adopters]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement (2022)][announcement]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[v1.0 Release (2024)][v1_release] 
+[Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Adopters][adopters]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement (2022)][announcement]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[v1.0 Release (2024)][v1_release] 
 
 ![OSSF-Scorecard Score](https://img.shields.io/ossf-scorecard/github.com/brexhq/substation?style=for-the-badge)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/brexhq/substation/code.yml?style=for-the-badge)
@@ -15,6 +15,16 @@
 ![GitHub License](https://img.shields.io/github/license/brexhq/substation?style=for-the-badge)
 
 </div>
+
+## Quickstart
+
+Want to see a demo before diving into the documentation? Run this command:
+
+```sh
+export PATH=$PATH:$(go env GOPATH)/bin && \
+go install github.com/brexhq/substation/v2/cmd/substation@latest && \
+substation demo
+```
 
 ## At a Glance
 
@@ -443,13 +453,28 @@ You can run Substation on:
 - [macOS / Linux](https://substation.readme.io/docs/try-substation-on-macos-linux)
 - [AWS](https://substation.readme.io/docs/try-substation-on-aws)
 
+### Testing
+
+Use the Substation CLI tool to run through [examples](examples/) and unit test configurations:
+
+```sh
+substation test -h
+```
+
+Examples can be tested by running this command from the root of the project. For example:
+
+```sh
+% substation test -R examples/transform/time/str_conversion 
+{"time":"2024-01-01T01:02:03.123Z"}
+{"time":"2024-01-01T01:02:03"}
+ok	examples/transform/time/str_conversion/config.jsonnet	133µs
+```
+
 ### Development
 
 [VS Code](https://code.visualstudio.com/docs/devcontainers/containers) is the recommended development environment for Substation. The project includes a [development container](.devcontainer/Dockerfile) that should be used to develop and test the system. Refer to the [development guide](CONTRIBUTING.md) for more information.
 
-### Testing
-
-The development container is used to test the system locally and in the cloud. If don't use VS Code, then you should run the development container from the command line:
+If don't use VS Code, then you should run the development container from the command line:
 
 ```sh
 git clone https://github.com/brexhq/substation.git && cd substation && \
@@ -457,13 +482,7 @@ docker build -t substation-dev .devcontainer/ && \
 docker run -v $(pwd):/workspaces/substation/  -w /workspaces/substation -v /var/run/docker.sock:/var/run/docker.sock -it substation-dev
 ```
 
-To test the system locally, run this from the project root:
-
-```bash
-sh build/scripts/config/compile.sh && \
-go build -o ./examples/substation-file ./cmd/development/substation-file/ && \
-./examples/substation-file -config ./examples/transform/aggregate/summarize/config.json -file ./examples/transform/aggregate/summarize/data.jsonl
-```
+### Deployment
 
 The [Terraform documentation](build/terraform/aws/) includes guidance for deploying Substation to AWS.
 
@@ -474,7 +493,6 @@ Substation and its associated code is released under the terms of the [MIT Licen
 <!--Links-->
 [releases]:https://github.com/brexhq/substation/releases "Substation Releases"
 [docs]:https://substation.readme.io/docs "Substation Documentation"
-[quickstart]:https://substation.readme.io/recipes/1-minute-quickstart "Substation Quickstart"
 [adopters]:https://github.com/brexhq/substation/blob/main/ADOPTERS.md "Substation Adopters"
 [announcement]:https://medium.com/brexeng/announcing-substation-188d049d979b "Substation Announcement Post"
 [v1_release]:https://medium.com/brexeng/releasing-substation-v1-0-4d0314cbc45b "Substation v1.0 Release Post"

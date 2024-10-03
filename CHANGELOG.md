@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.1.0](https://github.com/brexhq/substation/compare/v2.0.0...v2.1.0) (2024-10-03)
+
+
+### Features
+
+* **cmd:** Add CLI Tool ([#244](https://github.com/brexhq/substation/issues/244)) ([55a62bc](https://github.com/brexhq/substation/commit/55a62bcd5fef33d83552b9a2a7e8795766171859))
+
+
+### Bug Fixes
+
+* **cmd:** Out of Bounds int32 Check in AWS Lambda Autoscale ([#238](https://github.com/brexhq/substation/issues/238)) ([bcc8108](https://github.com/brexhq/substation/commit/bcc81088529a0dfc6d5ed62c99c0b68b68767ddf))
+* **cmd:** Pre-Compile Demo Config ([#247](https://github.com/brexhq/substation/issues/247)) ([81d50b8](https://github.com/brexhq/substation/commit/81d50b84b2f95f90a3904dcb3c70dcd4c215dc94))
+* **condition:** Remove v1 Imports ([#246](https://github.com/brexhq/substation/issues/246)) ([fc22eeb](https://github.com/brexhq/substation/commit/fc22eeb49ebbded3097ed986f8f8e02cd6cf8de2))
+
 ## [2.0.0](https://github.com/brexhq/substation/compare/v1.7.1...v2.0.0) (2024-09-23)
 
 

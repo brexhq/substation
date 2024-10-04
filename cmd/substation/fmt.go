@@ -38,8 +38,15 @@ Supported file extensions: .jsonnet, .libsonnet`,
 			path = args[0]
 		}
 
-		write, _ := cmd.Flags().GetBool("write")
-		recursive, _ := cmd.Flags().GetBool("recursive")
+		write, err := cmd.Flags().GetBool("write")
+		if err != nil {
+			return err
+		}
+
+		recursive, err := cmd.Flags().GetBool("recursive")
+		if err != nil {
+			return err
+		}
 
 		return formatPath(path, write, recursive)
 	},

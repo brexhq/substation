@@ -17,7 +17,7 @@ func init() {
 
 var fmtCmd = &cobra.Command{
 	Use:   "fmt [path]",
-	Short: "Format Jsonnet files",
+	Short: "format configs",
 	Long: `'substation fmt' formats Jsonnet files.
 It prints the formatted output to stdout by default.
 Use the --write flag to update the files in-place.

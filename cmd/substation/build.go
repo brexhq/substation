@@ -52,20 +52,7 @@ func buildPath(arg string, extVars map[string]string, recursive bool) error {
 	//
 	// Only `.jsonnet` files are built.
 	if filepath.Ext(arg) == ".jsonnet" {
-		mem, err := buildFile(arg, extVars)
-		if err != nil {
-			return err
-		}
-
-		dir, fname := pathVars(arg)
-		if err := os.WriteFile(filepath.Join(dir, fname)+".json", []byte(mem), 0o644); err != nil {
-			return err
-		}
-
-		// Print the file that was built.
-		fmt.Println(arg)
-
-		return nil
+		return buildFile(arg, extVars)
 	}
 
 	if err := filepath.WalkDir(arg, func(path string, d os.DirEntry, err error) error {
@@ -86,23 +73,27 @@ func buildPath(arg string, extVars map[string]string, recursive bool) error {
 			return nil
 		}
 
-		mem, err := buildFile(path, extVars)
-		if err != nil {
-			return err
-		}
-
-		dir, fname := pathVars(path)
-		if err := os.WriteFile(filepath.Join(dir, fname)+".json", []byte(mem), 0o644); err != nil {
-			return err
-		}
-
-		// Print the file that was built.
-		fmt.Println(path)
-
-		return nil
+		return buildFile(path, extVars)
 	}); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func buildFile(arg string, extVars map[string]string) error {
+	mem, err := compileFile(arg, extVars)
+	if err != nil {
+		return err
+	}
+
+	dir, fname := pathVars(arg)
+	if err := os.WriteFile(filepath.Join(dir, fname)+".json", []byte(mem), 0o644); err != nil {
+		return err
+	}
+
+	// Print the file that was built.
+	fmt.Println(arg)
 
 	return nil
 }

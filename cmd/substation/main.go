@@ -30,7 +30,7 @@ func init() {
 }
 
 // buildFile returns JSON from a Jsonnet file.
-func buildFile(f string, extVars map[string]string) (string, error) {
+func compileFile(f string, extVars map[string]string) (string, error) {
 	vm := jsonnet.MakeVM()
 	for k, v := range extVars {
 		vm.ExtVar(k, v)

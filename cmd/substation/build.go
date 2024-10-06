@@ -33,6 +33,12 @@ and the current directory is used if no arg is provided.`,
 			path = args[0]
 		}
 
+		// Catches an edge case where the user is looking for help.
+		if path == "help" {
+			fmt.Printf("warning: \"%s\" matched no files\n", path)
+			return nil
+		}
+
 		m, err := cmd.PersistentFlags().GetStringToString("ext-str")
 		if err != nil {
 			return err

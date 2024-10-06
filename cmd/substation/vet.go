@@ -72,6 +72,12 @@ array:
 			path = args[0]
 		}
 
+		// Catches an edge case where the user is looking for help.
+		if path == "help" {
+			fmt.Printf("warning: \"%s\" matched no files\n", path)
+			return nil
+		}
+
 		extStr, err := cmd.PersistentFlags().GetStringToString("ext-str")
 		if err != nil {
 			return err

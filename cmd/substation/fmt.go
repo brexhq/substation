@@ -18,7 +18,7 @@ func init() {
 var fmtCmd = &cobra.Command{
 	Use:   "fmt [path]",
 	Short: "format configs",
-	Long: `'substation fmt' formats Jsonnet files.
+	Long: `'substation fmt' formats configuration files.
 It prints the formatted output to stdout by default.
 Use the --write flag to update the files in-place.
 
@@ -32,10 +32,16 @@ Supported file extensions: .jsonnet, .libsonnet`,
   substation fmt -w -R /path/to/configs`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Default to current directory if no path is provided
+		// Default to current directory if no path is provided.
 		path := "."
 		if len(args) > 0 {
 			path = args[0]
+		}
+
+		// Catches an edge case where the user is looking for help.
+		if path == "help" {
+			fmt.Printf("warning: \"%s\" matched no files\n", path)
+			return nil
 		}
 
 		write, err := cmd.Flags().GetBool("write")
@@ -52,25 +58,23 @@ Supported file extensions: .jsonnet, .libsonnet`,
 	},
 }
 
-func formatPath(path string, write, recursive bool) error {
-	fi, err := os.Stat(path)
-	if err != nil {
-		return err
+func formatPath(arg string, write, recursive bool) error {
+	// Handle cases where the path is a file.
+	ext := filepath.Ext(arg)
+	if ext == ".jsonnet" || ext == ".libsonnet" {
+		return formatFile(arg, write)
 	}
 
-	if !fi.IsDir() {
-		return formatFile(path, write)
-	}
-
-	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+	if err := filepath.WalkDir(arg, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if info.IsDir() {
-			if !recursive && path != "." {
+		if d.IsDir() {
+			if !recursive && path != arg {
 				return filepath.SkipDir
 			}
+
 			return nil
 		}
 
@@ -78,30 +82,37 @@ func formatPath(path string, write, recursive bool) error {
 		if ext != ".jsonnet" && ext != ".libsonnet" {
 			return nil
 		}
+
 		return formatFile(path, write)
-	})
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func formatFile(path string, write bool) error {
-	content, err := os.ReadFile(path)
+func formatFile(arg string, write bool) error {
+	content, err := os.ReadFile(arg)
 	if err != nil {
 		return err
 	}
 
-	formatted, err := formatter.Format(path, string(content), formatter.DefaultOptions())
+	formatted, err := formatter.Format(arg, string(content), formatter.DefaultOptions())
 	if err != nil {
 		return err
 	}
 
-	if write {
-		err = os.WriteFile(path, []byte(formatted), 0o644)
-		if err != nil {
-			return err
-		}
-		fmt.Println(path)
-	} else {
+	if !write {
 		fmt.Println(formatted)
+
+		return nil
 	}
+
+	if err := os.WriteFile(arg, []byte(formatted), 0o644); err != nil {
+		return err
+	}
+
+	fmt.Println(arg)
 
 	return nil
 }

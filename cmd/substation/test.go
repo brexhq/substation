@@ -226,135 +226,188 @@ production resources, such as any enrichment or send transforms.
 `,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := context.Background() // This doesn't need to be canceled.
-
-		// 'test' defaults to the current directory.
-		arg, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-
+		path := "."
 		if len(args) > 0 {
-			arg = args[0]
+			path = args[0]
 		}
 
 		// Catches an edge case where the user is looking for help.
-		if arg == "help" {
-			fmt.Printf("warning: \"%s\" matched no files\n", arg)
+		if path == "help" {
+			fmt.Printf("warning: \"%s\" matched no files\n", path)
 			return nil
 		}
 
-		fi, err := os.Stat(arg)
+		extStr, err := cmd.PersistentFlags().GetStringToString("ext-str")
 		if err != nil {
 			return err
 		}
 
-		// If the arg is a file, then test only that file.
-		if !fi.IsDir() {
-			var cfg customConfig
-
-			switch filepath.Ext(arg) {
-			case ".jsonnet", ".libsonnet":
-				m, err := cmd.PersistentFlags().GetStringToString("ext-str")
-				if err != nil {
-					return err
-				}
-
-				// If the Jsonnet cannot compile, then the file is invalid.
-				mem, err := buildFile(arg, m)
-				if err != nil {
-					fmt.Printf("?\t%s\t[config error]\n", arg)
-
-					return nil
-				}
-
-				cfg, err = memConfig(mem)
-				if err != nil {
-					return err
-				}
-			case ".json":
-				cfg, err = fiConfig(arg)
-				if err != nil {
-					return err
-				}
-			default:
-				fmt.Printf("warning: \"%s\" matched no files\n", arg)
-			}
-
-			if err := test(ctx, arg, cfg); err != nil {
-				return err
-			}
-
-			return nil
+		recursive, err := cmd.Flags().GetBool("recursive")
+		if err != nil {
+			return err
 		}
 
-		var entries []string
-		// Walk to get all valid files in the directory.
-		//
-		// These are assumed to be Substation configuration files,
-		// and are validated before attempting to run tests.
-		if err := filepath.WalkDir(arg, func(path string, d os.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
+		return testPath(path, extStr, recursive)
+	},
+}
 
-			if filepath.Ext(path) == ".json" ||
-				filepath.Ext(path) == ".jsonnet" ||
-				filepath.Ext(path) == ".libsonnet" {
-				entries = append(entries, path)
-			}
+func testPath(arg string, extVars map[string]string, recursive bool) error {
+	// Handle cases where the path is a file.
+	ext := filepath.Ext(arg)
+	if ext == ".jsonnet" || ext == ".libsonnet" || ext == ".json" {
+		return testFile(arg, extVars)
+	}
 
-			// Skip directories, except the one provided as an argument, if
-			// the 'recursive' flag is not set.
-			if d.IsDir() && path != arg && !cmd.Flag("recursive").Changed {
+	if err := filepath.WalkDir(arg, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			if !recursive && path != arg {
 				return filepath.SkipDir
 			}
 
 			return nil
-		}); err != nil {
-			return err
 		}
 
-		if len(entries) == 0 {
-			fmt.Printf("warning: \"%s\" matched no files\n", arg)
-
+		ext := filepath.Ext(path)
+		if ext != ".jsonnet" && ext != ".libsonnet" && ext != ".json" {
 			return nil
 		}
 
-		for _, entry := range entries {
-			var cfg customConfig
+		return testFile(path, extVars)
+	}); err != nil {
+		return err
+	}
 
-			switch filepath.Ext(entry) {
-			case ".jsonnet", ".libsonnet":
-				m, err := cmd.PersistentFlags().GetStringToString("ext-str")
-				if err != nil {
-					return err
-				}
+	return nil
+}
 
-				// If the Jsonnet cannot compile, then the file is invalid.
-				mem, err := buildFile(entry, m)
-				if err != nil {
-					fmt.Printf("?\t%s\t[config error]\n", entry)
+func testFile(arg string, extVars map[string]string) error {
+	var cfg customConfig
 
-					continue
-				}
+	switch filepath.Ext(arg) {
+	case ".jsonnet", ".libsonnet":
+		// If the Jsonnet cannot compile, then the file is invalid.
+		mem, err := buildFile(arg, extVars)
+		if err != nil {
+			fmt.Printf("?\t%s\t[config error]\n", arg)
 
-				cfg, err = memConfig(mem)
-				if err != nil {
-					return err
-				}
-			case ".json":
-				cfg, err = fiConfig(entry)
-				if err != nil {
-					return err
-				}
-			}
-
-			if err := test(ctx, entry, cfg); err != nil {
-				return err
-			}
+			//nolint:nilerr  // errors should not disrupt the test.
+			return nil
 		}
 
+		c, err := memConfig(mem)
+		if err != nil {
+			return err
+		}
+
+		cfg = c
+	case ".json":
+		c, err := fiConfig(arg)
+		if err != nil {
+			return err
+		}
+
+		cfg = c
+	}
+
+	start := time.Now()
+
+	// These configurations are not valid.
+	if len(cfg.Transforms) == 0 {
 		return nil
-	},
+	}
+
+	if len(cfg.Tests) == 0 {
+		fmt.Printf("?\t%s\t[no tests]\n", arg)
+
+		return nil
+	}
+
+	ctx := context.Background() // This doesn't need to be canceled.
+
+	var failedFile bool // Tracks if any test in a file failed.
+	for _, test := range cfg.Tests {
+		// cnd asserts that the test is successful.
+		cnd, err := condition.New(ctx, test.Condition)
+		if err != nil {
+			fmt.Printf("FAIL\t%s\t[test error]\n", arg)
+
+			//nolint:nilerr  // errors should not disrupt the test.
+			return nil
+		}
+
+		// setup creates the test messages that are tested.
+		setup, err := substation.New(ctx, substation.Config{
+			Transforms: test.Transforms,
+		})
+		if err != nil {
+			fmt.Printf("?\t%s\t[test error]\n", arg)
+
+			//nolint:nilerr  // errors should not disrupt the test.
+			return nil
+		}
+
+		// tester contains the config that will be tested.
+		// This has to be done for each test to ensure
+		// that there is no state shared between tests.
+		tester, err := substation.New(ctx, cfg.Config)
+		if err != nil {
+			fmt.Printf("?\t%s\t[config error]\n", arg)
+
+			//nolint:nilerr  // errors should not disrupt the test.
+			return nil
+		}
+
+		sMsgs, err := setup.Transform(ctx, message.New().AsControl())
+		if err != nil {
+			fmt.Printf("?\t%s\t[test error]\n", arg)
+
+			//nolint:nilerr  // errors should not disrupt the test.
+			return nil
+		}
+
+		tMsgs, err := tester.Transform(ctx, sMsgs...)
+		if err != nil {
+			fmt.Printf("?\t%s\t[config error]\n", arg)
+
+			//nolint:nilerr  // errors should not disrupt the test.
+			return nil
+		}
+
+		for _, msg := range tMsgs {
+			// Skip control messages because they contain no data.
+			if msg.IsControl() {
+				continue
+			}
+
+			ok, err := cnd.Condition(ctx, msg)
+			if err != nil {
+				fmt.Printf("?\t%s\t[test error]\n", arg)
+
+				//nolint:nilerr  // errors should not disrupt the test.
+				return nil
+			}
+
+			if !ok {
+				fmt.Printf("%s\n%s\n%s\n",
+					fmt.Sprintf("--- FAIL: %s", test.Name),
+					fmt.Sprintf("    message:\t%s", msg),
+					fmt.Sprintf("    condition:\t%s", cnd),
+				)
+
+				failedFile = true
+			}
+		}
+	}
+
+	if failedFile {
+		fmt.Printf("FAIL\t%s\t%s\t\n", arg, time.Since(start).Round(time.Microsecond))
+	} else {
+		fmt.Printf("ok\t%s\t%s\t\n", arg, time.Since(start).Round(time.Microsecond))
+	}
+
+	return nil
 }

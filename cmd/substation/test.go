@@ -261,7 +261,7 @@ production resources, such as any enrichment or send transforms.
 				}
 
 				// If the Jsonnet cannot compile, then the file is invalid.
-				mem, err := buildFile(arg, m)
+				mem, err := compileFile(arg, m)
 				if err != nil {
 					fmt.Printf("?\t%s\t[config error]\n", arg)
 
@@ -332,7 +332,7 @@ production resources, such as any enrichment or send transforms.
 				}
 
 				// If the Jsonnet cannot compile, then the file is invalid.
-				mem, err := buildFile(entry, m)
+				mem, err := compileFile(entry, m)
 				if err != nil {
 					fmt.Printf("?\t%s\t[config error]\n", entry)
 

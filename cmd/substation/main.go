@@ -2,6 +2,8 @@ package main
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/google/go-jsonnet"
 	"github.com/spf13/cobra"
@@ -27,8 +29,8 @@ func init() {
 	})
 }
 
-// buildFile returns JSON from a Jsonnet file.
-func buildFile(f string, extVars map[string]string) (string, error) {
+// compileFile returns JSON from a Jsonnet file.
+func compileFile(f string, extVars map[string]string) (string, error) {
 	vm := jsonnet.MakeVM()
 	for k, v := range extVars {
 		vm.ExtVar(k, v)
@@ -40,6 +42,15 @@ func buildFile(f string, extVars map[string]string) (string, error) {
 	}
 
 	return res, nil
+}
+
+// pathVars returns the directory and file name of a file path.
+func pathVars(p string) (string, string) {
+	dir, fn := filepath.Split(p)
+	ext := filepath.Ext(fn)
+	fn = strings.TrimSuffix(fn, ext)
+
+	return dir, fn
 }
 
 func main() {

@@ -74,7 +74,7 @@ array:
 
 		// Catches an edge case where the user is looking for help.
 		if path == "help" {
-			fmt.Printf("warning: \"%s\" matched no files\n", path)
+			fmt.Printf("warning: %q matched no files\n", path)
 			return nil
 		}
 
@@ -98,7 +98,7 @@ func vetFile(arg string, extVars map[string]string) error {
 
 	switch filepath.Ext(arg) {
 	case ".jsonnet", ".libsonnet":
-		mem, err := buildFile(arg, extVars)
+		mem, err := compileFile(arg, extVars)
 		if err != nil {
 			// This is an error in the Jsonnet syntax.
 			// The line number and column range are included.

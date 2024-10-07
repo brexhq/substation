@@ -135,7 +135,7 @@ production resources, such as any enrichment or send transforms.
 
 		// Catches an edge case where the user is looking for help.
 		if path == "help" {
-			fmt.Printf("warning: \"%s\" matched no files\n", path)
+			fmt.Printf("warning: %q matched no files\n", path)
 			return nil
 		}
 

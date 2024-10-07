@@ -192,7 +192,7 @@ func testFile(arg string, extVars map[string]string) error {
 	switch filepath.Ext(arg) {
 	case ".jsonnet", ".libsonnet":
 		// If the Jsonnet cannot compile, then the file is invalid.
-		mem, err := buildFile(arg, extVars)
+		mem, err := compileFile(arg, extVars)
 		if err != nil {
 			fmt.Printf("?\t%s\t[config error]\n", arg)
 

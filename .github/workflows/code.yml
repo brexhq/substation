@@ -16,12 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           fetch-depth: 1
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
           go-version: 1.22
 
@@ -29,25 +29,26 @@ jobs:
         run: go test -timeout 30s -v ./...
 
       - name: Linting
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@971e284b6050e8a5849b72094c50ab08da042db8 # v6.1.0
         with:
-          version: latest
+          version: v1.61.0
 
   # Inherits workflow permissions.
   python:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
         with:
           python-version: "3.x"
 
+      # v24.10.0
       - name: Linting
         run: |
-          pip3 install black
+          pip install git+https://github.com/psf/black@1b2427a2b785cc4aac97c19bb4b9a0de063f9547 
           find -name *.py | xargs black --check
 
   # Inherits workflow permissions.
@@ -55,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           fetch-depth: 1
 

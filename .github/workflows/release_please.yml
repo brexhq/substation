@@ -5,10 +5,16 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   release_please:
-    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create release commit
+      pull-requests: write # create release PR
 
+    runs-on: ubuntu-latest
     steps:
       - uses: google-github-actions/release-please-action@v3
         with:

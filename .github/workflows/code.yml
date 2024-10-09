@@ -40,13 +40,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
-      - name: Setup Python
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
-        with:
-          python-version: "3.x"
-
       - name: Linting
         uses: psf/black@1b2427a2b785cc4aac97c19bb4b9a0de063f9547 # v24.10.0
+        with:
+          src: "./build"
+          options: "--check"
 
   # Inherits workflow permissions.
   jsonnet:

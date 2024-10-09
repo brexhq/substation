@@ -43,8 +43,8 @@ jobs:
       - name: Linting
         uses: psf/black@1b2427a2b785cc4aac97c19bb4b9a0de063f9547 # v24.10.0
         with:
-          src: "./build"
-          options: "--check"
+          # src: "./build"
+          options: "--check --exclude=''" # "An empty value means no paths are excluded."
 
   # Inherits workflow permissions.
   jsonnet:

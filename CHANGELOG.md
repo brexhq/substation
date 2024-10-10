@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.2.0](https://github.com/brexhq/substation/compare/v2.1.0...v2.2.0) (2024-10-10)
+
+
+### Features
+
+* add support for formatting jsonnet with substation cli ([#250](https://github.com/brexhq/substation/issues/250)) ([6cae3cd](https://github.com/brexhq/substation/commit/6cae3cd80492a5e8208bc1bab2d6fe17fc6aa87b))
+* **cmd:** Add build Command to CLI Tool ([#252](https://github.com/brexhq/substation/issues/252)) ([5ffe528](https://github.com/brexhq/substation/commit/5ffe528b85ec2ac1db2f389ce89ccdb553f14d41))
+* **cmd:** Add vet Command to CLI Tool ([#253](https://github.com/brexhq/substation/issues/253)) ([97fbc92](https://github.com/brexhq/substation/commit/97fbc922e3323f5bec8ae5bd5625488f8f160ee1))
+
+
+### Bug Fixes
+
+* **internal/secrets:** Error on Missing Secrets ([#260](https://github.com/brexhq/substation/issues/260)) ([b788992](https://github.com/brexhq/substation/commit/b788992969d7ef311bc5f6865e367870c5786aa0))
+
 ## [2.1.0](https://github.com/brexhq/substation/compare/v2.0.0...v2.1.0) (2024-10-03)
 
 

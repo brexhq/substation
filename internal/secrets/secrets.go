@@ -17,8 +17,8 @@ var (
 	// interpRe is used for parsing secrets during interpolation. Secrets
 	// must not contain any curly braces.
 	interpRe = regexp.MustCompile(`\${(SECRET:[^}]+)}`)
-	// errNoSecrets is returned when no secrets are found in the cache.
-	errNoSecrets = fmt.Errorf("secrets: no secrets found")
+	// errNoSecret is returned when no secrets are found in the cache.
+	errNoSecret = fmt.Errorf("secrets: no secret found")
 	// KV store is used as a secrets cache
 	cache kv.Storer
 )
@@ -75,7 +75,7 @@ func Interpolate(ctx context.Context, s string) (string, error) {
 		}
 
 		if secret == nil {
-			return "", errNoSecrets
+			return "", errNoSecret
 		}
 
 		// Replaces each substring with a secret. If the secret is

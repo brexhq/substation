@@ -13,7 +13,10 @@ Thank you so much for your interest in contributing to Substation! This document
 
 [Development](#development)
   + [Development Environment](#development-environment)
+  + [Conditions](#conditions)
+  + [Transforms](#transforms)
   + [Testing](#testing)
+    + [Config Unit Tests](#config-unit-tests)
 
 [Style Guides](#style-guides)
   + [Design Patterns](#design-patterns)

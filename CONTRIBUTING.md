@@ -13,7 +13,10 @@ Thank you so much for your interest in contributing to Substation! This document
 
 [Development](#development)
   + [Development Environment](#development-environment)
+  + [Conditions](#conditions)
+  + [Transforms](#transforms)
   + [Testing](#testing)
+    + [Config Unit Tests](#config-unit-tests)
 
 [Style Guides](#style-guides)
   + [Design Patterns](#design-patterns)
@@ -45,9 +48,81 @@ Enhancements should be submitted as issues using the issue template.
 
 The project supports development through the use of [Visual Studio Code configurations](https://code.visualstudio.com/docs/remote/containers). The VS Code [development container](.devcontainer/Dockerfile) contains all packages required to develop and test changes locally before submitting pull requests.
 
+### [Conditions](condition/)
+
+Each condition should be functional and solve a single problem, and each one is nested under a "family" of conditions. (We may ask that you split complex condition logic into multiple conditions.) For example, there is a family for string comparisons:
+   - Equal To (`cnd.string.equal_to`, `cnd.str.eq`)
+   - Starts With (`cnd.string.starts_with`, `cnd.str.prefix`)
+   - Ends With (`cnd.string.ends_with`, `cnd.str.suffix`)
+   - Contains (`cnd.string.contains`, `cnd.str.has`)
+   - Match (regular expression) (`cnd.string.match`)
+   - Greater Than (`cnd.string.greater_than`, `cnd.str.gt`)
+   - Less Than (`cnd.string.less_than`, `cnd.str.lt`)
+
+Conditions may require changes to the [configuration library](substation.libsonnet) (usually when adding features or making breaking changes). For new conditions, we typically ask that you add a new [example](examples/) that uses a config unit test.
+
+Conditions may reuse these field structures:
+   - `object`: For reading from JSON objects.
+
+In some cases, we may ask you to rename fields for consistency.
+
+### [Transforms](transform/)
+
+Each transform should be functional and solve a single problem, and each one is nested under a "family" of transforms. (We may ask that you split complex transform logic into multiple transforms.) For example, there is a family for JSON object operations:
+   - Copy (`tf.object.copy`, `tf.obj.cp`)
+   - Delete (`tf.object.delete`, `tf.obj.del`)
+   - Insert (`tf.object.insert`)
+   - To Boolean (`tf.object.to.boolean`, `tf.obj.to.bool`)
+   - To String (`tf.object.to.string`, `tf.obj.to.str`)
+   - To Float (`tf.object.to.float`)
+   - To Integer (`tf.object.to.integer`, `tf.obj.to.int`)
+   - To Unsigned Integer (`tf.object.to.unsigned_integer`, `tf.obj.to.uint`)
+
+Transforms may require changes to the [configuration library](substation.libsonnet) (usually when adding features or making breaking changes). For new transforms, we typically ask that you add a new [example](examples/) that uses a config unit test.
+
+Transforms may reuse these field structures:
+   - `id`: For uniquely identifying a transform. (If not configured, then this is automatically generated when a configuration is compiled by Jsonnet.)
+   - `object`: For reading from and writing to JSON objects.
+   - `batch`: For stateful collection of multiple messages in a transform.
+   - `transforms`: For chaining multiple transforms together. (Used in `meta` transforms.)
+   - `aux_transforms`: For chaining multiple transforms together, _after_ the primary transform has executed. (Used in `send` transforms.)
+
+In some cases, we may ask you to rename fields for consistency.
+
 ### Testing
 
 We rely on contributors to test changes before they are submitted as pull requests. Any components added or changed should be tested and public packages should be supported by unit tests.
+
+#### Config Unit Tests
+
+Configuration examples should use config unit tests to demo new concepts or features, like this:
+
+```jsonnet
+{
+  tests: [
+    {
+      // Every test should have a unique name.
+      name: 'my-passing-test',
+      // Generates the test message '{"a": true}' which
+      // is run through the configured transforms and
+      // then checked against the condition.
+      transforms: [
+        sub.tf.test.message({ value: {a: true} }),
+      ],
+      // Checks if key 'x' == 'true'.
+      condition: sub.cnd.all([
+        sub.cnd.str.eq({ object: {source_key: 'x'}, value: 'true' }),
+      ])
+    },
+  ],
+  // These transforms process the test message and the result
+  // is checked against the condition.
+  transforms: [
+    // Copies the value of key 'a' to key 'x'.
+    sub.tf.obj.cp({ object: { source_key: 'a', target_key: 'x' } }),
+  ],
+}
+```
 
 ## Style Guides
 
@@ -125,7 +200,7 @@ Sources that [add metadata during message creation](/message/) should use lowerC
 
 #### Package Configurations
 
-Configurations for packages (for example, [condition](/condition/README.md) and [transform](/transform/README.md)) should always use lower_snake_case in their JSON keys. This helps maintain readability when reviewing large configuration files.
+Configurations for packages (for example, conditions and transforms) should always use lower_snake_case in their JSON keys. This helps maintain readability when reviewing large configuration files.
 
 We strongly urge everyone to use Jsonnet for managing configurations.
 

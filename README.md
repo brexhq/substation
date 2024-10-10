@@ -474,7 +474,7 @@ ok	examples/transform/time/str_conversion/config.jsonnet	133µs
 
 [VS Code](https://code.visualstudio.com/docs/devcontainers/containers) is the recommended development environment for Substation. The project includes a [development container](.devcontainer/Dockerfile) that should be used to develop and test the system. Refer to the [development guide](CONTRIBUTING.md) for more information.
 
-If don't use VS Code, then you should run the development container from the command line:
+If you don't use VS Code, then you should run the development container from the command line:
 
 ```sh
 git clone https://github.com/brexhq/substation.git && cd substation && \

@@ -206,7 +206,7 @@ const indexHTML = `
             max-width: 90vw;
             margin: 0 auto;
             padding: 40px;
-            background-color: #ffffff;
+            background-color: #f9f9f9;
             color: var(--text-color);
             display: grid;
             grid-template-rows: auto 1fr;
@@ -235,6 +235,7 @@ const indexHTML = `
             color: #212121;
             font-weight: 800;
             margin-bottom: 8px;
+            word-wrap: break-word;
         }
 
         .playground-label {
@@ -363,7 +364,16 @@ const indexHTML = `
             main {
                 grid-template-columns: 1fr;
             }
+
+            h1 {
+                font-size: 36px;
+            }
+
+            h3 {
+                font-size: 16px;
+            }
         }
+
 
         .nav-bar {
             position: absolute;

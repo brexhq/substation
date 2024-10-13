@@ -2,6 +2,7 @@ package substation
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 
@@ -9,6 +10,9 @@ import (
 	"github.com/brexhq/substation/v2/message"
 	"github.com/brexhq/substation/v2/transform"
 )
+
+//go:embed substation.libsonnet
+var Libsonnet string
 
 var errNoTransforms = fmt.Errorf("no transforms configured")
 

@@ -191,7 +191,6 @@ const indexHTML = `
     <meta name="description" content="A toolkit for routing, normalizing, and enriching security event and audit logs.">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap');
 
         :root {
             --primary-color: #F46A35;
@@ -233,7 +232,7 @@ const indexHTML = `
 
         h1 {
             font-size: 48px;
-            color: var(--secondary-color);
+            color: #212121;
             font-weight: 800;
             margin-bottom: 8px;
         }

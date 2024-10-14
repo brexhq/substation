@@ -18,6 +18,7 @@ import (
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/message"
 	"github.com/google/go-jsonnet"
+	"github.com/google/go-jsonnet/formatter"
 )
 
 func init() {
@@ -38,6 +39,7 @@ func runPlayground(cmd *cobra.Command, args []string) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handleIndex)
 	mux.HandleFunc("/run", handleRun)
+	mux.HandleFunc("/fmt", handleFmt)
 	mux.HandleFunc("/examples", handleExamples)
 
 	server := &http.Server{
@@ -180,6 +182,33 @@ func handleExamples(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handleFmt(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var input struct {
+		Jsonnet string `json:"jsonnet"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, fmt.Sprintf("Error decoding request: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	formatted, err := formatter.Format("", input.Jsonnet, formatter.DefaultOptions())
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error formatting Jsonnet: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(map[string]string{"formatted": formatted}); err != nil {
+		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
+		return
+	}
+}
+
 const indexHTML = `
 <!DOCTYPE html>
 <html lang="en">
@@ -287,8 +316,9 @@ const indexHTML = `
 
         .editor-container {
             flex-grow: 1;
-            background-color: #ffffff;
+            background-color: #1e1e1e;
             border-radius: 8px;
+            padding: 16px 0px;
             box-shadow: 0 0 0 1px var(--border-color), 0 2px 4px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
@@ -344,6 +374,15 @@ const indexHTML = `
 
         .primary-button:hover {
             background-color: var(--primary-hover-color);
+        }
+
+        .format-button {
+            background-color: #EDEFEE;
+            color: #323333;
+        }
+
+        .format-button:hover {
+            background-color: #D9DBD9;
         }
 
         .secondary-link {
@@ -457,6 +496,7 @@ const indexHTML = `
                         </select>
                     </div>
                     <button class="primary-button" onclick="runSubstation()">Run</button>
+                    <button class="format-button" onclick="formatJsonnet()">Format</button>
                 </div>
                 <p class="subtext">Select an example to get started or create your own configuration.</p>
             </div>
@@ -539,6 +579,19 @@ const indexHTML = `
                 .catch(error => {
                     outputEditor.setValue('Error: ' + error);
                 });
+        }
+
+        function formatJsonnet() {
+            fetch('/fmt', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jsonnet: configEditor.getValue() })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    configEditor.setValue(data.formatted);
+                })
+                .catch(error => console.error('Error formatting Jsonnet:', error));
         }
 
         function loadExample() {

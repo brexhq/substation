@@ -39,6 +39,7 @@ func runPlayground(cmd *cobra.Command, args []string) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handleIndex)
 	mux.HandleFunc("/run", handleRun)
+	mux.HandleFunc("/test", handleTest)
 	mux.HandleFunc("/demo", handleDemo)
 	mux.HandleFunc("/fmt", handleFmt)
 
@@ -89,6 +90,10 @@ func handleDemo(w http.ResponseWriter, r *http.Request) {
 	}); err != nil {
 		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
 	}
+}
+
+func handleTest(w http.ResponseWriter, r *http.Request) {
+	return
 }
 
 func handleRun(w http.ResponseWriter, r *http.Request) {

@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -42,6 +44,7 @@ func runPlayground(cmd *cobra.Command, args []string) error {
 	mux.HandleFunc("/test", handleTest)
 	mux.HandleFunc("/demo", handleDemo)
 	mux.HandleFunc("/fmt", handleFmt)
+	mux.HandleFunc("/share", handleShare) // Add this line
 
 	server := &http.Server{
 		Addr:    ":8080",
@@ -67,9 +70,25 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		DefaultConfig string
 		DefaultInput  string
+		DefaultOutput string
 	}{
 		DefaultConfig: "",
 		DefaultInput:  "",
+		DefaultOutput: "",
+	}
+
+	// Check for shared data in query string
+	sharedData := r.URL.Query().Get("share")
+	if sharedData != "" {
+		decodedData, err := base64.URLEncoding.DecodeString(sharedData)
+		if err == nil {
+			parts := strings.SplitN(string(decodedData), "|", 3)
+			if len(parts) == 3 {
+				data.DefaultConfig = parts[0]
+				data.DefaultInput = parts[1]
+				data.DefaultOutput = parts[2]
+			}
+		}
 	}
 
 	tmpl := template.Must(template.New("index").Parse(indexHTML))
@@ -185,6 +204,38 @@ func handleFmt(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
 		return
 	}
+}
+
+// Add a new handler for sharing
+func handleShare(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var request struct {
+		Config string `json:"config"`
+		Input  string `json:"input"`
+		Output string `json:"output"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// Combine and encode the data
+	combined := request.Config + "|" + request.Input + "|" + request.Output
+	encoded := base64.URLEncoding.EncodeToString([]byte(combined))
+
+	// Create the shareable URL
+	shareURL := url.URL{
+		Path:     "/",
+		RawQuery: "share=" + encoded,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"url": shareURL.String()})
 }
 
 const indexHTML = `
@@ -433,6 +484,7 @@ const indexHTML = `
                     <button class="secondary-button" onclick="testSubstation()">Test</button>
                     <button class="secondary-button" onclick="demoSubstation()">Demo</button>
                     <button class="secondary-button" onclick="formatJsonnet()">Format</button>
+                    <button class="secondary-button" onclick="shareSubstation()">Share</button>
                 </div>
                 <p class="subtext">
                     Run your configuration, test it, or try a demo. 
@@ -479,7 +531,6 @@ const indexHTML = `
 
     <script>
         let configEditor, inputEditor, outputEditor;
-        let examples = {};
 
         require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.30.1/min/vs' } });
 
@@ -500,10 +551,25 @@ const indexHTML = `
                 });
             }
 
-            configEditor = createEditor('config', 'jsonnet', "");
-            inputEditor = createEditor('input', 'text', "");
-            outputEditor = createEditor('output', 'text', '// Processed message data will appear here');
+            configEditor = createEditor('config', 'jsonnet', {{.DefaultConfig}});
+            inputEditor = createEditor('input', 'text', {{.DefaultInput}});
+            outputEditor = createEditor('output', 'text', {{.DefaultOutput}});
+
+            // Set the correct mode for input and output editors
+            document.getElementById('inputModeSelector').value = isJsonString({{.DefaultInput}}) ? 'json' : 'text';
+            document.getElementById('outputModeSelector').value = isJsonString({{.DefaultOutput}}) ? 'json' : 'text';
+            changeEditorMode('input');
+            changeEditorMode('output');
         });
+
+        function isJsonString(str) {
+            try {
+                JSON.parse(str);
+            } catch (e) {
+                return false;
+            }
+            return true;
+        }
 
         function changeEditorMode(editorId) {
             const editor = editorId === 'input' ? inputEditor : outputEditor;
@@ -572,6 +638,32 @@ const indexHTML = `
             })
             .catch(error => {
                 console.error('Error fetching demo:', error);
+            });
+        }
+
+        function shareSubstation() {
+            fetch('/share', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    config: configEditor.getValue(),
+                    input: inputEditor.getValue(),
+                    output: outputEditor.getValue()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const shareUrl = window.location.origin + data.url;
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    alert('Shareable link copied to clipboard!');
+                }).catch(err => {
+                    console.error('Could not copy text: ', err);
+                    prompt('Copy this link to share:', shareUrl);
+                });
+            })
+            .catch(error => {
+                console.error('Error sharing:', error);
+                alert('Error creating shareable link');
             });
         }
     </script>

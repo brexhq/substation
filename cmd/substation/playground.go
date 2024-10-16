@@ -82,7 +82,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	if sharedData != "" {
 		decodedData, err := base64.URLEncoding.DecodeString(sharedData)
 		if err == nil {
-			parts := strings.SplitN(string(decodedData), "|", 3)
+			parts := strings.SplitN(string(decodedData), "{substation-separator}", 3)
 			if len(parts) == 3 {
 				data.DefaultConfig = parts[0]
 				data.DefaultInput = parts[1]
@@ -225,7 +225,7 @@ func handleShare(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Combine and encode the data
-	combined := request.Config + "|" + request.Input + "|" + request.Output
+	combined := request.Config + "{substation-separator}" + request.Input + "{substation-separator}" + request.Output
 	encoded := base64.URLEncoding.EncodeToString([]byte(combined))
 
 	// Create the shareable URL

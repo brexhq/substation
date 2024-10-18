@@ -43,6 +43,8 @@ func New(ctx context.Context, cfg config.Config) (Conditioner, error) { //nolint
 		return newNetworkIPPrivate(ctx, cfg)
 	case "network_ip_unicast":
 		return newNetworkIPUnicast(ctx, cfg)
+	case "network_ip_unique_local_address":
+		return newNetworkIPUniqueLocalAddress(ctx, cfg)
 	case "network_ip_unspecified":
 		return newNetworkIPUnspecified(ctx, cfg)
 	case "network_ip_valid":

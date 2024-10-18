@@ -208,6 +208,13 @@ local helpers = {
           type: 'network_ip_unicast',
           settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
         },
+        ula(settings={}): $.condition.network.ip.unique_local_address(settings=settings),
+        unique_local_address(settings={}): {
+          local default = $.condition.network.ip.default,
+
+          type: 'network_ip_unique_local_address',
+          settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
+        },
         unspecified(settings={}): {
           local default = $.condition.network.ip.default,
 

@@ -2,6 +2,7 @@ package condition
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
@@ -87,6 +88,7 @@ func (c *metaNone) Condition(ctx context.Context, msg *message.Message) (bool, e
 
 			// If any of the values in the array match, then this returns false.
 			if ok {
+				fmt.Println("return: false") // Debugging line.
 				return false, nil
 			}
 		}

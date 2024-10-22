@@ -2,6 +2,7 @@ package condition
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/brexhq/substation/v2/config"
@@ -16,113 +17,12 @@ var metaNoneTests = []struct {
 	data     []byte
 	expected bool
 }{
+	// This should fail, but doesn't.
 	{
-		"data",
+		"object_missing",
 		config.Config{
 			Settings: map[string]interface{}{
 				"conditions": []config.Config{
-					{
-						Type: "string_contains",
-						Settings: map[string]interface{}{
-							"value": "a",
-						},
-					},
-				},
-			},
-		},
-		[]byte("bcd"),
-		true,
-	},
-	{
-		"object",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"source_key": "z",
-				},
-				"conditions": []config.Config{
-					{
-						Type: "string_contains",
-						Settings: map[string]interface{}{
-							"value": "a",
-						},
-					},
-				},
-			},
-		},
-		[]byte(`{"z":"bcd"}`),
-		true,
-	},
-	// In this test the data is interpreted as a JSON array, as specified
-	// by the source_key. This test passes because no elements in the array
-	// contain "d".
-	{
-		"array",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"source_key": "@this",
-				},
-				"conditions": []config.Config{
-					{
-						Type: "string_contains",
-						Settings: map[string]interface{}{
-							"value": "d",
-						},
-					},
-				},
-			},
-		},
-		[]byte(`["a","b","c"]`),
-		true,
-	},
-	{
-		"array",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"source_key": "@this",
-				},
-				"conditions": []config.Config{
-					{
-						Type: "string_contains",
-						Settings: map[string]interface{}{
-							"value": "a",
-						},
-					},
-				},
-			},
-		},
-		[]byte(`["a","b","c"]`),
-		false,
-	},
-	{
-		"object_array",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"source_key": "z",
-				},
-				"conditions": []config.Config{
-					{
-						Type: "string_contains",
-						Settings: map[string]interface{}{
-							"value": "a",
-						},
-					},
-				},
-			},
-		},
-		[]byte(`{"z":["b","c","d"]}`),
-		true,
-	},
-	// This test passes because both inspectors do not match the input.
-	{
-		"object_mixed",
-		config.Config{
-			Settings: map[string]interface{}{
-				"conditions": []config.Config{
-					// This inspector fails because no elements in the array contain "d".
 					{
 						Type: "none",
 						Settings: map[string]interface{}{
@@ -131,26 +31,22 @@ var metaNoneTests = []struct {
 							},
 							"conditions": []config.Config{
 								{
-									Type: "string_contains",
+									Type: "string_equal_to",
 									Settings: map[string]interface{}{
-										"pattern": "d",
+										"object": map[string]interface{}{
+											"source_key": "a",
+										},
+										"value": "b",
 									},
 								},
 							},
 						},
 					},
-					// This inspector fails because the data does not match the pattern "^\\[.*\\]$".
-					{
-						Type: "string_match",
-						Settings: map[string]interface{}{
-							"pattern": "^\\[.*\\]$",
-						},
-					},
 				},
 			},
 		},
-		[]byte(`{"z":["a","b","c"]}`),
-		true,
+		[]byte(`{"z":[{"a":"b"}]}`),
+		false,
 	},
 }
 
@@ -170,6 +66,8 @@ func TestNoneCondition(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
+
+			fmt.Println("got:", check) // Debugging output.
 
 			if test.expected != check {
 				t.Errorf("expected %v, got %v, %v", test.expected, check, string(test.data))

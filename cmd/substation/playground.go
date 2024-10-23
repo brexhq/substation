@@ -251,6 +251,8 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	time.Sleep(5 * time.Second)
+
 	var request struct {
 		Config string `json:"config"`
 		Input  string `json:"input"`
@@ -573,6 +575,17 @@ const indexHTML = `
             background-color: #ffffff;
             color: var(--text-color);
         }
+
+        button:disabled {
+            background-color: #EDEFEE;
+            color: #323333;
+            cursor: not-allowed;
+        }
+
+        button:disabled:hover {
+            background-color: #EDEFEE;
+            transform: none;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.30.1/min/vs/loader.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -601,7 +614,7 @@ const indexHTML = `
         <div class="content-wrapper">
             <div class="button-container">
                 <div class="action-row">
-                    <button class="primary-button" onclick="runSubstation()">Run</button>
+                    <button id="runButton" class="primary-button" onclick="runSubstation()">Run</button>
                     <button class="secondary-button" onclick="testSubstation()">Test</button>
                     <button class="secondary-button" onclick="demoSubstation()">Demo</button>
                     <button class="secondary-button" onclick="formatJsonnet()">Format</button>
@@ -701,6 +714,12 @@ const indexHTML = `
         }
 
         function runSubstation() {
+            const runButton = document.getElementById('runButton');
+            runButton.disabled = true;
+            runButton.textContent = 'Running...';
+            runButton.classList.remove('primary-button');
+            runButton.classList.add('secondary-button');
+
             fetch('/run', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -709,13 +728,19 @@ const indexHTML = `
                     input: inputEditor.getValue(),
                 })
             })
-                .then(response => response.json())
-                .then(data => {
-                    outputEditor.setValue(data.output.join('\n'));
-                })
-                .catch(error => {
-                    outputEditor.setValue('Error: ' + error);
-                });
+            .then(response => response.json())
+            .then(data => {
+                outputEditor.setValue(data.output.join('\n'));
+            })
+            .catch(error => {
+                outputEditor.setValue('Error: ' + error);
+            })
+            .finally(() => {
+                runButton.disabled = false;
+                runButton.textContent = 'Run';
+                runButton.classList.remove('secondary-button');
+                runButton.classList.add('primary-button');
+            });
         }
 
         function formatJsonnet() {

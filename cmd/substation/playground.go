@@ -562,7 +562,12 @@ const indexHTML = `
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: 16px;
             margin-bottom: 4px;
+        }
+
+        .editor-header h2 {
+            margin: 0;
         }
 
         .mode-selector {

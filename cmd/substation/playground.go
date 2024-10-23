@@ -251,8 +251,6 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	time.Sleep(5 * time.Second)
-
 	var request struct {
 		Config string `json:"config"`
 		Input  string `json:"input"`

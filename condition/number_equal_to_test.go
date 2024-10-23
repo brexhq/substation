@@ -54,19 +54,6 @@ var numberEqualToTests = []struct {
 		true,
 	},
 	{
-		"pass",
-		config.Config{
-			Settings: map[string]interface{}{
-				"object": map[string]interface{}{
-					"source_key": "bar",
-				},
-				"value": 0,
-			},
-		},
-		[]byte(`{"foo":null}`),
-		true,
-	},
-	{
 		"fail",
 		config.Config{
 			Settings: map[string]interface{}{

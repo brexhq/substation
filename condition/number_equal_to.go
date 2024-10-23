@@ -45,10 +45,6 @@ func (insp *numberEqualTo) Condition(ctx context.Context, msg *message.Message) 
 	}
 
 	v := msg.GetValue(insp.conf.Object.SourceKey)
-	// if !v.Exists() {
-	// 	return false, nil
-	// }
-
 	return insp.match(v.Float(), compare), nil
 }
 

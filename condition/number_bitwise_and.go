@@ -26,7 +26,7 @@ type numberBitwiseAND struct {
 }
 
 func (insp *numberBitwiseAND) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		return false, nil
 	}
 

@@ -281,7 +281,7 @@ func testFile(arg string, extVars map[string]string) error {
 
 		for _, msg := range tMsgs {
 			// Skip control messages because they contain no data.
-			if msg.IsControl() {
+			if msg.HasFlag(message.IsControl) {
 				continue
 			}
 

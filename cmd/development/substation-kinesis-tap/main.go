@@ -237,7 +237,7 @@ func run(ctx context.Context, opts options) error {
 					log.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).WithField("count", len(deagg)).Debug("Retrieved records from Kinesis shard.")
 
 					for _, record := range deagg {
-						msg := message.New().SetData(record.Data)
+						msg := message.New().SetData(record.Data).SkipMissingValues()
 						ch.Send(msg)
 					}
 

@@ -142,7 +142,7 @@ func dynamodbHandler(ctx context.Context, event events.DynamoDBEvent) error {
 			//   "before": { ... },
 			//   "after": { ... }
 			// }
-			msg := message.New().SetMetadata(metadata)
+			msg := message.New().SetMetadata(metadata).SkipMissingValues()
 			if err := msg.SetValue("source.ts_ms", record.Change.ApproximateCreationDateTime.Time.UnixMilli()); err != nil {
 				return err
 			}

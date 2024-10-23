@@ -170,7 +170,7 @@ func main() {
 		defer ch.Close()
 
 		for _, b := range data {
-			msg := message.New().SetData(b)
+			msg := message.New().SetData(b).SkipMissingValues()
 			ch.Send(msg)
 		}
 

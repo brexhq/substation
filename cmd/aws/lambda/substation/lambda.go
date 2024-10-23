@@ -32,7 +32,7 @@ func lambdaHandler(ctx context.Context, event json.RawMessage) ([]json.RawMessag
 
 	// Data and ctrl messages are sent as a group.
 	msg := []*message.Message{
-		message.New().SetData(evt),
+		message.New().SetData(evt).SkipMissingValues(),
 		message.New().AsControl(),
 	}
 

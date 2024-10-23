@@ -159,7 +159,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 					return err
 				}
 
-				msg := message.New().SetData(r).SetMetadata(metadata)
+				msg := message.New().SetData(r).SetMetadata(metadata).SkipMissingValues()
 				ch.Send(msg)
 
 				return nil
@@ -180,7 +180,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 				}
 
 				b := []byte(scanner.Text())
-				msg := message.New().SetData(b).SetMetadata(metadata)
+				msg := message.New().SetData(b).SetMetadata(metadata).SkipMissingValues()
 
 				ch.Send(msg)
 			}
@@ -336,7 +336,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 						return err
 					}
 
-					msg := message.New().SetData(r).SetMetadata(metadata)
+					msg := message.New().SetData(r).SetMetadata(metadata).SkipMissingValues()
 					ch.Send(msg)
 
 					return nil
@@ -357,7 +357,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 					}
 
 					b := []byte(scanner.Text())
-					msg := message.New().SetData(b).SetMetadata(metadata)
+					msg := message.New().SetData(b).SetMetadata(metadata).SkipMissingValues()
 
 					ch.Send(msg)
 				}

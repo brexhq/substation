@@ -119,7 +119,7 @@ type metaSwitch struct {
 }
 
 func (tf *metaSwitch) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		var messages []*message.Message
 		for _, c := range tf.conditional {
 			msgs, err := Apply(ctx, c.transformers, msg)

@@ -37,7 +37,7 @@ type timeToString struct {
 }
 
 func (tf *timeToString) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		return []*message.Message{msg}, nil
 	}
 
@@ -48,7 +48,7 @@ func (tf *timeToString) Transform(ctx context.Context, msg *message.Message) ([]
 		value = bytesToValue(msg.Data())
 	}
 
-	if !value.Exists() {
+	if skipMessage(msg, value) {
 		return []*message.Message{msg}, nil
 	}
 

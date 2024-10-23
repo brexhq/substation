@@ -87,7 +87,7 @@ type stringCapture struct {
 }
 
 func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		return []*message.Message{msg}, nil
 	}
 
@@ -134,7 +134,7 @@ func (tf *stringCapture) Transform(_ context.Context, msg *message.Message) ([]*
 	}
 
 	value := msg.GetValue(tf.conf.Object.SourceKey)
-	if !value.Exists() {
+	if skipMessage(msg, value) {
 		return []*message.Message{msg}, nil
 	}
 

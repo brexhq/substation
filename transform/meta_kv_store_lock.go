@@ -143,7 +143,7 @@ func (tf *metaKVStoreLock) Transform(ctx context.Context, msg *message.Message) 
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
 
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		msgs, err := Apply(ctx, tf.tfs, msg)
 		if err != nil {
 			for _, key := range tf.keys {

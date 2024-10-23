@@ -56,7 +56,7 @@ func (tf *aggregateToString) Transform(ctx context.Context, msg *message.Message
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
 
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		var output []*message.Message
 
 		for _, items := range tf.agg.GetAll() {

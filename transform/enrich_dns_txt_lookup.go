@@ -55,7 +55,7 @@ func (tf *enrichDNSTxtLookup) Transform(ctx context.Context, msg *message.Messag
 	resolverCtx, cancel := context.WithTimeout(ctx, tf.timeout)
 	defer cancel() // important to avoid a resource leak
 
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		return []*message.Message{msg}, nil
 	}
 
@@ -73,7 +73,7 @@ func (tf *enrichDNSTxtLookup) Transform(ctx context.Context, msg *message.Messag
 	}
 
 	value := msg.GetValue(tf.conf.Object.SourceKey)
-	if !value.Exists() {
+	if skipMessage(msg, value) {
 		return []*message.Message{msg}, nil
 	}
 

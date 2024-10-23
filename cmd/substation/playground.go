@@ -14,10 +14,12 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/brexhq/substation/v2"
+	"github.com/brexhq/substation/v2/condition"
 	"github.com/brexhq/substation/v2/message"
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/formatter"
@@ -32,6 +34,13 @@ var playgroundCmd = &cobra.Command{
 	Short: "start playground",
 	Long:  `'substation playground' starts a local HTTP server for testing Substation configurations.`,
 	RunE:  runPlayground,
+}
+
+func sendJSONResponse(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
+	}
 }
 
 func runPlayground(cmd *cobra.Command, args []string) error {
@@ -112,7 +121,128 @@ func handleDemo(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleTest(w http.ResponseWriter, r *http.Request) {
-	return
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var request struct {
+		Config string `json:"config"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	combinedConfig := fmt.Sprintf(`local sub = %s;
+
+%s`, substation.Libsonnet, request.Config)
+
+	vm := jsonnet.MakeVM()
+	jsonString, err := vm.EvaluateAnonymousSnippet("", combinedConfig)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error evaluating Jsonnet: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	var cfg customConfig
+	if err := json.Unmarshal([]byte(jsonString), &cfg); err != nil {
+		http.Error(w, fmt.Sprintf("Invalid configuration: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	var output strings.Builder
+
+	if len(cfg.Transforms) == 0 {
+		output.WriteString("?\t[config error]\n")
+		sendJSONResponse(w, map[string]string{"output": output.String()})
+		return
+	}
+
+	if len(cfg.Tests) == 0 {
+		output.WriteString("?\t[no tests]\n")
+		sendJSONResponse(w, map[string]string{"output": output.String()})
+		return
+	}
+
+	start := time.Now()
+	failedTests := false
+
+	for _, test := range cfg.Tests {
+		cnd, err := condition.New(ctx, test.Condition)
+		if err != nil {
+			output.WriteString("?\t[test error]\n")
+			sendJSONResponse(w, map[string]string{"output": output.String()})
+			return
+		}
+
+		setup, err := substation.New(ctx, substation.Config{
+			Transforms: test.Transforms,
+		})
+		if err != nil {
+			output.WriteString("?\t[test error]\n")
+			sendJSONResponse(w, map[string]string{"output": output.String()})
+			return
+		}
+
+		tester, err := substation.New(ctx, cfg.Config)
+		if err != nil {
+			output.WriteString("?\t[config error]\n")
+			sendJSONResponse(w, map[string]string{"output": output.String()})
+			return
+		}
+
+		sMsgs, err := setup.Transform(ctx, message.New().AsControl())
+		if err != nil {
+			output.WriteString("?\t[test error]\n")
+			sendJSONResponse(w, map[string]string{"output": output.String()})
+			return
+		}
+
+		tMsgs, err := tester.Transform(ctx, sMsgs...)
+		if err != nil {
+			output.WriteString("?\t[config error]\n")
+			sendJSONResponse(w, map[string]string{"output": output.String()})
+			return
+		}
+
+		testPassed := true
+		for _, msg := range tMsgs {
+			if msg.IsControl() {
+				continue
+			}
+
+			ok, err := cnd.Condition(ctx, msg)
+			if err != nil {
+				output.WriteString("?\t[test error]\n")
+				sendJSONResponse(w, map[string]string{"output": output.String()})
+				return
+			}
+
+			if !ok {
+				output.WriteString(fmt.Sprintf("--- FAIL: %s\n", test.Name))
+				output.WriteString(fmt.Sprintf("    message:\t%s\n", msg))
+				output.WriteString(fmt.Sprintf("    condition:\t%s\n", cnd))
+				testPassed = false
+				failedTests = true
+				break
+			}
+		}
+
+		if testPassed {
+			output.WriteString(fmt.Sprintf("--- PASS: %s\n", test.Name))
+		}
+	}
+
+	if failedTests {
+		output.WriteString(fmt.Sprintf("FAIL\t%s\n", time.Since(start).Round(time.Microsecond)))
+	} else {
+		output.WriteString(fmt.Sprintf("ok\t%s\n", time.Since(start).Round(time.Microsecond)))
+	}
+
+	sendJSONResponse(w, map[string]string{"output": output.String()})
 }
 
 func handleRun(w http.ResponseWriter, r *http.Request) {
@@ -172,11 +302,7 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := json.NewEncoder(w).Encode(map[string]interface{}{
-		"output": output,
-	}); err != nil {
-		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
-	}
+	sendJSONResponse(w, map[string]interface{}{"output": output})
 }
 
 func handleFmt(w http.ResponseWriter, r *http.Request) {
@@ -199,11 +325,7 @@ func handleFmt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(map[string]string{"formatted": formatted}); err != nil {
-		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
-		return
-	}
+	sendJSONResponse(w, map[string]string{"config": formatted})
 }
 
 // Add a new handler for sharing
@@ -234,8 +356,7 @@ func handleShare(w http.ResponseWriter, r *http.Request) {
 		RawQuery: "share=" + encoded,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"url": shareURL.String()})
+	sendJSONResponse(w, map[string]string{"url": shareURL.String()})
 }
 
 const indexHTML = `
@@ -605,7 +726,7 @@ const indexHTML = `
             })
                 .then(response => response.json())
                 .then(data => {
-                    configEditor.setValue(data.formatted);
+                    configEditor.setValue(data.config);
                 })
                 .catch(error => console.error('Error formatting Jsonnet:', error));
         }
@@ -616,12 +737,11 @@ const indexHTML = `
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     config: configEditor.getValue(),
-                    input: inputEditor.getValue(),
                 })
             })
             .then(response => response.json())
             .then(data => {
-                outputEditor.setValue(JSON.stringify(data, null, 2));
+                outputEditor.setValue(data.output);
             })
             .catch(error => {
                 outputEditor.setValue('Error: ' + error);

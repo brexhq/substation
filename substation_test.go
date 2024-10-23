@@ -190,7 +190,7 @@ type utilityDuplicate struct {
 
 func (t *utilityDuplicate) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	// Always return control messages.
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		return []*message.Message{msg}, nil
 	}
 

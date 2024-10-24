@@ -6,12 +6,12 @@ local sub = import '../../../../substation.libsonnet';
     {
       name: 'extend',
       transforms: [
-        sub.tf.test.message({ value: {"a":[1,2,[3,4,[5,6]]]} }),
+        sub.tf.test.message({ value: { a: [1, 2, [3, 4, [5, 6]]] } }),
         sub.tf.send.stdout(),
       ],
       // Asserts that 'a' contains 6 elements.
-      condition: sub.cnd.num.len.eq({ obj: {src: 'a'}, value: 6 }),
-    }
+      condition: sub.cnd.num.len.eq({ obj: { src: 'a' }, value: 6 }),
+    },
   ],
   transforms: [
     // Flatten by copying the value and chaining GJSON's `@flatten` operator

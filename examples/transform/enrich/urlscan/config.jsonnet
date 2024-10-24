@@ -1,10 +1,22 @@
 // This example shows how to make scan requests and retrieve
 // results using the urlscan API (https://urlscan.io/docs/api/).
+//
+// Test this example using the substation CLI:
+//  URLSCAN_API_KEY=xx substation test config.jsonnet
 local sub = import '../../../../substation.libsonnet';
 
 local headers = { 'API-Key': '${SECRET:URLSCAN}', 'Content-Type': 'application/json' };
 
 {
+  tests: [
+    {
+      name: 'urlscan',
+      transforms: [
+        sub.tf.test.message({ value: { url: 'https://www.brex.com/' } }),
+      ],
+      condition: sub.cnd.str.eq({ object: { source_key: 'task.domain' }, value: 'www.brex.com' }),
+    },
+  ],
   transforms: [
     // Retrieve the urlscan API key from the secrets store.
     // (Never put a secret directly into a configuration.)

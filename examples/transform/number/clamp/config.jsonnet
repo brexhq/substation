@@ -16,7 +16,7 @@ local sub = import '../../../../substation.libsonnet';
         sub.cnd.num.greater_than({ value: -1 }),
         sub.cnd.num.less_than({ value: 101 }),
       ]),
-    }
+    },
   ],
   transforms: [
     sub.tf.number.maximum({ value: 0 }),

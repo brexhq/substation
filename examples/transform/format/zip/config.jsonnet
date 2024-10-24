@@ -15,7 +15,7 @@ local sub = import '../../../../substation.libsonnet';
       ],
       // Asserts that each message is not empty.
       condition: sub.cnd.num.len.gt({ value: 0 }),
-    }
+    },
   ],
   transforms: [
     // Unzip the file. The contents of each file in the Zip file are

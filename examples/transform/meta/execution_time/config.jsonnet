@@ -10,11 +10,11 @@ local dest = { type: 'aws_cloudwatch_embedded_metrics' };
     {
       name: 'execution_time',
       transforms: [
-        sub.tf.test.message({ value: {"a":"b"} }),
+        sub.tf.test.message({ value: { a: 'b' } }),
       ],
       // Asserts that each message is not empty.
       condition: sub.cnd.num.len.gt({ value: 0 }),
-    }
+    },
   ],
   transforms: [
     // The `meta_metric_duration` transform measures the execution time of

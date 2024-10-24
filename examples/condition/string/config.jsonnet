@@ -6,15 +6,15 @@ local sub = import '../../../substation.libsonnet';
     {
       name: 'string',
       transforms: [
-        sub.tf.test.message({ value: {"action":"ACCEPT","vpcId":"vpc-2b3c4d5e"} }),
+        sub.tf.test.message({ value: { action: 'ACCEPT', vpcId: 'vpc-2b3c4d5e' } }),
         sub.tf.send.stdout(),
       ],
       // Asserts that the conditional transforms were applied.
       condition: sub.cnd.all([
-        sub.cnd.str.eq({ obj: {src: 'outcome'}, value: 'Allow' }),
-        sub.cnd.str.eq({ obj: {src: 'priority'}, value: 'high' }),
-      ])
-    }
+        sub.cnd.str.eq({ obj: { src: 'outcome' }, value: 'Allow' }),
+        sub.cnd.str.eq({ obj: { src: 'priority' }, value: 'high' }),
+      ]),
+    },
   ],
   transforms: [
     sub.tf.meta.switch({ cases: [

@@ -6,12 +6,12 @@ local sub = import '../../../../substation.libsonnet';
     {
       name: 'str_conversion',
       transforms: [
-        sub.tf.test.message({ value: {"time":"2024-01-01T01:02:03.123Z"}}),
+        sub.tf.test.message({ value: { time: '2024-01-01T01:02:03.123Z' } }),
         sub.tf.send.stdout(),
       ],
       // Asserts that the time value is equal to the expected value.
-      condition: sub.cnd.str.eq({ obj: {src: 'time'}, value: '2024-01-01T01:02:03' }),
-    }
+      condition: sub.cnd.str.eq({ obj: { src: 'time' }, value: '2024-01-01T01:02:03' }),
+    },
   ],
   // Substation uses Go's pattern-based time format (https://gobyexample.com/time-formatting-parsing)
   // to convert time values to and from strings. All time values in the system are in epoch / Unix format

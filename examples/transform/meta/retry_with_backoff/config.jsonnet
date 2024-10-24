@@ -17,11 +17,11 @@ local cnd = sub.cnd.all([
     {
       name: 'retry_with_backoff',
       transforms: [
-        sub.tf.test.message({ value: {"a":"b"} }),
+        sub.tf.test.message({ value: { a: 'b' } }),
       ],
       // Asserts that the target key 'c' exists.
       condition: sub.cnd.num.len.greater_than({ object: { source_key: key }, value: 1 }),
-    }
+    },
   ],
   transforms: [
     sub.tf.meta.retry({

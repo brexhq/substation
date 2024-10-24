@@ -8,12 +8,12 @@ local sub = import '../../../substation.libsonnet';
     {
       name: 'meta',
       transforms: [
-        sub.tf.test.message({ value: ["alice@brex.com","bob@brex.com"] }),
+        sub.tf.test.message({ value: ['alice@brex.com', 'bob@brex.com'] }),
         sub.tf.send.stdout(),
       ],
       // Asserts that the message is equal to 'true'.
       condition: sub.cnd.str.eq({ value: 'true' }),
-    }
+    },
   ],
   transforms: [
     // In real-world deployments, the match decision is typically used

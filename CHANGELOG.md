@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.3.0](https://github.com/brexhq/substation/compare/v2.2.0...v2.3.0) (2024-10-24)
+
+
+### Features
+
+* **deps:** Upgrade to Latest Minor Versions ([#266](https://github.com/brexhq/substation/issues/266)) ([9db10a8](https://github.com/brexhq/substation/commit/9db10a8dc34e30c6c7862cfee63c871cd2c81310))
+* **message:** Add Flag Support ([#264](https://github.com/brexhq/substation/issues/264)) ([1acc9a0](https://github.com/brexhq/substation/commit/1acc9a0ea2b33154b3608b13ffd6f7792363ce0b))
+
 ## [2.2.0](https://github.com/brexhq/substation/compare/v2.1.0...v2.2.0) (2024-10-10)
 
 

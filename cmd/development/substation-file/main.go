@@ -151,7 +151,7 @@ func run(ctx context.Context, opts options) error {
 				return err
 			}
 
-			msg := message.New().SetData(r)
+			msg := message.New().SetData(r).SkipMissingValues()
 			ch.Send(msg)
 
 			return nil
@@ -172,7 +172,7 @@ func run(ctx context.Context, opts options) error {
 			}
 
 			b := []byte(scanner.Text())
-			msg := message.New().SetData(b)
+			msg := message.New().SetData(b).SkipMissingValues()
 
 			ch.Send(msg)
 		}

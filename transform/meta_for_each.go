@@ -83,7 +83,7 @@ type metaForEach struct {
 }
 
 func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		msgs, err := Apply(ctx, tf.tfs, msg)
 		if err != nil {
 			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
@@ -93,7 +93,7 @@ func (tf *metaForEach) Transform(ctx context.Context, msg *message.Message) ([]*
 	}
 
 	value := msg.GetValue(tf.conf.Object.SourceKey)
-	if !value.Exists() {
+	if skipMessage(msg, value) {
 		return []*message.Message{msg}, nil
 	}
 

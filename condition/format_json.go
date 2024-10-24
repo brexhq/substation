@@ -34,7 +34,7 @@ type formatJSON struct {
 }
 
 func (c *formatJSON) Condition(ctx context.Context, msg *message.Message) (bool, error) {
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		return false, nil
 	}
 

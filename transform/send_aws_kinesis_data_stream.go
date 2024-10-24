@@ -133,7 +133,7 @@ func (tf *sendAWSKinesisDataStream) Transform(ctx context.Context, msg *message.
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
 
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		for key := range tf.agg.GetAll() {
 			if tf.agg.Count(key) == 0 {
 				continue

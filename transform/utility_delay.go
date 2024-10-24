@@ -65,7 +65,7 @@ type utilityDelay struct {
 }
 
 func (tf *utilityDelay) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		return []*message.Message{msg}, nil
 	}
 

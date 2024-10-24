@@ -126,7 +126,7 @@ func (tf *sendAWSSNS) Transform(ctx context.Context, msg *message.Message) ([]*m
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
 
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		for key := range tf.agg.GetAll() {
 			if tf.agg.Count(key) == 0 {
 				continue

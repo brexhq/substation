@@ -113,7 +113,7 @@ func kinesisStreamHandler(ctx context.Context, event events.KinesisEvent) error 
 				return err
 			}
 
-			msg := message.New().SetData(record.Data).SetMetadata(metadata)
+			msg := message.New().SetData(record.Data).SetMetadata(metadata).SkipMissingValues()
 			ch.Send(msg)
 		}
 

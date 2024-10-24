@@ -13,6 +13,7 @@ Thank you so much for your interest in contributing to Substation! This document
 
 [Development](#development)
   + [Development Environment](#development-environment)
+  + [Messages](#messages)
   + [Conditions](#conditions)
   + [Transforms](#transforms)
   + [Testing](#testing)
@@ -47,6 +48,12 @@ Enhancements should be submitted as issues using the issue template.
 ### Development Environment
 
 The project supports development through the use of [Visual Studio Code configurations](https://code.visualstudio.com/docs/remote/containers). The VS Code [development container](.devcontainer/Dockerfile) contains all packages required to develop and test changes locally before submitting pull requests.
+
+### [Messages](message/)
+
+Each message can have a series of flags attached to it that are used to determine how the message should be processed by the system. These flags are exported as iota constants and should use verb style naming, such as:
+- `IsControl`
+- `SkipMissingValues`
 
 ### [Conditions](condition/)
 

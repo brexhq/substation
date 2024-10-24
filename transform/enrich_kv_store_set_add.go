@@ -116,7 +116,7 @@ type enrichKVStoreSetAdd struct {
 }
 
 func (tf *enrichKVStoreSetAdd) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		if !tf.conf.CloseKVStore {
 			return []*message.Message{msg}, nil
 		}
@@ -135,7 +135,7 @@ func (tf *enrichKVStoreSetAdd) Transform(ctx context.Context, msg *message.Messa
 	}
 
 	value := msg.GetValue(tf.conf.Object.SourceKey)
-	if !value.Exists() {
+	if skipMessage(msg, value) {
 		return []*message.Message{msg}, nil
 	}
 

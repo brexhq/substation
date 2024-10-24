@@ -38,7 +38,7 @@ type hashSHA256 struct {
 }
 
 func (tf *hashSHA256) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.IsControl() {
+	if msg.HasFlag(message.IsControl) {
 		return []*message.Message{msg}, nil
 	}
 
@@ -51,7 +51,7 @@ func (tf *hashSHA256) Transform(ctx context.Context, msg *message.Message) ([]*m
 	}
 
 	value := msg.GetValue(tf.conf.Object.SourceKey)
-	if !value.Exists() {
+	if skipMessage(msg, value) {
 		return []*message.Message{msg}, nil
 	}
 

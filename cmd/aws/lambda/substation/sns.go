@@ -100,7 +100,7 @@ func snsHandler(ctx context.Context, event events.SNSEvent) error {
 
 		for _, record := range event.Records {
 			b := []byte(record.SNS.Message)
-			msg := message.New().SetData(b).SetMetadata(metadata)
+			msg := message.New().SetData(b).SetMetadata(metadata).SkipMissingValues()
 
 			ch.Send(msg)
 		}

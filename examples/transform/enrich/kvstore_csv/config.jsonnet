@@ -14,12 +14,12 @@ local kv = sub.kv_store.csv_file({ file: 'kv.csv', column: 'product' });
     {
       name: 'kvstore_csv',
       transforms: [
-        sub.tf.test.message({ value: {"product":"churro"} }),
+        sub.tf.test.message({ value: { product: 'churro' } }),
         sub.tf.send.stdout(),
       ],
       // Asserts that the message contains product info.
       condition: sub.cnd.num.len.gt({ object: { source_key: 'info' }, value: 0 }),
-    }
+    },
   ],
   transforms: [
     // The CSV file KV store returns the entire row minus the key column.

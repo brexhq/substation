@@ -8,6 +8,16 @@ local sub = import '../../../../substation.libsonnet';
 local key = 'c';
 
 {
+  tests: [
+    // This test should result in a config error if the program crashed.
+    {
+      name: 'crash_program',
+      transforms: [
+        sub.tf.test.message({ value: { a: 'b' } }),
+      ],
+      condition: sub.cnd.num.len.gt({ value: 0 }),
+    },
+  ],
   transforms: [
     // This simulates a transform that may not produce an output.
     sub.tf.meta.switch({ cases: [

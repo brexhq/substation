@@ -5,6 +5,27 @@
 local sub = import '../../../../substation.libsonnet';
 
 {
+  tests: [
+    {
+      name: 'aux_transforms',
+      transforms: [
+        sub.tf.test.message({ value: { a: 'b' } }),
+        sub.tf.test.message({ value: { c: 'd' } }),
+        sub.tf.test.message({ value: { e: 'f' } }),
+        sub.tf.test.message({ value: { g: 'h' } }),
+        sub.tf.test.message({ value: { i: 'j' } }),
+        sub.tf.test.message({ value: { k: 'l' } }),
+        sub.tf.test.message({ value: { m: 'n' } }),
+        sub.tf.test.message({ value: { o: 'p' } }),
+        sub.tf.test.message({ value: { q: 'r' } }),
+        sub.tf.test.message({ value: { s: 't' } }),
+        sub.tf.test.message({ value: { u: 'v' } }),
+        sub.tf.test.message({ value: { w: 'x' } }),
+        sub.tf.test.message({ value: { y: 'z' } }),
+      ],
+      condition: sub.cnd.num.len.gt({ value: 0 }),
+    },
+  ],
   transforms: [
     // By default all data is buffered before it is sent.
     sub.tf.send.stdout({

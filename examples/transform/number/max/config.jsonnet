@@ -15,7 +15,7 @@ local sub = import '../../../../substation.libsonnet';
       ],
       // Asserts that each number is greater than -1.
       condition: sub.cnd.num.greater_than({ value: -1 }),
-    }
+    },
   ],
   transforms: [
     sub.tf.num.max({ value: 0 }),

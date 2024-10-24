@@ -6,12 +6,12 @@ local sub = import '../../../../substation.libsonnet';
     {
       name: 'extend',
       transforms: [
-        sub.tf.test.message({ value: {"a":[1,2],"z":[3,4]} }),
+        sub.tf.test.message({ value: { a: [1, 2], z: [3, 4] } }),
         sub.tf.send.stdout(),
       ],
       // Asserts that 'a' contains 4 elements.
-      condition: sub.cnd.num.len.eq({ obj: {src: 'a'}, value: 4 }),
-    }
+      condition: sub.cnd.num.len.eq({ obj: { src: 'a' }, value: 4 }),
+    },
   ],
   transforms: [
     // Append the value of `z` to `a` (using the `-1` array index).

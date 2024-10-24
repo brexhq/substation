@@ -18,11 +18,11 @@ local dest = { type: 'aws_cloudwatch_embedded_metrics' };
     {
       name: 'message_freshness',
       transforms: [
-        sub.tf.test.message({ value: {"timestamp":1724299266000000000}}),
+        sub.tf.test.message({ value: { timestamp: 1724299266000000000 } }),
       ],
       // Asserts that the message is not empty.
       condition: sub.cnd.num.len.gt({ value: 0 }),
-    }
+    },
   ],
   transforms: [
     sub.transform.utility.metric.freshness({

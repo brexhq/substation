@@ -10,18 +10,18 @@ local kv = sub.kv_store.memory();
     {
       name: 'exactly_once_producer',
       transforms: [
-        sub.tf.test.message({ value: {"a":"b"} }),
-        sub.tf.test.message({ value: {"a":"b"} }),
-        sub.tf.test.message({ value: {"c":"d"} }),
-        sub.tf.test.message({ value: {"a":"b"} }),
-        sub.tf.test.message({ value: {"c":"d"} }),
-        sub.tf.test.message({ value: {"c":"d"} }),
-        sub.tf.test.message({ value: {"e":"f"} }),
-        sub.tf.test.message({ value: {"a":"b"} }),
+        sub.tf.test.message({ value: { a: 'b' } }),
+        sub.tf.test.message({ value: { a: 'b' } }),
+        sub.tf.test.message({ value: { c: 'd' } }),
+        sub.tf.test.message({ value: { a: 'b' } }),
+        sub.tf.test.message({ value: { c: 'd' } }),
+        sub.tf.test.message({ value: { c: 'd' } }),
+        sub.tf.test.message({ value: { e: 'f' } }),
+        sub.tf.test.message({ value: { a: 'b' } }),
       ],
       // Asserts that each message is not empty.
       condition: sub.cnd.num.len.gt({ value: 0 }),
-    }
+    },
   ],
   transforms: [
     // All messages are locked before being sent through other transform

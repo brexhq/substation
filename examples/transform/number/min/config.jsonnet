@@ -15,7 +15,7 @@ local sub = import '../../../../substation.libsonnet';
       ],
       // Asserts that each number is less than 1.
       condition: sub.cnd.num.less_than({ value: 1 }),
-    }
+    },
   ],
   transforms: [
     sub.tf.num.min({ value: 0 }),

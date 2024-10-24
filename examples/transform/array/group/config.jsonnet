@@ -9,7 +9,7 @@ local files_key = 'meta files';
     {
       name: 'group',
       transforms: [
-        sub.tf.test.message({ value: {"file_name":["foo.txt","bar.html"],"file_type":["text/plain","text/html"],"file_size":[100,500]} }),
+        sub.tf.test.message({ value: { file_name: ['foo.txt', 'bar.html'], file_type: ['text/plain', 'text/html'], file_size: [100, 500] } }),
         sub.tf.send.stdout(),
       ],
       // Asserts that each element in the array contains these keys:
@@ -25,8 +25,8 @@ local files_key = 'meta files';
           sub.cnd.num.len.greater_than({ obj: { src: 'file_name' }, value: 0 }),
           sub.cnd.num.len.greater_than({ obj: { src: 'file_extension' }, value: 0 }),
         ],
-      })
-    }
+      }),
+    },
   ],
   transforms: [
     // Copy the object to metadata, where it is grouped.

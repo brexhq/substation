@@ -13,12 +13,14 @@ import (
 	"github.com/tidwall/sjson"
 )
 
+type Flag int
+
 const (
 	// metaKey is a prefix used to access the meta field in a Message.
 	metaKey = "meta "
 
 	// IsControl indicates that the message is a control message.
-	IsControl = iota
+	IsControl Flag = iota + 1
 	// SkipNullValues indicates that null values should be ignored when processing the message.
 	SkipNullValues
 	// SkipMissingValues indicates that missing values should be ignored when processing the message.
@@ -54,7 +56,7 @@ type Message struct {
 	// Control messages trigger special behavior in transforms and conditions.
 	ctrl bool
 
-	flags []any
+	flags []Flag
 }
 
 // String returns the message data as a string.
@@ -70,11 +72,6 @@ func New(opts ...func(*Message)) *Message {
 	}
 
 	return msg
-}
-
-// Flags returns all message flags.
-func (m *Message) Flags() []any {
-	return m.flags
 }
 
 // HasFlag returns true if the message contains a flag.

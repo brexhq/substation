@@ -75,7 +75,7 @@ func New(opts ...func(*Message)) *Message {
 }
 
 // HasFlag returns true if the message contains a flag.
-func (m *Message) HasFlag(i any) bool {
+func (m *Message) HasFlag(i Flag) bool {
 	for _, f := range m.flags {
 		if f == i {
 			return true

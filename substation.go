@@ -12,7 +12,7 @@ import (
 )
 
 //go:embed substation.libsonnet
-var Libsonnet string
+var Library string
 
 var errNoTransforms = fmt.Errorf("no transforms configured")
 

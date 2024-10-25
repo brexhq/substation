@@ -164,7 +164,7 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 
 	combinedConfig := fmt.Sprintf(`local sub = %s;
 
-%s`, substation.Libsonnet, request.Config)
+%s`, substation.Library, request.Config)
 
 	vm := jsonnet.MakeVM()
 	jsonString, err := vm.EvaluateAnonymousSnippet("", combinedConfig)
@@ -291,7 +291,7 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 
 	combinedConfig := fmt.Sprintf(`local sub = %s;
 
-%s`, substation.Libsonnet, request.Config)
+%s`, substation.Library, request.Config)
 
 	vm := jsonnet.MakeVM()
 	jsonString, err := vm.EvaluateAnonymousSnippet("", combinedConfig)

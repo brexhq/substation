@@ -8,11 +8,11 @@
 
 [Releases][releases]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation][docs]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Adopters][adopters]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Announcement (2022)][announcement]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[v1.0 Release (2024)][v1_release] 
 
-![OSSF-Scorecard Score](https://img.shields.io/ossf-scorecard/github.com/brexhq/substation?style=for-the-badge)
+[![OSSF-Scorecard Score](https://img.shields.io/ossf-scorecard/github.com/brexhq/substation?style=for-the-badge)](https://scorecard.dev/viewer/?uri=github.com/brexhq/substation)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/brexhq/substation/code.yml?style=for-the-badge)
-![GitHub Release](https://img.shields.io/github/v/release/brexhq/substation?sort=semver&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fbrexhq%2Fsubstation%2Freleases%2Flatest)
+[![GitHub Release](https://img.shields.io/github/v/release/brexhq/substation?sort=semver&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fbrexhq%2Fsubstation%2Freleases%2Flatest)](https://github.com/brexhq/substation/releases)
 ![GitHub Created At](https://img.shields.io/github/created-at/brexhq/substation?style=for-the-badge&label=created)
-![GitHub License](https://img.shields.io/github/license/brexhq/substation?style=for-the-badge)
+[![GitHub License](https://img.shields.io/github/license/brexhq/substation?style=for-the-badge)](https://github.com/brexhq/substation/blob/main/LICENSE)
 
 </div>
 

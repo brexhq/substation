@@ -64,6 +64,10 @@ enable debug logs: SUBSTATION_DEBUG=true
 
 WARNING: This command is intended to provide temporary access 
 to streaming data and should not be used for production workloads.
+
+WARNING: This command is "experimental" and does not strictly 
+adhere to semantic versioning. Refer to the versioning policy
+for more information.
 `,
 	Example: `  substation tap --aws-kinesis-data-stream arn:aws:kinesis:us-east-1:123456789012:stream/my-stream
   substation tap --aws-kinesis-data-stream arn:aws:kinesis:us-east-1:123456789012:stream/my-stream --offset earliest

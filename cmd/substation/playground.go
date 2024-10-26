@@ -237,7 +237,7 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 
 		testPassed := true
 		for _, msg := range tMsgs {
-			if msg.IsControl() {
+			if msg.HasFlag(message.IsControl) {
 				continue
 			}
 
@@ -330,7 +330,7 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 
 	var output []string
 	for _, msg := range result {
-		if !msg.IsControl() {
+		if !msg.HasFlag(message.IsControl) {
 			output = append(output, string(msg.Data()))
 		}
 	}

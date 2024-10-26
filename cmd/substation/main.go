@@ -44,6 +44,21 @@ func compileFile(f string, extVars map[string]string) (string, error) {
 	return res, nil
 }
 
+// compileStr returns JSON from a Jsonnet string.
+func compileStr(m string, extVars map[string]string) (string, error) {
+	vm := jsonnet.MakeVM()
+	for k, v := range extVars {
+		vm.ExtVar(k, v)
+	}
+
+	res, err := vm.EvaluateAnonymousSnippet("snippet", m)
+	if err != nil {
+		return "", err
+	}
+
+	return res, nil
+}
+
 // pathVars returns the directory and file name of a file path.
 func pathVars(p string) (string, string) {
 	dir, fn := filepath.Split(p)

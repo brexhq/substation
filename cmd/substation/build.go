@@ -35,7 +35,7 @@ and the current directory is used if no arg is provided.`,
 
 		// Catches an edge case where the user is looking for help.
 		if path == "help" {
-			fmt.Printf("warning: %q matched no files\n", path)
+			fmt.Printf("warning: use -h instead.\n")
 			return nil
 		}
 

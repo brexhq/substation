@@ -1,6 +1,6 @@
 // This example shows how to use the `meta_kv_store_lock` transform to
 // create an "exactly once" semantic for an entire pipeline system.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 // In production environments a distributed KV store should be used.
 local kv = sub.kv_store.memory();

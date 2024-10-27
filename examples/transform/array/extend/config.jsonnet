@@ -1,5 +1,5 @@
 // This example extends an array by appending and flattening values.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 {
   tests: [

@@ -1,4 +1,4 @@
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 {
   tests: [

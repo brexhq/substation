@@ -2,7 +2,7 @@
 // are executed after the data is buffered and before it is sent. The
 // transforms applied inside of the send transform do not affect the data
 // sent through the main pipeline. All send transforms use this behavior.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 {
   tests: [

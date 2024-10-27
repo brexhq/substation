@@ -3,7 +3,7 @@
 //
 // More information about Sumo Logic HTTP upload can be found here:
 // https://help.sumologic.com/docs/send-data/hosted-collectors/http-source/logs-metrics/upload-logs/
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 // Sumo Logic has a strict limit of 1MB per request.
 local max_size = 1000 * 1000;
@@ -19,7 +19,9 @@ local max_size = 1000 * 1000;
       // There is no authentication, so the URL should be treated like a secret.
       url: 'https://endpoint6.collection.us2.sumologic.com/receiver/v1/http/xxxxxxxxxx',
       // You can override the default source category associated with the URL.
-      // headers: [{key: 'X-Sumo-Category', value: 'testing/substation'}]
+      headers: {
+        'X-Sumo-Category': 'testing/substation',
+      },
     }),
   ],
 }

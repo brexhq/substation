@@ -1,7 +1,7 @@
 // This example shows how to use the `enrich_kv_store_set_add` transform
 // to track data over time in a KV store. The sample data contains food
 // orders and is indexed by each customer's email address.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 // Default Memory store is used.
 local mem = sub.kv_store.memory();

@@ -1,7 +1,7 @@
 // This example shows how to use the `meta.for_each` transform to
 // modify objects in an array. In this example, keys are removed
 // and added to each object in the array.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 {
   tests: [

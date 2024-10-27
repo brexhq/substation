@@ -1,6 +1,6 @@
 // This example groups an array of arrays into an array of objects
 // based on index and configured keys.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 local files_key = 'meta files';
 

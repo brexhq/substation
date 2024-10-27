@@ -1,7 +1,7 @@
 // This example determines if all values in an array are email addresses
 // that have the DNS domain "brex.com". This technique can be used to
 // validate or summarize values in an array.
-local sub = import '../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 {
   tests: [

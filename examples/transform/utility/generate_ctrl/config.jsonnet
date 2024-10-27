@@ -2,7 +2,7 @@
 // generate a control (ctrl) Message based on the amount of data Messages
 // received by the system. ctrl Messages overrides the settings of the
 // `aggregate_to_array` transform (and any other transform that supports).
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 {
   tests: [

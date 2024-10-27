@@ -1,5 +1,5 @@
 // This example flattens an array of arrays.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 {
   tests: [

@@ -13,6 +13,8 @@ func init() {
 	rootCmd.AddCommand(fmtCmd)
 	fmtCmd.PersistentFlags().BoolP("write", "w", false, "write result to (source) file instead of stdout")
 	fmtCmd.PersistentFlags().BoolP("recursive", "R", false, "recursively format all files")
+	fmtCmd.Flags().SortFlags = false
+	fmtCmd.PersistentFlags().SortFlags = false
 }
 
 var fmtCmd = &cobra.Command{

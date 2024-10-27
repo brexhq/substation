@@ -16,6 +16,8 @@ func init() {
 	rootCmd.AddCommand(vetCmd)
 	vetCmd.PersistentFlags().BoolP("recursive", "R", false, "recursively vet all files")
 	vetCmd.PersistentFlags().StringToString("ext-str", nil, "set external variables")
+	vetCmd.Flags().SortFlags = false
+	vetCmd.PersistentFlags().SortFlags = false
 }
 
 // vetTransformRe captures the transform ID from a Substation error message.

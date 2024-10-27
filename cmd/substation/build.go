@@ -12,6 +12,8 @@ func init() {
 	rootCmd.AddCommand(buildCmd)
 	buildCmd.PersistentFlags().BoolP("recursive", "R", false, "recursively build all files")
 	buildCmd.PersistentFlags().StringToString("ext-str", nil, "set external variables")
+	buildCmd.Flags().SortFlags = false
+	buildCmd.PersistentFlags().SortFlags = false
 }
 
 var buildCmd = &cobra.Command{

@@ -32,6 +32,8 @@ func init() {
 	rootCmd.AddCommand(testCmd)
 	testCmd.PersistentFlags().BoolP("recursive", "R", false, "recursively test all files")
 	testCmd.PersistentFlags().StringToString("ext-str", nil, "set external variables")
+	testCmd.Flags().SortFlags = false
+	testCmd.PersistentFlags().SortFlags = false
 }
 
 func fiConfig(f string) (customConfig, error) {

@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/brexhq/substation/v2"
 	"github.com/spf13/cobra"
+
+	"github.com/brexhq/substation/v2"
 )
 
 func init() {

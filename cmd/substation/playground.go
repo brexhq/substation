@@ -18,12 +18,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/go-jsonnet/formatter"
+	"github.com/spf13/cobra"
+
 	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/condition"
 	"github.com/brexhq/substation/v2/message"
-	"github.com/google/go-jsonnet"
-	"github.com/google/go-jsonnet/formatter"
-	"github.com/spf13/cobra"
 )
 
 //go:embed playground.tmpl
@@ -137,11 +137,9 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 func handleDemo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	cleanedDemoconf := strings.ReplaceAll(demoConf, "local sub = import '../../substation.libsonnet';\n\n", "")
-
 	if err := json.NewEncoder(w).Encode(map[string]interface{}{
-		"config": cleanedDemoconf,
-		"input":  demoEvt,
+		"config": confDemo,
+		"input":  evtDemo,
 	}); err != nil {
 		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
 	}
@@ -162,19 +160,14 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	combinedConfig := fmt.Sprintf(`local sub = %s;
-
-%s`, substation.Library, request.Config)
-
-	vm := jsonnet.MakeVM()
-	jsonString, err := vm.EvaluateAnonymousSnippet("", combinedConfig)
+	conf, err := compileStr(request.Config, nil)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error evaluating Jsonnet: %v", err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Error compiling config: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	var cfg customConfig
-	if err := json.Unmarshal([]byte(jsonString), &cfg); err != nil {
+	if err := json.Unmarshal([]byte(conf), &cfg); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid configuration: %v", err), http.StatusBadRequest)
 		return
 	}
@@ -289,19 +282,14 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	combinedConfig := fmt.Sprintf(`local sub = %s;
-
-%s`, substation.Library, request.Config)
-
-	vm := jsonnet.MakeVM()
-	jsonString, err := vm.EvaluateAnonymousSnippet("", combinedConfig)
+	conf, err := compileStr(request.Config, nil)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error evaluating Jsonnet: %v", err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Error compiling config: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	var cfg substation.Config
-	if err := json.Unmarshal([]byte(jsonString), &cfg); err != nil {
+	if err := json.Unmarshal([]byte(conf), &cfg); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid configuration: %v", err), http.StatusBadRequest)
 		return
 	}
@@ -402,7 +390,6 @@ func handleShare(w http.ResponseWriter, r *http.Request) {
 	var request struct {
 		Config string `json:"config"`
 		Input  string `json:"input"`
-		Output string `json:"output"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -411,7 +398,7 @@ func handleShare(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Combine and encode the data
-	combined := request.Config + "{substation-separator}" + request.Input + "{substation-separator}" + request.Output
+	combined := request.Config + "{substation-separator}" + request.Input + "{substation-separator}"
 	encoded := base64.URLEncoding.EncodeToString([]byte(combined))
 
 	// Create the shareable URL

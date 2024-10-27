@@ -32,15 +32,6 @@ func init() {
 	tapCmd.PersistentFlags().StringToString("ext-str", nil, "set external variables")
 }
 
-var tapConfig = fmt.Sprintf(`local sub = %s;
-
-{
-  transforms: [
-    sub.tf.send.stdout(),
-  ],
-}
-`, substation.Library)
-
 var tapCmd = &cobra.Command{
 	Use:   "tap [path]",
 	Short: "tap data streams",
@@ -139,7 +130,7 @@ func tapKinesis(arg string, extVars map[string]string, offset, stream string) er
 
 		cfg = fi
 	default:
-		mem, err := compileStr(tapConfig, extVars)
+		mem, err := compileStr(confStdout, extVars)
 		if err != nil {
 			return err
 		}

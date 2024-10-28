@@ -63,5 +63,5 @@ jobs:
 
       - name: Compiling
         run: |
-          go install github.com/google/go-jsonnet/cmd/jsonnet@latest
+          go install github.com/google/go-jsonnet/cmd/jsonnet@v0.20.0
           sh .github/workflows/code_jsonnet.sh

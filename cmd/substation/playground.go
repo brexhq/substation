@@ -34,9 +34,9 @@ func init() {
 }
 
 var playgroundCmd = &cobra.Command{
-	Use:   "playground",
+	Use:   "play",
 	Short: "start playground",
-	Long:  `'substation playground' starts a local HTTP server for testing Substation configurations.`,
+	Long:  `'substation play' starts a local instance of the Substation playground.`,
 	RunE:  runPlayground,
 }
 
@@ -124,7 +124,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	// If shared data is present, don't include environment variables
 	if sharedData == "" {
-		data.DefaultEnv = "# Add environment variables here, one per line\n# Example: KEY=VALUE"
+		data.DefaultEnv = "# Example: KEY=VALUE"
 	}
 
 	tmpl := template.Must(template.New("index").Parse(playgroundHTML))

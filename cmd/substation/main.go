@@ -30,7 +30,8 @@ const (
 }`
 
 	// confDemo is a demo configuration for AWS CloudTrail.
-	confDemo = `local sub = std.extVar('sub');
+	confDemo = `// Every config must import the Substation library.
+local sub = std.extVar('sub');
 
 {
   transforms: [

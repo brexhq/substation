@@ -318,8 +318,7 @@
                     <button class="secondary-button" onclick="shareSubstation()">Share</button>
                 </div>
                 <p class="subtext">
-                    Run your configuration, test it, or try a demo. 
-                    <a href="https://github.com/brexhq/substation/tree/main/examples" target="_blank" class="examples-link">View examples</a>
+                    Run, test, or share a config. New to Substation? Try the demo to see how it works. Need inspiration? <a href="https://github.com/brexhq/substation/tree/main/examples" target="_blank" class="examples-link">View more examples here</a>.
                 </p>
             </div>
         </div>
@@ -330,7 +329,7 @@
                 <h2>Configuration</h2>
                 <button class="secondary-button" onclick="formatJsonnet()"><i class="fas fa-broom"></i></button>
             </div>
-            <p class="subtext">Configure the transformations to be applied to the input event.</p>
+            <p class="subtext">Configure the transforms.</p>
             <div class="editor-container" id="config"></div>
         </section>
         <section class="right-column">
@@ -342,7 +341,7 @@
                         <option value="json">JSON</option>
                     </select>
                 </div>
-                <p class="subtext">Paste the message data to be processed by Substation here.</p>
+                <p class="subtext">Add message data.</p>
                 <div class="editor-container" id="input"></div>
             </div>
             <div class="editor-section">
@@ -353,7 +352,7 @@
                         <option value="json">JSON</option>
                     </select>
                 </div>
-                <p class="subtext">The processed message data will appear here after running.</p>
+                <p class="subtext">See the results.</p>
                 <div class="editor-container" id="output"></div>
             </div>
         </section>
@@ -366,7 +365,7 @@
                 <h2>Environment Variables</h2>
                 <span class="close" onclick="closeEnvModal()">&times;</span>
             </div>
-            <p class="subtext">Add environment variables here, one per line (KEY=VALUE). These will not be included when sharing.</p>
+            <p class="subtext">Add environment variables, one per line (KEY=VALUE). These are not included when sharing the config.</p>
             <div class="editor-container" id="env"></div>
             <div class="modal-footer">
                 <button class="primary-button" onclick="closeEnvModal()">Save & Close</button>
@@ -518,7 +517,7 @@
             .then(data => {
                 configEditor.setValue(data.config);
                 inputEditor.setValue(data.input);
-                outputEditor.setValue('// Run the demo to see the output');
+                outputEditor.setValue('// Click the Run button to see the results!');
             })
             .catch(error => {
                 console.error('Error fetching demo:', error);

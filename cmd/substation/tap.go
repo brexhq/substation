@@ -27,7 +27,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(tapCmd)
-	tapCmd.PersistentFlags().String("aws-kinesis-data-stream", "", "ARN of the Kinesis Data Stream to tap")
+	tapCmd.PersistentFlags().String("aws-kinesis-data-stream", "", "arn of the aws kinesis data stream to tap")
 	tapCmd.PersistentFlags().String("offset", "latest", "the offset to read from (earliest, latest)")
 	tapCmd.PersistentFlags().StringToString("ext-str", nil, "set external variables")
 	tapCmd.Flags().SortFlags = false

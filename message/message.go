@@ -20,7 +20,7 @@ const (
 	metaKey = "meta "
 
 	// IsControl indicates that the message is a control message.
-	IsControl Flag = iota + 1
+	IsControl Flag = iota
 	// SkipNullValues indicates that null values should be ignored when processing the message.
 	SkipNullValues
 	// SkipMissingValues indicates that missing values should be ignored when processing the message.

@@ -7,14 +7,17 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/brexhq/substation/v2"
 	"github.com/spf13/cobra"
+
+	"github.com/brexhq/substation/v2"
 )
 
 func init() {
 	rootCmd.AddCommand(vetCmd)
 	vetCmd.PersistentFlags().BoolP("recursive", "R", false, "recursively vet all files")
 	vetCmd.PersistentFlags().StringToString("ext-str", nil, "set external variables")
+	vetCmd.Flags().SortFlags = false
+	vetCmd.PersistentFlags().SortFlags = false
 }
 
 // vetTransformRe captures the transform ID from a Substation error message.
@@ -74,7 +77,7 @@ array:
 
 		// Catches an edge case where the user is looking for help.
 		if path == "help" {
-			fmt.Printf("warning: %q matched no files\n", path)
+			fmt.Printf("warning: use -h instead.\n")
 			return nil
 		}
 

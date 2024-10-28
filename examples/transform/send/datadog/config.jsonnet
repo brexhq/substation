@@ -3,7 +3,7 @@
 //
 // More information about the Datadog Logs API can be found here:
 // https://docs.datadoghq.com/api/latest/logs/#send-logs
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 // Datadog has a strict limit of 5MB per payload. Any individual event
 // larger than 1MB will be truncated on ingest.
@@ -22,20 +22,11 @@ local max_count = 1000;
         sub.tf.agg.to.array({ object: { target_key: 'message' } }),
       ],
       url: 'https://http-intake.logs.datadoghq.com/api/v2/logs',
-      headers: [
-        {
-          key: 'DD-API-KEY',
-          value: '${SECRET:DD}',
-        },
-        {
-          key: 'ddsource',
-          value: 'my-source',
-        },
-        {
-          key: 'service',
-          value: 'my-service',
-        },
-      ],
+      headers: {
+        'DD-API-KEY': '${SECRET:DD}',
+        ddsource: 'my-source',
+        service: 'my-service',
+      },
     }),
   ],
 }

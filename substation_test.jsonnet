@@ -1,7 +1,6 @@
-local sub = import 'substation.libsonnet';
+local sub = std.extVar('sub');
 
 local src = 'source';
-local trg = 'target';
 
 {
   condition: {

@@ -1,5 +1,5 @@
 // This example shows usage of the 'string.equal_to' and 'string.greater_than' conditions.
-local sub = import '../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 {
   tests: [

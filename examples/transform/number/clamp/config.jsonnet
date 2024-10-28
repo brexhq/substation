@@ -1,5 +1,5 @@
 // This example shows how to clamp a number to a range.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 {
   tests: [

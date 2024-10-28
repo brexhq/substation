@@ -1,6 +1,6 @@
 // This example shows how to use the `utility_metric_bytes` transform to
 // sum the amount of data received and transformed by Substation.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 local attr = { AppName: 'example' };
 local dest = { type: 'aws_cloudwatch_embedded_metrics' };

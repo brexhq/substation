@@ -3,7 +3,7 @@
 //
 // Test this example using the substation CLI:
 //  URLSCAN_API_KEY=xx substation test config.jsonnet
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 local headers = { 'API-Key': '${SECRET:URLSCAN}', 'Content-Type': 'application/json' };
 

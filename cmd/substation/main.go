@@ -1,18 +1,103 @@
 package main
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/google/go-jsonnet"
 	"github.com/spf13/cobra"
+
+	"github.com/brexhq/substation/v2"
 )
 
 var rootCmd = &cobra.Command{
 	Use:  "substation",
 	Long: "'substation' is a tool for managing Substation configurations.",
 }
+
+const (
+	// confStdout is the default configuration used by
+	// read-like commands. It prints any results (<= 100MB)
+	// to stdout.
+	confStdout = `local sub = std.extVar('sub');
+
+{
+  transforms: [
+    sub.tf.send.stdout({ batch: { size: 100000000000, count: 1 } }),
+  ],
+}`
+
+	// confDemo is a demo configuration for AWS CloudTrail.
+	confDemo = `// Every config must import the Substation library.
+local sub = std.extVar('sub');
+
+{
+  transforms: [
+    // Move the event to the 'event.original' field.
+    sub.tf.obj.cp({object: { source_key: '@this', target_key: 'meta event.original' }}),
+    sub.tf.obj.cp({object: { source_key: 'meta @this' }}),
+
+    // Insert the hash of the original event into the 'event.hash' field.
+    sub.tf.hash.sha256({obj: { src: 'event.original', trg: 'event.hash'}}),
+
+    // Insert the event dataset into the 'event.dataset' field.
+    sub.tf.obj.insert({obj: { trg: 'event.dataset' }, value: 'aws.cloudtrail'}),
+
+    // Insert the kind of event into the 'event.kind' field.
+    sub.tf.obj.insert({obj: { trg: 'event.kind' }, value: 'event'}),
+
+    // Insert the event category into the 'event.category' field.
+    sub.tf.obj.insert({obj: { trg: std.format('%s.-1', 'event.category') }, value: 'configuration'}),
+
+    // Insert the event type into the 'event.type' field.
+    sub.tf.obj.insert({obj: { trg: std.format('%s.-1', 'event.type') }, value: 'change'}),
+
+    // Insert the outcome into the 'event.outcome' field.
+    sub.tf.meta.switch({ cases: [
+      {
+        condition: sub.cnd.num.len.gt({ obj: { src: 'errorCode' }, value: 0 }),
+        transforms: [
+          sub.tf.obj.insert({ obj: { trg: 'event.outcome' }, value: 'failure' }),
+        ],
+      },
+      {
+        transforms: [
+          sub.tf.obj.insert({ obj: { trg: 'event.outcome' }, value: 'success' }),
+        ],
+      },
+    ] }),
+
+    // Copy the event time to the '@timestamp' field.
+    sub.tf.obj.cp({obj: { src: 'event.original.eventTime', trg: '\\@timestamp' }}),
+
+    // Copy the IP address to the 'source.ip' field.
+    sub.tf.obj.cp({obj: { src: 'event.original.sourceIPAddress', trg: 'source.ip' }}),
+
+    // Copy the user agent to the 'user_agent.original' field.
+    sub.tf.obj.cp({obj: { src: 'event.original.userAgent', trg: 'user_agent.original' }}),
+
+    // Copy the region to the 'cloud.region' field.
+    sub.tf.obj.cp({obj: { src: 'event.original.awsRegion', trg: 'cloud.region' }}),
+
+    // Copy the account ID to the 'cloud.account.id' field.
+    sub.tf.obj.cp({obj: { src: 'event.original.userIdentity.accountId', trg: 'cloud.account.id' }}),
+
+    // Add the cloud service provider to the 'cloud.provider' field.
+    sub.tf.obj.insert({obj: { trg: 'cloud.provider' }, value: 'aws'}),
+
+    // Extract the cloud service into the 'cloud.service.name' field.
+    sub.tf.str.capture({obj: { src: 'event.original.eventSource', trg: 'cloud.service.name' }, pattern: '^(.*)\\.amazonaws\\.com$'}),
+
+    // Make the event pretty before printing to the console.
+    sub.tf.obj.cp({obj: { src: '@this|@pretty' }}),
+    sub.tf.send.stdout(),
+  ],
+}`
+
+	evtDemo = `{"eventVersion":"1.08","userIdentity":{"type":"IAMUser","principalId":"EXAMPLE123456789","arn":"arn:aws:iam::123456789012:user/Alice","accountId":"123456789012","accessKeyId":"ASIAEXAMPLE123","sessionContext":{"attributes":{"mfaAuthenticated":"false","creationDate":"2024-10-01T12:00:00Z"},"sessionIssuer":{"type":"AWS","principalId":"EXAMPLE123456","arn":"arn:aws:iam::123456789012:role/Admin","accountId":"123456789012","userName":"Admin"}}},"eventTime":"2024-10-01T12:30:45Z","eventSource":"s3.amazonaws.com","eventName":"PutBucketPolicy","awsRegion":"us-west-2","sourceIPAddress":"203.0.113.0","userAgent":"aws-sdk-python/1.0.0 Python/3.8.0 Linux/4.15.0","requestParameters":{"bucketName":"example-bucket","policy":"{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::example-bucket/*\"}]}"}},"responseElements":{"location":"http://example-bucket.s3.amazonaws.com/"},"requestID":"EXAMPLE123456789","eventID":"EXAMPLE-1-2-3-4-5-6","readOnly":false,"resources":[{"ARN":"arn:aws:s3:::example-bucket","accountId":"123456789012","type":"AWS::S3::Bucket"}],"eventType":"AwsApiCall","managementEvent":true,"recipientAccountId":"123456789012"}`
+)
 
 func init() {
 	// Hides the 'completion' command.
@@ -30,13 +115,31 @@ func init() {
 }
 
 // compileFile returns JSON from a Jsonnet file.
-func compileFile(f string, extVars map[string]string) (string, error) {
+func compileFile(fi string, extVars map[string]string) (string, error) {
+	f, err := os.Open(fi)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	s, err := io.ReadAll(f)
+	if err != nil {
+		return "", err
+	}
+
+	return compileStr(string(s), extVars)
+}
+
+// compileStr returns JSON from a Jsonnet string.
+func compileStr(s string, extVars map[string]string) (string, error) {
 	vm := jsonnet.MakeVM()
+	vm.ExtCode("sub", substation.Library)
+
 	for k, v := range extVars {
 		vm.ExtVar(k, v)
 	}
 
-	res, err := vm.EvaluateFile(f)
+	res, err := vm.EvaluateAnonymousSnippet("snippet", s)
 	if err != nil {
 		return "", err
 	}

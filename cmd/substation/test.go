@@ -32,6 +32,8 @@ func init() {
 	rootCmd.AddCommand(testCmd)
 	testCmd.PersistentFlags().BoolP("recursive", "R", false, "recursively test all files")
 	testCmd.PersistentFlags().StringToString("ext-str", nil, "set external variables")
+	testCmd.Flags().SortFlags = false
+	testCmd.PersistentFlags().SortFlags = false
 }
 
 func fiConfig(f string) (customConfig, error) {
@@ -54,6 +56,7 @@ func fiConfig(f string) (customConfig, error) {
 
 func memConfig(m string) (customConfig, error) {
 	cfg := customConfig{}
+
 	if err := json.Unmarshal([]byte(m), &cfg); err != nil {
 		return customConfig{}, err
 	}
@@ -135,7 +138,7 @@ production resources, such as any enrichment or send transforms.
 
 		// Catches an edge case where the user is looking for help.
 		if path == "help" {
-			fmt.Printf("warning: %q matched no files\n", path)
+			fmt.Printf("warning: use -h instead.\n")
 			return nil
 		}
 

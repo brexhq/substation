@@ -1,6 +1,6 @@
 // This example shows how to use the `meta_metric_duration` transform to
 // measure the execution time of other transforms.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 local attr = { AppName: 'example' };
 local dest = { type: 'aws_cloudwatch_embedded_metrics' };

@@ -1,6 +1,6 @@
 // This example shows how to use the `enrich_kv_store_item_get` transform
 // to lookup data in a KV store backed by a CSV file.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 // This CSV file must be local to the Substation app. Absolute paths are
 // recommended. Files accessible over HTTPS and hosted in AWS S3 also work.

@@ -1,15 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
-	"io"
-	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"syscall"
 	"time"
@@ -18,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/awslabs/kinesis-aggregation/go/v2/deaggregator"
+	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/brexhq/substation/v2"
@@ -25,68 +22,129 @@ import (
 
 	"github.com/brexhq/substation/v2/internal/channel"
 	iconfig "github.com/brexhq/substation/v2/internal/config"
-	"github.com/brexhq/substation/v2/internal/file"
 	"github.com/brexhq/substation/v2/internal/log"
 )
 
-type options struct {
-	Config string
-
-	// StreamName is the name of the Kinesis stream to read from.
-	StreamName string
-	// StreamOffset is the read offset of the stream (earliest, latest).
-	StreamOffset string
+func init() {
+	rootCmd.AddCommand(tapCmd)
+	tapCmd.PersistentFlags().String("aws-kinesis-data-stream", "", "arn of the aws kinesis data stream to tap")
+	tapCmd.PersistentFlags().String("offset", "latest", "the offset to read from (earliest, latest)")
+	tapCmd.PersistentFlags().StringToString("ext-str", nil, "set external variables")
+	tapCmd.Flags().SortFlags = false
+	tapCmd.PersistentFlags().SortFlags = false
 }
 
-// getConfig contextually retrieves a Substation configuration.
-func getConfig(ctx context.Context, cfg string) (io.Reader, error) {
-	path, err := file.Get(ctx, cfg)
-	defer os.Remove(path)
+var tapCmd = &cobra.Command{
+	Use:   "tap [path]",
+	Short: "tap data streams",
+	Long: `'substation tap' reads from a data stream.
+It supports these data stream sources:
+  AWS Kinesis Data Streams (--aws-kinesis-data-stream)
 
-	if err != nil {
-		return nil, err
-	}
+The data stream can be read from either the beginning 
+(earliest) or the end (latest) using the --offset flag.
+Reading the stream can be interrupted by sending an 
+interrupt signal (ex. Ctrl+C).
 
-	conf, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer conf.Close()
+If the config is not already compiled, then it is compiled 
+before reading the stream ('.jsonnet', '.libsonnet' files are 
+compiled to JSON). If no config is provided, then the stream
+data is sent to stdout.
 
-	buf := new(bytes.Buffer)
-	if _, err := io.Copy(buf, conf); err != nil {
-		return nil, err
-	}
+Debug logs can be enabled to report the status of reading
+from the data stream. Use this environment variable to
+enable debug logs: SUBSTATION_DEBUG=true
 
-	return buf, nil
+WARNING: This command is intended to provide temporary access 
+to streaming data and should not be used for production workloads.
+
+WARNING: This command is "experimental" and does not strictly 
+adhere to semantic versioning. Refer to the versioning policy
+for more information.
+`,
+	Example: `  substation tap --aws-kinesis-data-stream arn:aws:kinesis:us-east-1:123456789012:stream/my-stream
+  substation tap --aws-kinesis-data-stream arn:aws:kinesis:us-east-1:123456789012:stream/my-stream --offset earliest
+  substation tap /path/to/config.json --aws-kinesis-data-stream arn:aws:kinesis:us-east-1:123456789012:stream/my-stream
+`,
+	Args: cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// If no path is provided, then a default config is used.
+		path := ""
+		if len(args) > 0 {
+			path = args[0]
+		}
+
+		// Catches an edge case where the user is looking for help.
+		if path == "help" {
+			fmt.Printf("warning: use -h instead.\n")
+			return nil
+		}
+
+		ext, err := cmd.PersistentFlags().GetStringToString("ext-str")
+		if err != nil {
+			return err
+		}
+
+		offset, err := cmd.Flags().GetString("offset")
+		if err != nil {
+			return err
+		}
+
+		kinesis, err := cmd.Flags().GetString("aws-kinesis-data-stream")
+		if err != nil {
+			return err
+		}
+
+		if kinesis != "" {
+			return tapKinesis(path, ext, offset, kinesis)
+		}
+
+		return fmt.Errorf("no valid data stream source provided")
+	},
 }
 
-func main() {
-	var opts options
+//nolint:gocognit, cyclop, gocyclo // Ignore cognitive and cyclomatic complexity.
+func tapKinesis(arg string, extVars map[string]string, offset, stream string) error {
+	cfg := customConfig{}
 
-	flag.StringVar(&opts.Config, "config", "./config.json", "The Substation configuration file used to transform records")
-	flag.StringVar(&opts.StreamName, "stream-name", "", "The AWS Kinesis Data Stream to fetch records from")
-	flag.StringVar(&opts.StreamOffset, "stream-offset", "earliest", "Determines the offset of the stream (earliest, latest)")
-	flag.Parse()
+	switch filepath.Ext(arg) {
+	case ".jsonnet", ".libsonnet":
+		mem, err := compileFile(arg, extVars)
+		if err != nil {
+			// This is an error in the Jsonnet syntax.
+			// The line number and column range are included.
+			//
+			// Example: `vet.jsonnet:19:36-38 Unknown variable: st`
+			fmt.Printf("%v\n", err)
 
-	if err := run(context.Background(), opts); err != nil {
-		panic(fmt.Errorf("main: %v", err))
+			return nil
+		}
+
+		cfg, err = memConfig(mem)
+		if err != nil {
+			return err
+		}
+	case ".json":
+		fi, err := fiConfig(arg)
+		if err != nil {
+			return err
+		}
+
+		cfg = fi
+	default:
+		mem, err := compileStr(confStdout, extVars)
+		if err != nil {
+			return err
+		}
+
+		cfg, err = memConfig(mem)
+		if err != nil {
+			return err
+		}
 	}
-}
 
-//nolint:gocognit // Ignore cognitive complexity.
-func run(ctx context.Context, opts options) error {
-	cfg := substation.Config{}
-	c, err := getConfig(ctx, opts.Config)
-	if err != nil {
-		return err
-	}
-
-	if err := json.NewDecoder(c).Decode(&cfg); err != nil {
-		return err
-	}
-
-	sub, err := substation.New(ctx, cfg)
+	ctx := context.Background()
+	sub, err := substation.New(ctx, cfg.Config)
 	if err != nil {
 		return err
 	}
@@ -151,22 +209,22 @@ func run(ctx context.Context, opts options) error {
 		client := kinesis.NewFromConfig(awsCfg)
 
 		resp, err := client.ListShards(ctx, &kinesis.ListShardsInput{
-			StreamName: &opts.StreamName,
+			StreamARN: &stream,
 		})
 		if err != nil {
 			return err
 		}
 
-		log.WithField("stream", opts.StreamName).WithField("count", len(resp.Shards)).Debug("Retrieved active shards from Kinesis stream.")
+		log.WithField("stream", stream).WithField("count", len(resp.Shards)).Debug("Retrieved active shards from Kinesis stream.")
 
 		var iType string
-		switch opts.StreamOffset {
+		switch offset {
 		case "earliest":
 			iType = "TRIM_HORIZON"
 		case "latest":
 			iType = "LATEST"
 		default:
-			return fmt.Errorf("invalid offset: %s", opts.StreamOffset)
+			return fmt.Errorf("invalid offset: %s", stream)
 		}
 
 		// Each shard is read concurrently using a worker
@@ -187,7 +245,7 @@ func run(ctx context.Context, opts options) error {
 		// reached or the context is cancelled.
 		for _, shard := range resp.Shards {
 			iterator, err := client.GetShardIterator(ctx, &kinesis.GetShardIteratorInput{
-				StreamName:        &opts.StreamName,
+				StreamARN:         &stream,
 				ShardId:           shard.ShardId,
 				ShardIteratorType: types.ShardIteratorType(iType),
 			})
@@ -217,7 +275,7 @@ func run(ctx context.Context, opts options) error {
 					}
 
 					if resp.NextShardIterator == nil {
-						log.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).Debug("Reached end of Kinesis shard.")
+						log.WithField("stream", stream).WithField("shard", shard.ShardId).Debug("Reached end of Kinesis shard.")
 
 						break
 					}
@@ -234,7 +292,7 @@ func run(ctx context.Context, opts options) error {
 						return err
 					}
 
-					log.WithField("stream", opts.StreamName).WithField("shard", shard.ShardId).WithField("count", len(deagg)).Debug("Retrieved records from Kinesis shard.")
+					log.WithField("stream", stream).WithField("shard", shard.ShardId).WithField("count", len(deagg)).Debug("Retrieved records from Kinesis shard.")
 
 					for _, record := range deagg {
 						msg := message.New().SetData(record.Data).SkipMissingValues()

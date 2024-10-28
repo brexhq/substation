@@ -5,7 +5,7 @@
 //
 // More information about the Splunk HEC can be found here:
 // https://docs.splunk.com/Documentation/SplunkCloud/latest/Data/HECExamples
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 // By default the Splunk HEC limits the size of each request to 1MB.
 local max_size = 1000 * 1000;
@@ -21,10 +21,9 @@ local max_size = 1000 * 1000;
         sub.tf.array.join({ separator: '' }),
       ],
       url: 'https://my-instance.cloud.splunk.com:8088/services/collector',
-      headers: [{
-        key: 'Authorization',
-        value: 'Splunk ${SECRET:SPLUNK}',
-      }],
+      headers: {
+        Authorization: 'Splunk ${SECRET:SPLUNK}',
+      },
     }),
   ],
 }

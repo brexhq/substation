@@ -3,7 +3,7 @@
 //
 // Test this example using the substation CLI:
 //  SUBSTATION_EXAMPLE_URL=https://www.gutenberg.org/files/2701/old/moby10b.txt substation test config.jsonnet
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 // The secret is retrieved from the environment variable named
 // `SUBSTATION_EXAMPLE_URL` and referenced in subsequent transforms using

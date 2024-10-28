@@ -1,5 +1,5 @@
 // This example shows how to convert time values between string formats.
-local sub = import '../../../../substation.libsonnet';
+local sub = std.extVar('sub');
 
 {
   tests: [

@@ -268,17 +268,17 @@ func testFile(arg string, extVars map[string]string) error {
 
 		sMsgs, err := setup.Transform(ctx, message.New().AsControl())
 		if err != nil {
-			fmt.Printf("?\t%s\t[test error]\n", arg)
+			fmt.Printf("?\t%s\t[test.transform error]\n", arg)
+			fmt.Fprintf(os.Stderr, "\t\t%v\n", err)
 
-			//nolint:nilerr  // errors should not disrupt the test.
 			return nil
 		}
 
 		tMsgs, err := tester.Transform(ctx, sMsgs...)
 		if err != nil {
-			fmt.Printf("?\t%s\t[config error]\n", arg)
+			fmt.Printf("?\t%s\t[transform error]\n", arg)
+			fmt.Fprintf(os.Stderr, "\t\t%v\n", err)
 
-			//nolint:nilerr  // errors should not disrupt the test.
 			return nil
 		}
 

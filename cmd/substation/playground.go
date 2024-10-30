@@ -193,7 +193,7 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 	for _, test := range cfg.Tests {
 		cnd, err := condition.New(ctx, test.Condition)
 		if err != nil {
-			output.WriteString("?\t[test error]\n")
+			fmt.Fprintf(&output, "test condition error: %v\n", err)
 			sendJSONResponse(w, map[string]string{"output": output.String()})
 			return
 		}
@@ -202,28 +202,28 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 			Transforms: test.Transforms,
 		})
 		if err != nil {
-			output.WriteString("?\t[test error]\n")
+			fmt.Fprintf(&output, "test config error: %v\n", err)
 			sendJSONResponse(w, map[string]string{"output": output.String()})
 			return
 		}
 
 		tester, err := substation.New(ctx, cfg.Config)
 		if err != nil {
-			output.WriteString("?\t[config error]\n")
+			fmt.Fprintf(&output, "config error: %v\n", err)
 			sendJSONResponse(w, map[string]string{"output": output.String()})
 			return
 		}
 
 		sMsgs, err := setup.Transform(ctx, message.New().AsControl())
 		if err != nil {
-			output.WriteString("?\t[test error]\n")
+			fmt.Fprintf(&output, "test transform error: %v\n", err)
 			sendJSONResponse(w, map[string]string{"output": output.String()})
 			return
 		}
 
 		tMsgs, err := tester.Transform(ctx, sMsgs...)
 		if err != nil {
-			output.WriteString("?\t[config error]\n")
+			fmt.Fprintf(&output, "transform error: %v\n", err)
 			sendJSONResponse(w, map[string]string{"output": output.String()})
 			return
 		}
@@ -236,7 +236,7 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 
 			ok, err := cnd.Condition(ctx, msg)
 			if err != nil {
-				output.WriteString("?\t[test error]\n")
+				fmt.Fprintf(&output, "test error: %v\n", err)
 				sendJSONResponse(w, map[string]string{"output": output.String()})
 				return
 			}

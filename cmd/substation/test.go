@@ -198,8 +198,8 @@ func testFile(arg string, extVars map[string]string) error {
 		mem, err := compileFile(arg, extVars)
 		if err != nil {
 			fmt.Printf("?\t%s\t[config error]\n", arg)
+			fmt.Fprintf(os.Stderr, "    %v\n", err)
 
-			//nolint:nilerr  // errors should not disrupt the test.
 			return nil
 		}
 
@@ -238,9 +238,9 @@ func testFile(arg string, extVars map[string]string) error {
 		// cnd asserts that the test is successful.
 		cnd, err := condition.New(ctx, test.Condition)
 		if err != nil {
-			fmt.Printf("FAIL\t%s\t[test error]\n", arg)
+			fmt.Printf("FAIL\t%s\t[test condition error]\n", arg)
+			fmt.Fprintf(os.Stderr, "    %v\n", err)
 
-			//nolint:nilerr  // errors should not disrupt the test.
 			return nil
 		}
 
@@ -249,9 +249,9 @@ func testFile(arg string, extVars map[string]string) error {
 			Transforms: test.Transforms,
 		})
 		if err != nil {
-			fmt.Printf("?\t%s\t[test error]\n", arg)
+			fmt.Printf("?\t%s\t[test config error]\n", arg)
+			fmt.Fprintf(os.Stderr, "    %v\n", err)
 
-			//nolint:nilerr  // errors should not disrupt the test.
 			return nil
 		}
 
@@ -261,15 +261,15 @@ func testFile(arg string, extVars map[string]string) error {
 		tester, err := substation.New(ctx, cfg.Config)
 		if err != nil {
 			fmt.Printf("?\t%s\t[config error]\n", arg)
+			fmt.Fprintf(os.Stderr, "    %v\n", err)
 
-			//nolint:nilerr  // errors should not disrupt the test.
 			return nil
 		}
 
 		sMsgs, err := setup.Transform(ctx, message.New().AsControl())
 		if err != nil {
 			fmt.Printf("?\t%s\t[test.transform error]\n", arg)
-			fmt.Fprintf(os.Stderr, "\t\t%v\n", err)
+			fmt.Fprintf(os.Stderr, "    %v\n", err)
 
 			return nil
 		}
@@ -277,7 +277,7 @@ func testFile(arg string, extVars map[string]string) error {
 		tMsgs, err := tester.Transform(ctx, sMsgs...)
 		if err != nil {
 			fmt.Printf("?\t%s\t[transform error]\n", arg)
-			fmt.Fprintf(os.Stderr, "\t\t%v\n", err)
+			fmt.Fprintf(os.Stderr, "    %v\n", err)
 
 			return nil
 		}
@@ -290,9 +290,9 @@ func testFile(arg string, extVars map[string]string) error {
 
 			ok, err := cnd.Condition(ctx, msg)
 			if err != nil {
-				fmt.Printf("?\t%s\t[test error]\n", arg)
+				fmt.Printf("?\t%s\t[test condition error]\n", arg)
+				fmt.Fprintf(os.Stderr, "    %v\n", err)
 
-				//nolint:nilerr  // errors should not disrupt the test.
 				return nil
 			}
 

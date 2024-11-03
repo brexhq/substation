@@ -17,15 +17,16 @@ import (
 	"github.com/brexhq/substation/v2/message"
 )
 
+type testConfig struct {
+	Name       string          `json:"name"`
+	Transforms []config.Config `json:"transforms"`
+	Condition  config.Config   `json:"condition"`
+}
+
 // customConfig wraps the Substation config with support for tests.
 type customConfig struct {
 	substation.Config
-
-	Tests []struct {
-		Name       string          `json:"name"`
-		Transforms []config.Config `json:"transforms"`
-		Condition  config.Config   `json:"condition"`
-	} `json:"tests"`
+	Tests []testConfig `json:"tests"`
 }
 
 func init() {
@@ -197,8 +198,8 @@ func testFile(arg string, extVars map[string]string) error {
 		// If the Jsonnet cannot compile, then the file is invalid.
 		mem, err := compileFile(arg, extVars)
 		if err != nil {
-			fmt.Printf("?\t%s\t[config error]\n", arg)
-			fmt.Fprintf(os.Stderr, "    %v\n", err)
+			fmt.Printf("?\t%s\t[error]\n", arg)
+			fmt.Fprint(os.Stderr, transformErrStr(err, arg, cfg))
 
 			return nil
 		}
@@ -220,7 +221,7 @@ func testFile(arg string, extVars map[string]string) error {
 
 	start := time.Now()
 
-	// These configurations are not valid.
+	// These are not valid Substation configs and must be ignored.
 	if len(cfg.Transforms) == 0 {
 		return nil
 	}
@@ -238,8 +239,8 @@ func testFile(arg string, extVars map[string]string) error {
 		// cnd asserts that the test is successful.
 		cnd, err := condition.New(ctx, test.Condition)
 		if err != nil {
-			fmt.Printf("FAIL\t%s\t[test condition error]\n", arg)
-			fmt.Fprintf(os.Stderr, "    %v\n", err)
+			fmt.Printf("?\t%s\t[error]\n", arg)
+			fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:tests:%s:condition", arg, test.Name), cfg))
 
 			return nil
 		}
@@ -249,8 +250,12 @@ func testFile(arg string, extVars map[string]string) error {
 			Transforms: test.Transforms,
 		})
 		if err != nil {
-			fmt.Printf("?\t%s\t[test config error]\n", arg)
-			fmt.Fprintf(os.Stderr, "    %v\n", err)
+			fmt.Printf("?\t%s\t[error]\n", arg)
+			if len(transformRe.FindStringSubmatch(err.Error())) == 0 {
+				fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:tests:%s", arg, test.Name), cfg))
+			} else {
+				fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:tests:%s:transforms", arg, test.Name), cfg))
+			}
 
 			return nil
 		}
@@ -260,24 +265,28 @@ func testFile(arg string, extVars map[string]string) error {
 		// that there is no state shared between tests.
 		tester, err := substation.New(ctx, cfg.Config)
 		if err != nil {
-			fmt.Printf("?\t%s\t[config error]\n", arg)
-			fmt.Fprintf(os.Stderr, "    %v\n", err)
+			fmt.Printf("?\t%s\t[error]\n", arg)
+			if len(transformRe.FindStringSubmatch(err.Error())) == 0 {
+				fmt.Fprint(os.Stderr, transformErrStr(err, arg, cfg))
+			} else {
+				fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:transforms", arg), cfg))
+			}
 
 			return nil
 		}
 
 		sMsgs, err := setup.Transform(ctx, message.New().AsControl())
 		if err != nil {
-			fmt.Printf("?\t%s\t[test.transform error]\n", arg)
-			fmt.Fprintf(os.Stderr, "    %v\n", err)
+			fmt.Printf("?\t%s\t[error]\n", arg)
+			fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:tests:%s:transforms", arg, test.Name), cfg))
 
 			return nil
 		}
 
 		tMsgs, err := tester.Transform(ctx, sMsgs...)
 		if err != nil {
-			fmt.Printf("?\t%s\t[transform error]\n", arg)
-			fmt.Fprintf(os.Stderr, "    %v\n", err)
+			fmt.Printf("?\t%s\t[error]\n", arg)
+			fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:transforms", arg), cfg))
 
 			return nil
 		}
@@ -290,8 +299,8 @@ func testFile(arg string, extVars map[string]string) error {
 
 			ok, err := cnd.Condition(ctx, msg)
 			if err != nil {
-				fmt.Printf("?\t%s\t[test condition error]\n", arg)
-				fmt.Fprintf(os.Stderr, "    %v\n", err)
+				fmt.Printf("?\t%s\t[error]\n", arg)
+				fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:tests:%s:condition", arg, test.Name), cfg))
 
 				return nil
 			}

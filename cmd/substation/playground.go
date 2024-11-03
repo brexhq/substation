@@ -175,14 +175,16 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var output strings.Builder
 
+	arg := "config.jsonnet" // Used for consistency with the test and vet commands.
+
 	if len(cfg.Transforms) == 0 {
-		output.WriteString("?\t[config error]\n")
+		output.WriteString(fmt.Sprintf("?\t%s\t[error]\n", arg))
 		sendJSONResponse(w, map[string]string{"output": output.String()})
 		return
 	}
 
 	if len(cfg.Tests) == 0 {
-		output.WriteString("?\t[no tests]\n")
+		output.WriteString(fmt.Sprintf("?\t%s\t[no tests]\n", arg))
 		sendJSONResponse(w, map[string]string{"output": output.String()})
 		return
 	}
@@ -193,7 +195,9 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 	for _, test := range cfg.Tests {
 		cnd, err := condition.New(ctx, test.Condition)
 		if err != nil {
-			fmt.Fprintf(&output, "test condition error: %v\n", err)
+			output.WriteString(fmt.Sprintf("?\t%s\t[error]\n", arg))
+			output.WriteString(transformErrStr(err, fmt.Sprintf("%s:tests:%s:condition", arg, test.Name), cfg))
+
 			sendJSONResponse(w, map[string]string{"output": output.String()})
 			return
 		}
@@ -202,28 +206,44 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 			Transforms: test.Transforms,
 		})
 		if err != nil {
-			fmt.Fprintf(&output, "test config error: %v\n", err)
+			output.WriteString(fmt.Sprintf("?\t%s\t[error]\n", arg))
+			if len(transformRe.FindStringSubmatch(err.Error())) == 0 {
+				output.WriteString(transformErrStr(err, fmt.Sprintf("%s:tests:%s", arg, test.Name), cfg))
+			} else {
+				output.WriteString(transformErrStr(err, fmt.Sprintf("%s:tests:%s:transforms", arg, test.Name), cfg))
+			}
+
 			sendJSONResponse(w, map[string]string{"output": output.String()})
 			return
 		}
 
 		tester, err := substation.New(ctx, cfg.Config)
 		if err != nil {
-			fmt.Fprintf(&output, "config error: %v\n", err)
+			output.WriteString(fmt.Sprintf("?\t%s\t[error]\n", arg))
+			if len(transformRe.FindStringSubmatch(err.Error())) == 0 {
+				output.WriteString(transformErrStr(err, arg, cfg))
+			} else {
+				output.WriteString(transformErrStr(err, fmt.Sprintf("%s:transforms", arg), cfg))
+			}
+
 			sendJSONResponse(w, map[string]string{"output": output.String()})
 			return
 		}
 
 		sMsgs, err := setup.Transform(ctx, message.New().AsControl())
 		if err != nil {
-			fmt.Fprintf(&output, "test transform error: %v\n", err)
+			output.WriteString(fmt.Sprintf("?\t%s\t[error]\n", arg))
+			output.WriteString(transformErrStr(err, fmt.Sprintf("%s:tests:%s:transforms", arg, test.Name), cfg))
+
 			sendJSONResponse(w, map[string]string{"output": output.String()})
 			return
 		}
 
 		tMsgs, err := tester.Transform(ctx, sMsgs...)
 		if err != nil {
-			fmt.Fprintf(&output, "transform error: %v\n", err)
+			output.WriteString(fmt.Sprintf("?\t%s\t[error]\n", arg))
+			output.WriteString(transformErrStr(err, fmt.Sprintf("%s:transforms", arg), cfg))
+
 			sendJSONResponse(w, map[string]string{"output": output.String()})
 			return
 		}
@@ -236,7 +256,9 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 
 			ok, err := cnd.Condition(ctx, msg)
 			if err != nil {
-				fmt.Fprintf(&output, "test error: %v\n", err)
+				output.WriteString(fmt.Sprintf("?\t%s\t[error]\n", arg))
+				output.WriteString(transformErrStr(err, fmt.Sprintf("%s:tests:%s:condition", arg, test.Name), cfg))
+
 				sendJSONResponse(w, map[string]string{"output": output.String()})
 				return
 			}

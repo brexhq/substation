@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.3.0](https://github.com/brexhq/substation/compare/v2.2.0...v2.3.0) (2024-11-04)
+
+
+### Features
+
+* added support for new substation playground command ([#262](https://github.com/brexhq/substation/issues/262)) ([82f39e8](https://github.com/brexhq/substation/commit/82f39e89088d055579f315111d8ce4ced99d6036))
+* **cmd:** Add tap and read Commands to CLI Tool ([#269](https://github.com/brexhq/substation/issues/269)) ([6149968](https://github.com/brexhq/substation/commit/6149968e522f52241826fce8a4ac37b06708cbf5))
+* **cmd:** log test errors ([#272](https://github.com/brexhq/substation/issues/272)) ([917e29f](https://github.com/brexhq/substation/commit/917e29fbaebd754be64270e1e82bf617827ca187))
+* **deps:** Upgrade to Latest Minor Versions ([#266](https://github.com/brexhq/substation/issues/266)) ([9db10a8](https://github.com/brexhq/substation/commit/9db10a8dc34e30c6c7862cfee63c871cd2c81310))
+* **message:** Add Flag Support ([#264](https://github.com/brexhq/substation/issues/264)) ([1acc9a0](https://github.com/brexhq/substation/commit/1acc9a0ea2b33154b3608b13ffd6f7792363ce0b))
+
+
+### Bug Fixes
+
+* **message:** Update Flag Iota ([#270](https://github.com/brexhq/substation/issues/270)) ([1f43c15](https://github.com/brexhq/substation/commit/1f43c15e79af2d39cab438d3a619e27cdbe64933))
+
 ## [2.2.0](https://github.com/brexhq/substation/compare/v2.1.0...v2.2.0) (2024-10-10)
 
 

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/google/go-jsonnet"
@@ -16,6 +18,10 @@ var rootCmd = &cobra.Command{
 	Use:  "substation",
 	Long: "'substation' is a tool for managing Substation configurations.",
 }
+
+// transformRe captures the transform ID from a Substation error message.
+// Example: `transform 324f1035-10a51b9a: object_target_key: missing required option` -> `324f1035-10a51b9a`
+var transformRe = regexp.MustCompile(`transform ([a-f0-9-]+):`)
 
 const (
 	// confStdout is the default configuration used by
@@ -154,6 +160,45 @@ func pathVars(p string) (string, string) {
 	fn = strings.TrimSuffix(fn, ext)
 
 	return dir, fn
+}
+
+// transformErrStr returns a formatted string for transform errors.
+//
+// If the error is not a transform error, then the error message
+// is returned as is.
+func transformErrStr(err error, arg string, cfg customConfig) string {
+	r := transformRe.FindStringSubmatch(err.Error())
+
+	// Cannot determine which transform failed. This should almost
+	// never happen, unless something has modified the configuration
+	// after it was compiled by Jsonnet.
+	if len(r) == 0 {
+		// Substation uses the transform name as a static transform ID.
+		//
+		// Example: `vet.json: transform hash_sha256: object_target_key: missing required option``
+		return fmt.Sprintf("%s: %v\n", arg, err)
+	}
+
+	tfID := r[1] // The transform ID (e.g., `324f1035-10a51b9a`).
+
+	// Prioritize returning test errors.
+	for _, test := range cfg.Tests {
+		for idx, tf := range test.Transforms {
+			if tf.Settings["id"] == tfID {
+				// Example: `vet.json:3 transform 324f1035-10a51b9a: object_target_key: missing required option``
+				return fmt.Sprintf("%s:%d %v\n", arg, idx+1, err) + fmt.Sprintf("        %s\n\n", tf) // The line number is 1-based.
+			}
+		}
+	}
+
+	for idx, tf := range cfg.Config.Transforms {
+		if tf.Settings["id"] == tfID {
+			return fmt.Sprintf("%s:%d %v\n", arg, idx+1, err) + fmt.Sprintf("        %s\n\n", tf)
+		}
+	}
+
+	// This happens if the input is not a transform error.
+	return fmt.Sprintf("%s: %v\n", arg, err)
 }
 
 func main() {

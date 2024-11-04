@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 
 	"github.com/spf13/cobra"
 
@@ -19,10 +18,6 @@ func init() {
 	vetCmd.Flags().SortFlags = false
 	vetCmd.PersistentFlags().SortFlags = false
 }
-
-// vetTransformRe captures the transform ID from a Substation error message.
-// Example: `transform 324f1035-10a51b9a: object_target_key: missing required option` -> `324f1035-10a51b9a`
-var vetTransformRe = regexp.MustCompile(`transform ([a-f0-9-]+):`)
 
 var vetCmd = &cobra.Command{
 	Use:   "vet [path]",
@@ -127,30 +122,13 @@ func vetFile(arg string, extVars map[string]string) error {
 
 	ctx := context.Background() // This doesn't need to be canceled.
 	if _, err := substation.New(ctx, cfg.Config); err != nil {
-		r := vetTransformRe.FindStringSubmatch(err.Error())
-
-		// Cannot determine which transform failed. This should almost
-		// never happen, unless something has modified the configuration
-		// after it was compiled by Jsonnet.
-		if len(r) == 0 {
-			// Substation uses the transform name as a static transform ID.
-			//
-			// Example: `vet.json: transform hash_sha256: object_target_key: missing required option``
-			fmt.Printf("%s: %v\n", arg, err)
-
-			return nil
+		if len(transformRe.FindStringSubmatch(err.Error())) == 0 {
+			fmt.Fprint(os.Stderr, transformErrStr(err, arg, cfg))
+		} else {
+			fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:transforms", arg), cfg))
 		}
 
-		tfID := r[1] // The transform ID (e.g., `324f1035-10a51b9a`).
-		for idx, tf := range cfg.Config.Transforms {
-			if tf.Settings["id"] == tfID {
-				// Example: `vet.jsonnet:3 transform 324f1035-10a51b9a: object_target_key: missing required option``
-				fmt.Printf("%s:%d %v\n", arg, idx+1, err) // The line number is 1-based.
-				fmt.Printf("\n    %s\n\n", tf)
-
-				return nil
-			}
-		}
+		return nil
 	}
 
 	// No errors were found.

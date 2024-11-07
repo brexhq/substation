@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/brexhq/substation/compare/v2.3.0...v2.3.1) (2024-11-07)
+
+
+### Bug Fixes
+
+* **transform:** Add SkipMissingValues Flag to Test Transform ([#273](https://github.com/brexhq/substation/issues/273)) ([21ff1db](https://github.com/brexhq/substation/commit/21ff1dbfee305398cbaf3a210d9e1a6ef50cca69))
+
 ## [2.3.0](https://github.com/brexhq/substation/compare/v2.2.0...v2.3.0) (2024-11-04)
 
 

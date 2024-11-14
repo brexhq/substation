@@ -89,7 +89,7 @@ sub.cnd.all([
 
 #### `meta.for_each` Condition
 
-This is replaced by the `meta.all`, `meta.any`, and `meta.none` conditions. If the `object.source_key` value is an array, then the data is treated as a list of elements. 
+This is replaced by the `meta.all`, `meta.any`, and `meta.none` conditions. If the `object.source_key` value is an array, then the data is treated as a list of elements.
 
 v1.x.x:
 
@@ -104,10 +104,10 @@ sub.cnd.meta.for_each({
 v2.x.x:
 
 ```jsonnet
-sub.cnd.meta.any([{
+sub.cnd.meta.any({
   object: { source_key: 'field' },
   conditions: [ sub.cnd.str.eq({ value: 'FOO' }) ],
-}])
+})
 ```
 
 #### `meta.negate` Condition
@@ -184,8 +184,8 @@ v2.x.x:
 sub.tf.meta.switch({ cases: [
   {
     condition: sub.cnd.str.eq({ obj: { source_key: 'field' }, value: 'FOO' }),
-    transforms: [ 
-      sub.tf.obj.insert({ object: { target_key: 'field' }, value: 'BAR' }) 
+    transforms: [
+      sub.tf.obj.insert({ object: { target_key: 'field' }, value: 'BAR' })
     ],
   },
 ]})
@@ -247,7 +247,7 @@ sub.tf.send.aws.dynamodb.put({
 
 The `enrich.aws.dynamodb` transform was renamed to `enrich.aws.dynamodb.query`, and had these additional changes:
 - `PartitionKey` and `SortKey` now reference the column names in the DynamoDB table and are nested under the `Attributes` field.
-- By default, the value retrieved from `Object.SourceKey` is used as the `PartitionKey` value. If the `SortKey` is provided and the value from `Object.SourceKey` is an array, then the first element is used as the `PartitionKey` value and the second element is used as the `SortKey` value. 
+- By default, the value retrieved from `Object.SourceKey` is used as the `PartitionKey` value. If the `SortKey` is provided and the value from `Object.SourceKey` is an array, then the first element is used as the `PartitionKey` value and the second element is used as the `SortKey` value.
 - The `KeyConditionExpression` field was removed because this is now a derived value.
 
 v1.x.x:

@@ -73,6 +73,70 @@ var stringEqualToTests = []struct {
 		[]byte(`{"foo":"abc", "bar":"def"}`),
 		false,
 	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+				},
+				"value": "abc",
+			},
+		},
+		[]byte(`{"bar": "abc", "baz": "0"}`),
+		false,
+	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+				},
+				"value": "",
+			},
+		},
+		[]byte(`{"bar": "abc", "baz": "0"}`),
+		false,
+	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "baz",
+				},
+			},
+		},
+		[]byte(`{"bar": "abc", "baz": "0"}`),
+		false,
+	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"target_key": "foo",
+				},
+			},
+		},
+		[]byte(`{"bar": "abc", "baz": "0"}`),
+		false,
+	},
+	{
+		"pass",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "bar",
+					"target_key": "foo",
+				},
+			},
+		},
+		[]byte(`{"bar": "abc", "baz": "0"}`),
+		false,
+	},
 }
 
 func TestStringEqualTo(t *testing.T) {

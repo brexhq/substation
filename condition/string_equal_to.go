@@ -40,21 +40,21 @@ func (insp *stringEqualTo) Condition(ctx context.Context, msg *message.Message) 
 		return bytes.Equal(msg.Data(), compare), nil
 	}
 
-	source_value := msg.GetValue(insp.conf.Object.SourceKey)
-	target_value := msg.GetValue(insp.conf.Object.TargetKey)
+	val := msg.GetValue(insp.conf.Object.SourceKey)
 
 	// for gjson's GetValue, if the path is empty string (indicating source key or target key is not present),
 	// the Result.Exists() will return false
 	// If source or target key is present but value cannot be found, always return false
-	if !source_value.Exists() || insp.conf.Object.TargetKey != "" && !target_value.Exists() {
+	if !val.Exists() {
 		return false, nil
 	}
 
-	if target_value.Exists() {
-		compare = target_value.Bytes()
+	target := msg.GetValue(insp.conf.Object.TargetKey)
+	if target.Exists() {
+		compare = target.Bytes()
 	}
 
-	return bytes.Equal(source_value.Bytes(), compare), nil
+	return bytes.Equal(val.Bytes(), compare), nil
 }
 
 func (c *stringEqualTo) String() string {

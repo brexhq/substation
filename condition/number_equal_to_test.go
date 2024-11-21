@@ -135,7 +135,7 @@ var numberEqualToTests = []struct {
 		false,
 	},
 	{
-		"pass",
+		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -148,7 +148,7 @@ var numberEqualToTests = []struct {
 		false,
 	},
 	{
-		"pass",
+		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -161,7 +161,7 @@ var numberEqualToTests = []struct {
 		false,
 	},
 	{
-		"pass",
+		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -173,7 +173,7 @@ var numberEqualToTests = []struct {
 		false,
 	},
 	{
-		"pass",
+		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -186,7 +186,7 @@ var numberEqualToTests = []struct {
 		false,
 	},
 	{
-		"pass",
+		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{

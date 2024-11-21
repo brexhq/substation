@@ -74,7 +74,7 @@ var stringEqualToTests = []struct {
 		false,
 	},
 	{
-		"pass",
+		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -87,7 +87,7 @@ var stringEqualToTests = []struct {
 		false,
 	},
 	{
-		"pass",
+		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -100,7 +100,7 @@ var stringEqualToTests = []struct {
 		false,
 	},
 	{
-		"pass",
+		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -113,7 +113,7 @@ var stringEqualToTests = []struct {
 		false,
 	},
 	{
-		"pass",
+		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{
@@ -125,7 +125,7 @@ var stringEqualToTests = []struct {
 		false,
 	},
 	{
-		"pass",
+		"fail",
 		config.Config{
 			Settings: map[string]interface{}{
 				"object": map[string]interface{}{

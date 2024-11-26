@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.2](https://github.com/brexhq/substation/compare/v2.3.1...v2.3.2) (2024-11-26)
+
+
+### Bug Fixes
+
+* **condition:** handling of missing source and/or target keys ([#277](https://github.com/brexhq/substation/issues/277)) ([090981b](https://github.com/brexhq/substation/commit/090981b9792f12d6187f5e3c87a1e7667a295814))
+
 ## [2.3.1](https://github.com/brexhq/substation/compare/v2.3.0...v2.3.1) (2024-11-07)
 
 

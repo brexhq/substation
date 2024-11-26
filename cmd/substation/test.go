@@ -193,10 +193,20 @@ func testPath(arg string, extVars map[string]string, recursive bool) error {
 func testFile(arg string, extVars map[string]string) error {
 	var cfg customConfig
 
-	switch filepath.Ext(arg) {
+	// Switching directories is required to support relative imports.
+	// The current directory is saved and restored after each test.
+	wd, _ := os.Getwd()
+	defer func() {
+		_ = os.Chdir(wd)
+	}()
+
+	fileName := filepath.Base(arg)
+	_ = os.Chdir(filepath.Dir(arg))
+
+	switch filepath.Ext(fileName) {
 	case ".jsonnet", ".libsonnet":
 		// If the Jsonnet cannot compile, then the file is invalid.
-		mem, err := compileFile(arg, extVars)
+		mem, err := compileFile(fileName, extVars)
 		if err != nil {
 			fmt.Printf("?\t%s\t[error]\n", arg)
 			fmt.Fprint(os.Stderr, transformErrStr(err, arg, cfg))
@@ -211,7 +221,7 @@ func testFile(arg string, extVars map[string]string) error {
 
 		cfg = c
 	case ".json":
-		c, err := fiConfig(arg)
+		c, err := fiConfig(fileName)
 		if err != nil {
 			return err
 		}

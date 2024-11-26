@@ -134,6 +134,70 @@ var numberEqualToTests = []struct {
 		[]byte(`{"foo": 100, "bar": 200}`),
 		false,
 	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "baz",
+				},
+				"value": 0,
+			},
+		},
+		[]byte(`{"foo": 100, "bar": 200}`),
+		false,
+	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "baz",
+					"target_key": "bar",
+				},
+			},
+		},
+		[]byte(`{"foo": 100, "bar": 200}`),
+		false,
+	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"target_key": "abc",
+				},
+			},
+		},
+		[]byte(`100`),
+		false,
+	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "foo",
+					"target_key": "baz",
+				},
+			},
+		},
+		[]byte(`{"foo": 100, "bar": 200}`),
+		false,
+	},
+	{
+		"fail",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "baz",
+					"target_key": "abc",
+				},
+			},
+		},
+		[]byte(`{"foo": 100, "bar": 200}`),
+		false,
+	},
 }
 
 func TestNumberEqualTo(t *testing.T) {

@@ -39,13 +39,22 @@ func (insp *numberEqualTo) Condition(ctx context.Context, msg *message.Message) 
 		return insp.match(f, compare), nil
 	}
 
+
+	val := msg.GetValue(insp.conf.Object.SourceKey)
+
+	// for gjson's GetValue, if the path is empty string (indicating source key or target key is not present),
+	// the Result.Exists() will return false
+	// If source or target key is present but value cannot be found, always return false
+	if !val.Exists() {
+		return false, nil
+	}
+
 	target := msg.GetValue(insp.conf.Object.TargetKey)
 	if target.Exists() {
 		compare = target.Float()
 	}
 
-	v := msg.GetValue(insp.conf.Object.SourceKey)
-	return insp.match(v.Float(), compare), nil
+	return insp.match(val.Float(), compare), nil
 }
 
 func (c *numberEqualTo) match(f float64, t float64) bool {

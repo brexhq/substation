@@ -104,6 +104,8 @@ func vetFile(arg string, extVars map[string]string) error {
 	fileName := filepath.Base(arg)
 	_ = os.Chdir(filepath.Dir(arg))
 
+	// The default case is a no-op -- the file is skipped because
+	// it cannot be vetted.
 	switch filepath.Ext(fileName) {
 	case ".jsonnet", ".libsonnet":
 		mem, err := compileFile(fileName, extVars)

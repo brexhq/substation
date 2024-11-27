@@ -203,6 +203,8 @@ func testFile(arg string, extVars map[string]string) error {
 	fileName := filepath.Base(arg)
 	_ = os.Chdir(filepath.Dir(arg))
 
+	// The default case is a no-op -- the file is skipped because
+	// it cannot be tested.
 	switch filepath.Ext(fileName) {
 	case ".jsonnet", ".libsonnet":
 		// If the Jsonnet cannot compile, then the file is invalid.

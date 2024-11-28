@@ -318,6 +318,8 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 
 	// Set up environment variables
 	for key, value := range request.Env {
+		// Remove surrounding quotes if present to mimic the behavior of export in bash
+		value = strings.Trim(value, "\"")
 		os.Setenv(key, value)
 	}
 

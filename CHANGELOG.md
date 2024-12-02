@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.3.3](https://github.com/brexhq/substation/compare/v2.3.2...v2.3.3) (2024-12-02)
+
+
+### Bug Fixes
+
+* **cmd:** CLI Config Relative Imports ([#279](https://github.com/brexhq/substation/issues/279)) ([3b18bfe](https://github.com/brexhq/substation/commit/3b18bfe763c5c73887c6b6cad364df45385416c7))
+* **message:** use correct encodings for JSON Number values ([#281](https://github.com/brexhq/substation/issues/281)) ([d476fa5](https://github.com/brexhq/substation/commit/d476fa510b4bc8fdb19f507a3d721e897f637a8e))
+* **playground:** trim quotes from environment variables ([#282](https://github.com/brexhq/substation/issues/282)) ([83bd0e8](https://github.com/brexhq/substation/commit/83bd0e8bb9901f3394cbab6d85baf42690de01ba))
+
 ## [2.3.2](https://github.com/brexhq/substation/compare/v2.3.1...v2.3.2) (2024-11-26)
 
 

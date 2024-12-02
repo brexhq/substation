@@ -33,6 +33,36 @@ var objectCopyTests = []struct {
 		},
 	},
 	{
+		"large integer",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "b",
+				},
+			},
+		},
+		[]byte(`{"a":30400402455622563}`),
+		[][]byte{
+			[]byte(`{"a":30400402455622563,"b":30400402455622563}`),
+		},
+	},
+	{
+		"large float",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "b",
+				},
+			},
+		},
+		[]byte(`{"a":3.141592653589793}`),
+		[][]byte{
+			[]byte(`{"a":3.141592653589793,"b":3.141592653589793}`),
+		},
+	},
+	{
 		"unescape object",
 		config.Config{
 			Settings: map[string]interface{}{

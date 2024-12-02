@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
 	"unicode/utf8"
 
@@ -366,6 +367,16 @@ func setValue(json []byte, key string, value interface{}) ([]byte, error) {
 			return sjson.SetBytes(json, key, base64.Encode(v))
 		}
 	case Value:
+		// JSON number values can lose precision if not read with the right encoding.
+		// Determine if the value is an integer by checking if floating poit truncation has no
+		// affect of the value.
+		if v.gjson.Type == gjson.Number {
+			if v.Float() == math.Trunc(v.Float()) {
+				return sjson.SetBytes(json, key, v.Int())
+			}
+			return sjson.SetBytes(json, key, v.Float())
+		}
+
 		return sjson.SetBytes(json, key, v.Value())
 	default:
 		return sjson.SetBytes(json, key, v)

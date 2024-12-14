@@ -20,3 +20,12 @@ jobs:
         with:
           release-type: go
           package-name: release-please-action
+
+      - name: Upload Release Artifact
+        if: ${{ steps.release.outputs.release_created }}
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag_name }}

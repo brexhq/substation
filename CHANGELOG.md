@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.4](https://github.com/brexhq/substation/compare/v2.3.3...v2.3.4) (2024-12-19)
+
+
+### Bug Fixes
+
+* only build release artifacts on releases ([#286](https://github.com/brexhq/substation/issues/286)) ([e4026ae](https://github.com/brexhq/substation/commit/e4026ae4219f60ff86897e00f2e25483014a9937))
+
 ## [2.3.3](https://github.com/brexhq/substation/compare/v2.3.2...v2.3.3) (2024-12-02)
 
 

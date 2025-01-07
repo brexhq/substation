@@ -64,6 +64,7 @@ var timeToStringTests = []struct {
 }
 
 func TestTimeToString(t *testing.T) {
+	t.Setenv("TZ", "UTC")
 	ctx := context.TODO()
 	for _, test := range timeToStringTests {
 		t.Run(test.name, func(t *testing.T) {

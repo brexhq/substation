@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"
@@ -63,7 +64,15 @@ func (tf *objectToString) Transform(ctx context.Context, msg *message.Message) (
 		return []*message.Message{msg}, nil
 	}
 
-	if err := msg.SetValue(tf.conf.Object.TargetKey, value.String()); err != nil {
+	val := value.String()
+
+	// Pad JSON objects with quotes so they fail further isJSON checks
+	// this will be removing during SetValue handling.
+	if strings.HasPrefix(val, "{") && json.Valid([]byte(val)) {
+		val = fmt.Sprintf(`"%s"`, val)
+	}
+
+	if err := msg.SetValue(tf.conf.Object.TargetKey, val); err != nil {
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 

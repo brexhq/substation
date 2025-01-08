@@ -62,6 +62,21 @@ var objectToStringTests = []struct {
 			[]byte(`{"a":"1"}`),
 		},
 	},
+	{
+		"obj to_str",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "a",
+					"target_key": "a",
+				},
+			},
+		},
+		[]byte(`{"a":{"b": "c", "d": true}}`),
+		[][]byte{
+			[]byte(`{"a":"{\"b\": \"c\", \"d\": true}"}`),
+		},
+	},
 }
 
 func TestObjectToString(t *testing.T) {

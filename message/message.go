@@ -354,32 +354,37 @@ func deleteValue(json []byte, key string) ([]byte, error) {
 // sjson.SetBytesOptions is not used because transform benchmarks perform better with
 // sjson.SetBytes (allocating a new byte slice). This may change if transforms are
 // refactored.
-func setValue(json []byte, key string, value interface{}) ([]byte, error) {
+func setValue(obj []byte, key string, value interface{}) ([]byte, error) {
 	if validJSON(value) {
-		return setRaw(json, key, value)
+		return setRaw(obj, key, value)
 	}
 
 	switch v := value.(type) {
 	case []byte:
 		if utf8.Valid(v) {
-			return sjson.SetBytes(json, key, v)
+			return sjson.SetBytes(obj, key, v)
 		} else {
-			return sjson.SetBytes(json, key, base64.Encode(v))
+			return sjson.SetBytes(obj, key, base64.Encode(v))
 		}
+	case string:
+		if json.Valid([]byte(strings.Trim(v, `"`))) {
+			return sjson.SetBytes(obj, key, strings.Trim(v, `"`))
+		}
+		return sjson.SetBytes(obj, key, v)
 	case Value:
 		// JSON number values can lose precision if not read with the right encoding.
 		// Determine if the value is an integer by checking if floating poit truncation has no
 		// affect of the value.
 		if v.gjson.Type == gjson.Number {
 			if v.Float() == math.Trunc(v.Float()) {
-				return sjson.SetBytes(json, key, v.Int())
+				return sjson.SetBytes(obj, key, v.Int())
 			}
-			return sjson.SetBytes(json, key, v.Float())
+			return sjson.SetBytes(obj, key, v.Float())
 		}
 
-		return sjson.SetBytes(json, key, v.Value())
+		return sjson.SetBytes(obj, key, v.Value())
 	default:
-		return sjson.SetBytes(json, key, v)
+		return sjson.SetBytes(obj, key, v)
 	}
 }
 

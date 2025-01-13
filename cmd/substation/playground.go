@@ -330,7 +330,7 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	msgs := []*message.Message{
-		message.New().SetData([]byte(request.Input)),
+		message.New().SetData([]byte(request.Input)).SkipMissingValues(),
 		message.New().AsControl(),
 	}
 

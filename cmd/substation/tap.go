@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os/signal"
@@ -101,6 +102,13 @@ for more information.
 
 		return fmt.Errorf("no valid data stream source provided")
 	},
+}
+
+type kinesisStreamMetadata struct {
+	ApproximateArrivalTimestamp time.Time `json:"approximateArrivalTimestamp"`
+	Stream                      string    `json:"stream"`
+	PartitionKey                string    `json:"partitionKey"`
+	SequenceNumber              string    `json:"sequenceNumber"`
 }
 
 //nolint:gocognit, cyclop, gocyclo // Ignore cognitive and cyclomatic complexity.
@@ -295,7 +303,19 @@ func tapKinesis(arg string, extVars map[string]string, offset, stream string) er
 					log.WithField("stream", stream).WithField("shard", shard.ShardId).WithField("count", len(deagg)).Debug("Retrieved records from Kinesis shard.")
 
 					for _, record := range deagg {
-						msg := message.New().SetData(record.Data).SkipMissingValues()
+						// Create Message metadata.
+						m := kinesisStreamMetadata{
+							*record.ApproximateArrivalTimestamp,
+							stream,
+							*record.PartitionKey,
+							*record.SequenceNumber,
+						}
+						metadata, err := json.Marshal(m)
+						if err != nil {
+							return err
+						}
+
+						msg := message.New().SetData(record.Data).SetMetadata(metadata).SkipMissingValues()
 						ch.Send(msg)
 					}
 

@@ -315,7 +315,7 @@ func tapKinesis(arg string, extVars map[string]string, offset, stream string) er
 							return err
 						}
 
-						msg := message.New().SetData(record.Data).SetMetadata(metadata).SkipMissingValues()
+						msg := message.New().SetData(record.Data).SetMetadata(metadata)
 						ch.Send(msg)
 					}
 

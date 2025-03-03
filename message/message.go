@@ -14,20 +14,9 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-type Flag int
-
 const (
 	// metaKey is a prefix used to access the meta field in a Message.
 	metaKey = "meta "
-
-	// IsControl indicates that the message is a control message.
-	IsControl Flag = iota
-	// SkipNullValues indicates that null values should be ignored when processing the message.
-	SkipNullValues
-	// SkipMissingValues indicates that missing values should be ignored when processing the message.
-	SkipMissingValues
-	// SkipEmptyValues indicates that empty values should be ignored when processing the message.
-	SkipEmptyValues
 )
 
 // errSetRawInvalidValue is returned when setRaw receives an invalid interface type.
@@ -56,8 +45,6 @@ type Message struct {
 	//
 	// Control messages trigger special behavior in transforms and conditions.
 	ctrl bool
-
-	flags []Flag
 }
 
 // String returns the message data as a string.
@@ -75,40 +62,12 @@ func New(opts ...func(*Message)) *Message {
 	return msg
 }
 
-// HasFlag returns true if the message contains a flag.
-func (m *Message) HasFlag(i Flag) bool {
-	for _, f := range m.flags {
-		if f == i {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (m *Message) SkipNullValues() *Message {
-	m.flags = append(m.flags, SkipNullValues)
-	return m
-}
-
-func (m *Message) SkipMissingValues() *Message {
-	m.flags = append(m.flags, SkipMissingValues)
-	return m
-}
-
-func (m *Message) SkipEmptyValues() *Message {
-	m.flags = append(m.flags, SkipEmptyValues)
-	return m
-}
-
 // AsControl sets the message as a control message.
 func (m *Message) AsControl() *Message {
 	m.data = nil
 	m.meta = nil
 
 	m.ctrl = true
-	m.flags = append(m.flags, IsControl)
-
 	return m
 }
 
@@ -174,7 +133,6 @@ func (m *Message) GetValue(key string) Value {
 
 	key = strings.TrimSpace(key)
 	v := gjson.GetBytes(m.data, key)
-
 	return Value{gjson: v}
 }
 
@@ -307,39 +265,9 @@ func (v Value) Map() map[string]Value {
 	return values
 }
 
-// IsObject returns true if the value is an object.
-func (v Value) IsObject() bool {
-	return v.gjson.IsObject()
-}
-
 // Exists returns true if the value exists.
 func (v Value) Exists() bool {
 	return v.gjson.Exists()
-}
-
-// IsNull returns true if the value is null.
-func (v Value) IsNull() bool {
-	return v.gjson.Type == gjson.Null
-}
-
-// IsMissing returns true if the value is missing.
-func (v Value) IsMissing() bool {
-	return !v.gjson.Exists()
-}
-
-// IsEmpty returns true if the value is an empty string,
-// empty array, empty object, or null.
-func (v Value) IsEmpty() bool {
-	if v.IsArray() {
-		return len(v.Array()) == 0
-	}
-
-	if v.IsObject() {
-		return v.String() == "{}"
-	}
-
-	// This catches all other types, including strings and null.
-	return v.String() == ""
 }
 
 func deleteValue(json []byte, key string) ([]byte, error) {

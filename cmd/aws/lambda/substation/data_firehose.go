@@ -48,7 +48,7 @@ func firehoseHandler(ctx context.Context, event events.KinesisFirehoseEvent) (ev
 			return resp, err
 		}
 
-		msg := message.New().SetData(record.Data).SetMetadata(metadata).SkipMissingValues()
+		msg := message.New().SetData(record.Data).SetMetadata(metadata)
 		res, err := sub.Transform(ctx, msg)
 		if err != nil {
 			return resp, err

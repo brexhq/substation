@@ -43,8 +43,8 @@ type testMessage struct {
 }
 
 func (tf *testMessage) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.HasFlag(message.IsControl) {
-		m := message.New().SetData(anyToBytes(tf.conf.Value)).SkipMissingValues()
+	if msg.IsControl() {
+		m := message.New().SetData(anyToBytes(tf.conf.Value))
 		return []*message.Message{m, msg}, nil
 	}
 

@@ -55,12 +55,12 @@ type objectToString struct {
 }
 
 func (tf *objectToString) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
 
 	value := msg.GetValue(tf.conf.Object.SourceKey)
-	if skipMessage(msg, value) {
+	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 

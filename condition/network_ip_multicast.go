@@ -27,7 +27,7 @@ type networkIPMulticast struct {
 }
 
 func (insp *networkIPMulticast) Condition(ctx context.Context, msg *message.Message) (bool, error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		return false, nil
 	}
 

@@ -101,7 +101,7 @@ type enrichHTTPPost struct {
 }
 
 func (tf *enrichHTTPPost) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
 

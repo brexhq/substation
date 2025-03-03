@@ -44,7 +44,7 @@ type utilityErr struct {
 }
 
 func (tf *utilityErr) Transform(_ context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
 

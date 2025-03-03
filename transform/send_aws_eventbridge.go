@@ -111,7 +111,7 @@ func (tf *sendAWSEventBridge) Transform(ctx context.Context, msg *message.Messag
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
 
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		for key := range tf.agg.GetAll() {
 			if tf.agg.Count(key) == 0 {
 				continue

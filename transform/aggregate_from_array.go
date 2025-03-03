@@ -37,7 +37,7 @@ type aggregateFromArray struct {
 }
 
 func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
 
@@ -54,7 +54,7 @@ func (tf *aggregateFromArray) Transform(ctx context.Context, msg *message.Messag
 		value = bytesToValue(msg.Data())
 	}
 
-	if skipMessage(msg, value) {
+	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 

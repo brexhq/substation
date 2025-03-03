@@ -38,7 +38,7 @@ type timeToUnix struct {
 }
 
 func (tf *timeToUnix) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
 
@@ -49,7 +49,7 @@ func (tf *timeToUnix) Transform(ctx context.Context, msg *message.Message) ([]*m
 		value = bytesToValue(msg.Data())
 	}
 
-	if skipMessage(msg, value) {
+	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 

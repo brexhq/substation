@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.4.0](https://github.com/brexhq/substation/compare/v2.3.4...v2.4.0) (2025-03-04)
+
+
+### Features
+
+* **cmd:** set kinesis metadata in tap CLI ([#293](https://github.com/brexhq/substation/issues/293)) ([4156385](https://github.com/brexhq/substation/commit/4156385edf3605005245da83c35ff385ccdde847))
+* **transform:** add JSON object support in the obj_to_string transform ([#290](https://github.com/brexhq/substation/issues/290)) ([fd858a9](https://github.com/brexhq/substation/commit/fd858a9d0b64039317cf377abc5ee9be514905be))
+
+
+### Bug Fixes
+
+* **actions:** results upload artifact name ([#295](https://github.com/brexhq/substation/issues/295)) ([740e0d0](https://github.com/brexhq/substation/commit/740e0d0e7071e5b816a5b58aecf4ae4fad856bd8))
+* **cmd:** Add SkipMissingValues flag in Playground ([#292](https://github.com/brexhq/substation/issues/292)) ([e786320](https://github.com/brexhq/substation/commit/e786320a07a0038329b631188e2b4a3e930ac412))
+* **message:** revert 'Add Flag Support' ([#264](https://github.com/brexhq/substation/issues/264)) ([#296](https://github.com/brexhq/substation/issues/296)) ([972df08](https://github.com/brexhq/substation/commit/972df08029ba413f815290c007bfb6ec65aaca3c))
+
 ## [2.3.4](https://github.com/brexhq/substation/compare/v2.3.3...v2.3.4) (2024-12-19)
 
 

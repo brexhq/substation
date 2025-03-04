@@ -30,7 +30,7 @@ type stringStartsWith struct {
 }
 
 func (insp *stringStartsWith) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		return false, nil
 	}
 

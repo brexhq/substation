@@ -38,7 +38,7 @@ type aggregateFromString struct {
 }
 
 func (tf *aggregateFromString) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
 

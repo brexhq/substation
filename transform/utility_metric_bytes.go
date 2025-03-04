@@ -55,7 +55,7 @@ type utilityMetricBytes struct {
 }
 
 func (tf *utilityMetricBytes) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		if err := tf.metric.Generate(ctx, metrics.Data{
 			Name:       tf.conf.Metric.Name,
 			Value:      tf.bytes,

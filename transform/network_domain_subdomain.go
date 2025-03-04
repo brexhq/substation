@@ -44,7 +44,7 @@ type networkDomainSubdomain struct {
 }
 
 func (tf *networkDomainSubdomain) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		return []*message.Message{msg}, nil
 	}
 
@@ -60,7 +60,7 @@ func (tf *networkDomainSubdomain) Transform(ctx context.Context, msg *message.Me
 	}
 
 	value := msg.GetValue(tf.conf.Object.SourceKey)
-	if skipMessage(msg, value) {
+	if !value.Exists() {
 		return []*message.Message{msg}, nil
 	}
 

@@ -83,7 +83,7 @@ type utilityMetricFreshness struct {
 func (tf *utilityMetricFreshness) Transform(ctx context.Context, msg *message.Message) ([]*message.Message, error) {
 	// ctrl messages are handled by only one thread, so the map
 	// updates below are safe for concurrency.
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		tf.conf.Metric.Attributes["FreshnessType"] = "Success"
 		if err := tf.metric.Generate(ctx, metrics.Data{
 			Name:       tf.conf.Metric.Name,

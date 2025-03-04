@@ -25,7 +25,7 @@ type numberEqualTo struct {
 }
 
 func (insp *numberEqualTo) Condition(ctx context.Context, msg *message.Message) (output bool, err error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		return false, nil
 	}
 	compare := insp.conf.Value
@@ -50,6 +50,7 @@ func (insp *numberEqualTo) Condition(ctx context.Context, msg *message.Message) 
 	}
 
 	target := msg.GetValue(insp.conf.Object.TargetKey)
+
 	if target.Exists() {
 		compare = target.Float()
 	}

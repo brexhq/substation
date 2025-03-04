@@ -267,16 +267,3 @@ func truncateTTL(v message.Value) int64 {
 	l := len(v.String()) - 10
 	return v.Int() / int64(math.Pow10(l))
 }
-
-func skipMessage(msg *message.Message, val message.Value) bool {
-	switch {
-	case msg.HasFlag(message.SkipNullValues) && val.IsNull():
-		return true
-	case msg.HasFlag(message.SkipMissingValues) && val.IsMissing():
-		return true
-	case msg.HasFlag(message.SkipEmptyValues) && val.IsEmpty():
-		return true
-	}
-
-	return false
-}

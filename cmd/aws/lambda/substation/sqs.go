@@ -99,8 +99,7 @@ func sqsHandler(ctx context.Context, event events.SQSEvent) error {
 
 		for _, record := range event.Records {
 			b := []byte(record.Body)
-			msg := message.New().SetData(b).SetMetadata(metadata).SkipMissingValues()
-
+			msg := message.New().SetData(b).SetMetadata(metadata)
 			ch.Send(msg)
 		}
 

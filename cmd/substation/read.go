@@ -243,7 +243,7 @@ func read(cfg customConfig, f *os.File) error {
 				return err
 			}
 
-			msg := message.New().SetData(r).SkipMissingValues()
+			msg := message.New().SetData(r)
 			ch.Send(msg)
 
 			return nil
@@ -264,7 +264,7 @@ func read(cfg customConfig, f *os.File) error {
 			}
 
 			b := []byte(scanner.Text())
-			msg := message.New().SetData(b).SkipMissingValues()
+			msg := message.New().SetData(b)
 
 			ch.Send(msg)
 		}

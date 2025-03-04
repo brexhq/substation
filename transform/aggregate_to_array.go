@@ -51,7 +51,7 @@ func (tf *aggregateToArray) Transform(ctx context.Context, msg *message.Message)
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
 
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		var output []*message.Message
 
 		for _, items := range tf.agg.GetAll() {

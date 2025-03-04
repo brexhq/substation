@@ -250,7 +250,7 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 
 		testPassed := true
 		for _, msg := range tMsgs {
-			if msg.HasFlag(message.IsControl) {
+			if msg.IsControl() {
 				continue
 			}
 
@@ -330,7 +330,7 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	msgs := []*message.Message{
-		message.New().SetData([]byte(request.Input)).SkipMissingValues(),
+		message.New().SetData([]byte(request.Input)),
 		message.New().AsControl(),
 	}
 
@@ -342,7 +342,7 @@ func handleRun(w http.ResponseWriter, r *http.Request) {
 
 	var output []string
 	for _, msg := range result {
-		if !msg.HasFlag(message.IsControl) {
+		if !msg.IsControl() {
 			output = append(output, string(msg.Data()))
 		}
 	}

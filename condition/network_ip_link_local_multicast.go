@@ -27,7 +27,7 @@ type networkIPLinkLocalMulticast struct {
 }
 
 func (insp *networkIPLinkLocalMulticast) Condition(ctx context.Context, msg *message.Message) (bool, error) {
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		return false, nil
 	}
 

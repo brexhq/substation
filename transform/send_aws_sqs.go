@@ -140,7 +140,7 @@ func (tf *sendAWSSQS) Transform(ctx context.Context, msg *message.Message) ([]*m
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
 
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		for key := range tf.agg.GetAll() {
 			if tf.agg.Count(key) == 0 {
 				continue

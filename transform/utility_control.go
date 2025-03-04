@@ -60,7 +60,7 @@ func (tf *utilityControl) Transform(_ context.Context, msg *message.Message) ([]
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
 
-	if msg.HasFlag(message.IsControl) {
+	if msg.IsControl() {
 		// If a control message is received, then the aggregation is reset
 		// to prevent sending duplicate control messages.
 		tf.agg.ResetAll()

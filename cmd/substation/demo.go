@@ -47,7 +47,7 @@ partially normalized to the Elastic Common Schema (ECS).
 		}
 
 		msgs := []*message.Message{
-			message.New().SetData([]byte(evtDemo)).SkipMissingValues(),
+			message.New().SetData([]byte(evtDemo)),
 			message.New().AsControl(),
 		}
 

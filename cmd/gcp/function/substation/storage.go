@@ -25,7 +25,7 @@ import (
 type CloudStorageEvent struct {
 	Bucket string `json:"bucket"`
 	Name   string `json:"name"`
-	Size   int64  `json:"size"`
+	Size   string `json:"size"`
 	Time   string `json:"time"`
 }
 

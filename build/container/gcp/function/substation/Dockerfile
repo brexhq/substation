@@ -1,6 +1,6 @@
 ARG SOURCE="."  # default to local source
 
-FROM --platform=$BUILDPLATFORM golang:1.23 AS build
+FROM --platform=$BUILDPLATFORM golang:1.24 AS build
 ENV GO111MODULE=on 
 ENV CGO_ENABLED=0
 ENV GOOS=linux

@@ -20,6 +20,8 @@ import (
 	"github.com/brexhq/substation/v2/internal/media"
 )
 
+// CloudStorageEvent is the event data for a Cloud Storage event.
+// This also provides metadata about the object that was created.
 type CloudStorageEvent struct {
 	Bucket string `json:"bucket"`
 	Name   string `json:"name"`
@@ -138,6 +140,11 @@ func cloudStorageHandler(ctx context.Context, e cloudevents.Event) error {
 			return err
 		}
 
+		metadata, err := json.Marshal(evt)
+		if err != nil {
+			return err
+		}
+
 		// Unsupported media types are sent as binary data.
 		if !slices.Contains(bufio.MediaTypes, mediaType) {
 			r, err := io.ReadAll(dst)
@@ -145,7 +152,7 @@ func cloudStorageHandler(ctx context.Context, e cloudevents.Event) error {
 				return err
 			}
 
-			msg := message.New().SetData(r)
+			msg := message.New().SetData(r).SetMetadata(metadata)
 			ch.Send(msg)
 
 			return nil
@@ -166,7 +173,7 @@ func cloudStorageHandler(ctx context.Context, e cloudevents.Event) error {
 			}
 
 			b := []byte(scanner.Text())
-			msg := message.New().SetData(b)
+			msg := message.New().SetData(b).SetMetadata(metadata)
 
 			ch.Send(msg)
 		}

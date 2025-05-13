@@ -26,7 +26,9 @@ func init() {
 
 	switch handler {
 	case "GCP_STORAGE":
-		funcframework.RegisterCloudEventFunctionContext(context.Background(), "/", cloudStorageHandler)
+		if err := funcframework.RegisterCloudEventFunctionContext(context.Background(), "/", cloudStorageHandler); err != nil {
+			panic(fmt.Errorf("init handler %s: %v", handler, err))
+		}
 	default:
 		panic(fmt.Errorf("init handler %s: %v", handler, errFunctionMissingHandler))
 	}

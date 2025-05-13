@@ -125,6 +125,7 @@ func Get(ctx context.Context, location string) (string, error) {
 		return dst.Name(), nil
 	}
 
+	//nolint: nestif // ignore nesting complexity
 	if strings.HasPrefix(location, "gs://") {
 		if gcpdownloader == nil {
 			gcpdownloader, err = storage.NewClient(ctx)

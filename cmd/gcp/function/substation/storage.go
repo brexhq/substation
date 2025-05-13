@@ -29,6 +29,7 @@ type CloudStorageEvent struct {
 	Time   string `json:"time"`
 }
 
+// nolint: gocognit // Ignore cognitive complexity.
 func cloudStorageHandler(ctx context.Context, e cloudevents.Event) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)

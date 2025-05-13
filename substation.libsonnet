@@ -949,6 +949,25 @@ local helpers = {
           settings: std.prune(std.mergePatch(default, helpers.abbv(s))),
         },
       },
+      gcp: {
+        storage(settings={}): {
+          local type = 'send_gcp_storage',
+          local default = {
+            id: helpers.id(type, settings),
+            batch: $.config.batch,
+            gcp: $.config.gcp,
+            auxiliary_transforms: null,
+          },
+
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
+          type: type,
+          settings: std.prune(std.mergePatch(default, helpers.abbv(s))),
+        },
+      },
       file(settings={}): {
         local type = 'send_file',
         local default = {
@@ -1353,6 +1372,7 @@ local helpers = {
   // Mirrors structs from the internal/config package.
   config: {
     aws: { arn: null, assume_role_arn: null },
+    gcp: { resource: null },
     batch: { count: 1000, size: 1000 * 1000, duration: '1m' },
     metric: { name: null, attributes: null, destination: null },
     object: { source_key: null, target_key: null, batch_key: null },

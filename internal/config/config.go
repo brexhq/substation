@@ -158,3 +158,8 @@ func NewAWS(ctx context.Context, cfg AWS) (aws.Config, error) {
 
 	return conf, err
 }
+
+type GCP struct {
+	// Resource is the GCP resource that the action will interact with.
+	Resource string `json:"resource"`
+}

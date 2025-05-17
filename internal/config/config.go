@@ -161,5 +161,10 @@ func NewAWS(ctx context.Context, cfg AWS) (aws.Config, error) {
 
 type GCP struct {
 	// Resource is the GCP resource that the action will interact with.
+	// This uses the full resource name format for each resource type,
+	// such as projects/my-project/topics/my-topic (Pub/Sub) or
+	// projects/_/buckets/my-bucket (Cloud Storage). Refer to the GCP
+	// documentation for more information:
+	// https://cloud.google.com/iam/docs/full-resource-names
 	Resource string `json:"resource"`
 }

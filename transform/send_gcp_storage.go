@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"cloud.google.com/go/storage"
@@ -16,6 +17,10 @@ import (
 	iconfig "github.com/brexhq/substation/v2/internal/config"
 	"github.com/brexhq/substation/v2/internal/file"
 	"github.com/brexhq/substation/v2/internal/media"
+)
+
+const (
+	gcpStorageResourcePrefix = "projects/_/buckets/"
 )
 
 type sendGCPStorageConfig struct {
@@ -42,6 +47,10 @@ func (c *sendGCPStorageConfig) Validate() error {
 		return fmt.Errorf("gcp.resource: %v", iconfig.ErrMissingRequiredOption)
 	}
 
+	if !strings.HasPrefix(c.GCP.Resource, gcpStorageResourcePrefix) {
+		return fmt.Errorf("gcp.resource: %v", iconfig.ErrInvalidOption)
+	}
+
 	return nil
 }
 
@@ -59,9 +68,13 @@ func newSendGCPStorage(ctx context.Context, cfg config.Config) (*sendGCPStorage,
 		return nil, fmt.Errorf("transform %s: %v", conf.ID, err)
 	}
 
+	// Extract the bucket name from the resource name.
+	// projects/_/buckets/my-bucket -> my-bucket
+	bucket := strings.TrimPrefix(conf.GCP.Resource, gcpStorageResourcePrefix)
+
 	tf := sendGCPStorage{
 		conf:   conf,
-		bucket: conf.GCP.Resource,
+		bucket: bucket,
 	}
 
 	agg, err := aggregate.New(aggregate.Config{

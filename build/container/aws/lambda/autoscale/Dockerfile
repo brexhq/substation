@@ -1,7 +1,7 @@
 ARG ARCH=x86_64
 ARG SOURCE="."  # default to local source
 
-FROM golang:1.23 as build
+FROM golang:1.24 as build
 ENV GO111MODULE=on
 ENV CGO_ENABLED=0
 

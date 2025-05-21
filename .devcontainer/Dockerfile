@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64 mcr.microsoft.com/vscode/devcontainers/go:dev-1.23
+FROM --platform=linux/arm64 mcr.microsoft.com/vscode/devcontainers/go:dev-1.24
 RUN apt-get update -y && \
     # Docker
     curl -fsSL https://get.docker.com | sh && \
@@ -13,4 +13,8 @@ RUN apt-get update -y && \
     # AWS CLI
     apt-get install -y awscli && \
     # python
-    apt-get install -y python3 python3-boto3 black
+    apt-get install -y python3 python3-boto3 black && \
+    # GCP CLI
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    apt-get update -y && apt-get install -y google-cloud-cli

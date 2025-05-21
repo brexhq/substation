@@ -154,6 +154,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newSendAWSSNS(ctx, cfg)
 	case "send_aws_sqs":
 		return newSendAWSSQS(ctx, cfg)
+	case "send_gcp_storage":
+		return newSendGCPStorage(ctx, cfg)
 	case "send_file":
 		return newSendFile(ctx, cfg)
 	case "send_http_post":

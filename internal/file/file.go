@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"cloud.google.com/go/storage"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
@@ -19,8 +20,9 @@ import (
 )
 
 var (
-	httpClient   http.HTTP
-	s3downloader *manager.Downloader
+	httpClient    http.HTTP
+	s3downloader  *manager.Downloader
+	gcpdownloader *storage.Client
 )
 
 // errEmptyFile is returned when Get is called but finds an empty file.
@@ -37,6 +39,8 @@ Get retrieves a file from these locations (in order):
 - HTTP or HTTPS URL
 
 - AWS S3
+
+- GCP Storage
 
 If a file is found, then it is saved as a temporary local file and the name is returned. The caller is responsible for removing files when they are no longer needed; files should be removed even if an error occurs.
 */
@@ -110,6 +114,38 @@ func Get(ctx context.Context, location string) (string, error) {
 			Bucket: &paths[0],
 			Key:    &paths[1],
 		})
+		if err != nil {
+			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
+		}
+
+		if size == 0 {
+			return dst.Name(), fmt.Errorf("get %s: %v", location, errEmptyFile)
+		}
+
+		return dst.Name(), nil
+	}
+
+	//nolint: nestif // ignore nesting complexity
+	if strings.HasPrefix(location, "gs://") {
+		if gcpdownloader == nil {
+			gcpdownloader, err = storage.NewClient(ctx)
+			if err != nil {
+				return dst.Name(), fmt.Errorf("get %s: %v", location, err)
+			}
+		}
+
+		// "gs://bucket/key" becomes ["bucket" "key"]
+		paths := strings.SplitN(strings.TrimPrefix(location, "gs://"), "/", 2)
+
+		// Download the file from GCP Storage.
+		ctx = context.WithoutCancel(ctx)
+		reader, err := gcpdownloader.Bucket(paths[0]).Object(paths[1]).NewReader(ctx)
+		if err != nil {
+			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
+		}
+		defer reader.Close()
+
+		size, err := io.Copy(dst, reader)
 		if err != nil {
 			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 		}

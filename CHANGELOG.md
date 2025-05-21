@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/brexhq/substation/compare/v2.4.0...v2.5.0) (2025-05-21)
+
+
+### Features
+
+* **gcp:** Add GCP Function and GCS Support ([#299](https://github.com/brexhq/substation/issues/299)) ([413be62](https://github.com/brexhq/substation/commit/413be623971e79d7090349b135162fd10870fe1a))
+
 ## [2.4.0](https://github.com/brexhq/substation/compare/v2.3.4...v2.4.0) (2025-03-04)
 
 

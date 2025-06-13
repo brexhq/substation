@@ -31,7 +31,6 @@ type s3Metadata struct {
 	ObjectSize int64     `json:"objectSize"`
 }
 
-//nolint:gocognit
 func s3Handler(ctx context.Context, event events.S3Event) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
@@ -91,7 +90,7 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 		return nil
 	})
 
-	// Data ingest
+	// Data ingest. File contents are downloaded and send to the channel.
 	group.Go(func() error {
 		defer ch.Close()
 
@@ -119,7 +118,6 @@ func s3Handler(ctx context.Context, event events.S3Event) error {
 	return nil
 }
 
-//nolint:gocognit
 func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
@@ -179,7 +177,7 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 		return nil
 	})
 
-	// Data ingest.
+	// Data ingest. File contents are downloaded and send to the channel.
 	group.Go(func() error {
 		defer ch.Close()
 
@@ -215,7 +213,6 @@ func s3SnsHandler(ctx context.Context, event events.SNSEvent) error {
 	return nil
 }
 
-//nolint:gocognit
 func s3SqsHandler(ctx context.Context, event events.SQSEvent) error {
 	// Retrieve and load configuration.
 	conf, err := getConfig(ctx)
@@ -275,7 +272,7 @@ func s3SqsHandler(ctx context.Context, event events.SQSEvent) error {
 		return nil
 	})
 
-	// Data ingest.
+	// Data ingest. File contents are downloaded and send to the channel.
 	group.Go(func() error {
 		defer ch.Close()
 

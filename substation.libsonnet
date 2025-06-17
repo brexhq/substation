@@ -505,6 +505,13 @@ local helpers = {
           type: type,
           settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
         },
+        parquet(settings={}): {
+          local type = 'format_from_parquet',
+          local default = { id: helpers.id(type, settings) },
+
+          type: type,
+          settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
+        },
         pretty_print(settings={}): {
           local type = 'format_from_pretty_print',
           local default = { id: helpers.id(type, settings) },

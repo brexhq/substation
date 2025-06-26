@@ -13,6 +13,7 @@ This app handles ingest, transform, and load for data from these AWS services:
 * [Synchronous Invocation (Lambda)](https://docs.aws.amazon.com/lambda/latest/dg/invocation-sync.html)
 * [S3](https://docs.aws.amazon.com/lambda/latest/dg/with-s3.html)
 * [S3 via SNS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ways-to-add-notification-config-to-bucket.html)
+* [S3 via SQS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ways-to-add-notification-config-to-bucket.html)
 * [SNS](https://docs.aws.amazon.com/lambda/latest/dg/with-sns.html)
 * [SQS](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html)
 

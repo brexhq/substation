@@ -77,6 +77,8 @@ func main() {
 		lambda.Start(s3Handler)
 	case "AWS_S3_SNS":
 		lambda.Start(s3SnsHandler)
+	case "AWS_S3_SQS":
+		lambda.Start(s3SqsHandler)
 	case "AWS_SNS":
 		lambda.Start(snsHandler)
 	case "AWS_SQS":

@@ -12,8 +12,10 @@ import (
 )
 
 type stringAppendConfig struct {
-	// Suffix is the string appended to the end of the string.
+	// Suffix is the static string to append. This is used when SuffixKey is empty.
 	Suffix string `json:"suffix"`
+	// SuffixKey is the object key to get the suffix value from. When set, this takes precedence over Suffix.
+	SuffixKey string `json:"suffix_key"`
 
 	ID     string         `json:"id"`
 	Object iconfig.Object `json:"object"`
@@ -32,8 +34,13 @@ func (c *stringAppendConfig) Validate() error {
 		return fmt.Errorf("object_target_key: %v", iconfig.ErrMissingRequiredOption)
 	}
 
-	if c.Suffix == "" {
-		return fmt.Errorf("suffix: %v", iconfig.ErrMissingRequiredOption)
+	if c.Suffix == "" && c.SuffixKey == "" {
+		return fmt.Errorf("either suffix or suffix_key must be set")
+	}
+
+	// If SuffixKey is set, we need Object.SourceKey to be set as well
+	if c.SuffixKey != "" && c.Object.SourceKey == "" {
+		return fmt.Errorf("object_source_key is required when using suffix_key")
 	}
 
 	return nil
@@ -74,9 +81,21 @@ func (tf *stringAppend) Transform(ctx context.Context, msg *message.Message) ([]
 		return []*message.Message{msg}, nil
 	}
 
+	// Get the suffix value - either from SuffixKey or static Suffix
+	var suffixStr string
+	if tf.conf.SuffixKey != "" {
+		suffixValue := msg.GetValue(tf.conf.SuffixKey)
+		if !suffixValue.Exists() {
+			return []*message.Message{msg}, nil
+		}
+		suffixStr = suffixValue.String()
+	} else {
+		suffixStr = string(tf.s)
+	}
+
 	if !tf.isObject {
 		b := msg.Data()
-		b = append(b, tf.s...)
+		b = append(b, []byte(suffixStr)...)
 
 		msg.SetData(b)
 		return []*message.Message{msg}, nil
@@ -87,7 +106,7 @@ func (tf *stringAppend) Transform(ctx context.Context, msg *message.Message) ([]
 		return []*message.Message{msg}, nil
 	}
 
-	str := value.String() + tf.conf.Suffix
+	str := value.String() + suffixStr
 
 	if err := msg.SetValue(tf.conf.Object.TargetKey, str); err != nil {
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)

@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.0](https://github.com/brexhq/substation/compare/v2.5.0...v2.6.0) (2025-07-14)
+
+
+### Features
+
+* **cmd:** Add S3-SQS Handler ([#301](https://github.com/brexhq/substation/issues/301)) ([ee1e551](https://github.com/brexhq/substation/commit/ee1e551cefdb162ee496204acd19253720654854))
+* **transform:** allow use of a value from a key for the suffix in string append ([#304](https://github.com/brexhq/substation/issues/304)) ([134bacf](https://github.com/brexhq/substation/commit/134bacff84228d2d167dc12a9f116208daf3a43a))
+
 ## [2.5.0](https://github.com/brexhq/substation/compare/v2.4.0...v2.5.0) (2025-05-21)
 
 

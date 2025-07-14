@@ -47,6 +47,22 @@ var stringAppendTests = []struct {
 			[]byte(`{"a":"bc"}`),
 		},
 	},
+	{
+		"object_dynamic_suffix",
+		config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "input",
+					"target_key": "output",
+				},
+				"suffix_key": "suffix",
+			},
+		},
+		[]byte(`{"input":"hello","suffix":"_world"}`),
+		[][]byte{
+			[]byte(`{"input":"hello","suffix":"_world","output":"hello_world"}`),
+		},
+	},
 }
 
 func TestStringAppend(t *testing.T) {
@@ -106,6 +122,7 @@ func FuzzTestStringAppend(f *testing.F) {
 		[]byte(``),
 		[]byte(`{"a":""}`),
 		[]byte(`{"a":123}`),
+		[]byte(`{"input":"hello","suffix":"_world"}`),
 	}
 
 	for _, tc := range testcases {
@@ -139,6 +156,25 @@ func FuzzTestStringAppend(f *testing.F) {
 					"target_key": "a",
 				},
 				"suffix": "c",
+			},
+		})
+		if err != nil {
+			return
+		}
+
+		_, err = tf.Transform(ctx, msg)
+		if err != nil {
+			return
+		}
+
+		// Test with dynamic suffix settings
+		tf, err = newStringAppend(ctx, config.Config{
+			Settings: map[string]interface{}{
+				"object": map[string]interface{}{
+					"source_key": "input",
+					"target_key": "output",
+				},
+				"suffix_key": "suffix",
 			},
 		})
 		if err != nil {

@@ -1032,6 +1032,7 @@ local helpers = {
           id: helpers.id(type, settings),
           object: $.config.object,
           suffix: null,
+          suffix_key: null,
         },
 
         type: type,

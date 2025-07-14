@@ -224,8 +224,11 @@ func Apply(ctx context.Context, tf []Transformer, msgs ...*message.Message) ([]*
 	resultMsgs := make([]*message.Message, len(msgs))
 	copy(resultMsgs, msgs)
 
+	// Apply each transform to the messages as long as there are messages.
 	for i := 0; len(resultMsgs) > 0 && i < len(tf); i++ {
+		// Storing results for each transform.
 		var nextResultMsgs []*message.Message
+		// Apply the transform to each message.
 		for _, m := range resultMsgs {
 			rMsgs, err := tf[i].Transform(ctx, m)
 			if err != nil {

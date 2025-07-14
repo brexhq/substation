@@ -53,6 +53,7 @@ func New(ctx context.Context, cfg Config, opts ...func(*Substation)) (*Substatio
 			return nil, err
 		}
 
+		// Append the transform (t) to the list of transforms (sub.tforms).
 		sub.tforms = append(sub.tforms, t)
 	}
 

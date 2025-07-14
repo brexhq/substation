@@ -17,6 +17,7 @@ func newMetaAll(ctx context.Context, cfg config.Config) (*metaAll, error) {
 		conf: conf,
 	}
 
+	// Generate a list of all of the conditions that need to be met
 	cnd.cnds = make([]Conditioner, len(conf.Conditions))
 	for i, c := range conf.Conditions {
 		cond, err := New(ctx, c)

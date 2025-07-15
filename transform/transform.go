@@ -76,6 +76,8 @@ func New(ctx context.Context, cfg config.Config) (Transformer, error) { //nolint
 		return newFormatFromGzip(ctx, cfg)
 	case "format_to_gzip":
 		return newFormatToGzip(ctx, cfg)
+	case "format_from_parquet":
+		return newFormatFromParquet(ctx, cfg)
 	case "format_from_pretty_print":
 		return newFormatFromPrettyPrint(ctx, cfg)
 	case "format_from_zip":

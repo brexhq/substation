@@ -230,6 +230,8 @@ func (tf *sendAWSS3) send(ctx context.Context, key string) error {
 		Body:         f,
 		StorageClass: tf.sclass,
 		ContentType:  &mediaType,
+		// If the bucket has Object Lock enabled, we need to specify a checksum algorithm.
+		ChecksumAlgorithm: types.ChecksumAlgorithmCrc32,
 	}); err != nil {
 		return err
 	}

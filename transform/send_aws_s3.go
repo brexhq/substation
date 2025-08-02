@@ -24,6 +24,8 @@ import (
 type sendAWSS3Config struct {
 	// StorageClass is the storage class of the object.
 	StorageClass string `json:"storage_class"`
+	// ChecksumAlgorithm is the algorithm used to create the checksum for the object.
+	ChecksumAlgorithm string `json:"checksum_algorithm"`
 	// FilePath determines how the name of the uploaded object is constructed.
 	// See filePath.New for more information.
 	FilePath file.Path `json:"file_path"`
@@ -49,6 +51,10 @@ func (c *sendAWSS3Config) Validate() error {
 
 	if types.StorageClass(c.StorageClass) == "" {
 		return fmt.Errorf("storage class: %v", iconfig.ErrInvalidOption)
+	}
+
+	if c.ChecksumAlgorithm != "" && types.ChecksumAlgorithm(c.ChecksumAlgorithm) == "" {
+		return fmt.Errorf("checksum algorithm: %v", iconfig.ErrInvalidOption)
 	}
 
 	return nil
@@ -85,6 +91,12 @@ func newSendAWSS3(ctx context.Context, cfg config.Config) (*sendAWSS3, error) {
 		tf.sclass = types.StorageClassStandard
 	} else {
 		tf.sclass = types.StorageClass(conf.StorageClass)
+	}
+
+	if conf.ChecksumAlgorithm == "" {
+		tf.calgo = types.ChecksumAlgorithmCrc32
+	} else {
+		tf.calgo = types.ChecksumAlgorithm(conf.ChecksumAlgorithm)
 	}
 
 	agg, err := aggregate.New(aggregate.Config{
@@ -125,6 +137,7 @@ type sendAWSS3 struct {
 	client *manager.Uploader
 	bucket string
 	sclass types.StorageClass
+	calgo  types.ChecksumAlgorithm
 
 	mu     sync.Mutex
 	agg    *aggregate.Aggregate
@@ -225,11 +238,12 @@ func (tf *sendAWSS3) send(ctx context.Context, key string) error {
 
 	ctx = context.WithoutCancel(ctx)
 	if _, err := tf.client.Upload(ctx, &s3.PutObjectInput{
-		Bucket:       &tf.bucket,
-		Key:          &filePath,
-		Body:         f,
-		StorageClass: tf.sclass,
-		ContentType:  &mediaType,
+		Bucket:            &tf.bucket,
+		Key:               &filePath,
+		Body:              f,
+		StorageClass:      tf.sclass,
+		ContentType:       &mediaType,
+		ChecksumAlgorithm: tf.calgo,
 	}); err != nil {
 		return err
 	}

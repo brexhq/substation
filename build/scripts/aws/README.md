@@ -29,7 +29,7 @@ Contains scripts for uploading, deleting, and validating Substation configuratio
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.22
+          go-version: 1.23
 
       - name: Install Jsonnet
         run: |

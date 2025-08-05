@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://github.com/brexhq/substation/compare/v2.6.0...v2.7.0) (2025-08-05)
+
+
+### Features
+
+* **transform:** support checksum algorithm in send to s3 ([#309](https://github.com/brexhq/substation/issues/309)) ([9e3a62c](https://github.com/brexhq/substation/commit/9e3a62c20dd203d8c7716c487c8d519934be872d))
+
 ## [2.6.0](https://github.com/brexhq/substation/compare/v2.5.0...v2.6.0) (2025-07-14)
 
 

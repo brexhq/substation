@@ -8,10 +8,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/google/uuid"
 
 	"github.com/brexhq/substation/v2/config"
@@ -197,13 +196,15 @@ func (tf *sendAWSSQS) sendMessages(ctx context.Context, data [][]byte) error {
 
 	entries := make([]types.SendMessageBatchRequestEntry, 0, len(data))
 	for idx, d := range data {
+		id := strconv.Itoa(idx)
+		body := string(d)
 		entry := types.SendMessageBatchRequestEntry{
-			Id:          aws.String(strconv.Itoa(idx)),
-			MessageBody: aws.String(string(d)),
+			Id:          &id,
+			MessageBody: &body,
 		}
 
 		if strings.HasSuffix(tf.queueURL, ".fifo") {
-			entry.MessageGroupId = aws.String(mgid)
+			entry.MessageGroupId = &mgid
 		}
 
 		entries = append(entries, entry)
@@ -211,7 +212,7 @@ func (tf *sendAWSSQS) sendMessages(ctx context.Context, data [][]byte) error {
 
 	resp, err := tf.client.SendMessageBatch(ctx, &sqs.SendMessageBatchInput{
 		Entries:  entries,
-		QueueUrl: aws.String(tf.queueURL),
+		QueueUrl: &tf.queueURL,
 	})
 	if err != nil {
 		return err
@@ -220,7 +221,11 @@ func (tf *sendAWSSQS) sendMessages(ctx context.Context, data [][]byte) error {
 	if resp.Failed != nil {
 		var retry [][]byte
 		for _, r := range resp.Failed {
-			idx, err := strconv.Atoi(aws.StringValue(r.Id))
+			var id string
+			if r.Id != nil {
+				id = *r.Id
+			}
+			idx, err := strconv.Atoi(id)
 			if err != nil {
 				return err
 			}

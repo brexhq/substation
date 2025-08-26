@@ -7,10 +7,10 @@ import (
 	"os"
 	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/aws/aws-sdk-go/aws/arn"
 
 	"github.com/brexhq/substation/v2/config"
 	"github.com/brexhq/substation/v2/message"

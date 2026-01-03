@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://github.com/brexhq/substation/compare/v2.7.0...v2.8.0) (2026-01-03)
+
+
+### Features
+
+* **transform:** Add FormatFromParquet Transform ([#302](https://github.com/brexhq/substation/issues/302)) ([64928e1](https://github.com/brexhq/substation/commit/64928e102a3d34fa534ecd1e29b6709553e19406))
+
 ## [2.7.0](https://github.com/brexhq/substation/compare/v2.6.0...v2.7.0) (2025-08-05)
 
 

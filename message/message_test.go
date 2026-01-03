@@ -385,3 +385,77 @@ func FuzzMessageDeleteValue(f *testing.F) {
 		_ = msg.DeleteValue(key)
 	})
 }
+
+var dedupeModifierTests = []struct {
+	name     string
+	data     []byte
+	key      string
+	expected string
+}{
+	{
+		"strings with duplicates",
+		[]byte(`{"arr":["a","b","a","c","b"]}`),
+		"arr.@dedupe",
+		`["a","b","c"]`,
+	},
+	{
+		"integers with duplicates",
+		[]byte(`{"arr":[1,2,1,3,2]}`),
+		"arr.@dedupe",
+		`[1,2,3]`,
+	},
+	{
+		"no duplicates",
+		[]byte(`{"arr":["a","b","c"]}`),
+		"arr.@dedupe",
+		`["a","b","c"]`,
+	},
+	{
+		"empty array",
+		[]byte(`{"arr":[]}`),
+		"arr.@dedupe",
+		`[]`,
+	},
+	{
+		"mixed types",
+		[]byte(`{"arr":[1,"a",1,"a",true,true]}`),
+		"arr.@dedupe",
+		`[1,"a",true]`,
+	},
+	{
+		"objects with duplicates",
+		[]byte(`{"arr":[{"a":1},{"b":2},{"a":1}]}`),
+		"arr.@dedupe",
+		`[{"a":1},{"b":2}]`,
+	},
+	{
+		"not an array",
+		[]byte(`{"obj":{"a":"b"}}`),
+		"obj.@dedupe",
+		`{"a":"b"}`,
+	},
+}
+
+func TestDedupeModifier(t *testing.T) {
+	for _, test := range dedupeModifierTests {
+		t.Run(test.name, func(t *testing.T) {
+			msg := New().SetData(test.data)
+			result := msg.GetValue(test.key).String()
+			if result != test.expected {
+				t.Errorf("expected %s, got %s", test.expected, result)
+			}
+		})
+	}
+}
+
+func BenchmarkDedupeModifier(b *testing.B) {
+	for _, test := range dedupeModifierTests {
+		b.Run(test.name, func(b *testing.B) {
+			msg := New().SetData(test.data)
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_ = msg.GetValue(test.key)
+			}
+		})
+	}
+}

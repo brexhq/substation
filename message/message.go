@@ -14,6 +14,30 @@ import (
 	"github.com/tidwall/sjson"
 )
 
+func init() {
+	// dedupe is a custom GJSON modifier that removes duplicate values from an array.
+	// Usage: @dedupe
+	gjson.AddModifier("dedupe", func(json, arg string) string {
+		result := gjson.Parse(json)
+		if !result.IsArray() {
+			return json
+		}
+
+		seen := make(map[string]bool)
+		var unique []string
+
+		for _, item := range result.Array() {
+			key := item.Raw
+			if !seen[key] {
+				seen[key] = true
+				unique = append(unique, key)
+			}
+		}
+
+		return "[" + strings.Join(unique, ",") + "]"
+	})
+}
+
 const (
 	// metaKey is a prefix used to access the meta field in a Message.
 	metaKey = "meta "

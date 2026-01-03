@@ -13,7 +13,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
-	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/smithy-go"
 	"github.com/awslabs/kinesis-aggregation/go/v2/deaggregator"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -330,8 +330,9 @@ func tapKinesis(arg string, extVars map[string]string, offset, stream string) er
 		// is interrupted. All other errors are returned to
 		// the caller.
 		if err := recvGroup.Wait(); err != nil {
-			if awsErr, ok := err.(awserr.Error); ok {
-				if awsErr.Code() == "RequestCanceled" {
+			var ae smithy.APIError
+			if errors.As(err, &ae) {
+				if ae.ErrorCode() == "RequestCanceled" {
 					return nil
 				}
 			}

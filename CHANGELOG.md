@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.8.0](https://github.com/brexhq/substation/compare/v2.7.0...v2.8.0) (2026-01-20)
+
+
+### Features
+
+* **message:** add custom gjson modifier to dedupe arrays ([#313](https://github.com/brexhq/substation/issues/313)) ([e37da27](https://github.com/brexhq/substation/commit/e37da27e09812a536904866594e892a6dbf50b83))
+* **transform:** Add FormatFromParquet Transform ([#302](https://github.com/brexhq/substation/issues/302)) ([64928e1](https://github.com/brexhq/substation/commit/64928e102a3d34fa534ecd1e29b6709553e19406))
+
+
+### Bug Fixes
+
+* **deps:** remove aws-sdk-go v1 ([#311](https://github.com/brexhq/substation/issues/311)) ([80777b4](https://github.com/brexhq/substation/commit/80777b43376a67870f5d4177353fef9c7b4dcc6c))
+
 ## [2.7.0](https://github.com/brexhq/substation/compare/v2.6.0...v2.7.0) (2025-08-05)
 
 

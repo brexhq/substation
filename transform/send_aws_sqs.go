@@ -221,11 +221,10 @@ func (tf *sendAWSSQS) sendMessages(ctx context.Context, data [][]byte) error {
 	if resp.Failed != nil {
 		var retry [][]byte
 		for _, r := range resp.Failed {
-			var id string
-			if r.Id != nil {
-				id = *r.Id
+			if r.Id == nil {
+				return fmt.Errorf("unexpected nil Id in batch error response")
 			}
-			idx, err := strconv.Atoi(id)
+			idx, err := strconv.Atoi(*r.Id)
 			if err != nil {
 				return err
 			}

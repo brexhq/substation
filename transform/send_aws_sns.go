@@ -10,7 +10,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sns/types"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/google/uuid"
 
 	"github.com/brexhq/substation/v2/config"
@@ -183,13 +182,15 @@ func (tf *sendAWSSNS) sendMessages(ctx context.Context, data [][]byte) error {
 
 	entries := make([]types.PublishBatchRequestEntry, 0, len(data))
 	for idx, d := range data {
+		id := strconv.Itoa(idx)
+		msg := string(d)
 		entry := types.PublishBatchRequestEntry{
-			Id:      aws.String(strconv.Itoa(idx)),
-			Message: aws.String(string(d)),
+			Id:      &id,
+			Message: &msg,
 		}
 
 		if strings.HasSuffix(tf.conf.AWS.ARN, ".fifo") {
-			entry.MessageGroupId = aws.String(mgid)
+			entry.MessageGroupId = &mgid
 		}
 
 		entries = append(entries, entry)
@@ -198,7 +199,7 @@ func (tf *sendAWSSNS) sendMessages(ctx context.Context, data [][]byte) error {
 	ctx = context.WithoutCancel(ctx)
 	resp, err := tf.client.PublishBatch(ctx, &sns.PublishBatchInput{
 		PublishBatchRequestEntries: entries,
-		TopicArn:                   aws.String(tf.conf.AWS.ARN),
+		TopicArn:                   &tf.conf.AWS.ARN,
 	})
 	if err != nil {
 		return err
@@ -207,7 +208,10 @@ func (tf *sendAWSSNS) sendMessages(ctx context.Context, data [][]byte) error {
 	if resp.Failed != nil {
 		var retry [][]byte
 		for _, r := range resp.Failed {
-			idx, err := strconv.Atoi(aws.StringValue(r.Id))
+			if r.Id == nil {
+				return fmt.Errorf("unexpected nil Id in batch error response")
+			}
+			idx, err := strconv.Atoi(*r.Id)
 			if err != nil {
 				return err
 			}

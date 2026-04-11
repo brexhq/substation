@@ -79,7 +79,7 @@ func (tf *objectJQ) Transform(ctx context.Context, msg *message.Message) ([]*mes
 	}
 
 	var arr []interface{}
-	iter := tf.query.RunWithContext(ctx, i)
+	iter := tf.query.RunWithContext(context.WithoutCancel(ctx), i)
 
 	for {
 		v, ok := iter.Next()

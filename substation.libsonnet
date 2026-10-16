@@ -505,6 +505,13 @@ local helpers = {
           type: type,
           settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
         },
+        otlp(settings={}): {
+          local type = 'format_from_otlp',
+          local default = { id: helpers.id(type, settings), signal: null },
+
+          type: type,
+          settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
+        },
         parquet(settings={}): {
           local type = 'format_from_parquet',
           local default = { id: helpers.id(type, settings) },

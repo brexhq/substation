@@ -36,9 +36,11 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/tidwall/gjson v1.18.0 // Upgrades require SemVer bump.
 	github.com/tidwall/sjson v1.2.5
+	go.opentelemetry.io/proto/otlp v1.6.0
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
 	golang.org/x/net v0.41.0
 	golang.org/x/sync v0.16.0
+	google.golang.org/protobuf v1.36.6
 )
 
 require (
@@ -125,7 +127,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250505200425-f936aa4a68b2 // indirect
 	google.golang.org/grpc v1.72.0 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )

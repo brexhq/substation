@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.0](https://github.com/brexhq/substation/compare/v2.8.0...v2.9.0) (2026-10-16)
+
+
+### Features
+
+* **transform:** Add FormatFromOTLP Transform ([#317](https://github.com/brexhq/substation/issues/317)) ([b594623](https://github.com/brexhq/substation/commit/b594623336fd119094deb2c6416df46204d3d943))
+
 ## [2.8.0](https://github.com/brexhq/substation/compare/v2.7.0...v2.8.0) (2026-01-20)
 
 

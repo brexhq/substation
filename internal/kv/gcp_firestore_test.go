@@ -127,15 +127,15 @@ func TestGCPFirestoreIsNotFound(t *testing.T) {
 	}
 }
 
-// TestGCPFirestoreEmulator exercises the full round-trip against the Firestore
-// emulator. It is skipped when FIRESTORE_EMULATOR_HOST is unset so that the unit
-// test suite passes without the emulator.
-func TestGCPFirestoreEmulator(t *testing.T) {
+// newEmulatorStore returns a store connected to the Firestore emulator. It skips
+// the test when FIRESTORE_EMULATOR_HOST is unset so that the unit test suite
+// passes without the emulator.
+func newEmulatorStore(t *testing.T) *kvGCPFirestore {
+	t.Helper()
+
 	if os.Getenv("FIRESTORE_EMULATOR_HOST") == "" {
 		t.Skip("FIRESTORE_EMULATOR_HOST is not set; skipping Firestore emulator integration test")
 	}
-
-	ctx := context.Background()
 
 	cfg := config.Config{
 		Type: "gcp_firestore",
@@ -156,14 +156,23 @@ func TestGCPFirestoreEmulator(t *testing.T) {
 		t.Fatalf("newKVGCPFirestore: %v", err)
 	}
 
-	if err := store.Setup(ctx); err != nil {
+	if err := store.Setup(context.Background()); err != nil {
 		t.Fatalf("Setup: %v", err)
 	}
-	defer store.Close()
+	t.Cleanup(func() { _ = store.Close() })
 
 	if !store.IsEnabled() {
 		t.Fatal("IsEnabled: got false, want true after Setup")
 	}
+
+	return store
+}
+
+// TestGCPFirestoreEmulator exercises the get and set round-trip, including TTL,
+// against the Firestore emulator.
+func TestGCPFirestoreEmulator(t *testing.T) {
+	store := newEmulatorStore(t)
+	ctx := context.Background()
 
 	// A missing key is a miss, not an error.
 	got, err := store.Get(ctx, "missing")
@@ -214,6 +223,15 @@ func TestGCPFirestoreEmulator(t *testing.T) {
 	if got != "here" {
 		t.Errorf("Get(fresh) = %v, want %q", got, "here")
 	}
+}
+
+// TestGCPFirestoreEmulatorSetAdd exercises SetAddWithTTL against the Firestore
+// emulator.
+func TestGCPFirestoreEmulatorSetAdd(t *testing.T) {
+	store := newEmulatorStore(t)
+	ctx := context.Background()
+	expired := time.Now().Add(-1 * time.Hour).Unix()
+	future := time.Now().Add(1 * time.Hour).Unix()
 
 	// SetAddWithTTL builds a unique set.
 	if err := store.SetAddWithTTL(ctx, "set", "a", future); err != nil {
@@ -226,7 +244,7 @@ func TestGCPFirestoreEmulator(t *testing.T) {
 		t.Fatalf("SetAddWithTTL(b): %v", err)
 	}
 
-	got, err = store.Get(ctx, "set")
+	got, err := store.Get(ctx, "set")
 	if err != nil {
 		t.Fatalf("Get(set): %v", err)
 	}

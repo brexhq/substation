@@ -97,10 +97,13 @@ func (tf *objectJQ) Transform(ctx context.Context, msg *message.Message) ([]*mes
 		return nil, fmt.Errorf("transform %s: unexpected data after top-level value", tf.conf.ID)
 	}
 
-	i, err := objectJQFixNumbers(i)
-	if err != nil {
+	// Check numbers in the raw tokens, because Decode drops all but the
+	// last value of a duplicate key.
+	if err := objectJQCheckFloats(msg.Data()); err != nil {
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
+
+	i = objectJQFixNumbers(i)
 
 	var arr []interface{}
 	iter := tf.query.RunWithContext(ctx, i)
@@ -118,6 +121,7 @@ func (tf *objectJQ) Transform(ctx context.Context, msg *message.Message) ([]*mes
 	}
 
 	var b []byte
+	var err error
 	switch len(arr) {
 	case 0:
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, errObjectJQNoOutputGenerated)
@@ -135,38 +139,50 @@ func (tf *objectJQ) Transform(ctx context.Context, msg *message.Message) ([]*mes
 	return []*message.Message{msg}, nil
 }
 
-// Preserve json.Unmarshal behavior that gojq's number normalization changes.
-func objectJQFixNumbers(v interface{}) (interface{}, error) {
+// Reject a non-integer number that overflows float64, as json.Unmarshal
+// does. gojq would otherwise turn it into +Inf.
+func objectJQCheckFloats(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+
+	for {
+		t, err := dec.Token()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		n, ok := t.(json.Number)
+		if !ok || !strings.ContainsAny(n.String(), ".eE") {
+			continue
+		}
+		if _, err := strconv.ParseFloat(n.String(), 64); err != nil {
+			return err
+		}
+	}
+}
+
+// Keep -0 a negative zero float, as json.Unmarshal does, instead of the
+// int 0 that gojq makes from a json.Number.
+func objectJQFixNumbers(v interface{}) interface{} {
 	switch v := v.(type) {
 	case map[string]interface{}:
 		for k, e := range v {
-			n, err := objectJQFixNumbers(e)
-			if err != nil {
-				return nil, err
-			}
-			v[k] = n
+			v[k] = objectJQFixNumbers(e)
 		}
 	case []interface{}:
 		for k, e := range v {
-			n, err := objectJQFixNumbers(e)
-			if err != nil {
-				return nil, err
-			}
-			v[k] = n
+			v[k] = objectJQFixNumbers(e)
 		}
 	case json.Number:
-		s := v.String()
-		if s == "-0" {
-			return math.Copysign(0, -1), nil
-		}
-		if strings.ContainsAny(s, ".eE") {
-			if _, err := strconv.ParseFloat(s, 64); err != nil {
-				return nil, err
-			}
+		if v.String() == "-0" {
+			return math.Copysign(0, -1)
 		}
 	}
 
-	return v, nil
+	return v
 }
 
 func (tf *objectJQ) String() string {

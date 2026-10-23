@@ -257,6 +257,8 @@ func TestObjectJQInvalidInput(t *testing.T) {
 		{`{"a":`, ""},
 		{`not json`, ""},
 		{`{"x":1e400}`, "value out of range"},
+		{`{"x":1e400,"x":1}`, "value out of range"},
+		{`[1,{"x":[-1.5e400]}]`, "value out of range"},
 		{`{"a":1} x`, "invalid character 'x'"},
 		{`{"a":1} {"b":2}`, "unexpected data after top-level value"},
 		{`{"a":1} {"b":`, "unexpected data after top-level value"},

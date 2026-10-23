@@ -28,6 +28,15 @@ func TestSendGCPStorageValidate(t *testing.T) {
 			settings: map[string]interface{}{"gcp": map[string]interface{}{"resource": "projects/_/buckets/bucket"}},
 		},
 		{
+			name:     "valid chunk_size",
+			settings: map[string]interface{}{"gcp": map[string]interface{}{"resource": "projects/_/buckets/bucket"}, "chunk_size": 262144},
+		},
+		{
+			name:     "negative chunk_size",
+			settings: map[string]interface{}{"gcp": map[string]interface{}{"resource": "projects/_/buckets/bucket"}, "chunk_size": -1},
+			wantErr:  true,
+		},
+		{
 			name:     "invalid resource",
 			settings: map[string]interface{}{"gcp": map[string]interface{}{"resource": "projects/project/topics/topic"}},
 			wantErr:  true,

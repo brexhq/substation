@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -218,7 +219,9 @@ func (tf *sendGCPStorage) send(ctx context.Context, key string) error {
 	// Set object attributes
 	writer.ContentType = mediaType
 
-	if _, err := writer.Write(data[0]); err != nil {
+	if _, err := io.Copy(writer, f); err != nil {
+		// Abort the upload so a partial object is not committed.
+		writer.CloseWithError(err)
 		return err
 	}
 

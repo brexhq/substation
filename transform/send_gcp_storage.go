@@ -223,7 +223,11 @@ func (tf *sendGCPStorage) send(ctx context.Context, key string) error {
 		return err
 	}
 
-	ctx = context.WithoutCancel(ctx)
+	// Canceling the writer's context aborts the upload, so a partial object is
+	// not committed if the copy fails.
+	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	defer cancel()
+
 	obj := tf.client.Bucket(tf.bucket).Object(filePath)
 	writer := obj.NewWriter(ctx)
 	if tf.conf.ChunkSize > 0 {
@@ -234,8 +238,8 @@ func (tf *sendGCPStorage) send(ctx context.Context, key string) error {
 	writer.ContentType = mediaType
 
 	if _, err := io.Copy(writer, f); err != nil {
-		// Abort the upload so a partial object is not committed.
-		writer.CloseWithError(err)
+		cancel()
+
 		return err
 	}
 

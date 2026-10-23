@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/GoogleCloudPlatform/functions-framework-go/funcframework"
 
@@ -18,7 +19,16 @@ import (
 // errFunctionMissingHandler is returned when the Function is deployed without a configured handler.
 var errFunctionMissingHandler = fmt.Errorf("SUBSTATION_FUNCTION_HANDLER environment variable is missing")
 
+// errFunctionInvalidHandler is returned when the Function is deployed with an unsupported handler.
+var errFunctionInvalidHandler = fmt.Errorf("SUBSTATION_FUNCTION_HANDLER environment variable is invalid")
+
 func init() {
+	// The test binary calls the handlers directly, so it does not need
+	// handler registration or the panic on a missing handler.
+	if strings.HasSuffix(os.Args[0], ".test") {
+		return
+	}
+
 	handler, ok := os.LookupEnv("SUBSTATION_FUNCTION_HANDLER")
 	if !ok {
 		panic(fmt.Errorf("init handler %s: %v", handler, errFunctionMissingHandler))
@@ -29,8 +39,16 @@ func init() {
 		if err := funcframework.RegisterCloudEventFunctionContext(context.Background(), "/", cloudStorageHandler); err != nil {
 			panic(fmt.Errorf("init handler %s: %v", handler, err))
 		}
+	case "GCP_HTTP":
+		if err := funcframework.RegisterHTTPFunctionContext(context.Background(), "/", httpHandler); err != nil {
+			panic(fmt.Errorf("init handler %s: %v", handler, err))
+		}
+	case "GCP_PUBSUB":
+		if err := funcframework.RegisterCloudEventFunctionContext(context.Background(), "/", pubsubHandler); err != nil {
+			panic(fmt.Errorf("init handler %s: %v", handler, err))
+		}
 	default:
-		panic(fmt.Errorf("init handler %s: %v", handler, errFunctionMissingHandler))
+		panic(fmt.Errorf("init handler %s: %v", handler, errFunctionInvalidHandler))
 	}
 }
 

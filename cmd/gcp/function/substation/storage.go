@@ -10,13 +10,10 @@ import (
 
 	"cloud.google.com/go/storage"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"golang.org/x/sync/errgroup"
 
-	"github.com/brexhq/substation/v2"
 	"github.com/brexhq/substation/v2/message"
 
 	"github.com/brexhq/substation/v2/internal/bufio"
-	"github.com/brexhq/substation/v2/internal/channel"
 	"github.com/brexhq/substation/v2/internal/media"
 )
 
@@ -29,82 +26,18 @@ type CloudStorageEvent struct {
 	Time   string `json:"time"`
 }
 
-//nolint: gocognit // Ignore cognitive complexity.
 func cloudStorageHandler(ctx context.Context, e cloudevents.Event) error {
-	// Retrieve and load configuration.
-	conf, err := getConfig(ctx)
+	cfg, sub, err := loadRuntime(ctx)
 	if err != nil {
 		return err
 	}
 
-	cfg := customConfig{}
-	if err := json.NewDecoder(conf).Decode(&cfg); err != nil {
-		return err
-	}
-
-	// Catches an edge case where a missing concurrency value
-	// can deadlock the application.
-	if cfg.Concurrency == 0 {
-		cfg.Concurrency = 1
-	}
-
-	sub, err := substation.New(ctx, cfg.Config)
-	if err != nil {
-		return err
-	}
-
-	ch := channel.New[*message.Message]()
-	group, ctx := errgroup.WithContext(ctx)
-
-	// Data transformation. Transforms are executed concurrently using a worker pool
-	// managed by an errgroup. Each message is processed in a separate goroutine.
-	group.Go(func() error {
-		tfGroup, tfCtx := errgroup.WithContext(ctx)
-		tfGroup.SetLimit(cfg.Concurrency)
-
-		for message := range ch.Recv() {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-			}
-
-			msg := message
-			tfGroup.Go(func() error {
-				// Transformed messages are never returned to the caller because
-				// invocation is asynchronous.
-				if _, err := sub.Transform(tfCtx, msg); err != nil {
-					return err
-				}
-
-				return nil
-			})
-		}
-
-		if err := tfGroup.Wait(); err != nil {
-			return err
-		}
-
-		// CTRL messages flush the pipeline. This must be done
-		// after all messages have been processed.
-		ctrl := message.New().AsControl()
-		if _, err := sub.Transform(tfCtx, ctrl); err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	// Data ingest
-	group.Go(func() error {
-		defer ch.Close()
-
+	return runAsyncTransform(ctx, sub, cfg.Concurrency, func(ctx context.Context, send messageSender) error {
 		var evt CloudStorageEvent
 		if err := json.Unmarshal(e.Data(), &evt); err != nil {
 			return fmt.Errorf("failed to unmarshal event data: %v", err)
 		}
 
-		// Create a storage client
 		client, err := storage.NewClient(ctx)
 		if err != nil {
 			return fmt.Errorf("storage.NewClient: %v", err)
@@ -153,8 +86,7 @@ func cloudStorageHandler(ctx context.Context, e cloudevents.Event) error {
 				return err
 			}
 
-			msg := message.New().SetData(r).SetMetadata(metadata)
-			ch.Send(msg)
+			send(message.New().SetData(r).SetMetadata(metadata))
 
 			return nil
 		}
@@ -174,23 +106,9 @@ func cloudStorageHandler(ctx context.Context, e cloudevents.Event) error {
 			}
 
 			b := []byte(scanner.Text())
-			msg := message.New().SetData(b).SetMetadata(metadata)
-
-			ch.Send(msg)
+			send(message.New().SetData(b).SetMetadata(metadata))
 		}
 
-		if err := scanner.Err(); err != nil {
-			return err
-		}
-
-		return nil
+		return scanner.Err()
 	})
-
-	// Wait for all goroutines to complete. This includes the goroutines that are
-	// executing the transform functions.
-	if err := group.Wait(); err != nil {
-		return err
-	}
-
-	return nil
 }

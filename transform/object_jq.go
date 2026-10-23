@@ -1,9 +1,14 @@
 package transform
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math"
+	"strconv"
+	"strings"
 
 	"github.com/itchyny/gojq"
 
@@ -73,8 +78,27 @@ func (tf *objectJQ) Transform(ctx context.Context, msg *message.Message) ([]*mes
 		return []*message.Message{msg}, nil
 	}
 
+	// UseNumber keeps integers exact: gojq turns a json.Number into an int,
+	// or a *big.Int when it does not fit, instead of rounding to float64.
+	dec := json.NewDecoder(bytes.NewReader(msg.Data()))
+	dec.UseNumber()
+
 	var i interface{}
-	if err := json.Unmarshal(msg.Data(), &i); err != nil {
+	if err := dec.Decode(&i); err != nil {
+		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
+	}
+
+	// Reject trailing data after the value, as json.Unmarshal does. The
+	// trailing token is left out of the error so payload data is not logged.
+	if _, err := dec.Token(); err != io.EOF {
+		if err != nil {
+			return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
+		}
+		return nil, fmt.Errorf("transform %s: unexpected data after top-level value", tf.conf.ID)
+	}
+
+	i, err := objectJQFixNumbers(i)
+	if err != nil {
 		return nil, fmt.Errorf("transform %s: %v", tf.conf.ID, err)
 	}
 
@@ -93,7 +117,6 @@ func (tf *objectJQ) Transform(ctx context.Context, msg *message.Message) ([]*mes
 		arr = append(arr, v)
 	}
 
-	var err error
 	var b []byte
 	switch len(arr) {
 	case 0:
@@ -110,6 +133,40 @@ func (tf *objectJQ) Transform(ctx context.Context, msg *message.Message) ([]*mes
 
 	msg.SetData(b)
 	return []*message.Message{msg}, nil
+}
+
+// Preserve json.Unmarshal behavior that gojq's number normalization changes.
+func objectJQFixNumbers(v interface{}) (interface{}, error) {
+	switch v := v.(type) {
+	case map[string]interface{}:
+		for k, e := range v {
+			n, err := objectJQFixNumbers(e)
+			if err != nil {
+				return nil, err
+			}
+			v[k] = n
+		}
+	case []interface{}:
+		for k, e := range v {
+			n, err := objectJQFixNumbers(e)
+			if err != nil {
+				return nil, err
+			}
+			v[k] = n
+		}
+	case json.Number:
+		s := v.String()
+		if s == "-0" {
+			return math.Copysign(0, -1), nil
+		}
+		if strings.ContainsAny(s, ".eE") {
+			if _, err := strconv.ParseFloat(s, 64); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return v, nil
 }
 
 func (tf *objectJQ) String() string {

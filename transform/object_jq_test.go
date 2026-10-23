@@ -3,6 +3,7 @@ package transform
 import (
 	"context"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/brexhq/substation/v2/config"
@@ -103,6 +104,110 @@ var objectJQTests = []struct {
 		},
 		nil,
 	},
+	{
+		"large integer",
+		config.Config{
+			Settings: map[string]interface{}{
+				"filter": `.`,
+			},
+		},
+		[]byte(`{"id":1234567890123456789}`),
+		[][]byte{
+			[]byte(`{"id":1234567890123456789}`),
+		},
+		nil,
+	},
+	{
+		"integer above 2^64",
+		config.Config{
+			Settings: map[string]interface{}{
+				"filter": `.`,
+			},
+		},
+		[]byte(`{"id":123456789012345678901234567890}`),
+		[][]byte{
+			[]byte(`{"id":123456789012345678901234567890}`),
+		},
+		nil,
+	},
+	{
+		"negative large integer",
+		config.Config{
+			Settings: map[string]interface{}{
+				"filter": `.`,
+			},
+		},
+		[]byte(`{"id":-123456789012345678901234567890}`),
+		[][]byte{
+			[]byte(`{"id":-123456789012345678901234567890}`),
+		},
+		nil,
+	},
+	{
+		"large integer arithmetic",
+		config.Config{
+			Settings: map[string]interface{}{
+				"filter": `.id + 1`,
+			},
+		},
+		[]byte(`{"id":123456789012345678901234567890}`),
+		[][]byte{
+			[]byte(`123456789012345678901234567891`),
+		},
+		nil,
+	},
+	{
+		"float",
+		config.Config{
+			Settings: map[string]interface{}{
+				"filter": `.`,
+			},
+		},
+		[]byte(`{"x":1.5}`),
+		[][]byte{
+			[]byte(`{"x":1.5}`),
+		},
+		nil,
+	},
+	{
+		"exponent",
+		config.Config{
+			Settings: map[string]interface{}{
+				"filter": `.x * 2`,
+			},
+		},
+		[]byte(`{"x":1e3}`),
+		[][]byte{
+			[]byte(`2000`),
+		},
+		nil,
+	},
+	{
+		"negative zero",
+		config.Config{
+			Settings: map[string]interface{}{
+				"filter": `.`,
+			},
+		},
+		[]byte(`{"x":-0}`),
+		[][]byte{
+			[]byte(`{"x":-0}`),
+		},
+		nil,
+	},
+	{
+		"negative zero tostring",
+		config.Config{
+			Settings: map[string]interface{}{
+				"filter": `.x | tostring`,
+			},
+		},
+		[]byte(`{"x":-0}`),
+		[][]byte{
+			[]byte(`"-0"`),
+		},
+		nil,
+	},
 }
 
 func TestObjectJQ(t *testing.T) {
@@ -129,6 +234,67 @@ func TestObjectJQ(t *testing.T) {
 				t.Errorf("expected %s, got %s", test.expected, data)
 			}
 		})
+	}
+}
+
+func TestObjectJQInvalidInput(t *testing.T) {
+	ctx := context.TODO()
+	tf, err := newObjectJQ(ctx, config.Config{
+		Settings: map[string]interface{}{
+			"filter": `.`,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// An empty want accepts any error.
+	for _, test := range []struct {
+		data string
+		want string
+	}{
+		{``, ""},
+		{`{"a":`, ""},
+		{`not json`, ""},
+		{`{"x":1e400}`, "value out of range"},
+		{`{"a":1} x`, "invalid character 'x'"},
+		{`{"a":1} {"b":2}`, "unexpected data after top-level value"},
+		{`{"a":1} {"b":`, "unexpected data after top-level value"},
+		{`{} "extra-value"`, "unexpected data after top-level value"},
+	} {
+		msg := message.New().SetData([]byte(test.data))
+		_, err := tf.Transform(ctx, msg)
+		if err == nil {
+			t.Errorf("input %q: expected error, got nil", test.data)
+			continue
+		}
+		if !strings.Contains(err.Error(), test.want) {
+			t.Errorf("input %q: expected error containing %q, got %v", test.data, test.want, err)
+		}
+	}
+
+	// The trailing value must not appear in the error, since errors are logged.
+	if _, err := tf.Transform(ctx, message.New().SetData([]byte(`{} "extra-value"`))); err == nil || strings.Contains(err.Error(), "extra-value") {
+		t.Errorf("trailing string: expected error without the value, got %v", err)
+	}
+
+	// A float overflow fails as json.Unmarshal did, rather than becoming +Inf.
+	tostring, err := newObjectJQ(ctx, config.Config{
+		Settings: map[string]interface{}{
+			"filter": `.x | tostring`,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tostring.Transform(ctx, message.New().SetData([]byte(`{"x":1e400}`))); err == nil {
+		t.Errorf("1e400 | tostring: expected error, got nil")
+	}
+
+	// Trailing whitespace is allowed, as with json.Unmarshal.
+	msg := message.New().SetData([]byte("{\"a\":1}\n"))
+	if _, err := tf.Transform(ctx, msg); err != nil {
+		t.Errorf("trailing whitespace: unexpected error: %v", err)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -47,6 +48,10 @@ type kvGCPFirestore struct {
 		// enforced on read: an item whose TTL has passed is reported as a miss.
 		TTL string `json:"ttl"`
 	} `json:"attributes"`
+
+	// mu guards client, because transforms that share the store can call Setup
+	// concurrently.
+	mu     sync.Mutex
 	client *firestore.Client
 }
 
@@ -121,12 +126,8 @@ func (store *kvGCPFirestore) Get(ctx context.Context, key string) (interface{}, 
 
 	data := snap.Data()
 
-	// Enforce TTL on read. A zero value indicates that TTL is not configured for
-	// the item.
-	if store.Attributes.TTL != "" {
-		if ttl := toUnixSeconds(data[store.Attributes.TTL]); ttl != 0 && ttl <= time.Now().Unix() {
-			return nil, nil
-		}
+	if store.expired(data) {
+		return nil, nil
 	}
 
 	val, found := data[store.valueField()]
@@ -180,8 +181,8 @@ func (store *kvGCPFirestore) SetWithTTL(ctx context.Context, key string, val int
 }
 
 // SetAddWithTTL appends a value to a set (unique list) stored in the value field.
-// If the document does not exist, then it is created. If the TTL attribute is
-// configured, then the TTL field is updated with the provided value.
+// If the document does not exist or has expired, then a new set is created. If the
+// TTL attribute is configured, then the TTL field is updated with the provided value.
 //
 // Uniqueness is provided by Firestore's ArrayUnion, which only adds elements that
 // are not already present.
@@ -203,20 +204,46 @@ func (store *kvGCPFirestore) SetAddWithTTL(ctx context.Context, key string, val 
 		data[store.Attributes.TTL] = ttl
 	}
 
-	// MergeAll upserts the provided fields, creating the document if it does not
-	// already exist while preserving other fields.
 	ref, err := store.doc(key)
 	if err != nil {
 		return err
 	}
 
-	_, err = ref.Set(ctx, data, firestore.MergeAll)
+	// The expiry check and the write run in a transaction, so that members of an
+	// expired set are not restored by the new TTL.
+	return store.client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		snap, err := tx.Get(ref)
+		if err != nil && !isNotFound(err) {
+			return err
+		}
 
-	return err
+		if err == nil && store.expired(snap.Data()) {
+			return tx.Set(ref, data)
+		}
+
+		// MergeAll upserts the provided fields, creating the document if it does
+		// not already exist while preserving other fields.
+		return tx.Set(ref, data, firestore.MergeAll)
+	})
+}
+
+// expired returns true if the document has a TTL that has passed. A zero value
+// indicates that TTL is not configured for the item.
+func (store *kvGCPFirestore) expired(data map[string]interface{}) bool {
+	if store.Attributes.TTL == "" {
+		return false
+	}
+
+	ttl := toUnixSeconds(data[store.Attributes.TTL])
+
+	return ttl != 0 && ttl <= time.Now().Unix()
 }
 
 // IsEnabled returns true if the Firestore client is ready for use.
 func (store *kvGCPFirestore) IsEnabled() bool {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
 	return store.client != nil
 }
 
@@ -226,6 +253,9 @@ func (store *kvGCPFirestore) Setup(ctx context.Context) error {
 	if store.Project == "" || store.Collection == "" {
 		return iconfig.ErrMissingRequiredOption
 	}
+
+	store.mu.Lock()
+	defer store.mu.Unlock()
 
 	// Avoids unnecessary setup.
 	if store.client != nil {
@@ -244,6 +274,9 @@ func (store *kvGCPFirestore) Setup(ctx context.Context) error {
 
 // Close releases the Firestore client's resources.
 func (store *kvGCPFirestore) Close() error {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
 	if store.client == nil {
 		return nil
 	}

@@ -3,6 +3,7 @@ package kv
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -139,8 +140,10 @@ func TestGCPFirestoreEmulator(t *testing.T) {
 	cfg := config.Config{
 		Type: "gcp_firestore",
 		Settings: map[string]interface{}{
-			"project":    "substation-test",
-			"collection": "kv_test",
+			"project": "substation-test",
+			// A collection per run keeps data left in the emulator from
+			// affecting the results.
+			"collection": fmt.Sprintf("kv_test_%d", time.Now().UnixNano()),
 			"attributes": map[string]interface{}{
 				"value": "value",
 				"ttl":   "ttl",
@@ -233,6 +236,22 @@ func TestGCPFirestoreEmulator(t *testing.T) {
 	}
 	if len(members) != 2 {
 		t.Errorf("Get(set) has %d members, want 2 (unique set): %v", len(members), members)
+	}
+
+	// Members of an expired set are not restored by a later add.
+	if err := store.SetAddWithTTL(ctx, "expired_set", "a", expired); err != nil {
+		t.Fatalf("SetAddWithTTL(expired a): %v", err)
+	}
+	if err := store.SetAddWithTTL(ctx, "expired_set", "b", future); err != nil {
+		t.Fatalf("SetAddWithTTL(b): %v", err)
+	}
+
+	got, err = store.Get(ctx, "expired_set")
+	if err != nil {
+		t.Fatalf("Get(expired_set): %v", err)
+	}
+	if members, ok := got.([]interface{}); !ok || len(members) != 1 || members[0] != "b" {
+		t.Errorf("Get(expired_set) = %v, want [b]", got)
 	}
 
 	// A list is added as individual members.

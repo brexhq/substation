@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.1](https://github.com/brexhq/substation/compare/v2.9.0...v2.9.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **build:** build with Go 1.27.3 ([#331](https://github.com/brexhq/substation/issues/331)) ([2ec533e](https://github.com/brexhq/substation/commit/2ec533e1b4fb4bdf5a505e4f4cd2fc2048766c96))
+
 ## [2.9.0](https://github.com/brexhq/substation/compare/v2.8.0...v2.9.0) (2026-10-16)
 
 

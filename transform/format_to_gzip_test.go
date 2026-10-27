@@ -1,7 +1,10 @@
 package transform
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"io"
 	"reflect"
 	"testing"
 
@@ -23,7 +26,7 @@ var formatToGzipTests = []struct {
 		config.Config{},
 		[]byte(`foo`),
 		[][]byte{
-			{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 74, 203, 207, 7, 4, 0, 0, 255, 255, 33, 101, 115, 140, 3, 0, 0, 0},
+			[]byte(`foo`),
 		},
 		nil,
 	},
@@ -45,9 +48,20 @@ func TestFormatToGzip(t *testing.T) {
 				t.Error(err)
 			}
 
+			// Compressed bytes vary across Go versions, so compare the round trip.
 			var data [][]byte
 			for _, c := range result {
-				data = append(data, c.Data())
+				r, err := gzip.NewReader(bytes.NewReader(c.Data()))
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				b, err := io.ReadAll(r)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				data = append(data, b)
 			}
 
 			if !reflect.DeepEqual(data, test.expected) {

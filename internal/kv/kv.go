@@ -69,6 +69,8 @@ func New(cfg config.Config) (Storer, error) {
 		return newKVAWSDynamoDB(cfg)
 	case "csv_file":
 		return newKVCSVFile(cfg)
+	case "gcp_firestore":
+		return newKVGCPFirestore(cfg)
 	case "json_file":
 		return newKVJSONFile(cfg)
 	case "memory":

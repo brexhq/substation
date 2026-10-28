@@ -1337,6 +1337,18 @@ local helpers = {
       type: 'csv_file',
       settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
     },
+    gcp: {
+      firestore(settings={}): {
+        local default = {
+          project: null,
+          collection: null,
+          attributes: { value: null, ttl: null },
+        },
+
+        type: 'gcp_firestore',
+        settings: std.prune(std.mergePatch(default, helpers.abbv(settings))),
+      },
+    },
     json_file(settings=$.defaults.kv_store.json_file.settings): {
       local default = { file: null, is_lines: false },
 

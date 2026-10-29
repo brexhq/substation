@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -20,10 +21,57 @@ import (
 )
 
 var (
+	clientsMu     sync.Mutex
 	httpClient    http.HTTP
 	s3downloader  *manager.Downloader
 	gcpdownloader *storage.Client
 )
+
+func ensureHTTPClient() {
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
+
+	if !httpClient.IsEnabled() {
+		httpClient.Setup()
+	}
+}
+
+func ensureS3Downloader(ctx context.Context) (*manager.Downloader, error) {
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
+
+	if s3downloader != nil {
+		return s3downloader, nil
+	}
+
+	awsCfg, err := iconfig.NewAWS(ctx, iconfig.AWS{})
+	if err != nil {
+		return nil, err
+	}
+
+	c := s3.NewFromConfig(awsCfg)
+	s3downloader = manager.NewDownloader(c)
+
+	return s3downloader, nil
+}
+
+func ensureGCPStorageClient(ctx context.Context) (*storage.Client, error) {
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
+
+	if gcpdownloader != nil {
+		return gcpdownloader, nil
+	}
+
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	gcpdownloader = client
+
+	return gcpdownloader, nil
+}
 
 // errEmptyFile is returned when Get is called but finds an empty file.
 var errEmptyFile = fmt.Errorf("empty file found")
@@ -71,9 +119,7 @@ func Get(ctx context.Context, location string) (string, error) {
 	}
 
 	if strings.HasPrefix(location, "http://") || strings.HasPrefix(location, "https://") {
-		if !httpClient.IsEnabled() {
-			httpClient.Setup()
-		}
+		ensureHTTPClient()
 
 		resp, err := httpClient.Get(ctx, location)
 		if err != nil {
@@ -93,16 +139,10 @@ func Get(ctx context.Context, location string) (string, error) {
 		return dst.Name(), nil
 	}
 
-	//nolint: nestif // ignore nesting complexity
 	if strings.HasPrefix(location, "s3://") {
-		if s3downloader == nil {
-			awsCfg, err := iconfig.NewAWS(ctx, iconfig.AWS{})
-			if err != nil {
-				return dst.Name(), fmt.Errorf("get %s: %v", location, err)
-			}
-
-			c := s3.NewFromConfig(awsCfg)
-			s3downloader = manager.NewDownloader(c)
+		downloader, err := ensureS3Downloader(ctx)
+		if err != nil {
+			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 		}
 
 		// "s3://bucket/key" becomes ["bucket" "key"]
@@ -110,7 +150,7 @@ func Get(ctx context.Context, location string) (string, error) {
 
 		// Download the file from S3.
 		ctx = context.WithoutCancel(ctx)
-		size, err := s3downloader.Download(ctx, dst, &s3.GetObjectInput{
+		size, err := downloader.Download(ctx, dst, &s3.GetObjectInput{
 			Bucket: &paths[0],
 			Key:    &paths[1],
 		})
@@ -125,13 +165,10 @@ func Get(ctx context.Context, location string) (string, error) {
 		return dst.Name(), nil
 	}
 
-	//nolint: nestif // ignore nesting complexity
 	if strings.HasPrefix(location, "gs://") {
-		if gcpdownloader == nil {
-			gcpdownloader, err = storage.NewClient(ctx)
-			if err != nil {
-				return dst.Name(), fmt.Errorf("get %s: %v", location, err)
-			}
+		client, err := ensureGCPStorageClient(ctx)
+		if err != nil {
+			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 		}
 
 		// "gs://bucket/key" becomes ["bucket" "key"]
@@ -139,7 +176,7 @@ func Get(ctx context.Context, location string) (string, error) {
 
 		// Download the file from GCP Storage.
 		ctx = context.WithoutCancel(ctx)
-		reader, err := gcpdownloader.Bucket(paths[0]).Object(paths[1]).NewReader(ctx)
+		reader, err := client.Bucket(paths[0]).Object(paths[1]).NewReader(ctx)
 		if err != nil {
 			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 		}

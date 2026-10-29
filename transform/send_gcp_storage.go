@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -29,6 +30,13 @@ type sendGCPStorageConfig struct {
 	FilePath file.Path `json:"file_path"`
 	// UseBatchKeyAsPrefix determines if the batch key should be used as the prefix.
 	UseBatchKeyAsPrefix bool `json:"use_batch_key_as_prefix"`
+	// ChunkSize is the size in bytes of the upload buffer (storage.Writer.ChunkSize).
+	//
+	// The GCS client allocates a buffer of this size for every in-flight upload.
+	// If unset or 0, the client library default (16 MiB) is used. A smaller value
+	// reduces memory when many objects are uploaded concurrently. A positive value
+	// is rounded up to a multiple of 256 KiB.
+	ChunkSize int `json:"chunk_size"`
 	// AuxTransforms are applied to batched data before it is sent.
 	AuxTransforms []config.Config `json:"auxiliary_transforms"`
 
@@ -49,6 +57,10 @@ func (c *sendGCPStorageConfig) Validate() error {
 
 	if !strings.HasPrefix(c.GCP.Resource, gcpStorageResourcePrefix) {
 		return fmt.Errorf("gcp.resource: %v", iconfig.ErrInvalidOption)
+	}
+
+	if c.ChunkSize < 0 {
+		return fmt.Errorf("chunk_size: %v", iconfig.ErrInvalidOption)
 	}
 
 	return nil
@@ -211,14 +223,23 @@ func (tf *sendGCPStorage) send(ctx context.Context, key string) error {
 		return err
 	}
 
-	ctx = context.WithoutCancel(ctx)
+	// Canceling the writer's context aborts the upload, so a partial object is
+	// not committed if the copy fails.
+	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	defer cancel()
+
 	obj := tf.client.Bucket(tf.bucket).Object(filePath)
 	writer := obj.NewWriter(ctx)
+	if tf.conf.ChunkSize > 0 {
+		writer.ChunkSize = tf.conf.ChunkSize
+	}
 
 	// Set object attributes
 	writer.ContentType = mediaType
 
-	if _, err := writer.Write(data[0]); err != nil {
+	if _, err := io.Copy(writer, f); err != nil {
+		cancel()
+
 		return err
 	}
 

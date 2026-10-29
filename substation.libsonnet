@@ -964,6 +964,28 @@ local helpers = {
         },
       },
       gcp: {
+        // Publishes messages to a Pub/Sub topic. The `gcp.resource` is the topic
+        // in the form `projects/{project}/topics/{topic}`. Message ordering is
+        // off by default; set `ordering_key` (a message key) to enable it, at the
+        // cost of a 1 MB/s throughput cap per ordering key value.
+        pubsub(settings={}): {
+          local type = 'send_gcp_pubsub',
+          local default = {
+            id: helpers.id(type, settings),
+            batch: $.config.batch,
+            gcp: $.config.gcp,
+            ordering_key: null,
+            auxiliary_transforms: null,
+          },
+
+          local s = std.mergePatch(settings, {
+            auxiliary_transforms: if std.objectHas(settings, 'auxiliary_transforms') then settings.auxiliary_transforms else if std.objectHas(settings, 'aux_tforms') then settings.aux_tforms else null,
+            aux_tforms: null,
+          }),
+
+          type: type,
+          settings: std.prune(std.mergePatch(default, helpers.abbv(s))),
+        },
         storage(settings={}): {
           local type = 'send_gcp_storage',
           local default = {

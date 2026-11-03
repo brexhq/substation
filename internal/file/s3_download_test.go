@@ -81,7 +81,7 @@ func TestDownloadS3(t *testing.T) {
 			defer dst.Close()
 
 			obj := &fakeObject{versions: tt.versions, overwrites: tt.overwrites}
-			_, err = downloadS3(context.Background(), obj, obj, dst, "bucket", "key")
+			size, err := downloadS3(context.Background(), obj, obj, dst, "bucket", "key")
 			if tt.wantErr {
 				if err == nil {
 					t.Fatal("expected an error when the object never settles")
@@ -98,6 +98,9 @@ func TestDownloadS3(t *testing.T) {
 			}
 			if string(got) != tt.want {
 				t.Errorf("got %q, want %q (stale bytes from a failed attempt must not remain)", got, tt.want)
+			}
+			if size != int64(len(tt.want)) {
+				t.Errorf("returned size %d, want %d", size, len(tt.want))
 			}
 		})
 	}

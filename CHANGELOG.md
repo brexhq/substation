@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.2](https://github.com/brexhq/substation/compare/v2.9.1...v2.9.2) (2026-11-03)
+
+
+### Bug Fixes
+
+* **file:** pin S3 downloads to one object version ([#334](https://github.com/brexhq/substation/issues/334)) ([352b247](https://github.com/brexhq/substation/commit/352b247ccc4c109038f5a6a738bfd63ae1d8d790))
+
 ## [2.9.1](https://github.com/brexhq/substation/compare/v2.9.0...v2.9.1) (2026-10-27)
 
 

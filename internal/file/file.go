@@ -3,6 +3,7 @@ package file
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/smithy-go"
 	"github.com/google/uuid"
 
 	iconfig "github.com/brexhq/substation/v2/internal/config"
@@ -21,6 +23,7 @@ import (
 
 var (
 	httpClient    http.HTTP
+	s3client      *s3.Client
 	s3downloader  *manager.Downloader
 	gcpdownloader *storage.Client
 )
@@ -101,8 +104,8 @@ func Get(ctx context.Context, location string) (string, error) {
 				return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 			}
 
-			c := s3.NewFromConfig(awsCfg)
-			s3downloader = manager.NewDownloader(c)
+			s3client = s3.NewFromConfig(awsCfg)
+			s3downloader = manager.NewDownloader(s3client)
 		}
 
 		// "s3://bucket/key" becomes ["bucket" "key"]
@@ -110,10 +113,7 @@ func Get(ctx context.Context, location string) (string, error) {
 
 		// Download the file from S3.
 		ctx = context.WithoutCancel(ctx)
-		size, err := s3downloader.Download(ctx, dst, &s3.GetObjectInput{
-			Bucket: &paths[0],
-			Key:    &paths[1],
-		})
+		size, err := downloadS3(ctx, s3client, s3downloader, dst, paths[0], paths[1])
 		if err != nil {
 			return dst.Name(), fmt.Errorf("get %s: %v", location, err)
 		}
@@ -222,4 +222,60 @@ func (p Path) New() string {
 	}
 
 	return fmt.Sprintf("%s%s", path.Join(arr...), p.Suffix)
+}
+
+// s3DownloadAttempts is how many times downloadS3 restarts when the object
+// changes mid-download.
+const s3DownloadAttempts = 3
+
+// s3Downloader downloads an S3 object in parallel ranged GETs.
+type s3Downloader interface {
+	Download(context.Context, io.WriterAt, *s3.GetObjectInput, ...func(*manager.Downloader)) (int64, error)
+}
+
+// s3HeadClient reads S3 object metadata.
+type s3HeadClient interface {
+	HeadObject(context.Context, *s3.HeadObjectInput, ...func(*s3.Options)) (*s3.HeadObjectOutput, error)
+}
+
+// downloadS3 downloads one version of an S3 object.
+//
+// The downloader fetches parts in parallel, each as its own ranged GET, so an
+// object overwritten mid-download would otherwise be stitched together from
+// two versions. Pinning every part to the ETag from HeadObject makes S3 reject
+// a changed object with 412 Precondition Failed, and the download starts over.
+func downloadS3(ctx context.Context, client s3HeadClient, d s3Downloader, dst *os.File, bucket, key string) (int64, error) {
+	var err error
+	for i := 0; i < s3DownloadAttempts; i++ {
+		var head *s3.HeadObjectOutput
+		head, err = client.HeadObject(ctx, &s3.HeadObjectInput{
+			Bucket: &bucket,
+			Key:    &key,
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		// Drop any bytes from an earlier attempt.
+		if err = dst.Truncate(0); err != nil {
+			return 0, err
+		}
+
+		var size int64
+		size, err = d.Download(ctx, dst, &s3.GetObjectInput{
+			Bucket:  &bucket,
+			Key:     &key,
+			IfMatch: head.ETag,
+		})
+		if err == nil {
+			return size, nil
+		}
+
+		var apiErr smithy.APIError
+		if !errors.As(err, &apiErr) || apiErr.ErrorCode() != "PreconditionFailed" {
+			return 0, err
+		}
+	}
+
+	return 0, fmt.Errorf("object changed during %d download attempts: %v", s3DownloadAttempts, err)
 }

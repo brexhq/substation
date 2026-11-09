@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.10.0](https://github.com/brexhq/substation/compare/v2.9.2...v2.10.0) (2026-11-09)
+
+
+### Features
+
+* **kv:** add GCP_FIRESTORE key-value store ([#328](https://github.com/brexhq/substation/issues/328)) ([70b3373](https://github.com/brexhq/substation/commit/70b33734a2f62c4b34dd663e9e51ae55dce96a93))
+
+
+### Bug Fixes
+
+* **cmd:** exit non-zero when substation test fails ([#322](https://github.com/brexhq/substation/issues/322)) ([93a7cac](https://github.com/brexhq/substation/commit/93a7cac280d7e7be76105c9cda3528d1597d2068))
+* **transform:** preserve large integers in object_jq ([#321](https://github.com/brexhq/substation/issues/321)) ([17611fa](https://github.com/brexhq/substation/commit/17611fa62c62b351cdc010df36303022733a8f2b))
+* **transform:** upload full batch in send_gcp_storage ([#324](https://github.com/brexhq/substation/issues/324)) ([448463d](https://github.com/brexhq/substation/commit/448463d14a6081c3cb209961de4e82a1d1ba3d1c))
+
 ## [2.9.2](https://github.com/brexhq/substation/compare/v2.9.1...v2.9.2) (2026-11-03)
 
 

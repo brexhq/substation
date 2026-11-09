@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -28,6 +29,10 @@ type customConfig struct {
 	substation.Config
 	Tests []testConfig `json:"tests"`
 }
+
+// errTestFailed is returned when any test fails or cannot run. The
+// results are already printed, so the error itself is not printed.
+var errTestFailed = errors.New("test failed")
 
 func init() {
 	rootCmd.AddCommand(testCmd)
@@ -75,6 +80,11 @@ It prints a summary of the test results in the format:
   ?	path/to/config2.json 	[no tests]
   FAIL 	path/to/config3.json 	349µs
   ...
+
+The command exits with a non-zero status if any test fails or
+cannot run ('[error]'). A failing file does not stop the run, so
+every file is still tested and reported. An error while loading or
+parsing a config file still stops the run.
 
 If the file is not already compiled, then it is compiled before
 testing ('.jsonnet', '.libsonnet' files are compiled to JSON).
@@ -153,17 +163,33 @@ production resources, such as any enrichment or send transforms.
 			return err
 		}
 
-		return testPath(path, extStr, recursive)
+		failed, err := testPath(path, extStr, recursive)
+		if err != nil {
+			return err
+		}
+
+		if failed {
+			cmd.SilenceErrors = true
+			cmd.SilenceUsage = true
+
+			return errTestFailed
+		}
+
+		return nil
 	},
 }
 
-func testPath(arg string, extVars map[string]string, recursive bool) error {
+// testPath tests every file in the path and reports whether any
+// test failed or could not run. All files are tested even if an
+// earlier file fails.
+func testPath(arg string, extVars map[string]string, recursive bool) (bool, error) {
 	// Handle cases where the path is a file.
 	ext := filepath.Ext(arg)
 	if ext == ".jsonnet" || ext == ".libsonnet" || ext == ".json" {
 		return testFile(arg, extVars)
 	}
 
+	var failed bool
 	if err := filepath.WalkDir(arg, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -182,15 +208,22 @@ func testPath(arg string, extVars map[string]string, recursive bool) error {
 			return nil
 		}
 
-		return testFile(path, extVars)
-	}); err != nil {
+		f, err := testFile(path, extVars)
+		if f {
+			failed = true
+		}
+
 		return err
+	}); err != nil {
+		return failed, err
 	}
 
-	return nil
+	return failed, nil
 }
 
-func testFile(arg string, extVars map[string]string) error {
+// testFile tests a file and reports whether any test failed or
+// could not run.
+func testFile(arg string, extVars map[string]string) (bool, error) {
 	var cfg customConfig
 
 	// Switching directories is required to support relative imports.
@@ -213,19 +246,19 @@ func testFile(arg string, extVars map[string]string) error {
 			fmt.Printf("?\t%s\t[error]\n", arg)
 			fmt.Fprint(os.Stderr, transformErrStr(err, arg, cfg))
 
-			return nil
+			return true, nil
 		}
 
 		c, err := memConfig(mem)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		cfg = c
 	case ".json":
 		c, err := fiConfig(fileName)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		cfg = c
@@ -235,13 +268,13 @@ func testFile(arg string, extVars map[string]string) error {
 
 	// These are not valid Substation configs and must be ignored.
 	if len(cfg.Transforms) == 0 {
-		return nil
+		return false, nil
 	}
 
 	if len(cfg.Tests) == 0 {
 		fmt.Printf("?\t%s\t[no tests]\n", arg)
 
-		return nil
+		return false, nil
 	}
 
 	ctx := context.Background() // This doesn't need to be canceled.
@@ -254,7 +287,7 @@ func testFile(arg string, extVars map[string]string) error {
 			fmt.Printf("?\t%s\t[error]\n", arg)
 			fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:tests:%s:condition", arg, test.Name), cfg))
 
-			return nil
+			return true, nil
 		}
 
 		// setup creates the test messages that are tested.
@@ -269,7 +302,7 @@ func testFile(arg string, extVars map[string]string) error {
 				fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:tests:%s:transforms", arg, test.Name), cfg))
 			}
 
-			return nil
+			return true, nil
 		}
 
 		// tester contains the config that will be tested.
@@ -284,7 +317,7 @@ func testFile(arg string, extVars map[string]string) error {
 				fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:transforms", arg), cfg))
 			}
 
-			return nil
+			return true, nil
 		}
 
 		sMsgs, err := setup.Transform(ctx, message.New().AsControl())
@@ -292,7 +325,7 @@ func testFile(arg string, extVars map[string]string) error {
 			fmt.Printf("?\t%s\t[error]\n", arg)
 			fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:tests:%s:transforms", arg, test.Name), cfg))
 
-			return nil
+			return true, nil
 		}
 
 		tMsgs, err := tester.Transform(ctx, sMsgs...)
@@ -300,7 +333,7 @@ func testFile(arg string, extVars map[string]string) error {
 			fmt.Printf("?\t%s\t[error]\n", arg)
 			fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:transforms", arg), cfg))
 
-			return nil
+			return true, nil
 		}
 
 		for _, msg := range tMsgs {
@@ -314,7 +347,7 @@ func testFile(arg string, extVars map[string]string) error {
 				fmt.Printf("?\t%s\t[error]\n", arg)
 				fmt.Fprint(os.Stderr, transformErrStr(err, fmt.Sprintf("%s:tests:%s:condition", arg, test.Name), cfg))
 
-				return nil
+				return true, nil
 			}
 
 			if !ok {
@@ -335,5 +368,5 @@ func testFile(arg string, extVars map[string]string) error {
 		fmt.Printf("ok\t%s\t%s\t\n", arg, time.Since(start).Round(time.Microsecond))
 	}
 
-	return nil
+	return failedFile, nil
 }
